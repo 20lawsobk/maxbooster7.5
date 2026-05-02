@@ -7,17 +7,18 @@ import {
 } from '../../shared/schema.js';
 import { generateMaxResponse } from '../services/maxAssistantService.js';
 import { logger } from '../logger.js';
+import { aiRateLimiter } from '../middleware/rateLimiter.js';
 import rateLimit from 'express-rate-limit';
 
-// 120M req/s system capacity — 7.2B per 60-second window per user/IP.
-// Admin skip retained for zero-friction admin tooling.
-const chatLimiter = rateLimit({
+// Unauthenticated callers get a tighter IP-based cap.
+// Authenticated users are handled by the Redis-backed aiRateLimiter (100/hr).
+const anonChatLimiter = rateLimit({
   windowMs: 60 * 1000,
-  max: 7_200_000_000,
+  max: 10,
   standardHeaders: true,
   legacyHeaders: false,
-  message: { error: 'Too many messages — please wait a moment before sending again.' },
-  skip: (req) => (req as any).user?.role === 'admin',
+  skip: (req) => !!(req as any).user,
+  message: { error: 'Too many messages — please sign in or wait before sending again.' },
 });
 
 const router = Router();
@@ -134,7 +135,7 @@ router.get('/history', async (req: Request, res: Response) => {
 // Sends a message to Max, persists it, returns the in-house AI response.
 // Body: { message: string }
 // Response: { content, category, confidence, proactiveSuggestions, relatedTopics, quickActions, messageId, assistantMessageId }
-router.post('/chat', chatLimiter, async (req: Request, res: Response) => {
+router.post('/chat', aiRateLimiter, anonChatLimiter, async (req: Request, res: Response) => {
   try {
     const { message } = req.body ?? {};
 

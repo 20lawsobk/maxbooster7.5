@@ -178,6 +178,22 @@ class ContractTemplateService {
   private contracts: Map<string, GeneratedContract> = new Map();
   private dbInitPromise: Promise<void>;
 
+  // In-memory contract cache cap. Contracts are DB-persisted; evicting an
+  // entry here only means the next read re-fetches from the database.
+  private static readonly MAX_CONTRACTS = 100_000;
+
+  private cacheContract(id: string, contract: GeneratedContract): void {
+    while (this.contracts.size >= ContractTemplateService.MAX_CONTRACTS) {
+      const oldestKey = this.contracts.keys().next().value;
+      if (oldestKey !== undefined) {
+        this.contracts.delete(oldestKey);
+      } else {
+        break;
+      }
+    }
+    this.contracts.set(id, contract);
+  }
+
   constructor() {
     this.dbInitPromise = this.loadFromDatabase().catch(err => {
       logger.warn('Failed to load contracts from DB on startup:', err);
@@ -212,7 +228,7 @@ class ContractTemplateService {
           expiresAt: row.expiresAt ?? undefined,
           pdfUrl: row.pdfUrl ?? undefined,
         };
-        this.contracts.set(contract.id, contract);
+        this.cacheContract(contract.id, contract);
       }
       logger.info(`Loaded ${rows.length} contracts from database`);
     } catch (err) {
@@ -298,7 +314,7 @@ class ContractTemplateService {
       expiresAt: variables.expirationDate,
     };
 
-    this.contracts.set(contract.id, contract);
+    this.cacheContract(contract.id, contract);
     this.persistToDb(contract);
     logger.info(`Generated contract ${contract.id} from template ${templateId}`);
     return contract;
@@ -1080,7 +1096,7 @@ ${vars.producerName || '[PRODUCER NAME]'}
       contract.status = 'partially_signed';
     }
 
-    this.contracts.set(contractId, contract);
+    this.cacheContract(contractId, contract);
     this.persistToDb(contract);
     logger.info(`Contract ${contractId} signed by ${partyName}. Status: ${contract.status}`);
     return contract;
@@ -1244,7 +1260,7 @@ ${vars.producerName || '[PRODUCER NAME]'}
       signatures: parties.map(p => ({ partyName: p.name })),
     };
 
-    this.contracts.set(contractId, updatedContract);
+    this.cacheContract(contractId, updatedContract);
     this.persistToDb(updatedContract);
     logger.info(`Contract ${contractId} draft updated`);
     return updatedContract;
@@ -1261,7 +1277,7 @@ ${vars.producerName || '[PRODUCER NAME]'}
     }
 
     contract.status = 'pending_signature';
-    this.contracts.set(contractId, contract);
+    this.cacheContract(contractId, contract);
     this.persistToDb(contract);
     logger.info(`Contract ${contractId} sent for signature`);
     return contract;
@@ -1279,7 +1295,7 @@ ${vars.producerName || '[PRODUCER NAME]'}
     }
 
     contract.status = 'voided';
-    this.contracts.set(contractId, contract);
+    this.cacheContract(contractId, contract);
     this.persistToDb(contract);
     logger.info(`Contract ${contractId} declined by ${partyName}. Reason: ${reason}`);
     return contract;
@@ -1296,7 +1312,7 @@ ${vars.producerName || '[PRODUCER NAME]'}
     }
 
     contract.status = 'voided';
-    this.contracts.set(contractId, contract);
+    this.cacheContract(contractId, contract);
     this.persistToDb(contract);
     logger.info(`Contract ${contractId} voided. Reason: ${reason}`);
     return contract;

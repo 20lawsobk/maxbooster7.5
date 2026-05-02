@@ -331,9 +331,50 @@ class DistributionDataTransferService {
   private spotifyTokenCache: { token: string; expiresAt: number } | null = null;
   private readonly registry = CircuitBreakerRegistry.getInstance();
 
+  // Hard caps — entries beyond these are evicted oldest-first so a single
+  // instance can serve tens of millions of users without heap exhaustion.
+  private static readonly MAX_JOBS = 100_000;
+  private static readonly MAX_LINKED_USERS = 100_000;
+  private static readonly JOB_TTL_MS = 48 * 60 * 60 * 1000; // 48 h
+
   constructor() {
     logger.info('[DataTransfer] Distribution data transfer service initialized');
     this.initCircuitBreakers();
+    this.startMemoryCleanup();
+  }
+
+  private startMemoryCleanup(): void {
+    // Run hourly; evict stale jobs and inactive user profile entries.
+    setInterval(() => {
+      const now = Date.now();
+
+      // 1. Evict jobs older than 48 h (completed or abandoned).
+      for (const [jobId, job] of this.jobs) {
+        if (now - job.createdAt.getTime() > DistributionDataTransferService.JOB_TTL_MS) {
+          this.jobs.delete(jobId);
+        }
+      }
+      // Safety valve: if still over cap after TTL eviction, drop oldest.
+      while (this.jobs.size > DistributionDataTransferService.MAX_JOBS) {
+        const oldest = this.jobs.keys().next().value;
+        if (oldest !== undefined) this.jobs.delete(oldest); else break;
+      }
+
+      // 2. Evict linkedProfiles + syncHistory for users over the cap.
+      // Users with active autoSync are exempt from eviction.
+      if (this.linkedProfiles.size > DistributionDataTransferService.MAX_LINKED_USERS) {
+        const overflow = this.linkedProfiles.size - DistributionDataTransferService.MAX_LINKED_USERS;
+        let evicted = 0;
+        for (const userId of this.linkedProfiles.keys()) {
+          if (evicted >= overflow) break;
+          if (!this.autoSyncStates.has(userId)) {
+            this.linkedProfiles.delete(userId);
+            this.syncHistory.delete(userId);
+            evicted++;
+          }
+        }
+      }
+    }, 60 * 60 * 1000);
   }
 
   private initCircuitBreakers(): void {

@@ -141,6 +141,23 @@ class InvoiceService {
   private invoices: Map<string, Invoice> = new Map();
   private invoiceCounter: number = 1000;
 
+  // In-memory invoice store is a generation cache — invoices that survive
+  // past this window have been paid, cancelled, or are awaiting DB persistence.
+  // Keep at most 50 000 entries; when over cap, evict the oldest (Map is
+  // insertion-ordered, so the first key is always the oldest entry).
+  private static readonly MAX_INVOICES = 50_000;
+
+  private evictIfOverCap(): void {
+    while (this.invoices.size >= InvoiceService.MAX_INVOICES) {
+      const oldestKey = this.invoices.keys().next().value;
+      if (oldestKey !== undefined) {
+        this.invoices.delete(oldestKey);
+      } else {
+        break;
+      }
+    }
+  }
+
   generateInvoiceNumber(): string {
     const year = new Date().getFullYear();
     const number = ++this.invoiceCounter;
@@ -275,6 +292,7 @@ class InvoiceService {
       metadata: data.metadata,
     };
 
+    this.evictIfOverCap();
     this.invoices.set(invoice.id, invoice);
     logger.info(`Created invoice ${invoice.invoiceNumber} for user ${data.userId}`);
     return invoice;
@@ -303,6 +321,7 @@ class InvoiceService {
       invoice.paymentMethod = paymentDetails.paymentMethod;
     }
 
+    this.evictIfOverCap();
     this.invoices.set(invoiceId, invoice);
     logger.info(`Updated invoice ${invoice.invoiceNumber} status to ${status}`);
     return invoice;

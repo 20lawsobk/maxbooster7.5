@@ -124,6 +124,9 @@ export class HybridStorageService {
   private contentHashIndex: Map<string, string[]> = new Map();
   private publicContentHashes: Map<string, string> = new Map();
 
+  private static readonly MAX_FILE_INDEX_ENTRIES = 500_000;
+  private static readonly FILE_INDEX_WARN_THRESHOLD = 400_000;
+
   private constructor() {}
 
   static getInstance(): HybridStorageService {
@@ -189,6 +192,24 @@ export class HybridStorageService {
   }
 
   private async saveIndex(): Promise<void> {
+    const size = this.fileIndex.size;
+    if (size >= HybridStorageService.FILE_INDEX_WARN_THRESHOLD) {
+      if (size >= HybridStorageService.MAX_FILE_INDEX_ENTRIES) {
+        logger.error(
+          `[HybridStorage] fileIndex at capacity (${size} entries) — evicting oldest 10% by lastAccessed. ` +
+          'Architectural migration to per-key PDIM storage is required.'
+        );
+        const evictCount = Math.ceil(size * 0.1);
+        const sorted = [...this.fileIndex.entries()].sort(
+          ([, a], [, b]) => a.lastAccessed.getTime() - b.lastAccessed.getTime()
+        );
+        for (let i = 0; i < evictCount; i++) {
+          this.fileIndex.delete(sorted[i][0]);
+        }
+      } else {
+        logger.warn(`[HybridStorage] fileIndex approaching capacity: ${size}/${HybridStorageService.MAX_FILE_INDEX_ENTRIES} entries.`);
+      }
+    }
     try {
       await getPdimClient().set('hybrid:storage:index', JSON.stringify({
         files: Object.fromEntries(this.fileIndex),

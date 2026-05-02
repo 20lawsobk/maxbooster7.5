@@ -3,7 +3,7 @@ import { db } from '../db.js';
 import { supportTickets, users } from '../../shared/schema.js';
 import { eq, desc, like, or, sql, count, avg, and } from 'drizzle-orm';
 import { logger } from '../logger.js';
-import { requireAuth } from '../middleware/auth.js';
+import { requireAuth, require2FA } from '../middleware/auth.js';
 import { notificationService } from '../services/notificationService.js';
 
 const router = Router();
@@ -41,7 +41,7 @@ router.get('/tickets', requireAuth, async (req, res) => {
 });
 
 // Get all tickets (admin only)
-router.get('/tickets/all', requireAdmin, async (req, res) => {
+router.get('/tickets/all', requireAdmin, require2FA, async (req, res) => {
   try {
     const { status, priority, search } = req.query;
 
@@ -94,7 +94,7 @@ router.get('/tickets/all', requireAdmin, async (req, res) => {
   }
 });
 
-router.get('/stats', requireAdmin, async (req, res) => {
+router.get('/stats', requireAdmin, require2FA, async (req, res) => {
   try {
     const [ticketStatsResult, avgResponseResult, avgSatisfactionResult] = await Promise.all([
       db
@@ -130,7 +130,7 @@ router.get('/stats', requireAdmin, async (req, res) => {
   }
 });
 
-router.get('/tickets/:ticketId', requireAdmin, async (req, res) => {
+router.get('/tickets/:ticketId', requireAdmin, require2FA, async (req, res) => {
   try {
     const { ticketId } = req.params;
 
@@ -151,7 +151,7 @@ router.get('/tickets/:ticketId', requireAdmin, async (req, res) => {
   }
 });
 
-router.patch('/tickets/:ticketId', requireAdmin, async (req, res) => {
+router.patch('/tickets/:ticketId', requireAdmin, require2FA, async (req, res) => {
   try {
     const { ticketId } = req.params;
     const { status, priority, assignedTo, responseTimeMinutes, satisfactionRating, resolvedAt } = req.body;

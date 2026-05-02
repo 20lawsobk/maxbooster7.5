@@ -12,6 +12,19 @@ const PERMANENT_DELETE_DAYS = 30;
 
 const transcodeJobs = new Map<string, { startedAt: number; estimatedDurationMs: number; userId: string }>();
 
+// Evict transcode jobs whose clients never polled for completion.
+// Grace window = max(3× the job's estimated duration, 10 min).
+const TRANSCODE_MIN_TTL_MS = 10 * 60 * 1000;
+setInterval(() => {
+  const now = Date.now();
+  for (const [jobId, job] of transcodeJobs) {
+    const ttl = Math.max(job.estimatedDurationMs * 3, TRANSCODE_MIN_TTL_MS);
+    if (now - job.startedAt > ttl) {
+      transcodeJobs.delete(jobId);
+    }
+  }
+}, 5 * 60 * 1000);
+
 const router = Router();
 
 const upload = createHardenedUpload({

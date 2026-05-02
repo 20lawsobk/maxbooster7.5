@@ -1,4 +1,5 @@
 import { Router, type RequestHandler } from 'express';
+import { require2FA } from '../../middleware/auth.js';
 import { metricsService } from '../../services/metricsService.js';
 import { emailTrackingService } from '../../services/emailTrackingService.js';
 import { logger } from '../../logger.js';
@@ -18,6 +19,7 @@ const requireAdmin: RequestHandler = (req, res, next) => {
 };
 
 router.use(requireAdmin);
+router.use(require2FA);
 
 /**
  * Get system metrics for a time period

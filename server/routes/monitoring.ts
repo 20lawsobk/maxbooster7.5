@@ -5,11 +5,12 @@ import { aiModelManager } from '../services/aiModelManager.js';
 import { asyncHandler } from '../middleware/errorHandler.js';
 import { alertingService } from '../monitoring/alertingService.js';
 import { metricsCollector } from '../monitoring/metricsCollector.js';
-import { requireAdmin } from '../middleware/auth.js';
+import { requireAdmin, require2FA } from '../middleware/auth.js';
 
 const router = Router();
 
 router.use(requireAdmin);
+router.use(require2FA);
 
 router.get(
   '/queue-metrics',

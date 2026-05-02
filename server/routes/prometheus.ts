@@ -9,7 +9,7 @@ import {
 } from 'prom-client';
 
 import { tfWorkerPool } from '../lib/tensorflowWorkerPool';
-import { requireAdmin } from '../middleware/auth.js';
+import { requireAdmin, require2FA } from '../middleware/auth.js';
 
 const registry = new Registry();
 
@@ -96,6 +96,7 @@ export const tfWorkerQueueDepth = new Gauge({
 });
 
 const router = Router();
+router.use(require2FA);
 
 router.get('/metrics', requireAdmin, async (_req: Request, res: Response) => {
   try {

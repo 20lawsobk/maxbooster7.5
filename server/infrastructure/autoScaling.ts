@@ -264,7 +264,16 @@ export const autoScalingManager = AutoScalingManager.getInstance();
 
 export const scalingMetricsRouter = Router();
 
-scalingMetricsRouter.get('/metrics', (req: Request, res: Response) => {
+function requireAdminInline(req: Request, res: Response, next: () => void): void {
+  const user = (req as any).user;
+  if (!user || user.role !== 'admin') {
+    res.status(403).json({ error: 'Admin access required' });
+    return;
+  }
+  next();
+}
+
+scalingMetricsRouter.get('/metrics', requireAdminInline, (req: Request, res: Response) => {
   try {
     const metrics = autoScalingManager.getMetrics();
     res.json({
@@ -279,11 +288,11 @@ scalingMetricsRouter.get('/metrics', (req: Request, res: Response) => {
   }
 });
 
-scalingMetricsRouter.get('/metrics/kube', (req: Request, res: Response) => {
+scalingMetricsRouter.get('/metrics/kube', requireAdminInline, (req: Request, res: Response) => {
   autoScalingManager.getKubeMetricsHandler(req, res);
 });
 
-scalingMetricsRouter.get('/health/detailed', (req: Request, res: Response) => {
+scalingMetricsRouter.get('/health/detailed', requireAdminInline, (req: Request, res: Response) => {
   try {
     const metrics = autoScalingManager.getMetrics();
     const isHealthy = 
