@@ -1,3 +1,4 @@
+import { requireUUIDParam } from '../middleware/requestValidation.js';
 import { Router } from "express";
 import { requireAuth } from "../middleware/auth";
 import { asyncHandler } from "../middleware/errorHandler";
@@ -86,7 +87,7 @@ router.post("/", requireAuth, asyncHandler(async (req, res) => {
 }));
 
 // PUT /api/shows/:id - update show
-router.put("/:id", requireAuth, asyncHandler(async (req, res) => {
+router.put("/:id", requireAuth, requireUUIDParam("id"), asyncHandler(async (req, res) => {
   const userId = req.user!.id;
   const showId = req.params.id;
   const data = createShowSchema.partial().parse(req.body);
@@ -104,7 +105,7 @@ router.put("/:id", requireAuth, asyncHandler(async (req, res) => {
 }));
 
 // PATCH /api/shows/:id - partial update show (alias for PUT to support both methods)
-router.patch("/:id", requireAuth, asyncHandler(async (req, res) => {
+router.patch("/:id", requireAuth, requireUUIDParam("id"), asyncHandler(async (req, res) => {
   const userId = req.user!.id;
   const showId = req.params.id;
   const data = createShowSchema.partial().parse(req.body);
@@ -122,7 +123,7 @@ router.patch("/:id", requireAuth, asyncHandler(async (req, res) => {
 }));
 
 // DELETE /api/shows/:id - delete show
-router.delete("/:id", requireAuth, asyncHandler(async (req, res) => {
+router.delete("/:id", requireAuth, requireUUIDParam("id"), asyncHandler(async (req, res) => {
   const userId = req.user!.id;
   const showId = req.params.id;
 
@@ -232,7 +233,7 @@ router.get("/setlists", requireAuth, asyncHandler(async (req, res) => {
 }));
 
 // GET /api/shows/:id - get single show (must come after all fixed-path routes)
-router.get("/:id", requireAuth, asyncHandler(async (req, res) => {
+router.get("/:id", requireAuth, requireUUIDParam("id"), asyncHandler(async (req, res) => {
   const userId = req.user!.id;
   const showId = req.params.id;
 

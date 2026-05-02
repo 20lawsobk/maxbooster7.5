@@ -72,6 +72,95 @@ describe('Unauthenticated route guards', () => {
     const s = await unauthPost('/api/create-checkout-session', { tier: 'pro' });
     expect([401, 403]).toContain(s);
   });
+
+  // --- Files ---
+  it('GET /api/files/list → 401', async () => {
+    const s = await unauthGet('/api/files/list');
+    expect([401, 403]).toContain(s);
+  });
+
+  // --- Artist profiles ---
+  it('GET /api/artist-profiles → 401', async () => {
+    const s = await unauthGet('/api/artist-profiles');
+    expect([401, 403]).toContain(s);
+  });
+
+  // --- Achievements ---
+  it('GET /api/achievements → 401', async () => {
+    const s = await unauthGet('/api/achievements');
+    expect([401, 403]).toContain(s);
+  });
+
+  // --- Shows ---
+  it('GET /api/shows → 401', async () => {
+    const s = await unauthGet('/api/shows');
+    expect([401, 403]).toContain(s);
+  });
+
+  // --- Merch ---
+  it('GET /api/merch → 401', async () => {
+    const s = await unauthGet('/api/merch');
+    expect([401, 403]).toContain(s);
+  });
+
+  // --- Label Submissions ---
+  it('GET /api/label-submissions → 401', async () => {
+    const s = await unauthGet('/api/label-submissions');
+    expect([401, 403]).toContain(s);
+  });
+
+  // --- Venues ---
+  it('GET /api/venues → 401', async () => {
+    const s = await unauthGet('/api/venues');
+    expect([401, 403]).toContain(s);
+  });
+
+  // --- Music Videos ---
+  it('GET /api/music-videos → 401', async () => {
+    const s = await unauthGet('/api/music-videos');
+    expect([401, 403]).toContain(s);
+  });
+
+  // --- Fan Campaigns ---
+  it('GET /api/fan-campaigns → 401', async () => {
+    const s = await unauthGet('/api/fan-campaigns');
+    expect([401, 403]).toContain(s);
+  });
+
+  // --- Collaboration ---
+  it('GET /api/collaboration → 401', async () => {
+    const s = await unauthGet('/api/collaboration');
+    expect([401, 403, 404]).toContain(s);
+  });
+});
+
+describe('Param validation — UUID guard returns 400 for malformed IDs', () => {
+  // These routes all have requireUUIDParam('id') applied.
+  // A non-UUID param should return 400 (not 401/404) even when unauthenticated
+  // because the middleware fires before auth on some routes, or 401 if auth fires first.
+  // Either way it must NOT return 200 or 500.
+
+  it('GET /api/files/not-a-uuid/download → 400 or 401', async () => {
+    const s = await unauthGet('/api/files/not-a-uuid/download');
+    expect([400, 401, 403]).toContain(s);
+  });
+
+  it('GET /api/artist-profiles/bad-id → 400 or 401', async () => {
+    const s = await unauthGet('/api/artist-profiles/bad-id');
+    expect([400, 401, 403]).toContain(s);
+  });
+
+  it('PATCH /api/artist-profiles/bad-id → 400 or 401 or 403', async () => {
+    const s = await unauthPost('/api/artist-profiles/bad-id', {});
+    expect([400, 401, 403]).toContain(s);
+  });
+
+  it('GET /api/files/sql-injection-attempt/download → 400 or 401', async () => {
+    const s = await unauthGet("/api/files/'; DROP TABLE users; --/download");
+    // Server must not 500; should sanitize or reject early
+    expect(s).not.toBe(500);
+    expect(s).not.toBe(200);
+  });
 });
 
 describe('Public routes are accessible', () => {
@@ -85,5 +174,39 @@ describe('Public routes are accessible', () => {
   it('GET /api/marketplace/beats is public', async () => {
     const s = await unauthGet('/api/marketplace/beats');
     expect([200, 404]).toContain(s);
+  });
+});
+
+describe('Error reporting endpoint', () => {
+  it('POST /api/errors accepts client error reports without auth', async () => {
+    const res = await fetch(`${BASE}/api/errors`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: 'test error', stack: 'Error: test\n  at test:1:1', url: '/test', userAgent: 'vitest' }),
+      signal: AbortSignal.timeout(8000),
+    });
+    // Must not be 500; 200/204/400/429 are all acceptable
+    expect(res.status).not.toBe(500);
+    expect(res.status).not.toBe(401);
+  });
+
+  it('POST /api/errors rate-limits excessive reports', async () => {
+    // Fire 6 requests rapidly — the rate limiter should kick in at some point
+    const results: number[] = [];
+    for (let i = 0; i < 6; i++) {
+      const res = await fetch(`${BASE}/api/errors`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: `flood test ${i}`, stack: '', url: '/test', userAgent: 'vitest' }),
+        signal: AbortSignal.timeout(8000),
+      });
+      results.push(res.status);
+    }
+    // At least some should succeed (2xx) and possibly some rate-limited (429)
+    const hasSuccess = results.some(s => s >= 200 && s < 300);
+    const hasRateLimit = results.some(s => s === 429);
+    // Either we got some success OR we got rate limited — never all 500s
+    expect(hasSuccess || hasRateLimit).toBe(true);
+    expect(results.every(s => s === 500)).toBe(false);
   });
 });

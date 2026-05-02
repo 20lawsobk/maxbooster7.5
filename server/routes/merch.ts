@@ -1,3 +1,4 @@
+import { requireUUIDParam } from '../middleware/requestValidation.js';
 import { Router, Request, Response } from 'express';
 import { db } from '../db';
 import { merchItems, merchOrders } from '@shared/schema';
@@ -86,7 +87,7 @@ router.post('/', requireAuth, async (req: Request, res: Response) => {
 });
 
 // PUT /api/merch/:id - update merch item (explicit field allowlist - no body spread)
-router.put('/:id', requireAuth, async (req: Request, res: Response) => {
+router.put('/:id', requireAuth, requireUUIDParam('id'), async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
 
@@ -135,7 +136,7 @@ router.put('/:id', requireAuth, async (req: Request, res: Response) => {
 });
 
 // DELETE /api/merch/:id - delete item
-router.delete('/:id', requireAuth, async (req: Request, res: Response) => {
+router.delete('/:id', requireAuth, requireUUIDParam('id'), async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const existing = await db.select().from(merchItems)
@@ -263,7 +264,7 @@ router.get('/stats', requireAuth, async (req: Request, res: Response) => {
 });
 
 // GET /api/merch/:id - get single merch item (after /stats & /orders to avoid route shadowing)
-router.get('/:id', requireAuth, async (req: Request, res: Response) => {
+router.get('/:id', requireAuth, requireUUIDParam('id'), async (req: Request, res: Response) => {
   try {
     const [item] = await db.select().from(merchItems)
       .where(and(eq(merchItems.id, req.params.id), eq(merchItems.userId, req.user!.id)))

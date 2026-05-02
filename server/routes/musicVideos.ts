@@ -1,3 +1,4 @@
+import { requireUUIDParam } from '../middleware/requestValidation.js';
 import { Router } from 'express';
 import { db } from '../db';
 import { musicVideoProductions, insertMusicVideoProductionSchema } from '@shared/schema';
@@ -81,7 +82,7 @@ router.post('/', requireAuth, async (req, res) => {
   }
 });
 
-router.put('/:id', requireAuth, async (req, res) => {
+router.put('/:id', requireAuth, requireUUIDParam('id'), async (req, res) => {
   try {
     const userId = req.user!.id;
     const { id } = req.params;
@@ -113,7 +114,7 @@ router.put('/:id', requireAuth, async (req, res) => {
   }
 });
 
-router.delete('/:id', requireAuth, async (req, res) => {
+router.delete('/:id', requireAuth, requireUUIDParam('id'), async (req, res) => {
   try {
     const userId = req.user!.id;
     const { id } = req.params;
@@ -137,7 +138,7 @@ router.delete('/:id', requireAuth, async (req, res) => {
 });
 
 // GET /:id - get single music video production (after /stats to avoid route shadowing)
-router.get('/:id', requireAuth, async (req, res) => {
+router.get('/:id', requireAuth, requireUUIDParam('id'), async (req, res) => {
   try {
     const [item] = await db.select().from(musicVideoProductions)
       .where(and(eq(musicVideoProductions.id, req.params.id), eq(musicVideoProductions.userId, req.user!.id)))

@@ -1,3 +1,4 @@
+import { requireUUIDParam } from '../middleware/requestValidation.js';
 import { Router } from 'express';
 import { db } from '../db';
 import { labelSubmissions, insertLabelSubmissionSchema } from '@shared/schema';
@@ -62,7 +63,7 @@ router.get('/stats', requireAuth, async (req, res) => {
   }
 });
 
-router.get('/:id', requireAuth, async (req, res) => {
+router.get('/:id', requireAuth, requireUUIDParam('id'), async (req, res) => {
   try {
     const [item] = await db.select().from(labelSubmissions)
       .where(and(eq(labelSubmissions.id, req.params.id), eq(labelSubmissions.userId, req.user!.id)))
@@ -90,7 +91,7 @@ router.post('/', requireAuth, async (req, res) => {
   }
 });
 
-router.put('/:id', requireAuth, async (req, res) => {
+router.put('/:id', requireAuth, requireUUIDParam('id'), async (req, res) => {
   try {
     const userId = req.user!.id;
     const { id } = req.params;
@@ -121,7 +122,7 @@ router.put('/:id', requireAuth, async (req, res) => {
 });
 
 // PATCH /api/label-submissions/:id/status - quick status update
-router.patch('/:id/status', requireAuth, async (req, res) => {
+router.patch('/:id/status', requireAuth, requireUUIDParam('id'), async (req, res) => {
   try {
     const userId = req.user!.id;
     const { id } = req.params;
@@ -157,7 +158,7 @@ router.patch('/:id/status', requireAuth, async (req, res) => {
 });
 
 // POST /api/label-submissions/:id/followup - log a follow-up attempt
-router.post('/:id/followup', requireAuth, async (req, res) => {
+router.post('/:id/followup', requireAuth, requireUUIDParam('id'), async (req, res) => {
   try {
     const userId = req.user!.id;
     const { id } = req.params;
@@ -191,7 +192,7 @@ router.post('/:id/followup', requireAuth, async (req, res) => {
   }
 });
 
-router.delete('/:id', requireAuth, async (req, res) => {
+router.delete('/:id', requireAuth, requireUUIDParam('id'), async (req, res) => {
   try {
     const userId = req.user!.id;
     const { id } = req.params;
