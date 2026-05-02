@@ -766,7 +766,7 @@ app.use((req: Request, res: Response, next: NextFunction) => {
       '/api/analytics/dashboard':         'private, max-age=60, stale-while-revalidate=600',
       '/api/achievements':                'private, max-age=120, stale-while-revalidate=900',
     };
-    app.use('/api', ((req, res, next) => {
+    app.use('/api', (req, res, next) => {
       if (req.method !== 'GET') return next();
       const directive = SWR_ROUTES[req.path.replace(/\/$/, '') || req.path];
       if (directive && !res.getHeader('Cache-Control')) {

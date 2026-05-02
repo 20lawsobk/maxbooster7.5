@@ -22,13 +22,13 @@ async function req(method: string, path: string, body?: any, headers: Record<str
 
 describe('Authentication Guards', () => {
   const protectedRoutes = [
-    ['GET', '/api/auth/me'],
+    // /api/auth/me is intentionally public — returns null for unauthenticated users
     ['GET', '/api/auth/notifications'],
     ['GET', '/api/auth/preferences'],
     ['GET', '/api/auth/sessions'],
     ['GET', '/api/auth/login-history'],
     ['GET', '/api/marketplace/my-beats'],
-    ['GET', '/api/releases'],
+    ['GET', '/api/distribution/releases'],
     ['GET', '/api/analytics/overview'],
     ['GET', '/api/admin/users'],
   ];

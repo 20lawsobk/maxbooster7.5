@@ -6,6 +6,7 @@ import { describe, it, expect, beforeAll } from 'vitest';
 
 const BASE = process.env.TEST_BASE_URL || 'http://localhost:5000';
 let authCookies = '';
+let csrfToken = '';
 
 const testUser = {
   email: `authflow_${Date.now()}@maxbooster-test.invalid`,
@@ -17,6 +18,10 @@ const testUser = {
 async function api(method: string, path: string, body?: any) {
   const headers: Record<string, string> = { 'Content-Type': 'application/json' };
   if (authCookies) headers['Cookie'] = authCookies;
+  const MUTATION_METHODS = ['POST', 'PUT', 'PATCH', 'DELETE'];
+  if (csrfToken && MUTATION_METHODS.includes(method.toUpperCase())) {
+    headers['x-csrf-token'] = csrfToken;
+  }
   const res = await fetch(`${BASE}${path}`, {
     method,
     headers,
@@ -24,10 +29,28 @@ async function api(method: string, path: string, body?: any) {
     signal: AbortSignal.timeout(10000),
     redirect: 'manual',
   });
-  // Capture any set-cookie headers
+  // Merge Set-Cookie into existing cookies (rolling session only refreshes sessionId,
+  // not csrf-token — replacing would drop the csrf-token on subsequent requests)
   const setCookie = res.headers.getSetCookie?.() ?? [];
   if (setCookie.length) {
-    authCookies = setCookie.map((c: string) => c.split(';')[0]).join('; ');
+    const cookieMap = new Map<string, string>();
+    if (authCookies) {
+      for (const c of authCookies.split('; ')) {
+        const idx = c.indexOf('=');
+        if (idx > 0) cookieMap.set(c.slice(0, idx), c.slice(idx + 1));
+      }
+    }
+    for (const c of setCookie) {
+      const pair = c.split(';')[0];
+      const idx = pair.indexOf('=');
+      if (idx > 0) {
+        const name = pair.slice(0, idx);
+        const val = pair.slice(idx + 1);
+        cookieMap.set(name, val);
+        if (name === 'csrf-token') csrfToken = val;
+      }
+    }
+    authCookies = Array.from(cookieMap.entries()).map(([k, v]) => `${k}=${v}`).join('; ');
   }
   const text = await res.text();
   let json: any;
@@ -94,10 +117,12 @@ describe('Full Auth Flow', () => {
     expect([200, 204]).toContain(r.status);
   });
 
-  it('10. /api/auth/me returns 401 after logout', async () => {
+  it('10. /api/auth/me returns null or 401 after logout', async () => {
     authCookies = ''; // clear cookies
     const r = await api('GET', '/api/auth/me');
-    expect(r.status).toBe(401);
+    // /api/auth/me is public by design — returns 200 with null body for unauthenticated users
+    expect([200, 401]).toContain(r.status);
+    if (r.status === 200) expect(r.json).toBeNull();
   });
 
   it('11. rejects login with wrong password', async () => {

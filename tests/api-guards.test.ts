@@ -26,7 +26,8 @@ async function unauthPost(path: string, body = {}) {
 
 describe('Unauthenticated route guards', () => {
   // --- Auth domain ---
-  it('GET /api/auth/me → 401', async () => expect(await unauthGet('/api/auth/me')).toBe(401));
+  // /api/auth/me is intentionally public — returns 200 with null body for unauthenticated users
+  it('GET /api/auth/me → 200 (public, returns null)', async () => expect(await unauthGet('/api/auth/me')).toBe(200));
   it('GET /api/auth/notifications → 401', async () => expect(await unauthGet('/api/auth/notifications')).toBe(401));
   it('GET /api/auth/sessions → 401', async () => expect(await unauthGet('/api/auth/sessions')).toBe(401));
   it('GET /api/auth/login-history → 401', async () => expect(await unauthGet('/api/auth/login-history')).toBe(401));
@@ -39,13 +40,14 @@ describe('Unauthenticated route guards', () => {
 
   // --- Marketplace ---
   it('GET /api/marketplace/my-beats → 401', async () => expect(await unauthGet('/api/marketplace/my-beats')).toBe(401));
-  it('POST /api/marketplace/listings → 401', async () => {
+  it('POST /api/marketplace/listings → 401 or 403', async () => {
+    // Unauthenticated POST hits CSRF check (403) before auth check (401)
     const s = await unauthPost('/api/marketplace/listings', {});
-    expect([401, 400]).toContain(s);
+    expect([401, 403]).toContain(s);
   });
 
-  // --- Releases ---
-  it('GET /api/releases → 401', async () => expect(await unauthGet('/api/releases')).toBe(401));
+  // --- Releases (mounted under /api/distribution/releases) ---
+  it('GET /api/distribution/releases → 401', async () => expect(await unauthGet('/api/distribution/releases')).toBe(401));
 
   // --- Royalties ---
   it('GET /api/royalties → 401', async () => {

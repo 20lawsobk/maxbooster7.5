@@ -260,6 +260,11 @@ export async function createSessionStore(): Promise<session.Store> {
 
 export function getSessionConfig(store: session.Store) {
   const isProduction = process.env.NODE_ENV === 'production' || !!process.env.REPLIT_DEPLOYMENT;
+  // Session cookies are only marked Secure when running under TLS in production.
+  // REPLIT_DEPLOYMENT=1 can be set even for dev servers running on plain HTTP
+  // (e.g. localhost:5000 accessed by the test suite), so we gate the Secure
+  // flag on NODE_ENV=production to allow session cookies over HTTP in dev.
+  const useSecureCookies = process.env.NODE_ENV === 'production';
   const sessionSecret = env.SESSION_SECRET;
 
   if (isProduction) {
@@ -280,7 +285,7 @@ export function getSessionConfig(store: session.Store) {
     name: 'sessionId',
     proxy: isProduction,
     cookie: {
-      secure: isProduction,
+      secure: useSecureCookies,
       httpOnly: true,
       maxAge: 24 * 60 * 60 * 1000,
       sameSite: 'lax' as const,

@@ -96,9 +96,8 @@ export const tfWorkerQueueDepth = new Gauge({
 });
 
 const router = Router();
-router.use(require2FA);
 
-router.get('/metrics', requireAdmin, async (_req: Request, res: Response) => {
+router.get('/metrics', require2FA, requireAdmin, async (_req: Request, res: Response) => {
   try {
     res.set('Content-Type', registry.contentType as RegistryContentType);
     const metrics = await registry.metrics();

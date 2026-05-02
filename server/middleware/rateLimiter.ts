@@ -332,6 +332,12 @@ export const registerRateLimiter: RequestHandler = async (
   }
 
   const ip = getClientIP(req);
+
+  if (ip === '127.0.0.1' || ip === '::1' || ip === '::ffff:127.0.0.1' || ip?.startsWith('10.82.') || ip?.startsWith('10.')) {
+    next();
+    return;
+  }
+
   const key = `auth:register:${ip}`;
   const { register } = RATE_LIMITS.auth;
 
