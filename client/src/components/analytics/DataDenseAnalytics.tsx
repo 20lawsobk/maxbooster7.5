@@ -192,7 +192,7 @@ export function DataDenseAnalytics() {
         totalPlays: overview.totalPlays || overview.totalStreams || 0,
         monthlyListeners: audience.totalListeners || 0,
         artistScore: raw.aiInsights?.performanceScore || 0,
-        careerStage: raw.aiInsights?.careerStage || 'Unknown',
+        careerStage: raw.aiInsights?.careerStage || 'Emerging Artist',
         streamChange: overview.growthRate || 0,
         revenueChange: 0,
         followerChange: 0,
