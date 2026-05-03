@@ -9,7 +9,14 @@ requires-python = ">=3.12"
 # binary downloaded from python-build-standalone.
 # Keeping this list empty ensures `uv sync` is a true no-op and never tries
 # to write to the read-only Nix store during the deployment build phase.
-dependencies = []
+dependencies = [
+    "fastapi>=0.100.0",
+    "numpy>=1.24.0",
+    "pillow>=10.0.0",
+    "pydantic>=2.0.0",
+    "scipy>=1.11.0",
+    "uvicorn[standard]>=0.23.0",
+]
 
 [tool.uv]
 # Do not treat this project as an installable package.
