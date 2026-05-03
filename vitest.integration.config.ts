@@ -4,7 +4,10 @@ import path from 'path';
 export default defineConfig({
   test: {
     // Integration tests hitting a running Express server via fetch.
+    // Files must run sequentially so concurrent test suites don't interfere
+    // with each other's sessions, DB writes, or rate-limit counters.
     // Run via: npm run test:integration
+    fileParallelism: false,
     include: [
       'tests/health.test.ts',
       'tests/api-guards.test.ts',
@@ -16,6 +19,9 @@ export default defineConfig({
       'tests/ai-analytics-integration.test.ts',
       'tests/cache-invalidation.test.ts',
       'tests/unit/cache-cross-pod.test.ts',
+      'tests/file-management.test.ts',
+      'tests/billing-lifecycle.test.ts',
+      'tests/auth-2fa.test.ts',
     ],
     environment: 'node',
     globals: true,

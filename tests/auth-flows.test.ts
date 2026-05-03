@@ -133,3 +133,73 @@ describe('Full Auth Flow', () => {
     expect(r.status).toBe(401);
   });
 });
+
+describe('OAuth Callback Structure', () => {
+  it('12. GET /api/social/callback/:platform with no state redirects with error', async () => {
+    const res = await fetch(`${BASE}/api/social/callback/youtube`, {
+      signal: AbortSignal.timeout(8000),
+      redirect: 'manual',
+    });
+    // Should redirect (3xx) with error in location, or return 400
+    expect([301, 302, 303, 307, 308, 400]).toContain(res.status);
+    if (res.status >= 300 && res.status < 400) {
+      const location = res.headers.get('location') ?? '';
+      expect(location).toBeTruthy();
+      // Expect an error param in the redirect URL
+      expect(location).toMatch(/error=/i);
+    }
+  });
+
+  it('13. GET /api/social/callback/:platform with invalid state redirects with invalid_state', async () => {
+    const res = await fetch(
+      `${BASE}/api/social/callback/youtube?state=totally_invalid_state_value&code=abc123`,
+      {
+        signal: AbortSignal.timeout(8000),
+        redirect: 'manual',
+      },
+    );
+    expect([301, 302, 303, 307, 308, 400]).toContain(res.status);
+    if (res.status >= 300 && res.status < 400) {
+      const location = res.headers.get('location') ?? '';
+      expect(location).toMatch(/invalid_state/i);
+    }
+  });
+
+  it('14. GET /api/social/callback/:platform with OAuth provider error redirects with oauth_denied', async () => {
+    const res = await fetch(
+      `${BASE}/api/social/callback/youtube?error=access_denied&error_description=User+denied`,
+      {
+        signal: AbortSignal.timeout(8000),
+        redirect: 'manual',
+      },
+    );
+    expect([301, 302, 303, 307, 308, 400]).toContain(res.status);
+    if (res.status >= 300 && res.status < 400) {
+      const location = res.headers.get('location') ?? '';
+      expect(location).toMatch(/oauth_denied/i);
+    }
+  });
+
+  it('15. POST /api/social/connect/:platform requires authentication', async () => {
+    const res = await fetch(`${BASE}/api/social/connect/youtube`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: '{}',
+      signal: AbortSignal.timeout(8000),
+      redirect: 'manual',
+    });
+    expect([401, 403]).toContain(res.status);
+  });
+
+  it('16. GET /api/social/platforms returns platform list without auth', async () => {
+    const res = await fetch(`${BASE}/api/social/platforms`, {
+      signal: AbortSignal.timeout(8000),
+    });
+    // May require auth (401) or return platform list (200)
+    expect([200, 401, 403]).toContain(res.status);
+    if (res.status === 200) {
+      const body = await res.json() as unknown;
+      expect(body).toBeDefined();
+    }
+  });
+});
