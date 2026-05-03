@@ -89,10 +89,14 @@ class RedisRateLimitStore implements Store {
             if (isLimited) return this.maxRequests + 1; // force the limiter to block
             return this.maxRequests - remaining;
           } catch {
-            // EVAL unsupported — fall back to ZCOUNT + ZADD.
-            // ZCOUNT(key, windowStart, '+inf') counts only in-window entries,
-            // naturally excluding expired ones without ZREMRANGEBYSCORE.
-            const count: number = await redis.zcount(rKey, windowStart, '+inf');
+            // EVAL unsupported — mirror the Lua ZREMRANGEBYSCORE + ZCARD algorithm.
+            // If PDIM also returns HTTP 400 for ZREMRANGEBYSCORE (exec() → null),
+            // fall through to ZCOUNT which is always supported and gives the correct
+            // in-window count without pruning.
+            const pruned: number | null = await redis.zremrangebyscore(rKey, '-inf', windowStart - 1);
+            const count: number = (pruned !== null)
+              ? await redis.zcard(rKey)
+              : await redis.zcount(rKey, windowStart, '+inf');
             await redis.zadd(rKey, now, entryId);
             Promise.resolve(redis.expire(rKey, windowExpireSecs)).catch(() => {});
             return count + 1;

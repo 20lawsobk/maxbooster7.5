@@ -140,18 +140,30 @@ describe('Rate Limiting', () => {
 function createMockZsetRedis(): SlidingWindowRedis {
   const store = new Map<string, Map<string, number>>(); // key → (member → score)
   return {
-    // eval() throws to exercise the sequential ZCOUNT + ZADD fallback path.
+    // eval() throws to exercise the sequential ZREMRANGEBYSCORE + ZCARD + ZADD fallback path.
     async eval(): Promise<unknown> {
       throw new Error('eval() not supported in mock — testing fallback path');
     },
-    async zcount(key: string, min: string | number, _max: string): Promise<number> {
+    async zremrangebyscore(key: string, min: string | number, max: string | number): Promise<number> {
+      const zset = store.get(key);
+      if (!zset) return 0;
+      const lo = min === '-inf' ? -Infinity : Number(min);
+      const hi = max === '+inf' ? Infinity  : Number(max);
+      let removed = 0;
+      for (const [member, score] of zset) {
+        if (score >= lo && score <= hi) { zset.delete(member); removed++; }
+      }
+      return removed;
+    },
+    async zcard(key: string): Promise<number> {
+      return store.get(key)?.size ?? 0;
+    },
+    async zcount(key: string, min: string | number, _max: string | number): Promise<number> {
       const zset = store.get(key);
       if (!zset) return 0;
       const lo = Number(min);
       let n = 0;
-      for (const score of zset.values()) {
-        if (score >= lo) n++;  // +inf upper bound — all in-window entries qualify
-      }
+      for (const score of zset.values()) { if (score >= lo) n++; }
       return n;
     },
     async zadd(key: string, ...args: unknown[]): Promise<number> {
@@ -347,48 +359,58 @@ describe('Sliding-Window — Real PDIM Integration', () => {
   );
 
   it.skipIf(!_pdimConfigured)(
-    'boundary-burst: near-boundary requests remain blocked, post-expiry request passes',
+    'boundary-burst: burst fired before window expiry is blocked; request after expiry passes',
     async () => {
-      // Timeline (WINDOW_MS = 600ms):
-      //   T=0         fire LIMIT → fill window (all pass)
-      //   T≈400ms     fire LIMIT more → still inside window → all blocked
-      //               (a fixed-window counter that resets at the boundary would
-      //                let all of these through — 2 × LIMIT burst)
-      //   T≈650ms     wait past windowMs from T=0 → entries expire
-      //   T≈650ms     fire 1 → must pass (window cleared)
+      // Anchors all timing to t0 so the test stays correct regardless of how long
+      // each PDIM round-trip takes.  PDIM's fallback path uses ZREMRANGEBYSCORE +
+      // ZCARD (or ZCOUNT when ZREMRANGEBYSCORE is unsupported) — 2-3 calls per
+      // request.  With AIMD gaps of ~10ms per call, phase 1 (3 requests × 3 calls)
+      // can take ~90-300ms.  All phase-2 waits and the post-expiry check are
+      // computed relative to t0 so no relative-wait arithmetic goes wrong.
+      //
+      // Timeline:
+      //   T=t0           phase 1 fires — fills window (LIMIT requests pass)
+      //   T=t0+BURST_AT  phase 2 fires — entries are still within window → all blocked
+      //   T=t0+WINDOW_MS+MARGIN  phase 3 fires — oldest entry has expired → passes
       const { DistributedRateLimiter } = await import('../server/middleware/scalableRateLimiter.js');
       const { getRedisClient } = await import('../server/lib/redisClient.js');
       const redis = getRedisClient();
 
-      const LIMIT = 3;
-      const WINDOW_MS = 600;
+      const LIMIT     = 3;
+      const WINDOW_MS = 1500; // wider window gives phase-1 entries more room to stay fresh
+      const BURST_AT  = 200;  // fire phase 2 only 200ms after t0; entries (at t0…t0+300ms)
+                              // are well inside [now-1500ms, now] when phase 2 fires
+
       const limiter = new DistributedRateLimiter(
         { windowMs: WINDOW_MS, maxRequests: LIMIT },
         redis as unknown as SlidingWindowRedis,
       );
       const key = `pdim:boundary:${Date.now()}:${Math.random().toString(36).slice(2, 7)}`;
+      const t0 = Date.now();
 
-      // Phase 1: fill the window
+      // Phase 1: fill the window — all LIMIT requests must pass
       for (let i = 0; i < LIMIT; i++) {
         const r = await limiter.isRateLimited(key);
         expect(r.limited, `fill request ${i + 1} should pass`).toBe(false);
       }
 
-      // Phase 2: wait to near-boundary (inside the window) then burst
-      await new Promise(resolve => setTimeout(resolve, WINDOW_MS - 200)); // ~400 ms
+      // Wait until t0 + BURST_AT before firing the boundary burst.
+      // This is a near-boundary burst: entries from phase 1 are well inside the
+      // window at this point (oldest entry score ≈ t0, windowStart ≈ t0-1300ms).
+      const toWaitForBurst = Math.max(0, BURST_AT - (Date.now() - t0));
+      await new Promise(resolve => setTimeout(resolve, toWaitForBurst));
 
+      // Phase 2: burst — all must be blocked (window still full)
       let nearBoundaryBlocked = 0;
       for (let i = 0; i < LIMIT; i++) {
         const r = await limiter.isRateLimited(key);
         if (r.limited) nearBoundaryBlocked++;
       }
-      // All near-boundary requests must be blocked — no 2× burst at the boundary
       expect(nearBoundaryBlocked).toBe(LIMIT);
 
-      // Phase 3: wait until ALL phase-1 entries have aged past windowMs
-      // phase-1 entries were written at T=0; we've already waited ~400ms.
-      // Need to wait an additional (WINDOW_MS - 400ms + margin) = ~250ms.
-      await new Promise(resolve => setTimeout(resolve, 250));
+      // Phase 3: wait until t0 + WINDOW_MS + 300ms (all phase-1 entries have aged out)
+      const toWaitForExpiry = Math.max(0, WINDOW_MS + 300 - (Date.now() - t0));
+      await new Promise(resolve => setTimeout(resolve, toWaitForExpiry));
 
       const afterExpiry = await limiter.isRateLimited(key);
       expect(afterExpiry.limited).toBe(false);

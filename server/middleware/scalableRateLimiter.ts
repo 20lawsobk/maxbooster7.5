@@ -14,11 +14,20 @@ export interface SlidingWindowRedis {
   /** Atomic Lua eval — one round-trip, races eliminated at the server. */
   eval(script: string, numkeys: number | string, ...args: unknown[]): Promise<unknown>;
   /**
-   * Count members with score in [windowStart, '+inf'] — the in-window tally.
-   * Used instead of ZREMRANGEBYSCORE + ZCARD so that expired entries need not
-   * be explicitly deleted; the key's TTL cleans them up eventually.
+   * Remove expired members (score < windowStart) — prunes out-of-window entries
+   * so the ZSET stays bounded to at most maxRequests members on hot keys.
+   * Returns the removal count, or null if the backend doesn't support this command
+   * (e.g. PDIM returns HTTP 400 for ZREMRANGEBYSCORE → exec() returns null).
    */
-  zcount(key: string, min: string | number, max: string): Promise<number>;
+  zremrangebyscore(key: string, min: string | number, max: string | number): Promise<number | null>;
+  /** Count surviving (in-window) members; used after a successful zremrangebyscore. */
+  zcard(key: string): Promise<number>;
+  /**
+   * Count members with score in [min, max] — used as the fallback count when
+   * zremrangebyscore is not supported (PDIM returns null for that command).
+   * Correctly counts only in-window entries even without explicit pruning.
+   */
+  zcount(key: string, min: string | number, max: string | number): Promise<number>;
   zadd(key: string, ...args: unknown[]): Promise<number>;
   expire(key: string, seconds: number): Promise<unknown>;
 }
@@ -109,11 +118,16 @@ export class DistributedRateLimiter {
       return { limited, remaining };
     } catch {
       // Fallback: EVAL unsupported (backend returned HTTP 400) or PDIM transient
-      // error.  ZCOUNT counts only members within [windowStart, +inf], naturally
-      // excluding expired entries without needing ZREMRANGEBYSCORE.  Old entries
-      // accumulate until the key's TTL evicts the whole key — acceptable given
-      // the (windowMs/1000 + 60) s TTL is tight relative to the window.
-      const count = await this.redisClient.zcount(redisKey, windowStart, '+inf');
+      // error.  Mirror the Lua script's ZREMRANGEBYSCORE + ZCARD algorithm to keep
+      // the ZSET bounded.  On backends where ZREMRANGEBYSCORE is also unsupported
+      // (PDIM returns HTTP 400 → exec() returns null rather than throwing), fall
+      // through to ZCOUNT which counts only in-window members without pruning.
+      // ZCOUNT is always supported by PDIM and gives correct rate-limit decisions;
+      // ZREMRANGEBYSCORE prunes old entries when available to bound ZSET growth.
+      const pruned = await this.redisClient.zremrangebyscore(redisKey, '-inf', windowStart - 1);
+      const count = (pruned !== null)
+        ? await this.redisClient.zcard(redisKey)           // pruned → ZCARD is exact
+        : await this.redisClient.zcount(redisKey, windowStart, '+inf'); // no prune → ZCOUNT
       if (count >= this.config.maxRequests) return { limited: true, remaining: 0 };
       await this.redisClient.zadd(redisKey, now, entryId);
       // Fire-and-forget: expiry is a GC safety net, not on the critical path.

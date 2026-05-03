@@ -13,26 +13,30 @@
  *
  * Returns a two-element Lua array: { isLimited (0|1), remaining }
  *
- * Algorithm — ZCOUNT variant (avoids ZREMRANGEBYSCORE):
- *   ZCOUNT counts only members with score ∈ [windowStart, +inf], naturally
- *   excluding entries older than the rolling window without removing them.
- *   Old entries accumulate until the key's TTL evicts the whole key; the ZSET
- *   size is bounded by maxRequests × (expireSecs / windowSecs).
+ * Algorithm — ZREMRANGEBYSCORE + ZCARD (bounded ZSET):
+ *   1. Prune entries whose score falls before the rolling window start.
+ *      This keeps the ZSET size bounded to at most maxRequests entries
+ *      for a well-behaved caller and prevents unbounded accumulation on
+ *      hot keys where the key TTL never fires.
+ *   2. ZCARD counts the survivors — those still within the window.
+ *   3. If the count is at the limit, reject; otherwise ZADD + EXPIRE.
  *
  * Atomicity:
  *   When PDIM supports EVAL the script runs as a single Redis command —
  *   no race window between the count check and the ZADD.
- *   If EVAL is unavailable callers fall back to sequential ZCOUNT + ZADD,
- *   which is serialised through PDIM's single-chain HTTP queue.
+ *   If EVAL is unavailable callers fall back to sequential
+ *   ZREMRANGEBYSCORE + ZCARD + ZADD, serialised through PDIM's
+ *   single-chain HTTP queue.
  */
 export const SLIDING_WINDOW_LUA = `
-local key         = KEYS[1]
+local key          = KEYS[1]
 local window_start = tonumber(ARGV[1])
-local max_req     = tonumber(ARGV[2])
-local now         = tonumber(ARGV[3])
-local entry_id    = ARGV[4]
-local expire_secs = tonumber(ARGV[5])
-local n = tonumber(redis.call('ZCOUNT', key, window_start, '+inf'))
+local max_req      = tonumber(ARGV[2])
+local now          = tonumber(ARGV[3])
+local entry_id     = ARGV[4]
+local expire_secs  = tonumber(ARGV[5])
+redis.call('ZREMRANGEBYSCORE', key, '-inf', window_start - 1)
+local n = tonumber(redis.call('ZCARD', key))
 if n >= max_req then return {1, 0} end
 redis.call('ZADD', key, now, entry_id)
 redis.call('EXPIRE', key, expire_secs)
