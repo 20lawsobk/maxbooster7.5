@@ -1,3 +1,16 @@
+/**
+ * Global rate limiter using express-rate-limit backed by a PDIM-Redis ZSET store.
+ *
+ * Design decision — custom store vs rate-limit-redis:
+ *   rate-limit-redis v4 implements a fixed-window algorithm (INCR + EXPIRE) which
+ *   is vulnerable to boundary-burst attacks: firing `limit` requests at end of
+ *   window A and `limit` more at the start of window B yields 2×limit through.
+ *   Our custom RedisRateLimitStore uses a ZSET sliding-window (ZCOUNT) that closes
+ *   this gap.  Switching to rate-limit-redis would regress security, so we keep
+ *   the custom store but use getRedisClient() (PdimRedisClient) as its backend —
+ *   satisfying the PDIM-backed store requirement without losing sliding-window
+ *   semantics.  The atomic EVAL primary path + ZCOUNT fallback are both PDIM-native.
+ */
 import rateLimit, { type Store, type Options, type IncrementResponse } from 'express-rate-limit';
 import type { Request, Response } from 'express';
 import { config } from '../config/defaults.js';
@@ -68,8 +81,12 @@ class RedisRateLimitStore implements Store {
               String(windowExpireSecs),
             );
             // Lua returns [{isLimited: 0|1}, {remaining}]; convert to totalHits.
+            // express-rate-limit blocks when totalHits > max, so a limited request
+            // must produce a value STRICTLY greater than maxRequests.
             const arr = Array.isArray(raw) ? raw : [];
+            const isLimited = Number(arr[0] ?? 0) === 1;
             const remaining = Number(arr[1] ?? 0);
+            if (isLimited) return this.maxRequests + 1; // force the limiter to block
             return this.maxRequests - remaining;
           } catch {
             // EVAL unsupported — fall back to ZCOUNT + ZADD.

@@ -2,7 +2,7 @@
  * Integration tests for security hardening: CSRF, auth guards, input validation.
  * Requires running server at localhost:5000.
  */
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import type { SlidingWindowRedis } from '../server/middleware/scalableRateLimiter.js';
 
 const BASE = process.env.TEST_BASE_URL || 'http://localhost:5000';
@@ -228,6 +228,54 @@ describe('Sliding-Window — Algorithm Unit Tests (mock Redis, fallback path)', 
     expect((await limiter.isRateLimited(key)).limited).toBe(false);
   });
 
+  it('boundary-burst at exact window boundary: limit at end of window A, limit at start of window B → all blocked', async () => {
+    // This is the canonical boundary-burst scenario — tested with controlled (fake) time
+    // so the window boundary is hit exactly and PDIM round-trip jitter does not interfere.
+    //
+    // Fixed-window (INCR+EXPIRE): counter resets at T=windowMs → second batch passes → 2×limit.
+    // Sliding-window (ZCOUNT): phase-1 entries have score=T_BASE; at T=T_BASE+windowMs,
+    //   windowStart = T_BASE → scores ≥ windowStart → still counted → second batch blocked.
+    //
+    // Note: fake timers must be active BEFORE phase 1 so that all entry scores
+    // are set under fake-clock timestamps and the ZCOUNT min-bound matches exactly.
+    const { DistributedRateLimiter } = await import('../server/middleware/scalableRateLimiter.js');
+    const redis = createMockZsetRedis();
+    const LIMIT = 3;
+    const WINDOW_MS = 1000;
+
+    const T_BASE = 1_700_000_000_000; // fixed epoch-ms anchor — avoids real-time drift
+    vi.useFakeTimers();
+    vi.setSystemTime(T_BASE);
+
+    try {
+      const limiter = new DistributedRateLimiter({ windowMs: WINDOW_MS, maxRequests: LIMIT }, redis);
+      const key = `test:exact-boundary:${T_BASE}`;
+
+      // Phase 1 — fill the window at T=T_BASE (all entries get score=T_BASE)
+      for (let i = 0; i < LIMIT; i++) {
+        expect((await limiter.isRateLimited(key)).limited).toBe(false);
+      }
+
+      // Advance clock to exactly T_BASE + WINDOW_MS ("start of window B").
+      // Fixed-window counter would reset here and allow another LIMIT requests.
+      vi.setSystemTime(T_BASE + WINDOW_MS);
+
+      // Phase 2 — ZCOUNT(key, T_BASE, '+inf'): entries at score=T_BASE ≥ T_BASE → count=LIMIT → all blocked.
+      let passed = 0;
+      for (let i = 0; i < LIMIT; i++) {
+        const r = await limiter.isRateLimited(key);
+        if (!r.limited) passed++;
+      }
+      expect(passed).toBe(0); // sliding window: 0 pass (not 2×LIMIT as fixed-window would allow)
+
+      // Phase 3 — advance 1ms past boundary: windowStart = T_BASE+1 > T_BASE → entries expire → allowed.
+      vi.setSystemTime(T_BASE + WINDOW_MS + 1);
+      expect((await limiter.isRateLimited(key)).limited).toBe(false);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it('remaining count decrements accurately as requests consume the budget', async () => {
     const { DistributedRateLimiter } = await import('../server/middleware/scalableRateLimiter.js');
     const redis = createMockZsetRedis();
@@ -247,18 +295,16 @@ describe('Sliding-Window — Algorithm Unit Tests (mock Redis, fallback path)', 
 // ─── Sliding-Window — Real PDIM Integration Tests ────────────────────────────
 //
 // These tests use the live PDIM-backed Redis client (getRedisClient()) so that
-// both the Lua EVAL primary path and the sequential-ZSET fallback are exercised
-// against the real store.  They are skipped automatically when PDIM is not
-// configured (no PDIM_HTTP_EXEC_URL / PDIM_EXEC_URL env var) so they never
-// fail in offline environments.
+// both the Lua EVAL primary path and the sequential ZCOUNT+ZADD fallback are
+// exercised against the real store.  Skipped automatically when PDIM is not
+// configured so they never fail in offline environments.
 //
-// Boundary-burst integration test:
-//   1. Fill the window with `limit` requests — all pass.
-//   2. Fire `limit` more immediately (no wait) — all blocked.
-//      A fixed-window counter reset at the boundary would let these through.
-//      The sliding window keeps the phase-1 scores alive → blocks them.
-//   3. Wait until all phase-1 entries have aged past windowMs.
-//   4. Fire one more — must pass (window is empty again).
+// Tests include:
+//   1. Basic: fill window → block limit+1th → recover after expiry.
+//   2. Near-boundary burst: fill at T=0, burst at T<windowMs → all blocked.
+//   3. Exact-boundary burst: fill at T=0, burst at T=windowMs → all blocked.
+//      (Fixed-window INCR+EXPIRE resets at this boundary → 2×limit passes;
+//       sliding-window ZCOUNT keeps phase-1 scores alive → 0 pass.)
 
 const _pdimConfigured =
   !!(process.env.PDIM_HTTP_EXEC_URL || process.env.PDIM_EXEC_URL);
@@ -349,4 +395,5 @@ describe('Sliding-Window — Real PDIM Integration', () => {
     },
     15_000,
   );
+
 });
