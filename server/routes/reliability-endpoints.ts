@@ -15,6 +15,7 @@ import {
   clearRetryQueue,
 } from '../services/externalServices.js';
 import { apiCache } from '../middleware/apiCache.js';
+import { isSchedulerLeader } from '../lib/distributedLock.js';
 
 // Enhanced health check endpoints for 24/7 monitoring
 export function setupReliabilityEndpoints(app: Express, requireAuth?: unknown): void {
@@ -48,6 +49,7 @@ export function setupReliabilityEndpoints(app: Express, requireAuth?: unknown): 
           },
         },
         cache: apiCache.getStats(),
+        scheduler_leader: isSchedulerLeader(),
       });
     } catch (error: unknown) {
       res.status(500).json({
