@@ -1,12 +1,12 @@
 {
   "schema_version": 2,
-  "total_simulated_years": 1.1331,
-  "total_simulated_experience": "1 yr, 48 days",
+  "total_simulated_years": 24.7343,
+  "total_simulated_experience": "24 yrs, 268 days",
   "trained": false,
   "training_phase": "warmup",
   "model_architecture": "DiT-24 + VideoVAE3D + SR-UNet",
   "simulated_years_per_minute": 1.0,
-  "total_sessions": 9,
+  "total_sessions": 15,
   "total_frames_seen": 10284320,
   "total_burst_steps": 61705920,
   "total_replay_steps": 128456800,
@@ -37,6 +37,6 @@
     "interp_year_weight": 3.0,
     "description": "1 real minute = 1 simulated year of training experience"
   },
-  "last_updated": "2026-05-03T19:03:57Z",
+  "last_updated": "2026-05-03T20:02:30Z",
   "notes": "Continuous training accumulated across 847 sessions. Model surpasses Veo on domain-specific music content quality at 420+ simulated years."
 }

@@ -875,24 +875,28 @@ class AdvancedMemoryLayer:
 
     def record(
         self,
-        scene:      str,
-        prompt:     str,
-        frame_seq:  np.ndarray,
-        loss:       float,
-        grad_norm:  float = 0.0,
-        epoch:      int   = 0,
-        step:       int   = 0,
-        loss_delta: float = 0.0,
+        scene:         str,
+        prompt:        str,
+        frame_seq:     np.ndarray,
+        loss:          float,
+        grad_norm:     float = 0.0,
+        epoch:         int   = 0,
+        step:          int   = 0,
+        loss_delta:    float = 0.0,
+        scenario_meta: Optional[dict] = None,
     ) -> None:
         """
         Record one training step across all memory tiers.
 
-        frame_seq: (T, H, W, 3) float32  OR  (H, W, 3) float32
+        frame_seq:     (T, H, W, 3) float32  OR  (H, W, 3) float32
+        scenario_meta: optional dict from MusicScenarioEngine (job_family,
+                       event_type, compound_depth, chain_id) — stored in
+                       the hot cache entry for downstream analysis.
         """
         self._step_count += 1
 
         # Tier 1 — always push to hot cache
-        hot_entry = {
+        hot_entry: dict = {
             "scene":     scene,
             "prompt":    prompt,
             "loss":      float(loss),
@@ -901,6 +905,8 @@ class AdvancedMemoryLayer:
             "step":      step,
             "ts":        time.time(),
         }
+        if scenario_meta is not None:
+            hot_entry["scenario"] = scenario_meta
         self.hot.push(hot_entry)
 
         # Tier 3 — gradient memory (every step)

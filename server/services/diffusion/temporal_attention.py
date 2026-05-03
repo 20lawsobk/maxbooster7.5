@@ -35,6 +35,16 @@ import numpy as np
 import math
 
 
+def _f16safe(arr: np.ndarray) -> np.ndarray:
+    """Clip to float16 range then cast — prevents ±inf from overflowing caches."""
+    return np.clip(arr, -65504.0, 65504.0).astype(np.float16)
+
+
+def _f32safe(arr16: np.ndarray) -> np.ndarray:
+    """Restore a float16 cache to float32, clamping any residual ±inf/NaN to zero."""
+    return np.nan_to_num(arr16.astype(np.float32), nan=0.0, posinf=65504.0, neginf=-65504.0)
+
+
 def _sinusoidal_pos_embed(T: int, C: int) -> np.ndarray:
     """
     Sinusoidal positional embeddings for T positions, C channels.
@@ -184,10 +194,15 @@ class TemporalAttention1D:
         # Reshape back: (H*W, T, C) → (T, H, W, C)
         final = out_hw.reshape(H, W, T, C).transpose(2, 0, 1, 3)
 
-        # Cache for backward
-        self._cache = (x, residual, x_hw, x_pe, x_norm, mu, var, xn,
-                       Q_t, K_t, V_t, weights, attn_out,
-                       out_r, out, out_hw, H, W, T, N, pe)
+        # Cache only the arrays needed for backward; store large ones as f16.
+        # Stripped arrays not needed in backward: x, residual, x_hw, x_pe, mu,
+        # out_r, out, out_hw, pe — removing them saves significant memory.
+        self._cache = (_f16safe(x_norm), var,
+                       _f16safe(xn),
+                       _f16safe(Q_t), _f16safe(K_t),
+                       _f16safe(V_t), _f16safe(weights),
+                       _f16safe(attn_out),
+                       H, W, T, N)
         return final
 
     def backward(self, dout: np.ndarray) -> np.ndarray:
@@ -196,9 +211,16 @@ class TemporalAttention1D:
 
         Full backprop through temporal attention with gradient accumulation.
         """
-        (x, residual, x_hw, x_pe, x_norm, mu, var, xn,
-         Q_t, K_t, V_t, weights, attn_out,
-         out_r, out, out_hw, H, W, T, N, pe) = self._cache
+        (x_norm16, var, xn16,
+         Q_t16, K_t16, V_t16, weights16, attn_out16,
+         H, W, T, N) = self._cache
+        x_norm   = _f32safe(x_norm16)
+        xn       = _f32safe(xn16)
+        Q_t      = _f32safe(Q_t16)
+        K_t      = _f32safe(K_t16)
+        V_t      = _f32safe(V_t16)
+        weights  = _f32safe(weights16)
+        attn_out = _f32safe(attn_out16)
 
         C = self.C
 

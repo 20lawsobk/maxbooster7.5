@@ -128,6 +128,13 @@ _BURST_YEAR_WEIGHT:  float = 6.0    # each burst variant = 6 conventional steps
 _REPLAY_YEAR_WEIGHT: float = 12.0   # replay hard example = 12 conventional steps
 _INTERP_YEAR_WEIGHT: float = 3.0    # synthetic interp frame = 3 conventional steps
 
+# Scenario-sourced steps earn a premium over replay — they carry targeted
+# music-industry domain knowledge (job family + career arc + consequence chain)
+# that makes each gradient update more information-dense than random prompts.
+_SCENARIO_YE_WEIGHT_BASE:       int = 18   # depth 0 (fresh scenario)   = 1.5× replay
+_SCENARIO_YE_WEIGHT_COMPOUND_1: int = 24   # depth 1 (first follow-up)  = 2×  replay
+_SCENARIO_YE_WEIGHT_COMPOUND_2: int = 30   # depth 2+ (veteran arc)     = 2.5× replay
+
 # Training loop safety caps
 MAX_REPLAY_CYCLES_PER_EPOCH: int = 500   # max replay passes after each epoch
 REPLAY_BATCH_SIZE:            int = 16    # frames per replay cycle
@@ -220,6 +227,33 @@ class RealisticTimeSimulator:
     def add_year_equiv_steps(self, n: int) -> None:
         """Credit n year-equivalent steps to the running total."""
         self._year_equiv_steps += n
+
+    def add_scenario_steps(self, n: int = 1, compound_depth: int = 0) -> None:
+        """
+        Credit year-equivalent steps for a scenario-sourced training step.
+
+        Scenario steps earn a premium over generic replay because they carry
+        targeted music-industry domain knowledge — job family, career arc, and
+        consequence chain context — per gradient update.
+
+        Weight tiers (mirrored in music_scenario_engine.py):
+          depth 0 (fresh)    → _SCENARIO_YE_WEIGHT_BASE       (18 YE-steps, 1.5× replay)
+          depth 1 (follow-up) → _SCENARIO_YE_WEIGHT_COMPOUND_1 (24 YE-steps, 2×  replay)
+          depth 2+ (veteran)  → _SCENARIO_YE_WEIGHT_COMPOUND_2 (30 YE-steps, 2.5× replay)
+
+        Args:
+            n:             Number of scenario steps to credit (normally 1 per loop step).
+            compound_depth: Compounding depth from the ScenarioSpec.
+        """
+        if compound_depth >= 2:
+            weight = _SCENARIO_YE_WEIGHT_COMPOUND_2
+        elif compound_depth == 1:
+            weight = _SCENARIO_YE_WEIGHT_COMPOUND_1
+        else:
+            weight = _SCENARIO_YE_WEIGHT_BASE
+        self._year_equiv_steps += n * weight
+        self._effective_steps  += n
+        self._real_steps       += n
 
     def year_equiv_target(self, elapsed_real_s: float) -> int:
         """

@@ -48,7 +48,8 @@ import os
 import numpy as np
 import math
 from .layers import (Conv2D, ResBlock, SelfAttention2D, GroupNorm,
-                     Linear, SiLU, MaxPool2x2, upsample2x, upsample2x_backward)
+                     Linear, SiLU, MaxPool2x2, upsample2x, upsample2x_backward,
+                     _f16safe, _f32safe)
 from .temporal_attention import TemporalAttention1D
 
 # ── Architecture constants (FULL — for GPU / Windows D: drive server) ─────────
@@ -137,11 +138,10 @@ class LightResBlock:
         out = self.dsc2.forward(out)
         if self.proj:
             residual = self.proj.forward(x)
-        self._cache = (x, residual)
+        # NOTE: cache not needed — backward uses sub-module caches only
         return out + residual
 
     def backward(self, dout: np.ndarray) -> np.ndarray:
-        x, residual = self._cache
         d1 = self.dsc2.backward(dout)
         dx = self.dsc1.backward(d1)
         if self.proj:
@@ -184,11 +184,13 @@ class ConditioningInjectorV4:
         proj  = self.fc2.forward(h)
         gamma = proj[:self.c_out] + 1.0
         beta  = proj[self.c_out:]
-        self._cache = (x, gamma, beta, h)
+        # gamma/beta are (C,) vectors — keep f32; x is large — store f16
+        self._cache = (_f16safe(x), gamma, beta, h)
         return x * gamma[None, None, :] + beta[None, None, :]
 
     def backward(self, dout: np.ndarray) -> np.ndarray:
-        x, gamma, beta, h = self._cache
+        x16, gamma, beta, h = self._cache
+        x = _f32safe(x16)
         dx     = dout * gamma[None, None, :]
         dgamma = (dout * x).sum(axis=(0, 1))
         dbeta  = dout.sum(axis=(0, 1))
@@ -252,43 +254,30 @@ class EncoderLevel:
         returns: (out, skip)  where out is pooled, skip is pre-pool for decoder
         """
         T, H, W, C = x_seq.shape
-        out = x_seq.copy()
+        out = x_seq
 
         # Apply ResBlocks frame-by-frame (spatial ops, no temporal mixing yet)
-        rb_outs = []
         for rb in self.res_blocks:
-            frame_outs = []
-            for t in range(T):
-                frame_outs.append(rb.forward(out[t]))
-            out = np.stack(frame_outs, axis=0)
-            rb_outs.append(out.copy())
+            out = np.stack([rb.forward(out[t]) for t in range(T)], axis=0)
 
         # FiLM conditioning (same cond vector for all frames — time/text embedding)
-        cond_frames = []
-        for t in range(T):
-            cond_frames.append(self.cond.forward(out[t], cond))
-        out = np.stack(cond_frames, axis=0)
+        out = np.stack([self.cond.forward(out[t], cond) for t in range(T)], axis=0)
 
         # Spatial attention (per-frame)
         if self.use_spatial_attn:
-            sa_outs = []
-            for t in range(T):
-                sa_outs.append(self.spatial_attn.forward(out[t]))
-            out = np.stack(sa_outs, axis=0)
+            out = np.stack([self.spatial_attn.forward(out[t]) for t in range(T)], axis=0)
 
         # Temporal attention (across frames at each spatial position)
         if self.use_temporal_attn:
             out = self.temporal_attn.forward(out)
 
-        skip = out.copy()
+        skip = out
 
         # Pool each frame
-        pooled = []
-        for t in range(T):
-            pooled.append(self.pool.forward(out[t]))
-        out = np.stack(pooled, axis=0)
+        out = np.stack([self.pool.forward(out[t]) for t in range(T)], axis=0)
 
-        self._cache = {'rb_outs': rb_outs, 'skip': skip, 'out': out, 'T': T}
+        # skip is returned to the caller; backward never reads it from _cache
+        self._cache = {'T': T}
         return out, skip
 
     def backward(self, dout: np.ndarray, dskip: np.ndarray = None) -> np.ndarray:
@@ -420,7 +409,8 @@ class Bottleneck:
             cond_outs.append(self.cond.forward(out[t], cond))
         out = np.stack(cond_outs, axis=0)
 
-        self._cache = {'T': T, 'out': out}
+        # out is returned to caller; backward only needs T for loop iteration
+        self._cache = {'T': T}
         return out
 
     def backward(self, dout: np.ndarray) -> np.ndarray:
@@ -526,13 +516,16 @@ class DecoderLevel:
         if self.use_temporal_attn:
             out = self.temporal_attn.forward(out)
 
-        self._cache = {'T': T, 'x_seq': x_seq, 'skip_seq': skip_seq}
+        # x_seq and skip_seq are large (T, H, W, C) tensors — store as f16
+        self._cache = {'T': T,
+                       'x_seq':    _f16safe(x_seq),
+                       'skip_seq': _f16safe(skip_seq)}
         return out
 
     def backward(self, dout: np.ndarray) -> tuple:
         T = self._cache['T']
-        x_seq    = self._cache['x_seq']
-        skip_seq = self._cache['skip_seq']
+        x_seq    = _f32safe(self._cache['x_seq'])
+        skip_seq = _f32safe(self._cache['skip_seq'])
 
         if self.use_temporal_attn:
             dout = self.temporal_attn.backward(dout)
@@ -716,13 +709,11 @@ class UNetV4:
             out_frames.append(self.out_conv.forward(act_out))
         out = np.stack(out_frames, axis=0)
 
-        self._cache = {
-            'T': T, 'squeeze': squeeze,
-            'skip0': skip0, 'skip1': skip1, 'skip2': skip2,
-            'skip3': skip3, 'skip4': skip4,
-            'e4': e4, 'bot': bot,
-            'd4': d4, 'd3': d3, 'd2': d2, 'd1': d1, 'd0': d0,
-        }
+        # Only T and squeeze are needed by UNetV4.backward() — skip/encoder/
+        # decoder arrays are already held by sub-module caches and are NOT
+        # read back here. Storing them here just creates extra references that
+        # prevent GC and waste ~90 MB.
+        self._cache = {'T': T, 'squeeze': squeeze}
 
         return out[0] if squeeze else out
 
@@ -773,6 +764,34 @@ class UNetV4:
         pairs.append((self.out_gn.params,   self.out_gn.grads))
         pairs.append((self.out_conv.params,  self.out_conv.grads))
         return pairs
+
+    def clear_caches(self):
+        """Free all activation caches after backward() to reduce peak memory before optimizer step.
+        Saves ~1 GB by releasing forward-pass intermediate arrays that are no longer needed."""
+        import gc
+        _seen: set = set()
+
+        def _clear(obj):
+            oid = id(obj)
+            if oid in _seen:
+                return
+            _seen.add(oid)
+            if hasattr(obj, '_cache'):
+                obj._cache = None
+            if hasattr(obj, '_sig'):
+                obj._sig = None
+            if hasattr(obj, '_x'):
+                obj._x = None
+            for v in vars(obj).values():
+                if hasattr(v, '__dict__') and not isinstance(v, type):
+                    _clear(v)
+                elif isinstance(v, (list, tuple)):
+                    for item in v:
+                        if hasattr(item, '__dict__') and not isinstance(item, type):
+                            _clear(item)
+
+        _clear(self)
+        gc.collect()
 
     def zero_grads(self):
         for _, grads in self._get_param_grad_pairs_flat():

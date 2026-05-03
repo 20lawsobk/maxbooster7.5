@@ -18,16 +18,28 @@ import math
 import sys as _sys
 import os as _os
 
+
+def _f16safe(arr: np.ndarray) -> np.ndarray:
+    """Clip to float16 range then cast — prevents ±inf from overflowing caches."""
+    return np.clip(arr, -65504.0, 65504.0).astype(np.float16)
+
+
+def _f32safe(arr16: np.ndarray) -> np.ndarray:
+    """Restore a float16 cache to float32, clamping any residual ±inf/NaN to zero."""
+    return np.nan_to_num(arr16.astype(np.float32), nan=0.0, posinf=65504.0, neginf=-65504.0)
+
 _services_dir = _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__)))
 if _services_dir not in _sys.path:
     _sys.path.insert(0, _services_dir)
 try:
     from digitalgpu import get_gpu as _get_gpu
-    # Only activate GPU path when CUDA is actually available.
-    # The digitalgpu conv2d uses a different calling convention (expects
-    # full [H,W,C] tensors with [C_out,C_in,kH,kW] weights) which is
-    # incompatible with the im2col-based NumPy path used here on CPU.
-    _GPU_AVAILABLE = bool(_get_gpu().has_gpu)
+    # Only activate GPU path when CUDA or MPS hardware is present.
+    # digitalgpu.conv2d expects raw 4-D (B,C,H,W) input with its own
+    # im2col, which is incompatible with the pre-computed 2-D `cols`
+    # matrix that Conv2D.forward() passes.  On the numpy/CPU tier the
+    # GPU branch must be disabled or every step crashes with:
+    #   "not enough values to unpack (expected 4, got 2)"
+    _GPU_AVAILABLE = _get_gpu().acceleration_tier in ('cuda', 'mps')
 except Exception:
     _GPU_AVAILABLE = False
 
@@ -93,16 +105,19 @@ class Conv2D:
                                          b=self.params['b'])
         else:
             out_flat = cols @ self.params['W'].T + self.params['b']
-        self._cache = (x.shape, cols)
+        self._cache = (_f16safe(x), H_out, W_out)  # f16 halves cache size
+        del cols
         return out_flat.reshape(H_out, W_out, self.c_out)
 
     def backward(self, dout: np.ndarray) -> np.ndarray:
-        x_shape, cols = self._cache
+        x16, H_out, W_out = self._cache
+        x = _f32safe(x16)  # restore precision for grad computation
+        cols, _, _ = im2col(x, self.k, self.k, self.stride, self.pad)
         dout_flat = dout.reshape(-1, self.c_out)
         self.grads['W'] = dout_flat.T @ cols
         self.grads['b'] = dout_flat.sum(axis=0)
         dcols = dout_flat @ self.params['W']
-        return col2im(dcols, x_shape, self.k, self.k, self.stride, self.pad)
+        return col2im(dcols, x.shape, self.k, self.k, self.stride, self.pad)
 
 
 # ── Group Normalisation ────────────────────────────────────────────────────
@@ -134,11 +149,14 @@ class GroupNorm:
         var  = x_r.var(axis=(0, 1, 3),  keepdims=True)
         x_hat = (x_r - mean) / np.sqrt(var + self.eps)
         x_hat = x_hat.reshape(H, W, C)
-        self._cache = (x_r, x_hat, mean, var, H, W, C, G, CG)
+        # mean/var are tiny (G,) vectors — keep f32; x_r and x_hat are large — store f16
+        self._cache = (_f16safe(x_r), _f16safe(x_hat), mean, var, H, W, C, G, CG)
         return self.params['gamma'] * x_hat + self.params['beta']
 
     def backward(self, dout: np.ndarray) -> np.ndarray:
-        x_r, x_hat, mean, var, H, W, C, G, CG = self._cache
+        x_r16, x_hat16, mean, var, H, W, C, G, CG = self._cache
+        x_r = _f32safe(x_r16)
+        x_hat = _f32safe(x_hat16)
         N = H * W * CG
         std_inv = 1.0 / np.sqrt(var + self.eps)
         self.grads['gamma'] = (dout * x_hat).sum(axis=(0, 1))
@@ -175,11 +193,14 @@ class BatchNorm:
         else:
             mean = self.running_mean; var = self.running_var
         x_hat = (x - mean) / np.sqrt(var + self.eps)
-        self._cache = (x, x_hat, mean, var)
+        # mean/var are (C,) vectors — keep f32; x and x_hat are large — store f16
+        self._cache = (_f16safe(x), _f16safe(x_hat), mean, var)
         return self.params['gamma'] * x_hat + self.params['beta']
 
     def backward(self, dout):
-        x, x_hat, mean, var = self._cache
+        x16, x_hat16, mean, var = self._cache
+        x = _f32safe(x16)
+        x_hat = _f32safe(x_hat16)
         N = x.shape[0] * x.shape[1]
         std_inv = 1.0 / np.sqrt(var + self.eps)
         dx_hat  = dout * self.params['gamma']
@@ -198,16 +219,18 @@ class BatchNorm:
 class SiLU:
     """Sigmoid-Linear Unit (Swish) — smooth, used in modern diffusion models."""
     def __init__(self):
-        self._sig = None; self._x = None
+        self._sig = None
 
     def forward(self, x):
-        self._sig = 1.0 / (1.0 + np.exp(-x.clip(-30, 30)))
-        self._x = x
-        return x * self._sig
+        sig = 1.0 / (1.0 + np.exp(-x.clip(-30, 30)))
+        self._sig = _f16safe(sig)  # f16 halves cache; values in [0,1], no overflow risk
+        return x * sig
 
     def backward(self, dout):
-        sig = self._sig
-        return dout * sig * (1 + self._x * (1 - sig))
+        sig = _f32safe(self._sig)  # restore for grad computation
+        sig_safe = np.clip(sig, 1e-7, 1.0 - 1e-7)
+        x = np.log(sig_safe) - np.log(1.0 - sig_safe)
+        return dout * sig * (1.0 + x * (1.0 - sig))
 
     @property
     def params(self): return {}
@@ -336,12 +359,25 @@ class SelfAttention2D:
         else:
             out = out_flat @ self.params['Wo'].T + self.params['bo']
 
-        self._cache = (x, x_norm, x_flat, Q, K, V, attn_weights, out_flat, H, W, C, N)
+        # Store large activation arrays as f16 to halve cache memory
+        self._cache = (_f16safe(x), _f16safe(x_norm),
+                       _f16safe(x_flat), _f16safe(Q),
+                       _f16safe(K), _f16safe(V),
+                       _f16safe(attn_weights), _f16safe(out_flat),
+                       H, W, C, N)
         # Residual connection: output + input
         return out.reshape(H, W, C) + x
 
     def backward(self, dout: np.ndarray) -> np.ndarray:
-        x, x_norm, x_flat, Q, K, V, attn_weights, out_flat, H, W, C, N = self._cache
+        x16, x_norm16, x_flat16, Q16, K16, V16, attn_weights16, out_flat16, H, W, C, N = self._cache
+        x            = _f32safe(x16)
+        x_norm       = _f32safe(x_norm16)
+        x_flat       = _f32safe(x_flat16)
+        Q            = _f32safe(Q16)
+        K            = _f32safe(K16)
+        V            = _f32safe(V16)
+        attn_weights = _f32safe(attn_weights16)
+        out_flat     = _f32safe(out_flat16)
         h = self.n_heads
         d = self.d_head
 
@@ -420,7 +456,7 @@ class ResBlock:
         shortcut = self.proj.forward(x) if self.proj else x
         h = self.act1.forward(self.gn1.forward(self.conv1.forward(x)))
         h = self.gn2.forward(self.conv2.forward(h))
-        self._cache = shortcut
+        # NOTE: self._cache not needed — backward uses sub-module caches only
         return self.act2.forward(h + shortcut)
 
     def backward(self, dout: np.ndarray) -> np.ndarray:
@@ -571,18 +607,45 @@ class Adam:
             for key in params:
                 if key not in grads or grads[key] is None: continue
                 flat_key = id(params) * 1000 + hash(key)
-                g = grads[key].astype(np.float64)
+                g = grads[key].astype(np.float32)
                 if self.wd > 0:
-                    g = g + self.wd * params[key].astype(np.float64)
-                if flat_key not in self._m:
-                    self._m[flat_key] = np.zeros_like(g)
-                    self._v[flat_key] = np.zeros_like(g)
-                self._m[flat_key] = self.b1 * self._m[flat_key] + (1 - self.b1) * g
-                self._v[flat_key] = self.b2 * self._v[flat_key] + (1 - self.b2) * g * g
-                m_hat = self._m[flat_key] / bc1
-                v_hat = self._v[flat_key] / bc2
-                params[key] = (params[key]
-                    - (self.lr * m_hat / (np.sqrt(v_hat) + self.eps)).astype(np.float32))
+                    g += self.wd * params[key]          # in-place
+
+                first = flat_key not in self._m
+                if first:
+                    # np.empty: virtual-only (no memset) so physical pages are
+                    # deferred until the copyto calls below — saves ~75 MB peak
+                    self._m[flat_key] = np.empty(g.shape, dtype=np.float16)
+                    self._v[flat_key] = np.empty(g.shape, dtype=np.float16)
+
+                m = self._m[flat_key]   # float16 view (≈ half the size of f32)
+                v = self._v[flat_key]   # float16 view
+
+                # Promote to float32 for numerics; treat uninitialised as zero
+                m32 = np.zeros_like(g) if first else m.astype(np.float32)
+                v32 = np.zeros_like(g) if first else v.astype(np.float32)
+
+                # Update moments in float32
+                g_sq  = g * g
+                m32  *= self.b1;  m32 += (1.0 - self.b1) * g     # 1 temp, freed
+                v32  *= self.b2;  v32 += (1.0 - self.b2) * g_sq  # 1 temp, freed
+                del g, g_sq
+
+                # Store back as float16 (also backs the lazy pages on first step)
+                np.copyto(m, m32, casting='unsafe')
+                np.copyto(v, v32, casting='unsafe')
+
+                # Bias-corrected update — all in float32, applied in-place to params
+                m_hat = m32 / bc1
+                v_hat = v32 / bc2
+                del m32, v32
+                np.sqrt(v_hat, out=v_hat)
+                v_hat += self.eps
+                m_hat *= self.lr
+                m_hat /= v_hat
+                del v_hat
+                params[key] -= m_hat.astype(np.float32)  # in-place: no new params
+                del m_hat
 
 
 # ── EMA (Exponential Moving Average of weights) ────────────────────────────
@@ -608,10 +671,11 @@ class EMA:
             for key, val in params.items():
                 pk = (id(params), key)
                 if pk not in self._store:
-                    self._store[pk] = val.copy()
+                    self._store[pk] = val.astype(np.float32, copy=True)
                 else:
-                    self._store[pk] = (self.decay * self._store[pk]
-                                       + (1 - self.decay) * val)
+                    e = self._store[pk]
+                    e *= self.decay                      # in-place: no new EMA array
+                    e += (1.0 - self.decay) * val       # 1 temp for (1-d)*val → freed
 
     def apply(self, param_grad_pairs: list):
         """Swap in EMA weights for inference."""
