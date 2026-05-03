@@ -329,4 +329,56 @@ describe('OAuth Callback Structure', () => {
     // Must contain an error signal — either invalid_state or a generic login error
     expect(location).toMatch(/invalid_state|error=/i);
   });
+
+  it('23. GET /api/auth/google/callback with valid state reaches a different redirect than invalid_state', async () => {
+    // Step 1: initiate the OAuth flow to establish session state
+    const initRes = await fetch(`${BASE}/api/auth/google`, {
+      signal: AbortSignal.timeout(8000),
+      redirect: 'manual',
+    });
+    expect([301, 302, 303, 307, 308]).toContain(initRes.status);
+    const initLocation = initRes.headers.get('location') ?? '';
+
+    if (initLocation.includes('google_not_configured')) {
+      // Google credentials not present — can't set up session state; skip gracefully
+      console.warn('[AuthTest] GOOGLE_CLIENT_ID not configured — skipping valid-state callback test');
+      return;
+    }
+
+    // Extract state from the Google redirect URL
+    let googleState: string;
+    try {
+      const googleUrl = new URL(initLocation);
+      googleState = googleUrl.searchParams.get('state') ?? '';
+    } catch {
+      console.warn('[AuthTest] Could not parse Google redirect URL — skipping valid-state callback test');
+      return;
+    }
+    expect(googleState.length).toBeGreaterThan(0);
+
+    // Capture the session cookie set by the initiation request (holds googleOAuthState)
+    const setCookies = initRes.headers.getSetCookie?.() ?? [];
+    const sessionCookie = setCookies
+      .map(c => c.split(';')[0])
+      .join('; ');
+
+    // Step 2: call the callback with the VALID state — code is fake so token exchange
+    // will fail, but the redirect must NOT be to invalid_state (state check passed).
+    const callbackRes = await fetch(
+      `${BASE}/api/auth/google/callback?code=fake_code_valid_test&state=${encodeURIComponent(googleState)}`,
+      {
+        signal: AbortSignal.timeout(10000),
+        redirect: 'manual',
+        headers: sessionCookie ? { Cookie: sessionCookie } : {},
+      },
+    );
+    expect([301, 302, 303, 307, 308]).toContain(callbackRes.status);
+    const callbackLocation = callbackRes.headers.get('location') ?? '';
+
+    // Valid state must NOT redirect to invalid_state — it proceeds to token exchange
+    // (which fails with the fake code → token_exchange_failed or similar error)
+    expect(callbackLocation).not.toMatch(/invalid_state/i);
+    // It must contain some error indicating the code exchange failed, not the state check
+    expect(callbackLocation).toMatch(/error=/i);
+  });
 });

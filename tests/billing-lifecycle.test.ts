@@ -113,7 +113,11 @@ function makeSubscriptionEvent(overrides: Record<string, unknown> = {}, customer
   return { ...base, ...overrides };
 }
 
-function makeCheckoutSessionEvent(userId: string, overrides: Record<string, unknown> = {}) {
+function makeCheckoutSessionEvent(
+  customerId: string,
+  planId: string,
+  overrides: Record<string, unknown> = {},
+) {
   const base: Record<string, unknown> = {
     id: `evt_cs_${crypto.randomBytes(8).toString('hex')}`,
     object: 'event',
@@ -127,13 +131,10 @@ function makeCheckoutSessionEvent(userId: string, overrides: Record<string, unkn
         mode: 'subscription',
         payment_status: 'paid',
         status: 'complete',
-        customer: `cus_cs_${crypto.randomBytes(6).toString('hex')}`,
+        customer: customerId,
         subscription: `sub_cs_${crypto.randomBytes(8).toString('hex')}`,
         payment_intent: null,
-        metadata: {
-          userId,
-          planId: 'yearly',
-        },
+        metadata: { planId },
       },
     },
   };
@@ -235,20 +236,34 @@ describe('Billing Webhook Lifecycle', () => {
     expect(body.received).toBe(true);
   });
 
-  it('6. valid checkout.session.completed is accepted and returns received:true', async () => {
+  it('6. checkout.session.completed (subscription mode) updates subscription_tier', async () => {
     const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
     if (!webhookSecret) {
-      console.warn('[BillingTest] STRIPE_WEBHOOK_SECRET not set — skipping checkout.session test');
+      console.warn('[BillingTest] STRIPE_WEBHOOK_SECRET not set — skipping checkout.session tier-update test');
       return;
     }
 
-    const event = makeCheckoutSessionEvent(testUserId);
+    // Plant a unique stripeCustomerId on the test user for this test
+    const fakeCusId6 = `cus_cs_${crypto.randomBytes(8).toString('hex')}`;
+    const setupR = await api('POST', '/api/testing/setup-stripe-customer', { stripeCustomerId: fakeCusId6 });
+    if (setupR.status !== 200) {
+      console.warn(`[BillingTest] setup-stripe-customer returned ${setupR.status} — skipping checkout.session tier-update`);
+      return;
+    }
+
+    // Fire checkout.session.completed with mode:subscription → should update tier to 'monthly'
+    const event = makeCheckoutSessionEvent(fakeCusId6, 'monthly');
     const payload = JSON.stringify(event);
     const r = await fireWebhook(payload, webhookSecret);
 
     expect(r.status).toBe(200);
     const body = r.json as Record<string, unknown>;
     expect(body.received).toBe(true);
+
+    // Verify tier updated directly in DB (bypasses Stripe API sync)
+    const tierR = await api('GET', '/api/testing/user-tier');
+    expect(tierR.status).toBe(200);
+    expect((tierR.json as Record<string, unknown>).tier).toBe('monthly');
   });
 
   // ──────────────────── Idempotency ────────────────────

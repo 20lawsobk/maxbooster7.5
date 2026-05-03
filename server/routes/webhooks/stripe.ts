@@ -130,6 +130,32 @@ registerWebhookHandler('checkout.session.completed', async (event) => {
     }
   }
 
+  // For subscription-mode checkouts with a planId in metadata, update the user's
+  // tier immediately so they get access before customer.subscription.created fires.
+  if (session.mode === 'subscription' && session.customer && session.metadata?.planId) {
+    const checkoutCusId = typeof session.customer === 'string'
+      ? session.customer
+      : (session.customer as { id: string }).id;
+    const planId = session.metadata.planId;
+    try {
+      const updated = await db.update(users)
+        .set({
+          subscriptionTier: planId,
+          subscriptionStatus: 'active',
+          stripeSubscriptionId: typeof session.subscription === 'string'
+            ? session.subscription
+            : null,
+        })
+        .where(eq(users.stripeCustomerId, checkoutCusId))
+        .returning({ id: users.id });
+      if (updated.length > 0) {
+        logger.info(`[Stripe] checkout.session.completed: user ${updated[0].id} tier set to ${planId}`);
+      }
+    } catch (checkoutErr) {
+      logger.warn({ err: checkoutErr }, '[Stripe] Failed to update tier on checkout.session.completed:');
+    }
+  }
+
   return { success: true, message: 'Checkout session processed' };
 });
 
