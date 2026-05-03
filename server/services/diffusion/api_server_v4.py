@@ -60,6 +60,9 @@ _SVC    = os.path.dirname(_HERE)                        # …/server/services
 if _SVC not in sys.path:
     sys.path.insert(0, _SVC)
 
+# ── DigitalGPU — the compute backend for all training and inference ───────────
+from digitalgpu import get_gpu as _get_gpu_ctx, gpu_info as _gpu_info
+
 # Activate LITE mode before importing UNetV4 / trainer constants
 os.environ['MAXCORE_LITE'] = '1'
 
@@ -85,8 +88,8 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(
-    title='MaxCore Diffusion v4 — NumPy LITE',
-    description='Music-specialized video generation — UNetV4 LITE, pure NumPy, CPU-native',
+    title='MaxCore Diffusion v4 — DigitalGPU LITE',
+    description='Music-specialized video generation — UNetV4 LITE, DigitalGPU-accelerated (CUDA/MPS/NumPy)',
     version='4.0.0',
     lifespan=lifespan,
 )
@@ -745,10 +748,11 @@ def health():
 
 @app.get('/ready')
 def ready():
+    _gi = _gpu_info()
     return {
         'ready':   _model_ready,
-        'device':  'cpu',
-        'backend': 'numpy',
+        'device':  _gi.get('device', 'cpu (NumPy)'),
+        'backend': _gi.get('backend', 'numpy'),
         'model':   'unet_v4_lite',
         'version': '4.0.0',
     }
@@ -756,10 +760,14 @@ def ready():
 
 @app.get('/gpu/status')
 def gpu_status_endpoint():
+    _gi = _gpu_info()
     return {
-        'device':              'cpu',
-        'backend':             'numpy-unet-v4-lite',
-        'cuda_available':      False,
+        'device':              _gi.get('device', 'cpu (NumPy)'),
+        'backend':             f"digitalgpu-{_gi.get('backend', 'numpy')}-unet-v4-lite",
+        'cuda_available':      _gi.get('cuda_available', False),
+        'mps_available':       _gi.get('mps_available', False),
+        'torch_available':     _gi.get('torch_available', False),
+        'has_gpu':             _get_gpu_ctx().has_gpu,
         'postprocessor_ready': True,
         'pipeline_ready':      _model_ready,
         'available_scenes':    list(_SCENE_META.keys()),
@@ -1012,6 +1020,7 @@ def generate(req: GenerateRequest):
 
     meta = _SCENE_META.get(req.style_name, _SCENE_META['default'])
 
+    _dg = _get_gpu_ctx()
     return GenerateResponse(
         status='ok',
         frames_b64=frames_b64,
@@ -1019,9 +1028,9 @@ def generate(req: GenerateRequest):
         shape=list(frames.shape),
         style_used=req.style_name,
         scene_name=req.style_name,
-        device='cpu',
+        device=_dg.device_name,
         num_frames=req.T,
-        gpu_applied=False,
+        gpu_applied=req.use_digital_gpu and _dg.has_gpu,
         scene_metadata={
             'scene_name':      req.style_name,
             'bloom_threshold': meta['bloom'],
