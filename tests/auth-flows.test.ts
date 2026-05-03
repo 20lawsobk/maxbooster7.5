@@ -330,6 +330,31 @@ describe('OAuth Callback Structure', () => {
     expect(location).toMatch(/invalid_state|error=/i);
   });
 
+  it('24. POST /api/auth/oauth/initiate without auth returns 401', async () => {
+    const res = await fetch(`${BASE}/api/auth/oauth/initiate`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ platform: 'spotify' }),
+      signal: AbortSignal.timeout(8000),
+      redirect: 'manual',
+    });
+    // Server may return 401 or 403 depending on middleware order (e.g. CSRF check fires first)
+    expect([401, 403]).toContain(res.status);
+  });
+
+  it('25. GET /api/auth/oauth/callback?platform=spotify&error=access_denied redirects with oauth_denied', async () => {
+    const res = await fetch(
+      `${BASE}/api/auth/oauth/callback?platform=spotify&error=access_denied`,
+      {
+        signal: AbortSignal.timeout(8000),
+        redirect: 'manual',
+      },
+    );
+    expect([301, 302, 303, 307, 308]).toContain(res.status);
+    const location = res.headers.get('location') ?? '';
+    expect(location).toMatch(/oauth_denied/i);
+  });
+
   it('23. GET /api/auth/google/callback with valid state reaches a different redirect than invalid_state', async () => {
     // Step 1: initiate the OAuth flow to establish session state
     const initRes = await fetch(`${BASE}/api/auth/google`, {

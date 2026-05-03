@@ -181,6 +181,15 @@ describe('2FA Flow (TOTP)', () => {
     expect(body.twoFactorSecret).toBeUndefined();
   });
 
+  it('16. POST /api/auth/2fa/validate with a valid TOTP code returns { valid: true }', async () => {
+    if (!totpSecret) throw new Error('No TOTP secret from setup step');
+    const code = genCode(totpSecret);
+    const r = await api('POST', '/api/auth/2fa/validate', { code });
+    expect(r.status).toBe(200);
+    const body = r.json as Record<string, unknown>;
+    expect(body.valid).toBe(true);
+  });
+
   it('12. POST /api/auth/2fa/disable with wrong password returns 400', async () => {
     const r = await api('POST', '/api/auth/2fa/disable', {
       password: 'WrongPassword!',

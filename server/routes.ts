@@ -1405,6 +1405,61 @@ export async function registerRoutes(
     });
   });
 
+  // Auth: 2FA validate - Check a TOTP code against the authenticated user's secret
+  // without modifying any state. Useful for step-up auth and re-authentication flows.
+  app.post("/api/auth/2fa/validate", twoFactorRateLimiter, async (req: Request, res: Response) => {
+    if (!req.user) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+    const { code } = req.body;
+    if (!code) {
+      return res.status(400).json({ message: "code is required" });
+    }
+    if (!req.user.twoFactorEnabled || !req.user.twoFactorSecret) {
+      return res.status(400).json({ message: "2FA is not enabled on this account" });
+    }
+    const verifyResult = authenticator.verify({ token: String(code), secret: req.user.twoFactorSecret });
+    // authenticator.verify() returns the full verifySync result object — extract the boolean
+    const isValid = typeof verifyResult === 'object' && verifyResult !== null
+      ? (verifyResult as { valid: boolean }).valid
+      : !!verifyResult;
+    return res.json({ valid: isValid });
+  });
+
+  // Auth: OAuth initiate alias — thin wrapper around /api/social/connect/:platform
+  // Provides a stable /api/auth/oauth/initiate path that the front-end and tests can rely on.
+  app.post("/api/auth/oauth/initiate", async (req: Request, res: Response) => {
+    if (!req.user) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+    const platform = ((req.body?.platform ?? req.query?.platform) as string | undefined ?? '').toLowerCase().trim();
+    if (!platform) {
+      return res.status(400).json({ message: "platform is required" });
+    }
+    // 307 preserves the POST body through the redirect so the social/connect handler
+    // receives exactly the same request (method, cookies, etc.).
+    return res.redirect(307, `/api/social/connect/${encodeURIComponent(platform)}`);
+  });
+
+  // Auth: OAuth callback alias — thin wrapper around /api/social/callback/:platform
+  // Maps GET /api/auth/oauth/callback?platform=X&... to the social OAuth callback handler.
+  app.get("/api/auth/oauth/callback", (req: Request, res: Response) => {
+    const platform = ((req.query?.platform) as string | undefined ?? '').toLowerCase().trim();
+    if (!platform) {
+      return res.redirect('/login?error=platform_required');
+    }
+    if (req.query.error) {
+      // Short-circuit OAuth provider errors immediately (same behaviour as social callback)
+      return res.redirect(`/social-media?error=oauth_denied&platform=${encodeURIComponent(platform)}`);
+    }
+    // Forward all other query params (code, state, …) to the real social callback handler.
+    const qs = new URLSearchParams();
+    for (const [k, v] of Object.entries(req.query)) {
+      if (k !== 'platform') qs.set(k, String(v));
+    }
+    return res.redirect(307, `/api/social/callback/${encodeURIComponent(platform)}?${qs.toString()}`);
+  });
+
   // REMOVED: Duplicate 2FA disable route without password verification
   // The secured version with password + 2FA code verification is registered above (line ~1139)
 
