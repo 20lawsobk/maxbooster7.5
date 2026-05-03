@@ -284,8 +284,8 @@ export async function registerRoutes(
           firstName: firstName || "",
           lastName: lastName || ""
         });
-      } catch (createErr) {
-        if ((createErr as any)?.code === '23505' || (createErr as any)?.message?.toLowerCase().includes('unique')) {
+      } catch (createErr: unknown) {
+        if (createErr instanceof Error && (('code' in createErr && createErr.code === '23505') || createErr.message.toLowerCase().includes('unique'))) {
           return res.status(400).json({ message: "Email already registered" });
         }
         throw createErr;
@@ -2376,7 +2376,7 @@ export async function registerRoutes(
       if (err) {
         logger.warn({ err }, "Project upload error");
         const errMsg = err instanceof Error ? err.message : undefined;
-        const errCode = (err as Record<string, unknown>).code;
+        const errCode = err instanceof Error && 'code' in err ? err.code : undefined;
         if (errCode === 'LIMIT_FILE_SIZE') {
           return res.status(413).json({ message: "File too large. Maximum size is 500MB." });
         }
@@ -3949,12 +3949,14 @@ export async function registerRoutes(
       const returnUrl = `${baseUrl}/royalties?setup=complete`;
       const url = await instantPayoutService.createAccountLink(req.user.id, refreshUrl, returnUrl);
       return res.json({ success: true, url });
-    } catch (error) {
+    } catch (error: unknown) {
       logger.warn({ err: error }, "Connect Stripe error");
       if (
-        (error as any)?.type === 'StripeInvalidRequestError' ||
-        (error as any)?.rawType === 'invalid_request_error' ||
-        ((error as any)?.message && (error as any).message.toLowerCase().includes('connect'))
+        error instanceof Error && (
+          ('type' in error && error.type === 'StripeInvalidRequestError') ||
+          ('rawType' in error && error.rawType === 'invalid_request_error') ||
+          error.message.toLowerCase().includes('connect')
+        )
       ) {
         return res.status(400).json({
           message: "Stripe Connect payouts are not yet enabled on this account. Please contact support to enable direct payouts.",

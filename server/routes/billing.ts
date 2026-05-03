@@ -875,7 +875,7 @@ router.get('/invoices/:invoiceId/download', requireAuth, async (req: Authenticat
     try {
       invoice = await stripe.invoices.retrieve(invoiceId);
     } catch (stripeError: unknown) {
-      if ((stripeError as Record<string, unknown>).code === 'resource_missing') {
+      if (stripeError instanceof Error && 'code' in stripeError && stripeError.code === 'resource_missing') {
         return res.status(404).json({ 
           message: 'Invoice not found',
           code: 'INVOICE_NOT_FOUND',
@@ -1516,10 +1516,10 @@ router.post('/refund/request', requireAuth, async (req: AuthenticatedRequest, re
       code: 'REFUND_REQUESTED',
       refundRequest: refundRequestPayload,
     });
-  } catch (error) {
+  } catch (error: unknown) {
     logger.warn({ err: error }, '[Billing] Failed to create refund request:');
     
-    if ((error as Record<string, unknown>).code === 'resource_missing') {
+    if (error instanceof Error && 'code' in error && error.code === 'resource_missing') {
       return res.status(404).json({ 
         message: 'Invoice or charge not found',
         code: 'NOT_FOUND',
@@ -1624,7 +1624,7 @@ router.post('/dispute/evidence', requireAuth, async (req: AuthenticatedRequest, 
         status: evidence.submit ? 'under_review' : 'needs_response'
       });
     } catch (stripeError: unknown) {
-      if ((stripeError as Record<string, unknown>).code === 'resource_missing') {
+      if (stripeError instanceof Error && 'code' in stripeError && stripeError.code === 'resource_missing') {
         return res.status(404).json({ 
           message: 'Dispute not found',
           code: 'DISPUTE_NOT_FOUND',
