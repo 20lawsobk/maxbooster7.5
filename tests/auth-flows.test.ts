@@ -330,16 +330,41 @@ describe('OAuth Callback Structure', () => {
     expect(location).toMatch(/invalid_state|error=/i);
   });
 
-  it('24. POST /api/auth/oauth/initiate without auth returns 401', async () => {
-    const res = await fetch(`${BASE}/api/auth/oauth/initiate`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ platform: 'spotify' }),
+  it('24. GET /api/auth/oauth/initiate without auth returns 401', async () => {
+    const res = await fetch(`${BASE}/api/auth/oauth/initiate?platform=google`, {
       signal: AbortSignal.timeout(8000),
       redirect: 'manual',
     });
-    // Server may return 401 or 403 depending on middleware order (e.g. CSRF check fires first)
-    expect([401, 403]).toContain(res.status);
+    expect(res.status).toBe(401);
+  });
+
+  it('24b. GET /api/auth/oauth/initiate?platform=google with auth redirects to Google or error page', async () => {
+    // Re-authenticate so we have a valid session for this request
+    const loginRes = await fetch(`${BASE}/api/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: testUser.email, password: testUser.password }),
+      signal: AbortSignal.timeout(8000),
+      redirect: 'manual',
+    });
+    const sessionCookies = loginRes.headers.getSetCookie?.()
+      .map(c => c.split(';')[0])
+      .join('; ') ?? '';
+
+    const res = await fetch(`${BASE}/api/auth/oauth/initiate?platform=google`, {
+      signal: AbortSignal.timeout(8000),
+      redirect: 'manual',
+      headers: sessionCookies ? { Cookie: sessionCookies } : {},
+    });
+    // Must redirect — either to Google OAuth or to the google_not_configured error page
+    expect([301, 302, 303, 307, 308]).toContain(res.status);
+    const location = res.headers.get('location') ?? '';
+    // Route should delegate to /api/auth/google which redirects to Google or error page
+    const isExpectedDestination =
+      location.includes('accounts.google.com') ||
+      location.includes('google_not_configured') ||
+      location.includes('/api/auth/google');
+    expect(isExpectedDestination).toBe(true);
   });
 
   it('25. GET /api/auth/oauth/callback?platform=spotify&error=access_denied redirects with oauth_denied', async () => {
@@ -353,6 +378,20 @@ describe('OAuth Callback Structure', () => {
     expect([301, 302, 303, 307, 308]).toContain(res.status);
     const location = res.headers.get('location') ?? '';
     expect(location).toMatch(/oauth_denied/i);
+  });
+
+  it('26. GET /api/auth/oauth/callback without state redirects with invalid_state', async () => {
+    // No state param — the callback handler must reject immediately (no round-trip to social handler)
+    const res = await fetch(
+      `${BASE}/api/auth/oauth/callback?platform=spotify&code=fake_code_no_state`,
+      {
+        signal: AbortSignal.timeout(8000),
+        redirect: 'manual',
+      },
+    );
+    expect([301, 302, 303, 307, 308]).toContain(res.status);
+    const location = res.headers.get('location') ?? '';
+    expect(location).toMatch(/invalid_state/i);
   });
 
   it('23. GET /api/auth/google/callback with valid state reaches a different redirect than invalid_state', async () => {

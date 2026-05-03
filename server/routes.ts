@@ -1426,31 +1426,40 @@ export async function registerRoutes(
     return res.json({ valid: isValid });
   });
 
-  // Auth: OAuth initiate alias — thin wrapper around /api/social/connect/:platform
-  // Provides a stable /api/auth/oauth/initiate path that the front-end and tests can rely on.
-  app.post("/api/auth/oauth/initiate", async (req: Request, res: Response) => {
+  // Auth: OAuth initiate alias — GET /api/auth/oauth/initiate?platform=<name>
+  // Requires auth; for google delegates to /api/auth/google (the dedicated Google handler);
+  // for all other platforms redirects to /api/social/connect/:platform (POST via 307 not
+  // applicable for GET, so those callers should use /api/social/connect directly).
+  app.get("/api/auth/oauth/initiate", async (req: Request, res: Response) => {
     if (!req.user) {
       return res.status(401).json({ message: "Not authenticated" });
     }
-    const platform = ((req.body?.platform ?? req.query?.platform) as string | undefined ?? '').toLowerCase().trim();
+    const platform = (req.query?.platform as string | undefined ?? '').toLowerCase().trim();
     if (!platform) {
       return res.status(400).json({ message: "platform is required" });
     }
-    // 307 preserves the POST body through the redirect so the social/connect handler
-    // receives exactly the same request (method, cookies, etc.).
-    return res.redirect(307, `/api/social/connect/${encodeURIComponent(platform)}`);
+    // Google has a dedicated handler that sets session state and redirects to accounts.google.com
+    if (platform === 'google') {
+      return res.redirect(307, '/api/auth/google');
+    }
+    // For other platforms the caller should use POST /api/social/connect/:platform
+    return res.status(400).json({ message: `Use POST /api/social/connect/${platform} for this platform` });
   });
 
-  // Auth: OAuth callback alias — thin wrapper around /api/social/callback/:platform
-  // Maps GET /api/auth/oauth/callback?platform=X&... to the social OAuth callback handler.
+  // Auth: OAuth callback alias — GET /api/auth/oauth/callback?platform=X&[code&state | error]
+  // Validates the platform and state presence before forwarding to the social callback handler.
   app.get("/api/auth/oauth/callback", (req: Request, res: Response) => {
-    const platform = ((req.query?.platform) as string | undefined ?? '').toLowerCase().trim();
+    const platform = (req.query?.platform as string | undefined ?? '').toLowerCase().trim();
     if (!platform) {
       return res.redirect('/login?error=platform_required');
     }
     if (req.query.error) {
       // Short-circuit OAuth provider errors immediately (same behaviour as social callback)
       return res.redirect(`/social-media?error=oauth_denied&platform=${encodeURIComponent(platform)}`);
+    }
+    // Reject missing state before forwarding — prevents unnecessary round-trips
+    if (!req.query.state) {
+      return res.redirect(`/social-media?error=invalid_state&platform=${encodeURIComponent(platform)}`);
     }
     // Forward all other query params (code, state, …) to the real social callback handler.
     const qs = new URLSearchParams();
