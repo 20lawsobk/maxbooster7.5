@@ -62,19 +62,41 @@ export class DistributedRateLimiter {
   }
 
   async isRateLimited(key: string): Promise<{ limited: boolean; remaining: number }> {
-    const redisKey = `ratelimit:${key}`;
-    const windowSecs = Math.ceil(this.config.windowMs / 1000);
+    const redisKey = `ratelimit:sw:${key}`;
+    const now = Date.now();
+    const windowStart = now - this.config.windowMs;
+    // Key expires automatically well after the window — avoids stale ZSET accumulation.
+    const windowExpireSecs = Math.ceil(this.config.windowMs / 1000) + 60;
 
-    // Fixed-window counter using INCR + EXPIRE — PDIM-compatible.
-    const count: number = await this.redisClient.incr(redisKey);
-    if (count === 1) {
-      // First request in this window — set the expiry (fire-and-forget)
-      this.redisClient.expire(redisKey, windowSecs).catch(() => {});
+    // Sliding-window ZSET algorithm (sub-millisecond precision):
+    //   1. Evict timestamps that have fallen outside [now - windowMs, now]
+    //   2. Count remaining entries — that is the current request tally
+    //   3. If under limit: add current timestamp with a unique member and allow
+    //
+    // Using the score as the epoch-ms timestamp means ZREMRANGEBYSCORE precisely
+    // tracks the rolling window without the rounding loss of INCR+EXPIRE
+    // (which must ceil windowMs → whole seconds and is therefore imprecise).
+    // Firing requests at a window boundary cannot create a >1× burst because
+    // entries only age out when their score is strictly older than windowMs.
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const redis = this.redisClient as any;
+
+    await redis.zremrangebyscore(redisKey, '-inf', windowStart);
+    const count: number = await redis.zcard(redisKey);
+
+    if (count >= this.config.maxRequests) {
+      return { limited: true, remaining: 0 };
     }
 
-    const limited = count > this.config.maxRequests;
-    const remaining = Math.max(0, this.config.maxRequests - count);
-    return { limited, remaining };
+    // Unique member prevents score-collision collisions from different callers
+    // hitting the same millisecond (common under high concurrency).
+    const entryId = `${now}:${Math.random().toString(36).slice(2, 9)}`;
+    await redis.zadd(redisKey, now, entryId);
+    // Fire-and-forget: key expiry is a safety net, not on the critical path.
+    redis.expire(redisKey, windowExpireSecs).catch(() => {});
+
+    return { limited: false, remaining: this.config.maxRequests - count - 1 };
   }
 
   middleware(): RequestHandler {

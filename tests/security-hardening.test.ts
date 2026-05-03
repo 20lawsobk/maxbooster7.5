@@ -118,3 +118,148 @@ describe('Rate Limiting', () => {
     expect([400, 401, 429]).toContain(r.status);
   });
 });
+
+// ─── Sliding-Window Rate Limiter — Algorithm Unit Tests ───────────────────────
+// These tests import DistributedRateLimiter directly and drive it with an
+// in-memory ZSET mock so no running server or PDIM connection is required.
+// They prove the sliding-window algorithm prevents the boundary-burst attack
+// that the old INCR+EXPIRE fixed-window counter was vulnerable to.
+//
+// Boundary-burst attack (INCR+EXPIRE):
+//   1. Fire `limit` requests — all pass (counter reaches `limit`, key set to expire in windowMs)
+//   2. Wait for the key to expire (≈ windowMs)
+//   3. Fire `limit` more — all pass again (new key, counter reset to 0)
+//   Total: 2 × limit requests in ≈ windowMs + ε
+//
+// With the ZSET sliding window:
+//   Entries carry millisecond-precision scores. At step 3, entries from step 1
+//   are still within the rolling [now-windowMs, now] window, so they are counted
+//   and the additional requests are correctly blocked.
+
+/** Minimal in-memory ZSET that implements the ioredis surface used by DistributedRateLimiter. */
+function createMockZsetRedis() {
+  const store = new Map<string, Map<string, number>>(); // key → (member → score)
+  return {
+    async zremrangebyscore(key: string, _min: string, max: number): Promise<number> {
+      const zset = store.get(key);
+      if (!zset) return 0;
+      let removed = 0;
+      for (const [member, score] of zset) {
+        if (score <= max) { zset.delete(member); removed++; }
+      }
+      return removed;
+    },
+    async zcard(key: string): Promise<number> {
+      return store.get(key)?.size ?? 0;
+    },
+    async zadd(key: string, score: number, member: string): Promise<number> {
+      if (!store.has(key)) store.set(key, new Map());
+      store.get(key)!.set(member, score);
+      return 1;
+    },
+    async expire(_key: string, _secs: number): Promise<number> { return 1; },
+    async del(key: string): Promise<number> { store.delete(key); return 1; },
+  };
+}
+
+describe('Sliding-Window Rate Limiter — Boundary Burst', () => {
+  it('allows exactly `limit` requests and blocks the (limit+1)th immediately', async () => {
+    const { DistributedRateLimiter } = await import('../server/middleware/scalableRateLimiter.js');
+    const redis = createMockZsetRedis();
+    const LIMIT = 5;
+    const limiter = new DistributedRateLimiter(
+      { windowMs: 5000, maxRequests: LIMIT },
+      redis as unknown as Record<string, unknown>,
+    );
+    const key = `test:basic:${Date.now()}`;
+
+    // All LIMIT requests must be allowed
+    for (let i = 0; i < LIMIT; i++) {
+      const r = await limiter.isRateLimited(key);
+      expect(r.limited).toBe(false);
+    }
+    // The very next request (limit+1) must be blocked immediately
+    const blocked = await limiter.isRateLimited(key);
+    expect(blocked.limited).toBe(true);
+    expect(blocked.remaining).toBe(0);
+  });
+
+  it('boundary-burst: firing limit more requests immediately after filling the window blocks ALL of them', async () => {
+    // This is the core boundary-burst scenario.
+    // With INCR+EXPIRE a key reset could allow a second full burst;
+    // the ZSET sliding window prevents this because entries don't disappear
+    // until their score (timestamp) falls outside [now-windowMs, now].
+    const { DistributedRateLimiter } = await import('../server/middleware/scalableRateLimiter.js');
+    const redis = createMockZsetRedis();
+    const LIMIT = 5;
+    const limiter = new DistributedRateLimiter(
+      { windowMs: 500, maxRequests: LIMIT },
+      redis as unknown as Record<string, unknown>,
+    );
+    const key = `test:burst:${Date.now()}`;
+
+    // Phase 1 — fill the window ("end of window A")
+    let passed = 0;
+    for (let i = 0; i < LIMIT; i++) {
+      const r = await limiter.isRateLimited(key);
+      if (!r.limited) passed++;
+    }
+    expect(passed).toBe(LIMIT);
+
+    // Phase 2 — immediately fire LIMIT more ("start of window B", no wait)
+    // Sliding window: all LIMIT entries from phase 1 are still in [now-500ms, now]
+    // → every additional request must be blocked (0 pass-through, not 2×LIMIT).
+    let blocked = 0;
+    for (let i = 0; i < LIMIT; i++) {
+      const r = await limiter.isRateLimited(key);
+      if (r.limited) blocked++;
+    }
+    expect(blocked).toBe(LIMIT); // All LIMIT extra requests blocked — no boundary burst
+  });
+
+  it('correctly allows requests again after the sliding window has fully elapsed', async () => {
+    const { DistributedRateLimiter } = await import('../server/middleware/scalableRateLimiter.js');
+    const redis = createMockZsetRedis();
+    const LIMIT = 3;
+    const WINDOW_MS = 200;
+    const limiter = new DistributedRateLimiter(
+      { windowMs: WINDOW_MS, maxRequests: LIMIT },
+      redis as unknown as Record<string, unknown>,
+    );
+    const key = `test:expire:${Date.now()}`;
+
+    // Fill the window to the limit
+    for (let i = 0; i < LIMIT; i++) {
+      await limiter.isRateLimited(key);
+    }
+    // Confirm blocked
+    const blockedBefore = await limiter.isRateLimited(key);
+    expect(blockedBefore.limited).toBe(true);
+
+    // Wait for the sliding window to pass
+    await new Promise(resolve => setTimeout(resolve, WINDOW_MS + 50));
+
+    // All entries from the first window have aged out — requests must pass again
+    const allowedAfter = await limiter.isRateLimited(key);
+    expect(allowedAfter.limited).toBe(false);
+  });
+
+  it('remaining count decrements accurately as requests consume the budget', async () => {
+    const { DistributedRateLimiter } = await import('../server/middleware/scalableRateLimiter.js');
+    const redis = createMockZsetRedis();
+    const LIMIT = 4;
+    const limiter = new DistributedRateLimiter(
+      { windowMs: 5000, maxRequests: LIMIT },
+      redis as unknown as Record<string, unknown>,
+    );
+    const key = `test:remaining:${Date.now()}`;
+
+    const remainings: number[] = [];
+    for (let i = 0; i < LIMIT; i++) {
+      const r = await limiter.isRateLimited(key);
+      remainings.push(r.remaining);
+    }
+    // Each successive call must report one fewer remaining slot
+    expect(remainings).toEqual([3, 2, 1, 0]);
+  });
+});

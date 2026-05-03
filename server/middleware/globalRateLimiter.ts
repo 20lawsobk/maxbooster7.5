@@ -44,23 +44,31 @@ class RedisRateLimitStore implements Store {
 
   async increment(key: string): Promise<IncrementResponse> {
     const rKey = `${RL_PREFIX}${key}`;
-    const windowSec = Math.ceil(this.windowMs / 1000);
+    const now = Date.now();
+    const windowStart = now - this.windowMs;
+    const entryId = `${now}:${Math.random().toString(36).slice(2, 9)}`;
+    const windowExpireSecs = Math.ceil(this.windowMs / 1000) + 60;
 
     try {
       const redis = getRedisClient();
-      const pipeline = redis.pipeline();
-      pipeline.incr(rKey);
-      pipeline.expire(rKey, windowSec);
-      // 400ms timeout — blip guard; PDIM is at 120M req/s so timeouts are
-      // rare, but the guard protects against momentary network hiccups.
-      const results = await Promise.race([
-        pipeline.exec(),
+      // 400ms timeout — PDIM is highly available, but guard against transient blips.
+      const totalHits = await Promise.race([
+        (async () => {
+          // Sliding-window ZSET: evict expired scores, count, then add the new entry.
+          // This replaces the old INCR+EXPIRE fixed-window counter which:
+          //   1. Had integer-second rounding (ceil) causing imprecise window boundaries
+          //   2. Could allow boundary bursts when the counter reset between two windows
+          await redis.zremrangebyscore(rKey, '-inf', windowStart);
+          const count: number = await redis.zcard(rKey);
+          await redis.zadd(rKey, now, entryId);
+          redis.expire(rKey, windowExpireSecs).catch(() => {});
+          return count + 1;
+        })(),
         new Promise<never>((_, reject) =>
-          setTimeout(() => reject(new Error('[GlobalRateLimit] Pipeline timed out (400ms)')), 400)
-        )
+          setTimeout(() => reject(new Error('[GlobalRateLimit] Sliding-window ops timed out (400ms)')), 400)
+        ),
       ]);
-      const totalHits = (results?.[0]?.[1] as number) ?? 1;
-      const resetTime = new Date(Date.now() + this.windowMs);
+      const resetTime = new Date(now + this.windowMs);
       return { totalHits, resetTime };
     } catch {
       logger.warn('[GlobalRateLimit] Redis unavailable — using in-memory fallback');
@@ -69,10 +77,12 @@ class RedisRateLimitStore implements Store {
   }
 
   async decrement(key: string): Promise<void> {
+    // With ZSET we undo an increment by removing the most-recently-added member
+    // (highest score = most recent timestamp). ZREMRANGEBYRANK -1 -1 pops the top.
+    const rKey = `${RL_PREFIX}${key}`;
     try {
       const redis = getRedisClient();
-      const v = await redis.decr(`${RL_PREFIX}${key}`);
-      if (v < 0) await redis.set(`${RL_PREFIX}${key}`, '0');
+      await redis.zremrangebyrank(rKey, -1, -1);
     } catch {
       const entry = this.fallbackStore.get(key);
       if (entry && entry.hits > 0) entry.hits--;
