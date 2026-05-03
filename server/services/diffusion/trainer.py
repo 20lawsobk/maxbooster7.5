@@ -1371,7 +1371,11 @@ def train_v4(n_epochs: int = 5,
              lr: float = 2e-4,
              ema_decay: float = 0.9998,
              use_perceptual: bool = True,
-             session_label: str = 'v4_quick') -> dict:
+             session_label: str = 'v4_quick',
+             model=None,
+             time_enc=None,
+             text_enc=None,
+             scheduler=None) -> dict:
     """
     Train the v4 UNet (300M params, T-frame sequences, 100K prompts).
 
@@ -1390,8 +1394,12 @@ def train_v4(n_epochs: int = 5,
         ema_decay:   EMA decay rate (higher = slower adaptation)
         use_perceptual: Use Sobel edge + FFT loss
         session_label: Label for memory/logging
+        model:       Pre-built UNetV4 instance (pass from api server to avoid
+                     double allocation — if None a new model is created)
+        time_enc:    Pre-built TimeEncoder (or None to create fresh)
+        text_enc:    Pre-built TextEncoder (or None to create fresh)
+        scheduler:   Pre-built DDPMScheduler (or None to create fresh)
     """
-    from .unet_v4 import UNetV4
     from .frame_extractor import FrameExtractor
     from .training_data_v3 import get_all_prompts, get_scenes
 
@@ -1404,20 +1412,37 @@ def train_v4(n_epochs: int = 5,
     print(f"  LR: {lr}  |  EMA: {ema_decay}  |  Perceptual: {use_perceptual}", flush=True)
     print(f"{'='*70}", flush=True)
 
-    # ── Build model ───────────────────────────────────────────────────────────
+    # ── Build or reuse model ──────────────────────────────────────────────────
+    # When called from the continuous training loop the API server passes its
+    # already-loaded globals so we never allocate a second 463 M-param model
+    # while the first one is live in memory (two concurrent ~1.8 GB allocations
+    # → OOM kill on the Reserved VM).
     from .encoder import TimeEncoder, TextEncoder
-    model    = UNetV4(cond_dim=_COND_DIM_V4, T=T, lite=_LITE_MODE_V4)
+    _owns_model = model is None
+    if _owns_model:
+        from .unet_v4 import UNetV4
+        model = UNetV4(cond_dim=_COND_DIM_V4, T=T, lite=_LITE_MODE_V4)
+        print(f"[DiffusionTrainer v4] Built fresh model", flush=True)
+    if time_enc is None:
+        time_enc = TimeEncoder(emb_dim=_TIME_ENC_DIM_V4)
+    if text_enc is None:
+        text_enc = TextEncoder(emb_dim=_TEXT_ENC_DIM_V4)
+    if scheduler is None:
+        scheduler = DDPMScheduler(T=1000, schedule='cosine')
+
     param_count = model.count_params()
-    print(f"[DiffusionTrainer v4] Model params: {param_count:,} ({param_count/1e6:.1f}M)",
+    print(f"[DiffusionTrainer v4] Model params: {param_count:,} ({param_count/1e6:.1f}M) "
+          f"({'fresh alloc' if _owns_model else 'shared from API server'})",
           flush=True)
 
-    time_enc = TimeEncoder(emb_dim=_TIME_ENC_DIM_V4)
-    text_enc = TextEncoder(emb_dim=_TEXT_ENC_DIM_V4)
-    scheduler = DDPMScheduler(T=1000, schedule='cosine')
     extractor = FrameExtractor(T=T, H=res, W=res)
 
-    # ── Try loading existing v4 weights ──────────────────────────────────────
-    _load_v4(model, time_enc, text_enc)
+    # ── Try loading existing v4 weights (only when we own the model) ──────────
+    # When the API server passes its model the weights are already loaded by
+    # _load_model(); calling _load_v4 again would be redundant and could
+    # corrupt the in-place param arrays.
+    if _owns_model:
+        _load_v4(model, time_enc, text_enc)
     model.set_training(True)
 
     # ── Optimizer ─────────────────────────────────────────────────────────────

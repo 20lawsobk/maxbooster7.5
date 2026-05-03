@@ -103,6 +103,14 @@ async function pruneUploadDirs(days = 7): Promise<void> {
 // ── Job processor ─────────────────────────────────────────────────────────────
 
 async function processAutonomousJob(job: Job): Promise<void> {
+  if (!job.name) {
+    // Stale repeatable job from a prior schedule fired with an undefined name.
+    // This happens when BullMQ replays a job whose key pre-dates the current
+    // name registry (e.g. after a deploy that cleared or renamed jobs).
+    // Safe to skip — the scheduler will register fresh repeatable jobs on startup.
+    logger.warn(`[AutonomousScheduler] Skipping job with undefined name (id=${job.id}) — stale entry from prior schedule`);
+    return;
+  }
   switch (job.name) {
     case 'content-dispatch': {
       const { autonomousService } = await import('./autonomousService.js');

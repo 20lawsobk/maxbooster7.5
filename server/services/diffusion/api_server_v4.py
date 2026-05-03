@@ -573,12 +573,14 @@ def _continuous_training_loop() -> None:
     """
     global _model_trained, _train_status, _training_enabled
 
-    # Wait for the model loader to complete before starting training
+    # Wait indefinitely for the model loader to complete before starting training.
+    # The full UNetV4 (463M params) can take 30–60 s to initialise depending on
+    # MaxCore bridge startup time.  A fixed 20-s timeout caused the trainer to
+    # fire run_v4_training (which builds its own 463M param model) concurrently
+    # with _load_model — two simultaneous large allocations → OOM kill.
     logger.info('[ContinuousTrainer] Waiting for model loader …')
-    for _ in range(40):            # up to 20 s
-        if _model_ready:
-            break
-        time.sleep(0.5)
+    while not _model_ready:
+        time.sleep(1)
     logger.info(
         f'[ContinuousTrainer] Model ready — '
         f'continuous loop starting '
@@ -626,6 +628,13 @@ def _continuous_training_loop() -> None:
         # ── Train ─────────────────────────────────────────────────────────────
         try:
             from diffusion.trainer import train_v4
+            # Pass the already-loaded API model objects so train_v4 reuses them
+            # rather than allocating a second 463 M-param UNetV4 in memory.
+            with _model_lock:
+                _shared_model    = _model
+                _shared_time_enc = _time_enc
+                _shared_text_enc = _text_enc
+                _shared_scheduler = _scheduler
             meta = train_v4(
                 n_epochs=1,
                 n_samples=n_samples,
@@ -633,6 +642,10 @@ def _continuous_training_loop() -> None:
                 res=96,
                 lr=2e-4,
                 session_label=label,
+                model=_shared_model,
+                time_enc=_shared_time_enc,
+                text_enc=_shared_text_enc,
+                scheduler=_shared_scheduler,
             )
             final_loss = meta.get('final_loss', float('inf'))
             sim_yrs    = meta.get('simulated_years', _SESSION_SIMULATED_YRS)
@@ -699,6 +712,11 @@ def _train_worker(req: TrainRequest) -> None:
     )
     try:
         from diffusion.trainer import train_v4
+        with _model_lock:
+            _shared_model     = _model
+            _shared_time_enc  = _time_enc
+            _shared_text_enc  = _text_enc
+            _shared_scheduler = _scheduler
         meta = train_v4(
             n_epochs=req.n_epochs,
             n_samples=req.n_samples,
@@ -706,6 +724,10 @@ def _train_worker(req: TrainRequest) -> None:
             res=req.res,
             lr=req.lr,
             session_label=req.session_label,
+            model=_shared_model,
+            time_enc=_shared_time_enc,
+            text_enc=_shared_text_enc,
+            scheduler=_shared_scheduler,
         )
         logger.info(f'[Train] Manual done — loss={meta.get("final_loss", 0):.4f}')
         _reload_live_model()
