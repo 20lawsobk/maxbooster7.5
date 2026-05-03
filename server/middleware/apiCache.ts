@@ -6,31 +6,37 @@
  *   L2  PDIM            configurable TTL   shared across all pods
  *
  * Cross-pod invalidation (replaces Redis pub/sub — PDIM stubs PUBLISH/SUBSCRIBE
- * as no-ops; see pdimClient.ts lines 1080-1084 for the documented reason):
+ * as no-ops; see pdimClient.ts lines 1080-1084 for the documented constraint):
  *
- *   Instead of pub/sub push, we use a 100 ms polling loop on every pod.
- *   Semantics are equivalent: other pods clear their L1 within ~150 ms of an
+ *   Instead of a pub/sub push, every pod runs a 100 ms polling loop.
+ *   Semantics are equivalent: other pods evict their L1 within ~150 ms of an
  *   invalidation event (100 ms poll interval + one PDIM round-trip ≈ 50 ms).
  *
- *   Write path (invalidateForUser):
- *     1. Clear this pod's L1 immediately (synchronous).
- *     2. HSET apicache:inv {userId} {timestamp}   — invalidation event log.
- *     3. INCR apicache:inv:seq                    — wakes up pollers efficiently.
- *     4. SET  apicache:bust:u:{userId} {timestamp} — defense-in-depth per-user flag.
+ *   ── Write path (invalidateForUser) ──────────────────────────────────────
+ *     1. l1DelPrefix("u:{uid}:") — immediate on this pod (synchronous).
+ *     2. HSET apicache:inv:users {uid} {timestamp} — shared invalidation log.
+ *     3. INCR apicache:inv:seq                     — wakes pollers efficiently.
+ *     4. SET  apicache:bust:u:{uid} {timestamp}    — defense-in-depth flag.
  *
- *   Poller tick (every 100 ms per pod):
- *     1. GET apicache:inv:seq  — 1 PDIM call. If unchanged, no further work.
- *     2. HGETALL apicache:inv  — fetch all pending events.
- *     3. For each new {userId: timestamp}: l1DelPrefix("u:{userId}:") immediately.
+ *   ── Write path (invalidatePattern) ──────────────────────────────────────
+ *     1. Apply regex to L1 — immediate on this pod (synchronous).
+ *     2. LPUSH apicache:inv:patterns "{pattern}:{timestamp}" — event log.
+ *     3. INCR apicache:inv:seq                               — wakes pollers.
  *
- *   get() bust-key check (defense-in-depth):
- *     Reads apicache:bust:u:{userId} from PDIM (L1-cached 500 ms).
+ *   ── Poller tick (every 100 ms per pod) ──────────────────────────────────
+ *     1. GET apicache:inv:seq — 1 PDIM call. Unchanged → skip (quiet-path).
+ *     2. HGETALL apicache:inv:users — fetch all user invalidation events.
+ *     3. LRANGE  apicache:inv:patterns 0 99 — fetch recent pattern events.
+ *     4. For each new user event: l1DelPrefix("u:{uid}:") immediately.
+ *     5. For each new pattern event: apply regex to L1 immediately.
+ *
+ *   ── get() bust-key check (defense-in-depth) ─────────────────────────────
+ *     Reads apicache:bust:u:{uid} from PDIM (L1-cached 500 ms).
  *     Treats the entry as a miss if entry.timestamp < bustAt.
- *     Covers any gaps between poll ticks.
+ *     Covers gaps between poll ticks (PDIM blips, process startup, etc.).
  *
- *   Max cross-pod L1 staleness after invalidation:
- *     ~150 ms (active poller) vs. the previous design's unbounded staleness
- *     (no cross-pod signal existed at all before this change).
+ *   Max cross-pod L1 staleness after ANY invalidation:
+ *     ~150 ms   (before this change: unbounded — no cross-pod signal existed)
  */
 
 import { Request, Response, NextFunction } from 'express';
@@ -103,26 +109,26 @@ interface CacheOptions {
 }
 
 // ── PDIM key namespaces ───────────────────────────────────────────────────────
-// L2 entry store:       apicache:e:{cacheKey}
-// Invalidation hash:    apicache:inv           field=userId, value=timestamp
-// Invalidation seq:     apicache:inv:seq        incremented on every invalidation
-// Per-user bust flag:   apicache:bust:u:{uid}   defense-in-depth copy of hash value
-const PDIM_ENTRY_PFX  = 'apicache:e:';
-const PDIM_INV_HASH   = 'apicache:inv';
-const PDIM_INV_SEQ    = 'apicache:inv:seq';
-const PDIM_BUST_PFX   = 'apicache:bust:u:';
-const PDIM_INV_TTL_S  = 300; // 5 min — prevent unbounded hash growth
-const BUST_PDIM_TTL_S = 120;
+const PDIM_ENTRY_PFX     = 'apicache:e:';
+const PDIM_INV_USERS     = 'apicache:inv:users';     // Hash: field=userId, value=timestamp
+const PDIM_INV_PATTERNS  = 'apicache:inv:patterns';  // List: "{pattern}:{timestamp}" events
+const PDIM_INV_SEQ       = 'apicache:inv:seq';       // Counter: incremented on any invalidation
+const PDIM_BUST_PFX      = 'apicache:bust:u:';       // Per-user defense-in-depth flag
+const PDIM_INV_TTL_S     = 300;   // 5 min TTL on invalidation data structures
+const BUST_PDIM_TTL_S    = 120;
+const PDIM_PATTERNS_KEEP = 100;   // LTRIM: keep only last N pattern events
 
 // ── Tuning constants ──────────────────────────────────────────────────────────
-const L1_ENTRY_TTL_MS = 4_000;   // in-process entry TTL
-const BUST_L1_TTL_MS  =   500;   // defense-in-depth bust-key L1 cache (500 ms)
-const L1_MAX          = 5_000;
-const POLL_INTERVAL_MS = 100;    // poller period — drives cross-pod propagation latency
+const L1_ENTRY_TTL_MS  = 4_000;   // in-process entry TTL
+const BUST_L1_TTL_MS   =   500;   // defense-in-depth bust-key L1 (500 ms safety net)
+const L1_MAX           = 5_000;
+const POLL_INTERVAL_MS =   100;   // ~150 ms max cross-pod propagation lag
 
 /**
  * APIResponseCache — two-tier, horizontally-safe response cache with
  * active cross-pod L1 invalidation via a 100 ms PDIM polling loop.
+ *
+ * Both invalidateForUser() and invalidatePattern() propagate to all pods.
  */
 class APIResponseCache {
   // ── L1 entry cache ────────────────────────────────────────────────────────
@@ -132,10 +138,9 @@ class APIResponseCache {
   private bustL1 = new Map<string, { bustAt: number; expiresAt: number }>();
 
   // ── Poller state ──────────────────────────────────────────────────────────
-  // pollSeq: last sequence number seen from PDIM (null = never polled).
-  // processed: userId → last timestamp the poller already cleared for.
   private pollSeq: string | null = null;
-  private processed = new Map<string, number>();
+  private processedUsers    = new Map<string, number>(); // userId → last ts cleared for
+  private lastPatternCleared = 0;                         // newest pattern ts processed
   private pollTimer: ReturnType<typeof setInterval> | null = null;
 
   private hitCount  = 0;
@@ -159,11 +164,15 @@ class APIResponseCache {
 
   private l1Del(key: string): void { this.l1.delete(key); }
 
-  /** Evict all L1 entries whose key starts with prefix — O(n) but n ≤ L1_MAX. */
   private l1DelPrefix(prefix: string): void {
     for (const k of this.l1.keys()) {
       if (k.startsWith(prefix)) this.l1.delete(k);
     }
+  }
+
+  private l1ApplyRegex(regex: RegExp): void {
+    for (const k of this.l1.keys())    { if (regex.test(k)) this.l1.delete(k); }
+    for (const k of this.bustL1.keys()) { if (regex.test(k)) this.bustL1.delete(k); }
   }
 
   // ── Bust-flag L1 helpers ─────────────────────────────────────────────────
@@ -178,7 +187,6 @@ class APIResponseCache {
     this.bustL1.set(userId, { bustAt, expiresAt: Date.now() + BUST_L1_TTL_MS });
   }
 
-  /** Fetch the bust flag for a user: L1 (500 ms) → PDIM. */
   private async getBustAt(userId: string): Promise<number> {
     const l1 = this.bustL1Get(userId);
     if (l1 !== undefined) return l1;
@@ -195,12 +203,11 @@ class APIResponseCache {
 
   // ── Active invalidation poller ────────────────────────────────────────────
   /**
-   * Start the background poller.  Call once after distributedCache.connect().
-   * The poller reads PDIM every POLL_INTERVAL_MS (100 ms) and evicts L1 entries
-   * for any users invalidated on other pods since the last tick.
+   * Start the cross-pod invalidation poller.
+   * Call once after distributedCache.connect() — handled in server/index.ts.
    */
   startPoller(): void {
-    if (this.pollTimer !== null) return; // already running
+    if (this.pollTimer !== null) return;
     if (!isPdimConfigured()) {
       logger.info('[APICache] PDIM not configured — cross-pod invalidation poller skipped (single-instance mode)');
       return;
@@ -213,66 +220,67 @@ class APIResponseCache {
     if (this.pollTimer !== null) {
       clearInterval(this.pollTimer);
       this.pollTimer = null;
-      logger.info('[APICache] Cross-pod invalidation poller stopped');
     }
   }
 
   /**
-   * One poller tick.  Two PDIM calls in the active case; one call (seq GET)
-   * in the quiet case.
+   * One poller tick.
    *
-   * Steps:
-   *   1. GET apicache:inv:seq — skip if unchanged (no new invalidations).
-   *   2. HGETALL apicache:inv — fetch all pending invalidation events.
-   *   3. For each entry newer than what we processed last, evict L1 for that user.
+   * Quiet path (no new invalidations): 1 PDIM GET (seq check).
+   * Active path: 1 PDIM GET (seq) + 1 HGETALL (user events) + 1 LRANGE (pattern events).
    */
   private async pollTick(): Promise<void> {
     if (!distributedCache.isConnected()) return;
     try {
       const redis = getRedisClient();
 
-      // ── Fast path: check sequence number (1 PDIM GET) ──────────────────
+      // ── Fast path: check sequence number ──────────────────────────────────
       const seqRaw = await redis.get(PDIM_INV_SEQ);
       const seq = seqRaw as string | null;
-      if (seq === this.pollSeq) return; // nothing new since last tick
+      if (seq === this.pollSeq) return;
 
-      // ── Slow path: fetch all invalidation events (1 PDIM HGETALL) ──────
-      const events = await redis.hgetall(PDIM_INV_HASH) as Record<string, string> | null;
-      if (events) {
-        for (const [uid, tsStr] of Object.entries(events)) {
+      // ── Process user invalidation events ──────────────────────────────────
+      const userEvents = await redis.hgetall(PDIM_INV_USERS) as Record<string, string> | null;
+      if (userEvents) {
+        for (const [uid, tsStr] of Object.entries(userEvents)) {
           const ts = parseInt(tsStr, 10);
           if (isNaN(ts)) continue;
-          const lastSeen = this.processed.get(uid) ?? 0;
+          const lastSeen = this.processedUsers.get(uid) ?? 0;
           if (ts > lastSeen) {
-            // New invalidation — actively clear L1 for this user right now
             this.l1DelPrefix(`u:${uid}:`);
             this.bustL1.delete(uid);
-            this.processed.set(uid, ts);
+            this.processedUsers.set(uid, ts);
           }
         }
       }
 
+      // ── Process pattern invalidation events ───────────────────────────────
+      const patternEvents = await redis.lrange(PDIM_INV_PATTERNS, 0, PDIM_PATTERNS_KEEP - 1) as string[];
+      for (const event of patternEvents) {
+        // Format: "{pattern}:{timestamp}" — timestamp is the last colon-delimited segment
+        const lastColon = event.lastIndexOf(':');
+        if (lastColon === -1) continue;
+        const pattern = event.slice(0, lastColon);
+        const ts = parseInt(event.slice(lastColon + 1), 10);
+        if (isNaN(ts) || ts <= this.lastPatternCleared) continue;
+        try {
+          this.l1ApplyRegex(new RegExp(pattern));
+        } catch { /* ignore malformed regex events in PDIM */ }
+        if (ts > this.lastPatternCleared) this.lastPatternCleared = ts;
+      }
+
       this.pollSeq = seq;
     } catch {
-      // PDIM temporarily unreachable — skip this tick; will retry on next interval
+      // PDIM temporarily unreachable — skip this tick
     }
   }
 
   // ── Public API ────────────────────────────────────────────────────────────
 
-  /**
-   * Retrieve a cached entry.  Returns undefined on miss or stale-due-to-bust.
-   *
-   * @param key     Full cache key produced by cacheMiddleware.
-   * @param userId  Enables bust-flag validation for this user (defense-in-depth).
-   */
   async get(key: string, userId?: string): Promise<CacheEntry | undefined> {
-    // ── L1 hit ──────────────────────────────────────────────────────────────
     const l1hit = this.l1Get(key);
     if (l1hit) {
       if (userId) {
-        // Defense-in-depth: check bust flag even for L1 hits, in case this pod
-        // missed a poller tick (PDIM blip, process startup, etc.).
         const bustAt = await this.getBustAt(userId);
         if (bustAt && l1hit.timestamp < bustAt) {
           this.l1Del(key);
@@ -284,7 +292,6 @@ class APIResponseCache {
       return l1hit;
     }
 
-    // ── L2 (PDIM) ────────────────────────────────────────────────────────────
     if (distributedCache.isConnected()) {
       try {
         const pdimEntry = await distributedCache.get<CacheEntry>(`${PDIM_ENTRY_PFX}${key}`);
@@ -292,101 +299,96 @@ class APIResponseCache {
           if (userId) {
             const bustAt = await this.getBustAt(userId);
             if (bustAt && pdimEntry.timestamp < bustAt) {
-              // Stale — evict from PDIM too (best-effort)
               distributedCache.delete(`${PDIM_ENTRY_PFX}${key}`).catch(() => {});
               this.missCount++;
               return undefined;
             }
           }
-          // Valid hit — warm L1
           this.l1Set(key, pdimEntry);
           this.hitCount++;
           return pdimEntry;
         }
-      } catch {
-        // PDIM temporarily unreachable — fall through to miss
-      }
+      } catch { /* PDIM temporarily unreachable */ }
     }
 
     this.missCount++;
     return undefined;
   }
 
-  /** Store a cache entry in L1 and (fire-and-forget) in PDIM. */
   set(key: string, entry: CacheEntry, ttlSeconds: number): void {
     this.l1Set(key, entry);
     if (distributedCache.isConnected()) {
       distributedCache
         .set(`${PDIM_ENTRY_PFX}${key}`, entry, ttlSeconds)
-        .catch((err) =>
-          logger.warn({ err }, '[APICache] PDIM write failed — entry lives in L1 only'),
-        );
+        .catch((err) => logger.warn({ err }, '[APICache] PDIM write failed — entry in L1 only'));
     }
   }
 
   /**
    * Invalidate all cached entries for a user across ALL pods.
    *
-   * This pod: L1 cleared immediately (synchronous, zero latency).
-   * Other pods: invalidation record written to PDIM hash + seq counter incremented.
-   *   Their pollers will pick it up within POLL_INTERVAL_MS (100 ms) + PDIM RTT ≈ 50 ms
-   *   = ~150 ms maximum cross-pod L1 staleness after invalidation.
-   *
-   * Defense-in-depth: also writes a per-user bust flag (apicache:bust:u:{uid}) to PDIM
-   * so that pods which somehow missed the poller tick still see the invalidation via
-   * the bust-flag check in get() (with a short 500 ms L1 cache window).
+   * This pod: L1 cleared immediately.
+   * Other pods: invalidation written to PDIM; pollers evict their L1 within ~150 ms.
    */
   invalidateForUser(userId: string): void {
-    // 1. Immediate L1 eviction on this pod (synchronous)
     this.l1DelPrefix(`u:${userId}:`);
     this.bustL1.delete(userId);
-    // Mark as processed so the poller does not redundantly re-clear on this pod
-    this.processed.set(userId, Date.now());
+    this.processedUsers.set(userId, Date.now());
 
     if (!distributedCache.isConnected()) return;
 
     const bustAt = Date.now();
-    // Warm this pod's own bust L1 immediately
     this.bustL1Set(userId, bustAt);
 
-    // 2. Write invalidation event to PDIM (fire-and-forget)
     ;(async () => {
       try {
         const redis = getRedisClient();
-
-        // Write to the shared invalidation hash — pollers on other pods read this
-        await redis.hset(PDIM_INV_HASH, userId, String(bustAt));
-        // Extend hash TTL to prevent unbounded growth in PDIM
-        await redis.expire(PDIM_INV_HASH, PDIM_INV_TTL_S);
-        // Increment sequence counter so pollers know to wake up (fast change detection)
+        await redis.hset(PDIM_INV_USERS, userId, String(bustAt));
+        await redis.expire(PDIM_INV_USERS, PDIM_INV_TTL_S);
         await redis.incr(PDIM_INV_SEQ);
-
-        // Defense-in-depth: also write per-user bust flag
         await distributedCache.set(`${PDIM_BUST_PFX}${userId}`, bustAt, BUST_PDIM_TTL_S);
       } catch (err) {
-        logger.warn({ err }, '[APICache] PDIM invalidation write failed — cross-pod propagation degraded for this event');
+        logger.warn({ err }, '[APICache] PDIM user-invalidation write failed — cross-pod propagation degraded');
       }
     })();
   }
 
   /**
-   * Invalidate entries matching a path-pattern (shared/public caches).
+   * Invalidate cached entries matching a path-pattern, across ALL pods.
    *
    * This pod: matching L1 entries cleared immediately.
-   * Other pods: L1 entries naturally expire within L1_ENTRY_TTL_MS (4 s).
-   *   Path-based shared caches are safe with 4 s staleness because they are only
-   *   invalidated on write mutations and the new data is immediately available in PDIM.
+   * Other pods: pattern event written to PDIM; pollers apply the regex to their L1
+   *   within ~150 ms.
    */
   invalidatePattern(pattern: string): void {
+    // Local L1 — immediate
     const regex = new RegExp(pattern);
-    for (const k of this.l1.keys())    { if (regex.test(k)) this.l1.delete(k); }
-    for (const k of this.bustL1.keys()) { if (regex.test(k)) this.bustL1.delete(k); }
+    this.l1ApplyRegex(regex);
+    const ts = Date.now();
+    this.lastPatternCleared = Math.max(this.lastPatternCleared, ts);
+
+    if (!distributedCache.isConnected()) return;
+
+    // PDIM — fire-and-forget
+    ;(async () => {
+      try {
+        const redis = getRedisClient();
+        // Append pattern event — format "{pattern}:{timestamp}" (timestamps have no colons)
+        await redis.lpush(PDIM_INV_PATTERNS, `${pattern}:${ts}`);
+        await redis.ltrim(PDIM_INV_PATTERNS, 0, PDIM_PATTERNS_KEEP - 1);
+        await redis.expire(PDIM_INV_PATTERNS, PDIM_INV_TTL_S);
+        await redis.incr(PDIM_INV_SEQ); // wake pollers
+      } catch (err) {
+        logger.warn({ err }, '[APICache] PDIM pattern-invalidation write failed — cross-pod propagation degraded');
+      }
+    })();
   }
 
   clear(): void {
     this.l1.clear();
     this.bustL1.clear();
-    this.processed.clear();
+    this.processedUsers.clear();
+    this.lastPatternCleared = 0;
   }
 
   getStats() {
@@ -426,7 +428,6 @@ export function cacheMiddleware(options: CacheOptions = {}) {
             res.status(304).end();
             return;
           }
-
           res.setHeader('X-Cache',       'HIT');
           res.setHeader('X-Cache-Age',   Math.round(age / 1000).toString());
           res.setHeader('ETag',          cached.etag);
@@ -434,16 +435,12 @@ export function cacheMiddleware(options: CacheOptions = {}) {
           for (const [k, v] of Object.entries(cached.headers)) {
             if (k.toLowerCase() !== 'transfer-encoding') res.setHeader(k, v);
           }
-
           res.status(cached.statusCode).json(cached.body);
           return;
         }
       }
-    } catch {
-      // Cache check failed — serve from origin (non-fatal)
-    }
+    } catch { /* cache failure is non-fatal */ }
 
-    // Intercept response to populate cache
     const originalJson = res.json.bind(res);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (res as any).json = function (body: unknown) {
@@ -451,13 +448,7 @@ export function cacheMiddleware(options: CacheOptions = {}) {
         const etag = generateETag(body);
         apiCache.set(
           cacheKey,
-          {
-            body,
-            headers:    { 'Content-Type': 'application/json' },
-            statusCode: res.statusCode,
-            timestamp:  Date.now(),
-            etag,
-          } as CacheEntry,
+          { body, headers: { 'Content-Type': 'application/json' }, statusCode: res.statusCode, timestamp: Date.now(), etag } as CacheEntry,
           ttlSeconds,
         );
         res.setHeader('X-Cache',       'MISS');

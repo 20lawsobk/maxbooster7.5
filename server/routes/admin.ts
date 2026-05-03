@@ -222,6 +222,19 @@ adminRouter.put("/users/:userId", async (req, res) => {
     logger.info(`Admin ${req.user?.email} updated user ${userId}:`, updateData);
 
     res.json({ success: true, message: "User updated" });
+
+    // SECURITY: Revoke all active sessions when role or subscription status changes.
+    // This forces re-login so the new role/status takes effect immediately across all pods.
+    if (updateData.role !== undefined || updateData.subscriptionStatus !== undefined) {
+      setImmediate(async () => {
+        try {
+          const { revokeUserSessions } = await import('../middleware/sessionConfig.js');
+          await revokeUserSessions(String(userId));
+        } catch (revokeErr: unknown) {
+          logger.warn({ err: revokeErr }, `[Security] Session revocation failed after admin update of user ${userId}`);
+        }
+      });
+    }
   } catch (error) {
     logger.warn("Error updating user:", error);
     res.status(500).json({ error: "Failed to update user" });
@@ -244,6 +257,16 @@ adminRouter.post("/users/:userId/suspend", async (req, res) => {
     logger.info(`Admin ${req.user?.email} suspended user ${userId}. Reason: ${reason || "Not specified"}`);
 
     res.json({ success: true, message: "User suspended" });
+
+    // SECURITY: Revoke all active sessions immediately after suspension.
+    setImmediate(async () => {
+      try {
+        const { revokeUserSessions } = await import('../middleware/sessionConfig.js');
+        await revokeUserSessions(String(userId));
+      } catch (revokeErr: unknown) {
+        logger.warn({ err: revokeErr }, `[Security] Session revocation failed after admin suspension of user ${userId}`);
+      }
+    });
   } catch (error) {
     logger.warn("Error suspending user:", error);
     res.status(500).json({ error: "Failed to suspend user" });

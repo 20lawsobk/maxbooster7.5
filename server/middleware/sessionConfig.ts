@@ -143,7 +143,7 @@ function createIoredisAdapter(ioredisClient: { get: (...a: unknown[]) => Promise
 // Before this change: unbounded (L1 session cache was 60 s; revocation wrote to PDIM/DB
 // but other pods' L1 caches were never cleared).
 
-const REVOKE_L1_TTL_ACTIVE_MS  = 10_000; // 10 s — normal users; efficient PDIM access
+const REVOKE_L1_TTL_ACTIVE_MS  =  5_000; // 5 s — normal users; ≤5 s cross-pod propagation
 const REVOKE_L1_TTL_REVOKED_MS =    200; // 200 ms — just-revoked user; fast re-check
 const REVOKE_PDIM_TTL_S        =     70; // slightly longer than L1_TTL_MS (60 s)
 

@@ -238,8 +238,19 @@ router.put('/users/:userId', async (req, res) => {
 
     res.json({ success: true, message: 'User updated' });
 
-    if (subscriptionStatus === 'banned') {
-      setImmediate(async () => {
+    setImmediate(async () => {
+      // SECURITY: Revoke all active sessions when role or subscription status changes.
+      // Forces re-login so new privileges/restrictions take effect within ≤5 s across all pods.
+      if (updateData.role !== undefined || updateData.subscriptionStatus !== undefined) {
+        try {
+          const { revokeUserSessions } = await import('../../middleware/sessionConfig.js');
+          await revokeUserSessions(String(userId));
+        } catch (revokeErr: unknown) {
+          logger.warn({ err: revokeErr }, `[Security] Session revocation failed after admin update of user ${userId}`);
+        }
+      }
+
+      if (subscriptionStatus === 'banned') {
         try {
           const [targetUser] = await db.select({ email: users.email }).from(users).where(eq(users.id, userId)).limit(1);
           if (targetUser?.email) {
@@ -252,8 +263,8 @@ router.put('/users/:userId', async (req, res) => {
         } catch (err) {
           logger.warn({ err: err }, 'User flagged notification error:');
         }
-      });
-    }
+      }
+    });
   } catch (error) {
     logger.warn({ err: error }, 'Error updating user:');
     res.status(500).json({ error: 'Failed to update user' });

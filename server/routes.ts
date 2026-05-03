@@ -1522,6 +1522,15 @@ export async function registerRoutes(
         passwordResetExpires: null,
       });
 
+      // SECURITY: Revoke all active sessions after password reset so old sessions
+      // are rejected across all pods within ≤5 s (REVOKE_L1_TTL_ACTIVE_MS).
+      try {
+        const { revokeUserSessions } = await import('./middleware/sessionConfig.js');
+        await revokeUserSessions(String(user.id));
+      } catch (revokeErr: unknown) {
+        logger.warn({ err: revokeErr }, '[Security] Session revocation failed after password reset');
+      }
+
       return res.json({ success: true, message: "Password reset successfully" });
     } catch (error) {
       logger.warn("Reset password error:", error);
