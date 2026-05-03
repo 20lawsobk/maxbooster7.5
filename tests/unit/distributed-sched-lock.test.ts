@@ -306,6 +306,52 @@ describe('BullMQ autonomous scheduler — AUTONOMOUS_QUEUE constant', () => {
   });
 });
 
+// ── Campaign job execution (regression guard) ──────────────────────────────────
+//
+// Ensures that the campaign-optimize-* branch in processAutonomousJob() actually
+// calls autonomousService.runCampaignOptimization() and does not silently no-op.
+
+const mockRunCampaignOptimization = vi.fn().mockResolvedValue(undefined);
+vi.mock('../../server/services/autonomousService.js', () => ({
+  autonomousService: {
+    runCampaignOptimization: mockRunCampaignOptimization,
+    runContentDispatch: vi.fn().mockResolvedValue(undefined),
+    runPeriodicAnalytics: vi.fn().mockResolvedValue(undefined),
+    persistMetricsToCache: vi.fn().mockResolvedValue(undefined),
+  },
+}));
+
+describe('BullMQ autonomous scheduler — job execution (campaign)', () => {
+  beforeEach(() => {
+    resetMocks();
+    mockRunCampaignOptimization.mockClear();
+  });
+  afterEach(() => closeScheduler().catch(() => {}));
+
+  it('worker processor calls autonomousService.runCampaignOptimization with campaignId', async () => {
+    await setupRepeatableJobs();
+
+    // Extract the processor function passed to the Worker constructor
+    const [, processorFn] = mocks.MockWorker.mock.calls[0];
+
+    // Simulate BullMQ dispatching a campaign-optimize job
+    await processorFn({ name: 'campaign-optimize-camp-99', data: { campaignId: 'camp-99' }, id: 'j1' });
+
+    expect(mockRunCampaignOptimization).toHaveBeenCalledWith('camp-99');
+  });
+
+  it('worker processor warns and skips when campaignId is missing from job data', async () => {
+    await setupRepeatableJobs();
+    const [, processorFn] = mocks.MockWorker.mock.calls[0];
+
+    // Job without campaignId — should not throw and should not call the service
+    await expect(
+      processorFn({ name: 'campaign-optimize-bad', data: {}, id: 'j2' })
+    ).resolves.not.toThrow();
+    expect(mockRunCampaignOptimization).not.toHaveBeenCalled();
+  });
+});
+
 // ── withSchedLock utility — kept for stateful aggregation tasks ───────────────
 //
 // withSchedLock remains in distributedLock.ts for tasks that need a lock around

@@ -131,10 +131,13 @@ async function processAutonomousJob(job: Job): Promise<void> {
       break;
     default:
       if (job.name.startsWith('campaign-optimize-')) {
-        // Campaign optimization: BullMQ job is enqueued for observability.
-        // The actual optimization logic runs here; the job appearing in the
-        // BullMQ dashboard confirms distributed scheduling is working.
-        logger.info(`[AutonomousScheduler] Campaign optimization job received: ${job.name}`);
+        const campaignId = job.data?.campaignId as string | undefined;
+        if (campaignId) {
+          const { autonomousService } = await import('./autonomousService.js');
+          await autonomousService.runCampaignOptimization(campaignId);
+        } else {
+          logger.warn(`[AutonomousScheduler] campaign-optimize job missing campaignId: ${job.name}`);
+        }
       } else {
         logger.warn(`[AutonomousScheduler] Unknown job: ${job.name}`);
       }
