@@ -350,6 +350,43 @@ describe('BullMQ autonomous scheduler — job execution (campaign)', () => {
     ).resolves.not.toThrow();
     expect(mockRunCampaignOptimization).not.toHaveBeenCalled();
   });
+
+  it('isSchedulerLeader() returns true during job execution', async () => {
+    await setupRepeatableJobs();
+    const [, processorFn] = mocks.MockWorker.mock.calls[0];
+
+    let leaderDuringJob = false;
+    mockRunCampaignOptimization.mockImplementationOnce(async () => {
+      leaderDuringJob = isSchedulerLeader();
+    });
+
+    await processorFn({ name: 'campaign-optimize-camp-x', data: { campaignId: 'camp-x' }, id: 'j3' });
+    expect(leaderDuringJob).toBe(true);
+  });
+
+  it('isSchedulerLeader() stays true after job completes (within staleness window)', async () => {
+    await setupRepeatableJobs();
+    const [, processorFn] = mocks.MockWorker.mock.calls[0];
+    await processorFn({ name: 'campaign-optimize-camp-y', data: { campaignId: 'camp-y' }, id: 'j4' });
+    // Immediately after completion, the pod was recently active → still true
+    expect(isSchedulerLeader()).toBe(true);
+  });
+});
+
+describe('BullMQ autonomous scheduler — sentinel cleared on add failure', () => {
+  beforeEach(resetMocks);
+  afterEach(() => closeScheduler().catch(() => {}));
+
+  it('clears the idempotency sentinel when queue.add throws, allowing retry', async () => {
+    // First call fails
+    mocks.mockAdd.mockRejectedValueOnce(new Error('PDIM timeout'));
+    await expect(scheduleCampaignOptimization('camp-err')).rejects.toThrow('PDIM timeout');
+
+    // Second call should succeed (sentinel was cleared)
+    mocks.mockAdd.mockResolvedValueOnce({ id: 'job-2' });
+    await scheduleCampaignOptimization('camp-err');
+    expect(mocks.mockAdd).toHaveBeenCalledTimes(2);
+  });
 });
 
 // ── withSchedLock utility — kept for stateful aggregation tasks ───────────────

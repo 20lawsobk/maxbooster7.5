@@ -13,15 +13,17 @@ export const AUTONOMOUS_QUEUE = 'autonomous';
 let _queue: Queue | null = null;
 let _worker: Worker | null = null;
 
-// True while this pod is executing a scheduled job — reported as scheduler_leader
-// in /api/system/health.  In a multi-pod cluster all pods run a worker, but only
-// the pod that wins the BullMQ job lock for a given tick will be the leader for
-// that job's duration.  The BullMQ queue state in Redis (PDIM) IS the distributed
-// coordination mechanism — no additional lock utility is needed.
+// Track whether this pod is currently executing a job AND when it last finished one.
+// isSchedulerLeader() returns true while a job is running OR within 2× the shortest
+// interval (120 s) after the last completion.  This gives operators a stable signal
+// in the BullMQ dashboard: the pod that processed the most recent job stays "leader"
+// between ticks rather than everyone reporting false when idle.
 let _isProcessingJob = false;
+let _lastJobCompletedAt = 0;
+const LEADER_STALENESS_MS = 120_000; // 2× content-dispatch interval (60 s)
 
 export function isSchedulerLeader(): boolean {
-  return _isProcessingJob;
+  return _isProcessingJob || (Date.now() - _lastJobCompletedAt < LEADER_STALENESS_MS);
 }
 
 // BullMQ repeat key per campaign (for removeCampaignOptimization)
@@ -165,6 +167,7 @@ function createAutonomousWorker(): Worker {
       _isProcessingJob = true;
       try {
         await processAutonomousJob(job);
+        _lastJobCompletedAt = Date.now(); // update on success so isSchedulerLeader() stays true between ticks
       } catch (err) {
         logger.warn(`[AutonomousScheduler] ${job.name} error: ${(err as Error).message}`);
         throw err; // re-throw so BullMQ handles retry/failure state
@@ -274,7 +277,13 @@ export async function scheduleCampaignOptimization(campaignId: string): Promise<
   _campaignJobKeys.set(campaignId, jobName);
 
   const queue = getQueue();
-  await queue.add(jobName, { campaignId }, { ...SCHED_DEFAULTS, repeat: { every: 300_000 } });
+  try {
+    await queue.add(jobName, { campaignId }, { ...SCHED_DEFAULTS, repeat: { every: 300_000 } });
+  } catch (err) {
+    // Clear the sentinel so a retry attempt can register the job
+    _campaignJobKeys.delete(campaignId);
+    throw err;
+  }
 
   // Capture the BullMQ repeat key so removeCampaignOptimization can remove by key.
   const repeatableJobs = await queue.getRepeatableJobs().catch(() => []);
