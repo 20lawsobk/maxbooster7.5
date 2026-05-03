@@ -1,0 +1,25 @@
+{
+  "version": 4,
+  "epochs": 1,
+  "samples_per_epoch": 62,
+  "final_loss": 0.0,
+  "total_seconds": 2.299846887588501,
+  "resolution": 96,
+  "T": 4,
+  "channels": [
+    128,
+    256,
+    512,
+    1024
+  ],
+  "levels": 5,
+  "resblocks": 4,
+  "bottleneck_depth": 6,
+  "attention_levels": 5,
+  "temporal_attn": true,
+  "param_count": 17492823,
+  "scene_categories": 54,
+  "total_prompts": 102654,
+  "ema_decay": 0.9998,
+  "session_label": "continuous_00001_p1"
+}

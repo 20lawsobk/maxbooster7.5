@@ -1,24 +1,34 @@
 {
   "schema_version": 2,
-  "total_simulated_years": 420.5,
-  "total_simulated_experience": "420 yrs, 182 days",
-  "trained": true,
-  "training_phase": "production",
+  "total_simulated_years": 0.1419,
+  "total_simulated_experience": "1.7 months",
+  "trained": false,
+  "training_phase": "warmup",
   "model_architecture": "DiT-24 + VideoVAE3D + SR-UNet",
   "simulated_years_per_minute": 1.0,
-  "total_sessions": 847,
+  "total_sessions": 1,
   "total_frames_seen": 10284320,
   "total_burst_steps": 61705920,
   "total_replay_steps": 128456800,
   "total_interp_steps": 20568640,
-  "avg_loss_final": 0.0412,
+  "avg_loss_final": null,
   "best_loss": 0.0387,
   "scenes_mastered": [
-    "neon_tunnel", "galaxy_spiral", "plasma_fractal",
-    "concert_stage", "golden_hour", "city_nights",
-    "fire_embers", "aurora_curtains", "warp_speed",
-    "liquid_metal", "crystal_facets", "trap_aesthetic",
-    "gospel_choir", "studio_session", "neon_cityscape"
+    "neon_tunnel",
+    "galaxy_spiral",
+    "plasma_fractal",
+    "concert_stage",
+    "golden_hour",
+    "city_nights",
+    "fire_embers",
+    "aurora_curtains",
+    "warp_speed",
+    "liquid_metal",
+    "crystal_facets",
+    "trap_aesthetic",
+    "gospel_choir",
+    "studio_session",
+    "neon_cityscape"
   ],
   "year_equiv_engine": {
     "ye_steps_accumulated": 59772438000,
@@ -27,6 +37,6 @@
     "interp_year_weight": 3.0,
     "description": "1 real minute = 1 simulated year of training experience"
   },
-  "last_updated": "2026-04-08T00:00:00Z",
+  "last_updated": "2026-05-03T18:51:04Z",
   "notes": "Continuous training accumulated across 847 sessions. Model surpasses Veo on domain-specific music content quality at 420+ simulated years."
 }
