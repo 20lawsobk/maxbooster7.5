@@ -11,7 +11,7 @@
   "license": "MIT",
   "main": "electron/main.js",
   "scripts": {
-    "dev": "bash -c '([ -x ./boosterstate/target/debug/boosterstate ] && ./boosterstate/target/debug/boosterstate &); (MAXCORE_LITE=1 VIDEO_DIFFUSION_PORT=8008 VIDEO_DIFFUSION_HOST=0.0.0.0 PYTHONPATH=server/services python3 server/services/diffusion/api_server_v4.py >> /tmp/diffusion-8008.log 2>&1 &); sleep 1 && NODE_ENV=development npx tsx server/index.ts'",
+    "dev": "bash -c '([ -x ./boosterstate/target/debug/boosterstate ] && ./boosterstate/target/debug/boosterstate &); sleep 1 && NODE_ENV=development npx tsx server/index.ts'",
     "security-fix": "npx tsx script/security-fix.ts",
     "build": "npx tsx script/build.ts",
     "build:clean": "DEPLOY_CLEAN=1 npx tsx script/build.ts",

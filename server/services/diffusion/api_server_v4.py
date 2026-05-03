@@ -1,10 +1,10 @@
 """
-MaxCore Diffusion API Server — NumPy UNetV4 LITE Edition
-=========================================================
-Serves the in-house NumPy UNetV4 LITE model (~6M params, 96×96, T=32) via
-FastAPI at port 8008.  Provides the same endpoint contract as the PyTorch
-video_diffusion/infer/api_server.py so the TypeScript service can call either
-without modification.
+MaxCore Diffusion API Server — UNetV4 FULL Edition (Reserved VM)
+================================================================
+Serves the in-house UNetV4 FULL model (~300M params, 96×96, T=32) via
+FastAPI at port 8008, powered by DigitalGPU.  Provides the same endpoint
+contract as the PyTorch video_diffusion/infer/api_server.py so the
+TypeScript service can call either without modification.
 
 Endpoints:
   POST /generate           Video generation (returns frames_b64 | mp4_b64)
@@ -63,8 +63,8 @@ if _SVC not in sys.path:
 # ── DigitalGPU — the compute backend for all training and inference ───────────
 from digitalgpu import get_gpu as _get_gpu_ctx, gpu_info as _gpu_info
 
-# Activate LITE mode before importing UNetV4 / trainer constants
-os.environ['MAXCORE_LITE'] = '1'
+# Reserved VM deployment — full model, no resource restrictions
+os.environ['MAXCORE_LITE'] = '0'
 
 logging.basicConfig(
     level=logging.INFO,
@@ -88,8 +88,8 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(
-    title='MaxCore Diffusion v4 — DigitalGPU LITE',
-    description='Music-specialized video generation — UNetV4 LITE, DigitalGPU-accelerated (CUDA/MPS/NumPy)',
+    title='MaxCore Diffusion v4 — DigitalGPU FULL',
+    description='Music-specialized video generation — UNetV4 FULL (~300M params), DigitalGPU-accelerated (CUDA/MPS/NumPy), Reserved VM',
     version='4.0.0',
     lifespan=lifespan,
 )
@@ -171,7 +171,7 @@ _STYLE_PROMPTS: Dict[str, str] = {
 # ── Model loader ──────────────────────────────────────────────────────────────
 
 def _load_model() -> None:
-    """Load (or initialise fresh) the UNetV4 LITE model. Thread-safe."""
+    """Load (or initialise fresh) the UNetV4 FULL model. Thread-safe."""
     global _model, _time_enc, _text_enc, _scheduler, _model_ready, _model_trained
 
     try:
@@ -182,15 +182,15 @@ def _load_model() -> None:
             _load_v4, _COND_DIM_V4, _TIME_ENC_DIM_V4, _TEXT_ENC_DIM_V4
         )
 
-        logger.info('[Model] Initialising UNetV4 LITE …')
+        logger.info('[Model] Initialising UNetV4 FULL …')
         with _model_lock:
-            _model    = UNetV4(cond_dim=_COND_DIM_V4, T=4, lite=True)
+            _model    = UNetV4(cond_dim=_COND_DIM_V4, T=4, lite=False)
             _time_enc = TimeEncoder(emb_dim=_TIME_ENC_DIM_V4)
             _text_enc = TextEncoder(emb_dim=_TEXT_ENC_DIM_V4)
             _scheduler = DDPMScheduler(T=1000, schedule='cosine')
 
             n = _model.count_params()
-            logger.info(f'[Model] UNetV4 LITE: {n:,} params ({n/1e6:.1f}M)')
+            logger.info(f'[Model] UNetV4 FULL: {n:,} params ({n/1e6:.1f}M)')
 
             loaded = _load_v4(_model, _time_enc, _text_enc)
             if loaded:
@@ -227,7 +227,7 @@ def _build_cond(
     is_drop:     bool,
 ) -> np.ndarray:
     """
-    128-dim (LITE) music-aware conditioning vector.
+    256-dim music-aware conditioning vector (full model, Reserved VM).
 
     Combines:
       [0:64]   — sinusoidal time embedding (from TimeEncoder)
@@ -478,7 +478,7 @@ class GenerateResponse(BaseModel):
     num_frames:     int = 0
     gpu_applied:    bool = False
     scene_metadata: Dict[str, Any] = {}
-    model_version:  str = 'v4-lite-numpy'
+    model_version:  str = 'v4'
     beat_sync:      bool = True
 
 
@@ -508,15 +508,14 @@ def _reload_live_model() -> None:
 
 # ── Continuous training loop ───────────────────────────────────────────────────
 
-# ── 10-minute session target ───────────────────────────────────────────────────
-# Each session is tuned to complete in ~10 real minutes on CPU.
-# The time simulator converts 1 real minute → 1 simulated year, so every
-# 10-minute session accumulates exactly 10 simulated years of training experience.
-# n_samples=62 × ~100 steps each × (1/4.5 s/step) ≈ 620/4.5 ≈ 138s of pure
-# compute + augmentation burst overhead ≈ 10 minutes total wall time.
-_SESSION_N_SAMPLES     = 62      # ~10 min on 8-core CPU (LITE, T=4)
-_SESSION_SIMULATED_YRS = 10      # years simulated per session (1 min = 1 yr × 10 min)
-_SESSION_PAUSE_S       = 5       # seconds between sessions (keep close to 0 for continuity)
+# ── Session target — Reserved VM 16 vCPU / 64 GiB ─────────────────────────────
+# BLAS runs across all 16 cores so each matmul/conv2d is ~16× faster than
+# single-core.  512 samples × full UNetV4 ≈ 10 minutes of wall time at full
+# throughput.  The time simulator converts 1 real minute → 1 simulated year,
+# so each 10-minute session accumulates 10 simulated years of experience.
+_SESSION_N_SAMPLES     = 512     # ~10 min on 16-vCPU Reserved VM, full model
+_SESSION_SIMULATED_YRS = 10      # simulated years per session
+_SESSION_PAUSE_S       = 1       # 1 s gap between sessions — dedicated VM, no yield needed
 
 
 def _push_weights_to_maxcore(session_label: str) -> None:
@@ -735,7 +734,7 @@ def root():
     return {
         'service': 'MaxCore Diffusion Gateway',
         'version': '4.0.0',
-        'model':   'unet_v4_lite_numpy',
+        'model':   'unet_v4',
         'status':  'running',
         'docs':    '/health — liveness | /ready — readiness | /train/status — training',
     }
@@ -743,7 +742,7 @@ def root():
 
 @app.get('/health')
 def health():
-    return {'status': 'ok', 'version': '4.0.0', 'model': 'unet_v4_lite_numpy'}
+    return {'status': 'ok', 'version': '4.0.0', 'model': 'unet_v4'}
 
 
 @app.get('/ready')
@@ -753,7 +752,7 @@ def ready():
         'ready':   _model_ready,
         'device':  _gi.get('device', 'cpu (NumPy)'),
         'backend': _gi.get('backend', 'numpy'),
-        'model':   'unet_v4_lite',
+        'model':   'unet_v4',
         'version': '4.0.0',
     }
 
@@ -763,7 +762,7 @@ def gpu_status_endpoint():
     _gi = _gpu_info()
     return {
         'device':              _gi.get('device', 'cpu (NumPy)'),
-        'backend':             f"digitalgpu-{_gi.get('backend', 'numpy')}-unet-v4-lite",
+        'backend':             f"digitalgpu-{_gi.get('backend', 'numpy')}-unet-v4",
         'cuda_available':      _gi.get('cuda_available', False),
         'mps_available':       _gi.get('mps_available', False),
         'torch_available':     _gi.get('torch_available', False),
@@ -771,7 +770,7 @@ def gpu_status_endpoint():
         'postprocessor_ready': True,
         'pipeline_ready':      _model_ready,
         'available_scenes':    list(_SCENE_META.keys()),
-        'model_version':       'v4-lite',
+        'model_version':       'v4',
         'beat_sync':           True,
         'music_domain':        True,
     }
@@ -1041,7 +1040,7 @@ def generate(req: GenerateRequest):
             'is_drop':         req.is_drop,
             'elapsed_s':       round(elapsed, 2),
         },
-        model_version='v4-lite-numpy',
+        model_version='v4',
         beat_sync=True,
     )
 
@@ -1067,9 +1066,9 @@ def generate_keyframe(req: GenerateRequest):
         'frame_b64':      result.frames_b64[mid] if result.frames_b64 else None,
         'style_used':     result.style_used,
         'scene_name':     result.scene_name,
-        'gpu_applied':    False,
+        'gpu_applied':    result.gpu_applied,
         'scene_metadata': result.scene_metadata,
-        'model_version':  'v4-lite-numpy',
+        'model_version':  'v4',
     }
 
 
@@ -1212,7 +1211,7 @@ class SyncRequest(BaseModel):
 @app.post('/sync')
 def sync_weights_to_maxcore(req: SyncRequest):
     """
-    Push locally trained UNetV4 LITE weights back to MaxCore so the full
+    Push locally trained UNetV4 FULL weights back to MaxCore so the full
     training cluster can benefit from on-device curriculum learning.
 
     Sync protocol:
@@ -1300,7 +1299,7 @@ def sync_weights_to_maxcore(req: SyncRequest):
 
     payload = {
         'source':         'max-booster-local-v4',
-        'model_version':  'v4-lite-numpy',
+        'model_version':  'v4',
         'fingerprint':    fingerprint,
         'size_bytes':     size_bytes,
         'size_mb':        size_mb,
@@ -1517,7 +1516,7 @@ def combined_status():
 
     ct   = _continuous_thread
     return {
-        'service':                   'MaxCore Diffusion v4 LITE',
+        'service':                   'MaxCore Diffusion v4 FULL',
         'version':                   '4.0.0',
         'port':                      int(os.environ.get('VIDEO_DIFFUSION_PORT', 8008)),
         'model_ready':               _model_ready,
@@ -1561,5 +1560,5 @@ def combined_status():
 if __name__ == '__main__':
     port = int(os.environ.get('VIDEO_DIFFUSION_PORT', 8008))
     host = os.environ.get('VIDEO_DIFFUSION_HOST', '0.0.0.0')
-    logger.info(f'MaxCore Diffusion v4 LITE on {host}:{port}')
+    logger.info(f'MaxCore Diffusion v4 FULL on {host}:{port}')
     uvicorn.run('api_server_v4:app', host=host, port=port, reload=False)

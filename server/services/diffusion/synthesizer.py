@@ -142,10 +142,10 @@ class DiffusionSynthesizer:
         self._loaded    = False
 
         self.scheduler  = DDPMScheduler(T=T, schedule='cosine')
-        # LITE mode: time_emb(64) + text_emb(64) = cond_dim(128)
-        self.time_enc   = TimeEncoder(emb_dim=64)
-        self.text_enc   = TextEncoder(emb_dim=64)
-        self.model      = UNetV4(cond_dim=128, T=4, lite=True)
+        # Full model: time_emb(128) + text_emb(128) = cond_dim(256) — Reserved VM
+        self.time_enc   = TimeEncoder(emb_dim=128)
+        self.text_enc   = TextEncoder(emb_dim=128)
+        self.model      = UNetV4(cond_dim=256, T=4, lite=False)
         self.sampler    = DDIMSampler(self.scheduler, n_steps=ddim_steps, eta=0.0)
         self._all_pairs = None
 
