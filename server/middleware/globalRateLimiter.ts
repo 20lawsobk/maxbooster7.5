@@ -3,6 +3,7 @@ import type { Request, Response } from 'express';
 import { config } from '../config/defaults.js';
 import { logger } from '../logger.js';
 import { getRedisClient } from '../lib/redisClient.js';
+import { SLIDING_WINDOW_LUA } from './slidingWindowLua.js';
 
 const RL_PREFIX = 'glrl:';
 
@@ -51,18 +52,34 @@ class RedisRateLimitStore implements Store {
 
     try {
       const redis = getRedisClient();
-      // 400ms timeout — PDIM is highly available, but guard against transient blips.
+      // Atomic sliding-window check via EVAL — single PDIM round-trip, no race window.
+      // Falls back to sequential ZSET ops if EVAL is unsupported (HTTP 400).
       const totalHits = await Promise.race([
         (async () => {
-          // Sliding-window ZSET: evict expired scores, count, then add the new entry.
-          // This replaces the old INCR+EXPIRE fixed-window counter which:
-          //   1. Had integer-second rounding (ceil) causing imprecise window boundaries
-          //   2. Could allow boundary bursts when the counter reset between two windows
-          await redis.zremrangebyscore(rKey, '-inf', windowStart);
-          const count: number = await redis.zcard(rKey);
-          await redis.zadd(rKey, now, entryId);
-          redis.expire(rKey, windowExpireSecs).catch(() => {});
-          return count + 1;
+          try {
+            const raw = await redis.eval(
+              SLIDING_WINDOW_LUA,
+              1,
+              rKey,
+              String(windowStart),
+              String(this.maxRequests),
+              String(now),
+              entryId,
+              String(windowExpireSecs),
+            );
+            // Lua returns [{isLimited: 0|1}, {remaining}]; convert to totalHits.
+            const arr = Array.isArray(raw) ? raw : [];
+            const remaining = Number(arr[1] ?? 0);
+            return this.maxRequests - remaining;
+          } catch {
+            // EVAL unsupported — fall back to ZCOUNT + ZADD.
+            // ZCOUNT(key, windowStart, '+inf') counts only in-window entries,
+            // naturally excluding expired ones without ZREMRANGEBYSCORE.
+            const count: number = await redis.zcount(rKey, windowStart, '+inf');
+            await redis.zadd(rKey, now, entryId);
+            Promise.resolve(redis.expire(rKey, windowExpireSecs)).catch(() => {});
+            return count + 1;
+          }
         })(),
         new Promise<never>((_, reject) =>
           setTimeout(() => reject(new Error('[GlobalRateLimit] Sliding-window ops timed out (400ms)')), 400)
@@ -77,8 +94,9 @@ class RedisRateLimitStore implements Store {
   }
 
   async decrement(key: string): Promise<void> {
-    // With ZSET we undo an increment by removing the most-recently-added member
+    // With ZSET, undo an increment by removing the most-recently-added member
     // (highest score = most recent timestamp). ZREMRANGEBYRANK -1 -1 pops the top.
+    // Single atomic command — no race window.
     const rKey = `${RL_PREFIX}${key}`;
     try {
       const redis = getRedisClient();

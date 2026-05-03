@@ -2,8 +2,26 @@ import type { Request, Response, NextFunction, RequestHandler } from 'express';
 import { logger } from '../logger.js';
 import { getRedisClient } from '../lib/redisClient.js';
 import { isPdimConfigured } from '../lib/pdimClient.js';
+import { SLIDING_WINDOW_LUA } from './slidingWindowLua.js';
 
 const _passThrough: RequestHandler = (_req, _res, next) => next();
+
+/**
+ * Minimal Redis interface required by the sliding-window ZSET algorithm.
+ * Matches the subset of the PDIM client surface used by DistributedRateLimiter.
+ */
+export interface SlidingWindowRedis {
+  /** Atomic Lua eval — one round-trip, races eliminated at the server. */
+  eval(script: string, numkeys: number | string, ...args: unknown[]): Promise<unknown>;
+  /**
+   * Count members with score in [windowStart, '+inf'] — the in-window tally.
+   * Used instead of ZREMRANGEBYSCORE + ZCARD so that expired entries need not
+   * be explicitly deleted; the key's TTL cleans them up eventually.
+   */
+  zcount(key: string, min: string | number, max: string): Promise<number>;
+  zadd(key: string, ...args: unknown[]): Promise<number>;
+  expire(key: string, seconds: number): Promise<unknown>;
+}
 
 interface RateLimiterConfig {
   windowMs: number;
@@ -54,9 +72,9 @@ const skipRateLimiting = (req: Request): boolean => {
 
 export class DistributedRateLimiter {
   private config: RateLimiterConfig;
-  private redisClient: Record<string, unknown>;
+  private redisClient: SlidingWindowRedis;
 
-  constructor(config: RateLimiterConfig, redisClient: Record<string, unknown>) {
+  constructor(config: RateLimiterConfig, redisClient: SlidingWindowRedis) {
     this.config = config;
     this.redisClient = redisClient;
   }
@@ -65,38 +83,43 @@ export class DistributedRateLimiter {
     const redisKey = `ratelimit:sw:${key}`;
     const now = Date.now();
     const windowStart = now - this.config.windowMs;
-    // Key expires automatically well after the window — avoids stale ZSET accumulation.
+    // Key auto-expires well after the window closes — avoids stale ZSET accumulation.
     const windowExpireSecs = Math.ceil(this.config.windowMs / 1000) + 60;
-
-    // Sliding-window ZSET algorithm (sub-millisecond precision):
-    //   1. Evict timestamps that have fallen outside [now - windowMs, now]
-    //   2. Count remaining entries — that is the current request tally
-    //   3. If under limit: add current timestamp with a unique member and allow
-    //
-    // Using the score as the epoch-ms timestamp means ZREMRANGEBYSCORE precisely
-    // tracks the rolling window without the rounding loss of INCR+EXPIRE
-    // (which must ceil windowMs → whole seconds and is therefore imprecise).
-    // Firing requests at a window boundary cannot create a >1× burst because
-    // entries only age out when their score is strictly older than windowMs.
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const redis = this.redisClient as any;
-
-    await redis.zremrangebyscore(redisKey, '-inf', windowStart);
-    const count: number = await redis.zcard(redisKey);
-
-    if (count >= this.config.maxRequests) {
-      return { limited: true, remaining: 0 };
-    }
-
-    // Unique member prevents score-collision collisions from different callers
-    // hitting the same millisecond (common under high concurrency).
+    // Unique member prevents score-collision loss when multiple callers land on
+    // the same millisecond (common under high concurrency).
     const entryId = `${now}:${Math.random().toString(36).slice(2, 9)}`;
-    await redis.zadd(redisKey, now, entryId);
-    // Fire-and-forget: key expiry is a safety net, not on the critical path.
-    redis.expire(redisKey, windowExpireSecs).catch(() => {});
 
-    return { limited: false, remaining: this.config.maxRequests - count - 1 };
+    // Primary path: atomic EVAL — single PDIM round-trip, no race window.
+    // The Lua script runs ZREMRANGEBYSCORE + ZCARD + ZADD + EXPIRE in one
+    // operation, making the check-and-increment indivisible.
+    try {
+      const raw = await this.redisClient.eval(
+        SLIDING_WINDOW_LUA,
+        1,
+        redisKey,
+        String(windowStart),
+        String(this.config.maxRequests),
+        String(now),
+        entryId,
+        String(windowExpireSecs),
+      );
+      const result = Array.isArray(raw) ? raw : [];
+      const limited   = Number(result[0] ?? 1) === 1;
+      const remaining = Number(result[1] ?? 0);
+      return { limited, remaining };
+    } catch {
+      // Fallback: EVAL unsupported (backend returned HTTP 400) or PDIM transient
+      // error.  ZCOUNT counts only members within [windowStart, +inf], naturally
+      // excluding expired entries without needing ZREMRANGEBYSCORE.  Old entries
+      // accumulate until the key's TTL evicts the whole key — acceptable given
+      // the (windowMs/1000 + 60) s TTL is tight relative to the window.
+      const count = await this.redisClient.zcount(redisKey, windowStart, '+inf');
+      if (count >= this.config.maxRequests) return { limited: true, remaining: 0 };
+      await this.redisClient.zadd(redisKey, now, entryId);
+      // Fire-and-forget: expiry is a GC safety net, not on the critical path.
+      Promise.resolve(this.redisClient.expire(redisKey, windowExpireSecs)).catch(() => {});
+      return { limited: false, remaining: this.config.maxRequests - count - 1 };
+    }
   }
 
   middleware(): RequestHandler {
@@ -164,7 +187,7 @@ function buildDistributedGlobal(
         return `${keyPrefix}:${userId ?? ip}`;
       },
     },
-    redisClient
+    redisClient as SlidingWindowRedis,
   );
 
   return limiter.middleware();
@@ -199,7 +222,7 @@ export const createScalableRateLimiter = (overrides?: Partial<RateLimiterConfig>
       },
       ...overrides,
     },
-    redisClient
+    redisClient as SlidingWindowRedis,
   );
 
   return limiter.middleware();
