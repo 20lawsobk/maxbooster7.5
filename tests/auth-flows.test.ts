@@ -282,4 +282,51 @@ describe('OAuth Callback Structure', () => {
     });
     expect([401, 403]).toContain(res.status);
   });
+
+  // ──────────────────── Google OAuth (auth-scoped) routes ────────────────────
+  // The app exposes /api/auth/google (initiate) and /api/auth/google/callback
+  // as the canonical Google OAuth routes registered in Google Console.
+
+  it('20. GET /api/auth/google initiates Google OAuth — redirects to Google or error page', async () => {
+    const res = await fetch(`${BASE}/api/auth/google`, {
+      signal: AbortSignal.timeout(8000),
+      redirect: 'manual',
+    });
+    // 302 to Google (credentials configured) OR 302 to /login?error=google_not_configured
+    expect([301, 302, 303, 307, 308]).toContain(res.status);
+    const location = res.headers.get('location') ?? '';
+    expect(location.length).toBeGreaterThan(0);
+    const isGoogleOrError =
+      location.includes('accounts.google.com') || location.includes('google_not_configured');
+    expect(isGoogleOrError).toBe(true);
+  });
+
+  it('21. GET /api/auth/google/callback?error=access_denied redirects with google_denied', async () => {
+    const res = await fetch(
+      `${BASE}/api/auth/google/callback?error=access_denied`,
+      {
+        signal: AbortSignal.timeout(8000),
+        redirect: 'manual',
+      },
+    );
+    // Server must redirect — not return 200 HTML or 500
+    expect([301, 302, 303, 307, 308]).toContain(res.status);
+    const location = res.headers.get('location') ?? '';
+    expect(location).toMatch(/google_denied/i);
+  });
+
+  it('22. GET /api/auth/google/callback with no state redirects with invalid_state', async () => {
+    // No session state present — the server must reject and redirect
+    const res = await fetch(
+      `${BASE}/api/auth/google/callback?code=fake_code_xyz`,
+      {
+        signal: AbortSignal.timeout(8000),
+        redirect: 'manual',
+      },
+    );
+    expect([301, 302, 303, 307, 308]).toContain(res.status);
+    const location = res.headers.get('location') ?? '';
+    // Must contain an error signal — either invalid_state or a generic login error
+    expect(location).toMatch(/invalid_state|error=/i);
+  });
 });

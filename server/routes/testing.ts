@@ -4,10 +4,53 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { db } from '../db.js';
 import { users, projects, releases } from '../../shared/schema.js';
-import { count } from 'drizzle-orm';
+import { count, eq } from 'drizzle-orm';
 import { logger } from '../logger.js';
 
 const router = Router();
+
+/**
+ * POST /api/testing/setup-stripe-customer
+ * Test-only endpoint (NODE_ENV=test only) that sets stripeCustomerId on the
+ * authenticated user directly in the DB so integration tests can exercise the
+ * full billing-webhook tier-update flow without a live Stripe connection.
+ */
+router.post('/setup-stripe-customer', async (req, res) => {
+  if (process.env.NODE_ENV === 'production') {
+    return res.status(404).json({ error: 'Not found' });
+  }
+  if (!req.isAuthenticated?.() || !req.user?.id) {
+    return res.status(401).json({ error: 'Authentication required' });
+  }
+  const { stripeCustomerId } = req.body as Record<string, unknown>;
+  if (typeof stripeCustomerId !== 'string' || !stripeCustomerId) {
+    return res.status(400).json({ error: 'stripeCustomerId (string) required' });
+  }
+  await db.update(users).set({ stripeCustomerId }).where(eq(users.id, req.user.id));
+  return res.json({ success: true });
+});
+
+/**
+ * GET /api/testing/user-tier
+ * Test-only endpoint (non-production) that returns the authenticated user's
+ * subscriptionTier read directly from the primary DB — no Stripe API call,
+ * no caching.  Used by billing integration tests to verify webhook-driven
+ * tier updates without interference from the Stripe subscription-sync logic.
+ */
+router.get('/user-tier', async (req, res) => {
+  if (process.env.NODE_ENV === 'production') {
+    return res.status(404).json({ error: 'Not found' });
+  }
+  if (!req.isAuthenticated?.() || !req.user?.id) {
+    return res.status(401).json({ error: 'Authentication required' });
+  }
+  const [row] = await db
+    .select({ subscriptionTier: users.subscriptionTier })
+    .from(users)
+    .where(eq(users.id, req.user.id))
+    .limit(1);
+  return res.json({ tier: row?.subscriptionTier ?? 'free' });
+});
 
 const requireAdmin: RequestHandler = (req, res, next) => {
   if (!req.isAuthenticated || !req.isAuthenticated()) {

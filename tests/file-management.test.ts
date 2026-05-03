@@ -143,7 +143,7 @@ describe('File Management (Storage Round-Trip)', () => {
     uploadedFileKey = file.key as string;
   });
 
-  it('4. downloads the uploaded file and verifies content-type', async () => {
+  it('4. downloads the uploaded file and verifies content-type and byte payload', async () => {
     if (!uploadedFileKey) {
       console.warn('[FileTest] Upload step did not produce a key — skipping download test');
       return;
@@ -159,8 +159,11 @@ describe('File Management (Storage Round-Trip)', () => {
       expect(contentType).toMatch(/audio|octet-stream|binary|wav/i);
 
       const downloadedBytes = Buffer.from(await res.arrayBuffer());
-      // Downloaded content must be non-empty
-      expect(downloadedBytes.byteLength).toBeGreaterThan(0);
+      // Downloaded content must be at least as large as what we uploaded
+      expect(downloadedBytes.byteLength).toBeGreaterThanOrEqual(uploadPayload.byteLength);
+      // The leading bytes must exactly match the WAV payload we uploaded
+      const downloadedHead = downloadedBytes.slice(0, uploadPayload.byteLength);
+      expect(downloadedHead).toEqual(uploadPayload);
     }
   });
 

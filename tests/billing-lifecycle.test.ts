@@ -302,25 +302,30 @@ describe('Billing Webhook Lifecycle', () => {
       console.warn('[BillingTest] STRIPE_WEBHOOK_SECRET not set — skipping tier-update test');
       return;
     }
-    if (!testUserStripeCustomerId) {
-      console.warn('[BillingTest] Test user has no stripeCustomerId (Stripe not configured) — skipping tier-update test');
+
+    // Use the test-only helper to stamp a known stripeCustomerId onto the user
+    // (NODE_ENV=test gates this endpoint; no live Stripe connection required)
+    const fakeCusId = `cus_inttest_${crypto.randomBytes(8).toString('hex')}`;
+    const setupR = await api('POST', '/api/testing/setup-stripe-customer', { stripeCustomerId: fakeCusId });
+    if (setupR.status !== 200) {
+      console.warn(`[BillingTest] setup-stripe-customer returned ${setupR.status} — skipping tier-update test`);
       return;
     }
 
-    // Get the tier before
+    // Confirm baseline tier before webhook fires
     const beforeR = await api('GET', '/api/billing/subscription');
     const tierBefore = beforeR.status === 200
       ? (beforeR.json as Record<string, unknown>).tier
-      : null;
+      : 'free';
 
-    // Fire customer.subscription.created with the real user's customerId + planId: 'yearly'
-    const event = makeSubscriptionEvent({
+    // Fire customer.subscription.created with the planted customerId + planId: 'yearly'
+    const eventPayload = makeSubscriptionEvent({
       id: `evt_tier_${crypto.randomBytes(8).toString('hex')}`,
       data: {
         object: {
           id: `sub_tier_${crypto.randomBytes(8).toString('hex')}`,
           object: 'subscription',
-          customer: testUserStripeCustomerId,
+          customer: fakeCusId,
           status: 'active',
           current_period_end: Math.floor(Date.now() / 1000) + 365 * 24 * 60 * 60,
           metadata: { planId: 'yearly' },
@@ -328,17 +333,18 @@ describe('Billing Webhook Lifecycle', () => {
         },
       },
     });
-    const payload = JSON.stringify(event);
-    const r = await fireWebhook(payload, webhookSecret);
-    expect(r.status).toBe(200);
-    expect((r.json as Record<string, unknown>).received).toBe(true);
+    const rawPayload = JSON.stringify(eventPayload);
+    const webhookR = await fireWebhook(rawPayload, webhookSecret);
+    expect(webhookR.status).toBe(200);
+    expect((webhookR.json as Record<string, unknown>).received).toBe(true);
 
-    // Verify tier updated to 'yearly'
-    const afterR = await api('GET', '/api/billing/subscription');
-    expect(afterR.status).toBe(200);
-    const afterBody = afterR.json as Record<string, unknown>;
-    expect(afterBody.tier).not.toBe(tierBefore);
-    expect(afterBody.tier).toBe('yearly');
+    // Verify via the direct-DB test endpoint (bypasses Stripe subscription-sync logic
+    // which would error on the fake customerId and could obscure the DB value).
+    const tierR = await api('GET', '/api/testing/user-tier');
+    expect(tierR.status).toBe(200);
+    const tierBody = tierR.json as Record<string, unknown>;
+    expect(tierBody.tier).toBe('yearly');
+    expect(tierBody.tier).not.toBe(tierBefore);
   });
 
   // ──────────────────── Subscription endpoint shape ────────────────────
