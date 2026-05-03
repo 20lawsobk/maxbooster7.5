@@ -15,7 +15,7 @@ import {
   clearRetryQueue,
 } from '../services/externalServices.js';
 import { apiCache } from '../middleware/apiCache.js';
-import { isSchedulerLeader } from '../lib/distributedLock.js';
+import { isSchedulerLeader } from '../services/autonomousJobScheduler.js';
 
 // Enhanced health check endpoints for 24/7 monitoring
 export function setupReliabilityEndpoints(app: Express, requireAuth?: unknown): void {

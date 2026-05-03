@@ -174,8 +174,13 @@ async function gracefulShutdown(signal: string): Promise<void> {
       csvWorker?.close(),
       analyticsWorker?.close(),
       emailWorker?.close(),
+      // Drain the autonomous scheduler worker and close its queue.
+      // Dynamic import avoids circular-dependency issues at module load time.
+      import('./autonomousWorker.js')
+        .then(m => m.closeAutonomousWorker())
+        .catch(e => logger.warn('[Workers] Failed to close autonomous worker:', e?.message)),
     ]);
-    logger.info('✅ All BullMQ workers closed');
+    logger.info('✅ All BullMQ workers closed (audio, csv, analytics, email, autonomous)');
     process.exit(0);
   } catch (error) {
     logger.warn({ err: error }, '❌ Error during shutdown:');

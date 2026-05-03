@@ -1,67 +1,10 @@
-import { Worker, type Job } from 'bullmq';
-import { newBullMQRedisConnection } from '../lib/redisClient.js';
-import { logger } from '../logger.js';
-import { AUTONOMOUS_QUEUE } from '../services/autonomousJobScheduler.js';
+// Autonomous queue worker — thin re-export of the scheduler's lifecycle functions.
+//
+// All BullMQ Worker creation, repeatable job registration, and job processing
+// logic lives in autonomousJobScheduler.ts so it can manage the _worker reference
+// for isSchedulerLeader() tracking.  This file is the conventional workers/ entry
+// point that workers/index.ts uses in its shutdown sequence.
 
-let _worker: Worker | null = null;
-
-export function createAutonomousWorker(): Worker {
-  const w = new Worker(
-    AUTONOMOUS_QUEUE,
-    async (job: Job) => {
-      const { autonomousService } = await import('../services/autonomousService.js');
-
-      switch (true) {
-        case job.name === 'content-dispatch':
-          await autonomousService.runContentDispatch();
-          break;
-
-        case job.name === 'analytics':
-          await autonomousService.runPeriodicAnalytics();
-          break;
-
-        case job.name === 'metrics-persist':
-          await autonomousService.persistMetricsToCache();
-          break;
-
-        case job.name.startsWith('campaign-optimize-'):
-          await autonomousService.runCampaignOptimization(job.data.campaignId);
-          break;
-
-        default:
-          logger.warn(`[AutonomousWorker] Unknown job type: ${job.name}`);
-      }
-    },
-    {
-      connection: newBullMQRedisConnection(),
-      concurrency: 1,
-      drainDelay: 120_000,
-      runRetryDelay: 30_000,
-      stalledInterval: 300_000,
-      maxStalledCount: 1,
-      lockDuration: 600_000,
-      removeOnComplete: true,
-      removeOnFail: { count: 10 },
-    },
-  );
-
-  w.on('completed', (job) =>
-    logger.info(`✅ [AutonomousWorker] ${job.name} completed`),
-  );
-  w.on('failed', (job, err) =>
-    logger.warn(`❌ [AutonomousWorker] ${job?.name} failed: ${err.message}`),
-  );
-  w.on('error', (err) =>
-    logger.warn(`❌ [AutonomousWorker] Error: ${err.message}`),
-  );
-
-  _worker = w;
-  return w;
-}
-
-export async function closeAutonomousWorker(): Promise<void> {
-  if (_worker) {
-    await _worker.close();
-    _worker = null;
-  }
-}
+export {
+  closeScheduler as closeAutonomousWorker,
+} from '../services/autonomousJobScheduler.js';
