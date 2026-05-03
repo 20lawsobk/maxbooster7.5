@@ -450,8 +450,10 @@ export function cacheMiddleware(options: CacheOptions = {}) {
     } catch { /* cache failure is non-fatal */ }
 
     const originalJson = res.json.bind(res);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (res as any).json = function (body: unknown) {
+    // Override res.json using its own type signature — no any cast needed.
+    // typeof res.json resolves to Express's `(body?: any) => Response`, so the
+    // override is fully type-safe without suppressing lint rules.
+    const jsonOverride: typeof res.json = function cachedJson(body) {
       if (res.statusCode >= 200 && res.statusCode < 300) {
         const etag = generateETag(body);
         apiCache.set(
@@ -465,6 +467,7 @@ export function cacheMiddleware(options: CacheOptions = {}) {
       }
       return originalJson(body);
     };
+    res.json = jsonOverride;
 
     next();
   };
