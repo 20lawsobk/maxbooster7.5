@@ -243,7 +243,7 @@ export class StripeService {
     } else if (beatId && buyerId && licenseType) {
       // Beat purchase webhook handler reserved for future beat-specific purchases
       // Currently marketplace uses stem purchase flow above
-      logger.info('Beat purchase completed:', { beatId, buyerId, licenseType });
+      logger.info({ beatId, buyerId, licenseType }, 'Beat purchase completed');
     }
   }
 
@@ -392,12 +392,13 @@ export class StripeService {
           // that also creates a duplicate refundRecord is still safe.
           { idempotencyKey: `refund:${refundRecord.id}` },
         );
-      } catch (stripeError: Record<string, unknown>) {
+      } catch (stripeError: unknown) {
+        const _stripeErrMsg = stripeError instanceof Error ? stripeError.message : String(stripeError);
         await db
           .update(refunds)
-          .set({ status: 'failed', failureReason: stripeError.message })
+          .set({ status: 'failed', failureReason: _stripeErrMsg })
           .where(eq(refunds.id, refundRecord.id));
-        return { success: false, error: stripeError.message };
+        return { success: false, error: _stripeErrMsg };
       }
 
       // Step 3: atomic ledger update. All three writes must succeed together;
@@ -433,7 +434,7 @@ export class StripeService {
             metadata: { refundId: refundRecord.id, orderId: params.orderId },
           });
         });
-      } catch (ledgerError: Record<string, unknown>) {
+      } catch (ledgerError: unknown) {
         // Stripe accepted the refund but the ledger tx failed. Surface a loud
         // alert — manual reconciliation is required (the refund webhook will
         // also retry the status update independently).
@@ -443,7 +444,7 @@ export class StripeService {
         );
         await db
           .update(refunds)
-          .set({ status: 'reconcile_required', failureReason: ledgerError.message })
+          .set({ status: 'reconcile_required', failureReason: ledgerError instanceof Error ? ledgerError.message : String(ledgerError) })
           .where(eq(refunds.id, refundRecord.id))
           .catch(() => undefined);
         return {
@@ -454,10 +455,10 @@ export class StripeService {
         };
       }
 
-      logger.info('Refund created successfully', {
+      logger.info({
         refundId: refundRecord.id,
         stripeRefundId: stripeRefund.id,
-      });
+      }, 'Refund created successfully');
 
       return {
         success: true,
@@ -466,7 +467,7 @@ export class StripeService {
       };
     } catch (error) {
       logger.warn({ err: error }, 'Error creating refund:');
-      return { success: false, error: error.message || 'Failed to create refund' };
+      return { success: false, error: (error instanceof Error ? error.message : undefined) || 'Failed to create refund' };
     }
   }
 
@@ -486,7 +487,7 @@ export class StripeService {
 
       const refundId = refund.metadata?.refundId;
       if (!refundId) {
-        logger.warn('Refund webhook without refundId metadata', { stripeRefundId: refund.id });
+        logger.warn({ stripeRefundId: refund.id }, 'Refund webhook without refundId metadata');
         return;
       }
 
@@ -499,7 +500,7 @@ export class StripeService {
         })
         .where(eq(refunds.id, refundId));
 
-      logger.info('Refund status updated from webhook', { refundId, status: refund.status });
+      logger.info({ refundId, status: refund.status }, 'Refund status updated from webhook');
     } catch (error) {
       logger.warn({ err: error }, 'Error handling refund webhook:');
     }

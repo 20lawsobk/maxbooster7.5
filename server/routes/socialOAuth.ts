@@ -364,7 +364,7 @@ router.post('/connect/:platform', requireAuth, async (req: AuthenticatedRequest,
     }
 
     const authUrl = buildOAuthUrl(config.authUrl, params, config.scope);
-    logger.info(`[OAuth] Generated auth URL for ${platform}`, { userId, platform, redirectUri });
+    logger.info({ userId, platform, redirectUri }, `[OAuth] Generated auth URL for ${platform}`);
     res.json({ authUrl });
   } catch (error) {
     logger.warn({ err: error }, 'Failed to initiate OAuth:');
@@ -378,13 +378,13 @@ router.get('/callback/:platform', async (req: Request, res: Response) => {
     const { code, state, error, error_description } = req.query;
     
     if (error) {
-      logger.warn(`OAuth error for ${platform}:`, { error, error_description });
+      logger.warn({ error, error_description }, `OAuth error for ${platform}`);
       return res.redirect(`/social-media?error=oauth_denied&platform=${platform}`);
     }
     
     const stateData = state ? verifyOAuthState(decodeURIComponent(state as string)) : null;
     if (!stateData) {
-      logger.warn(`[OAuth] Invalid or expired state for ${platform}`, { hasState: !!state });
+      logger.warn({ hasState: !!state }, `[OAuth] Invalid or expired state for ${platform}`);
       return res.redirect(`/social-media?error=invalid_state&platform=${platform}`);
     }
     
@@ -425,11 +425,11 @@ router.get('/callback/:platform', async (req: Request, res: Response) => {
         try {
           const twitterClientId = process.env.TWITTER_CLIENT_ID || process.env.TWITTER_API_KEY || '';
           const twitterClientSecret = process.env.TWITTER_CLIENT_SECRET || process.env.TWITTER_API_SECRET || '';
-          logger.info(`[OAuth] Twitter token exchange (direct fetch)`, { 
+          logger.info({ 
             hasCode: !!authCode, 
             hasVerifier: !!stateData.codeVerifier,
             redirectUri,
-          });
+          }, `[OAuth] Twitter token exchange (direct fetch)`);
           const twitterTokenBody = new URLSearchParams({
             grant_type: 'authorization_code',
             code: authCode,
@@ -457,15 +457,15 @@ router.get('/callback/:platform', async (req: Request, res: Response) => {
             token_type: twitterTokenJson.token_type || 'bearer',
           };
           // SAFE: only logs presence booleans + numeric expiry — no token material.
-          logger.info(`[OAuth] Twitter token exchange SUCCESS`, { hasAccessToken: !!tokenData.access_token, hasRefreshToken: !!tokenData.refresh_token, expiresIn: tokenData.expires_in });
+          logger.info({ hasAccessToken: !!tokenData.access_token, hasRefreshToken: !!tokenData.refresh_token, expiresIn: tokenData.expires_in }, `[OAuth] Twitter token exchange SUCCESS`);
         } catch (twitterErr: unknown) {
           const e = twitterErr as { message?: string; data?: unknown };
-          logger.warn(`[OAuth] Twitter token exchange ERROR:`, {
+          logger.warn({
             error: e?.message ?? String(twitterErr),
             // INTENTIONAL: e.data may contain the upstream provider error body
             // (which can include access tokens on partial-success responses) —
             // do NOT log it. Only the error message is safe.
-          });
+          }, `[OAuth] Twitter token exchange ERROR`);
           return res.redirect(`/social-media?error=token_exchange_failed&platform=twitter&detail=${encodeURIComponent(e?.message ?? 'Twitter authentication failed')}`);
         }
       } else if (platform === 'spotify') {
@@ -486,7 +486,7 @@ router.get('/callback/:platform', async (req: Request, res: Response) => {
         tokenParams.set('client_secret', config.clientSecret!);
       }
 
-      logger.info(`[OAuth] Token exchange for ${platform}`, { redirectUri, hasCode: !!authCode, hasVerifier: !!stateData.codeVerifier });
+      logger.info({ redirectUri, hasCode: !!authCode, hasVerifier: !!stateData.codeVerifier }, `[OAuth] Token exchange for ${platform}`);
       
       let tokenResponse: globalThis.Response | undefined;
       let responseText: string | undefined;
@@ -502,7 +502,7 @@ router.get('/callback/:platform', async (req: Request, res: Response) => {
           responseText = await tokenResponse.text();
         } catch (fetchErr: unknown) {
           const fe = fetchErr as { message?: string };
-          logger.warn(`[OAuth] Token exchange network error for ${platform}:`, { error: fe?.message ?? String(fetchErr), tokenUrl: config.tokenUrl });
+          logger.warn({ error: fe?.message ?? String(fetchErr), tokenUrl: config.tokenUrl }, `[OAuth] Token exchange network error for ${platform}`);
           return res.redirect(`/social-media?error=token_exchange_failed&platform=${platform}&detail=${encodeURIComponent(fe?.message ?? 'Network error')}`);
         }
         
@@ -515,7 +515,7 @@ router.get('/callback/:platform', async (req: Request, res: Response) => {
         
         // SAFE: only logs status, presence boolean, and the upstream error code
         // (e.g. "invalid_grant") — never the access_token or refresh_token.
-        logger.warn(`[OAuth] Token exchange response for ${platform}:`, { status: tokenResponse!.status, ok: tokenResponse!.ok, hasAccessToken: !!tokenData?.access_token, error: tokenData?.error || 'none' });
+        logger.warn({ status: tokenResponse!.status, ok: tokenResponse!.ok, hasAccessToken: !!tokenData?.access_token, error: tokenData?.error || 'none' }, `[OAuth] Token exchange response for ${platform}`);
       }
 
       if (tokenResponse && (!tokenResponse.ok || tokenData?.error)) {
@@ -531,7 +531,7 @@ router.get('/callback/:platform', async (req: Request, res: Response) => {
             id_token: id_token ? '<redacted>' : undefined,
           };
         })();
-        logger.warn(`[OAuth] Token exchange failed for ${platform}:`, { status: tokenResponse!.status, data: safeTokenData, tokenUrl: config.tokenUrl });
+        logger.warn({ status: tokenResponse!.status, data: safeTokenData, tokenUrl: config.tokenUrl }, `[OAuth] Token exchange failed for ${platform}`);
         const errorDetail = tokenData.error_description || tokenData.error || 'unknown';
         return res.redirect(`/social-media?error=token_exchange_failed&platform=${platform}&detail=${encodeURIComponent(errorDetail)}`);
       }
@@ -551,14 +551,14 @@ router.get('/callback/:platform', async (req: Request, res: Response) => {
             tokenData.expires_in = longLivedData.expires_in || 5184000;
             logger.info(`[OAuth] Threads: exchanged for long-lived token (${tokenData.expires_in}s)`);
           } else {
-            logger.warn('[OAuth] Threads: long-lived token exchange returned error, using short-lived token', { data: redactOAuthFields(longLivedData) });
+            logger.warn({ data: redactOAuthFields(longLivedData) }, '[OAuth] Threads: long-lived token exchange returned error, using short-lived token');
           }
         } catch (llErr: unknown) {
           // INTENTIONAL: never log llErr directly — fetch errors can include the
           // request URL (which contains client_secret + access_token query params).
           // Only log a sanitized message string.
           const msg = llErr instanceof Error ? llErr.message : String(llErr);
-          logger.warn('[OAuth] Threads: failed to get long-lived token, using short-lived', { error: scrubSecretsFromText(msg) });
+          logger.warn({ error: scrubSecretsFromText(msg) }, '[OAuth] Threads: failed to get long-lived token, using short-lived');
         }
       }
     } catch (err: unknown) {
@@ -599,7 +599,7 @@ router.get('/callback/:platform', async (req: Request, res: Response) => {
           facebookProfileUrl = `https://www.facebook.com/${userData.id}`;
           facebookMetadata = { picture: userData.picture?.data?.url };
         } catch (fbErr) {
-          logger.warn('Failed to fetch Facebook user info:', fbErr);
+          logger.warn({ err: fbErr }, 'Failed to fetch Facebook user info');
         }
         
         try {
@@ -627,7 +627,7 @@ router.get('/callback/:platform', async (req: Request, res: Response) => {
             }
           }
         } catch (igErr) {
-          logger.warn('Failed to fetch Instagram username:', igErr);
+          logger.warn({ err: igErr }, 'Failed to fetch Instagram username');
         }
       } else if (platform === 'twitter') {
         try {
@@ -641,7 +641,7 @@ router.get('/callback/:platform', async (req: Request, res: Response) => {
           profileUrl = `https://x.com/${userData.data?.username}`;
           metadata = { followingCount: userData.data?.public_metrics?.following_count || 0, tweetCount: userData.data?.public_metrics?.tweet_count || 0, listedCount: userData.data?.public_metrics?.listed_count || 0, profileImageUrl: userData.data?.profile_image_url };
         } catch (twitterErr) {
-          logger.warn('Failed to fetch Twitter user info:', twitterErr);
+          logger.warn({ err: twitterErr }, 'Failed to fetch Twitter user info');
         }
       } else if (platform === 'youtube') {
         try {
@@ -656,7 +656,7 @@ router.get('/callback/:platform', async (req: Request, res: Response) => {
           profileUrl = `https://www.youtube.com/channel/${channel?.id}`;
           metadata = { viewCount: parseInt(channel?.statistics?.viewCount || '0'), videoCount: parseInt(channel?.statistics?.videoCount || '0'), customUrl: channel?.snippet?.customUrl, thumbnailUrl: channel?.snippet?.thumbnails?.default?.url };
         } catch (ytErr) {
-          logger.warn('Failed to fetch YouTube channel info:', ytErr);
+          logger.warn({ err: ytErr }, 'Failed to fetch YouTube channel info');
         }
       } else if (platform === 'tiktok') {
         try {
@@ -671,7 +671,7 @@ router.get('/callback/:platform', async (req: Request, res: Response) => {
           profileUrl = tiktokData?.profile_deep_link || (tiktokData?.username ? `https://www.tiktok.com/@${tiktokData.username}` : '');
           metadata = { avatarUrl: tiktokData?.avatar_url || '', bio: tiktokData?.bio_description || '', isVerified: tiktokData?.is_verified || false, tiktokUsername: tiktokData?.username || '' };
         } catch (tiktokErr) {
-          logger.warn('Failed to fetch TikTok user info:', tiktokErr);
+          logger.warn({ err: tiktokErr }, 'Failed to fetch TikTok user info');
           username = 'TikTok User';
         }
       } else if (platform === 'linkedin') {
@@ -685,7 +685,7 @@ router.get('/callback/:platform', async (req: Request, res: Response) => {
           profileUrl = `https://www.linkedin.com/in/${userData.sub}`;
           metadata = { email: userData.email, picture: userData.picture };
         } catch (linkedinErr) {
-          logger.warn('Failed to fetch LinkedIn user info:', linkedinErr);
+          logger.warn({ err: linkedinErr }, 'Failed to fetch LinkedIn user info');
           username = 'LinkedIn User';
         }
       } else if (platform === 'threads') {
@@ -697,7 +697,7 @@ router.get('/callback/:platform', async (req: Request, res: Response) => {
           profileUrl = `https://www.threads.net/@${userData.username}`;
           metadata = { profilePictureUrl: userData.threads_profile_picture_url };
         } catch (threadsErr) {
-          logger.warn('Failed to fetch Threads user info:', threadsErr);
+          logger.warn({ err: threadsErr }, 'Failed to fetch Threads user info');
           username = 'Threads User';
         }
       } else if (platform === 'spotify') {
@@ -712,7 +712,7 @@ router.get('/callback/:platform', async (req: Request, res: Response) => {
           followerCount = userData.followers?.total || 0;
           metadata = { email: userData.email, product: userData.product, country: userData.country, imageUrl: userData.images?.[0]?.url };
         } catch (spotifyErr) {
-          logger.warn('Failed to fetch Spotify user info:', spotifyErr);
+          logger.warn({ err: spotifyErr }, 'Failed to fetch Spotify user info');
           username = 'Spotify User';
         }
       } else if (platform === 'google' || platform === 'googlebusiness') {
@@ -726,7 +726,7 @@ router.get('/callback/:platform', async (req: Request, res: Response) => {
           profileUrl = '';
           metadata = { email: userData.email, picture: userData.picture };
         } catch (googleErr) {
-          logger.warn('Failed to fetch Google user info:', googleErr);
+          logger.warn({ err: googleErr }, 'Failed to fetch Google user info');
           username = 'Google User';
         }
       }
@@ -787,23 +787,23 @@ router.get('/callback/:platform', async (req: Request, res: Response) => {
         });
       }
       
-      logger.info(`[OAuth] Successfully connected ${p.name} for user`, { 
+      logger.info({ 
         userId: stateData.userId, 
         platform: p.name,
         username: p.username 
-      });
+      }, `[OAuth] Successfully connected ${p.name} for user`);
     }
     
     const redirectPlatform = platform === 'meta' ? 'facebook,instagram' : savePlatformName;
     const connectedUsername = platformsToSave[0]?.username || '';
     const successUrl = `/social-media?success=connected&platform=${redirectPlatform}&username=${encodeURIComponent(connectedUsername)}`;
-    logger.info(`[OAuth] Redirecting to success URL`, { successUrl, platform: redirectPlatform });
+    logger.info({ successUrl, platform: redirectPlatform }, `[OAuth] Redirecting to success URL`);
     res.redirect(successUrl);
   } catch (error) {
     logger.warn({ err: error }, 'OAuth callback error:');
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     const errorUrl = `/social-media?error=callback_failed&message=${encodeURIComponent(errorMessage)}`;
-    logger.warn(`[OAuth] Redirecting to error URL`, { errorUrl });
+    logger.warn({ errorUrl }, `[OAuth] Redirecting to error URL`);
     res.redirect(errorUrl);
   }
 });
@@ -824,7 +824,7 @@ router.post('/disconnect/:platform', requireAuth, async (req: AuthenticatedReque
           eq(socialAccounts.platform, p)
         ));
       
-      logger.info(`[OAuth] Disconnected ${p} for user`, { userId, platform: p });
+      logger.info({ userId, platform: p }, `[OAuth] Disconnected ${p} for user`);
     }
     
     res.json({ 

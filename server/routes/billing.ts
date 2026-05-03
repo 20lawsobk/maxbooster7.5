@@ -176,8 +176,8 @@ async function getOrCreateStripeCustomer(user: AuthenticatedRequest['user']): Pr
           .where(eq(users.id, user.id));
         saved = true;
         break;
-      } catch (dbErr: Record<string, unknown>) {
-        logger.warn(`[Billing] Failed to save stripeCustomerId (attempt ${attempt}/3): ${dbErr.message}`);
+      } catch (dbErr: unknown) {
+        logger.warn(`[Billing] Failed to save stripeCustomerId (attempt ${attempt}/3): ${dbErr instanceof Error ? dbErr.message : String(dbErr)}`);
         if (attempt < 3) await new Promise(r => setTimeout(r, attempt * 500));
       }
     }
@@ -187,7 +187,7 @@ async function getOrCreateStripeCustomer(user: AuthenticatedRequest['user']): Pr
 
     return customer.id;
   } catch (error) {
-    logger.warn('[Billing] Failed to create Stripe customer:', error.message);
+    logger.warn({ err: error }, '[Billing] Failed to create Stripe customer');
     throw new Error('Failed to create billing account. Please try again.');
   }
 }
@@ -874,8 +874,8 @@ router.get('/invoices/:invoiceId/download', requireAuth, async (req: Authenticat
     let invoice: Stripe.Invoice;
     try {
       invoice = await stripe.invoices.retrieve(invoiceId);
-    } catch (stripeError: Record<string, unknown>) {
-      if (stripeError.code === 'resource_missing') {
+    } catch (stripeError: unknown) {
+      if ((stripeError as Record<string, unknown>).code === 'resource_missing') {
         return res.status(404).json({ 
           message: 'Invoice not found',
           code: 'INVOICE_NOT_FOUND',
@@ -1032,7 +1032,7 @@ router.get('/refund/:refundId', requireAuth, async (req: AuthenticatedRequest, r
     
     res.json(refund);
   } catch (error) {
-    if (error.message === 'Refund not found') {
+    if (error instanceof Error && error.message === 'Refund not found') {
       return res.status(404).json({ error: 'Refund not found' });
     }
     logger.warn({ err: error }, '[Billing] Failed to get refund status:');
@@ -1142,7 +1142,7 @@ router.post('/retry-payment', requireAuth, requireStripe, async (req: Authentica
           status: 'active'
         });
       }
-    } catch (payError: Record<string, unknown>) {
+    } catch (payError: unknown) {
       const mappedError = mapStripeError(payError);
       
       if (mappedError.code === 'REQUIRES_3D_SECURE') {
@@ -1505,7 +1505,7 @@ router.post('/refund/request', requireAuth, async (req: AuthenticatedRequest, re
         details: refundRequestPayload,
       });
     } catch (persistErr) {
-      logger.warn('[Billing] Failed to persist refund request to audit log:', persistErr);
+      logger.warn({ err: persistErr }, '[Billing] Failed to persist refund request to audit log');
     }
 
     logger.info(`[Billing] Refund request ${refundRequestId} persisted for user ${userId}: ${invoiceId || chargeId}, reason: ${reason}, amount: ${refundAmount / 100}`);
@@ -1519,7 +1519,7 @@ router.post('/refund/request', requireAuth, async (req: AuthenticatedRequest, re
   } catch (error) {
     logger.warn({ err: error }, '[Billing] Failed to create refund request:');
     
-    if (error.code === 'resource_missing') {
+    if ((error as Record<string, unknown>).code === 'resource_missing') {
       return res.status(404).json({ 
         message: 'Invoice or charge not found',
         code: 'NOT_FOUND',
@@ -1623,8 +1623,8 @@ router.post('/dispute/evidence', requireAuth, async (req: AuthenticatedRequest, 
         disputeId,
         status: evidence.submit ? 'under_review' : 'needs_response'
       });
-    } catch (stripeError: Record<string, unknown>) {
-      if (stripeError.code === 'resource_missing') {
+    } catch (stripeError: unknown) {
+      if ((stripeError as Record<string, unknown>).code === 'resource_missing') {
         return res.status(404).json({ 
           message: 'Dispute not found',
           code: 'DISPUTE_NOT_FOUND',
