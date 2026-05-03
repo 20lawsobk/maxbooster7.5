@@ -70,7 +70,7 @@ class SessionL1Cache {
 function createIoredisAdapter(ioredisClient: { get: (...a: unknown[]) => Promise<unknown>; set: (...a: unknown[]) => Promise<unknown>; del: (...a: unknown[]) => Promise<unknown>; expire: (...a: unknown[]) => Promise<unknown> }) {
   return {
     get(key: string): Promise<string | null> {
-      return ioredisClient.get(key);
+      return ioredisClient.get(key) as Promise<string | null>;
     },
 
     set(
@@ -110,7 +110,7 @@ function createIoredisAdapter(ioredisClient: { get: (...a: unknown[]) => Promise
           pattern,
           'COUNT',
           count
-        );
+        ) as [string, string[]];
         cursor = nextCursor;
         if (keys.length > 0) {
           yield keys;
@@ -120,11 +120,98 @@ function createIoredisAdapter(ioredisClient: { get: (...a: unknown[]) => Promise
   };
 }
 
+// ── Session revocation ────────────────────────────────────────────────────────
+// Propagation timeline:
+//   revokeUserSessions(uid) called on pod A
+//   → writes `session:revoke:{uid}` to PDIM (shared across all pods)
+//   → pod B's revocationL1 for this uid expires within REVOKE_L1_TTL_MS (5 s)
+//   → pod B re-checks PDIM, sees flag, returns null session → user forced to re-login
+//
+// Before this change: password reset invalidated DB sessions but L1 cache on
+// other pods still served the old session for up to 60 s (L1_TTL_MS).
+
+const REVOKE_L1_TTL_MS = 5_000;  // 5 s max propagation lag for revocation signals
+const REVOKE_PDIM_TTL_S = 70;    // slightly longer than L1_TTL_MS (60 s) to ensure full coverage
+
+// In-process revocation-flag cache: key = userId; value = { revoked, expiresAt }
+// This is module-scoped (not class-scoped) so the exported revokeUserSessions()
+// can also warm it immediately without an instance reference.
+const _revokeL1 = new Map<string, { revoked: boolean; expiresAt: number }>();
+
+function _revokeL1Get(userId: string): boolean | undefined {
+  const entry = _revokeL1.get(userId);
+  if (!entry) return undefined;
+  if (Date.now() > entry.expiresAt) { _revokeL1.delete(userId); return undefined; }
+  return entry.revoked;
+}
+
+function _revokeL1Set(userId: string, revoked: boolean): void {
+  _revokeL1.set(userId, { revoked, expiresAt: Date.now() + REVOKE_L1_TTL_MS });
+}
+
+/**
+ * Check if this user's sessions have been revoked.
+ * L1-cached for REVOKE_L1_TTL_MS (5 s) to avoid a PDIM call on every request.
+ */
+async function isRevoked(userId: string): Promise<boolean> {
+  const l1 = _revokeL1Get(userId);
+  if (l1 !== undefined) return l1;
+
+  if (!isPdimConfigured()) return false;
+
+  try {
+    const redis = getRedisClient();
+    const val = await redis.get(`session:revoke:${userId}`);
+    const revoked = val !== null && val !== undefined;
+    _revokeL1Set(userId, revoked);
+    return revoked;
+  } catch {
+    return false; // on PDIM error, do not block the request
+  }
+}
+
+/**
+ * Extract the user ID from session data for revocation checks.
+ */
+function extractUserIdFromSession(data: session.SessionData | null): string | undefined {
+  if (!data) return undefined;
+  const d = data as Record<string, unknown>;
+  const passportUser = (d.passport as Record<string, unknown> | undefined)?.user;
+  const uid = d.userId ?? passportUser;
+  return uid ? String(uid) : undefined;
+}
+
+/**
+ * Write a cross-pod session revocation flag to PDIM.
+ *
+ * Call this after any security-critical user state change:
+ *   - Password change
+ *   - Account suspension / locking
+ *   - Role downgrade
+ *
+ * All pods will reject sessions for this user within REVOKE_L1_TTL_MS (5 s)
+ * regardless of their in-process L1 session cache state.
+ */
+export async function revokeUserSessions(userId: string): Promise<void> {
+  // Warm this pod's L1 immediately
+  _revokeL1Set(userId, true);
+
+  if (!isPdimConfigured()) return;
+
+  try {
+    const redis = getRedisClient();
+    await redis.set(`session:revoke:${userId}`, '1', 'EX', REVOKE_PDIM_TTL_S);
+    logger.info(`[SessionRevoke] Revocation flag set for user ${userId} (TTL=${REVOKE_PDIM_TTL_S}s, max cross-pod lag=5s)`);
+  } catch (err: unknown) {
+    logger.warn({ err }, `[SessionRevoke] Failed to write revocation flag for user ${userId} — other pods may still serve old sessions for up to 60 s`);
+  }
+}
+
 /**
  * PDIM session store with L1 in-process cache on top.
  *
  * PDIM is always reachable — no PG fallback, no degraded mode.
- * get()     → L1 hit returns immediately; miss fetches from PDIM and caches.
+ * get()     → L1 hit returns immediately (after revocation check); miss fetches from PDIM and caches.
  * set()     → writes through to PDIM AND updates L1 immediately.
  * destroy() → invalidates L1 AND propagates to PDIM.
  * touch()   → refreshes L1 TTL and forwards to PDIM store.
@@ -140,7 +227,23 @@ class PdimSessionStore extends session.Store {
 
   get(sid: string, cb: (err: unknown, session?: session.SessionData | null) => void): void {
     const cached = this.l1.get(sid);
-    if (cached !== undefined) return cb(null, cached);
+    if (cached !== undefined) {
+      const userId = extractUserIdFromSession(cached);
+      if (userId) {
+        // Async revocation check — does not block; uses L1 for the check itself (5 s TTL)
+        isRevoked(userId).then(revoked => {
+          if (revoked) {
+            this.l1.invalidate(sid);
+            // Best-effort PDIM destroy so the revoked session is cleaned up
+            this.inner.destroy(sid, () => {});
+            return cb(null, null);
+          }
+          return cb(null, cached);
+        }).catch(() => cb(null, cached)); // on error, serve cached (don't block)
+        return;
+      }
+      return cb(null, cached);
+    }
 
     this.inner.get(sid, (err, data) => {
       if (err) {
@@ -159,11 +262,30 @@ class PdimSessionStore extends session.Store {
         const now = Date.now();
         if (now - _lastFetchWarnAt >= WARN_THROTTLE_MS) {
           _lastFetchWarnAt = now;
-          logger.warn('[SessionStore] PDIM session fetch failed — serving session-less response:', (err as Error).message);
+          logger.warn('[SessionStore] PDIM session fetch failed — serving session-less response', {
+            err: err instanceof Error ? err.message : String(err),
+          });
         }
         return cb(null, null);
       }
+
       const result = data ?? null;
+      const userId = extractUserIdFromSession(result);
+      if (userId) {
+        isRevoked(userId).then(revoked => {
+          if (revoked) {
+            this.inner.destroy(sid, () => {});
+            return cb(null, null);
+          }
+          this.l1.set(sid, result);
+          cb(null, result);
+        }).catch(() => {
+          this.l1.set(sid, result);
+          cb(null, result);
+        });
+        return;
+      }
+
       this.l1.set(sid, result);
       cb(null, result);
     });
@@ -175,7 +297,9 @@ class PdimSessionStore extends session.Store {
     // authoritative copy — the session is functional even if PDIM is temporarily down.
     this.inner.set(sid, sess, (err?: unknown) => {
       if (err) {
-        logger.warn('[SessionStore] PDIM session write failed (session held in L1 cache):', (err as Error).message);
+        logger.warn('[SessionStore] PDIM session write failed (session held in L1 cache)', {
+          err: err instanceof Error ? err.message : String(err),
+        });
       }
       cb?.();
     });
@@ -187,7 +311,9 @@ class PdimSessionStore extends session.Store {
     // will not be served from cache regardless of whether PDIM succeeds.
     this.inner.destroy(sid, (err?: unknown) => {
       if (err) {
-        logger.warn('[SessionStore] PDIM session destroy failed (L1 already invalidated):', (err as Error).message);
+        logger.warn('[SessionStore] PDIM session destroy failed (L1 already invalidated)', {
+          err: err instanceof Error ? err.message : String(err),
+        });
       }
       cb?.();
     });
@@ -197,12 +323,14 @@ class PdimSessionStore extends session.Store {
     this.l1.set(sid, sess);
     const primaryTouch = (this.inner as Record<string, unknown>).touch;
     if (primaryTouch) {
-      primaryTouch.call(this.inner, sid, sess, (err?: unknown) => {
+      (primaryTouch as Function).call(this.inner, sid, sess, (err?: unknown) => {
         if (err) {
           // PDIM congestion during TTL refresh is non-critical — the session
           // remains valid at its original TTL. Swallow the error so express-session
           // does not propagate it after the response has already been sent.
-          logger.warn('[SessionStore] PDIM congested during touch — TTL refresh skipped:', (err as Error).message);
+          logger.warn('[SessionStore] PDIM congested during touch — TTL refresh skipped', {
+            err: err instanceof Error ? err.message : String(err),
+          });
         }
         cb?.();
       });

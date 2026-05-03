@@ -1052,6 +1052,18 @@ export async function registerRoutes(
       
       notificationService.sendPasswordChangedNotification(req.user.id).catch(() => {});
 
+      // SECURITY: Write cross-pod session revocation flag to PDIM so all running
+      // pods reject this user's old sessions within 5 s (L1 bust-key TTL).
+      // This supplements the session enumeration above which only deletes from
+      // the PDIM store — pods whose L1 session caches still hold the old session
+      // will now get a revocation signal on next request.
+      try {
+        const { revokeUserSessions } = await import('./middleware/sessionConfig.js');
+        await revokeUserSessions(String(req.user.id));
+      } catch (revokeErr: unknown) {
+        logger.warn({ err: revokeErr }, '[Security] Cross-pod session revocation failed after password change — other pods may still serve old sessions for up to 60 s');
+      }
+
       return res.json({ success: true, message: "Password changed. Other sessions have been logged out." });
     } catch (error) {
       logger.warn("Change password error:", error);

@@ -14,6 +14,7 @@ import {
   getRetryQueue,
   clearRetryQueue,
 } from '../services/externalServices.js';
+import { apiCache } from '../middleware/apiCache.js';
 
 // Enhanced health check endpoints for 24/7 monitoring
 export function setupReliabilityEndpoints(app: Express, requireAuth?: unknown): void {
@@ -46,6 +47,7 @@ export function setupReliabilityEndpoints(app: Express, requireAuth?: unknown): 
             avgMs: queryMetrics.windowedAverage,
           },
         },
+        cache: apiCache.getStats(),
       });
     } catch (error: unknown) {
       res.status(500).json({

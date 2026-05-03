@@ -14,6 +14,7 @@ export default defineConfig({
       'tests/critical-paths.test.ts',
       'tests/paid-user-e2e.test.ts',
       'tests/ai-analytics-integration.test.ts',
+      'tests/cache-invalidation.test.ts',
     ],
     environment: 'node',
     globals: true,
