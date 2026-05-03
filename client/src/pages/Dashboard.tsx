@@ -640,7 +640,7 @@ function DashboardContent({ user }: { user: Record<string, unknown> }) {
 
         {/* Main Content Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-6">
+          <TabsList className="grid w-full grid-cols-3 sm:grid-cols-6">
             <TabsTrigger data-testid="tab-overview" value="overview">
               Overview
             </TabsTrigger>

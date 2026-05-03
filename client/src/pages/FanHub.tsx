@@ -674,7 +674,7 @@ export default function FanHub() {
                       <Badge variant="secondary">Sent</Badge>
                     </div>
                     <CardContent className="p-6">
-                      <div className="grid grid-cols-3 gap-8 mb-6">
+                      <div className="grid grid-cols-3 gap-4 sm:gap-8 mb-6">
                         <div>
                           <p className="text-sm text-muted-foreground mb-1">Recipients</p>
                           <p className="text-2xl font-bold">{msg.recipientCount}</p>

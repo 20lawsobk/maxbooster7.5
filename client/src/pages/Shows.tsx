@@ -335,7 +335,8 @@ export default function Shows() {
             </div>
 
             {/* Day Headers */}
-            <div className="grid grid-cols-7 border border-b-0 rounded-t-lg overflow-hidden">
+            <div className="overflow-x-auto">
+            <div className="grid grid-cols-7 border border-b-0 rounded-t-lg overflow-hidden min-w-[480px]">
               {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(day => (
                 <div key={day} className="px-2 py-2 text-xs font-semibold text-muted-foreground bg-muted/30 text-center border-r last:border-r-0">
                   {day}
@@ -352,7 +353,7 @@ export default function Shows() {
               const days = eachDayOfInterval({ start: calStart, end: calEnd });
 
               return (
-                <div className="grid grid-cols-7 border rounded-b-lg overflow-hidden">
+                <div className="grid grid-cols-7 border rounded-b-lg overflow-hidden min-w-[480px]">
                   {days.map((day, i) => {
                     const dayShows = showsData?.filter(s => isSameDay(new Date(s.date), day)) || [];
                     const isToday = isSameDay(day, new Date());
@@ -393,6 +394,7 @@ export default function Shows() {
                 </div>
               );
             })()}
+            </div>
 
             {/* Legend */}
             <div className="flex items-center gap-4 text-xs text-muted-foreground">

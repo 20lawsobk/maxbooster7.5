@@ -245,7 +245,7 @@ export function DataDenseAnalytics() {
     totalPlays: 0,
     monthlyListeners: 0,
     artistScore: 0,
-    careerStage: 'Unknown',
+    careerStage: 'Emerging Artist',
     streamChange: 0,
     revenueChange: 0,
     followerChange: 0,

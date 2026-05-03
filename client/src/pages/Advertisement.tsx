@@ -650,7 +650,7 @@ export default function Advertisement() {
                 </div>
                 <div className="space-y-3">
                   <Label>Music Interests</Label>
-                  <div className="grid grid-cols-3 gap-2">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                     {musicInterests.map((interest) => (
                       <div key={interest} className={`p-2 text-center rounded-lg border cursor-pointer transition-colors text-sm ${campaignForm.targetAudience.interests.includes(interest) ? 'border-blue-500 bg-blue-50 dark:bg-blue-950/20' : 'border-border hover:border-blue-400'}`} onClick={() => { setCampaignForm((prev) => ({ ...prev, targetAudience: { ...prev.targetAudience, interests: prev.targetAudience.interests.includes(interest) ? prev.targetAudience.interests.filter((i) => i !== interest) : [...prev.targetAudience.interests, interest] } })); }}>
                         {interest}

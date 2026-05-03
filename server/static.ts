@@ -421,9 +421,10 @@ export function serveStatic(app: Express) {
     const resolvedStorefront = (req as Record<string, unknown>).storefront as { slug?: string } | undefined;
     if (resolvedStorefront?.slug) {
       const safeSlug = resolvedStorefront.slug.replace(/[^a-z0-9-]/gi, '');
+      res.setHeader('X-Maxbooster-Subdomain', safeSlug);
       const html = baseHtml.replace(
         '</head>',
-        `<script>window.__MAXBOOSTER_SUBDOMAIN__=${JSON.stringify(safeSlug)}</script></head>`
+        `<meta name="x-maxbooster-subdomain" content="${safeSlug}"></head>`
       );
       return res.send(html);
     }
@@ -433,9 +434,10 @@ export function serveStatic(app: Express) {
       const slug = await getStorefrontSlugForSubdomain(subdomain);
       if (slug) {
         const safeSlug = slug.replace(/[^a-z0-9-]/gi, '');
+        res.setHeader('X-Maxbooster-Subdomain', safeSlug);
         const html = baseHtml.replace(
           '</head>',
-          `<script>window.__MAXBOOSTER_SUBDOMAIN__=${JSON.stringify(safeSlug)}</script></head>`
+          `<meta name="x-maxbooster-subdomain" content="${safeSlug}"></head>`
         );
         return res.send(html);
       }
@@ -445,9 +447,10 @@ export function serveStatic(app: Express) {
       const slug = await getStorefrontSlugForCustomDomain(req.hostname);
       if (slug) {
         const safeSlug = slug.replace(/[^a-z0-9-]/gi, '');
+        res.setHeader('X-Maxbooster-Subdomain', safeSlug);
         const html = baseHtml.replace(
           '</head>',
-          `<script>window.__MAXBOOSTER_SUBDOMAIN__=${JSON.stringify(safeSlug)}</script></head>`
+          `<meta name="x-maxbooster-subdomain" content="${safeSlug}"></head>`
         );
         return res.send(html);
       }

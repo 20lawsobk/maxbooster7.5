@@ -263,7 +263,8 @@ function AppWithKeyboardShortcuts() {
   }, [location]);
 
   useEffect(() => {
-    const storefrontSlug = (window as Record<string, unknown>).__MAXBOOSTER_SUBDOMAIN__;
+    const metaEl = document.querySelector('meta[name="x-maxbooster-subdomain"]');
+    const storefrontSlug = metaEl?.getAttribute('content') || (window as Record<string, unknown>).__MAXBOOSTER_SUBDOMAIN__;
     if (storefrontSlug && typeof storefrontSlug === 'string') {
       setLocation(`/storefront/${storefrontSlug}`);
     }
