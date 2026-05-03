@@ -83,18 +83,26 @@ describe('Distributed API Cache', () => {
     expect([200, 201]).toContain(login.status);
   }, 30_000);
 
-  it('1. health endpoint reports cache backend', async () => {
+  it('1. health endpoint reports cache backend and pollerActive status', async () => {
     const r = await api('GET', '/api/system/health');
-    // Health endpoint may require auth or may be public — either status is OK
-    // as long as it responds. If 200, check for cache field.
+    expect(r.status).not.toBe(500);
+
     if (r.status === 200 && r.json && typeof r.json === 'object') {
       const body = r.json as Record<string, unknown>;
-      // Cache field may or may not be present depending on server version
-      // Just verify the health endpoint is functional
       expect(body.status).toBeDefined();
-    } else {
-      // If auth required, just verify it's a proper error response (not 500)
-      expect(r.status).not.toBe(500);
+
+      const cache = body.cache as Record<string, unknown> | undefined;
+      if (cache) {
+        // backend should be 'pdim' when PDIM is connected (production + Replit dev)
+        expect(['pdim', 'memory']).toContain(cache.backend);
+        // pollerActive should be true when PDIM is connected
+        if (cache.backend === 'pdim') {
+          expect(cache.pollerActive).toBe(true);
+        }
+        expect(typeof cache.hits).toBe('number');
+        expect(typeof cache.misses).toBe('number');
+        expect(typeof cache.size).toBe('number');
+      }
     }
   });
 

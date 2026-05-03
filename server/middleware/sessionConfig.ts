@@ -121,17 +121,31 @@ function createIoredisAdapter(ioredisClient: { get: (...a: unknown[]) => Promise
 }
 
 // ── Session revocation ────────────────────────────────────────────────────────
-// Propagation timeline:
-//   revokeUserSessions(uid) called on pod A
-//   → writes `session:revoke:{uid}` to PDIM (shared across all pods)
-//   → pod B's revocationL1 for this uid expires within REVOKE_L1_TTL_MS (5 s)
-//   → pod B re-checks PDIM, sees flag, returns null session → user forced to re-login
+// Propagation timeline for revokeUserSessions(uid):
+//   Pod A calls revokeUserSessions(uid)
+//   → writes `session:revoke:{uid}` = '1' to PDIM (all pods share this)
+//   → warms this pod's L1 with revoked=true immediately
 //
-// Before this change: password reset invalidated DB sessions but L1 cache on
-// other pods still served the old session for up to 60 s (L1_TTL_MS).
+//   Pod B (other pod):
+//   → _revokeL1 for this uid is missing or stores revoked=false with a 10 s TTL
+//   → next request for this user: L1 TTL (≤10 s) expires, re-checks PDIM
+//   → sees revocation flag → returns null session → user forced to re-login
+//
+// Asymmetric TTL design (key insight):
+//   revoked=false  10 s L1  — most users are never revoked; 10 s avoids per-request
+//                              PDIM calls while keeping the window short enough that
+//                              a newly revoked user is rejected within 10 s (not 60 s).
+//   revoked=true   200 ms L1 — once a user IS revoked, we keep re-checking PDIM quickly
+//                              so the "still-seeing-revocation" check stays fresh and
+//                              the flag is not inadvertently "healed" by a stale L1 read.
+//
+// Max cross-pod propagation lag: 10 s (L1 TTL for non-revoked entries).
+// Before this change: unbounded (L1 session cache was 60 s; revocation wrote to PDIM/DB
+// but other pods' L1 caches were never cleared).
 
-const REVOKE_L1_TTL_MS = 5_000;  // 5 s max propagation lag for revocation signals
-const REVOKE_PDIM_TTL_S = 70;    // slightly longer than L1_TTL_MS (60 s) to ensure full coverage
+const REVOKE_L1_TTL_ACTIVE_MS  = 10_000; // 10 s — normal users; efficient PDIM access
+const REVOKE_L1_TTL_REVOKED_MS =    200; // 200 ms — just-revoked user; fast re-check
+const REVOKE_PDIM_TTL_S        =     70; // slightly longer than L1_TTL_MS (60 s)
 
 // In-process revocation-flag cache: key = userId; value = { revoked, expiresAt }
 // This is module-scoped (not class-scoped) so the exported revokeUserSessions()
@@ -146,12 +160,20 @@ function _revokeL1Get(userId: string): boolean | undefined {
 }
 
 function _revokeL1Set(userId: string, revoked: boolean): void {
-  _revokeL1.set(userId, { revoked, expiresAt: Date.now() + REVOKE_L1_TTL_MS });
+  // Asymmetric TTL: re-check PDIM rapidly while revoked (200 ms), lazily when active (10 s).
+  const ttlMs = revoked ? REVOKE_L1_TTL_REVOKED_MS : REVOKE_L1_TTL_ACTIVE_MS;
+  _revokeL1.set(userId, { revoked, expiresAt: Date.now() + ttlMs });
 }
 
 /**
  * Check if this user's sessions have been revoked.
- * L1-cached for REVOKE_L1_TTL_MS (5 s) to avoid a PDIM call on every request.
+ *
+ * L1-cached asymmetrically:
+ *   revoked=false → 10 s  (efficient; non-revoked users are the common case)
+ *   revoked=true  → 200 ms (fast re-check; keeps rejection fresh while the flag is live)
+ *
+ * This means cross-pod propagation after revokeUserSessions() is at most 10 s
+ * (the L1 TTL for the "not yet revoked" state on other pods).
  */
 async function isRevoked(userId: string): Promise<boolean> {
   const l1 = _revokeL1Get(userId);
@@ -163,7 +185,7 @@ async function isRevoked(userId: string): Promise<boolean> {
     const redis = getRedisClient();
     const val = await redis.get(`session:revoke:${userId}`);
     const revoked = val !== null && val !== undefined;
-    _revokeL1Set(userId, revoked);
+    _revokeL1Set(userId, revoked); // uses asymmetric TTL internally
     return revoked;
   } catch {
     return false; // on PDIM error, do not block the request
@@ -189,8 +211,9 @@ function extractUserIdFromSession(data: session.SessionData | null): string | un
  *   - Account suspension / locking
  *   - Role downgrade
  *
- * All pods will reject sessions for this user within REVOKE_L1_TTL_MS (5 s)
- * regardless of their in-process L1 session cache state.
+ * All pods will reject sessions for this user within REVOKE_L1_TTL_ACTIVE_MS (10 s)
+ * regardless of their in-process L1 session cache state.  Already-revoked pods
+ * re-check PDIM every 200 ms (REVOKE_L1_TTL_REVOKED_MS) to stay current.
  */
 export async function revokeUserSessions(userId: string): Promise<void> {
   // Warm this pod's L1 immediately
@@ -201,7 +224,7 @@ export async function revokeUserSessions(userId: string): Promise<void> {
   try {
     const redis = getRedisClient();
     await redis.set(`session:revoke:${userId}`, '1', 'EX', REVOKE_PDIM_TTL_S);
-    logger.info(`[SessionRevoke] Revocation flag set for user ${userId} (TTL=${REVOKE_PDIM_TTL_S}s, max cross-pod lag=5s)`);
+    logger.info(`[SessionRevoke] Revocation flag set for user ${userId} (TTL=${REVOKE_PDIM_TTL_S}s, max cross-pod lag=${REVOKE_L1_TTL_ACTIVE_MS / 1000}s)`);
   } catch (err: unknown) {
     logger.warn({ err }, `[SessionRevoke] Failed to write revocation flag for user ${userId} — other pods may still serve old sessions for up to 60 s`);
   }

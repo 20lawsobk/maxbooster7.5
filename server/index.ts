@@ -1069,6 +1069,16 @@ app.use((req: Request, res: Response, next: NextFunction) => {
         try {
           await distributedCache.connect();
           logger.info('✅ [DistributedCache] Connected (deferred)');
+          // Start the API cache cross-pod invalidation poller now that PDIM is live.
+          // The poller reads PDIM every 100 ms and evicts L1 entries when another pod
+          // has signalled an invalidation — equivalent to pub/sub but using PDIM key-polling
+          // (PDIM stubs PUBLISH/SUBSCRIBE as no-ops; see pdimClient.ts:1080-1084).
+          try {
+            const { apiCache: _ac } = await import('./middleware/apiCache.js');
+            _ac.startPoller();
+          } catch (pollerErr: unknown) {
+            logger.warn(`⚠️ API cache invalidation poller failed to start: ${(pollerErr as Error)?.message}`);
+          }
         } catch (e) {
           logger.warn(`⚠️ Distributed cache connect failed (non-fatal, in-memory fallback active): ${e.message}`);
         }
