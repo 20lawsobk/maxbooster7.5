@@ -97,6 +97,9 @@ class RedisRateLimitStore implements Store {
             const count: number = (pruned !== null)
               ? await redis.zcard(rKey)
               : await redis.zcount(rKey, windowStart, '+inf');
+            // Mirror the Lua path: do NOT record the request when already limited.
+            // Avoids extending the blocking window on hot keys.
+            if (count >= this.maxRequests) return this.maxRequests + 1;
             await redis.zadd(rKey, now, entryId);
             Promise.resolve(redis.expire(rKey, windowExpireSecs)).catch(() => {});
             return count + 1;

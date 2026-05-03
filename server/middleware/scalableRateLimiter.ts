@@ -89,6 +89,9 @@ export class DistributedRateLimiter {
   }
 
   async isRateLimited(key: string): Promise<{ limited: boolean; remaining: number }> {
+    // 'sw' suffix distinguishes sliding-window keys from any legacy fixed-window
+    // (INCR+EXPIRE) keys that may still exist in Redis under the old prefix.
+    // Intentional: old keys are left to expire naturally; no counter reset needed.
     const redisKey = `ratelimit:sw:${key}`;
     const now = Date.now();
     const windowStart = now - this.config.windowMs;
