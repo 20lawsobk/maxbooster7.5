@@ -15,6 +15,7 @@ export default defineConfig({
       'tests/paid-user-e2e.test.ts',
       'tests/ai-analytics-integration.test.ts',
       'tests/cache-invalidation.test.ts',
+      'tests/unit/cache-cross-pod.test.ts',
     ],
     environment: 'node',
     globals: true,

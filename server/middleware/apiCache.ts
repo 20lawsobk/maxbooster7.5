@@ -130,7 +130,7 @@ const POLL_INTERVAL_MS =   100;   // ~150 ms max cross-pod propagation lag
  *
  * Both invalidateForUser() and invalidatePattern() propagate to all pods.
  */
-class APIResponseCache {
+export class APIResponseCache {
   // ── L1 entry cache ────────────────────────────────────────────────────────
   private l1 = new Map<string, { entry: CacheEntry; expiresAt: number }>();
 
@@ -229,7 +229,7 @@ class APIResponseCache {
    * Quiet path (no new invalidations): 1 PDIM GET (seq check).
    * Active path: 1 PDIM GET (seq) + 1 HGETALL (user events) + 1 LRANGE (pattern events).
    */
-  private async pollTick(): Promise<void> {
+  async pollTick(): Promise<void> {
     if (!distributedCache.isConnected()) return;
     try {
       const redis = getRedisClient();
@@ -401,6 +401,14 @@ class APIResponseCache {
       backend:      distributedCache.isConnected() ? 'pdim' : 'memory',
       pollerActive: this.pollTimer !== null,
     };
+  }
+
+  /** Check whether a key exists in the in-process L1 cache. Used by tests only. */
+  l1Has(key: string): boolean {
+    const hit = this.l1.get(key);
+    if (!hit) return false;
+    if (Date.now() > hit.expiresAt) { this.l1.delete(key); return false; }
+    return true;
   }
 }
 
