@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { AppLayout } from '@/components/layout/AppLayout';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRequireSubscription } from '@/hooks/useRequireAuth';
 import { useStudioStore } from '@/lib/studioStore';
@@ -435,19 +436,22 @@ export default function ShowPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-black">
-        <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
-      </div>
+      <AppLayout noPadding>
+        <div className="flex-1 flex items-center justify-center bg-black">
+          <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
+        </div>
+      </AppLayout>
     );
   }
 
 
 
   return (
+    <AppLayout noPadding>
     <TooltipProvider>
       <div
         ref={containerRef}
-        className={`min-h-screen bg-gray-950 text-white flex flex-col ${isFullscreen ? 'fixed inset-0 z-50' : ''}`}
+        className={`flex-1 bg-gray-950 text-white flex flex-col ${isFullscreen ? 'fixed inset-0 z-50' : ''}`}
       >
         <header className="h-14 bg-gray-900 border-b border-gray-800 flex items-center justify-between px-4 shrink-0">
           <div className="flex items-center gap-4">
@@ -1092,5 +1096,6 @@ export default function ShowPage() {
         </Dialog>
       </div>
     </TooltipProvider>
+    </AppLayout>
   );
 }

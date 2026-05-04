@@ -2,6 +2,7 @@ import { useLocation } from 'wouter';
 import OnboardingWizard from '@/components/onboarding/OnboardingWizard';
 import { useAuth } from '@/hooks/useAuth';
 import { useEffect } from 'react';
+import { AppLayout } from '@/components/layout/AppLayout';
 
 export default function Onboarding() {
   const [, setLocation] = useLocation();
@@ -22,9 +23,11 @@ export default function Onboarding() {
   };
 
   return (
-    <OnboardingWizard
-      onComplete={handleComplete}
-      onSkip={handleSkip}
-    />
+    <AppLayout noPadding>
+      <OnboardingWizard
+        onComplete={handleComplete}
+        onSkip={handleSkip}
+      />
+    </AppLayout>
   );
 }
