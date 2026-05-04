@@ -85,7 +85,6 @@ const Invoices = lazy(() => import('@/pages/Invoices'));
 const HandleLink = lazy(() => import('@/pages/HandleLink'));
 const Notifications = lazy(() => import('@/pages/Notifications'));
 const MusicWorkflowAutomations = lazy(() => import('@/pages/MusicWorkflowAutomations'));
-const VideoGeneratorPage = lazy(() => import('@/pages/VideoGeneratorPage'));
 const Shows = lazy(() => import('@/pages/Shows'));
 const FanHub = lazy(() => import('@/pages/FanHub'));
 const MerchStore = lazy(() => import('@/pages/MerchStore'));
@@ -131,7 +130,6 @@ function Router() {
       <Route path="/analytics" component={Analytics} />
       <Route path="/developer-api" component={DeveloperApi} />
       <Route path="/social-media" component={SocialMedia} />
-      <Route path="/video-generator" component={VideoGeneratorPage} />
       <Route path="/advertising" component={Advertisement} />
       <Route path="/marketplace" component={Marketplace} />
       <Route path="/marketplace/producer/:producerId" component={ProducerProfilePage} />

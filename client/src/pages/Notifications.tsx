@@ -34,6 +34,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { NotificationItem } from '@/components/notifications/NotificationItem';
 import type { Notification, NotificationCategory } from '@/components/notifications/types';
 import { categoryConfig, typeToCategory } from '@/components/notifications/types';
+import { AppLayout } from '@/components/layout/AppLayout';
 
 type TabFilter = 'all' | 'unread' | NotificationCategory;
 
@@ -165,8 +166,8 @@ export default function Notifications() {
   );
 
 return (
-    <div className="min-h-screen bg-background">
-      <div className="max-w-3xl mx-auto px-4 py-6">
+    <AppLayout title="Notifications">
+      <div className="max-w-3xl mx-auto">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">
             <Button variant="ghost" size="icon" onClick={() => navigate('/dashboard')}>
@@ -285,6 +286,6 @@ return (
           </CardContent>
         </Card>
       </div>
-    </div>
+    </AppLayout>
   );
 }

@@ -76,6 +76,8 @@ import {
   Power,
   PowerOff,
   Flag,
+  Unlock,
+  Lock,
   MessageSquare,
   AlertCircle,
   RefreshCw,
@@ -196,6 +198,7 @@ const ADMIN_NAV_ITEMS = [
   { id: 'analytics', label: 'Platform Analytics', icon: BarChart3 },
   { id: 'financial', label: 'Financial Config', icon: Sliders },
   { id: 'killswitch', label: 'Kill Switch', icon: Power },
+  { id: 'payment-bypass', label: 'Payment Bypass', icon: CreditCard },
   { id: 'settings', label: 'Settings', icon: Settings },
 ];
 
@@ -221,6 +224,9 @@ export default function Admin() {
   const [moderationNotes, setModerationNotes] = useState('');
   const [killSwitchReason, setKillSwitchReason] = useState('');
   const [killSwitchTarget, setKillSwitchTarget] = useState<'all' | string>('all');
+  const [bypassDuration, setBypassDuration] = useState('2');
+  const [bypassReason, setBypassReason] = useState('');
+  const [bypassExtendHours, setBypassExtendHours] = useState('1');
 
   const { data: usersData, isLoading: usersLoading, refetch: refetchUsers } = useQuery<UsersResponse>({
     queryKey: ['/api/admin/users', { search: searchTerm, status: statusFilter, plan: planFilter }],
@@ -263,6 +269,17 @@ export default function Admin() {
   const { data: platformSettings } = useQuery({
     queryKey: ['/api/admin/settings'],
     enabled: !!user,
+  });
+
+  const { data: bypassStatus, isLoading: bypassLoading, refetch: refetchBypass } = useQuery<{
+    bypassed: boolean;
+    config: { enabled: boolean; activatedAt: string | null; expiresAt: string | null; activatedBy: string | null; reason: string | null };
+    timeRemaining: string | null;
+    timeRemainingMs: number | null;
+  }>({
+    queryKey: ['/api/admin/payment-bypass/status'],
+    enabled: !!user,
+    refetchInterval: 30000,
   });
 
   const updateUserMutation = useMutation({
@@ -352,6 +369,52 @@ export default function Admin() {
     onSuccess: () => {
       refetchHealth();
       toast({ title: 'Systems Resumed', description: 'All autonomous systems have been resumed.' });
+    },
+  });
+
+  const activateBypassMutation = useMutation({
+    mutationFn: async ({ durationHours, reason }: { durationHours: number; reason: string }) => {
+      const response = await apiRequest('POST', '/api/admin/payment-bypass/activate', { durationHours, reason });
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/payment-bypass/status'] });
+      refetchBypass();
+      setBypassReason('');
+      toast({ title: 'Payment Bypass Activated', description: `Payment requirements bypassed for ${bypassDuration} hours.` });
+    },
+    onError: (error: Error) => {
+      toast({ title: 'Activation Failed', description: error.message, variant: 'destructive' });
+    },
+  });
+
+  const deactivateBypassMutation = useMutation({
+    mutationFn: async () => {
+      const response = await apiRequest('POST', '/api/admin/payment-bypass/deactivate', {});
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/payment-bypass/status'] });
+      refetchBypass();
+      toast({ title: 'Payment Bypass Deactivated', description: 'Payment requirements are back in effect.' });
+    },
+    onError: (error: Error) => {
+      toast({ title: 'Deactivation Failed', description: error.message, variant: 'destructive' });
+    },
+  });
+
+  const extendBypassMutation = useMutation({
+    mutationFn: async (additionalHours: number) => {
+      const response = await apiRequest('POST', '/api/admin/payment-bypass/extend', { additionalHours });
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/payment-bypass/status'] });
+      refetchBypass();
+      toast({ title: 'Bypass Extended', description: `Extended by ${bypassExtendHours} hour(s).` });
+    },
+    onError: (error: Error) => {
+      toast({ title: 'Extension Failed', description: error.message, variant: 'destructive' });
     },
   });
 
@@ -1256,6 +1319,219 @@ export default function Admin() {
     </div>
   );
 
+  const renderPaymentBypass = () => (
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-2xl font-bold text-amber-600 flex items-center gap-2">
+          <CreditCard className="h-6 w-6" />
+          Payment Bypass
+        </h2>
+        <p className="text-gray-500">Temporarily waive payment requirements for all users. Requires admin + 2FA.</p>
+      </div>
+
+      {bypassLoading ? (
+        <Card><CardContent className="pt-6"><Skeleton className="h-24 w-full" /></CardContent></Card>
+      ) : (
+        <>
+          <Card className={bypassStatus?.bypassed ? 'border-amber-400 bg-amber-50' : ''}>
+            <CardHeader>
+              <CardTitle className="flex items-center justify-between">
+                <span>Bypass Status</span>
+                <Badge variant={bypassStatus?.bypassed ? 'default' : 'secondary'}
+                  className={bypassStatus?.bypassed ? 'bg-amber-500 text-white' : ''}>
+                  {bypassStatus?.bypassed ? 'ACTIVE' : 'INACTIVE'}
+                </Badge>
+              </CardTitle>
+              <CardDescription>
+                When active, all authenticated users pass the subscription gate regardless of their plan.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {bypassStatus?.bypassed ? (
+                <div className="p-4 bg-amber-100 border border-amber-300 rounded-lg space-y-2">
+                  <div className="flex items-center gap-2 text-amber-800 font-medium">
+                    <Unlock className="h-5 w-5" />
+                    Payment requirements are currently bypassed
+                  </div>
+                  {bypassStatus.timeRemaining && (
+                    <div className="flex items-center gap-2 text-sm text-amber-700">
+                      <Clock className="h-4 w-4" />
+                      Expires in: <span className="font-mono font-semibold">{bypassStatus.timeRemaining}</span>
+                    </div>
+                  )}
+                  {bypassStatus.config.reason && (
+                    <p className="text-sm text-amber-700">Reason: {bypassStatus.config.reason}</p>
+                  )}
+                  {bypassStatus.config.activatedBy && (
+                    <p className="text-xs text-amber-600">Activated by: {bypassStatus.config.activatedBy}</p>
+                  )}
+                  {bypassStatus.config.activatedAt && (
+                    <p className="text-xs text-amber-600">
+                      Activated at: {new Date(bypassStatus.config.activatedAt).toLocaleString()}
+                    </p>
+                  )}
+                </div>
+              ) : (
+                <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+                  <div className="flex items-center gap-2 text-green-800 font-medium">
+                    <Lock className="h-5 w-5" />
+                    Payment requirements are enforced
+                  </div>
+                  <p className="text-sm text-green-700 mt-1">
+                    Users must have an active subscription, trial, or be within the grace period to access premium features.
+                  </p>
+                </div>
+              )}
+
+              {bypassStatus?.bypassed ? (
+                <Button
+                  variant="destructive"
+                  onClick={() => deactivateBypassMutation.mutate()}
+                  disabled={deactivateBypassMutation.isPending}
+                  className="w-full"
+                >
+                  {deactivateBypassMutation.isPending ? (
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  ) : (
+                    <Lock className="h-4 w-4 mr-2" />
+                  )}
+                  Deactivate Bypass Now
+                </Button>
+              ) : null}
+            </CardContent>
+          </Card>
+
+          {!bypassStatus?.bypassed && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Unlock className="h-5 w-5 text-amber-600" />
+                  Activate Bypass
+                </CardTitle>
+                <CardDescription>
+                  Set a duration and optional reason. Maximum 72 hours per activation.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="bypass-duration">Duration (hours)</Label>
+                    <Input
+                      id="bypass-duration"
+                      type="number"
+                      min="1"
+                      max="72"
+                      value={bypassDuration}
+                      onChange={(e) => setBypassDuration(e.target.value)}
+                      className="mt-1"
+                    />
+                    <p className="text-xs text-gray-400 mt-1">Max 72 hours</p>
+                  </div>
+                  <div className="flex items-end">
+                    <div className="text-sm text-gray-500">
+                      Expires: <span className="font-medium">
+                        {(() => {
+                          const h = parseFloat(bypassDuration) || 0;
+                          if (h <= 0) return '—';
+                          const d = new Date(Date.now() + h * 3600000);
+                          return d.toLocaleString();
+                        })()}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                <div>
+                  <Label htmlFor="bypass-reason">Reason (optional)</Label>
+                  <Input
+                    id="bypass-reason"
+                    value={bypassReason}
+                    onChange={(e) => setBypassReason(e.target.value)}
+                    placeholder="e.g. Testing new onboarding flow"
+                    className="mt-1"
+                  />
+                </div>
+                <Button
+                  className="w-full bg-amber-600 hover:bg-amber-700 text-white"
+                  onClick={() => {
+                    const hours = Math.min(72, Math.max(1, parseFloat(bypassDuration) || 2));
+                    activateBypassMutation.mutate({ durationHours: hours, reason: bypassReason });
+                  }}
+                  disabled={activateBypassMutation.isPending}
+                >
+                  {activateBypassMutation.isPending ? (
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  ) : (
+                    <Unlock className="h-4 w-4 mr-2" />
+                  )}
+                  Activate Payment Bypass
+                </Button>
+              </CardContent>
+            </Card>
+          )}
+
+          {bypassStatus?.bypassed && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Clock className="h-5 w-5 text-amber-600" />
+                  Extend Active Bypass
+                </CardTitle>
+                <CardDescription>Add more time to the current bypass window. Maximum 24 hours per extension.</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex gap-4 items-end">
+                  <div className="flex-1">
+                    <Label htmlFor="extend-hours">Additional hours</Label>
+                    <Input
+                      id="extend-hours"
+                      type="number"
+                      min="1"
+                      max="24"
+                      value={bypassExtendHours}
+                      onChange={(e) => setBypassExtendHours(e.target.value)}
+                      className="mt-1"
+                    />
+                  </div>
+                  <Button
+                    variant="outline"
+                    onClick={() => extendBypassMutation.mutate(Math.min(24, Math.max(1, parseFloat(bypassExtendHours) || 1)))}
+                    disabled={extendBypassMutation.isPending}
+                  >
+                    {extendBypassMutation.isPending ? (
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    ) : (
+                      <RefreshCw className="h-4 w-4 mr-2" />
+                    )}
+                    Extend
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-sm">
+                <AlertCircle className="h-4 w-4 text-blue-500" />
+                What this affects
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ul className="text-sm text-gray-600 space-y-1 list-disc list-inside">
+                <li>All <code className="text-xs bg-gray-100 px-1 rounded">requirePremium</code> middleware gates are bypassed instantly</li>
+                <li>Users with free, expired, or no subscription gain full access</li>
+                <li>Every protected API response includes an <code className="text-xs bg-gray-100 px-1 rounded">X-Payment-Bypass: active</code> header</li>
+                <li>State is persisted to the database — survives server restarts</li>
+                <li>Auto-expires at the set time with no manual action needed</li>
+                <li>All activate/deactivate actions are logged with admin ID and reason</li>
+              </ul>
+            </CardContent>
+          </Card>
+        </>
+      )}
+    </div>
+  );
+
   const renderSettings = () => (
     <div className="space-y-6">
       <div>
@@ -1558,6 +1834,7 @@ export default function Admin() {
       case 'analytics': return renderAnalytics();
       case 'financial': return <FinancialConfigPanel />;
       case 'killswitch': return renderKillSwitch();
+      case 'payment-bypass': return renderPaymentBypass();
       case 'settings': return renderSettings();
       default: return renderOverview();
     }

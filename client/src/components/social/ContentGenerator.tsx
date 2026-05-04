@@ -1048,7 +1048,7 @@ export function ContentGenerator() {
                                     platform:     vc.platform || selectedPlatform,
                                     tone:         vc.tone || selectedTone,
                                   });
-                                  window.location.href = `/video-generator?${params.toString()}`;
+                                  window.location.href = `/social-media?${params.toString()}`;
                                 }}
                               >
                                 <Video className="w-3 h-3 mr-1" />

@@ -34,7 +34,6 @@ import {
   ListMusic,
   BookOpen,
   Film,
-  Clapperboard,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -56,7 +55,6 @@ const navItems: NavItem[] = [
   // ── Creator ───────────────────────────────────────────────────────────
   { labelKey: 'navigation.projects', path: '/projects', icon: Music, section: 'Creator' },
   { labelKey: 'navigation.studio', path: '/studio', icon: Disc },
-  { labelKey: 'navigation.videoGenerator', path: '/video-generator', icon: Clapperboard },
   { labelKey: 'navigation.desktopApp', path: '/desktop-app', icon: Monitor },
 
   // ── Growth ────────────────────────────────────────────────────────────
