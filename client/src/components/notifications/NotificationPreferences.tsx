@@ -146,6 +146,9 @@ export function NotificationPreferences() {
   const [showPushPrompt, setShowPushPrompt] = useState(false);
   const [pushPermission, setPushPermission] = useState<NotificationPermission | 'unsupported'>('default');
   const [phoneInput, setPhoneInput] = useState('');
+  const [showCodeInput, setShowCodeInput] = useState(false);
+  const [codeInput, setCodeInput] = useState('');
+  const [devCode, setDevCode] = useState<string | null>(null);
 
   useEffect(() => {
     if ('Notification' in window) {
@@ -200,13 +203,38 @@ export function NotificationPreferences() {
 
   const verifyPhoneMutation = useMutation({
     mutationFn: async (phone: string) => {
-      return apiRequest('POST', '/api/notifications/sms/verify', { phoneNumber: phone });
+      const res = await apiRequest('POST', '/api/notifications/sms/verify', { phoneNumber: phone });
+      return res as { success: boolean; message: string; devCode?: string };
     },
-    onSuccess: () => {
-      toast({ title: 'Verification sent', description: 'Check your phone for the verification code.' });
+    onSuccess: (data) => {
+      setShowCodeInput(true);
+      setCodeInput('');
+      if (data?.devCode) {
+        setDevCode(data.devCode);
+        toast({ title: 'Demo mode', description: 'No SMS provider configured. Your code is shown below.' });
+      } else {
+        setDevCode(null);
+        toast({ title: 'Code sent', description: 'Check your phone for the 6-digit verification code.' });
+      }
     },
     onError: () => {
-      toast({ title: 'Error', description: 'Failed to send verification code.', variant: 'destructive' });
+      toast({ title: 'Error', description: 'Failed to send verification code. Please try again.', variant: 'destructive' });
+    },
+  });
+
+  const confirmPhoneMutation = useMutation({
+    mutationFn: async (code: string) => {
+      return apiRequest('POST', '/api/notifications/sms/confirm', { code });
+    },
+    onSuccess: () => {
+      setShowCodeInput(false);
+      setCodeInput('');
+      setDevCode(null);
+      queryClient.invalidateQueries({ queryKey: ['/api/notifications/preferences'] });
+      toast({ title: 'Phone verified', description: 'SMS notifications are now active on your account.' });
+    },
+    onError: () => {
+      toast({ title: 'Invalid code', description: 'The code you entered is incorrect or expired. Please try again.', variant: 'destructive' });
     },
   });
 
@@ -715,7 +743,7 @@ export function NotificationPreferences() {
                     type="tel"
                     placeholder="+1 (555) 123-4567"
                     value={phoneInput}
-                    onChange={(e) => setPhoneInput(e.target.value)}
+                    onChange={(e) => { setPhoneInput(e.target.value); setShowCodeInput(false); setDevCode(null); }}
                     data-testid="input-phone"
                   />
                   <Button
@@ -731,11 +759,52 @@ export function NotificationPreferences() {
                         Verified
                       </>
                     ) : (
-                      'Verify'
+                      'Send Code'
                     )}
                   </Button>
                 </div>
               </div>
+
+              {showCodeInput && !preferences.sms.verified && (
+                <div className="space-y-2 p-3 rounded-md border bg-muted/30">
+                  <Label>Enter verification code</Label>
+                  {devCode && (
+                    <Alert className="py-2">
+                      <AlertCircle className="h-4 w-4" />
+                      <AlertDescription className="text-xs">
+                        <strong>Demo mode:</strong> No SMS provider configured. Your code is: <strong className="font-mono tracking-widest">{devCode}</strong>
+                      </AlertDescription>
+                    </Alert>
+                  )}
+                  <div className="flex gap-2">
+                    <Input
+                      type="text"
+                      inputMode="numeric"
+                      maxLength={6}
+                      placeholder="6-digit code"
+                      value={codeInput}
+                      onChange={(e) => setCodeInput(e.target.value.replace(/\D/g, ''))}
+                      data-testid="input-sms-code"
+                    />
+                    <Button
+                      onClick={() => confirmPhoneMutation.mutate(codeInput)}
+                      disabled={codeInput.length < 6 || confirmPhoneMutation.isPending}
+                    >
+                      {confirmPhoneMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Confirm'}
+                    </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Didn't receive it?{' '}
+                    <button
+                      className="underline text-primary hover:opacity-80"
+                      onClick={() => verifyPhoneMutation.mutate(phoneInput)}
+                      disabled={verifyPhoneMutation.isPending}
+                    >
+                      Resend code
+                    </button>
+                  </p>
+                </div>
+              )}
 
               <Separator />
               <div className="space-y-3">

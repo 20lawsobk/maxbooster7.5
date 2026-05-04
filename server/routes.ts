@@ -2429,6 +2429,121 @@ export async function registerRoutes(
     }
   });
 
+  // SMS Notifications: Request phone verification code
+  app.post("/api/notifications/sms/verify", async (req: Request, res: Response) => {
+    if (!req.user) return res.status(401).json({ message: "Not authenticated" });
+    try {
+      const { phoneNumber } = req.body;
+      if (!phoneNumber) return res.status(400).json({ message: "Phone number is required" });
+
+      const cleanPhone = (phoneNumber as string).replace(/\D/g, '');
+      if (cleanPhone.length < 10) {
+        return res.status(400).json({ message: "Invalid phone number — must be at least 10 digits" });
+      }
+
+      const verificationCode = crypto.randomInt(100000, 1000000).toString();
+
+      // Store pending code in user settings
+      const user = await storage.getUser(req.user.id);
+      const currentSettings = (user?.notificationSettings as Record<string, unknown>) || {};
+      await storage.updateUser(req.user.id, {
+        notificationSettings: {
+          ...currentSettings,
+          sms: {
+            ...((currentSettings.sms as Record<string, unknown>) || {}),
+            phoneNumber,
+            verified: false,
+            pendingVerification: verificationCode,
+            pendingVerificationExpiry: Date.now() + 10 * 60 * 1000,
+          },
+        },
+      });
+
+      // Send via Twilio if credentials are configured
+      const twilioSid   = process.env.TWILIO_ACCOUNT_SID;
+      const twilioToken = process.env.TWILIO_AUTH_TOKEN;
+      const twilioFrom  = process.env.TWILIO_PHONE_NUMBER;
+
+      if (twilioSid && twilioToken && twilioFrom) {
+        const smsBody = `Your Max Booster verification code is: ${verificationCode}. Valid for 10 minutes. Do not share this code.`;
+        const twilioRes = await fetch(
+          `https://api.twilio.com/2010-04-01/Accounts/${twilioSid}/Messages.json`,
+          {
+            method: 'POST',
+            headers: {
+              Authorization: `Basic ${Buffer.from(`${twilioSid}:${twilioToken}`).toString('base64')}`,
+              'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: new URLSearchParams({ Body: smsBody, From: twilioFrom, To: phoneNumber }).toString(),
+          }
+        );
+
+        if (!twilioRes.ok) {
+          const errText = await twilioRes.text();
+          logger.warn({ errText }, '[SMS] Twilio send failed');
+          return res.status(502).json({ message: "Failed to send SMS. Please check the phone number and try again." });
+        }
+
+        logger.info(`[SMS] Verification code sent via Twilio to ${phoneNumber.slice(0, 4)}***`);
+        return res.json({ success: true, message: "Verification code sent to your phone." });
+      }
+
+      // No provider configured — dev/demo mode: return code in response
+      logger.info(`[SMS DEV] Verification code for ${phoneNumber.slice(0, 4)}***: ${verificationCode}`);
+      return res.json({
+        success: true,
+        message: "SMS provider not configured — use the code displayed below to complete verification.",
+        devCode: verificationCode,
+      });
+    } catch (error) {
+      logger.warn({ err: error }, "SMS verify error");
+      return res.status(500).json({ message: "Failed to send verification code" });
+    }
+  });
+
+  // SMS Notifications: Confirm verification code
+  app.post("/api/notifications/sms/confirm", async (req: Request, res: Response) => {
+    if (!req.user) return res.status(401).json({ message: "Not authenticated" });
+    try {
+      const { code } = req.body;
+      if (!code) return res.status(400).json({ message: "Verification code is required" });
+
+      const user = await storage.getUser(req.user.id);
+      const currentSettings = (user?.notificationSettings as Record<string, unknown>) || {};
+      const smsSettings     = (currentSettings.sms as Record<string, unknown>) || {};
+      const pendingCode     = smsSettings.pendingVerification as string | undefined;
+      const expiry          = smsSettings.pendingVerificationExpiry as number | undefined;
+
+      if (!pendingCode) {
+        return res.status(400).json({ message: "No pending verification — please request a new code" });
+      }
+      if (expiry && Date.now() > expiry) {
+        return res.status(400).json({ message: "Verification code expired — please request a new one" });
+      }
+      if (pendingCode !== (code as string).trim()) {
+        return res.status(400).json({ message: "Invalid verification code" });
+      }
+
+      await storage.updateUser(req.user.id, {
+        notificationSettings: {
+          ...currentSettings,
+          sms: {
+            ...smsSettings,
+            verified: true,
+            pendingVerification: null,
+            pendingVerificationExpiry: null,
+          },
+        },
+      });
+
+      logger.info(`[SMS] Phone number verified for user ${req.user.id}`);
+      return res.json({ success: true, message: "Phone number verified — SMS notifications are now active." });
+    } catch (error) {
+      logger.warn({ err: error }, "SMS confirm error");
+      return res.status(500).json({ message: "Failed to confirm verification code" });
+    }
+  });
+
   // Push Notifications: Enhanced multi-channel status
   app.get("/api/notifications/push/status", async (req: Request, res: Response) => {
     if (!req.user) return res.status(401).json({ message: "Not authenticated" });
