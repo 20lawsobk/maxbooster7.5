@@ -1318,6 +1318,610 @@ class MusicScenarioEngine:
         ).hexdigest()[:8]
         return f"chain_{digest}"
 
+    def build_spec_for_family(
+        self,
+        job_family:  str,
+        scene_hint:  Optional[str] = None,
+    ) -> ScenarioSpec:
+        """
+        Generate a ScenarioSpec for a *specific* job family without touching
+        the engine's exposure counters, seed queue, or ``_last_spec``.
+
+        Used by ABTestScenarioLayer to produce multiple variants for the
+        quality-gate loop while leaving the engine's state pristine — only the
+        winning spec's exposure is committed via ``_commit_spec()``.
+        """
+        if job_family not in SCENARIO_LIBRARY:
+            job_family = self._pick_job_family(None)
+
+        event_type     = self._pick_event(job_family)
+        event_data     = SCENARIO_LIBRARY[job_family][event_type]
+        career_stage   = self._pick_career_stage()
+        platform       = str(self._rng.choice(event_data['platforms']))
+        lo, hi         = event_data['intensity']
+        intensity      = float(self._rng.uniform(lo, hi))
+        scene_category = self._pick_scene_category(job_family, scene_hint)
+        scene_prompt   = self._build_prompt(event_data, career_stage, intensity, 0)
+        chain_id       = self._new_chain_id()
+
+        context = (
+            f"{career_stage.replace('_', ' ')} | "
+            f"{job_family.replace('_', ' ')} | "
+            f"{event_type.replace('_', ' ')} | "
+            f"{platform} | "
+            f"intensity={intensity:.2f} | depth=0 [ab_variant]"
+        )
+
+        return ScenarioSpec(
+            scenario_id         = f"ab_{int(time.time())}_{self._chain_counter}",
+            chain_id            = chain_id,
+            job_family          = job_family,
+            model_target        = MODEL_TARGET[job_family],
+            career_stage        = career_stage,
+            platform            = platform,
+            event_type          = event_type,
+            intensity           = intensity,
+            compound_depth      = 0,
+            consequence_seeds   = list(event_data['seeds']),
+            scene_category      = scene_category,
+            scene_prompt        = scene_prompt,
+            ye_weight           = SCENARIO_YE_WEIGHT_BASE,
+            context_description = context,
+        )
+
+    def commit_spec(self, spec: ScenarioSpec) -> None:
+        """
+        Record the winning AB variant into the engine's exposure counters,
+        ``_last_spec``, and ``_total_fired`` — call this *once* per training
+        step after ABTestScenarioLayer picks a winner.
+        """
+        self._job_exposure[spec.job_family]       = self._job_exposure.get(spec.job_family, 0) + 1
+        self._scene_exposure[spec.scene_category] = self._scene_exposure.get(spec.scene_category, 0) + 1
+        self._total_fired += 1
+        self._last_spec    = spec
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  A/B TEST SCENARIO LAYER
+# ══════════════════════════════════════════════════════════════════════════════
+
+"""
+ABTestScenarioLayer — UCB1-bandit quality-gate for scenario selection
+=====================================================================
+Translated from the TypeScript A/B post-testing system in:
+  server/services/contentQualityGate.ts     (quality gate retry loop)
+  server/autonomous-autopilot.ts            (UCB1 multi-armed bandit)
+  server/services/contentQualityPipeline.ts (variant generation + scoring)
+
+Direct concept mapping
+──────────────────────
+  ContentQualityGate.run()             →  select_scenario()
+  scoreAndGateExisting()               →  score_and_gate_spec()
+  UCB1 topic bandit (topicPerfMap)     →  UCB1 job-family bandit (_job_reward_map)
+  UCB1_C = 0.25                        →  AB_UCB1_C = 0.25            (unchanged)
+  quality threshold 81/100 (Veo)       →  AB_PASS_THRESHOLD = 0.70    (intensity)
+  VEO_PRESSURE_FLOOR = 73/100          →  AB_PRESSURE_FLOOR = 0.50    (intensity)
+  MAX_ROUNDS = 10                      →  AB_MAX_ROUNDS = 10           (unchanged)
+  VARIANTS_PER_ROUND = 7               →  AB_VARIANTS_PER_ROUND = 7   (unchanged)
+  rotateObjective()                    →  _rotate_job_family()
+  Caffeine Mode pressure (0 → 1.5)     →  training_pressure from sim.year_equiv_deficit()
+  recordEngagementOutcome()            →  record_reward()
+  contentPerformanceHistory (UCB1 arm) →  _job_reward_map / _job_trial_map
+
+Quality gate flow (mirrors ContentQualityGate.run())
+─────────────────────────────────────────────────────
+  Round 1  — UCB1-selected job family (best explore-exploit estimate)
+  Rounds 2+ — Rotate through other job families (broader search space)
+  Each round generates AB_VARIANTS_PER_ROUND + round scenario specs,
+  scored by intensity.  Winner = highest-intensity spec ≥ AB_PASS_THRESHOLD.
+  After AB_MAX_ROUNDS the best available is used if ≥ AB_PRESSURE_FLOOR,
+  otherwise None is returned so the caller skips injection.
+
+Training-pressure (Caffeine Mode analog)
+────────────────────────────────────────
+  pressure = 0          → on track    (normal UCB1 explore-exploit)
+  pressure 0 → 0.5      → mild lag    (tighten explore, mild high-YE bias)
+  pressure 0.5 → 1.5    → behind      (exploit hard, strong high-YE bias)
+  pressure > 1.5        → critical    (maximum exploitation, minimum floor relaxed)
+
+Memory-sync integration
+────────────────────────
+  After a winner is accepted by the training loop, call record_reward(spec)
+  to feed compound_depth + intensity back as a UCB1 reward signal.  This is
+  the equivalent of recordEngagementOutcome() — it adapts the bandit to what
+  the training simulator actually finds valuable.
+"""
+
+# ── A/B layer constants ───────────────────────────────────────────────────────
+AB_PASS_THRESHOLD:     float = 0.70   # intensity ≥ this → passes gate (≈ 81/100 Veo)
+AB_PRESSURE_FLOOR:     float = 0.50   # absolute minimum under pressure (≈ 73/100)
+AB_MAX_ROUNDS:         int   = 10     # retry budget
+AB_VARIANTS_PER_ROUND: int   = 7      # variants generated per round
+AB_UCB1_C:             float = 0.25   # UCB1 exploration constant (same as TS autopilot)
+AB_PRESSURE_MAX_YE_DEFICIT: float = 5.0  # YE-years deficit that saturates pressure at 1.5
+
+# ── High-YE-weight job families (prioritised under training pressure) ─────────
+_HIGH_YE_FAMILIES: List[str] = [
+    'release_architect',   # ye_weight targets all four models → highest coverage
+    'visual_director',     # UNetV4 primary → most direct gradient impact
+    'fan_engagement',      # engagement model — often the weakest link
+]
+
+# ── Job family rotation (rotateObjective() equivalent) ───────────────────────
+_FAMILY_ROTATION: List[str] = [
+    'visual_director',
+    'release_architect',
+    'fan_engagement',
+    'content_creator',
+    'social_strategist',
+    'ads_manager',
+    'touring_pro',
+    'sync_composer',
+]
+
+_AB_STATE_PATH = os.path.join(_STATE_DIR, 'ab_layer_state.json')
+
+
+class ABTestScenarioLayer:
+    """
+    UCB1 multi-armed bandit + quality-gate retry loop for scenario selection.
+
+    Wraps MusicScenarioEngine.build_spec_for_family() to generate multiple
+    scenario variants per step, applies an intensity quality gate, and learns
+    which job families produce the highest-value training signals via UCB1.
+
+    Public API
+    ──────────
+      select_scenario(step_count, scene_hint, gradient_health, sim)
+          → ScenarioSpec | None   (None = nothing cleared the pressure floor)
+
+      score_and_gate_spec(spec, sim, scene_hint, gradient_health)
+          → ScenarioSpec | None   (gate already-rolled spec, mirrors scoreAndGateExisting)
+
+      record_reward(spec)
+          → None                  (call after a winning spec completes a training step)
+
+      save() / load()             (call at session boundaries)
+
+      status() → dict             (FastAPI-compatible monitoring snapshot)
+    """
+
+    def __init__(self, engine: MusicScenarioEngine) -> None:
+        self._engine:          MusicScenarioEngine  = engine
+        self._job_reward_map:  Dict[str, float]     = {}   # avg reward per job family
+        self._job_trial_map:   Dict[str, int]        = {}   # trial count per job family
+        self._total_ab_runs:   int                   = 0    # gate invocations
+        self._total_passed:    int                   = 0    # invocations that found a winner
+        self._total_rejected:  int                   = 0    # invocations that returned None
+        self._last_pressure:   float                 = 0.0  # last computed training pressure
+        self.load()
+
+    # ── Public API ─────────────────────────────────────────────────────────────
+
+    def select_scenario(
+        self,
+        step_count:      int,
+        scene_hint:      Optional[str]  = None,
+        gradient_health: Optional[Dict] = None,
+        sim:             object          = None,
+    ) -> Optional[ScenarioSpec]:
+        """
+        Run the A/B quality-gate loop and return the best scenario spec that
+        clears the intensity threshold, or None if nothing clears the floor.
+
+        Mirrors ContentQualityGate.run().
+
+        Args:
+            step_count:      Current training step (for logging context).
+            scene_hint:      Active scene in the training loop (passed through
+                             to build_spec_for_family for thematic continuity).
+            gradient_health: {scene: health_score} from adv_mem (passed through
+                             to the engine's family picker as tiebreaker context).
+            sim:             TimeSimulator instance — used to compute training
+                             pressure (Caffeine Mode analog).  May be None.
+        """
+        try:
+            return self._run_gate(step_count, scene_hint, gradient_health, sim)
+        except Exception as exc:
+            print(f"[ABLayer] select_scenario error (returning None): {exc}", flush=True)
+            return None
+
+    def score_and_gate_spec(
+        self,
+        spec:            ScenarioSpec,
+        sim:             object          = None,
+        scene_hint:      Optional[str]  = None,
+        gradient_health: Optional[Dict] = None,
+    ) -> Optional[ScenarioSpec]:
+        """
+        Score an already-rolled ScenarioSpec against the quality gate.
+
+        If it passes → return it unchanged.
+        If it fails  → run the full AB retry loop to find a better one.
+
+        Mirrors ContentQualityGate.scoreAndGateExisting().
+        """
+        threshold, _ = self._compute_thresholds(sim)
+        if spec.intensity >= threshold:
+            print(
+                f"[ABLayer] Pre-rolled spec passed gate — "
+                f"intensity={spec.intensity:.3f} threshold={threshold:.2f} "
+                f"family={spec.job_family}",
+                flush=True,
+            )
+            return spec
+
+        print(
+            f"[ABLayer] Pre-rolled spec scored {spec.intensity:.3f} < {threshold:.2f} "
+            f"— handing off to AB retry gate (family={spec.job_family})",
+            flush=True,
+        )
+        return self._run_gate(
+            step_count=0,
+            scene_hint=scene_hint or spec.scene_category,
+            gradient_health=gradient_health,
+            sim=sim,
+        )
+
+    def record_reward(self, spec: ScenarioSpec) -> None:
+        """
+        Feed the outcome of a winning spec back into the UCB1 bandit arms.
+
+        Reward = normalised compound_depth (0.2/0.5/0.8) + intensity bonus (×0.3).
+        Range: [0.0, 1.1] — stays in the engagement-rate range expected by UCB1.
+
+        Equivalent to recordEngagementOutcome() in contentQualityGate.ts.
+        """
+        depth_reward = (
+            0.8 if spec.compound_depth >= 2 else
+            0.5 if spec.compound_depth == 1 else
+            0.2
+        )
+        reward = min(1.0, depth_reward + spec.intensity * 0.3)
+
+        family = spec.job_family
+        n      = self._job_trial_map.get(family, 0)
+        prev   = self._job_reward_map.get(family, reward)
+        # Incremental mean update (Welford)
+        self._job_reward_map[family] = (prev * n + reward) / (n + 1)
+        self._job_trial_map[family]  = n + 1
+
+        print(
+            f"[ABLayer] record_reward family={family} "
+            f"reward={reward:.3f} depth={spec.compound_depth} "
+            f"intensity={spec.intensity:.3f} "
+            f"avg_now={self._job_reward_map[family]:.3f} n={n+1}",
+            flush=True,
+        )
+
+    def save(self) -> None:
+        """Persist UCB1 arm state to JSON alongside scenario_state.json."""
+        state = {
+            'job_reward_map': self._job_reward_map,
+            'job_trial_map':  self._job_trial_map,
+            'total_ab_runs':  self._total_ab_runs,
+            'total_passed':   self._total_passed,
+            'total_rejected': self._total_rejected,
+        }
+        tmp = _AB_STATE_PATH + '.tmp'
+        try:
+            with open(tmp, 'w') as f:
+                json.dump(state, f, indent=2)
+            os.replace(tmp, _AB_STATE_PATH)
+        except Exception as exc:
+            print(f"[ABLayer] Save error: {exc}", flush=True)
+
+    def load(self) -> None:
+        """Restore UCB1 arm state from JSON if available."""
+        if not os.path.exists(_AB_STATE_PATH):
+            return
+        try:
+            with open(_AB_STATE_PATH) as f:
+                state = json.load(f)
+            self._job_reward_map = state.get('job_reward_map', {})
+            self._job_trial_map  = state.get('job_trial_map',  {})
+            self._total_ab_runs  = state.get('total_ab_runs',  0)
+            self._total_passed   = state.get('total_passed',   0)
+            self._total_rejected = state.get('total_rejected',  0)
+            print(
+                f"[ABLayer] State restored — "
+                f"arms={len(self._job_reward_map)} "
+                f"runs={self._total_ab_runs} "
+                f"pass_rate={self._total_passed}/{self._total_ab_runs}",
+                flush=True,
+            )
+        except Exception as exc:
+            print(f"[ABLayer] Load error ({exc}) — starting fresh", flush=True)
+
+    def status(self) -> dict:
+        """FastAPI-compatible status snapshot."""
+        total      = self._total_ab_runs or 1
+        pass_rate  = round(self._total_passed  / total, 3)
+        reject_rate= round(self._total_rejected / total, 3)
+
+        top_arms = sorted(
+            self._job_reward_map.items(), key=lambda kv: -kv[1]
+        )[:5]
+
+        return {
+            'ab_layer_active':      True,
+            'total_gate_runs':      self._total_ab_runs,
+            'pass_rate':            pass_rate,
+            'reject_rate':          reject_rate,
+            'last_training_pressure': round(self._last_pressure, 3),
+            'ucb1_arms':            {
+                fam: {
+                    'avg_reward': round(self._job_reward_map.get(fam, 0.0), 4),
+                    'trials':     self._job_trial_map.get(fam, 0),
+                }
+                for fam in SCENARIO_LIBRARY
+            },
+            'top_performing_families': [
+                {'family': fam, 'avg_reward': round(r, 4)}
+                for fam, r in top_arms
+            ],
+            'constants': {
+                'pass_threshold':     AB_PASS_THRESHOLD,
+                'pressure_floor':     AB_PRESSURE_FLOOR,
+                'max_rounds':         AB_MAX_ROUNDS,
+                'variants_per_round': AB_VARIANTS_PER_ROUND,
+                'ucb1_c':             AB_UCB1_C,
+            },
+        }
+
+    # ── Internal helpers ───────────────────────────────────────────────────────
+
+    def _run_gate(
+        self,
+        step_count:      int,
+        scene_hint:      Optional[str],
+        gradient_health: Optional[Dict],
+        sim:             object,
+    ) -> Optional[ScenarioSpec]:
+        """Core quality-gate retry loop. Mirrors ContentQualityGate.run()."""
+        self._total_ab_runs += 1
+
+        threshold, pressure_floor = self._compute_thresholds(sim)
+        pressure = self._compute_training_pressure(sim)
+        self._last_pressure = pressure
+
+        all_variants:      List[ScenarioSpec] = []
+        rejected_variants: List[ScenarioSpec] = []
+        winner:            Optional[ScenarioSpec] = None
+        passed_on_round:   int = 0
+
+        for round_num in range(1, AB_MAX_ROUNDS + 1):
+
+            # ── Round 1: UCB1-selected family (highest explore-exploit score) ──
+            # ── Rounds 2+: Rotate job family (different search angle) ──────────
+            if round_num == 1:
+                family = self._ucb1_select_family(pressure, gradient_health)
+            else:
+                family = self._rotate_job_family(round_num, gradient_health)
+
+            # More variants each retry round (mirrors variantCount = VARIANTS_PER_ROUND + round)
+            n_variants = AB_VARIANTS_PER_ROUND + round_num
+
+            variants = self._generate_variants(family, scene_hint, n_variants)
+            all_variants.extend(variants)
+
+            # Best variant this round (sorted by intensity descending)
+            candidate = max(variants, key=lambda s: s.intensity) if variants else None
+
+            if candidate and candidate.intensity >= threshold:
+                winner          = candidate
+                passed_on_round = round_num
+                rejected_variants.extend(
+                    v for v in variants if v is not candidate
+                )
+                print(
+                    f"[ABLayer] step={step_count} PASSED round {round_num}/{AB_MAX_ROUNDS} "
+                    f"— intensity={candidate.intensity:.3f} threshold={threshold:.2f} "
+                    f"family={candidate.job_family}",
+                    flush=True,
+                )
+                break
+
+            rejected_variants.extend(variants)
+            print(
+                f"[ABLayer] step={step_count} round {round_num}/{AB_MAX_ROUNDS} "
+                f"family={family} best={candidate.intensity:.3f if candidate else 'N/A'} "
+                f"< threshold={threshold:.2f} — retrying...",
+                flush=True,
+            )
+
+        # ── Exhausted all rounds: use best available or reject ─────────────────
+        if winner is None:
+            best = max(all_variants, key=lambda s: s.intensity) if all_variants else None
+
+            if best is None or best.intensity < pressure_floor:
+                pressure_hint = (
+                    'CRITICAL pressure — floor relaxed to minimum' if pressure > 1.5 else
+                    'moderate pressure — training deficit building' if pressure > 0.5 else
+                    'low pressure — content quality ceiling not yet reached'
+                )
+                print(
+                    f"[ABLayer] step={step_count} exhausted {AB_MAX_ROUNDS} rounds — "
+                    f"best intensity {best.intensity:.3f if best else 'N/A'} "
+                    f"< pressure_floor={pressure_floor:.2f}. "
+                    f"Scenario injection skipped. Pressure: {pressure:.2f} ({pressure_hint})",
+                    flush=True,
+                )
+                self._total_rejected += 1
+                return None
+
+            winner          = best
+            passed_on_round = AB_MAX_ROUNDS
+            print(
+                f"[ABLayer] step={step_count} exhausted {AB_MAX_ROUNDS} rounds — "
+                f"using best available: intensity={winner.intensity:.3f} "
+                f"(above floor={pressure_floor:.2f}, below threshold={threshold:.2f}) "
+                f"family={winner.job_family} pressure={pressure:.2f}",
+                flush=True,
+            )
+
+        # ── Commit winner to engine exposure counters ──────────────────────────
+        self._engine.commit_spec(winner)
+        self._total_passed += 1
+
+        print(
+            f"[ABLayer] gate_run={self._total_ab_runs} "
+            f"winner={winner.job_family}/{winner.event_type} "
+            f"intensity={winner.intensity:.3f} "
+            f"depth={winner.compound_depth} "
+            f"ye_weight={winner.ye_weight} "
+            f"passed_on_round={passed_on_round}/{AB_MAX_ROUNDS} "
+            f"total_variants_tried={len(all_variants)} "
+            f"pressure={pressure:.2f}",
+            flush=True,
+        )
+
+        return winner
+
+    def _generate_variants(
+        self,
+        job_family: str,
+        scene_hint: Optional[str],
+        n:          int,
+    ) -> List[ScenarioSpec]:
+        """Generate n scenario variants for a given job family."""
+        variants = []
+        for _ in range(n):
+            try:
+                spec = self._engine.build_spec_for_family(job_family, scene_hint)
+                variants.append(spec)
+            except Exception as exc:
+                print(f"[ABLayer] variant generation error (skip): {exc}", flush=True)
+        return variants
+
+    def _ucb1_select_family(
+        self,
+        pressure:        float,
+        gradient_health: Optional[Dict],
+    ) -> str:
+        """
+        UCB1 multi-armed bandit over job families.
+
+        score = avg_reward + UCB1_C * sqrt(ln(N) / n_arm)
+
+        Under high training pressure, _HIGH_YE_FAMILIES get an exploitation
+        bonus that overrides the exploration term — mirrors Caffeine Mode
+        bypassing optimal-timing windows when behind schedule.
+
+        Mirrors selectOptimalTopic() in autonomous-autopilot.ts.
+        """
+        families   = list(SCENARIO_LIBRARY.keys())
+        total_N    = sum(self._job_trial_map.values()) or len(families)
+
+        best_family = ''
+        best_score  = -float('inf')
+
+        for fam in families:
+            avg_reward = self._job_reward_map.get(fam, 0.0)
+            n          = max(1, self._job_trial_map.get(fam, 0))
+
+            # Standard UCB1 score
+            exploration_bonus = AB_UCB1_C * (
+                (total_N / n) ** 0.5  # sqrt(ln(N)/n) approximated as sqrt(N/n) for stability
+            )
+            ucb1_score = avg_reward + exploration_bonus
+
+            # Caffeine Mode: high-YE families get an extra exploitation bonus
+            # proportional to training pressure (mirrors broadcastPressure → fast crunch)
+            if pressure > 0 and fam in _HIGH_YE_FAMILIES:
+                # Linear bonus: 0 at pressure=0, +0.5 at pressure=1.5
+                pressure_bonus = min(0.5, pressure / 3.0)
+                ucb1_score    += pressure_bonus
+
+            # Gradient health bonus: boost families linked to weak scenes
+            if gradient_health:
+                related_scenes = SCENE_MAP.get(fam, [])
+                for sc in related_scenes:
+                    health = float(gradient_health.get(sc, 1.0))
+                    if health < 0.5:
+                        ucb1_score += (0.5 - health) * 0.2   # mild signal, not dominating
+
+            if ucb1_score > best_score:
+                best_score  = ucb1_score
+                best_family = fam
+
+        return best_family or families[0]
+
+    def _rotate_job_family(self, round_num: int, gradient_health: Optional[Dict]) -> str:
+        """
+        Rotate through job families on retry rounds to force different generation
+        angles — the A/B testing driver.  Mirrors rotateObjective() in the TS gate.
+
+        Weak-scene families are pulled earlier in the rotation under gradient pressure.
+        """
+        rotation = list(_FAMILY_ROTATION)
+
+        # If gradient_health is available, bubble families with weak scenes to front
+        if gradient_health:
+            def _health_score(fam: str) -> float:
+                scenes = SCENE_MAP.get(fam, [])
+                if not scenes:
+                    return 1.0
+                return float(
+                    sum(gradient_health.get(sc, 1.0) for sc in scenes) / len(scenes)
+                )
+            rotation = sorted(rotation, key=_health_score)  # weakest first
+
+        return rotation[(round_num - 1) % len(rotation)]
+
+    def _compute_training_pressure(self, sim: object) -> float:
+        """
+        Compute training pressure on a 0 → 1.5 scale from the time simulator.
+
+        Mirrors computeSchedulePressure() in autonomous-autopilot.ts.
+
+        0          → on track or ahead
+        0 → 0.5    → mild lag
+        0.5 → 1.5  → behind (moderate caffeine)
+        > 1.5      → critical (maximum caffeine — all-nighter mode)
+
+        If sim is None or the method is unavailable, returns 0.0.
+        """
+        if sim is None:
+            return 0.0
+        try:
+            deficit_years = float(sim.year_equiv_deficit())
+            # Normalise: AB_PRESSURE_MAX_YE_DEFICIT years maps to pressure 1.5
+            pressure = min(1.5, max(0.0, deficit_years / AB_PRESSURE_MAX_YE_DEFICIT * 1.5))
+            return pressure
+        except Exception:
+            return 0.0
+
+    def _compute_thresholds(self, sim: object) -> Tuple[float, float]:
+        """
+        Return (pass_threshold, pressure_floor) adjusted for training pressure.
+
+        Under critical pressure (> 1.5):
+          - pass_threshold relaxed to AB_PRESSURE_FLOOR + 0.05 (still above floor)
+          - pressure_floor kept at AB_PRESSURE_FLOOR (absolute minimum)
+
+        Under moderate pressure (0.5 → 1.5):
+          - pass_threshold relaxed linearly from AB_PASS_THRESHOLD → AB_PRESSURE_FLOOR + 0.10
+          - pressure_floor unchanged
+
+        No pressure:
+          - both constants unchanged
+
+        Mirrors the threshold adaptation in recordEngagementOutcome() / getUserThreshold().
+        """
+        pressure = self._compute_training_pressure(sim)
+
+        if pressure > 1.5:
+            threshold = AB_PRESSURE_FLOOR + 0.05
+        elif pressure > 0.5:
+            # Linear interpolation: full threshold at 0.5, relaxed at 1.5
+            t = (pressure - 0.5) / 1.0          # 0→1 across the moderate band
+            threshold = AB_PASS_THRESHOLD - t * (AB_PASS_THRESHOLD - AB_PRESSURE_FLOOR - 0.10)
+        else:
+            threshold = AB_PASS_THRESHOLD
+
+        return round(threshold, 4), AB_PRESSURE_FLOOR
+
 
 # ══════════════════════════════════════════════════════════════════════════════
 #  MODULE-LEVEL SINGLETON
@@ -1332,3 +1936,49 @@ def get_engine() -> MusicScenarioEngine:
     if _engine is None:
         _engine = MusicScenarioEngine()
     return _engine
+
+
+_ab_layer: Optional[ABTestScenarioLayer] = None
+
+
+def get_ab_layer() -> ABTestScenarioLayer:
+    """
+    Return (or create) the process-wide AB test scenario layer singleton.
+
+    The layer wraps the scenario engine singleton and persists its own UCB1
+    arm state to ab_layer_state.json alongside scenario_state.json.
+
+    Usage in trainer.py (drop-in replacement for roll_scenario):
+
+        from diffusion.music_scenario_engine import (
+            get_ab_layer as _get_ab_layer,
+            SCENARIO_INJECT_EVERY_N_STEPS as _SCENARIO_INJECT_N,
+        )
+        ab_layer = _get_ab_layer()
+
+        # Every N steps (inside training loop):
+        if step_count % _SCENARIO_INJECT_N == 0:
+            spec = ab_layer.select_scenario(
+                step_count      = step_count,
+                scene_hint      = scene,
+                gradient_health = _gh,
+                sim             = sim,
+            )
+            if spec is not None:
+                scene  = spec.scene_category
+                prompt = spec.scene_prompt
+                sim.add_scenario_steps(1, compound_depth=spec.compound_depth)
+
+        # After the training step completes successfully:
+        if spec is not None:
+            ab_layer.record_reward(spec)
+            get_engine().plant_seeds(spec, step_count)
+
+        # Session end:
+        ab_layer.save()
+        get_engine().save()
+    """
+    global _ab_layer
+    if _ab_layer is None:
+        _ab_layer = ABTestScenarioLayer(get_engine())
+    return _ab_layer
