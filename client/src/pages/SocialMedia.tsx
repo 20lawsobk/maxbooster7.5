@@ -115,6 +115,7 @@ import {
 import { ContentCalendarView } from '@/components/social/ContentCalendarView';
 import { SchedulePostDialog, SchedulePostData } from '@/components/social/SchedulePostDialog';
 import { PostTimelineView } from '@/components/social/PostTimelineView';
+import { BatchEditPanel, type BatchUpdate } from '@/components/social/BatchEditPanel';
 import { AutopilotDashboard } from '@/components/autopilot/autopilot-dashboard';
 import { ContentAnalyzer } from '@/components/content/ContentAnalyzer';
 import { UnifiedInbox } from '@/components/social/UnifiedInbox';
@@ -497,6 +498,7 @@ export default function SocialMedia() {
   const [scheduleDialogOpen, setScheduleDialogOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [editingCalendarPost, setEditingCalendarPost] = useState<CalendarPost | null>(null);
+  const [selectedCalendarPostIds, setSelectedCalendarPostIds] = useState<Set<string>>(new Set());
 
   // Helper function to format numbers with K/M suffix
   const formatNumber = (num: number): string => {
@@ -1024,6 +1026,67 @@ export default function SocialMedia() {
     },
   });
 
+  // ── Batch calendar mutations ──────────────────────────────────────────────
+  const batchUpdateCalendarMutation = useMutation({
+    mutationFn: async ({ postIds, updates }: { postIds: string[]; updates: BatchUpdate }) => {
+      const response = await apiRequest('PATCH', '/api/social/calendar/batch', { postIds, updates });
+      return response.json();
+    },
+    onSuccess: (data) => {
+      toast({
+        title: 'Posts Updated',
+        description: `${data.updated ?? 0} post${data.updated !== 1 ? 's' : ''} updated successfully.`,
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/social/calendar'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/social/calendar/stats'] });
+      invalidateOnSocialChange();
+      setSelectedCalendarPostIds(new Set());
+    },
+    onError: () => {
+      toast({ title: 'Batch Update Failed', description: 'Could not update the selected posts.', variant: 'destructive' });
+    },
+  });
+
+  const batchDeleteCalendarMutation = useMutation({
+    mutationFn: async (postIds: string[]) => {
+      const response = await apiRequest('DELETE', '/api/social/calendar/batch', { postIds });
+      return response.json();
+    },
+    onSuccess: (data) => {
+      toast({
+        title: 'Posts Deleted',
+        description: `${data.deleted ?? 0} post${data.deleted !== 1 ? 's' : ''} removed from calendar.`,
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/social/calendar'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/social/calendar/stats'] });
+      invalidateOnSocialChange();
+      setSelectedCalendarPostIds(new Set());
+    },
+    onError: () => {
+      toast({ title: 'Batch Delete Failed', description: 'Could not delete the selected posts.', variant: 'destructive' });
+    },
+  });
+
+  const batchPublishCalendarMutation = useMutation({
+    mutationFn: async (postIds: string[]) => {
+      const response = await apiRequest('POST', '/api/social/calendar/batch/publish', { postIds });
+      return response.json();
+    },
+    onSuccess: (data) => {
+      toast({
+        title: 'Posts Published',
+        description: `${data.published ?? 0} post${data.published !== 1 ? 's' : ''} published successfully.`,
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/social/calendar'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/social/calendar/stats'] });
+      invalidateOnSocialChange();
+      setSelectedCalendarPostIds(new Set());
+    },
+    onError: () => {
+      toast({ title: 'Batch Publish Failed', description: 'Could not publish the selected posts.', variant: 'destructive' });
+    },
+  });
+
   // Autopilot Queries and Mutations
   const { data: autopilotStatus, isLoading: autopilotLoading } = useQuery<AutopilotStatus>({
     queryKey: ['/api/autopilot/status'],
@@ -1340,6 +1403,45 @@ export default function SocialMedia() {
       title: 'Action Started',
       description: `${action} initiated`,
     });
+  };
+
+  // ── Calendar batch-selection helpers ─────────────────────────────────────
+  const calendarPostList: CalendarPost[] = Array.isArray(calendarPosts)
+    ? calendarPosts
+    : (calendarPosts as { posts: CalendarPost[] })?.posts || [];
+
+  const toggleCalendarPostSelect = (id: string) => {
+    setSelectedCalendarPostIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
+  const selectAllCalendarPosts = () => {
+    if (selectedCalendarPostIds.size === calendarPostList.length) {
+      setSelectedCalendarPostIds(new Set());
+    } else {
+      setSelectedCalendarPostIds(new Set(calendarPostList.map(p => p.id)));
+    }
+  };
+
+  const handleBatchUpdate = (updates: BatchUpdate) => {
+    const postIds = Array.from(selectedCalendarPostIds);
+    if (postIds.length === 0) return;
+    batchUpdateCalendarMutation.mutate({ postIds, updates });
+  };
+
+  const handleBatchDelete = () => {
+    const postIds = Array.from(selectedCalendarPostIds);
+    if (postIds.length === 0) return;
+    batchDeleteCalendarMutation.mutate(postIds);
+  };
+
+  const handleBatchPublish = () => {
+    const postIds = Array.from(selectedCalendarPostIds);
+    if (postIds.length === 0) return;
+    batchPublishCalendarMutation.mutate(postIds);
   };
 
   // Calendar handlers
@@ -2490,6 +2592,22 @@ return (
 
           {/* Calendar Tab */}
           <TabsContent value="calendar" className="space-y-6">
+            {/* Batch Edit Panel — visible when posts are selected */}
+            <BatchEditPanel
+              selectedCount={selectedCalendarPostIds.size}
+              totalCount={calendarPostList.length}
+              onClearSelection={() => setSelectedCalendarPostIds(new Set())}
+              onSelectAll={selectAllCalendarPosts}
+              onBatchUpdate={handleBatchUpdate}
+              onBatchDelete={handleBatchDelete}
+              onBatchPublish={handleBatchPublish}
+              isLoading={
+                batchUpdateCalendarMutation.isPending ||
+                batchDeleteCalendarMutation.isPending ||
+                batchPublishCalendarMutation.isPending
+              }
+            />
+
             {/* Stats Cards */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <Card className="bg-gradient-to-br from-blue-50 to-cyan-100 dark:from-blue-900/20 dark:to-cyan-900/20">
@@ -2549,20 +2667,21 @@ return (
 
             {/* Calendar View */}
             <ContentCalendarView
-              posts={
-                Array.isArray(calendarPosts) ? calendarPosts : (calendarPosts as { posts: CalendarPost[] })?.posts || []
-              }
+              posts={calendarPostList}
               onDateClick={handleDateClick}
+              selectedIds={selectedCalendarPostIds}
+              onToggleSelect={toggleCalendarPostSelect}
             />
 
             {/* Timeline View */}
             <PostTimelineView
-              posts={
-                Array.isArray(calendarPosts) ? calendarPosts : (calendarPosts as { posts: CalendarPost[] })?.posts || []
-              }
+              posts={calendarPostList}
               onEdit={handleEditCalendarPost}
               onDelete={handleDeleteCalendarPost}
               onPublish={handlePublishCalendarPost}
+              selectedIds={selectedCalendarPostIds}
+              onToggleSelect={toggleCalendarPostSelect}
+              onSelectAll={selectAllCalendarPosts}
             />
 
             {/* Schedule Post Dialog */}

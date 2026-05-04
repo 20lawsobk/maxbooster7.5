@@ -369,6 +369,138 @@ router.put('/calendar/:postId', requireAuth, async (req: AuthenticatedRequest, r
   }
 });
 
+// ── Batch operations on calendar posts ───────────────────────────────────────
+// These routes MUST appear before /:postId routes so Express does not
+// interpret "batch" as a post ID.
+
+// Batch update: change status, scheduledAt, platform, or content on many posts
+router.patch('/calendar/batch', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const userId = req.user!.id;
+    const { postIds, updates } = req.body as {
+      postIds: string[];
+      updates: {
+        status?: string;
+        scheduledAt?: string | null;
+        platform?: string;
+        content?: string;
+      };
+    };
+
+    if (!Array.isArray(postIds) || postIds.length === 0) {
+      return res.status(400).json({ error: 'postIds must be a non-empty array' });
+    }
+    if (!updates || Object.keys(updates).length === 0) {
+      return res.status(400).json({ error: 'updates must contain at least one field' });
+    }
+
+    // Verify all posts belong to this user
+    const existing = await db.select({ id: posts.id })
+      .from(posts)
+      .where(and(inArray(posts.id, postIds), eq(posts.userId, userId)));
+
+    const validIds = existing.map(r => r.id);
+    if (validIds.length === 0) {
+      return res.status(404).json({ error: 'No matching posts found' });
+    }
+
+    const dbUpdates: Record<string, unknown> = {};
+    if (updates.status    !== undefined) dbUpdates.status    = updates.status;
+    if (updates.platform  !== undefined) dbUpdates.platform  = updates.platform;
+    if (updates.content   !== undefined) dbUpdates.content   = updates.content;
+    if (updates.scheduledAt !== undefined) {
+      dbUpdates.scheduledAt = updates.scheduledAt ? new Date(updates.scheduledAt) : null;
+    }
+
+    const updated = await db.update(posts)
+      .set(dbUpdates)
+      .where(and(inArray(posts.id, validIds), eq(posts.userId, userId)))
+      .returning();
+
+    res.json({ updated: updated.length, posts: updated });
+  } catch (error) {
+    logger.warn({ err: error }, 'Batch calendar update error');
+    res.status(500).json({ error: 'Failed to batch update posts' });
+  }
+});
+
+// Batch publish: immediately publish multiple posts
+router.post('/calendar/batch/publish', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const userId = req.user!.id;
+    const { postIds } = req.body as { postIds: string[] };
+
+    if (!Array.isArray(postIds) || postIds.length === 0) {
+      return res.status(400).json({ error: 'postIds must be a non-empty array' });
+    }
+
+    const existing = await db.select().from(posts)
+      .where(and(inArray(posts.id, postIds), eq(posts.userId, userId)));
+
+    if (existing.length === 0) {
+      return res.status(404).json({ error: 'No matching posts found' });
+    }
+
+    const results: { id: string; success: boolean; error?: string }[] = [];
+
+    for (const post of existing) {
+      try {
+        await db.update(posts)
+          .set({ status: 'published', publishedAt: new Date() } as Record<string, unknown>)
+          .where(and(eq(posts.id, post.id), eq(posts.userId, userId)));
+
+        setImmediate(async () => {
+          try {
+            await notificationService.sendSocialPostPublishedNotification(
+              userId, post.platform ?? 'unknown', String(post.content ?? ''), new Date()
+            );
+          } catch { /* non-fatal */ }
+        });
+
+        results.push({ id: post.id, success: true });
+      } catch (err) {
+        results.push({ id: post.id, success: false, error: String(err) });
+      }
+    }
+
+    const successCount = results.filter(r => r.success).length;
+    res.json({ published: successCount, results });
+  } catch (error) {
+    logger.warn({ err: error }, 'Batch publish error');
+    res.status(500).json({ error: 'Failed to batch publish posts' });
+  }
+});
+
+// Batch delete: remove multiple calendar posts at once
+router.delete('/calendar/batch', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const userId = req.user!.id;
+    // Support both JSON body and query-string for DELETE
+    const rawIds = req.body?.postIds ?? req.query?.postIds;
+    const postIds: string[] = Array.isArray(rawIds) ? rawIds : typeof rawIds === 'string' ? [rawIds] : [];
+
+    if (postIds.length === 0) {
+      return res.status(400).json({ error: 'postIds must be a non-empty array' });
+    }
+
+    const existing = await db.select({ id: posts.id })
+      .from(posts)
+      .where(and(inArray(posts.id, postIds), eq(posts.userId, userId)));
+
+    const validIds = existing.map(r => r.id);
+    if (validIds.length === 0) {
+      return res.status(404).json({ error: 'No matching posts found' });
+    }
+
+    await db.delete(posts).where(and(inArray(posts.id, validIds), eq(posts.userId, userId)));
+
+    res.json({ deleted: validIds.length, ids: validIds });
+  } catch (error) {
+    logger.warn({ err: error }, 'Batch delete error');
+    res.status(500).json({ error: 'Failed to batch delete posts' });
+  }
+});
+
 // Delete a calendar post
 router.delete('/calendar/:postId', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
