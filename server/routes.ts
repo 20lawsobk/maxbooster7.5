@@ -2167,17 +2167,95 @@ export async function registerRoutes(
     }
     try {
       const user = await storage.getUser(req.user.id);
+      const savedPrefs = user?.notificationSettings as Record<string, unknown> | null;
+
       const defaultPrefs = {
-        email: true,
-        browser: true,
-        releases: true,
-        earnings: true,
-        sales: true,
-        marketing: false,
-        system: true,
+        muteAll: false,
+        quietHours: {
+          enabled: false,
+          startTime: '22:00',
+          endTime: '08:00',
+          timezone: 'America/New_York',
+          allowUrgent: true,
+        },
+        email: {
+          enabled: true,
+          frequency: 'instant',
+          categories: {
+            account_security: true,
+            distribution: true,
+            social_media: true,
+            marketplace: true,
+            royalties: true,
+            collaboration: true,
+            system: true,
+            direct_interaction: true,
+            platform_generated: false,
+            content_based: true,
+            engagement_summary: true,
+            location_based: false,
+          },
+        },
+        push: {
+          enabled: false,
+          categories: {
+            account_security: true,
+            distribution: true,
+            social_media: false,
+            marketplace: true,
+            royalties: true,
+            collaboration: true,
+            system: true,
+            direct_interaction: true,
+            platform_generated: false,
+            content_based: false,
+            engagement_summary: false,
+            location_based: false,
+          },
+        },
+        sms: {
+          enabled: false,
+          phoneNumber: null,
+          verified: false,
+          categories: {
+            account_security: true,
+            royalties: true,
+          },
+        },
+        inApp: {
+          enabled: true,
+          sound: true,
+          desktop: true,
+        },
       };
-      const prefs = user?.notificationSettings || defaultPrefs;
-      return res.json(prefs);
+
+      if (!savedPrefs) {
+        return res.json(defaultPrefs);
+      }
+
+      const merged = {
+        ...defaultPrefs,
+        ...savedPrefs,
+        quietHours: { ...defaultPrefs.quietHours, ...(savedPrefs.quietHours as Record<string, unknown> || {}) },
+        email: {
+          ...defaultPrefs.email,
+          ...(savedPrefs.email as Record<string, unknown> || {}),
+          categories: { ...defaultPrefs.email.categories, ...((savedPrefs.email as Record<string, unknown>)?.categories as Record<string, unknown> || {}) },
+        },
+        push: {
+          ...defaultPrefs.push,
+          ...(savedPrefs.push as Record<string, unknown> || {}),
+          categories: { ...defaultPrefs.push.categories, ...((savedPrefs.push as Record<string, unknown>)?.categories as Record<string, unknown> || {}) },
+        },
+        sms: {
+          ...defaultPrefs.sms,
+          ...(savedPrefs.sms as Record<string, unknown> || {}),
+          categories: { ...defaultPrefs.sms.categories, ...((savedPrefs.sms as Record<string, unknown>)?.categories as Record<string, unknown> || {}) },
+        },
+        inApp: { ...defaultPrefs.inApp, ...(savedPrefs.inApp as Record<string, unknown> || {}) },
+      };
+
+      return res.json(merged);
     } catch (error) {
       logger.warn({ err: error }, "Get notification preferences error");
       return res.status(500).json({ error: 'Failed to get notification preferences' });
@@ -2190,10 +2268,35 @@ export async function registerRoutes(
       return res.status(401).json({ message: "Not authenticated" });
     }
     try {
+      const newPreferences = req.body as Record<string, unknown>;
       await storage.updateUser(req.user.id, {
-        notificationSettings: req.body,
+        notificationSettings: newPreferences,
       });
-      return res.json({ success: true });
+
+      let outcomeType = 'preference_saved';
+      let outcomeMessage = 'Notification preferences updated';
+
+      if (newPreferences.muteAll !== undefined) {
+        outcomeType = 'mute_toggled';
+        outcomeMessage = newPreferences.muteAll ? 'All notifications muted' : 'Notifications unmuted';
+      } else if ((newPreferences.quietHours as Record<string, unknown>)?.enabled !== undefined) {
+        outcomeType = 'quiet_hours_set';
+        outcomeMessage = (newPreferences.quietHours as Record<string, unknown>).enabled
+          ? 'Quiet hours enabled'
+          : 'Quiet hours disabled';
+      } else if ((newPreferences.email as Record<string, unknown>)?.frequency) {
+        outcomeType = 'digest_changed';
+        outcomeMessage = `Email digest set to ${(newPreferences.email as Record<string, unknown>).frequency}`;
+      }
+
+      return res.json({
+        success: true,
+        outcome: {
+          type: outcomeType,
+          success: true,
+          message: outcomeMessage,
+        },
+      });
     } catch (error) {
       logger.warn({ err: error }, "Update notification preferences error");
       return res.status(500).json({ message: "Failed to update preferences" });

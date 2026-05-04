@@ -1,5 +1,11 @@
 /**
- * Max Booster Service Worker v8
+ * Max Booster Service Worker v9
+ *
+ * Key improvements (v9):
+ *  • pushsubscriptionchange handler — automatically re-subscribes when the
+ *    browser invalidates a push subscription (e.g. after browser updates or
+ *    VAPID key rotation) by fetching a fresh VAPID key and re-registering
+ *    the new subscription with the server.
  *
  * Key improvements (v8):
  *  • Silent push handler — processes background sync events from the server
@@ -411,6 +417,60 @@ self.addEventListener('notificationclose', (event) => {
       client.postMessage({ type: 'NOTIFICATION_CLOSED', tag: event.notification.tag, data: notifData });
     });
   });
+});
+
+// ── Push subscription auto-renewal ────────────────────────────────────────────
+// Fired by the browser when an existing push subscription expires or is
+// invalidated (e.g. after a browser update or VAPID key rotation).
+// We fetch a fresh VAPID public key from the server and re-subscribe, then
+// save the new subscription endpoint so push delivery continues uninterrupted.
+self.addEventListener('pushsubscriptionchange', (event) => {
+  event.waitUntil(
+    (async () => {
+      try {
+        // 1. Fetch the current VAPID public key from the server
+        const keyRes = await fetch('/api/notifications/push-key', { credentials: 'include' });
+        if (!keyRes.ok) return;
+        const { publicKey } = await keyRes.json();
+        if (!publicKey) return;
+
+        // 2. Convert URL-safe base64 VAPID key to Uint8Array
+        const padding = '='.repeat((4 - (publicKey.length % 4)) % 4);
+        const base64 = (publicKey + padding).replace(/-/g, '+').replace(/_/g, '/');
+        const applicationServerKey = Uint8Array.from(atob(base64), c => c.charCodeAt(0));
+
+        // 3. Re-subscribe using the new key
+        const registration = await self.registration;
+        const newSubscription = await registration.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey,
+        });
+
+        // 4. Send the new subscription to the server
+        const subJson = newSubscription.toJSON();
+        await fetch('/api/notifications/push-subscriptions', {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            endpoint: subJson.endpoint,
+            keys: {
+              p256dh: subJson.keys?.p256dh,
+              auth:   subJson.keys?.auth,
+            },
+          }),
+        });
+
+        // 5. Notify open windows so they can update UI state
+        const windowClients = await clients.matchAll({ type: 'window', includeUncontrolled: true });
+        windowClients.forEach(client =>
+          client.postMessage({ type: 'PUSH_SUBSCRIPTION_RENEWED', endpoint: subJson.endpoint })
+        );
+      } catch (err) {
+        console.warn('[SW] pushsubscriptionchange re-subscribe failed:', err);
+      }
+    })()
+  );
 });
 
 // ── Message handlers ──────────────────────────────────────────────────────────

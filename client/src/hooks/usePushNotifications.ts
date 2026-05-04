@@ -57,6 +57,26 @@ export function usePushNotifications() {
     });
   }, [user]);
 
+  // Listen for service-worker messages — specifically PUSH_SUBSCRIPTION_RENEWED
+  // which is fired by the pushsubscriptionchange handler in sw.js when the browser
+  // auto-renews an expired subscription.  Invalidate the status query so the UI
+  // reflects the new subscription without requiring a manual refresh.
+  useEffect(() => {
+    if (!('serviceWorker' in navigator)) return;
+
+    const handleSWMessage = (event: MessageEvent) => {
+      if (!event.data) return;
+      if (event.data.type === 'PUSH_SUBSCRIPTION_RENEWED') {
+        setIsSubscribed(true);
+        queryClient.invalidateQueries({ queryKey: ['/api/notifications/push-subscriptions/status'] });
+        logger.info('[Push] Subscription auto-renewed by service worker:', event.data.endpoint);
+      }
+    };
+
+    navigator.serviceWorker.addEventListener('message', handleSWMessage);
+    return () => navigator.serviceWorker.removeEventListener('message', handleSWMessage);
+  }, [queryClient]);
+
   const saveSubscriptionMutation = useMutation({
     mutationFn: async (subscription: PushSubscription) => {
       const json = subscription.toJSON();
@@ -150,7 +170,7 @@ export function usePushNotifications() {
       logger.error('Push subscription failed:', error);
       toast({
         title: 'Subscription Failed',
-        description: error.message || 'Failed to enable push notifications.',
+        description: (error as Error).message || 'Failed to enable push notifications.',
         variant: 'destructive',
       });
       return false;
@@ -188,7 +208,7 @@ export function usePushNotifications() {
       logger.error('Push unsubscribe failed:', error);
       toast({
         title: 'Unsubscribe Failed',
-        description: error.message || 'Failed to disable push notifications.',
+        description: (error as Error).message || 'Failed to disable push notifications.',
         variant: 'destructive',
       });
       return false;

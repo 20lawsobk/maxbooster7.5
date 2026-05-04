@@ -91,6 +91,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { NotificationPreferences } from '@/components/notifications';
 
 export default function Settings() {
   const { user, isLoading: authLoading } = useRequireSubscription();
@@ -987,87 +988,7 @@ export default function Settings() {
           </TabsContent>
 
           <TabsContent value="notifications" className="space-y-6">
-            <Card className="glassmorphism">
-              <CardHeader>
-                <CardTitle>Notification Preferences</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                {/* Email Notifications */}
-                <div>
-                  <h3 className="text-lg font-semibold mb-4">Email Notifications</h3>
-                  <div className="space-y-4">
-                    {[
-                      {
-                        key: 'emailNotifications',
-                        label: 'Email Notifications',
-                        description: 'Receive notifications via email',
-                      },
-                      {
-                        key: 'weeklyReports',
-                        label: 'Weekly Reports',
-                        description: 'Get weekly performance summaries',
-                      },
-                      {
-                        key: 'royaltyUpdates',
-                        label: 'Royalty Updates',
-                        description: 'Notifications about new royalty payments',
-                      },
-                      {
-                        key: 'salesAlerts',
-                        label: 'Sales Alerts',
-                        description: 'Instant notifications for beat sales',
-                      },
-                    ].map((setting) => (
-                      <div key={setting.key} className="flex items-center justify-between">
-                        <div>
-                          <p className="font-medium">{setting.label}</p>
-                          <p className="text-sm text-muted-foreground">{setting.description}</p>
-                        </div>
-                        <Switch
-                          checked={
-                            notificationSettings[setting.key as keyof typeof notificationSettings]
-                          }
-                          onCheckedChange={(checked) =>
-                            handleNotificationChange(setting.key, checked)
-                          }
-                          data-testid={`switch-${setting.key}`}
-                        />
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Push Notifications */}
-                <div>
-                  <h3 className="text-lg font-semibold mb-4">Push Notifications</h3>
-                  <div className="space-y-4">
-                    {[
-                      {
-                        key: 'pushNotifications',
-                        label: 'Push Notifications',
-                        description: 'Receive push notifications on your devices',
-                      },
-                    ].map((setting) => (
-                      <div key={setting.key} className="flex items-center justify-between">
-                        <div>
-                          <p className="font-medium">{setting.label}</p>
-                          <p className="text-sm text-muted-foreground">{setting.description}</p>
-                        </div>
-                        <Switch
-                          checked={
-                            notificationSettings[setting.key as keyof typeof notificationSettings]
-                          }
-                          onCheckedChange={(checked) =>
-                            handleNotificationChange(setting.key, checked)
-                          }
-                          data-testid={`switch-${setting.key}`}
-                        />
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+            <NotificationPreferences />
           </TabsContent>
 
           <TabsContent value="preferences" className="space-y-6">
