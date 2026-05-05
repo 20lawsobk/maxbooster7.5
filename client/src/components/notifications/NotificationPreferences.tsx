@@ -204,7 +204,7 @@ export function NotificationPreferences() {
   const verifyPhoneMutation = useMutation({
     mutationFn: async (phone: string) => {
       const res = await apiRequest('POST', '/api/notifications/sms/verify', { phoneNumber: phone });
-      return res as { success: boolean; message: string; devCode?: string };
+      return res.json() as Promise<{ success: boolean; message: string; devCode?: string }>;
     },
     onSuccess: (data) => {
       setShowCodeInput(true);
