@@ -2441,9 +2441,19 @@ export async function registerRoutes(
         return res.status(400).json({ message: "Invalid phone number — must be at least 10 digits" });
       }
 
+      // Normalize to E.164 format required by Twilio
+      let e164Phone: string;
+      if (cleanPhone.length === 10) {
+        e164Phone = `+1${cleanPhone}`;        // US number without country code
+      } else if (cleanPhone.length === 11 && cleanPhone.startsWith('1')) {
+        e164Phone = `+${cleanPhone}`;         // US number with leading 1
+      } else {
+        e164Phone = `+${cleanPhone}`;         // International — trust the digits
+      }
+
       const verificationCode = crypto.randomInt(100000, 1000000).toString();
 
-      // Store pending code in user settings
+      // Store pending code in user settings (save normalized number)
       const user = await storage.getUser(req.user.id);
       const currentSettings = (user?.notificationSettings as Record<string, unknown>) || {};
       await storage.updateUser(req.user.id, {
@@ -2451,7 +2461,7 @@ export async function registerRoutes(
           ...currentSettings,
           sms: {
             ...((currentSettings.sms as Record<string, unknown>) || {}),
-            phoneNumber,
+            phoneNumber: e164Phone,
             verified: false,
             pendingVerification: verificationCode,
             pendingVerificationExpiry: Date.now() + 10 * 60 * 1000,
@@ -2474,7 +2484,7 @@ export async function registerRoutes(
               Authorization: `Basic ${Buffer.from(`${twilioSid}:${twilioToken}`).toString('base64')}`,
               'Content-Type': 'application/x-www-form-urlencoded',
             },
-            body: new URLSearchParams({ Body: smsBody, From: twilioFrom, To: phoneNumber }).toString(),
+            body: new URLSearchParams({ Body: smsBody, From: twilioFrom, To: e164Phone }).toString(),
           }
         );
 
@@ -2484,7 +2494,7 @@ export async function registerRoutes(
           return res.status(502).json({ message: "Failed to send SMS. Please check the phone number and try again." });
         }
 
-        logger.info(`[SMS] Verification code sent via Twilio to ${phoneNumber.slice(0, 4)}***`);
+        logger.info(`[SMS] Verification code sent via Twilio to ${e164Phone.slice(0, 5)}***`);
         return res.json({ success: true, message: "Verification code sent to your phone." });
       }
 
