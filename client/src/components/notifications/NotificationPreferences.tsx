@@ -149,6 +149,7 @@ export function NotificationPreferences() {
   const [showCodeInput, setShowCodeInput] = useState(false);
   const [codeInput, setCodeInput] = useState('');
   const [devCode, setDevCode] = useState<string | null>(null);
+  const [pendingPhone, setPendingPhone] = useState<string | null>(null);
 
   useEffect(() => {
     if ('Notification' in window) {
@@ -206,9 +207,10 @@ export function NotificationPreferences() {
       const res = await apiRequest('POST', '/api/notifications/sms/verify', { phoneNumber: phone });
       return res.json() as Promise<{ success: boolean; message: string; devCode?: string }>;
     },
-    onSuccess: (data) => {
+    onSuccess: (data, variables) => {
       setShowCodeInput(true);
       setCodeInput('');
+      setPendingPhone(variables);
       if (data?.devCode) {
         setDevCode(data.devCode);
         toast({ title: 'Demo mode', description: 'No SMS provider configured. Your code is shown below.' });
@@ -224,17 +226,23 @@ export function NotificationPreferences() {
 
   const confirmPhoneMutation = useMutation({
     mutationFn: async (code: string) => {
-      return apiRequest('POST', '/api/notifications/sms/confirm', { code });
+      const res = await apiRequest('POST', '/api/notifications/sms/confirm', {
+        code,
+        phoneNumber: pendingPhone,
+      });
+      return res.json() as Promise<{ success: boolean; message: string }>;
     },
     onSuccess: () => {
       setShowCodeInput(false);
       setCodeInput('');
       setDevCode(null);
+      setPendingPhone(null);
       queryClient.invalidateQueries({ queryKey: ['/api/notifications/preferences'] });
       toast({ title: 'Phone verified', description: 'SMS notifications are now active on your account.' });
     },
-    onError: () => {
-      toast({ title: 'Invalid code', description: 'The code you entered is incorrect or expired. Please try again.', variant: 'destructive' });
+    onError: (error: unknown) => {
+      const msg = (error as { message?: string })?.message ?? 'The code you entered is incorrect or expired.';
+      toast({ title: 'Verification failed', description: msg, variant: 'destructive' });
     },
   });
 

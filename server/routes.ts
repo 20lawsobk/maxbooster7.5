@@ -2429,31 +2429,65 @@ export async function registerRoutes(
     }
   });
 
-  // SMS Notifications: Request phone verification code
+  // SMS Notifications: Request phone verification code (Twilio Verify API)
   app.post("/api/notifications/sms/verify", async (req: Request, res: Response) => {
     if (!req.user) return res.status(401).json({ message: "Not authenticated" });
     try {
       const { phoneNumber } = req.body;
       if (!phoneNumber) return res.status(400).json({ message: "Phone number is required" });
 
-      const cleanPhone = (phoneNumber as string).replace(/\D/g, '');
-      if (cleanPhone.length < 10) {
-        return res.status(400).json({ message: "Invalid phone number — must be at least 10 digits" });
-      }
-
-      // Normalize to E.164 format required by Twilio
+      // Normalize to E.164 using libphonenumber-js
+      const { parsePhoneNumber, isValidPhoneNumber } = await import('libphonenumber-js');
       let e164Phone: string;
-      if (cleanPhone.length === 10) {
-        e164Phone = `+1${cleanPhone}`;        // US number without country code
-      } else if (cleanPhone.length === 11 && cleanPhone.startsWith('1')) {
-        e164Phone = `+${cleanPhone}`;         // US number with leading 1
-      } else {
-        e164Phone = `+${cleanPhone}`;         // International — trust the digits
+      try {
+        const parsed = parsePhoneNumber(phoneNumber as string, 'US');
+        if (!parsed || !isValidPhoneNumber(phoneNumber as string, 'US')) {
+          return res.status(400).json({ message: "Invalid phone number. Please include country code, e.g. +1 (555) 123-4567" });
+        }
+        e164Phone = parsed.format('E.164');
+      } catch {
+        return res.status(400).json({ message: "Invalid phone number format" });
       }
 
-      const verificationCode = crypto.randomInt(100000, 1000000).toString();
+      const twilioSid        = process.env.TWILIO_ACCOUNT_SID;
+      const twilioToken      = process.env.TWILIO_AUTH_TOKEN;
+      const verifyServiceSid = process.env.TWILIO_VERIFY_SERVICE_SID;
 
-      // Store pending code in user settings (save normalized number)
+      if (twilioSid && twilioToken && verifyServiceSid) {
+        // ✅ Production path — Twilio Verify API handles code generation, delivery,
+        // expiry, retry limits, fraud guard, and global routing automatically.
+        const twilio = (await import('twilio')).default;
+        const client = twilio(twilioSid, twilioToken);
+
+        const verification = await client.verify.v2
+          .services(verifyServiceSid)
+          .verifications.create({ to: e164Phone, channel: 'sms' });
+
+        if (verification.status !== 'pending') {
+          logger.warn({ status: verification.status }, '[SMS] Unexpected Verify status');
+          return res.status(502).json({ message: "Failed to send verification code. Please try again." });
+        }
+
+        // Store the normalized phone number (code is managed by Twilio — no DB storage needed)
+        const user = await storage.getUser(req.user.id);
+        const currentSettings = (user?.notificationSettings as Record<string, unknown>) || {};
+        await storage.updateUser(req.user.id, {
+          notificationSettings: {
+            ...currentSettings,
+            sms: {
+              ...((currentSettings.sms as Record<string, unknown>) || {}),
+              phoneNumber: e164Phone,
+              verified: false,
+            },
+          },
+        });
+
+        logger.info(`[SMS] Verify code dispatched to ${e164Phone.slice(0, 5)}*** (sid: ${verification.sid})`);
+        return res.json({ success: true, message: "Verification code sent to your phone." });
+      }
+
+      // 🔧 Dev/demo fallback — no Twilio Verify Service configured
+      const verificationCode = crypto.randomInt(100000, 1000000).toString();
       const user = await storage.getUser(req.user.id);
       const currentSettings = (user?.notificationSettings as Record<string, unknown>) || {};
       await storage.updateUser(req.user.id, {
@@ -2468,77 +2502,75 @@ export async function registerRoutes(
           },
         },
       });
-
-      // Send via Twilio if credentials are configured
-      const twilioSid   = process.env.TWILIO_ACCOUNT_SID;
-      const twilioToken = process.env.TWILIO_AUTH_TOKEN;
-      const twilioFrom  = process.env.TWILIO_PHONE_NUMBER;
-
-      if (twilioSid && twilioToken && twilioFrom) {
-        const smsBody = `Your Max Booster verification code is: ${verificationCode}. Valid for 10 minutes. Do not share this code.`;
-        const twilioRes = await fetch(
-          `https://api.twilio.com/2010-04-01/Accounts/${twilioSid}/Messages.json`,
-          {
-            method: 'POST',
-            headers: {
-              Authorization: `Basic ${Buffer.from(`${twilioSid}:${twilioToken}`).toString('base64')}`,
-              'Content-Type': 'application/x-www-form-urlencoded',
-            },
-            body: new URLSearchParams({ Body: smsBody, From: twilioFrom, To: e164Phone }).toString(),
-          }
-        );
-
-        if (!twilioRes.ok) {
-          const errText = await twilioRes.text();
-          logger.warn({ errText }, '[SMS] Twilio send failed');
-          return res.status(502).json({ message: "Failed to send SMS. Please check the phone number and try again." });
-        }
-
-        logger.info(`[SMS] Verification code sent via Twilio to ${e164Phone.slice(0, 5)}***`);
-        return res.json({ success: true, message: "Verification code sent to your phone." });
-      }
-
-      // No provider configured — dev/demo mode: return code in response
-      logger.info(`[SMS DEV] Verification code for ${phoneNumber.slice(0, 4)}***: ${verificationCode}`);
+      logger.info(`[SMS DEV] Verification code for ${e164Phone.slice(0, 5)}***: ${verificationCode}`);
       return res.json({
         success: true,
-        message: "SMS provider not configured — use the code displayed below to complete verification.",
+        message: "Add TWILIO_VERIFY_SERVICE_SID to enable real SMS. Demo code shown below.",
         devCode: verificationCode,
       });
-    } catch (error) {
+    } catch (error: unknown) {
+      const twilioErr = error as { status?: number; message?: string; code?: number };
+      if (twilioErr?.status === 429 || twilioErr?.code === 60203) {
+        return res.status(429).json({ message: "Too many attempts. Please wait before requesting another code." });
+      }
+      if (twilioErr?.code === 60200) {
+        return res.status(400).json({ message: "Invalid phone number. Please check and try again." });
+      }
       logger.warn({ err: error }, "SMS verify error");
       return res.status(500).json({ message: "Failed to send verification code" });
     }
   });
 
-  // SMS Notifications: Confirm verification code
+  // SMS Notifications: Confirm verification code (Twilio Verify API check)
   app.post("/api/notifications/sms/confirm", async (req: Request, res: Response) => {
     if (!req.user) return res.status(401).json({ message: "Not authenticated" });
     try {
-      const { code } = req.body;
+      const { code, phoneNumber } = req.body;
       if (!code) return res.status(400).json({ message: "Verification code is required" });
 
+      const twilioSid        = process.env.TWILIO_ACCOUNT_SID;
+      const twilioToken      = process.env.TWILIO_AUTH_TOKEN;
+      const verifyServiceSid = process.env.TWILIO_VERIFY_SERVICE_SID;
+
+      // Resolve phone: prefer what was sent, fall back to what's stored
       const user = await storage.getUser(req.user.id);
       const currentSettings = (user?.notificationSettings as Record<string, unknown>) || {};
       const smsSettings     = (currentSettings.sms as Record<string, unknown>) || {};
-      const pendingCode     = smsSettings.pendingVerification as string | undefined;
-      const expiry          = smsSettings.pendingVerificationExpiry as number | undefined;
+      const storedPhone     = smsSettings.phoneNumber as string | undefined;
+      const toPhone         = (phoneNumber as string | undefined) || storedPhone;
 
-      if (!pendingCode) {
-        return res.status(400).json({ message: "No pending verification — please request a new code" });
-      }
-      if (expiry && Date.now() > expiry) {
-        return res.status(400).json({ message: "Verification code expired — please request a new one" });
-      }
-      if (pendingCode !== (code as string).trim()) {
-        return res.status(400).json({ message: "Invalid verification code" });
+      if (!toPhone) {
+        return res.status(400).json({ message: "Phone number not found. Please restart verification." });
       }
 
+      if (twilioSid && twilioToken && verifyServiceSid) {
+        // ✅ Production path — Twilio Verify checks the code
+        const twilio = (await import('twilio')).default;
+        const client = twilio(twilioSid, twilioToken);
+
+        const check = await client.verify.v2
+          .services(verifyServiceSid)
+          .verificationChecks.create({ to: toPhone, code: (code as string).trim() });
+
+        if (check.status !== 'approved') {
+          return res.status(400).json({ message: "Invalid or expired verification code. Please try again." });
+        }
+      } else {
+        // 🔧 Dev/demo fallback — validate against stored code
+        const pendingCode = smsSettings.pendingVerification as string | undefined;
+        const expiry      = smsSettings.pendingVerificationExpiry as number | undefined;
+        if (!pendingCode) return res.status(400).json({ message: "No pending verification. Please request a new code." });
+        if (expiry && Date.now() > expiry) return res.status(400).json({ message: "Code expired. Please request a new one." });
+        if (pendingCode !== (code as string).trim()) return res.status(400).json({ message: "Invalid verification code." });
+      }
+
+      // Mark phone as verified in user settings
       await storage.updateUser(req.user.id, {
         notificationSettings: {
           ...currentSettings,
           sms: {
             ...smsSettings,
+            phoneNumber: toPhone,
             verified: true,
             pendingVerification: null,
             pendingVerificationExpiry: null,
@@ -2546,9 +2578,13 @@ export async function registerRoutes(
         },
       });
 
-      logger.info(`[SMS] Phone number verified for user ${req.user.id}`);
+      logger.info(`[SMS] Phone verified for user ${req.user.id}`);
       return res.json({ success: true, message: "Phone number verified — SMS notifications are now active." });
-    } catch (error) {
+    } catch (error: unknown) {
+      const twilioErr = error as { status?: number; code?: number };
+      if (twilioErr?.code === 60202) {
+        return res.status(400).json({ message: "Max check attempts reached. Please request a new code." });
+      }
       logger.warn({ err: error }, "SMS confirm error");
       return res.status(500).json({ message: "Failed to confirm verification code" });
     }
