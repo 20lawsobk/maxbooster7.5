@@ -1402,7 +1402,7 @@ Direct concept mapping
   quality threshold 81/100 (Veo)       →  AB_PASS_THRESHOLD = 0.70    (intensity)
   VEO_PRESSURE_FLOOR = 73/100          →  AB_PRESSURE_FLOOR = 0.50    (intensity)
   MAX_ROUNDS = 10                      →  AB_MAX_ROUNDS = 10           (unchanged)
-  VARIANTS_PER_ROUND = 7               →  AB_VARIANTS_PER_ROUND = 7   (unchanged)
+  VARIANTS_PER_ROUND = 30              →  AB_VARIANTS_PER_ROUND = 30  (unchanged)
   rotateObjective()                    →  _rotate_job_family()
   Caffeine Mode pressure (0 → 1.5)     →  training_pressure from sim.year_equiv_deficit()
   recordEngagementOutcome()            →  record_reward()
@@ -1436,7 +1436,7 @@ Memory-sync integration
 AB_PASS_THRESHOLD:     float = 0.70   # intensity ≥ this → passes gate (≈ 81/100 Veo)
 AB_PRESSURE_FLOOR:     float = 0.50   # absolute minimum under pressure (≈ 73/100)
 AB_MAX_ROUNDS:         int   = 10     # retry budget
-AB_VARIANTS_PER_ROUND: int   = 7      # variants generated per round
+AB_VARIANTS_PER_ROUND: int   = 30     # variants generated per round
 AB_UCB1_C:             float = 0.25   # UCB1 exploration constant (same as TS autopilot)
 AB_PRESSURE_MAX_YE_DEFICIT: float = 5.0  # YE-years deficit that saturates pressure at 1.5
 
