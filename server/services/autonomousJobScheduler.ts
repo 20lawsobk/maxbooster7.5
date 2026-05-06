@@ -262,8 +262,8 @@ export async function setupRepeatableJobs(): Promise<void> {
 
   await Promise.allSettled(
     REPEATABLE_JOBS.map(({ name, every }) =>
-      queue.add(name, {}, { ...SCHED_DEFAULTS, repeat: { every } })
-        .catch(err => logger.warn(`[AutonomousScheduler] Failed to register ${name}: ${err?.message}`))
+      queue.upsertJobScheduler(name, { every }, { data: {}, opts: SCHED_DEFAULTS })
+        .catch((err: Error) => logger.warn(`[AutonomousScheduler] Failed to register ${name}: ${err?.message}`))
     )
   );
 
