@@ -1380,6 +1380,76 @@ class MusicScenarioEngine:
         self._total_fired += 1
         self._last_spec    = spec
 
+    def build_spec_from_teacher(
+        self,
+        teacher: 'TeacherSpec',
+        scene_hint: Optional[str] = None,
+    ) -> ScenarioSpec:
+        """
+        Generate a ScenarioSpec that inherits the proven structural attributes
+        of a winning teacher spec (job_family, event_type, career_stage) but
+        re-rolls stochastic elements (platform, intensity ± noise, scene_prompt)
+        to produce a fresh variant that carries the teacher's pattern forward
+        without exact duplication.
+
+        Used by ABTestScenarioLayer._generate_variants() for the teacher-spawn
+        fraction of each round — the training-simulator equivalent of the
+        social media quality gate's winner-becomes-teacher session inheritance.
+        """
+        if teacher.job_family not in SCENARIO_LIBRARY:
+            return self.build_spec_for_family(self._pick_job_family(None), scene_hint)
+
+        job_family = teacher.job_family
+        event_type = teacher.event_type
+
+        # Graceful fallback: if the exact event was removed from the library, re-roll
+        if event_type not in SCENARIO_LIBRARY.get(job_family, {}):
+            event_type = self._pick_event(job_family)
+
+        event_data   = SCENARIO_LIBRARY[job_family][event_type]
+        career_stage = teacher.career_stage
+
+        # Re-roll platform — inherit family context, not exact platform
+        platform = str(self._rng.choice(event_data['platforms']))
+
+        # Intensity: teacher's proven value ± mutation noise, clamped to event bounds
+        lo = max(teacher.intensity - AB_TEACHER_MUTATION_NOISE, event_data['intensity'][0])
+        hi = min(teacher.intensity + AB_TEACHER_MUTATION_NOISE, event_data['intensity'][1])
+        if lo >= hi:
+            lo, hi = event_data['intensity']
+        intensity = float(self._rng.uniform(lo, hi))
+
+        scene_category = self._pick_scene_category(
+            job_family, scene_hint or teacher.scene_category)
+        scene_prompt   = self._build_prompt(
+            event_data, career_stage, intensity, teacher.compound_depth)
+        chain_id       = self._new_chain_id()
+
+        context = (
+            f"{career_stage.replace('_', ' ')} | "
+            f"{job_family.replace('_', ' ')} | "
+            f"{event_type.replace('_', ' ')} | "
+            f"{platform} | "
+            f"intensity={intensity:.2f} | depth={teacher.compound_depth} [teacher_spawn]"
+        )
+
+        return ScenarioSpec(
+            scenario_id         = f"ts_{int(time.time())}_{self._chain_counter}",
+            chain_id            = chain_id,
+            job_family          = job_family,
+            model_target        = MODEL_TARGET[job_family],
+            career_stage        = career_stage,
+            platform            = platform,
+            event_type          = event_type,
+            intensity           = intensity,
+            compound_depth      = teacher.compound_depth,
+            consequence_seeds   = list(event_data['seeds']),
+            scene_category      = scene_category,
+            scene_prompt        = scene_prompt,
+            ye_weight           = teacher.ye_weight,
+            context_description = context,
+        )
+
 
 # ══════════════════════════════════════════════════════════════════════════════
 #  A/B TEST SCENARIO LAYER
@@ -1405,17 +1475,33 @@ Direct concept mapping
   VARIANTS_PER_ROUND = 30              →  AB_VARIANTS_PER_ROUND = 30  (unchanged)
   rotateObjective()                    →  _rotate_job_family()
   Caffeine Mode pressure (0 → 1.5)     →  training_pressure from sim.year_equiv_deficit()
-  recordEngagementOutcome()            →  record_reward()
+  recordEngagementOutcome()            →  record_reward() + _promote_to_teacher()
   contentPerformanceHistory (UCB1 arm) →  _job_reward_map / _job_trial_map
+  winner → teacher inheritance         →  TeacherSpec pool / build_spec_from_teacher()
 
 Quality gate flow (mirrors ContentQualityGate.run())
 ─────────────────────────────────────────────────────
   Round 1  — UCB1-selected job family (best explore-exploit estimate)
   Rounds 2+ — Rotate through other job families (broader search space)
-  Each round generates AB_VARIANTS_PER_ROUND + round scenario specs,
-  scored by intensity.  Winner = highest-intensity spec ≥ AB_PASS_THRESHOLD.
+  Each round generates AB_VARIANTS_PER_ROUND + round scenario specs.
+  AB_TEACHER_SPAWN_RATIO of each round's slots are teacher-seeded variants
+  that inherit the proven job_family / event_type / career_stage of past
+  winners, re-rolling stochastic attributes (platform, intensity ± noise,
+  scene_prompt) — so each session starts from a stronger baseline.
+  Winner = highest-intensity spec ≥ AB_PASS_THRESHOLD.
   After AB_MAX_ROUNDS the best available is used if ≥ AB_PRESSURE_FLOOR,
   otherwise None is returned so the caller skips injection.
+
+Winner → teacher inheritance (cross-session lineage)
+─────────────────────────────────────────────────────
+  When record_reward() is called after a step completes:
+    • If reward ≥ AB_TEACHER_PROMOTE_MIN_REWARD the spec is distilled into
+      a TeacherSpec and appended to _teacher_pool (max AB_TEACHER_POOL_SIZE).
+    • Lowest-reward teacher is evicted when the pool is full.
+    • Pool is persisted in ab_layer_state.json so it survives session restarts.
+    • Next session's _generate_variants() draws AB_TEACHER_SPAWN_RATIO of its
+      slots from the pool (reward-weighted sampling) via build_spec_from_teacher(),
+      giving proven patterns priority without eliminating fresh exploration.
 
 Training-pressure (Caffeine Mode analog)
 ────────────────────────────────────────
@@ -1440,6 +1526,12 @@ AB_VARIANTS_PER_ROUND: int   = 30     # variants generated per round
 AB_UCB1_C:             float = 0.25   # UCB1 exploration constant (same as TS autopilot)
 AB_PRESSURE_MAX_YE_DEFICIT: float = 5.0  # YE-years deficit that saturates pressure at 1.5
 
+# ── Winner → teacher inheritance constants ────────────────────────────────────
+AB_TEACHER_POOL_SIZE:          int   = 10    # max winning specs archived as session teachers
+AB_TEACHER_SPAWN_RATIO:        float = 0.35  # fraction of each round's variants seeded from teachers
+AB_TEACHER_MUTATION_NOISE:     float = 0.08  # intensity jitter on teacher-derived variants (±)
+AB_TEACHER_PROMOTE_MIN_REWARD: float = 0.55  # minimum UCB1 reward for teacher pool promotion
+
 # ── High-YE-weight job families (prioritised under training pressure) ─────────
 _HIGH_YE_FAMILIES: List[str] = [
     'release_architect',   # ye_weight targets all four models → highest coverage
@@ -1460,6 +1552,27 @@ _FAMILY_ROTATION: List[str] = [
 ]
 
 _AB_STATE_PATH = os.path.join(_STATE_DIR, 'ab_layer_state.json')
+
+
+@dataclass
+class TeacherSpec:
+    """
+    Distilled winning scenario spec — carries proven attributes into the
+    next session's variant pool so winners become the structural teachers
+    of future generation rounds.
+
+    Persisted in ab_layer_state.json alongside UCB1 arm state so the
+    lineage survives process restarts and session boundaries.
+    """
+    job_family:     str
+    event_type:     str
+    scene_category: str
+    career_stage:   str
+    intensity:      float  # winning intensity — reference quality bar for spawned variants
+    compound_depth: int
+    ye_weight:      float
+    session_won:    int    # _total_ab_runs counter at promotion time
+    reward:         float  # UCB1 reward at promotion time
 
 
 class ABTestScenarioLayer:
@@ -1487,13 +1600,15 @@ class ABTestScenarioLayer:
     """
 
     def __init__(self, engine: MusicScenarioEngine) -> None:
-        self._engine:          MusicScenarioEngine  = engine
-        self._job_reward_map:  Dict[str, float]     = {}   # avg reward per job family
-        self._job_trial_map:   Dict[str, int]        = {}   # trial count per job family
-        self._total_ab_runs:   int                   = 0    # gate invocations
-        self._total_passed:    int                   = 0    # invocations that found a winner
-        self._total_rejected:  int                   = 0    # invocations that returned None
-        self._last_pressure:   float                 = 0.0  # last computed training pressure
+        self._engine:                MusicScenarioEngine  = engine
+        self._job_reward_map:        Dict[str, float]     = {}   # avg reward per job family
+        self._job_trial_map:         Dict[str, int]       = {}   # trial count per job family
+        self._total_ab_runs:         int                  = 0    # gate invocations
+        self._total_passed:          int                  = 0    # invocations that found a winner
+        self._total_rejected:        int                  = 0    # invocations that returned None
+        self._last_pressure:         float                = 0.0  # last computed training pressure
+        self._teacher_pool:          List[TeacherSpec]    = []   # cross-session winner lineage
+        self._total_teacher_spawns:  int                  = 0    # variants generated via teacher inheritance
         self.load()
 
     # ── Public API ─────────────────────────────────────────────────────────────
@@ -1565,12 +1680,15 @@ class ABTestScenarioLayer:
 
     def record_reward(self, spec: ScenarioSpec) -> None:
         """
-        Feed the outcome of a winning spec back into the UCB1 bandit arms.
+        Feed the outcome of a winning spec back into the UCB1 bandit arms
+        and — if the reward clears AB_TEACHER_PROMOTE_MIN_REWARD — promote
+        the spec to the cross-session teacher pool.
 
         Reward = normalised compound_depth (0.2/0.5/0.8) + intensity bonus (×0.3).
         Range: [0.0, 1.1] — stays in the engagement-rate range expected by UCB1.
 
-        Equivalent to recordEngagementOutcome() in contentQualityGate.ts.
+        Equivalent to recordEngagementOutcome() in contentQualityGate.ts,
+        extended with winner → teacher inheritance.
         """
         depth_reward = (
             0.8 if spec.compound_depth >= 2 else
@@ -1586,22 +1704,41 @@ class ABTestScenarioLayer:
         self._job_reward_map[family] = (prev * n + reward) / (n + 1)
         self._job_trial_map[family]  = n + 1
 
+        # Promote winning spec to teacher pool if reward is strong enough
+        self._promote_to_teacher(spec, reward)
+
         print(
             f"[ABLayer] record_reward family={family} "
             f"reward={reward:.3f} depth={spec.compound_depth} "
             f"intensity={spec.intensity:.3f} "
-            f"avg_now={self._job_reward_map[family]:.3f} n={n+1}",
+            f"avg_now={self._job_reward_map[family]:.3f} n={n+1} "
+            f"teacher_pool={len(self._teacher_pool)}",
             flush=True,
         )
 
     def save(self) -> None:
-        """Persist UCB1 arm state to JSON alongside scenario_state.json."""
+        """Persist UCB1 arm state and teacher pool to JSON alongside scenario_state.json."""
         state = {
-            'job_reward_map': self._job_reward_map,
-            'job_trial_map':  self._job_trial_map,
-            'total_ab_runs':  self._total_ab_runs,
-            'total_passed':   self._total_passed,
-            'total_rejected': self._total_rejected,
+            'job_reward_map':        self._job_reward_map,
+            'job_trial_map':         self._job_trial_map,
+            'total_ab_runs':         self._total_ab_runs,
+            'total_passed':          self._total_passed,
+            'total_rejected':        self._total_rejected,
+            'total_teacher_spawns':  self._total_teacher_spawns,
+            'teacher_pool': [
+                {
+                    'job_family':     t.job_family,
+                    'event_type':     t.event_type,
+                    'scene_category': t.scene_category,
+                    'career_stage':   t.career_stage,
+                    'intensity':      t.intensity,
+                    'compound_depth': t.compound_depth,
+                    'ye_weight':      t.ye_weight,
+                    'session_won':    t.session_won,
+                    'reward':         t.reward,
+                }
+                for t in self._teacher_pool
+            ],
         }
         tmp = _AB_STATE_PATH + '.tmp'
         try:
@@ -1612,22 +1749,38 @@ class ABTestScenarioLayer:
             print(f"[ABLayer] Save error: {exc}", flush=True)
 
     def load(self) -> None:
-        """Restore UCB1 arm state from JSON if available."""
+        """Restore UCB1 arm state and teacher pool from JSON if available."""
         if not os.path.exists(_AB_STATE_PATH):
             return
         try:
             with open(_AB_STATE_PATH) as f:
                 state = json.load(f)
-            self._job_reward_map = state.get('job_reward_map', {})
-            self._job_trial_map  = state.get('job_trial_map',  {})
-            self._total_ab_runs  = state.get('total_ab_runs',  0)
-            self._total_passed   = state.get('total_passed',   0)
-            self._total_rejected = state.get('total_rejected',  0)
+            self._job_reward_map       = state.get('job_reward_map',       {})
+            self._job_trial_map        = state.get('job_trial_map',        {})
+            self._total_ab_runs        = state.get('total_ab_runs',        0)
+            self._total_passed         = state.get('total_passed',         0)
+            self._total_rejected       = state.get('total_rejected',       0)
+            self._total_teacher_spawns = state.get('total_teacher_spawns', 0)
+            self._teacher_pool = [
+                TeacherSpec(
+                    job_family     = t['job_family'],
+                    event_type     = t['event_type'],
+                    scene_category = t['scene_category'],
+                    career_stage   = t['career_stage'],
+                    intensity      = float(t['intensity']),
+                    compound_depth = int(t['compound_depth']),
+                    ye_weight      = float(t['ye_weight']),
+                    session_won    = int(t['session_won']),
+                    reward         = float(t['reward']),
+                )
+                for t in state.get('teacher_pool', [])
+            ]
             print(
                 f"[ABLayer] State restored — "
                 f"arms={len(self._job_reward_map)} "
                 f"runs={self._total_ab_runs} "
-                f"pass_rate={self._total_passed}/{self._total_ab_runs}",
+                f"pass_rate={self._total_passed}/{self._total_ab_runs} "
+                f"teachers={len(self._teacher_pool)}",
                 flush=True,
             )
         except Exception as exc:
@@ -1635,21 +1788,21 @@ class ABTestScenarioLayer:
 
     def status(self) -> dict:
         """FastAPI-compatible status snapshot."""
-        total      = self._total_ab_runs or 1
-        pass_rate  = round(self._total_passed  / total, 3)
-        reject_rate= round(self._total_rejected / total, 3)
+        total       = self._total_ab_runs or 1
+        pass_rate   = round(self._total_passed   / total, 3)
+        reject_rate = round(self._total_rejected / total, 3)
 
         top_arms = sorted(
             self._job_reward_map.items(), key=lambda kv: -kv[1]
         )[:5]
 
         return {
-            'ab_layer_active':      True,
-            'total_gate_runs':      self._total_ab_runs,
-            'pass_rate':            pass_rate,
-            'reject_rate':          reject_rate,
-            'last_training_pressure': round(self._last_pressure, 3),
-            'ucb1_arms':            {
+            'ab_layer_active':         True,
+            'total_gate_runs':         self._total_ab_runs,
+            'pass_rate':               pass_rate,
+            'reject_rate':             reject_rate,
+            'last_training_pressure':  round(self._last_pressure, 3),
+            'ucb1_arms': {
                 fam: {
                     'avg_reward': round(self._job_reward_map.get(fam, 0.0), 4),
                     'trials':     self._job_trial_map.get(fam, 0),
@@ -1660,12 +1813,34 @@ class ABTestScenarioLayer:
                 {'family': fam, 'avg_reward': round(r, 4)}
                 for fam, r in top_arms
             ],
+            'teacher_pool': {
+                'size':              len(self._teacher_pool),
+                'capacity':          AB_TEACHER_POOL_SIZE,
+                'total_spawns':      self._total_teacher_spawns,
+                'spawn_ratio':       AB_TEACHER_SPAWN_RATIO,
+                'promote_min_reward': AB_TEACHER_PROMOTE_MIN_REWARD,
+                'teachers': [
+                    {
+                        'job_family':     t.job_family,
+                        'event_type':     t.event_type,
+                        'career_stage':   t.career_stage,
+                        'intensity':      round(t.intensity, 3),
+                        'compound_depth': t.compound_depth,
+                        'reward':         round(t.reward, 4),
+                        'session_won':    t.session_won,
+                    }
+                    for t in sorted(self._teacher_pool, key=lambda t: -t.reward)
+                ],
+            },
             'constants': {
-                'pass_threshold':     AB_PASS_THRESHOLD,
-                'pressure_floor':     AB_PRESSURE_FLOOR,
-                'max_rounds':         AB_MAX_ROUNDS,
-                'variants_per_round': AB_VARIANTS_PER_ROUND,
-                'ucb1_c':             AB_UCB1_C,
+                'pass_threshold':          AB_PASS_THRESHOLD,
+                'pressure_floor':          AB_PRESSURE_FLOOR,
+                'max_rounds':              AB_MAX_ROUNDS,
+                'variants_per_round':      AB_VARIANTS_PER_ROUND,
+                'ucb1_c':                  AB_UCB1_C,
+                'teacher_pool_size':       AB_TEACHER_POOL_SIZE,
+                'teacher_spawn_ratio':     AB_TEACHER_SPAWN_RATIO,
+                'teacher_mutation_noise':  AB_TEACHER_MUTATION_NOISE,
             },
         }
 
@@ -1784,15 +1959,86 @@ class ABTestScenarioLayer:
         scene_hint: Optional[str],
         n:          int,
     ) -> List[ScenarioSpec]:
-        """Generate n scenario variants for a given job family."""
-        variants = []
-        for _ in range(n):
+        """
+        Generate n scenario variants for a given job family.
+
+        If the teacher pool is non-empty, AB_TEACHER_SPAWN_RATIO of the
+        requested slots are seeded from winning teacher specs — inheriting
+        their proven job_family / event_type / career_stage while re-rolling
+        stochastic attributes (platform, intensity ± noise, scene_prompt).
+        Teachers are sampled reward-weighted so the strongest teachers spawn
+        more offspring.  The remainder are generated fresh via the engine.
+        """
+        variants: List[ScenarioSpec] = []
+
+        # ── Teacher-spawned slots (winner inheritance) ─────────────────────
+        n_teacher = (
+            min(int(n * AB_TEACHER_SPAWN_RATIO), len(self._teacher_pool))
+            if self._teacher_pool else 0
+        )
+        if n_teacher > 0:
+            weights = np.array(
+                [t.reward for t in self._teacher_pool], dtype=np.float64)
+            weights = weights / weights.sum()
+            for _ in range(n_teacher):
+                try:
+                    teacher = self._teacher_pool[
+                        int(self._engine._rng.choice(len(self._teacher_pool), p=weights))
+                    ]
+                    spec = self._engine.build_spec_from_teacher(teacher, scene_hint)
+                    variants.append(spec)
+                    self._total_teacher_spawns += 1
+                except Exception as exc:
+                    print(f"[ABLayer] teacher spawn error (skip): {exc}", flush=True)
+
+        # ── Fresh variants for the remaining slots ─────────────────────────
+        n_fresh = n - len(variants)
+        for _ in range(n_fresh):
             try:
                 spec = self._engine.build_spec_for_family(job_family, scene_hint)
                 variants.append(spec)
             except Exception as exc:
                 print(f"[ABLayer] variant generation error (skip): {exc}", flush=True)
+
         return variants
+
+    def _promote_to_teacher(self, spec: ScenarioSpec, reward: float) -> None:
+        """
+        Promote a winning spec to the teacher pool when its reward clears
+        AB_TEACHER_PROMOTE_MIN_REWARD.
+
+        Pool is capped at AB_TEACHER_POOL_SIZE — the lowest-reward entry is
+        evicted when full.  Teachers persist across sessions via save()/load(),
+        so proven patterns carry forward into every future session's variant
+        generation without requiring any manual intervention.
+        """
+        if reward < AB_TEACHER_PROMOTE_MIN_REWARD:
+            return
+
+        teacher = TeacherSpec(
+            job_family     = spec.job_family,
+            event_type     = spec.event_type,
+            scene_category = spec.scene_category,
+            career_stage   = spec.career_stage,
+            intensity      = spec.intensity,
+            compound_depth = spec.compound_depth,
+            ye_weight      = spec.ye_weight,
+            session_won    = self._total_ab_runs,
+            reward         = reward,
+        )
+
+        # Evict lowest-reward teacher if pool is at capacity
+        if len(self._teacher_pool) >= AB_TEACHER_POOL_SIZE:
+            self._teacher_pool.sort(key=lambda t: t.reward)
+            self._teacher_pool.pop(0)   # drop weakest
+
+        self._teacher_pool.append(teacher)
+        print(
+            f"[ABLayer] teacher_promoted family={teacher.job_family} "
+            f"event={teacher.event_type} intensity={teacher.intensity:.3f} "
+            f"reward={reward:.3f} pool_size={len(self._teacher_pool)}/{AB_TEACHER_POOL_SIZE}",
+            flush=True,
+        )
 
     def _ucb1_select_family(
         self,
