@@ -14,10 +14,12 @@ import { env } from '../config/env.js';
  *
  * Sizing: 5 000 entries × ~2 KB average session ≈ 10 MB max — negligible.
  */
-const L1_TTL_MS       = 60_000; // 1 minute — normal session TTL
-const L1_ERR_TTL_MS   = 5_000;  // 5 seconds — short TTL when caching a PDIM error null,
-                                 // so we stop hammering PDIM while it's down but recover
-                                 // within 5 s once it comes back.
+const L1_TTL_MS       = 300_000; // 5 minutes — must exceed the heartbeat interval (2 min)
+                                  // and the maximum PDIM cold-start window (~90 s) so that
+                                  // active sessions survive a brief PDIM restart without a 401.
+const L1_ERR_TTL_MS   = 5_000;   // 5 seconds — short TTL when caching a PDIM error null,
+                                  // so we stop hammering PDIM while it's down but recover
+                                  // within 5 s once it comes back.
 const L1_MAX_SIZE     = 5_000;
 
 // Rate-limit the WARN log to once per 30 s — PDIM can be down for minutes and
@@ -144,7 +146,7 @@ function createIoredisAdapter(ioredisClient: { get: (...a: unknown[]) => Promise
 
 const REVOKE_L1_TTL_ACTIVE_MS  =  5_000; // 5 s — normal users; ≤5 s cross-pod propagation
 const REVOKE_L1_TTL_REVOKED_MS =    200; // 200 ms — just-revoked user; fast re-check
-const REVOKE_PDIM_TTL_S        =     70; // slightly longer than L1_TTL_MS (60 s)
+const REVOKE_PDIM_TTL_S        =    310; // slightly longer than L1_TTL_MS (300 s / 5 min)
 
 // In-process revocation-flag cache: key = userId; value = { revoked, expiresAt }
 // This is module-scoped (not class-scoped) so the exported revokeUserSessions()
