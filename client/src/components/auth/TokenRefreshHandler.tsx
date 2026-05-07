@@ -1,7 +1,7 @@
 import { useEffect, useRef, useCallback, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
-import { apiRequest } from '@/lib/queryClient';
+import { apiRequest, setAuthToken } from '@/lib/queryClient';
 import { useAuth } from '@/hooks/useAuth';
 
 export type TokenRefreshOutcome =
@@ -57,6 +57,9 @@ export function TokenRefreshHandler({
 
       if (data.success) {
         setLastRefresh(new Date());
+        if (data.sessionToken) {
+          setAuthToken(data.sessionToken);
+        }
         const result: TokenRefreshResult = {
           success: true,
           outcome: 'token_refresh_successful',

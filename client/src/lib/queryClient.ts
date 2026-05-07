@@ -27,6 +27,25 @@ import { errorService, captureException } from './errorService';
 
 const DEFAULT_TIMEOUT_MS = 30000;
 
+// ── In-memory JWT session token store ────────────────────────────────────────
+// Stores the short-lived access token issued at login / refresh so it can be
+// sent as "Authorization: Bearer <token>" on every API request.  This gives
+// the server's JWT fallback (resolveJwtUser) a chance to authenticate the user
+// even when the PDIM session store is temporarily unavailable.
+let _sessionToken: string | null = null;
+
+export function setAuthToken(token: string | null): void {
+  _sessionToken = token;
+}
+
+export function getAuthToken(): string | null {
+  return _sessionToken;
+}
+
+export function clearAuthToken(): void {
+  _sessionToken = null;
+}
+
 export type ApiErrorCode =
   | 'NETWORK_ERROR'
   | 'TIMEOUT'
@@ -334,6 +353,13 @@ export async function apiRequest(
     
     if (!isFormData && data) {
       headers['Content-Type'] = 'application/json';
+    }
+
+    // Include the in-memory JWT session token as a Bearer fallback so the
+    // server can authenticate the request even when PDIM session fetch fails.
+    const authToken = getAuthToken();
+    if (authToken) {
+      headers['Authorization'] = `Bearer ${authToken}`;
     }
 
     // Include the CSRF double-submit token for every state-mutating request

@@ -407,7 +407,18 @@ export async function registerRoutes(
         ).catch(() => {});
 
         const { password: _, twoFactorSecret: _2fa, passwordResetToken: _prt, emailVerificationToken: _evt, ...safeUser } = user as Record<string, unknown>;
-        return res.json(safeUser);
+
+        // Issue a short-lived JWT access token so the client can use it as a
+        // Bearer-token fallback when the PDIM session store is unavailable.
+        let sessionToken: string | null = null;
+        try {
+          const tokenPair = await jwtAuthService.issueTokens(user.id, (user as Record<string, unknown>).role as string || 'user');
+          sessionToken = tokenPair.accessToken;
+        } catch (tokenErr) {
+          logger.warn({ err: tokenErr }, '[Login] Failed to issue JWT session token — session-only auth will be used');
+        }
+
+        return res.json({ ...safeUser, sessionToken });
       } catch (sessionErr) {
         logger.warn({ err: sessionErr }, '[Login] Session operation failed after retries');
         return res.status(500).json({ message: "Login failed - session error" });
@@ -469,9 +480,20 @@ export async function registerRoutes(
       }
 
       const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+
+      // Re-issue a fresh JWT access token for the Bearer-token fallback path.
+      let sessionToken: string | null = null;
+      try {
+        const tokenPair = await jwtAuthService.issueTokens(String(userId), (user as Record<string, unknown>).role as string || 'user');
+        sessionToken = tokenPair.accessToken;
+      } catch (tokenErr) {
+        logger.warn({ err: tokenErr }, '[RefreshToken] Failed to re-issue JWT session token');
+      }
+
       return res.json({
         success: true,
         expiresAt,
+        sessionToken,
         message: 'Session refreshed',
       });
     } catch (error) {
