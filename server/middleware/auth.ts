@@ -3,17 +3,7 @@ import { jwtAuthService } from '../services/jwtAuthService.js';
 import { storage } from '../storage.js';
 import { logger } from '../logger.js';
 
-interface AuthenticatedRequest extends Request {
-  isAuthenticated(): boolean;
-  user?: Record<string, unknown>;
-}
-
-/**
- * Shared JWT bearer-token resolution.
- * If the session already has an authenticated user, this is a no-op.
- * Otherwise it tries to decode the Authorization header and loads the user.
- */
-async function resolveJwtUser(req: AuthenticatedRequest): Promise<void> {
+async function resolveJwtUser(req: Request): Promise<void> {
   if (req.isAuthenticated && req.isAuthenticated()) return;
 
   const authHeader = req.headers.authorization;
@@ -30,11 +20,11 @@ async function resolveJwtUser(req: AuthenticatedRequest): Promise<void> {
       }
     }
   } catch (err) {
-    logger.warn({ err: err }, '[Auth] JWT verification error:');
+    logger.warn({ err }, '[Auth] JWT verification error:');
   }
 }
 
-export const requireAuth = async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
+export const requireAuth = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   await resolveJwtUser(req);
 
   if (!req.isAuthenticated || !req.isAuthenticated()) {
@@ -42,21 +32,22 @@ export const requireAuth = async (req: AuthenticatedRequest, res: Response, next
     return;
   }
 
-  if (req.user.email === 'demo@maxbooster.ai') {
+  const user = req.user!;
+
+  if (user.email === 'demo@maxbooster.ai') {
     next();
     return;
   }
 
-  if (req.user.role === 'admin') {
+  if (user.role === 'admin') {
     next();
     return;
   }
 
   const now = new Date();
 
-  if (req.user.trialEndsAt) {
-    const trialEnd = new Date(req.user.trialEndsAt);
-    if (now > trialEnd) {
+  if (user.trialEndsAt) {
+    if (now > user.trialEndsAt) {
       res.status(403).json({
         error: 'Your 30-day trial has expired. Please contact support to continue using Max Booster.',
         trialExpired: true,
@@ -65,14 +56,13 @@ export const requireAuth = async (req: AuthenticatedRequest, res: Response, next
     }
   }
 
-  if (req.user.subscriptionEndsAt && req.user.subscriptionTier !== 'lifetime') {
-    const subscriptionEnd = new Date(req.user.subscriptionEndsAt);
-    if (now > subscriptionEnd) {
-      const planName = req.user.subscriptionTier === 'monthly' ? 'monthly' : 'yearly';
+  if (user.subscriptionEndsAt && user.subscriptionTier !== 'lifetime') {
+    if (now > user.subscriptionEndsAt) {
+      const planName = user.subscriptionTier === 'monthly' ? 'monthly' : 'yearly';
       res.status(403).json({
         error: `Your ${planName} subscription has expired. Please renew your subscription to continue using Max Booster.`,
         subscriptionExpired: true,
-        plan: req.user.subscriptionTier,
+        plan: user.subscriptionTier,
       });
       return;
     }
@@ -87,7 +77,7 @@ export const requireAuth = async (req: AuthenticatedRequest, res: Response, next
  * Use on content generation endpoints that are already behind
  * the frontend's protected-route subscription check.
  */
-export const requireAuthOnly = async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
+export const requireAuthOnly = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   await resolveJwtUser(req);
 
   if (!req.isAuthenticated || !req.isAuthenticated()) {
@@ -98,7 +88,7 @@ export const requireAuthOnly = async (req: AuthenticatedRequest, res: Response, 
   next();
 };
 
-export const requireAdmin = (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+export const requireAdmin = (req: Request, res: Response, next: NextFunction) => {
   if (!req.isAuthenticated || !req.isAuthenticated()) {
     return res.status(401).json({ error: 'Authentication required' });
   }
@@ -115,15 +105,14 @@ export const requireAdmin = (req: AuthenticatedRequest, res: Response, next: Nex
  * Gates that don't require 2FA (e.g. the 2FA setup/verify routes themselves)
  * should NOT use this middleware.
  */
-export const require2FA = (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
-  const user = req.user as Record<string, unknown>;
+export const require2FA = (req: Request, res: Response, next: NextFunction) => {
+  const user = req.user;
   if (!user) {
     return res.status(401).json({ error: 'Authentication required' });
   }
-  // If user has 2FA enabled, they must have verified it this session
   if (user.twoFactorEnabled) {
-    const session = (req as Record<string, unknown>).session;
-    if (!session?.twoFactorVerified) {
+    const sess = req.session as unknown as Record<string, unknown>;
+    if (!sess?.twoFactorVerified) {
       return res.status(403).json({
         error: 'Two-factor authentication required for this action',
         requiresTwoFactor: true,

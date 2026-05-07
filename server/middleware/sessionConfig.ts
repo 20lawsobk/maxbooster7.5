@@ -69,7 +69,7 @@ class SessionL1Cache {
  *   del(key1, key2)   ← spread, not array
  *   scan / no scanIterator
  */
-function createIoredisAdapter(ioredisClient: { get: (...a: unknown[]) => Promise<unknown>; set: (...a: unknown[]) => Promise<unknown>; del: (...a: unknown[]) => Promise<unknown>; expire: (...a: unknown[]) => Promise<unknown> }) {
+function createIoredisAdapter(ioredisClient: { get: (...a: unknown[]) => Promise<unknown>; set: (...a: unknown[]) => Promise<unknown>; del: (...a: unknown[]) => Promise<unknown>; expire: (...a: unknown[]) => Promise<unknown>; scan: (...a: unknown[]) => Promise<unknown> }) {
   return {
     get(key: string): Promise<string | null> {
       return ioredisClient.get(key) as Promise<string | null>;
@@ -198,7 +198,7 @@ async function isRevoked(userId: string): Promise<boolean> {
  */
 function extractUserIdFromSession(data: session.SessionData | null): string | undefined {
   if (!data) return undefined;
-  const d = data as Record<string, unknown>;
+  const d = (data as unknown) as Record<string, unknown>;
   const passportUser = (d.passport as Record<string, unknown> | undefined)?.user;
   const uid = d.userId ?? passportUser;
   return uid ? String(uid) : undefined;
@@ -286,9 +286,7 @@ class PdimSessionStore extends session.Store {
         const now = Date.now();
         if (now - _lastFetchWarnAt >= WARN_THROTTLE_MS) {
           _lastFetchWarnAt = now;
-          logger.warn('[SessionStore] PDIM session fetch failed — serving session-less response', {
-            err: err instanceof Error ? err.message : String(err),
-          });
+          logger.warn({ err: err instanceof Error ? err.message : String(err) }, '[SessionStore] PDIM session fetch failed — serving session-less response');
         }
         return cb(null, null);
       }
@@ -321,9 +319,7 @@ class PdimSessionStore extends session.Store {
     // authoritative copy — the session is functional even if PDIM is temporarily down.
     this.inner.set(sid, sess, (err?: unknown) => {
       if (err) {
-        logger.warn('[SessionStore] PDIM session write failed (session held in L1 cache)', {
-          err: err instanceof Error ? err.message : String(err),
-        });
+        logger.warn({ err: err instanceof Error ? err.message : String(err) }, '[SessionStore] PDIM session write failed (session held in L1 cache)');
       }
       cb?.();
     });
@@ -335,9 +331,7 @@ class PdimSessionStore extends session.Store {
     // will not be served from cache regardless of whether PDIM succeeds.
     this.inner.destroy(sid, (err?: unknown) => {
       if (err) {
-        logger.warn('[SessionStore] PDIM session destroy failed (L1 already invalidated)', {
-          err: err instanceof Error ? err.message : String(err),
-        });
+        logger.warn({ err: err instanceof Error ? err.message : String(err) }, '[SessionStore] PDIM session destroy failed (L1 already invalidated)');
       }
       cb?.();
     });
@@ -345,16 +339,14 @@ class PdimSessionStore extends session.Store {
 
   touch(sid: string, sess: session.SessionData, cb?: (err?: unknown) => void): void {
     this.l1.set(sid, sess);
-    const primaryTouch = (this.inner as Record<string, unknown>).touch;
+    const primaryTouch = (this.inner as unknown as Record<string, unknown>).touch;
     if (primaryTouch) {
       (primaryTouch as Function).call(this.inner, sid, sess, (err?: unknown) => {
         if (err) {
           // PDIM congestion during TTL refresh is non-critical — the session
           // remains valid at its original TTL. Swallow the error so express-session
           // does not propagate it after the response has already been sent.
-          logger.warn('[SessionStore] PDIM congested during touch — TTL refresh skipped', {
-            err: err instanceof Error ? err.message : String(err),
-          });
+          logger.warn({ err: err instanceof Error ? err.message : String(err) }, '[SessionStore] PDIM congested during touch — TTL refresh skipped');
         }
         cb?.();
       });
@@ -396,7 +388,7 @@ export async function createSessionStore(): Promise<session.Store> {
     await pingWithRetry(ioredisClient);
 
     const redisStore = new RedisStore({
-      client: createIoredisAdapter(ioredisClient) as Record<string, unknown>,
+      client: createIoredisAdapter(ioredisClient as unknown as Parameters<typeof createIoredisAdapter>[0]) as Record<string, unknown>,
       prefix: 'sess:',
       ttl: 24 * 60 * 60,
     });
@@ -405,7 +397,7 @@ export async function createSessionStore(): Promise<session.Store> {
     return new PdimSessionStore(redisStore);
   } catch (error: unknown) {
     const errMsg = error instanceof Error ? error.message : String(error);
-    logger.warn('❌ Failed to create PDIM session store:', errMsg);
+    logger.warn({ errMsg }, '❌ Failed to create PDIM session store');
     throw new Error(`Session store initialization failed: ${errMsg}. Sessions cannot be stored safely.`);
   }
 }

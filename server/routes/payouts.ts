@@ -1,3 +1,4 @@
+import crypto from 'crypto';
 import { Router } from 'express';
 import { instantPayoutService } from '../services/instantPayoutService';
 import {
@@ -112,7 +113,7 @@ router.post('/instant', async (req, res) => {
     if (error instanceof z.ZodError) {
       return res.status(400).json({
         error: 'Invalid request data',
-        details: error.errors,
+        details: error.issues,
       });
     }
 
@@ -223,11 +224,11 @@ router.get('/verify', async (req, res) => {
     }
 
     const user = req.user as Record<string, unknown>;
-    const prefs = user.preferences?.payout || {};
+    const prefs = ((user.preferences as Record<string, unknown> | undefined)?.payout as Record<string, unknown> | undefined) ?? {};
     const methods: string[] = [];
     
     if (prefs.paypalEmail) methods.push('paypal');
-    if (prefs.bankDetails && Object.keys(prefs.bankDetails).length > 0) methods.push('bank_transfer');
+    if (prefs.bankDetails && Object.keys(prefs.bankDetails as Record<string, unknown>).length > 0) methods.push('bank_transfer');
     
     const stripeVerification = await instantPayoutService.verifyStripeAccount(req.user.id);
     if (stripeVerification.verified) methods.push('stripe');
@@ -261,10 +262,10 @@ router.get('/preferences', async (req, res) => {
     }
     
     const user = req.user as Record<string, unknown>;
-    const prefs = user.preferences?.payout || {};
+    const prefs = ((user.preferences as Record<string, unknown> | undefined)?.payout as Record<string, unknown> | undefined) ?? {};
     res.json({
-      paypalEmail: prefs.paypalEmail || null,
-      bankDetails: prefs.bankDetails || null,
+      paypalEmail: prefs.paypalEmail ?? null,
+      bankDetails: prefs.bankDetails ?? null,
       stripeConnected: !!(user.stripeConnectedAccountId),
       preferredMethod: prefs.bankDetails ? 'bank_transfer' : prefs.paypalEmail ? 'paypal' : 'stripe'
     });
@@ -290,11 +291,11 @@ router.post('/preferences/paypal', async (req, res) => {
     }
     
     const user = req.user as Record<string, unknown>;
-    const currentPrefs = user.preferences || {};
+    const currentPrefs = (user.preferences as Record<string, unknown> | undefined) ?? {};
     const updatedPrefs = {
       ...currentPrefs,
       payout: {
-        ...(currentPrefs.payout || {}),
+        ...((currentPrefs.payout as Record<string, unknown> | undefined) ?? {}),
         paypalEmail: email
       }
     };
@@ -340,11 +341,11 @@ router.post('/preferences/bank', async (req, res) => {
     };
     
     const user = req.user as Record<string, unknown>;
-    const currentPrefs = user.preferences || {};
+    const currentPrefs = (user.preferences as Record<string, unknown> | undefined) ?? {};
     const updatedPrefs = {
       ...currentPrefs,
       payout: {
-        ...(currentPrefs.payout || {}),
+        ...((currentPrefs.payout as Record<string, unknown> | undefined) ?? {}),
         bankDetails: bankDetailsData
       }
     };
@@ -1005,7 +1006,7 @@ router.post('/disputes/:id/message', async (req, res) => {
 
     res.json({
       success: true,
-      messageId,
+      messageId: crypto.randomUUID(),
     });
   } catch (error: unknown) {
     logger.warn({ err: error }, 'Error sending message:');

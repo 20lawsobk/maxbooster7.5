@@ -969,6 +969,32 @@ export class InstantPayoutService {
   }
 
   /**
+   * Retry a previously failed payout by re-initiating it with the same amount.
+   */
+  async retryFailedPayout(userId: string, payoutId: string): Promise<PayoutResult> {
+    try {
+      const [payout] = await db
+        .select()
+        .from(instantPayouts)
+        .where(and(eq(instantPayouts.id, payoutId), eq(instantPayouts.userId, userId)))
+        .limit(1);
+
+      if (!payout) {
+        return { success: false, error: 'Payout not found' };
+      }
+
+      if (payout.status !== 'failed') {
+        return { success: false, error: 'Only failed payouts can be retried' };
+      }
+
+      return await this.requestInstantPayout(userId, payout.amountCents / 100, payout.currency ?? 'usd');
+    } catch (error: unknown) {
+      logger.warn({ err: error }, 'Error retrying failed payout:');
+      return { success: false, error: 'Failed to retry payout' };
+    }
+  }
+
+  /**
    * Get payout history for user
    */
   async getPayoutHistory(userId: string, limit: number = 50, offset: number = 0) {
