@@ -191,7 +191,10 @@ export function TaxFormWizard({
               {(['W-9', 'W-8BEN', 'W-8BEN-E'] as TaxFormType[]).map((type) => (
                 <div
                   key={type}
-                  onClick={() => updateFormData({ formType: type })}
+                  onClick={() => {
+                    updateFormData({ formType: type });
+                    updateAddress({ country: type === 'W-9' ? 'United States' : '' });
+                  }}
                   className={`p-4 rounded-lg border-2 cursor-pointer transition-all ${
                     formData.formType === type
                       ? 'border-primary bg-primary/10'
