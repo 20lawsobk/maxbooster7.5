@@ -78,63 +78,112 @@ export class DistributedCache {
     return !!this.redis;
   }
 
+  /**
+   * Read a value from cache.  Returns null on any Redis error so callers
+   * always fall through to the source-of-truth (DB) without crashing.
+   */
   async get<T>(key: string): Promise<T | null> {
     // L1 — nanosecond in-process lookup (no network)
     const l1raw = this.l1Get(key);
     if (l1raw !== null) {
       this.stats.hits++;
-      return JSON.parse(l1raw) as T;
+      try { return JSON.parse(l1raw) as T; } catch { return null; }
     }
 
-    const value = await this.redis.get(key);
-    if (value) {
-      this.l1Set(key, value);
-      this.stats.hits++;
-      return JSON.parse(value) as T;
+    if (!this.redis) { this.stats.misses++; return null; }
+
+    try {
+      const value = await this.redis.get(key);
+      if (value) {
+        this.l1Set(key, value);
+        this.stats.hits++;
+        return JSON.parse(value) as T;
+      }
+      this.stats.misses++;
+      return null;
+    } catch (err: unknown) {
+      // PDIM circuit open or network error — treat as cache miss, never throw
+      logger.warn({ err }, '[DistributedCache] get() failed — treating as cache miss');
+      this.stats.misses++;
+      return null;
     }
-    this.stats.misses++;
-    return null;
   }
 
+  /**
+   * Write a value to cache.  Silently swallows Redis errors so callers
+   * (routes) are not affected when PDIM is unavailable.
+   */
   async set<T>(key: string, value: T, ttlSeconds?: number): Promise<void> {
     const ttl = ttlSeconds || this.config.defaultTTL;
-    const serialized = JSON.stringify(value);
+    let serialized: string;
+    try {
+      serialized = JSON.stringify(value);
+    } catch {
+      return;
+    }
 
-    // Always populate L1 on write
+    // Always populate L1 on write — works even if Redis is down
     this.l1Set(key, serialized);
-
-    await this.redis.setex(key, ttl, serialized);
     this.stats.size++;
+
+    if (!this.redis) return;
+    try {
+      await this.redis.setex(key, ttl, serialized);
+    } catch (err: unknown) {
+      logger.warn({ err }, '[DistributedCache] set() failed — entry in L1 only');
+    }
   }
 
   async delete(key: string): Promise<void> {
     this.l1Del(key);
-    await this.redis.del(key);
+    if (!this.redis) return;
+    try {
+      await this.redis.del(key);
+    } catch (err: unknown) {
+      logger.warn({ err }, '[DistributedCache] delete() failed');
+    }
   }
 
   async invalidatePattern(pattern: string): Promise<number> {
-    // Evict matching L1 entries synchronously
+    // Evict matching L1 entries synchronously — always works
     const regex = new RegExp(pattern.replace(/\*/g, '.*'));
     for (const key of this.l1.keys()) { if (regex.test(key)) this.l1.delete(key); }
 
-    const keys = await this.redis.keys(`cache:${pattern}`);
-    if (keys.length > 0) {
-      const stripped = keys.map(k => k.replace(/^cache:/, ''));
-      await this.redis.del(...stripped);
-      return stripped.length;
+    if (!this.redis) return 0;
+    try {
+      const keys = await this.redis.keys(`cache:${pattern}`);
+      if (keys.length > 0) {
+        const stripped = keys.map(k => k.replace(/^cache:/, ''));
+        await this.redis.del(...stripped);
+        return stripped.length;
+      }
+    } catch (err: unknown) {
+      logger.warn({ err }, '[DistributedCache] invalidatePattern() failed — L1 evicted only');
     }
     return 0;
   }
 
+  /**
+   * Cache-aside pattern.  If the cache layer throws for any reason the fetcher
+   * is called directly so the route always gets data, even when PDIM is down.
+   */
   async getOrSet<T>(
     key: string,
     fetcher: () => Promise<T>,
     ttlSeconds?: number
   ): Promise<T> {
-    const cached = await this.get<T>(key);
-    if (cached !== null) return cached;
+    try {
+      const cached = await this.get<T>(key);
+      if (cached !== null) return cached;
+    } catch {
+      // Defensive: get() is already non-throwing, but belt-and-suspenders
+    }
+
     const value = await fetcher();
-    await this.set(key, value, ttlSeconds);
+
+    // Fire-and-forget cache write — must not delay or fail the response
+    this.set(key, value, ttlSeconds).catch(() => {});
+
     return value;
   }
 
@@ -151,10 +200,20 @@ export class DistributedCache {
     const cached = await this.get<T>(key);
     if (cached !== null) return cached;
 
+    if (!this.redis) {
+      // Redis unavailable — skip locking, fetch directly
+      return fetcher();
+    }
+
     const lockKey = `lock:${key}`;
 
-    // 2. Try to acquire SETNX lock
-    const acquired = await this.redis.set(lockKey, 'locked', 'EX', lockTtlSeconds, 'NX');
+    let acquired: string | null = null;
+    try {
+      acquired = await this.redis.set(lockKey, 'locked', 'EX', lockTtlSeconds, 'NX');
+    } catch {
+      // Can't acquire lock — fetch directly
+      return fetcher();
+    }
 
     if (!acquired) {
       // 3. Lock is held by another request — wait and retry cache check
@@ -173,12 +232,18 @@ export class DistributedCache {
       await this.set(key, value, ttlSeconds);
       return value;
     } finally {
-      await this.redis.del(lockKey);
+      this.redis.del(lockKey).catch(() => {});
     }
   }
 
   async flush(): Promise<void> {
-    await this.redis.flushdb();
+    this.l1.clear();
+    if (!this.redis) return;
+    try {
+      await this.redis.flushdb();
+    } catch (err: unknown) {
+      logger.warn({ err }, '[DistributedCache] flush() failed');
+    }
     this.stats.size = 0;
   }
 
