@@ -21,16 +21,15 @@ import {
 } from '@/components/ui/select';
 import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
-import { apiRequest, uploadWithProgress, getCsrfTokenFromCookie } from '@/lib/queryClient';
+import { apiRequest, getCsrfTokenFromCookie } from '@/lib/queryClient';
 import {
   Upload,
   FileAudio,
-  Music,
   Plus,
-  FolderOpen,
   Loader2,
   X,
   CheckCircle2,
+  AlertCircle,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -57,8 +56,17 @@ const ACCEPTED_AUDIO_TYPES = [
 ];
 const ACCEPTED_EXTENSIONS = ['.wav', '.mp3', '.flac', '.aiff', '.aif', '.ogg'];
 const MAX_FILE_SIZE = 500 * 1024 * 1024;
+const CHUNK_SIZE = 4 * 1024 * 1024;
 
-const CHUNK_SIZE = 4 * 1024 * 1024; // 4 MB — safely under Replit's proxy limit
+type FileStatus = 'pending' | 'uploading' | 'done' | 'error';
+
+interface SelectedFile {
+  id: string;
+  file: File;
+  status: FileStatus;
+  progress: number;
+  error?: string;
+}
 
 function generateUploadId(): string {
   return Array.from(crypto.getRandomValues(new Uint8Array(16)))
@@ -96,7 +104,7 @@ async function uploadInChunks(
       throw new Error(err.message || `Chunk ${i} upload failed`);
     }
 
-    onProgress(Math.round(((i + 1) / totalChunks) * 90));
+    onProgress(Math.round(((i + 1) / totalChunks) * 85));
   }
 
   const csrfToken2 = getCsrfTokenFromCookie();
@@ -121,6 +129,64 @@ async function uploadInChunks(
   return { audioUrl: url, fileSize: size };
 }
 
+async function uploadFileToProject(
+  file: File,
+  projectId: string,
+  onProgress: (percent: number) => void
+): Promise<void> {
+  if (file.size > CHUNK_SIZE) {
+    const { audioUrl } = await uploadInChunks(file, (pct) => onProgress(Math.round(pct * 0.9)));
+    const csrfToken = getCsrfTokenFromCookie();
+    const res = await fetch('/api/studio/upload-from-url', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(csrfToken ? { 'x-csrf-token': csrfToken } : {}),
+      },
+      credentials: 'include',
+      body: JSON.stringify({ projectId, audioUrl, filename: file.name }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || 'Failed to add track');
+    }
+    onProgress(100);
+    return;
+  }
+
+  const formData = new FormData();
+  formData.append('audioFile', file, file.name);
+  formData.append('projectId', projectId);
+
+  const csrfToken = getCsrfTokenFromCookie();
+  await new Promise<void>((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', '/api/studio/upload');
+    if (csrfToken) xhr.setRequestHeader('x-csrf-token', csrfToken);
+    xhr.withCredentials = true;
+    xhr.upload.onprogress = (e) => {
+      if (e.lengthComputable) {
+        onProgress(Math.round((e.loaded / e.total) * 100));
+      }
+    };
+    xhr.onload = () => {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        onProgress(100);
+        resolve();
+      } else {
+        try {
+          const body = JSON.parse(xhr.responseText);
+          reject(new Error(body.error || 'Upload failed'));
+        } catch {
+          reject(new Error('Upload failed'));
+        }
+      }
+    };
+    xhr.onerror = () => reject(new Error('Network error during upload'));
+    xhr.send(formData);
+  });
+}
+
 export function StudioProjectDialog({
   open,
   onOpenChange,
@@ -141,9 +207,9 @@ export function StudioProjectDialog({
     scale: 'Minor',
   });
 
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [uploadProgress, setUploadProgress] = useState(0);
+  const [selectedFiles, setSelectedFiles] = useState<SelectedFile[]>([]);
   const [isDragging, setIsDragging] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (open && initialTitle) {
@@ -152,16 +218,8 @@ export function StudioProjectDialog({
   }, [open, initialTitle]);
 
   const resetForm = useCallback(() => {
-    setForm({
-      title: '',
-      description: '',
-      genre: '',
-      bpm: 120,
-      key: 'C',
-      scale: 'Minor',
-    });
-    setSelectedFile(null);
-    setUploadProgress(0);
+    setForm({ title: '', description: '', genre: '', bpm: 120, key: 'C', scale: 'Minor' });
+    setSelectedFiles([]);
   }, []);
 
   const validateFile = useCallback((file: File): string | null => {
@@ -170,30 +228,59 @@ export function StudioProjectDialog({
       return `Unsupported file type. Accepted: ${ACCEPTED_EXTENSIONS.join(', ')}`;
     }
     if (file.size > MAX_FILE_SIZE) {
-      return `File too large. Maximum size: ${MAX_FILE_SIZE / (1024 * 1024)}MB`;
+      return `"${file.name}" exceeds the 500 MB limit`;
     }
     return null;
   }, []);
 
-  const handleFileSelect = useCallback((file: File) => {
-    const error = validateFile(file);
-    if (error) {
-      toast({ title: 'Invalid File', description: error, variant: 'destructive' });
-      return;
+  const addFiles = useCallback((files: FileList | File[]) => {
+    const incoming = Array.from(files);
+    const errors: string[] = [];
+    const valid: SelectedFile[] = [];
+
+    for (const file of incoming) {
+      const err = validateFile(file);
+      if (err) {
+        errors.push(err);
+        continue;
+      }
+      valid.push({
+        id: `${file.name}-${file.size}-${Date.now()}-${Math.random()}`,
+        file,
+        status: 'pending',
+        progress: 0,
+      });
     }
-    setSelectedFile(file);
-    if (!form.title) {
-      const nameWithoutExt = file.name.replace(/\.[^/.]+$/, '');
-      setForm(prev => ({ ...prev, title: nameWithoutExt }));
+
+    if (errors.length) {
+      toast({
+        title: 'Some files were skipped',
+        description: errors.join('\n'),
+        variant: 'destructive',
+      });
     }
+
+    if (valid.length === 0) return;
+
+    setSelectedFiles(prev => {
+      const combined = [...prev, ...valid];
+      if (!form.title && combined.length === 1) {
+        const name = combined[0].file.name.replace(/\.[^/.]+$/, '');
+        setForm(f => ({ ...f, title: name }));
+      }
+      return combined;
+    });
   }, [validateFile, toast, form.title]);
+
+  const removeFile = useCallback((id: string) => {
+    setSelectedFiles(prev => prev.filter(f => f.id !== id));
+  }, []);
 
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     setIsDragging(false);
-    const file = e.dataTransfer.files[0];
-    if (file) handleFileSelect(file);
-  }, [handleFileSelect]);
+    if (e.dataTransfer.files.length) addFiles(e.dataTransfer.files);
+  }, [addFiles]);
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -205,119 +292,105 @@ export function StudioProjectDialog({
     setIsDragging(false);
   }, []);
 
-  const createProjectMutation = useMutation({
-    mutationFn: async () => {
-      if (selectedFile) {
-        const projectMeta = {
-          title: form.title || 'Untitled Project',
-          description: form.description,
-          genre: form.genre,
-          bpm: form.bpm.toString(),
-          key: `${form.key} ${form.scale}`,
-          isStudioProject: 'true',
-        };
+  const updateFileState = useCallback((id: string, patch: Partial<SelectedFile>) => {
+    setSelectedFiles(prev => prev.map(f => f.id === id ? { ...f, ...patch } : f));
+  }, []);
 
-        if (selectedFile.size > CHUNK_SIZE) {
-          // Large file — upload in chunks to bypass Replit's proxy body-size limit
-          setUploadProgress(1);
-          const { audioUrl, fileSize } = await uploadInChunks(
-            selectedFile,
-            (pct) => setUploadProgress(pct)
-          );
-          const response = await apiRequest('POST', '/api/projects', {
-            ...projectMeta,
-            audioUrl,
-            fileSize,
-          });
-          return response.json();
-        }
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!form.title.trim() && selectedFiles.length === 0) {
+      toast({
+        title: 'Missing Information',
+        description: 'Please provide a project title or select at least one audio file.',
+        variant: 'destructive',
+      });
+      return;
+    }
 
-        // Small file — upload in a single multipart request
-        const formData = new FormData();
-        Object.entries(projectMeta).forEach(([k, v]) => formData.append(k, v));
-        formData.append('audio', selectedFile, selectedFile.name);
-        return uploadWithProgress('/api/projects', formData, {
-          onProgress: (percent) => setUploadProgress(percent),
-          timeout: 300000,
-        });
-      }
+    setIsSubmitting(true);
+    try {
+      const projectTitle = form.title.trim() ||
+        (selectedFiles[0]?.file.name.replace(/\.[^/.]+$/, '') ?? 'Untitled Project');
 
-      // No audio file — create a blank studio project
-      const response = await apiRequest('POST', '/api/studio/projects', {
-        title: form.title || 'Untitled Project',
+      const projectRes = await apiRequest('POST', '/api/studio/projects', {
+        title: projectTitle,
         description: form.description,
         genre: form.genre,
         tempo: form.bpm,
         key: `${form.key} ${form.scale}`,
       });
-      return response.json();
-    },
-    onSuccess: (data: Record<string, unknown>) => {
+      const projectData = await projectRes.json();
+      const projectId = projectData?.id || projectData?.project?.id;
+
+      if (!projectId) throw new Error('Failed to get project ID');
+
+      for (const sf of selectedFiles) {
+        updateFileState(sf.id, { status: 'uploading', progress: 0 });
+        try {
+          await uploadFileToProject(sf.file, projectId, (pct) => {
+            updateFileState(sf.id, { progress: pct });
+          });
+          updateFileState(sf.id, { status: 'done', progress: 100 });
+        } catch (err) {
+          const msg = err instanceof Error ? err.message : 'Upload failed';
+          updateFileState(sf.id, { status: 'error', error: msg });
+          toast({
+            title: `Failed to upload "${sf.file.name}"`,
+            description: msg,
+            variant: 'destructive',
+          });
+        }
+      }
+
       queryClient.invalidateQueries({ queryKey: ['/api/projects'] });
       queryClient.invalidateQueries({ queryKey: ['/api/studio/projects'] });
       queryClient.invalidateQueries({ queryKey: ['/api/studio/start-hub/summary'] });
 
       toast({
         title: 'Project Created',
-        description: `"${form.title || 'Untitled Project'}" has been created successfully.`,
+        description: `"${projectTitle}" is ready${selectedFiles.length > 0 ? ` with ${selectedFiles.length} track${selectedFiles.length > 1 ? 's' : ''}` : ''}.`,
       });
 
-      const projectId = data?.id || data?.project?.id;
-      if (projectId && onProjectCreated) {
-        onProjectCreated(projectId);
-      }
-
+      if (onProjectCreated) onProjectCreated(projectId);
       resetForm();
       onOpenChange(false);
-
-      if (projectId) {
-        setLocation(`/studio/${projectId}`);
-      }
-    },
-    onError: (error: Error) => {
+      setLocation(`/studio/${projectId}`);
+    } catch (err) {
       toast({
         title: 'Creation Failed',
-        description: error.message || 'Failed to create project. Please try again.',
+        description: err instanceof Error ? err.message : 'Failed to create project. Please try again.',
         variant: 'destructive',
       });
-      setUploadProgress(0);
-    },
-  });
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!form.title.trim() && !selectedFile) {
-      toast({
-        title: 'Missing Information',
-        description: 'Please provide a project title or select an audio file.',
-        variant: 'destructive',
-      });
-      return;
+    } finally {
+      setIsSubmitting(false);
     }
-    createProjectMutation.mutate();
   };
 
-  const isSubmitting = createProjectMutation.isPending;
+  const totalProgress = selectedFiles.length === 0 ? 0
+    : Math.round(selectedFiles.reduce((sum, f) => sum + f.progress, 0) / selectedFiles.length);
+
+  const hasUploading = selectedFiles.some(f => f.status === 'uploading');
+  const allDone = selectedFiles.length > 0 && selectedFiles.every(f => f.status === 'done');
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg bg-[#1e1e22] border-[#333] text-white">
+      <DialogContent className="max-w-lg bg-[#1e1e22] border-[#333] text-white max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-white">
             <Plus className="h-5 w-5 text-emerald-500" />
             New Project
           </DialogTitle>
           <DialogDescription className="text-gray-400">
-            Create a new project or upload an existing audio file to get started.
+            Create a new project and optionally import one or more audio files as tracks.
           </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4 mt-4">
           <div
             className={cn(
-              'border-2 border-dashed rounded-lg p-6 text-center transition-colors cursor-pointer',
+              'border-2 border-dashed rounded-lg p-5 text-center transition-colors cursor-pointer',
               isDragging ? 'border-emerald-500 bg-emerald-500/10' : 'border-[#444] hover:border-[#666]',
-              selectedFile && 'border-emerald-500/50 bg-emerald-500/5'
+              selectedFiles.length > 0 && !isDragging && 'border-emerald-500/40'
             )}
             onDrop={handleDrop}
             onDragOver={handleDragOver}
@@ -328,51 +401,101 @@ export function StudioProjectDialog({
               ref={fileInputRef}
               type="file"
               accept={ACCEPTED_EXTENSIONS.join(',')}
-              onChange={(e) => e.target.files?.[0] && handleFileSelect(e.target.files[0])}
+              multiple
+              onChange={(e) => e.target.files && addFiles(e.target.files)}
               className="hidden"
             />
-            {selectedFile ? (
-              <div className="flex items-center justify-center gap-3">
-                <CheckCircle2 className="h-8 w-8 text-emerald-500" />
-                <div className="text-left">
-                  <p className="font-medium text-white">{selectedFile.name}</p>
-                  <p className="text-sm text-gray-400">
-                    {(selectedFile.size / (1024 * 1024)).toFixed(2)} MB
-                  </p>
-                </div>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  className="ml-auto"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setSelectedFile(null);
-                  }}
-                >
-                  <X className="h-4 w-4" />
-                </Button>
-              </div>
-            ) : (
-              <>
-                <Upload className="h-10 w-10 mx-auto mb-3 text-gray-500" />
-                <p className="text-sm text-gray-400 mb-1">
-                  Drag & drop an audio file here, or click to browse
-                </p>
-                <p className="text-xs text-gray-500">
-                  WAV, MP3, FLAC, AIFF, OGG (max 500MB)
-                </p>
-              </>
-            )}
+            <Upload className="h-8 w-8 mx-auto mb-2 text-gray-500" />
+            <p className="text-sm text-gray-400 mb-1">
+              Drag & drop audio files here, or click to browse
+            </p>
+            <p className="text-xs text-gray-500">
+              WAV, MP3, FLAC, AIFF, OGG — up to 500 MB each — multiple files supported
+            </p>
           </div>
 
-          {uploadProgress > 0 && uploadProgress < 100 && (
-            <div className="space-y-1">
-              <div className="flex justify-between text-xs text-gray-400">
-                <span>Uploading...</span>
-                <span>{uploadProgress}%</span>
+          {selectedFiles.length > 0 && (
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <p className="text-xs text-gray-400 font-medium uppercase tracking-wide">
+                  {selectedFiles.length} file{selectedFiles.length > 1 ? 's' : ''} selected
+                </p>
+                {!isSubmitting && (
+                  <button
+                    type="button"
+                    onClick={() => setSelectedFiles([])}
+                    className="text-xs text-gray-500 hover:text-red-400 transition-colors"
+                  >
+                    Remove all
+                  </button>
+                )}
               </div>
-              <Progress value={uploadProgress} className="h-1" />
+
+              <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1">
+                {selectedFiles.map((sf) => (
+                  <div
+                    key={sf.id}
+                    className="flex items-center gap-2 bg-[#2a2a2e] rounded-lg px-3 py-2"
+                  >
+                    <FileAudio className="h-4 w-4 text-emerald-500 flex-shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs text-white truncate">{sf.file.name}</p>
+                      <div className="flex items-center gap-2 mt-0.5">
+                        <span className="text-[10px] text-gray-500">
+                          {(sf.file.size / (1024 * 1024)).toFixed(1)} MB
+                        </span>
+                        {sf.status === 'uploading' && (
+                          <>
+                            <div className="flex-1 h-0.5 bg-[#444] rounded-full">
+                              <div
+                                className="h-full bg-emerald-500 rounded-full transition-all"
+                                style={{ width: `${sf.progress}%` }}
+                              />
+                            </div>
+                            <span className="text-[10px] text-emerald-400">{sf.progress}%</span>
+                          </>
+                        )}
+                        {sf.status === 'done' && (
+                          <span className="text-[10px] text-emerald-400 flex items-center gap-1">
+                            <CheckCircle2 className="h-3 w-3" /> Done
+                          </span>
+                        )}
+                        {sf.status === 'error' && (
+                          <span className="text-[10px] text-red-400 flex items-center gap-1 truncate">
+                            <AlertCircle className="h-3 w-3 flex-shrink-0" />
+                            {sf.error || 'Failed'}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    {!isSubmitting && (
+                      <button
+                        type="button"
+                        onClick={() => removeFile(sf.id)}
+                        className="text-gray-600 hover:text-red-400 transition-colors flex-shrink-0"
+                      >
+                        <X className="h-3.5 w-3.5" />
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              {hasUploading && (
+                <div className="space-y-1">
+                  <div className="flex justify-between text-xs text-gray-400">
+                    <span>Uploading tracks...</span>
+                    <span>{totalProgress}%</span>
+                  </div>
+                  <Progress value={totalProgress} className="h-1" />
+                </div>
+              )}
+
+              {allDone && (
+                <p className="text-xs text-emerald-400 text-center">
+                  All tracks uploaded successfully
+                </p>
+              )}
             </div>
           )}
 
@@ -493,12 +616,17 @@ export function StudioProjectDialog({
               {isSubmitting ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Creating...
+                  {hasUploading ? 'Uploading...' : 'Creating...'}
                 </>
               ) : (
                 <>
                   <Plus className="h-4 w-4 mr-2" />
                   Create Project
+                  {selectedFiles.length > 0 && (
+                    <span className="ml-1 text-emerald-300">
+                      + {selectedFiles.length} track{selectedFiles.length > 1 ? 's' : ''}
+                    </span>
+                  )}
                 </>
               )}
             </Button>

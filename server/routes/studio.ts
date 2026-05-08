@@ -1988,6 +1988,72 @@ router.post('/upload', requireAuth, audioUpload.single('audioFile'), handleUploa
   }
 });
 
+// Create a track from a pre-assembled URL (used after chunked uploads)
+router.post('/upload-from-url', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const userId = req.user!.id;
+    const { projectId, audioUrl, filename } = req.body;
+
+    if (!projectId || typeof projectId !== 'string') {
+      return res.status(400).json({ error: 'projectId is required' });
+    }
+    if (!audioUrl || typeof audioUrl !== 'string') {
+      return res.status(400).json({ error: 'audioUrl is required' });
+    }
+
+    const hasAccess = await verifyProjectOwnership(projectId, userId);
+    if (!hasAccess) {
+      return res.status(404).json({ error: 'Project not found' });
+    }
+
+    const existingTracks = await db.query.studioTracks.findMany({
+      where: eq(studioTracks.projectId, projectId),
+    });
+    const trackOrder = existingTracks.length;
+
+    const rawName = typeof filename === 'string' ? filename : '';
+    const trackName = rawName.replace(/\.[^/.]+$/, '') || `Track ${trackOrder + 1}`;
+    const trackId = `track_${randomBytes(8).toString('hex')}`;
+
+    const [newTrack] = await db.insert(studioTracks).values({
+      id: trackId,
+      projectId,
+      name: trackName,
+      trackType: 'audio',
+      order: trackOrder,
+      volume: 1,
+      pan: 0,
+      isMuted: false,
+      isSolo: false,
+      isArmed: false,
+      inputSource: null,
+      color: `#${randomBytes(3).toString('hex')}`,
+      outputBus: 'master',
+    }).returning();
+
+    const clipId = `clip_${randomBytes(8).toString('hex')}`;
+    const [newClip] = await db.insert(audioClips).values({
+      id: clipId,
+      projectId,
+      trackId,
+      name: trackName,
+      audioUrl,
+      startTime: 0,
+      duration: null,
+      fadeIn: 0,
+      fadeOut: 0,
+      gain: 1,
+    }).returning();
+
+    logger.info('Created track from pre-assembled URL', { trackId, clipId, projectId });
+
+    res.json({ success: true, track: newTrack, clip: newClip });
+  } catch (error: unknown) {
+    logger.warn({ err: error }, 'Error creating track from URL:');
+    res.status(500).json({ error: 'Failed to create track' });
+  }
+});
+
 // Studio export endpoints
 router.post('/export', requireAuth, async (req: Request, res: Response) => {
   try {
