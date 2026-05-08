@@ -139,7 +139,7 @@ export function TaxFormWizard({
       },
     };
 
-    const config = badges[currentStatus];
+    const config = (currentStatus && badges[currentStatus]) ?? badges.not_started;
     return (
       <Badge className={`${config.className} flex items-center gap-1`}>
         {config.icon}
