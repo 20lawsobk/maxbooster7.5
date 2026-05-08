@@ -10,6 +10,7 @@ import { chainErrorAutoFixer } from '../services/chainErrorAutoFixer.js';
 import { platformAutoFixer } from '../services/platformAutoFixer.js';
 import { permanentFixRegistry } from '../services/permanentFixRegistry.js';
 import { env } from '../config/env.js';
+import { require2FA } from '../middleware/auth.js';
 
 const adminRouter = Router();
 
@@ -52,6 +53,7 @@ function requireAdmin(req: Request, res: Response, next: NextFunction) {
 }
 
 adminRouter.use(requireAdmin);
+adminRouter.use(require2FA);
 
 adminRouter.get("/dashboard", (req, res) => {
   const { password, twoFactorSecret, passwordResetToken, ...safeUser } = req.user as Record<string, unknown>;

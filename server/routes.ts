@@ -392,6 +392,11 @@ export async function registerRoutes(
       try {
         await sessionRegenerate(req);
         req.session.userId = user.id;
+        // If the user has 2FA enabled and passed the TOTP check above, mark this
+        // session as 2FA-verified so require2FA gates on privileged routes pass.
+        if (user.twoFactorEnabled) {
+          (req.session as unknown as Record<string, unknown>).twoFactorVerified = true;
+        }
         await sessionSave(req);
 
         logger.info({ userId: user.id }, '[Login] SUCCESS for userId');
@@ -1445,6 +1450,13 @@ export async function registerRoutes(
     const isValid = typeof verifyResult === 'object' && verifyResult !== null
       ? (verifyResult as { valid: boolean }).valid
       : !!verifyResult;
+    // Mark the session as 2FA-verified so privileged routes (require2FA) allow access.
+    if (isValid) {
+      (req.session as unknown as Record<string, unknown>).twoFactorVerified = true;
+      await new Promise<void>((resolve, reject) =>
+        req.session.save((err) => (err ? reject(err) : resolve()))
+      );
+    }
     return res.json({ valid: isValid });
   });
 
