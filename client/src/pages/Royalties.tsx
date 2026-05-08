@@ -173,6 +173,12 @@ export default function Royalties() {
   const [selectedPeriod, setSelectedPeriod] = useState('current');
   const [selectedPlatform, setSelectedPlatform] = useState('all');
   const [isAddPaymentDialogOpen, setIsAddPaymentDialogOpen] = useState(false);
+  const [newPaymentType, setNewPaymentType] = useState<'paypal' | 'bank_transfer'>('paypal');
+  const [newPaypalEmail, setNewPaypalEmail] = useState('');
+  const [newBankHolder, setNewBankHolder] = useState('');
+  const [newBankName, setNewBankName] = useState('');
+  const [newBankAccount, setNewBankAccount] = useState('');
+  const [newBankRouting, setNewBankRouting] = useState('');
   const [isTaxInfoDialogOpen, setIsTaxInfoDialogOpen] = useState(false);
   const [taxCountry, setTaxCountry] = useState('');
   const [taxId, setTaxId] = useState('');
@@ -247,7 +253,7 @@ export default function Royalties() {
   });
   const disputes = disputesData?.disputes ?? [];
 
-  const { data: taxFormsData, isLoading: taxFormsLoading } = useQuery<{ forms: unknown[] }>({
+  const { data: taxFormsData, isLoading: taxFormsLoading } = useQuery<{ forms: Array<{ formType?: string | null; status?: string; rejectionReason?: string }> }>({
     queryKey: ['/api/payouts/tax-forms'],
     enabled: !!user,
     staleTime: 5 * 60 * 1000,
@@ -319,14 +325,22 @@ export default function Royalties() {
   });
 
   const addPaymentMethodMutation = useMutation({
-    mutationFn: async (data: { type: string; accountNumber: string }) => {
+    mutationFn: async (data: { type: string; paypalEmail?: string; bankDetails?: Record<string, string> }) => {
       const response = await apiRequest('POST', '/api/royalties/payment-methods', data);
       return response.json();
     },
     onSuccess: () => {
       toast({ title: 'Payment Method Added', description: 'New payment method has been added' });
       setIsAddPaymentDialogOpen(false);
+      setNewPaypalEmail('');
+      setNewBankHolder('');
+      setNewBankName('');
+      setNewBankAccount('');
+      setNewBankRouting('');
       queryClient.invalidateQueries({ queryKey: ['/api/royalties/payment-methods'] });
+    },
+    onError: () => {
+      toast({ title: 'Error', description: 'Failed to add payment method', variant: 'destructive' });
     },
   });
 
@@ -978,11 +992,11 @@ return (
           <TabsContent value="payouts" className="space-y-6">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <PayoutHistoryTimeline
-                payouts={payoutHistory.map((p: Record<string, unknown>) => ({
+                payouts={payoutHistory.map((p) => ({
                   ...p,
-                  requestedAt: new Date(p.requestedAt),
-                  completedAt: p.completedAt ? new Date(p.completedAt) : undefined,
-                  estimatedArrival: p.estimatedArrival ? new Date(p.estimatedArrival) : undefined,
+                  requestedAt: new Date(p.requestedAt as unknown as string),
+                  completedAt: p.completedAt ? new Date(p.completedAt as unknown as string) : undefined,
+                  estimatedArrival: p.estimatedArrival ? new Date(p.estimatedArrival as unknown as string) : undefined,
                 }))}
                 isLoading={payoutHistoryLoading}
                 onRetry={(payoutId) => retryPayoutMutation.mutate(payoutId)}
@@ -994,8 +1008,8 @@ return (
               />
 
               <TaxFormWizard
-                currentFormType={taxForms[0]?.formType || null}
-                currentStatus={taxForms[0]?.status || 'not_started'}
+                currentFormType={(taxForms[0]?.formType || null) as import('@/components/royalties/TaxFormWizard').TaxFormData['formType'] | null}
+                currentStatus={(taxForms[0]?.status || 'not_started') as 'not_started' | 'in_progress' | 'pending_review' | 'approved' | 'rejected'}
                 rejectionReason={taxForms[0]?.rejectionReason}
                 onSubmit={async (formData) => {
                   await submitTaxFormMutation.mutateAsync(formData);
@@ -1009,10 +1023,10 @@ return (
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               <div className="lg:col-span-1">
                 <StatementDateRangePicker
-                  statements={statements.map((s: Record<string, unknown>) => ({
+                  statements={statements.map((s) => ({
                     ...s,
-                    startDate: new Date(s.startDate),
-                    endDate: new Date(s.endDate),
+                    startDate: new Date(s.startDate as unknown as string),
+                    endDate: new Date(s.endDate as unknown as string),
                   }))}
                   selectedPeriod={selectedStatement}
                   onPeriodSelect={(period) => {
@@ -1341,18 +1355,18 @@ return (
 
           <TabsContent value="disputes" className="space-y-6">
             <DisputeTracker
-              disputes={disputes.map((d: Record<string, unknown>) => ({
+              disputes={disputes.map((d) => ({
                 ...d,
-                createdAt: new Date(d.createdAt),
-                updatedAt: new Date(d.updatedAt),
-                messages: d.messages?.map((m: Record<string, unknown>) => ({
+                createdAt: new Date(d.createdAt as unknown as string),
+                updatedAt: new Date(d.updatedAt as unknown as string),
+                messages: (d.messages as Array<{ id: string; sender: 'user' | 'support'; content: string; timestamp: string | Date; attachments?: string[] }> | undefined)?.map((m) => ({
                   ...m,
-                  timestamp: new Date(m.timestamp),
-                })) || [],
+                  timestamp: new Date(m.timestamp as unknown as string),
+                })) ?? [],
               }))}
               isLoading={disputesLoading}
               onFileDispute={async (data) => {
-                await fileDisputeMutation.mutateAsync(data as Record<string, unknown>);
+                await fileDisputeMutation.mutateAsync(data);
               }}
               onSubmitEvidence={async (disputeId, evidence) => {
                 await submitEvidenceMutation.mutateAsync({ disputeId, evidence });
@@ -1550,6 +1564,90 @@ return (
             <TaxIntelligenceContent />
           </TabsContent>
         </Tabs>
+
+        {/* Add Payment Method Dialog */}
+        <Dialog open={isAddPaymentDialogOpen} onOpenChange={(open) => {
+          setIsAddPaymentDialogOpen(open);
+          if (!open) { setNewPaypalEmail(''); setNewBankHolder(''); setNewBankName(''); setNewBankAccount(''); setNewBankRouting(''); }
+        }}>
+          <DialogContent data-testid="dialog-add-payment-method">
+            <DialogHeader>
+              <DialogTitle>Add Payment Method</DialogTitle>
+              <DialogDescription>Choose how you want to receive your royalty payouts.</DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label>Payment Type</Label>
+                <Select value={newPaymentType} onValueChange={(v) => setNewPaymentType(v as 'paypal' | 'bank_transfer')}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="paypal">PayPal</SelectItem>
+                    <SelectItem value="bank_transfer">Bank Transfer (ACH)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              {newPaymentType === 'paypal' ? (
+                <div className="space-y-2">
+                  <Label htmlFor="paypal-email">PayPal Email</Label>
+                  <Input
+                    id="paypal-email"
+                    type="email"
+                    placeholder="you@example.com"
+                    value={newPaypalEmail}
+                    onChange={(e) => setNewPaypalEmail(e.target.value)}
+                  />
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <div className="space-y-2">
+                    <Label htmlFor="bank-holder">Account Holder Name</Label>
+                    <Input id="bank-holder" placeholder="Full legal name" value={newBankHolder} onChange={(e) => setNewBankHolder(e.target.value)} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="bank-name">Bank Name</Label>
+                    <Input id="bank-name" placeholder="e.g. Chase, Wells Fargo" value={newBankName} onChange={(e) => setNewBankName(e.target.value)} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="bank-account">Account Number</Label>
+                    <Input id="bank-account" type="password" placeholder="Account number" value={newBankAccount} onChange={(e) => setNewBankAccount(e.target.value)} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="bank-routing">Routing Number</Label>
+                    <Input id="bank-routing" placeholder="9-digit routing number" value={newBankRouting} onChange={(e) => setNewBankRouting(e.target.value)} />
+                  </div>
+                </div>
+              )}
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setIsAddPaymentDialogOpen(false)}>Cancel</Button>
+              <Button
+                onClick={() => {
+                  if (newPaymentType === 'paypal') {
+                    if (!newPaypalEmail.includes('@')) {
+                      toast({ title: 'Invalid email', description: 'Enter a valid PayPal email address', variant: 'destructive' });
+                      return;
+                    }
+                    addPaymentMethodMutation.mutate({ type: 'paypal', paypalEmail: newPaypalEmail });
+                  } else {
+                    if (!newBankHolder || !newBankName || !newBankAccount || !newBankRouting) {
+                      toast({ title: 'Missing fields', description: 'Please fill in all bank details', variant: 'destructive' });
+                      return;
+                    }
+                    addPaymentMethodMutation.mutate({
+                      type: 'bank_transfer',
+                      bankDetails: { accountHolderName: newBankHolder, bankName: newBankName, accountNumber: newBankAccount, routingNumber: newBankRouting },
+                    });
+                  }
+                }}
+                disabled={addPaymentMethodMutation.isPending}
+              >
+                {addPaymentMethodMutation.isPending ? 'Saving…' : 'Add Method'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
         {/* Tax Information Dialog */}
         <Dialog open={isTaxInfoDialogOpen} onOpenChange={setIsTaxInfoDialogOpen}>
