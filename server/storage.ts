@@ -1288,6 +1288,9 @@ export class DatabaseStorage implements IStorage {
           JOIN storefronts s ON sr2.storefront_id = s.id
           WHERE s.user_id = u.id
         ) sr ON true
+        WHERE l.beats_count > 0
+           OR EXISTS (SELECT 1 FROM storefronts st WHERE st.user_id = u.id)
+        ORDER BY l.beats_count DESC, o.sales_count DESC
         LIMIT 50
       `);
 
