@@ -270,6 +270,7 @@ export default function StorefrontBuilder() {
   const logoInputRef = useRef<HTMLInputElement>(null);
   const bannerInputRef = useRef<HTMLInputElement>(null);
   const avatarInputRef = useRef<HTMLInputElement>(null);
+  const slugDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const handleAssetUpload = async (file: File, assetType: 'logo' | 'banner' | 'avatar') => {
     if (!file) return;
@@ -717,16 +718,17 @@ export default function StorefrontBuilder() {
 
   const generateSlug = async (name: string) => {
     try {
-      const response = await apiRequest('POST', '/api/storefront/generate-slug', { name });
+      const response = await apiRequest('GET', `/api/storefront/generate-slug?name=${encodeURIComponent(name)}`);
       const data = await response.json();
       setCreateForm((prev) => ({ ...prev, slug: data.slug }));
-    } catch (error: unknown) {
-      toast({
-        title: 'Error',
-        description: 'Failed to generate slug',
-        variant: 'destructive',
-      });
+    } catch {
+      // Silently ignore — slug field keeps whatever value the user typed
     }
+  };
+
+  const generateSlugDebounced = (name: string) => {
+    if (slugDebounceRef.current) clearTimeout(slugDebounceRef.current);
+    slugDebounceRef.current = setTimeout(() => generateSlug(name), 400);
   };
 
   // Fetch a fresh Replit-style random URL suggestion from the server.
@@ -2192,7 +2194,7 @@ export default function StorefrontBuilder() {
                 onChange={(e) => {
                   setCreateForm({ ...createForm, name: e.target.value });
                   if (!slugUserEdited && e.target.value.trim()) {
-                    generateSlug(e.target.value);
+                    generateSlugDebounced(e.target.value);
                   }
                 }}
                 placeholder="My Artist Name"

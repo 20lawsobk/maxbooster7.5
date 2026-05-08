@@ -196,6 +196,32 @@ router.get('/preview/:slug', async (req, res) => {
 });
 
 /**
+ * GET /api/storefront/generate-slug?name=...
+ * Generate a unique slug from a name — read-only, no CSRF required.
+ * Must be registered BEFORE the /:slug catch-all to avoid param collision.
+ */
+router.get('/generate-slug', async (req, res) => {
+  try {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const name = typeof req.query.name === 'string' ? req.query.name : '';
+
+    if (!name.trim()) {
+      return res.status(400).json({ error: 'Name is required' });
+    }
+
+    const slug = await storefrontService.generateSlug(name);
+    res.json({ slug });
+  } catch (error: unknown) {
+    logger.warn({ err: error }, 'Error generating slug:');
+    const errorMessage = error instanceof Error ? error.message : 'Failed to generate slug';
+    res.status(500).json({ error: errorMessage });
+  }
+});
+
+/**
  * GET /api/storefront/:slug
  * Get storefront by slug (for authenticated access)
  */
@@ -698,30 +724,6 @@ router.get('/memberships/my', async (req, res) => {
   }
 });
 
-/**
- * POST /api/storefront/generate-slug
- * Generate a unique slug from a name
- */
-router.post('/generate-slug', async (req, res) => {
-  try {
-    if (!req.isAuthenticated()) {
-      return res.status(401).json({ error: 'Unauthorized' });
-    }
-
-    const { name } = req.body;
-
-    if (!name || typeof name !== 'string') {
-      return res.status(400).json({ error: 'Name is required' });
-    }
-
-    const slug = await storefrontService.generateSlug(name);
-    res.json({ slug });
-  } catch (error: unknown) {
-    logger.warn({ err: error }, 'Error generating slug:');
-    const errorMessage = error instanceof Error ? error.message : 'Failed to generate slug';
-    res.status(500).json({ error: errorMessage });
-  }
-});
 
 /**
  * GET /api/storefront/:storefrontId/membership-tiers/public
