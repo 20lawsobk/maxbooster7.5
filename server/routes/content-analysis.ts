@@ -5,6 +5,8 @@
  */
 
 import { Router } from 'express';
+import { promises as dns } from 'dns';
+import { isIPv4 as netIsIPv4 } from 'net';
 import { contentAnalysisService } from '../services/contentAnalysisService';
 import { requireAuth } from '../middleware/auth';
 import { logger } from '../logger';
@@ -13,9 +15,43 @@ import { db } from '../db';
 import { users, posts, adCampaigns } from '@shared/schema';
 import { eq } from 'drizzle-orm';
 
-const PRIVATE_IP_RE = /^(127\.|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.|169\.254\.|0\.|::1$|fc|fd)/i;
+// ─── Shared IP-safety helpers (pre-flight, defense-in-depth) ─────────────────
+// The primary SSRF barrier is the connect-time lookup in contentAnalysisService;
+// these checks are an early-rejection layer to block obvious private targets.
 
-function validateExternalUrl(raw: string): string {
+const PRIVATE_IPV4_RE =
+  /^(127\.|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.|169\.254\.|100\.(6[4-9]|[7-9]\d|1[01]\d|12[0-7])\.|0\.)/;
+
+const PRIVATE_IPV6_RE =
+  /^(::1$|fc[0-9a-f]{2}:|fd[0-9a-f]{2}:|fe[89ab][0-9a-f]:|::$)/i;
+
+/**
+ * Returns true when `raw` is a private/reserved/loopback IP address.
+ * Handles plain IPv4, plain IPv6, bracket-quoted IPv6, and
+ * IPv4-mapped IPv6 (::ffff:a.b.c.d).
+ */
+function isReservedIp(raw: string): boolean {
+  let addr = raw.toLowerCase();
+  if (addr.startsWith('[') && addr.endsWith(']')) addr = addr.slice(1, -1);
+  if (addr === 'localhost' || addr === '0.0.0.0' || addr === '::1') return true;
+  // IPv4-mapped IPv6 — extract the embedded IPv4 part.
+  if (addr.startsWith('::ffff:')) {
+    const embedded = addr.slice(7);
+    if (netIsIPv4(embedded)) return embedded === '0.0.0.0' || PRIVATE_IPV4_RE.test(embedded);
+    return true; // hex-only form — conservatively block
+  }
+  return PRIVATE_IPV4_RE.test(addr) || PRIVATE_IPV6_RE.test(addr);
+}
+
+/**
+ * Validates that a URL is syntactically correct, uses http/https, and does NOT
+ * resolve to a private/internal address. The DNS resolution step closes the
+ * DNS-rebinding bypass that a hostname-only regex check cannot catch.
+ *
+ * Note: This is defense-in-depth. The service layer also enforces the same
+ * policy at connect time via a custom http/https Agent.
+ */
+async function validateExternalUrl(raw: string): Promise<string> {
   let normalised = raw.trim();
   if (normalised && !/^https?:\/\//i.test(normalised)) {
     normalised = 'https://' + normalised;
@@ -29,9 +65,22 @@ function validateExternalUrl(raw: string): string {
   if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') {
     throw new Error('Invalid URL protocol');
   }
+  // parsed.hostname strips brackets from IPv6 literals (e.g. [::1] → ::1).
   const hostname = parsed.hostname.toLowerCase();
-  if (hostname === 'localhost' || PRIVATE_IP_RE.test(hostname)) {
+  if (isReservedIp(hostname)) {
     throw new Error('URL resolves to a private or reserved address');
+  }
+  // Resolve DNS and validate every returned address.
+  let addresses: dns.LookupAddress[];
+  try {
+    addresses = await dns.lookup(hostname, { all: true });
+  } catch {
+    throw new Error('Unable to resolve URL hostname');
+  }
+  for (const { address } of addresses) {
+    if (isReservedIp(address)) {
+      throw new Error('URL resolves to a private or reserved address');
+    }
   }
   return parsed.href;
 }
@@ -103,7 +152,7 @@ router.post('/image', async (req, res) => {
 
     let safeImageUrl: string;
     try {
-      safeImageUrl = validateExternalUrl(imageUrl);
+      safeImageUrl = await validateExternalUrl(imageUrl);
     } catch {
       return res.status(400).json({ error: 'Invalid or unsafe URL' });
     }
@@ -140,7 +189,7 @@ router.post('/video', async (req, res) => {
 
     let safeVideoUrl: string;
     try {
-      safeVideoUrl = validateExternalUrl(videoUrl);
+      safeVideoUrl = await validateExternalUrl(videoUrl);
     } catch {
       return res.status(400).json({ error: 'Invalid or unsafe URL' });
     }
@@ -180,7 +229,7 @@ router.post('/audio', async (req, res) => {
 
     let safeAudioUrl: string;
     try {
-      safeAudioUrl = validateExternalUrl(audioUrl);
+      safeAudioUrl = await validateExternalUrl(audioUrl);
     } catch {
       return res.status(400).json({ error: 'Invalid or unsafe URL' });
     }
@@ -253,7 +302,7 @@ router.post('/website', async (req, res) => {
 
     let safeUrl: string;
     try {
-      safeUrl = validateExternalUrl(url);
+      safeUrl = await validateExternalUrl(url);
     } catch (validationError) {
       logger.warn({ url, err: validationError }, '[ContentAnalysis] /website rejected — URL validation failed');
       return res.status(400).json({ error: 'Invalid or unsafe URL' });
@@ -294,12 +343,24 @@ router.post('/batch', async (req, res) => {
     const results: Record<string, unknown> = {};
 
     if (mediaType === 'image' && mediaUrl) {
-      results.image = await contentAnalysisService.analyzeImage(mediaUrl);
+      let safeMediaUrl: string;
+      try {
+        safeMediaUrl = await validateExternalUrl(mediaUrl);
+      } catch {
+        return res.status(400).json({ error: 'Invalid or unsafe mediaUrl' });
+      }
+      results.image = await contentAnalysisService.analyzeImage(safeMediaUrl);
     }
 
     if (mediaType === 'video' && mediaUrl) {
+      let safeMediaUrl: string;
+      try {
+        safeMediaUrl = await validateExternalUrl(mediaUrl);
+      } catch {
+        return res.status(400).json({ error: 'Invalid or unsafe mediaUrl' });
+      }
       results.video = await contentAnalysisService.analyzeVideo(
-        mediaUrl,
+        safeMediaUrl,
         videoDuration || 30
       );
     }
@@ -309,7 +370,13 @@ router.post('/batch', async (req, res) => {
     }
 
     if (landingPageUrl) {
-      results.website = await contentAnalysisService.analyzeWebsite(landingPageUrl);
+      let safeLandingPageUrl: string;
+      try {
+        safeLandingPageUrl = await validateExternalUrl(landingPageUrl);
+      } catch {
+        return res.status(400).json({ error: 'Invalid or unsafe landingPageUrl' });
+      }
+      results.website = await contentAnalysisService.analyzeWebsite(safeLandingPageUrl);
     }
 
     res.json({

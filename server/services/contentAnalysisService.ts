@@ -11,7 +11,99 @@
  */
 
 import axios from 'axios';
+import { Agent as HttpAgent } from 'http';
+import { Agent as HttpsAgent } from 'https';
+import { lookup as dnsLookup, LookupAddress } from 'dns';
+import { isIPv4 as netIsIPv4 } from 'net';
+import type { LookupFunction } from 'net';
 import { logger } from '../logger';
+
+// ─── Connect-time SSRF protection ────────────────────────────────────────────
+// Reject any hostname that resolves to a private / reserved address at the
+// moment the TCP socket is opened, not just at pre-flight validation time.
+// This closes the DNS-rebinding TOCTOU window left by a hostname-only check.
+//
+// Also covers IPv4-mapped IPv6 (::ffff:a.b.c.d) which a plain regex on the
+// IPv6 string cannot safely handle.
+
+const PRIVATE_IPV4_RE =
+  /^(127\.|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.|169\.254\.|100\.(6[4-9]|[7-9]\d|1[01]\d|12[0-7])\.|0\.)/;
+
+const PRIVATE_IPV6_RE =
+  /^(::1$|fc[0-9a-f]{2}:|fd[0-9a-f]{2}:|fe[89ab][0-9a-f]:|::$)/i;
+
+/**
+ * Normalise an IP address string and return true if it is private / reserved.
+ * Handles plain IPv4, plain IPv6, IPv6 bracket-quoted forms, and
+ * IPv4-mapped-IPv6 (::ffff:a.b.c.d or compact hex variants).
+ */
+function isReservedIp(raw: string): boolean {
+  let addr = raw.toLowerCase();
+
+  // Strip surrounding IPv6 brackets that Node can occasionally surface.
+  if (addr.startsWith('[') && addr.endsWith(']')) {
+    addr = addr.slice(1, -1);
+  }
+
+  // IPv4-mapped IPv6: ::ffff:<IPv4> — extract and re-check the IPv4 part.
+  if (addr.startsWith('::ffff:')) {
+    const embedded = addr.slice(7);
+    // It could be dotted-decimal (::ffff:127.0.0.1) or condensed hex
+    // (::ffff:7f00:1).  If it looks like a valid dotted IPv4, check that.
+    // Otherwise treat the whole address as suspicious / private to be safe.
+    if (netIsIPv4(embedded)) {
+      return embedded === '0.0.0.0' || PRIVATE_IPV4_RE.test(embedded);
+    }
+    // Hex-only form — conservatively block it since we cannot safely
+    // decode arbitrary hex quads inline.
+    return true;
+  }
+
+  if (addr === 'localhost' || addr === '0.0.0.0') return true;
+  if (PRIVATE_IPV4_RE.test(addr)) return true;
+  if (PRIVATE_IPV6_RE.test(addr)) return true;
+  return false;
+}
+
+/**
+ * Drop-in replacement for dns.lookup that rejects private/reserved addresses.
+ * Typed as net.LookupFunction so it can be passed directly to http/https Agent
+ * without unsafe casts.
+ */
+const safeDnsLookup: LookupFunction = (hostname, options, callback) => {
+  dnsLookup(hostname, { all: true }, (err, addresses) => {
+    if (err) {
+      callback(err, '', 4);
+      return;
+    }
+    const addrs: LookupAddress[] = Array.isArray(addresses)
+      ? addresses
+      : [{ address: String(addresses), family: 4 }];
+
+    for (const entry of addrs) {
+      if (isReservedIp(entry.address)) {
+        const ssrfErr = Object.assign(
+          new Error(`SSRF blocked: ${entry.address} is a reserved address`),
+          { code: 'ECONNREFUSED' }
+        ) as NodeJS.ErrnoException;
+        callback(ssrfErr, '', entry.family);
+        return;
+      }
+    }
+
+    const first = addrs[0];
+    callback(null, first.address, first.family);
+  });
+};
+
+const safeHttpAgent  = new HttpAgent( { lookup: safeDnsLookup });
+const safeHttpsAgent = new HttpsAgent({ lookup: safeDnsLookup });
+
+const SAFE_AXIOS_AGENTS = {
+  httpAgent:  safeHttpAgent,
+  httpsAgent: safeHttpsAgent,
+} as const;
+// ─────────────────────────────────────────────────────────────────────────────
 
 // Optional sharp support with graceful fallback
 let sharpModule: typeof import("sharp") | null = null;
@@ -468,6 +560,8 @@ export class ContentAnalysisService {
     const response = await axios.get(url, {
       responseType: 'arraybuffer',
       timeout: 10000,
+      maxRedirects: 0,
+      ...SAFE_AXIOS_AGENTS,
     });
     return Buffer.from(response.data);
   }
@@ -1006,6 +1100,8 @@ export class ContentAnalysisService {
       // Fetch and analyze website HTML
       const response = await axios.get(url, {
         timeout: 10000,
+        maxRedirects: 0,
+        ...SAFE_AXIOS_AGENTS,
         headers: {
           'User-Agent': 'Mozilla/5.0 (compatible; MaxBooster/1.0)',
         },
