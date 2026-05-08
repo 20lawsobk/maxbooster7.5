@@ -30,7 +30,8 @@ import { EmptyState } from '@/components/ui/empty-state';
 import { SkeletonProjectCard } from '@/components/ui/skeleton-loader';
 import { useToast } from '@/hooks/use-toast';
 import { useAnalyticsInvalidation } from '@/hooks/useAnalyticsInvalidation';
-import { apiRequest, uploadWithProgress } from '@/lib/queryClient';
+import { apiRequest } from '@/lib/queryClient';
+import { StudioProjectDialog } from '@/components/studio/StudioProjectDialog';
 import {
   Music,
   Upload,
@@ -103,13 +104,6 @@ export default function Projects() {
   const [location, setLocation] = useLocation();
   const [activeTab, setActiveTab] = useState('projects');
   const [isUploadOpen, setIsUploadOpen] = useState(false);
-  const [uploadForm, setUploadForm] = useState({
-    title: '',
-    description: '',
-    genre: '',
-    file: null as File | null,
-  });
-  const [uploadProgress, setUploadProgress] = useState(0);
   const [currentlyPlaying, setCurrentlyPlaying] = useState<string | null>(null);
   const [audioLoading, setAudioLoading] = useState<string | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -132,37 +126,6 @@ export default function Projects() {
   });
 
   const projects: Project[] = projectsData?.data || [];
-
-  const uploadMutation = useMutation({
-    mutationFn: async (formData: FormData) => {
-      return uploadWithProgress('/api/projects', formData, {
-        onProgress: (percent) => setUploadProgress(percent),
-        timeout: 300000, // 5 minutes
-      });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/projects'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/studio/projects'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/studio/start-hub/summary'] });
-      invalidateOnProjectChange();
-      toast({
-        title: 'Success!',
-        description: 'Your project has been uploaded successfully.',
-      });
-      setIsUploadOpen(false);
-      setUploadForm({ title: '', description: '', genre: '', file: null });
-      setUploadProgress(0);
-    },
-    onError: (error: Error) => {
-      const apiError = error as ApiError;
-      toast({
-        title: 'Upload Failed',
-        description: apiError.message || 'Failed to upload project. Please try again.',
-        variant: 'destructive',
-      });
-      setUploadProgress(0);
-    },
-  });
 
   const deleteMutation = useMutation({
     mutationFn: async (projectId: string) => {
@@ -351,27 +314,6 @@ export default function Projects() {
     });
   };
 
-  const handleUpload = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!uploadForm.file || !uploadForm.title.trim()) {
-      toast({
-        title: 'Missing Information',
-        description: 'Please provide a title and select an audio file.',
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    const formData = new FormData();
-    formData.append('title', uploadForm.title);
-    formData.append('description', uploadForm.description);
-    formData.append('genre', uploadForm.genre);
-    formData.append('audio', uploadForm.file, uploadForm.file.name);
-
-    uploadMutation.mutate(formData);
-  };
-
   const getWorkflowStageLabel = (stage: string) => {
     const labels: Record<string, string> = {
       setup: 'SETUP',
@@ -450,119 +392,23 @@ return (
           </div>
 
           <div className="flex gap-2">
-            <Dialog open={isUploadOpen} onOpenChange={(open) => {
-              // Prevent closing while upload is in progress
-              if (!open && uploadMutation.isPending) return;
-              setIsUploadOpen(open);
-            }}>
-              <DialogTrigger asChild>
-                <Button
-                  className="gradient-bg"
-                  data-testid="button-upload-project"
-                  aria-label="Upload new project"
-                >
-                  <Upload className="h-4 w-4 mr-2" aria-hidden="true" />
-                  Upload Project
-                </Button>
-              </DialogTrigger>
-            <DialogContent 
-              className="max-w-md"
-              onInteractOutside={(e) => {
-                if (uploadMutation.isPending) e.preventDefault();
-              }}
-              onEscapeKeyDown={(e) => {
-                if (uploadMutation.isPending) e.preventDefault();
-              }}
+            <Button
+              className="gradient-bg"
+              data-testid="button-upload-project"
+              aria-label="New project"
+              onClick={() => setIsUploadOpen(true)}
             >
-              <DialogHeader>
-                <DialogTitle>Upload New Project</DialogTitle>
-              </DialogHeader>
+              <Upload className="h-4 w-4 mr-2" aria-hidden="true" />
+              New Project
+            </Button>
 
-              <form onSubmit={handleUpload} className="space-y-4">
-                <div>
-                  <Label htmlFor="title">Project Title</Label>
-                  <Input
-                    id="title"
-                    value={uploadForm.title}
-                    onChange={(e) => setUploadForm((prev) => ({ ...prev, title: e.target.value }))}
-                    placeholder="Enter project title"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="description">Description (Optional)</Label>
-                  <Textarea
-                    id="description"
-                    value={uploadForm.description}
-                    onChange={(e) =>
-                      setUploadForm((prev) => ({ ...prev, description: e.target.value }))
-                    }
-                    placeholder="Describe your project"
-                    rows={3}
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="genre">Genre</Label>
-                  <Select
-                    value={uploadForm.genre}
-                    onValueChange={(value) => setUploadForm((prev) => ({ ...prev, genre: value }))}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select genre" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="pop">Pop</SelectItem>
-                      <SelectItem value="rock">Rock</SelectItem>
-                      <SelectItem value="hip-hop">Hip-Hop</SelectItem>
-                      <SelectItem value="electronic">Electronic</SelectItem>
-                      <SelectItem value="jazz">Jazz</SelectItem>
-                      <SelectItem value="classical">Classical</SelectItem>
-                      <SelectItem value="country">Country</SelectItem>
-                      <SelectItem value="r&b">R&B</SelectItem>
-                      <SelectItem value="indie">Indie</SelectItem>
-                      <SelectItem value="other">Other</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div>
-                  <Label htmlFor="file">Audio File</Label>
-                  <Input
-                    id="file"
-                    type="file"
-                    accept=".mp3,.wav,.flac,.ogg,.aiff,.aif,.webm,.aac,.m4a,audio/mpeg,audio/wav,audio/flac,audio/ogg,audio/aiff,audio/webm,audio/aac,audio/mp4,audio/*"
-                    capture={undefined}
-                    onChange={(e) => {
-                      const file = e.target.files?.[0] || null;
-                      setUploadForm((prev) => ({ ...prev, file }));
-                    }}
-                    required
-                    data-testid="input-file-upload"
-                    aria-describedby="file-help"
-                  />
-                  <p id="file-help" className="text-xs text-gray-500 mt-1">
-                    Supported formats: MP3, WAV, FLAC, OGG, AIFF, WebM, AAC (Max 500MB)
-                  </p>
-                  {uploadForm.file && (
-                    <p className="text-xs text-green-600 mt-1">
-                      Selected: {uploadForm.file.name} ({(uploadForm.file.size / (1024 * 1024)).toFixed(2)} MB)
-                    </p>
-                  )}
-                </div>
-
-                <div className="flex justify-end space-x-2 pt-4">
-                  <Button type="button" variant="outline" onClick={() => setIsUploadOpen(false)}>
-                    Cancel
-                  </Button>
-                  <Button type="submit" disabled={uploadMutation.isPending}>
-                    {uploadMutation.isPending ? `Uploading ${uploadProgress}%` : 'Upload Project'}
-                  </Button>
-                </div>
-              </form>
-            </DialogContent>
-          </Dialog>
+            <StudioProjectDialog
+              open={isUploadOpen}
+              onOpenChange={setIsUploadOpen}
+              onProjectCreated={() => {
+                invalidateOnProjectChange();
+              }}
+            />
           </div>
 
           {/* Edit Project Dialog */}
