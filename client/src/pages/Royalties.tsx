@@ -1332,7 +1332,7 @@ return (
                   <EmptyState
                     title="No works registered"
                     description="Register your musical works to start tracking publishing royalties."
-                    icon={<Copyright className="w-12 h-12" />}
+                    icon={Copyright}
                   />
                 )}
               </CardContent>
