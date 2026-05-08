@@ -5,6 +5,81 @@ import { getRedisClient } from '../lib/redisClient.js';
 import { isPdimConfigured } from '../lib/pdimClient.js';
 import { logger } from '../logger.js';
 import { env } from '../config/env.js';
+import { db } from '../db.js';
+import { sql } from 'drizzle-orm';
+
+// ── PostgreSQL session fallback ───────────────────────────────────────────────
+// When PDIM is unavailable (circuit OPEN) AND L1 in-process cache is empty
+// (e.g. fresh server restart), sessions would otherwise return null → 401 on
+// every request.  This lightweight PG fallback persists the raw session blob so
+// sessions survive PDIM outages and server restarts without loss of auth state.
+//
+// Table: pg_sessions  (created automatically on startup if it doesn't exist)
+//   sid    TEXT PRIMARY KEY   — express-session session ID (the cookie value)
+//   sess   TEXT NOT NULL      — JSON-serialised session data
+//   expire BIGINT NOT NULL    — Unix ms timestamp; entries older than this are stale
+
+async function ensurePgSessionTable(): Promise<void> {
+  try {
+    await db.execute(sql`
+      CREATE TABLE IF NOT EXISTS pg_sessions (
+        sid    TEXT    PRIMARY KEY,
+        sess   TEXT    NOT NULL,
+        expire BIGINT  NOT NULL
+      )
+    `);
+    await db.execute(sql`
+      CREATE INDEX IF NOT EXISTS pg_sessions_expire_idx ON pg_sessions (expire)
+    `);
+  } catch (err) {
+    logger.warn({ err }, '[PgSessions] Could not create pg_sessions table — PG fallback unavailable');
+  }
+}
+
+const PG_SESSION_TTL_MS = 24 * 60 * 60 * 1000; // 24 h (same as cookie maxAge)
+
+async function pgSessionGet(sid: string): Promise<session.SessionData | null> {
+  try {
+    const rows = await db.execute(sql`
+      SELECT sess FROM pg_sessions WHERE sid = ${sid} AND expire > ${Date.now()}
+    `);
+    const r = (rows as { rows?: unknown[] }).rows ?? (rows as unknown[]);
+    if (!Array.isArray(r) || r.length === 0) return null;
+    const row = r[0] as Record<string, unknown>;
+    const raw = row.sess as string | null;
+    if (!raw) return null;
+    return JSON.parse(raw) as session.SessionData;
+  } catch {
+    return null;
+  }
+}
+
+async function pgSessionSet(sid: string, sess: session.SessionData): Promise<void> {
+  try {
+    const expire = Date.now() + PG_SESSION_TTL_MS;
+    const data = JSON.stringify(sess);
+    await db.execute(sql`
+      INSERT INTO pg_sessions (sid, sess, expire)
+      VALUES (${sid}, ${data}, ${expire})
+      ON CONFLICT (sid) DO UPDATE SET sess = EXCLUDED.sess, expire = EXCLUDED.expire
+    `);
+  } catch {
+    /* best-effort — PDIM is the primary store */
+  }
+}
+
+async function pgSessionDestroy(sid: string): Promise<void> {
+  try {
+    await db.execute(sql`DELETE FROM pg_sessions WHERE sid = ${sid}`);
+  } catch {
+    /* best-effort */
+  }
+}
+
+// Periodically purge expired PG sessions (runs once an hour, non-blocking).
+setInterval(() => {
+  db.execute(sql`DELETE FROM pg_sessions WHERE expire <= ${Date.now()}`).catch(() => {});
+}, 60 * 60 * 1000).unref();
 
 /**
  * In-process session cache — eliminates repeated PDIM round-trips for hot
@@ -271,24 +346,28 @@ class PdimSessionStore extends session.Store {
 
     this.inner.get(sid, (err, data) => {
       if (err) {
-        // PDIM unavailable — treat as "no session" instead of propagating the error.
-        // Propagating causes Express to return 500 to the user, which is wrong: the
-        // correct behaviour during a PDIM outage is to serve a session-less (logged-out)
-        // response so the app remains accessible.
-        //
-        // Cache null with a SHORT TTL (L1_ERR_TTL_MS = 5 s) so:
-        //   1. We don't hammer PDIM with a fresh HTTP call on every request while it's down.
-        //   2. We automatically retry (and recover) within 5 s once PDIM comes back up.
-        //
-        // Rate-limit the WARN to once per 30 s — PDIM can be down for minutes and
-        // logging on every request produces thousands of lines of useless noise.
-        this.l1.set(sid, null, L1_ERR_TTL_MS);
-        const now = Date.now();
-        if (now - _lastFetchWarnAt >= WARN_THROTTLE_MS) {
-          _lastFetchWarnAt = now;
-          logger.warn({ err: err instanceof Error ? err.message : String(err) }, '[SessionStore] PDIM session fetch failed — serving session-less response');
-        }
-        return cb(null, null);
+        // PDIM unavailable — fall back to the PostgreSQL session store before
+        // giving up and serving a session-less (logged-out) response.  This
+        // keeps users authenticated across PDIM outages and server restarts.
+        pgSessionGet(sid).then(pgData => {
+          if (pgData) {
+            // PG had a valid session — warm L1 so subsequent requests are fast.
+            this.l1.set(sid, pgData);
+            return cb(null, pgData);
+          }
+          // Neither PDIM nor PG has this session.
+          this.l1.set(sid, null, L1_ERR_TTL_MS);
+          const now = Date.now();
+          if (now - _lastFetchWarnAt >= WARN_THROTTLE_MS) {
+            _lastFetchWarnAt = now;
+            logger.warn({ err: err instanceof Error ? err.message : String(err) }, '[SessionStore] PDIM session fetch failed — PG fallback also missed, serving session-less response');
+          }
+          return cb(null, null);
+        }).catch(() => {
+          this.l1.set(sid, null, L1_ERR_TTL_MS);
+          return cb(null, null);
+        });
+        return;
       }
 
       const result = data ?? null;
@@ -315,11 +394,13 @@ class PdimSessionStore extends session.Store {
 
   set(sid: string, sess: session.SessionData, cb?: (err?: unknown) => void): void {
     this.l1.set(sid, sess);
-    // Write through to PDIM; swallow errors because L1 cache already holds the
+    // Write to PG first (async, best-effort) so the session survives PDIM outages.
+    pgSessionSet(sid, sess).catch(() => {});
+    // Write through to PDIM; swallow errors because L1 + PG already hold the
     // authoritative copy — the session is functional even if PDIM is temporarily down.
     this.inner.set(sid, sess, (err?: unknown) => {
       if (err) {
-        logger.warn({ err: err instanceof Error ? err.message : String(err) }, '[SessionStore] PDIM session write failed (session held in L1 cache)');
+        logger.warn({ err: err instanceof Error ? err.message : String(err) }, '[SessionStore] PDIM session write failed (session held in L1+PG)');
       }
       cb?.();
     });
@@ -327,6 +408,8 @@ class PdimSessionStore extends session.Store {
 
   destroy(sid: string, cb?: (err?: unknown) => void): void {
     this.l1.invalidate(sid);
+    // Remove from PG fallback too (async, best-effort).
+    pgSessionDestroy(sid).catch(() => {});
     // Best-effort delete from PDIM; L1 is already invalidated so the session
     // will not be served from cache regardless of whether PDIM succeeds.
     this.inner.destroy(sid, (err?: unknown) => {
@@ -378,6 +461,9 @@ async function pingWithRetry(client: { ping: () => Promise<string> }, maxAttempt
  * Falls back to in-memory store when PDIM is not configured (development mode).
  */
 export async function createSessionStore(): Promise<session.Store> {
+  // Ensure the PG fallback table exists before any session operations.
+  await ensurePgSessionTable();
+
   if (!isPdimConfigured()) {
     logger.warn('⚠️  PDIM not configured — using in-memory session store (development mode, sessions will not persist across restarts)');
     const MemoryStore = (await import('memorystore')).default(session);
@@ -393,7 +479,7 @@ export async function createSessionStore(): Promise<session.Store> {
       ttl: 24 * 60 * 60,
     });
 
-    logger.info('✅ PDIM session store created (sessions survive restarts, shared across instances)');
+    logger.info('✅ PDIM session store created with PG fallback (sessions survive restarts and PDIM outages)');
     return new PdimSessionStore(redisStore);
   } catch (error: unknown) {
     const errMsg = error instanceof Error ? error.message : String(error);
