@@ -37,6 +37,7 @@ import {
   Edit,
   Eye,
   Save,
+  Check,
   CheckCircle,
   AlertCircle,
   Sparkles,
@@ -63,10 +64,16 @@ import { validateFreeDomain, SUPPORTED_TLDS } from '@shared/domainValidation';
 interface StorefrontTemplate {
   id: string;
   name: string;
-  description: string;
-  previewUrl: string;
-  thumbnailUrl: string;
-  customizationOptions: Record<string, unknown>;
+  slug: string;
+  description: string | null;
+  previewUrl: string | null;
+  thumbnailUrl: string | null;
+  configuration: {
+    colors?: { primary?: string; secondary?: string; background?: string; text?: string };
+    fonts?: { heading?: string; body?: string };
+    layout?: { headerStyle?: string; gridColumns?: number };
+    bio?: string;
+  } | null;
   isPremium: boolean;
   isActive: boolean;
 }
@@ -2168,7 +2175,7 @@ export default function StorefrontBuilder() {
       </Dialog>
 
       <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Create New Storefront</DialogTitle>
             <DialogDescription>
@@ -2176,15 +2183,14 @@ export default function StorefrontBuilder() {
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-4 py-4">
+          <div className="space-y-5 py-4">
+            {/* ── Name ── */}
             <div>
               <Label>Storefront Name</Label>
               <Input
                 value={createForm.name}
                 onChange={(e) => {
                   setCreateForm({ ...createForm, name: e.target.value });
-                  // Keep the URL in sync with the title unless the user has
-                  // manually edited the URL field (Replit behaviour)
                   if (!slugUserEdited && e.target.value.trim()) {
                     generateSlug(e.target.value);
                   }
@@ -2193,6 +2199,7 @@ export default function StorefrontBuilder() {
               />
             </div>
 
+            {/* ── URL Slug ── */}
             <div>
               <Label>URL Slug</Label>
               <div className="flex gap-2">
@@ -2200,7 +2207,7 @@ export default function StorefrontBuilder() {
                   value={createForm.slug}
                   onChange={(e) => {
                     setCreateForm({ ...createForm, slug: e.target.value });
-                    setSlugUserEdited(true); // stop auto-syncing from title
+                    setSlugUserEdited(true);
                   }}
                   placeholder="silent-wave"
                 />
@@ -2230,24 +2237,105 @@ export default function StorefrontBuilder() {
               </p>
             </div>
 
+            {/* ── Template picker ── */}
             <div>
-              <Label>Template (Optional)</Label>
-              <Select
-                value={createForm.templateId}
-                onValueChange={(value) => setCreateForm({ ...createForm, templateId: value })}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Choose a template..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {templates.map((template) => (
-                    <SelectItem key={template.id} value={template.id}>
-                      {template.name}
-                      {template.isPremium && ' (Premium)'}
-                    </SelectItem>
+              <div className="flex items-center justify-between mb-2">
+                <Label>Choose a Template</Label>
+                {createForm.templateId && (
+                  <button
+                    type="button"
+                    className="text-xs text-muted-foreground hover:text-foreground underline"
+                    onClick={() => setCreateForm({ ...createForm, templateId: '' })}
+                  >
+                    Clear selection (start blank)
+                  </button>
+                )}
+              </div>
+
+              {templatesLoading ? (
+                <div className="grid grid-cols-2 gap-3">
+                  {[...Array(6)].map((_, i) => (
+                    <div key={i} className="h-24 rounded-lg bg-muted animate-pulse" />
                   ))}
-                </SelectContent>
-              </Select>
+                </div>
+              ) : templates.length === 0 ? (
+                <p className="text-sm text-muted-foreground py-4 text-center">
+                  No templates available — your storefront will start with the default style.
+                </p>
+              ) : (
+                <div className="grid grid-cols-2 gap-3">
+                  {templates.map((template) => {
+                    const colors = template.configuration?.colors;
+                    const isSelected = createForm.templateId === template.id;
+                    return (
+                      <button
+                        key={template.id}
+                        type="button"
+                        onClick={() =>
+                          setCreateForm({
+                            ...createForm,
+                            templateId: isSelected ? '' : template.id,
+                          })
+                        }
+                        className={[
+                          'relative text-left rounded-xl border-2 p-3 transition-all hover:shadow-md focus:outline-none',
+                          isSelected
+                            ? 'border-primary ring-2 ring-primary/30'
+                            : 'border-border hover:border-primary/50',
+                        ].join(' ')}
+                        style={{
+                          background: colors?.background
+                            ? `linear-gradient(135deg, ${colors.background}ee 0%, ${colors.background} 100%)`
+                            : undefined,
+                        }}
+                      >
+                        {/* Color swatches */}
+                        <div className="flex gap-1.5 mb-2">
+                          {[colors?.background, colors?.primary, colors?.secondary, colors?.text]
+                            .filter(Boolean)
+                            .map((c, ci) => (
+                              <span
+                                key={ci}
+                                className="w-4 h-4 rounded-full border border-white/20 flex-shrink-0"
+                                style={{ background: c }}
+                              />
+                            ))}
+                        </div>
+
+                        {/* Name + premium badge */}
+                        <p
+                          className="font-semibold text-sm leading-tight mb-0.5"
+                          style={{ color: colors?.text ?? undefined }}
+                        >
+                          {template.name}
+                          {template.isPremium && (
+                            <span className="ml-1.5 text-[10px] font-bold px-1 py-0.5 rounded bg-amber-500 text-black align-middle">
+                              PRO
+                            </span>
+                          )}
+                        </p>
+
+                        {/* Description */}
+                        {template.description && (
+                          <p
+                            className="text-[11px] leading-snug line-clamp-2 opacity-80"
+                            style={{ color: colors?.text ?? undefined }}
+                          >
+                            {template.description}
+                          </p>
+                        )}
+
+                        {/* Selected indicator */}
+                        {isSelected && (
+                          <span className="absolute top-2 right-2 w-5 h-5 rounded-full bg-primary flex items-center justify-center">
+                            <Check className="w-3 h-3 text-white" />
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           </div>
 
@@ -2257,9 +2345,9 @@ export default function StorefrontBuilder() {
             </Button>
             <Button
               onClick={() => createStorefrontMutation.mutate(createForm)}
-              disabled={!createForm.name || !createForm.slug}
+              disabled={!createForm.name || !createForm.slug || createStorefrontMutation.isPending}
             >
-              Create Storefront
+              {createStorefrontMutation.isPending ? 'Creating...' : 'Create Storefront'}
             </Button>
           </DialogFooter>
         </DialogContent>

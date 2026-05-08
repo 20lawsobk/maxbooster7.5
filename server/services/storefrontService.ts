@@ -282,8 +282,20 @@ export class StorefrontService {
           })
         : null;
 
-      // Sanitize customization data
-      const sanitizedCustomization = sanitizeCustomization(input.customization);
+      // Merge: template configuration is the base, user-supplied customization
+      // overrides on top (so colors/fonts from the chosen template are always
+      // applied even when the user hasn't touched the customization panel yet).
+      const templateConfig =
+        template?.configuration &&
+        typeof template.configuration === 'object' &&
+        !Array.isArray(template.configuration)
+          ? (template.configuration as Record<string, unknown>)
+          : {};
+      const mergedCustomization: Record<string, unknown> = {
+        ...templateConfig,
+        ...(input.customization || {}),
+      };
+      const sanitizedCustomization = sanitizeCustomization(mergedCustomization);
 
       const autoSubdomain = await this.generateSubdomain(input.slug);
 
@@ -513,7 +525,7 @@ export class StorefrontService {
   }
 
   /**
-   * Get all available templates
+   * Get all available templates (auto-seeds built-ins on first call)
    */
   async getTemplates() {
     try {
@@ -522,6 +534,18 @@ export class StorefrontService {
         .from(storefrontTemplates)
         .where(eq(storefrontTemplates.isActive, true))
         .orderBy(storefrontTemplates.name);
+
+      if (templates.length === 0) {
+        // Lazy-seed built-in templates so they are always available without a
+        // separate migration step.
+        const { seedStorefrontTemplates } = await import('../seed/seedStorefrontTemplates.js');
+        await seedStorefrontTemplates();
+        return db
+          .select()
+          .from(storefrontTemplates)
+          .where(eq(storefrontTemplates.isActive, true))
+          .orderBy(storefrontTemplates.name);
+      }
 
       return templates;
     } catch (error: unknown) {
