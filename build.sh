@@ -56,8 +56,8 @@ echo "==> Build env: node $(node --version 2>/dev/null || echo n/a)  npm $(npm -
 #
 # FAST PATH — all pre-built artifacts are committed to the repl layer:
 #   • dist/public/index.html  — Vite frontend bundle (~17 MB)
-#   • dist/index.cjs          — esbuild server bundle (~5 MB)
-#   • dist/cluster.cjs        — esbuild cluster entry (~1 MB)
+#   • dist/index.mjs          — esbuild server bundle (~5 MB)
+#   • dist/cluster.mjs        — esbuild cluster entry (~1 MB)
 #
 #   Compile step is skipped entirely.  Only production deps are installed
 #   (`npm ci --omit=dev`), then security patches are applied to node_modules,
@@ -91,12 +91,12 @@ else
 fi
 
 PREBUILT_FRONTEND="dist/public/index.html"
-PREBUILT_SERVER="dist/index.cjs"
-PREBUILT_CLUSTER="dist/cluster.cjs"
+PREBUILT_SERVER="dist/index.mjs"
+PREBUILT_CLUSTER="dist/cluster.mjs"
 
 if [ -f "$PREBUILT_FRONTEND" ] && [ -f "$PREBUILT_SERVER" ] && [ -f "$PREBUILT_CLUSTER" ]; then
   echo "==> FAST PATH: all pre-built artifacts present"
-  echo "   dist/public/, dist/index.cjs, dist/cluster.cjs ready."
+  echo "   dist/public/, dist/index.mjs, dist/cluster.mjs ready."
 
   # ── Binary assets ──────────────────────────────────────────────────────────
   echo "==> Verifying binary assets in dist/public/..."
