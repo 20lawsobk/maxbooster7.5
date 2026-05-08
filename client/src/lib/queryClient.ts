@@ -313,15 +313,22 @@ async function throwIfResNotOk(res: Response) {
       setRateLimited(apiError.retryAfter);
     }
 
-    captureException(apiError, {
-      action: 'api-response-error',
-      metadata: {
-        status: res.status,
-        url: res.url,
-        statusText: res.statusText,
-        errorCode: apiError.code,
-      },
-    });
+    // Only report true server errors (5xx) to the error service.
+    // 4xx responses are expected business-logic outcomes (validation, conflicts,
+    // auth challenges) and are handled by each call site's own catch / onError.
+    // Sending them to captureException triggers spurious "Info" toasts for
+    // things like "Slug already taken" or "Unauthorized".
+    if (res.status >= 500) {
+      captureException(apiError, {
+        action: 'api-response-error',
+        metadata: {
+          status: res.status,
+          url: res.url,
+          statusText: res.statusText,
+          errorCode: apiError.code,
+        },
+      });
+    }
 
     throw apiError;
   }

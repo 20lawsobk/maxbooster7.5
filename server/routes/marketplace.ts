@@ -1796,9 +1796,17 @@ router.get('/producers/:producerId', async (req: Request, res: Response) => {
       audioUrl: beat.previewUrl || beat.audioUrl || '',
     }));
 
+    const displayName =
+      producer.artistName ||
+      `${producer.firstName || ''} ${producer.lastName || ''}`.trim() ||
+      producer.username ||
+      'Producer';
+
     res.json({
       id: producer.id,
       username: producer.username,
+      displayName,
+      name: displayName,
       avatarUrl: producer.avatarUrl,
       bio: producer.bio,
       location: producer.location,

@@ -130,8 +130,16 @@ router.get('/users', async (req, res) => {
 
     const total = totalResult[0]?.count || 0;
 
+    const usersWithDisplayName = usersList.map(u => ({
+      ...u,
+      displayName: u.username ||
+        `${u.firstName || ''} ${u.lastName || ''}`.trim() ||
+        u.email?.split('@')[0] ||
+        'User',
+    }));
+
     res.json({
-      users: usersList,
+      users: usersWithDisplayName,
       pagination: {
         total,
         page: pageNum,

@@ -1258,6 +1258,7 @@ export class DatabaseStorage implements IStorage {
           u.first_name,
           u.last_name,
           u.username,
+          u.artist_name,
           u.avatar_url,
           u.bio,
           u.location,
@@ -1294,7 +1295,11 @@ export class DatabaseStorage implements IStorage {
       if (!Array.isArray(rows)) return [];
 
       return rows.map((u: Record<string, unknown>) => {
-        const displayName = u.username || `${u.first_name || ''} ${u.last_name || ''}`.trim() || 'Producer';
+        const displayName =
+          (u.artist_name as string) ||
+          `${u.first_name || ''} ${u.last_name || ''}`.trim() ||
+          (u.username as string) ||
+          'Producer';
         return {
           id: u.id,
           username: u.username || displayName,
