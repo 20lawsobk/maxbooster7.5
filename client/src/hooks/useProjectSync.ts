@@ -1,4 +1,5 @@
 import { logger } from '../lib/logger';
+import { getCsrfTokenFromCookie } from '../lib/queryClient';
 import { useCallback, useEffect, useRef } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useStudioStore } from '@/stores/studioStore';
@@ -424,10 +425,14 @@ export function useProjectSync(projectId: string | null) {
       const dawState = serializeFullState();
       const state = getStoreState();
       
+      const csrfToken = getCsrfTokenFromCookie();
       const response = await fetch(`/api/studio/projects/${projectId}/save-daw-state`, {
         method: 'POST',
         credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(csrfToken ? { 'x-csrf-token': csrfToken } : {}),
+        },
         body: JSON.stringify({
           dawState: JSON.stringify(dawState),
           title: state.project.name,

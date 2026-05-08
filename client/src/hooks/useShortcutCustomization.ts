@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { getCsrfTokenFromCookie } from '@/lib/queryClient';
 import { useShortcuts } from '@/contexts/ShortcutContext';
 import { ShortcutConfig, ShortcutModifier, ShortcutConflict } from '@/lib/shortcuts/types';
 
@@ -25,9 +26,10 @@ async function fetchUserShortcuts(): Promise<ShortcutPreferences | null> {
 }
 
 async function saveUserShortcuts(shortcuts: CustomShortcut[]): Promise<ShortcutPreferences> {
+  const csrfToken = getCsrfTokenFromCookie();
   const response = await fetch('/api/shortcuts/user', {
     method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...(csrfToken ? { 'x-csrf-token': csrfToken } : {}) },
     credentials: 'include',
     body: JSON.stringify({ shortcuts }),
   });

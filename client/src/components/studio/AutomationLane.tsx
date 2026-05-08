@@ -1,5 +1,6 @@
 import { logger } from '@/lib/logger';
 import { useCallback, useState, useRef, useEffect } from 'react';
+import { getCsrfTokenFromCookie } from '@/lib/queryClient';
 import { Pen, Trash2, Circle, Plus, Minus, Loader2, MousePointer2, PenLine, Spline, Edit3, Minimize2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -118,9 +119,10 @@ export function AutomationLane({
     saveTimeoutRef.current = setTimeout(async () => {
       setIsSaving(true);
       try {
+        const csrfToken = getCsrfTokenFromCookie();
         const res = await fetch(`/api/studio/tracks/${trackId}/automation`, {
           method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json', ...(csrfToken ? { 'x-csrf-token': csrfToken } : {}) },
           credentials: 'include',
           body: JSON.stringify({ parameter, points: snapshot }),
         });

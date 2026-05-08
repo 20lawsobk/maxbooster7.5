@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { getCsrfTokenFromCookie } from '@/lib/queryClient';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -97,9 +98,10 @@ export function FilterPresetsManager({
 
   const savePresetMutation = useMutation({
     mutationFn: async (data: { name: string; filters: Record<string, any>; id?: string }) => {
+      const csrfToken = getCsrfTokenFromCookie();
       const res = await fetch('/api/search/filter-presets', {
         method: data.id ? 'PUT' : 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...(csrfToken ? { 'x-csrf-token': csrfToken } : {}) },
         credentials: 'include',
         body: JSON.stringify({ ...data, context }),
       });
@@ -127,9 +129,11 @@ export function FilterPresetsManager({
 
   const deletePresetMutation = useMutation({
     mutationFn: async (presetId: string) => {
+      const csrfToken = getCsrfTokenFromCookie();
       const res = await fetch(`/api/search/filter-presets/${presetId}`, {
         method: 'DELETE',
         credentials: 'include',
+        headers: csrfToken ? { 'x-csrf-token': csrfToken } : {},
       });
       if (!res.ok) throw new Error('Failed to delete preset');
       return res.json();
@@ -153,9 +157,11 @@ export function FilterPresetsManager({
 
   const setDefaultMutation = useMutation({
     mutationFn: async (presetId: string) => {
+      const csrfToken = getCsrfTokenFromCookie();
       const res = await fetch(`/api/search/filter-presets/${presetId}/default`, {
         method: 'POST',
         credentials: 'include',
+        headers: csrfToken ? { 'x-csrf-token': csrfToken } : {},
       });
       if (!res.ok) throw new Error('Failed to set default');
       return res.json();

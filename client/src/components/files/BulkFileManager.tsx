@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { getCsrfTokenFromCookie } from '@/lib/queryClient';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -171,9 +172,11 @@ export function BulkFileManager({
           if (onDelete) {
             result = await onDelete(ids);
           } else {
+            const csrfToken = getCsrfTokenFromCookie();
             const response = await fetch('/api/files/bulk-delete', {
               method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
+              credentials: 'include',
+              headers: { 'Content-Type': 'application/json', ...(csrfToken ? { 'x-csrf-token': csrfToken } : {}) },
               body: JSON.stringify({ fileIds: ids }),
             });
             result = await response.json();

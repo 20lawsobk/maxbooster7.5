@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { getCsrfTokenFromCookie } from '@/lib/queryClient';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -140,9 +141,11 @@ export default function CrossPlatformSync() {
       else if (ua.includes('Android')) osInfo = 'Android';
       else if (ua.includes('iPhone') || ua.includes('iPad')) osInfo = 'iOS';
 
+      const csrfToken = getCsrfTokenFromCookie();
       await fetch('/api/platform-sync/devices/register', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json', ...(csrfToken ? { 'x-csrf-token': csrfToken } : {}) },
         body: JSON.stringify({
           deviceId: storedId,
           platform: 'web',
@@ -168,7 +171,12 @@ export default function CrossPlatformSync() {
 
   const handleRemoveDevice = async (deviceId: string) => {
     try {
-      const res = await fetch(`/api/platform-sync/devices/${deviceId}`, { method: 'DELETE' });
+      const csrfToken = getCsrfTokenFromCookie();
+      const res = await fetch(`/api/platform-sync/devices/${deviceId}`, {
+        method: 'DELETE',
+        credentials: 'include',
+        headers: csrfToken ? { 'x-csrf-token': csrfToken } : {},
+      });
       if (res.ok) {
         toast({ title: 'Device removed' });
         await fetchDevices();
@@ -192,9 +200,11 @@ export default function CrossPlatformSync() {
       if (syncSettings.sessionState) changes.sessionState = { currentPage: window.location.pathname };
       if (syncSettings.notifications) changes.notificationReadIds = [];
 
+      const csrfToken = getCsrfTokenFromCookie();
       const res = await fetch('/api/platform-sync/sync/push', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json', ...(csrfToken ? { 'x-csrf-token': csrfToken } : {}) },
         body: JSON.stringify({ deviceId, changes }),
       });
 

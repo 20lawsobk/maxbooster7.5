@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { getCsrfTokenFromCookie } from '@/lib/queryClient';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
@@ -50,9 +51,10 @@ export function EmailPreferences() {
 
   const updateMutation = useMutation({
     mutationFn: async (updates: Partial<EmailPreferences>) => {
+      const csrfToken = getCsrfTokenFromCookie();
       const res = await fetch('/api/email-preferences', {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...(csrfToken ? { 'x-csrf-token': csrfToken } : {}) },
         credentials: 'include',
         body: JSON.stringify(updates),
       });

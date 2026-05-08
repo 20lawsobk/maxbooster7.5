@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { getCsrfTokenFromCookie } from '@/lib/queryClient';
 import {
   Dialog,
   DialogContent,
@@ -48,9 +49,10 @@ export function CreateTicketDialog({ open, onOpenChange, onSuccess }: CreateTick
     setIsSubmitting(true);
 
     try {
+      const csrfToken = getCsrfTokenFromCookie();
       const response = await fetch('/api/support/tickets', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...(csrfToken ? { 'x-csrf-token': csrfToken } : {}) },
         credentials: 'include',
         body: JSON.stringify({
           subject,

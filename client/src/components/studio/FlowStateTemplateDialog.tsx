@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { getCsrfTokenFromCookie } from '@/lib/queryClient';
 import { 
   Layers, 
   X, 
@@ -68,9 +69,10 @@ async function fetchTemplates(category?: string): Promise<{ templates: StudioTem
 }
 
 async function createProjectFromTemplate(templateId: string, title?: string): Promise<unknown> {
+  const csrfToken = getCsrfTokenFromCookie();
   const response = await fetch(`/api/studio/templates/${templateId}/create-project`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...(csrfToken ? { 'x-csrf-token': csrfToken } : {}) },
     credentials: 'include',
     body: JSON.stringify({ title }),
   });

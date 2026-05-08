@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { getCsrfTokenFromCookie } from '@/lib/queryClient';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -161,9 +162,10 @@ export function DataTransferWizard() {
 
   const linkProfileMutation = useMutation({
     mutationFn: async ({ platformId, profileUrl, artistName }: { platformId: string; profileUrl: string; artistName: string }) => {
+      const csrfToken = getCsrfTokenFromCookie();
       const res = await fetch('/api/distribution/profiles/link', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...(csrfToken ? { 'x-csrf-token': csrfToken } : {}) },
         body: JSON.stringify({ platformId, profileUrl, artistName }),
         credentials: 'include',
       });
@@ -184,9 +186,11 @@ export function DataTransferWizard() {
 
   const syncProfileMutation = useMutation({
     mutationFn: async (platformId: string) => {
+      const csrfToken = getCsrfTokenFromCookie();
       const res = await fetch(`/api/distribution/profiles/${platformId}/sync`, {
         method: 'POST',
         credentials: 'include',
+        headers: csrfToken ? { 'x-csrf-token': csrfToken } : {},
       });
       if (!res.ok) throw new Error('Failed to sync profile');
       return res.json();
@@ -199,9 +203,11 @@ export function DataTransferWizard() {
 
   const unlinkProfileMutation = useMutation({
     mutationFn: async (platformId: string) => {
+      const csrfToken = getCsrfTokenFromCookie();
       const res = await fetch(`/api/distribution/profiles/${platformId}`, {
         method: 'DELETE',
         credentials: 'include',
+        headers: csrfToken ? { 'x-csrf-token': csrfToken } : {},
       });
       if (!res.ok) throw new Error('Failed to unlink profile');
       return res.json();
@@ -214,9 +220,10 @@ export function DataTransferWizard() {
 
   const importCatalogMutation = useMutation({
     mutationFn: async ({ platformId, releases }: { platformId: string; releases: ScannedRelease[] }) => {
+      const csrfToken = getCsrfTokenFromCookie();
       const res = await fetch(`/api/distribution/profiles/${platformId}/import-catalog`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...(csrfToken ? { 'x-csrf-token': csrfToken } : {}) },
         body: JSON.stringify({ releases }),
         credentials: 'include',
       });
@@ -238,9 +245,11 @@ export function DataTransferWizard() {
   const handleScanReleases = async (platformId: string) => {
     setScanningPlatform(platformId);
     try {
+      const csrfToken = getCsrfTokenFromCookie();
       const res = await fetch(`/api/distribution/profiles/${platformId}/scan-releases`, {
         method: 'POST',
         credentials: 'include',
+        headers: csrfToken ? { 'x-csrf-token': csrfToken } : {},
       });
       if (!res.ok) {
         const err = await res.json().catch(() => ({ error: 'Scan failed' }));

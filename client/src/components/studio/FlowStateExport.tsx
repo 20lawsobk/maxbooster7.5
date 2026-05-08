@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
+import { getCsrfTokenFromCookie } from '@/lib/queryClient';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Dialog,
@@ -199,9 +200,10 @@ export function FlowStateExport({
 
       setExportPhase('complete');
 
+      const csrfToken = getCsrfTokenFromCookie();
       const response = await fetch(`/api/studio/projects/${projectId}/render`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...(csrfToken ? { 'x-csrf-token': csrfToken } : {}) },
         credentials: 'include',
         body: JSON.stringify(settings),
       });

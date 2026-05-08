@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { getCsrfTokenFromCookie } from '@/lib/queryClient';
 import { useLocation } from 'wouter';
 import { useAuth } from '@/hooks/useAuth';
 import { AppLayout } from '@/components/layout/AppLayout';
@@ -237,9 +238,10 @@ export default function Contracts() {
   const generateContractMutation = useMutation({
     mutationFn: async (variables: Record<string, any>) => {
       if (!selectedTemplate) throw new Error('No template selected');
+      const csrfToken = getCsrfTokenFromCookie();
       const res = await fetch('/api/contracts/generate', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...(csrfToken ? { 'x-csrf-token': csrfToken } : {}) },
         credentials: 'include',
         body: JSON.stringify({ templateId: selectedTemplate.id, variables }),
       });
@@ -265,9 +267,11 @@ export default function Contracts() {
 
   const sendForSignatureMutation = useMutation({
     mutationFn: async (contractId: string) => {
+      const csrfToken = getCsrfTokenFromCookie();
       const res = await fetch(`/api/contracts/${contractId}/send-for-signature`, {
         method: 'POST',
         credentials: 'include',
+        headers: csrfToken ? { 'x-csrf-token': csrfToken } : {},
       });
       if (!res.ok) throw new Error('Failed to send for signature');
       return res.json();
@@ -285,9 +289,10 @@ export default function Contracts() {
 
   const signContractMutation = useMutation({
     mutationFn: async ({ contractId, partyName, signatureData }: { contractId: string; partyName: string; signatureData: string }) => {
+      const csrfToken = getCsrfTokenFromCookie();
       const res = await fetch(`/api/contracts/${contractId}/sign`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...(csrfToken ? { 'x-csrf-token': csrfToken } : {}) },
         credentials: 'include',
         body: JSON.stringify({ partyName, signature: signatureData }),
       });
@@ -314,9 +319,10 @@ export default function Contracts() {
 
   const declineSignatureMutation = useMutation({
     mutationFn: async ({ contractId, partyName, reason }: { contractId: string; partyName: string; reason: string }) => {
+      const csrfToken = getCsrfTokenFromCookie();
       const res = await fetch(`/api/contracts/${contractId}/decline`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...(csrfToken ? { 'x-csrf-token': csrfToken } : {}) },
         credentials: 'include',
         body: JSON.stringify({ partyName, reason }),
       });
@@ -338,9 +344,10 @@ export default function Contracts() {
 
   const voidContractMutation = useMutation({
     mutationFn: async (contractId: string) => {
+      const csrfToken = getCsrfTokenFromCookie();
       const res = await fetch(`/api/contracts/${contractId}/void`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...(csrfToken ? { 'x-csrf-token': csrfToken } : {}) },
         credentials: 'include',
         body: JSON.stringify({ reason: 'Cancelled by user' }),
       });

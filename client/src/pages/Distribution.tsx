@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRequireSubscription } from '@/hooks/useRequireAuth';
+import { getCsrfTokenFromCookie } from '@/lib/queryClient';
 import { useLocation } from 'wouter';
 
 import { AppLayout } from '@/components/layout/AppLayout';
@@ -1565,9 +1566,10 @@ export default function Distribution() {
       }
 
       // CSV export
+      const csrfToken = getCsrfTokenFromCookie();
       const response = await fetch('/api/distribution/export-report', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...(csrfToken ? { 'x-csrf-token': csrfToken } : {}) },
         credentials: 'include',
         body: JSON.stringify({ format: 'csv' }),
       });
@@ -4750,10 +4752,12 @@ function MusicVideosContent() {
         outputPlatform,
         enableVoiceNarration: enableVoice,
       }));
+      const csrfToken2 = getCsrfTokenFromCookie();
       const res = await fetch('/api/social/generate-music-video', {
         method: 'POST',
         body: form,
         credentials: 'include',
+        headers: csrfToken2 ? { 'x-csrf-token': csrfToken2 } : {},
       });
       const data = await res.json();
       if (data.jobId) {

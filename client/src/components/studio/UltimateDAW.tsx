@@ -1,4 +1,5 @@
 import { useState, useCallback, useMemo, useEffect, useRef, DragEvent } from 'react';
+import { getCsrfTokenFromCookie } from '@/lib/queryClient';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Play, Pause, Square, Circle, SkipBack, SkipForward, Repeat,
@@ -358,7 +359,13 @@ export function UltimateDAW({ projectId, projectName = 'Untitled', onSave, onExp
       if (projectId) formData.append('projectId', projectId);
       let sourceUrl: string;
       try {
-        const res = await fetch('/api/studio/record/upload', { method: 'POST', body: formData });
+        const csrfToken = getCsrfTokenFromCookie();
+        const res = await fetch('/api/studio/record/upload', {
+          method: 'POST',
+          credentials: 'include',
+          headers: csrfToken ? { 'x-csrf-token': csrfToken } : {},
+          body: formData,
+        });
         if (res.ok) {
           const json = await res.json();
           sourceUrl = json.url || json.audioUrl || '';

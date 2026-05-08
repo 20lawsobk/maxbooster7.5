@@ -21,7 +21,7 @@ import {
 } from '@/components/ui/select';
 import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
-import { apiRequest, uploadWithProgress } from '@/lib/queryClient';
+import { apiRequest, uploadWithProgress, getCsrfTokenFromCookie } from '@/lib/queryClient';
 import {
   Upload,
   FileAudio,
@@ -84,10 +84,12 @@ async function uploadInChunks(
     formData.append('totalChunks', String(totalChunks));
     formData.append('chunk', chunk, file.name);
 
+    const csrfToken = getCsrfTokenFromCookie();
     const res = await fetch('/api/uploads/chunk', {
       method: 'POST',
       body: formData,
       credentials: 'include',
+      headers: csrfToken ? { 'x-csrf-token': csrfToken } : {},
     });
     if (!res.ok) {
       const err = await res.json().catch(() => ({ message: 'Chunk upload failed' }));
@@ -97,9 +99,10 @@ async function uploadInChunks(
     onProgress(Math.round(((i + 1) / totalChunks) * 90));
   }
 
+  const csrfToken2 = getCsrfTokenFromCookie();
   const assembleRes = await fetch('/api/uploads/assemble', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...(csrfToken2 ? { 'x-csrf-token': csrfToken2 } : {}) },
     credentials: 'include',
     body: JSON.stringify({
       uploadId,

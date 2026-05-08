@@ -3,6 +3,7 @@ import { useAudioContext } from './useAudioContext';
 import { useAudioDevices } from './useAudioDevices';
 import { nanoid } from 'nanoid';
 import { logger } from '@/lib/logger';
+import { getCsrfTokenFromCookie } from '@/lib/queryClient';
 
 export interface TrackRecorder {
   trackId: string;
@@ -300,8 +301,11 @@ export function useMultiTrackRecorder(selectedDeviceId?: string | null, bufferSi
             formData.append('startPosition', state.currentSession.startPosition.toString());
           }
 
+          const csrfToken = getCsrfTokenFromCookie();
           const response = await fetch('/api/studio/record/upload', {
             method: 'POST',
+            credentials: 'include',
+            headers: csrfToken ? { 'x-csrf-token': csrfToken } : {},
             body: formData,
           });
 

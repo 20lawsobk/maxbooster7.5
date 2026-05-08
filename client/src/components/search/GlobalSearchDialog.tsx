@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { getCsrfTokenFromCookie } from '@/lib/queryClient';
 import { useNavigate } from 'wouter';
 import {
   Dialog,
@@ -159,9 +160,11 @@ export function GlobalSearchDialog({
 
   const clearHistoryMutation = useMutation({
     mutationFn: async () => {
+      const csrfToken = getCsrfTokenFromCookie();
       const res = await fetch('/api/search/history', {
         method: 'DELETE',
         credentials: 'include',
+        headers: csrfToken ? { 'x-csrf-token': csrfToken } : {},
       });
       if (!res.ok) throw new Error('Failed to clear');
       return res.json();

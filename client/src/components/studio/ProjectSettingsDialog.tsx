@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { getCsrfTokenFromCookie } from '@/lib/queryClient';
 import {
   Dialog,
   DialogContent,
@@ -114,9 +115,11 @@ export function ProjectSettingsDialog({
 
       const [numerator, denominator] = form.timeSignature.split('/').map(Number);
 
+      const csrfToken = getCsrfTokenFromCookie();
       const response = await fetch(`/api/studio/projects/${projectId}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json', ...(csrfToken ? { 'x-csrf-token': csrfToken } : {}) },
         body: JSON.stringify({
           title: form.name,
           description: form.description,

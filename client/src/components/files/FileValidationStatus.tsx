@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
+import { getCsrfTokenFromCookie } from '@/lib/queryClient';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -183,8 +184,11 @@ export function FileValidationStatus({
       const formData = new FormData();
       formData.append('file', fileToValidate);
       
+      const csrfToken = getCsrfTokenFromCookie();
       const response = await fetch('/api/files/validate', {
         method: 'POST',
+        credentials: 'include',
+        headers: csrfToken ? { 'x-csrf-token': csrfToken } : {},
         body: formData,
       });
       

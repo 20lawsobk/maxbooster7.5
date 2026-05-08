@@ -1,4 +1,5 @@
 import { logger } from '@/lib/logger';
+import { getCsrfTokenFromCookie } from '@/lib/queryClient';
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -101,7 +102,12 @@ export function HybridStorageStats() {
   const runAutoTiering = async () => {
     try {
       setOptimizing(true);
-      const response = await fetch('/api/storage/hybrid/auto-tier', { method: 'POST' });
+      const csrfToken = getCsrfTokenFromCookie();
+      const response = await fetch('/api/storage/hybrid/auto-tier', {
+        method: 'POST',
+        credentials: 'include',
+        headers: csrfToken ? { 'x-csrf-token': csrfToken } : {},
+      });
       if (response.ok) {
         await fetchAnalytics();
       }

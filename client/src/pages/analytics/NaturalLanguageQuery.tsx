@@ -1,5 +1,6 @@
 import { useState, memo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { getCsrfTokenFromCookie } from '@/lib/queryClient';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -270,9 +271,10 @@ export default function NaturalLanguageQuery({ onQuery }: NaturalLanguageQueryPr
     setResult(null);
 
     try {
+      const csrfToken = getCsrfTokenFromCookie();
       const response = await fetch('/api/analytics/natural-language-query', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...(csrfToken ? { 'x-csrf-token': csrfToken } : {}) },
         credentials: 'include',
         body: JSON.stringify({ query: queryText }),
       });

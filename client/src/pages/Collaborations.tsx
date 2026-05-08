@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { getCsrfTokenFromCookie } from '@/lib/queryClient';
 import { useLocation } from 'wouter';
 import { useAuth } from '@/hooks/useAuth';
 import { AppLayout } from '@/components/layout/AppLayout';
@@ -87,9 +88,10 @@ export default function Collaborations() {
   const sendConnectionMutation = useMutation({
     mutationFn: async () => {
       if (!selectedUser) throw new Error('No user selected');
+      const csrfToken = getCsrfTokenFromCookie();
       const res = await fetch('/api/collaborations/connect', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...(csrfToken ? { 'x-csrf-token': csrfToken } : {}) },
         credentials: 'include',
         body: JSON.stringify({ userId: selectedUser.userId, message: connectionMessage }),
       });
@@ -110,9 +112,11 @@ export default function Collaborations() {
 
   const acceptConnectionMutation = useMutation({
     mutationFn: async (connectionId: string) => {
+      const csrfToken = getCsrfTokenFromCookie();
       const res = await fetch(`/api/collaborations/accept/${connectionId}`, {
         method: 'POST',
         credentials: 'include',
+        headers: csrfToken ? { 'x-csrf-token': csrfToken } : {},
       });
       if (!res.ok) throw new Error('Failed to accept connection');
       return res.json();
@@ -125,9 +129,11 @@ export default function Collaborations() {
 
   const declineConnectionMutation = useMutation({
     mutationFn: async (connectionId: string) => {
+      const csrfToken = getCsrfTokenFromCookie();
       const res = await fetch(`/api/collaborations/decline/${connectionId}`, {
         method: 'POST',
         credentials: 'include',
+        headers: csrfToken ? { 'x-csrf-token': csrfToken } : {},
       });
       if (!res.ok) throw new Error('Failed to decline connection');
       return res.json();

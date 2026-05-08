@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
+import { getCsrfTokenFromCookie } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
 import { useRequireAdmin } from '@/hooks/useRequireAuth';
 import { AppLayout } from '@/components/layout/AppLayout';
@@ -1208,9 +1209,10 @@ function TokenManagementTab() {
 
   const { mutate: issueToken, isPending: issuingToken } = useMutation({
     mutationFn: async () => {
+      const csrfToken = getCsrfTokenFromCookie();
       const response = await fetch('/api/auth/token', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...(csrfToken ? { 'x-csrf-token': csrfToken } : {}) },
         credentials: 'include',
       });
       if (!response.ok) throw new Error('Failed to issue token');
@@ -1226,9 +1228,10 @@ function TokenManagementTab() {
 
   const { mutate: revokeToken, isPending: revokingToken } = useMutation({
     mutationFn: async (tokenId: string) => {
+      const csrfToken = getCsrfTokenFromCookie();
       const response = await fetch('/api/auth/token/revoke', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...(csrfToken ? { 'x-csrf-token': csrfToken } : {}) },
         credentials: 'include',
         body: JSON.stringify({ tokenId, reason: 'Admin revocation' }),
       });
@@ -1309,9 +1312,11 @@ function WebhookMonitorTab() {
 
   const { mutate: retryWebhook, isPending: retrying } = useMutation({
     mutationFn: async (id: string) => {
+      const csrfToken = getCsrfTokenFromCookie();
       const response = await fetch(`/api/admin/webhooks/${id}/retry`, {
         method: 'POST',
         credentials: 'include',
+        headers: csrfToken ? { 'x-csrf-token': csrfToken } : {},
       });
       if (!response.ok) throw new Error('Failed to retry webhook');
       return response.json();

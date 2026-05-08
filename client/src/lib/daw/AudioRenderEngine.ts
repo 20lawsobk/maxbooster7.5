@@ -1,3 +1,4 @@
+import { getCsrfTokenFromCookie } from '../queryClient';
 export type AudioFormat = 'wav' | 'flac' | 'aiff' | 'mp3' | 'aac' | 'ogg' | 'opus';
 export type BitDepth = 16 | 24 | 32;
 export type SampleRate = 44100 | 48000 | 88200 | 96000 | 176400 | 192000;
@@ -452,9 +453,11 @@ export class AudioRenderEngine {
         warnings: validation.warnings,
       });
 
+      const csrfToken = getCsrfTokenFromCookie();
       const response = await fetch(`/api/studio/projects/${projectId}/render`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json', ...(csrfToken ? { 'x-csrf-token': csrfToken } : {}) },
         body: JSON.stringify(settings),
         signal: this.abortController.signal,
       });

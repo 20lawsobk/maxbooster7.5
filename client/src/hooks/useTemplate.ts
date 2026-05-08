@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from './use-toast';
-import { apiRequest } from '@/lib/queryClient';
+import { apiRequest, getCsrfTokenFromCookie } from '@/lib/queryClient';
 
 export type TemplateType = 
   | 'release' 
@@ -258,8 +258,11 @@ export function useTemplateLibrary() {
     const formData = new FormData();
     formData.append('file', file);
     
+    const csrfToken = getCsrfTokenFromCookie();
     const result = await fetch('/api/templates/import', {
       method: 'POST',
+      credentials: 'include',
+      headers: csrfToken ? { 'x-csrf-token': csrfToken } : {},
       body: formData,
     }).then(res => res.json());
     

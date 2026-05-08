@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { getCsrfTokenFromCookie } from '@/lib/queryClient';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -103,9 +104,10 @@ export function ApprovalDashboard() {
 
   const submitForReviewMutation = useMutation({
     mutationFn: async (postId: string) => {
+      const csrfToken = getCsrfTokenFromCookie();
       const res = await fetch(`/api/social/approvals/${postId}/submit`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...(csrfToken ? { 'x-csrf-token': csrfToken } : {}) },
         credentials: 'include',
       });
       if (!res.ok) throw new Error(await res.text());
@@ -129,9 +131,10 @@ export function ApprovalDashboard() {
 
   const approvePostMutation = useMutation({
     mutationFn: async ({ postId, comment }: { postId: string; comment?: string }) => {
+      const csrfToken = getCsrfTokenFromCookie();
       const res = await fetch(`/api/social/approvals/${postId}/approve`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...(csrfToken ? { 'x-csrf-token': csrfToken } : {}) },
         credentials: 'include',
         body: JSON.stringify({ comment }),
       });
@@ -167,9 +170,10 @@ export function ApprovalDashboard() {
       reason: string;
       comment?: string;
     }) => {
+      const csrfToken = getCsrfTokenFromCookie();
       const res = await fetch(`/api/social/approvals/${postId}/reject`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...(csrfToken ? { 'x-csrf-token': csrfToken } : {}) },
         credentials: 'include',
         body: JSON.stringify({ reason, comment }),
       });

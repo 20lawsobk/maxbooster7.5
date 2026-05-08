@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useQueryClient, useQuery } from '@tanstack/react-query';
 import { logger } from '@/lib/logger';
+import { getCsrfTokenFromCookie } from '@/lib/queryClient';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -412,9 +413,10 @@ export function AIGeneratorDialog({
   // Handle text-to-music submission
   const handleTextSubmit = form.handleSubmit((data) => {
     const apiCall = async (signal?: AbortSignal) => {
+      const csrfToken = getCsrfTokenFromCookie();
       const response = await fetch('/api/studio/generation/text', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...(csrfToken ? { 'x-csrf-token': csrfToken } : {}) },
         credentials: 'include',
         body: JSON.stringify({
           projectId,
@@ -467,8 +469,10 @@ export function AIGeneratorDialog({
         formData.append('projectId', projectId);
       }
 
+      const csrfToken2 = getCsrfTokenFromCookie();
       const response = await fetch('/api/studio/generation/audio', {
         method: 'POST',
+        headers: csrfToken2 ? { 'x-csrf-token': csrfToken2 } : {},
         body: formData,
         credentials: 'include',
         signal,

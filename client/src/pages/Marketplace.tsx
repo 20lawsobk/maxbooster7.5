@@ -1,5 +1,6 @@
 import { logger } from '@/lib/logger';
 import { uploadImageFile, createLocalPreview, revokeLocalPreview } from '@/lib/imageUpload';
+import { getCsrfTokenFromCookie } from '@/lib/queryClient';
 import { SafeImg } from '@/components/ui/safe-img';
 import { useState, useEffect, useRef } from 'react';
 import { useLocation } from 'wouter';
@@ -1665,9 +1666,10 @@ export default function Marketplace() {
 
   const trackInteraction = async (beatId: string, interactionType: string, extra?: Record<string, unknown>) => {
     try {
+      const csrfToken = getCsrfTokenFromCookie();
       await fetch('/api/marketplace/interaction', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...(csrfToken ? { 'x-csrf-token': csrfToken } : {}) },
         credentials: 'include',
         body: JSON.stringify({ beatId, interactionType, ...extra }),
       });

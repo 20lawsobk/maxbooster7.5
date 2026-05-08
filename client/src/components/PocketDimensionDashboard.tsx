@@ -1,5 +1,6 @@
 import { logger } from '@/lib/logger';
 import { useState, useEffect } from 'react';
+import { getCsrfTokenFromCookie } from '@/lib/queryClient';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -103,9 +104,11 @@ export function PocketDimensionDashboard() {
     
     setLoading(true);
     try {
+      const csrfToken = getCsrfTokenFromCookie();
       const response = await fetch('/api/pocket/create', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json', ...(csrfToken ? { 'x-csrf-token': csrfToken } : {}) },
         body: JSON.stringify({ id: newPocketId, encrypted: false }),
       });
       
@@ -129,9 +132,11 @@ export function PocketDimensionDashboard() {
     
     setLoading(true);
     try {
+      const csrfToken2 = getCsrfTokenFromCookie();
       const response = await fetch(`/api/pocket/${selectedPocket}/write`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json', ...(csrfToken2 ? { 'x-csrf-token': csrfToken2 } : {}) },
         body: JSON.stringify({ path: newFilePath, data: newFileContent }),
       });
       

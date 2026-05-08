@@ -1,4 +1,5 @@
 import { logger } from '../logger';
+import { getCsrfTokenFromCookie } from '../queryClient';
 import { transportEngine } from './TransportEngine';
 import { timelineEngine } from './TimelineEngine';
 import { automationEngine } from './AutomationEngine';
@@ -489,10 +490,13 @@ export class ProjectManager {
     };
 
     try {
+      const csrfToken = getCsrfTokenFromCookie();
+      const csrfHeaders = csrfToken ? { 'x-csrf-token': csrfToken } : {};
       if (projectId) {
         const response = await fetch(`/api/studio/projects/${projectId}/save-daw-state`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json', ...csrfHeaders },
           body: JSON.stringify(payload),
         });
         
@@ -508,7 +512,8 @@ export class ProjectManager {
       } else {
         const response = await fetch('/api/studio/projects', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json', ...csrfHeaders },
           body: JSON.stringify(payload),
         });
         

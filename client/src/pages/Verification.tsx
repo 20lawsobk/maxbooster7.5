@@ -1,5 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { getCsrfTokenFromCookie } from '@/lib/queryClient';
 import { useLocation } from 'wouter';
 import { useAuth } from '@/hooks/useAuth';
 import { AppLayout } from '@/components/layout/AppLayout';
@@ -173,9 +174,10 @@ export default function Verification() {
 
   const startVerificationMutation = useMutation({
     mutationFn: async (type: 'individual' | 'business') => {
+      const csrfToken = getCsrfTokenFromCookie();
       const res = await fetch('/api/kyc/start', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...(csrfToken ? { 'x-csrf-token': csrfToken } : {}) },
         credentials: 'include',
         body: JSON.stringify({ type, level: 'enhanced' }),
       });
@@ -206,9 +208,10 @@ export default function Verification() {
         ? { verificationId: vId, ...individualInfo }
         : { verificationId: vId, ...businessInfo };
       
+      const csrfToken = getCsrfTokenFromCookie();
       const res = await fetch(endpoint, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...(csrfToken ? { 'x-csrf-token': csrfToken } : {}) },
         credentials: 'include',
         body: JSON.stringify(data),
       });
@@ -233,9 +236,10 @@ export default function Verification() {
       const vId = verificationId || status?.verificationId;
       if (!vId) throw new Error('No verification in progress');
       
+      const csrfToken = getCsrfTokenFromCookie();
       const res = await fetch('/api/kyc/submit', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...(csrfToken ? { 'x-csrf-token': csrfToken } : {}) },
         credentials: 'include',
         body: JSON.stringify({ verificationId: vId }),
       });
@@ -1197,9 +1201,11 @@ function DocumentUploadCard({ title, description, type, verificationId, existing
       formData.append('verificationId', verificationId);
       formData.append('documentType', type);
 
+      const csrfToken = getCsrfTokenFromCookie();
       const res = await fetch('/api/kyc/documents/upload', {
         method: 'POST',
         credentials: 'include',
+        headers: csrfToken ? { 'x-csrf-token': csrfToken } : {},
         body: formData,
       });
 

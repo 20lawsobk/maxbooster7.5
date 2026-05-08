@@ -489,9 +489,11 @@ class ErrorService {
     this.errorQueue = [];
 
     try {
+      const { getCsrfTokenFromCookie: _getCsrf } = await import('@/lib/queryClient');
+      const _csrfToken = _getCsrf();
       const response = await fetch('/api/errors', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...(_csrfToken ? { 'x-csrf-token': _csrfToken } : {}) },
         credentials: 'include',
         body: JSON.stringify({
           errors: errors.map((e) => ({

@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { getCsrfTokenFromCookie } from '@/lib/queryClient';
 import { renderMaxcoreVideo, type MaxcoreJobMeta } from '@/lib/video/maxcoreVideoRenderer';
 import { useLocation } from 'wouter';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -375,9 +376,10 @@ export function ServerVideoGenerator({
     const elapsedInterval = setInterval(() => setGeneratingElapsed(s => s + 1), 1000);
 
     try {
+      const csrfToken = getCsrfTokenFromCookie();
       const response = await fetch('/api/social/generate-video', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...(csrfToken ? { 'x-csrf-token': csrfToken } : {}) },
         credentials: 'include',
         signal: controller.signal,
         body: JSON.stringify({
@@ -596,9 +598,11 @@ export function ServerVideoGenerator({
       const form = new FormData();
       form.append('audio', audioFile);
       form.append('platform', platform);
+      const csrfToken = getCsrfTokenFromCookie();
       const resp = await fetch('/api/social/analyze-audio', {
         method: 'POST',
         credentials: 'include',
+        headers: csrfToken ? { 'x-csrf-token': csrfToken } : {},
         body: form,
       });
       const data = await resp.json();
@@ -646,9 +650,11 @@ export function ServerVideoGenerator({
       form.append('image', imageFile);
       form.append('platform', platform);
       if (customArtistName) form.append('artist_name', customArtistName);
+      const csrfToken2 = getCsrfTokenFromCookie();
       const resp = await fetch('/api/social/analyze-image', {
         method: 'POST',
         credentials: 'include',
+        headers: csrfToken2 ? { 'x-csrf-token': csrfToken2 } : {},
         body: form,
       });
       const data = await resp.json();

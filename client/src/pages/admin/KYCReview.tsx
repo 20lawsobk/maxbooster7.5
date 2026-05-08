@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { getCsrfTokenFromCookie } from '@/lib/queryClient';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -117,9 +118,10 @@ export default function KYCReview() {
       notes?: string;
       reason?: string;
     }) => {
+      const csrfToken = getCsrfTokenFromCookie();
       const res = await fetch(`/api/kyc/admin/review/${verificationId}`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...(csrfToken ? { 'x-csrf-token': csrfToken } : {}) },
         credentials: 'include',
         body: JSON.stringify({ action, notes, reason }),
       });
@@ -151,9 +153,10 @@ export default function KYCReview() {
       approved: boolean;
       reason?: string;
     }) => {
+      const csrfToken = getCsrfTokenFromCookie();
       const res = await fetch(`/api/kyc/admin/documents/${documentId}/review`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...(csrfToken ? { 'x-csrf-token': csrfToken } : {}) },
         credentials: 'include',
         body: JSON.stringify({ approved, reason }),
       });

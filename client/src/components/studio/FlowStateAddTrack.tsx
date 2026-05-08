@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { getCsrfTokenFromCookie } from '@/lib/queryClient';
 import { 
   Plus, 
   Music, 
@@ -54,9 +55,10 @@ interface CreateTrackParams {
 }
 
 async function createTrack(params: CreateTrackParams) {
+  const csrfToken = getCsrfTokenFromCookie();
   const response = await fetch('/api/studio/tracks', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...(csrfToken ? { 'x-csrf-token': csrfToken } : {}) },
     credentials: 'include',
     body: JSON.stringify(params),
   });

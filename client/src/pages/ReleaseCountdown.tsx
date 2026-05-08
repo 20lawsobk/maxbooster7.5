@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { getCsrfTokenFromCookie } from '@/lib/queryClient';
 import { useLocation } from 'wouter';
 import { useAuth } from '@/hooks/useAuth';
 import { AppLayout } from '@/components/layout/AppLayout';
@@ -106,9 +107,10 @@ export default function ReleaseCountdown() {
 
   const createReleaseMutation = useMutation({
     mutationFn: async () => {
+      const csrfToken = getCsrfTokenFromCookie();
       const res = await fetch('/api/countdowns', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...(csrfToken ? { 'x-csrf-token': csrfToken } : {}) },
         credentials: 'include',
         body: JSON.stringify(newRelease),
       });
@@ -128,9 +130,10 @@ export default function ReleaseCountdown() {
 
   const toggleTaskMutation = useMutation({
     mutationFn: async ({ releaseId, taskId, completed }: { releaseId: string; taskId: string; completed: boolean }) => {
+      const csrfToken = getCsrfTokenFromCookie();
       const res = await fetch(`/api/countdowns/${releaseId}/tasks/${taskId}`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...(csrfToken ? { 'x-csrf-token': csrfToken } : {}) },
         credentials: 'include',
         body: JSON.stringify({ completed }),
       });

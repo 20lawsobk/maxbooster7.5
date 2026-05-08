@@ -241,7 +241,7 @@ export class ApiError extends Error {
 }
 
 /** Read the CSRF token set by the server (httpOnly=false, same-origin cookie). */
-function getCsrfTokenFromCookie(): string | null {
+export function getCsrfTokenFromCookie(): string | null {
   try {
     const match = document.cookie.split('; ').find(row => row.startsWith('csrf-token='));
     return match ? decodeURIComponent(match.split('=')[1]) : null;

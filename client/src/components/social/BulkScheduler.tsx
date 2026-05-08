@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { getCsrfTokenFromCookie } from '@/lib/queryClient';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -79,9 +80,10 @@ export function BulkScheduler() {
 
   const validateMutation = useMutation({
     mutationFn: async (posts: BulkPost[]) => {
+      const csrfToken = getCsrfTokenFromCookie();
       const res = await fetch('/api/social/bulk/validate', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...(csrfToken ? { 'x-csrf-token': csrfToken } : {}) },
         credentials: 'include',
         body: JSON.stringify({ posts }),
       });
@@ -109,9 +111,10 @@ export function BulkScheduler() {
 
   const scheduleMutation = useMutation({
     mutationFn: async (posts: BulkPost[]) => {
+      const csrfToken = getCsrfTokenFromCookie();
       const res = await fetch('/api/social/bulk/schedule', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...(csrfToken ? { 'x-csrf-token': csrfToken } : {}) },
         credentials: 'include',
         body: JSON.stringify({ posts }),
       });
@@ -146,9 +149,11 @@ export function BulkScheduler() {
 
   const cancelMutation = useMutation({
     mutationFn: async (batchId: string) => {
+      const csrfToken = getCsrfTokenFromCookie();
       const res = await fetch(`/api/social/bulk/${batchId}`, {
         method: 'DELETE',
         credentials: 'include',
+        headers: csrfToken ? { 'x-csrf-token': csrfToken } : {},
       });
       if (!res.ok) throw new Error('Cancellation failed');
       return res.json();

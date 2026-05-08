@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useLocation } from 'wouter';
+import { getCsrfTokenFromCookie } from '@/lib/queryClient';
 import {
   Dialog,
   DialogContent,
@@ -42,9 +43,11 @@ export function SaveAsDialog({
 
   const saveAsMutation = useMutation({
     mutationFn: async () => {
+      const csrfToken = getCsrfTokenFromCookie();
       const response = await fetch('/api/studio/projects', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json', ...(csrfToken ? { 'x-csrf-token': csrfToken } : {}) },
         body: JSON.stringify({
           title: title.trim() || 'Untitled Project',
           description,

@@ -1,5 +1,6 @@
 import { logger } from '@/lib/logger';
 import { useState } from 'react';
+import { getCsrfTokenFromCookie } from '@/lib/queryClient';
 import { useLocation } from 'wouter';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -76,9 +77,11 @@ export function QuickStartWizard({ onComplete, onSkip }: QuickStartWizardProps) 
 
   const completeOnboardingMutation = useMutation({
     mutationFn: async () => {
+      const csrfToken = getCsrfTokenFromCookie();
       const response = await fetch('/api/users/complete-onboarding', {
         method: 'POST',
         credentials: 'include',
+        headers: csrfToken ? { 'x-csrf-token': csrfToken } : {},
       });
       if (!response.ok) throw new Error('Failed to complete onboarding');
       return response.json();

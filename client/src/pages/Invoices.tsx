@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { getCsrfTokenFromCookie } from '@/lib/queryClient';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useLocation } from 'wouter';
 import { useAuth } from '@/hooks/useAuth';
@@ -90,9 +91,10 @@ export default function Invoices() {
 
   const createInvoiceMutation = useMutation({
     mutationFn: async () => {
+      const csrfToken = getCsrfTokenFromCookie();
       const res = await fetch('/api/invoices', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...(csrfToken ? { 'x-csrf-token': csrfToken } : {}) },
         credentials: 'include',
         body: JSON.stringify(newInvoice),
       });
@@ -119,9 +121,11 @@ export default function Invoices() {
 
   const sendInvoiceMutation = useMutation({
     mutationFn: async (invoiceId: string) => {
+      const csrfToken = getCsrfTokenFromCookie();
       const res = await fetch(`/api/invoices/${invoiceId}/send`, {
         method: 'POST',
         credentials: 'include',
+        headers: csrfToken ? { 'x-csrf-token': csrfToken } : {},
       });
       if (!res.ok) throw new Error('Failed to send invoice');
       return res.json();
@@ -137,7 +141,12 @@ export default function Invoices() {
 
   const deleteInvoiceMutation = useMutation({
     mutationFn: async (id: string) => {
-      const res = await fetch(`/api/invoices/${id}`, { method: 'DELETE', credentials: 'include' });
+      const csrfToken = getCsrfTokenFromCookie();
+      const res = await fetch(`/api/invoices/${id}`, {
+        method: 'DELETE',
+        credentials: 'include',
+        headers: csrfToken ? { 'x-csrf-token': csrfToken } : {},
+      });
       if (!res.ok) throw new Error('Failed to delete invoice');
     },
     onSuccess: () => {

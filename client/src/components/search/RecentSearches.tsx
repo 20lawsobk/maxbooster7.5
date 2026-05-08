@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { getCsrfTokenFromCookie } from '@/lib/queryClient';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -70,9 +71,11 @@ export function RecentSearches({
 
   const clearHistoryMutation = useMutation({
     mutationFn: async () => {
+      const csrfToken = getCsrfTokenFromCookie();
       const res = await fetch('/api/search/history', {
         method: 'DELETE',
         credentials: 'include',
+        headers: csrfToken ? { 'x-csrf-token': csrfToken } : {},
       });
       if (!res.ok) throw new Error('Failed to clear history');
       return res.json();
@@ -97,9 +100,11 @@ export function RecentSearches({
 
   const removeItemMutation = useMutation({
     mutationFn: async (query: string) => {
+      const csrfToken = getCsrfTokenFromCookie();
       const res = await fetch(`/api/search/history/${encodeURIComponent(query)}`, {
         method: 'DELETE',
         credentials: 'include',
+        headers: csrfToken ? { 'x-csrf-token': csrfToken } : {},
       });
       if (!res.ok) throw new Error('Failed to remove item');
       return res.json();

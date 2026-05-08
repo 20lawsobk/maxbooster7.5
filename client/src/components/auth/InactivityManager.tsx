@@ -1,5 +1,6 @@
 import { useEffect, useRef, useCallback } from 'react';
 import { useAuth } from '@/hooks/useAuth';
+import { getCsrfTokenFromCookie } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
 
 const INACTIVITY_MS = 30 * 60 * 1000;
@@ -29,10 +30,11 @@ export function InactivityManager() {
 
   const sendHeartbeat = useCallback(async () => {
     try {
+      const csrfToken = getCsrfTokenFromCookie();
       await fetch('/api/auth/heartbeat', {
         method: 'POST',
         credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...(csrfToken ? { 'x-csrf-token': csrfToken } : {}) },
       });
     } catch {
     }

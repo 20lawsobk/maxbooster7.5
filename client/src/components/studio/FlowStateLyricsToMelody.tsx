@@ -1,5 +1,5 @@
 import { useState, useCallback, useMemo } from 'react';
-import { apiRequest } from '@/lib/queryClient';
+import { apiRequest, getCsrfTokenFromCookie } from '@/lib/queryClient';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   PenTool,
@@ -250,8 +250,10 @@ export function FlowStateLyricsToMelody({
     try {
       const formData = new FormData();
       formData.append('audio', file);
+      const csrfToken = getCsrfTokenFromCookie();
       const res = await fetch('/api/studio/generation/audio-to-melody', {
         method: 'POST',
+        headers: csrfToken ? { 'x-csrf-token': csrfToken } : {},
         body: formData,
         credentials: 'include',
       });

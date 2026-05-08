@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { getCsrfTokenFromCookie } from '@/lib/queryClient';
 import { useLocation } from 'wouter';
 import { useAuth } from '@/hooks/useAuth';
 import { AppLayout } from '@/components/layout/AppLayout';
@@ -130,9 +131,10 @@ export default function Workspaces() {
 
   const createWorkspaceMutation = useMutation({
     mutationFn: async () => {
+      const csrfToken = getCsrfTokenFromCookie();
       const res = await fetch('/api/workspace/create', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...(csrfToken ? { 'x-csrf-token': csrfToken } : {}) },
         credentials: 'include',
         body: JSON.stringify(newWorkspace),
       });
@@ -153,9 +155,10 @@ export default function Workspaces() {
   const inviteMemberMutation = useMutation({
     mutationFn: async () => {
       if (!selectedWorkspace) throw new Error('No workspace selected');
+      const csrfToken = getCsrfTokenFromCookie();
       const res = await fetch(`/api/workspace/${selectedWorkspace.id}/invite`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...(csrfToken ? { 'x-csrf-token': csrfToken } : {}) },
         credentials: 'include',
         body: JSON.stringify({ email: inviteEmail, role: inviteRole }),
       });
@@ -176,9 +179,10 @@ export default function Workspaces() {
   const updateMemberRoleMutation = useMutation({
     mutationFn: async ({ memberId, role }: { memberId: string; role: string }) => {
       if (!selectedWorkspace) throw new Error('No workspace selected');
+      const csrfToken = getCsrfTokenFromCookie();
       const res = await fetch(`/api/workspace/${selectedWorkspace.id}/members/${memberId}/role`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...(csrfToken ? { 'x-csrf-token': csrfToken } : {}) },
         credentials: 'include',
         body: JSON.stringify({ role }),
       });
@@ -197,9 +201,11 @@ export default function Workspaces() {
   const removeMemberMutation = useMutation({
     mutationFn: async (memberId: string) => {
       if (!selectedWorkspace) throw new Error('No workspace selected');
+      const csrfToken = getCsrfTokenFromCookie();
       const res = await fetch(`/api/workspace/${selectedWorkspace.id}/members/${memberId}`, {
         method: 'DELETE',
         credentials: 'include',
+        headers: csrfToken ? { 'x-csrf-token': csrfToken } : {},
       });
       if (!res.ok) throw new Error('Failed to remove member');
       return res.json();
@@ -216,9 +222,10 @@ export default function Workspaces() {
   const createRoleMutation = useMutation({
     mutationFn: async (role: Omit<Role, 'id'>) => {
       if (!selectedWorkspace) throw new Error('No workspace selected');
+      const csrfToken = getCsrfTokenFromCookie();
       const res = await fetch(`/api/workspace/${selectedWorkspace.id}/roles`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...(csrfToken ? { 'x-csrf-token': csrfToken } : {}) },
         credentials: 'include',
         body: JSON.stringify(role),
       });
@@ -237,9 +244,10 @@ export default function Workspaces() {
   const updateRoleMutation = useMutation({
     mutationFn: async ({ roleId, updates }: { roleId: string; updates: Partial<Role> }) => {
       if (!selectedWorkspace) throw new Error('No workspace selected');
+      const csrfToken = getCsrfTokenFromCookie();
       const res = await fetch(`/api/workspace/${selectedWorkspace.id}/roles/${roleId}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...(csrfToken ? { 'x-csrf-token': csrfToken } : {}) },
         credentials: 'include',
         body: JSON.stringify(updates),
       });
@@ -258,9 +266,11 @@ export default function Workspaces() {
   const deleteRoleMutation = useMutation({
     mutationFn: async (roleId: string) => {
       if (!selectedWorkspace) throw new Error('No workspace selected');
+      const csrfToken = getCsrfTokenFromCookie();
       const res = await fetch(`/api/workspace/${selectedWorkspace.id}/roles/${roleId}`, {
         method: 'DELETE',
         credentials: 'include',
+        headers: csrfToken ? { 'x-csrf-token': csrfToken } : {},
       });
       if (!res.ok) throw new Error('Failed to delete role');
       return res.json();

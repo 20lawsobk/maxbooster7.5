@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
+import { getCsrfTokenFromCookie } from '@/lib/queryClient';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -29,9 +30,10 @@ const QUICK_SUGGESTIONS: Suggestion[] = [
 const WELCOME = "Hey there! I'm Max, your AI assistant — built entirely in-house by the B-Lawz Music team. Ask me anything about Max Booster: the Studio, distribution, social media, advertising, marketplace, analytics, and more. What do you want to know?";
 
 async function fetchChat(message: string): Promise<string> {
+  const csrfToken = getCsrfTokenFromCookie();
   const res = await fetch('/api/assistant/chat', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...(csrfToken ? { 'x-csrf-token': csrfToken } : {}) },
     credentials: 'include',
     body: JSON.stringify({ message }),
   });

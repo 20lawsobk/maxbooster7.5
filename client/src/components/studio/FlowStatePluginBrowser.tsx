@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { getCsrfTokenFromCookie } from '@/lib/queryClient';
 import {
   Dialog,
   DialogContent,
@@ -216,9 +217,10 @@ async function instantiatePlugin(
   projectId: string,
   trackId?: string
 ): Promise<{ success: boolean; instance: Record<string, unknown> }> {
+  const csrfToken = getCsrfTokenFromCookie();
   const response = await fetch(`/api/studio/plugins/instantiate/${pluginId}?projectId=${projectId}`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...(csrfToken ? { 'x-csrf-token': csrfToken } : {}) },
     credentials: 'include',
     body: JSON.stringify({ trackId }),
   });

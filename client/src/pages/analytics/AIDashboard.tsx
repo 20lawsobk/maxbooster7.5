@@ -1,6 +1,7 @@
 // AI Analytics Dashboard - Fixed: All null checks added (v2.1)
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { getCsrfTokenFromCookie } from '@/lib/queryClient';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -171,9 +172,10 @@ export default function AIDashboard() {
   } = useQuery<MetricPrediction[]>({
     queryKey: ['/api/analytics/ai/predict-metric', selectedMetric, timeRange],
     queryFn: async () => {
+      const csrfToken = getCsrfTokenFromCookie();
       const response = await fetch('/api/analytics/ai/predict-metric', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...(csrfToken ? { 'x-csrf-token': csrfToken } : {}) },
         credentials: 'include',
         body: JSON.stringify({ metric: selectedMetric, timeframe: timeRange }),
       });
@@ -297,9 +299,10 @@ export default function AIDashboard() {
   } = useQuery<CareerGrowthPrediction>({
     queryKey: ['/api/analytics/music/career-growth', careerMetric, careerTimeline],
     queryFn: async () => {
+      const csrfToken = getCsrfTokenFromCookie();
       const response = await fetch('/api/analytics/music/career-growth', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...(csrfToken ? { 'x-csrf-token': csrfToken } : {}) },
         credentials: 'include',
         body: JSON.stringify({ metric: careerMetric, timeline: careerTimeline }),
       });

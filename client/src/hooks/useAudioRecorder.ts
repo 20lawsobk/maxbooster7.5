@@ -1,6 +1,7 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { useAudioContext } from './useAudioContext';
 import { logger } from '@/lib/logger';
+import { getCsrfTokenFromCookie } from '@/lib/queryClient';
 
 export interface RecordingState {
   isRecording: boolean;
@@ -269,8 +270,11 @@ export function useAudioRecorder() {
 
         formData.append('projectId', projectId);
         formData.append('trackId', trackId);
+        const csrfToken = getCsrfTokenFromCookie();
         const response = await fetch(`/api/studio/record/upload`, {
           method: 'POST',
+          credentials: 'include',
+          headers: csrfToken ? { 'x-csrf-token': csrfToken } : {},
           body: formData,
         });
 

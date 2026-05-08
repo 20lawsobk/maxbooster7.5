@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { getCsrfTokenFromCookie } from '@/lib/queryClient';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -157,11 +158,10 @@ export function FileOperationsMenu({
       
       const undoAction = async () => {
         try {
+          const csrfToken = getCsrfTokenFromCookie();
           const response = await fetch(`/api/files/${file.id}/restore`, {
             method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
+            headers: { 'Content-Type': 'application/json', ...(csrfToken ? { 'x-csrf-token': csrfToken } : {}) },
             credentials: 'include',
           });
           

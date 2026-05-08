@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { getCsrfTokenFromCookie } from '@/lib/queryClient';
 import { 
   Upload, 
   X, 
@@ -30,9 +31,11 @@ async function uploadAudioFile(file: File, projectId: string): Promise<{ fileId:
   formData.append('audioFile', file);
   formData.append('projectId', projectId);
 
+  const csrfToken = getCsrfTokenFromCookie();
   const response = await fetch('/api/studio/upload', {
     method: 'POST',
     credentials: 'include',
+    headers: csrfToken ? { 'x-csrf-token': csrfToken } : {},
     body: formData,
   });
 
