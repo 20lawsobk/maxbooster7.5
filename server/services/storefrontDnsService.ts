@@ -317,9 +317,9 @@ export async function attachDomainToStorefront(
   try {
     await client.query('BEGIN');
 
-    // ── Check for existing claim ───────────────────────────────────────────
-    const { rows: existing } = await client.query<{ id: string; status: string }>(
-      `SELECT id, status FROM storefront_domains WHERE domain = $1`,
+    // ── Check for existing storefront_domains claim ────────────────────────
+    const { rows: existing } = await client.query<{ id: string; status: string; storefront_id: string }>(
+      `SELECT id, status, storefront_id FROM storefront_domains WHERE domain = $1`,
       [domain],
     );
     if (existing.length > 0) {
@@ -327,7 +327,22 @@ export async function attachDomainToStorefront(
       if (ex.status === 'active') {
         throw new Error(`Domain '${domain}' is already active on another storefront.`);
       }
+      // Only allow overwriting a pending/failed claim from the same storefront (idempotent re-attach).
+      // A pending claim owned by a different storefront (different tenant) must not be silently deleted.
+      if (ex.storefront_id !== storefrontId) {
+        throw new Error(`Domain '${domain}' is already being set up by another account.`);
+      }
       await client.query(`DELETE FROM storefront_domains WHERE id = $1`, [ex.id]);
+    }
+
+    // ── Guard dns_zones against cross-tenant zone seizure ─────────────────
+    // If a dns_zones row already exists for this domain owned by a different user, reject.
+    const { rows: existingZones } = await client.query<{ user_id: string }>(
+      `SELECT user_id FROM dns_zones WHERE domain = $1`,
+      [domain],
+    );
+    if (existingZones.length > 0 && existingZones[0].user_id !== userId) {
+      throw new Error(`Domain '${domain}' DNS zone is already owned by another account.`);
     }
 
     // ── Create dns_zones row ───────────────────────────────────────────────
@@ -335,7 +350,7 @@ export async function attachDomainToStorefront(
       `INSERT INTO dns_zones (user_id, domain, status, verification_token, nameserver1, nameserver2)
        VALUES ($1, $2, 'pending', $3, $4, $5)
        ON CONFLICT (domain) DO UPDATE
-         SET user_id = EXCLUDED.user_id, status = 'pending',
+         SET status = 'pending',
              verification_token = EXCLUDED.verification_token, updated_at = now()
        RETURNING id`,
       [userId, domain, verificationToken, NS_ALT1, NS_ALT2],

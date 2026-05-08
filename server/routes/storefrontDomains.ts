@@ -141,8 +141,9 @@ router.post("/custom/request", async (req, res) => {
     });
   } catch (err) {
     logger.warn({ err }, "[storefrontDomains] custom/request error");
-    const status = err.message?.includes("already active") ? 409 : 500;
-    return res.status(status).json({ ok: false, error: err.message || "Internal error." });
+    const msg: string = err.message || "";
+    const status = (msg.includes("already active") || msg.includes("already being set up") || msg.includes("DNS zone is already owned")) ? 409 : 500;
+    return res.status(status).json({ ok: false, error: msg || "Internal error." });
   }
 });
 
@@ -159,9 +160,27 @@ router.post("/custom/verify", async (req, res) => {
 
     const { domain, domainId } = req.body as { domain?: string; domainId?: string };
 
-    let resolvedId: string | null = domainId || null;
+    let resolvedId: string | null = null;
 
-    if (!resolvedId && domain) {
+    if (domainId) {
+      // Ownership check when caller supplies a raw domainId
+      const [row] = await db
+        .select({ id: storefrontDomains.id, storefrontId: storefrontDomains.storefrontId })
+        .from(storefrontDomains)
+        .where(eq(storefrontDomains.id, domainId))
+        .limit(1);
+      if (!row) return res.status(404).json({ ok: false, verified: false, error: "Domain not found." });
+
+      const [sf] = await db
+        .select({ userId: storefronts.userId })
+        .from(storefronts)
+        .where(eq(storefronts.id, row.storefrontId))
+        .limit(1);
+      if (sf?.userId !== (req.user as Record<string, unknown>).id)
+        return res.status(403).json({ ok: false, error: "Unauthorized." });
+
+      resolvedId = row.id;
+    } else if (domain) {
       const normalized = domain.trim().toLowerCase();
       const [row] = await db
         .select({ id: storefrontDomains.id, storefrontId: storefrontDomains.storefrontId })
@@ -550,8 +569,26 @@ router.get("/domain-status/:domainId", async (req, res) => {
   try {
     if (!req.isAuthenticated()) return res.status(401).json({ ok: false, error: "Unauthorized." });
 
+    const domainId = req.params.domainId;
+
+    // Ownership check — ensure the domain belongs to a storefront owned by the caller
+    const [domainRow] = await db
+      .select({ storefrontId: storefrontDomains.storefrontId })
+      .from(storefrontDomains)
+      .where(eq(storefrontDomains.id, domainId))
+      .limit(1);
+    if (!domainRow) return res.status(404).json({ ok: false, error: "Domain not found." });
+
+    const [sf] = await db
+      .select({ userId: storefronts.userId })
+      .from(storefronts)
+      .where(eq(storefronts.id, domainRow.storefrontId))
+      .limit(1);
+    if (sf?.userId !== (req.user as Record<string, unknown>).id)
+      return res.status(403).json({ ok: false, error: "Unauthorized." });
+
     const { getDomainStatus } = await import("../services/storefrontDnsService.js");
-    const status = await getDomainStatus(req.params.domainId);
+    const status = await getDomainStatus(domainId);
     return res.json({ ok: true, ...status });
   } catch (err) {
     logger.warn({ err }, "[domains] domain-status error");
@@ -612,8 +649,9 @@ router.post("/storefront/:storefrontId/attach-domain", async (req, res) => {
     return res.status(201).json({ ok: true, ...result });
   } catch (err) {
     logger.warn({ err }, "[storefrontDomains] attach-domain error");
-    const status = err.message?.includes("already active") ? 409 : 500;
-    return res.status(status).json({ ok: false, error: err.message || "Internal error." });
+    const msg: string = err.message || "";
+    const status = (msg.includes("already active") || msg.includes("already being set up") || msg.includes("DNS zone is already owned")) ? 409 : 500;
+    return res.status(status).json({ ok: false, error: msg || "Internal error." });
   }
 });
 
@@ -628,6 +666,23 @@ router.post("/custom/verify-status/:domainId", async (req, res) => {
     if (!req.isAuthenticated()) return res.status(401).json({ ok: false, error: "Unauthorized." });
 
     const { domainId } = req.params;
+
+    // Ownership check — ensure the domain belongs to a storefront owned by the caller
+    const [domainRow] = await db
+      .select({ storefrontId: storefrontDomains.storefrontId })
+      .from(storefrontDomains)
+      .where(eq(storefrontDomains.id, domainId))
+      .limit(1);
+    if (!domainRow) return res.status(404).json({ ok: false, error: "Domain not found." });
+
+    const [sf] = await db
+      .select({ userId: storefronts.userId })
+      .from(storefronts)
+      .where(eq(storefronts.id, domainRow.storefrontId))
+      .limit(1);
+    if (sf?.userId !== (req.user as Record<string, unknown>).id)
+      return res.status(403).json({ ok: false, error: "Unauthorized." });
+
     const { verifyStorefrontDomain } = await import("../services/storefrontDnsService.js");
     const result = await verifyStorefrontDomain(domainId);
     return res.json({ ok: true, result });
