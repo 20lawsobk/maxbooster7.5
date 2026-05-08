@@ -170,6 +170,32 @@ router.get('/check-domain', async (req, res) => {
 });
 
 /**
+ * GET /api/storefront/preview/:slug
+ * Owner-only preview — returns full storefront data regardless of isPublic/isActive.
+ * Does NOT increment views. Auth required and must be the owning user.
+ */
+router.get('/preview/:slug', async (req, res) => {
+  try {
+    if (!req.isAuthenticated() || !req.user) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+    const { slug } = req.params;
+    const storefront = await storefrontService.getStorefrontBySlug(slug);
+    if (storefront.userId !== req.user.id) {
+      return res.status(403).json({ error: 'Forbidden' });
+    }
+    res.json(storefront);
+  } catch (error: unknown) {
+    logger.warn({ err: error }, 'Error fetching storefront preview:');
+    const errMsg = getErrorMessage(error);
+    if (errMsg === 'Storefront not found') {
+      return res.status(404).json({ error: errMsg });
+    }
+    res.status(500).json({ error: errMsg || 'Failed to fetch storefront preview' });
+  }
+});
+
+/**
  * GET /api/storefront/:slug
  * Get storefront by slug (for authenticated access)
  */
