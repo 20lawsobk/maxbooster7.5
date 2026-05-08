@@ -481,10 +481,13 @@ export async function uploadWithProgress(
         }
         
         const error = new Error(errorMessage);
-        captureException(error, {
-          action: 'upload-response-error',
-          metadata: { status: xhr.status, url },
-        });
+        // Only report true server errors (5xx) — 4xx are expected business responses
+        if (xhr.status >= 500) {
+          captureException(error, {
+            action: 'upload-response-error',
+            metadata: { status: xhr.status, url },
+          });
+        }
         reject(error);
       }
     });
@@ -598,11 +601,17 @@ export const getQueryFn: <T>(options: { on401: UnauthorizedBehavior }) => QueryF
         throw timeoutError;
       }
 
-      // Capture other errors
-      captureException(error, {
-        action: 'query-error',
-        metadata: { queryKey: url },
-      });
+      // ApiErrors (4xx / 5xx HTTP responses) have already been processed by
+      // throwIfResNotOk — 5xx ones were captured there; 4xx ones are expected
+      // business logic (auth challenges, validation, conflicts) and are handled
+      // by each query's own onError / queryCache.onError.  Re-capturing them
+      // here would fire a spurious "Info" toast for every failed query.
+      if (!(error instanceof ApiError)) {
+        captureException(error, {
+          action: 'query-error',
+          metadata: { queryKey: url },
+        });
+      }
 
       throw error;
     }
