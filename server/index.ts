@@ -444,10 +444,13 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   // to single-digit milliseconds regardless of PDIM health.
   // The SPA catch-all (serveStatic) remains registered after API routes so
   // it can do OG meta injection and subdomain routing for page navigations.
-  if (isProductionEnv()) {
-    serveStaticFiles(app);
-    logger.info('✅ [Static] Pre-session asset serving registered (assets bypass session/PDIM)');
-  }
+  // Always register static file serving — not just in production.
+  // In dev mode the pre-built dist/public/assets/ files (hashed JS/CSS chunks)
+  // need to be served during the ~10 s boot window before Vite middleware loads.
+  // express.static() calls next() for unknown paths so Vite's own module graph
+  // (/@vite/client, /src/...) is unaffected.
+  serveStaticFiles(app);
+  logger.info('✅ [Static] Pre-session asset serving registered (assets bypass session/PDIM)');
 
   // Load optional modules in background — they're only used inside setImmediate
   // blocks that fire after all sync setup completes, so awaiting here just adds
