@@ -1,7 +1,7 @@
 import { logger } from '../logger.js';
 
-const _PORT = process.env.PORT || 5000;
-const AI_MODEL_URL = process.env.AI_MODEL_SERVICE_URL || `http://127.0.0.1:${_PORT}/api/ai-service`;
+const PYTHON_AI_PORT = parseInt(process.env.PYTHON_AI_PORT || '9878', 10);
+const AI_MODEL_URL = process.env.AI_MODEL_SERVICE_URL || `http://127.0.0.1:${PYTHON_AI_PORT}`;
 const VEO_TIMEOUT_MS = 60000;
 
 const _INTERNAL_SECRET = process.env.BOOSTERSTATE_SECRET || '';

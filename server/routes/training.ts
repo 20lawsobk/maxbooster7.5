@@ -5,8 +5,8 @@ import { syncWeightsNow } from '../services/maxcoreSync.js';
 
 const router = Router();
 
-const _PORT = process.env.PORT || 5000;
-const AI_URL = process.env.AI_MODEL_SERVICE_URL || `http://127.0.0.1:${_PORT}/api/ai-service`;
+const PYTHON_AI_PORT = parseInt(process.env.PYTHON_AI_PORT || '9878', 10);
+const AI_URL = process.env.AI_MODEL_SERVICE_URL || `http://127.0.0.1:${PYTHON_AI_PORT}`;
 const TRAIN_TIMEOUT = 60_000;
 const LONG_TIMEOUT  = 3_600_000;
 
