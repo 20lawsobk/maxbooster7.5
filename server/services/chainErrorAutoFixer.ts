@@ -1337,36 +1337,41 @@ class ChainErrorAutoFixer extends EventEmitter {
     const downstreamIds = ChainErrorAutoFixer.CHAIN_MAP[firedPatternId];
     if (!downstreamIds || downstreamIds.length === 0) return;
 
-    setTimeout(async () => {
-      for (const downstreamId of downstreamIds) {
-        const downstream = this.patterns.find(p => p.id === downstreamId);
-        if (!downstream) continue;
+    setTimeout(() => {
+      // Pre-emptive downstream fixes are fully independent — each targets a
+      // different error pattern on its own cooldown. Run them concurrently so
+      // the entire prediction batch completes in parallel instead of sequentially.
+      const eligible = downstreamIds
+        .map(id => ({ id, pattern: this.patterns.find(p => p.id === id) }))
+        .filter(({ pattern, id }) => {
+          if (!pattern) return false;
+          const st = this.state.get(id);
+          return st && !st.suppressed;
+        });
 
-        const st = this.state.get(downstreamId)!;
-        if (st.suppressed) continue;
-
-        logger.info(
-          `[ChainFixer] 🎯 OFFENSIVE: Chain prediction — '${firedPatternId}' historically ` +
-          `precedes '${downstreamId}'. Pre-applying fix now.`
-        );
-
-        try {
-          await downstream.autoFix(`[chain_prediction] triggered by ${firedPatternId}`);
-          this._chainPredictionsTotal++;
-          this._offensiveActionsTotal++;
-          this.pushHistory({
-            patternId: downstreamId,
-            patternName: `[PREDICTED] ${downstream.name}`,
-            triggeredAt: Date.now(),
-            triggeredBy: `chain_prediction:${firedPatternId}`,
-            result: 'success',
-            attemptNumber: 0,
-          });
-        } catch {
-          // Speculative fix failure — not critical
-          logger.info(`[ChainFixer] 🎯 OFFENSIVE: Chain prediction fix for '${downstreamId}' was not needed (no-op)`);
-        }
-      }
+      Promise.allSettled(
+        eligible.map(async ({ id: downstreamId, pattern: downstream }) => {
+          logger.info(
+            `[ChainFixer] 🎯 OFFENSIVE: Chain prediction — '${firedPatternId}' historically ` +
+            `precedes '${downstreamId}'. Pre-applying fix now.`
+          );
+          try {
+            await downstream!.autoFix(`[chain_prediction] triggered by ${firedPatternId}`);
+            this._chainPredictionsTotal++;
+            this._offensiveActionsTotal++;
+            this.pushHistory({
+              patternId: downstreamId,
+              patternName: `[PREDICTED] ${downstream!.name}`,
+              triggeredAt: Date.now(),
+              triggeredBy: `chain_prediction:${firedPatternId}`,
+              result: 'success',
+              attemptNumber: 0,
+            });
+          } catch {
+            logger.info(`[ChainFixer] 🎯 OFFENSIVE: Chain prediction fix for '${downstreamId}' was not needed (no-op)`);
+          }
+        })
+      );
     }, 2_000);
   }
 

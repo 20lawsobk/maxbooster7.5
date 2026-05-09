@@ -76,18 +76,24 @@ class AutoPostingServiceV2 {
     try {
       const pendingPosts = await storage.getScheduledPosts({ status: 'pending' });
 
-      let reloadedCount = 0;
+      // Enqueue all pending posts concurrently — each add() is an independent
+      // PDIM write, so firing them in parallel cuts startup time proportionally
+      // to the number of pending posts.
+      const results = await Promise.allSettled(
+        pendingPosts.map(post => {
+          const delay = new Date(post.scheduledTime).getTime() - Date.now();
+          return this.postQueue.add('auto-post', post, {
+            jobId: post.id,
+            delay: delay > 0 ? delay : 0,
+          });
+        })
+      );
 
-      for (const post of pendingPosts) {
-        const delay = new Date(post.scheduledTime).getTime() - Date.now();
-
-        await this.postQueue.add('auto-post', post, {
-          jobId: post.id,
-          delay: delay > 0 ? delay : 0,
-        });
-        reloadedCount++;
+      const reloadedCount = results.filter(r => r.status === 'fulfilled').length;
+      const failedCount   = results.length - reloadedCount;
+      if (failedCount > 0) {
+        logger.warn(`[AutoPost] reloadPendingJobs: ${failedCount} enqueue(s) failed`);
       }
-
       logger.info(`✅ Reloaded ${reloadedCount} pending posts`);
     } catch (error) {
       logger.warn({ err: error }, 'Failed to reload pending jobs:');

@@ -1825,12 +1825,19 @@ class MusicWorkflowAutomationService {
         )
       );
 
-    for (const row of enabledRows) {
-      const template = WORKFLOW_TEMPLATES.find((t) => t.id === templateId);
-      if (!template) continue;
-      const config = { ...template.defaultConfig, ...(row.config as Record<string, any>) };
-      await this.executeTemplate(template, row.userId, { userId: row.userId }, config, eventType);
-    }
+    const template = WORKFLOW_TEMPLATES.find((t) => t.id === templateId);
+    if (!template) return;
+
+    // Execute each user's workflow concurrently — they are fully independent
+    // (different userId, different DB rows, different notification targets).
+    // Sequential execution meant each user waited for all previous users to
+    // complete before their workflow ran.
+    await Promise.allSettled(
+      enabledRows.map(row => {
+        const config = { ...template.defaultConfig, ...(row.config as Record<string, any>) };
+        return this.executeTemplate(template, row.userId, { userId: row.userId }, config, eventType);
+      })
+    );
   }
 
   stop(): void {
