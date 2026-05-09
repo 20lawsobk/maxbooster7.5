@@ -25,6 +25,10 @@ const ADMISSION_CONGESTION_THROTTLE_MS = 30_000;
 const MAX_CONCURRENT_REQUESTS = parseInt(process.env.MAX_CONCURRENT_REQUESTS ?? '50000', 10);
 const RETRY_AFTER_SECONDS = 5;
 
+// In-process fallback counter — used when PDIM is unavailable so requests are
+// still bounded rather than passing through completely uncounted.
+let _localInflight = 0;
+
 const isProduction = () =>
   process.env.NODE_ENV === 'production' || !!process.env.REPLIT_DEPLOYMENT;
 
@@ -51,24 +55,33 @@ export async function admissionControl(
     return next();
   }
 
+  let usingLocalFallback = false;
   let current: number;
   try {
     current = await increment();
   } catch (err) {
-    // PDIM queue temporarily congested — pass request through rather than fail it.
-    // PDIM is always reachable; this is transient backpressure, not a server outage.
+    // PDIM unavailable — fall back to in-process counter so requests are still
+    // bounded. This is per-worker, so the effective limit is MAX_CONCURRENT_REQUESTS
+    // per worker process rather than globally, but it prevents completely unconstrained
+    // traffic during a PDIM outage.
     const now = Date.now();
     if (now - _lastAdmissionCongestionWarnAt >= ADMISSION_CONGESTION_THROTTLE_MS) {
       _lastAdmissionCongestionWarnAt = now;
-      logger.warn('[AdmissionControl] PDIM congested — passing request through:', (err as Error).message);
+      logger.warn('[AdmissionControl] PDIM unavailable — using in-process fallback counter:', (err as Error).message);
     }
-    return next();
+    usingLocalFallback = true;
+    current = ++_localInflight;
   }
 
   if (current > MAX_CONCURRENT_REQUESTS) {
-    await decrement().catch(() => {});
+    if (usingLocalFallback) {
+      _localInflight = Math.max(0, _localInflight - 1);
+    } else {
+      await decrement().catch(() => {});
+    }
     logger.warn(
-      `[AdmissionControl] Shedding request — inflight: ${current}/${MAX_CONCURRENT_REQUESTS} (global) path: ${req.path}`
+      `[AdmissionControl] Shedding request — inflight: ${current}/${MAX_CONCURRENT_REQUESTS} ` +
+      `(${usingLocalFallback ? 'local-fallback' : 'global'}) path: ${req.path}`
     );
     res.setHeader('Retry-After', String(RETRY_AFTER_SECONDS));
     res.status(503).json({
@@ -82,7 +95,11 @@ export async function admissionControl(
   const safeDecrement = () => {
     if (decremented) return;
     decremented = true;
-    decrement().catch(() => {});
+    if (usingLocalFallback) {
+      _localInflight = Math.max(0, _localInflight - 1);
+    } else {
+      decrement().catch(() => {});
+    }
   };
 
   res.on('finish', safeDecrement);

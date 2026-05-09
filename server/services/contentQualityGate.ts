@@ -47,7 +47,9 @@ export interface QualityGateResult {
 }
 
 const _DEFAULT_THRESHOLD    = 81;   // 90% of Veo's ~90 baseline score (overridden by calibrator)
-const _VEO_PRESSURE_FLOOR   = 73;   // absolute minimum — overridden by MaxCore calibration
+const _VEO_PRESSURE_FLOOR   = 65;   // absolute minimum — matches calibrator floor so best-available
+                                    // fallback fires instead of returning null when PDIM is degraded
+                                    // (previous value 73 caused all 65–68 content to be rejected)
 const DEFAULT_THRESHOLD  = () => getCalibratedThresholds().gate  ?? _DEFAULT_THRESHOLD;
 const VEO_PRESSURE_FLOOR = () => getCalibratedThresholds().floor ?? _VEO_PRESSURE_FLOOR;
 const MAX_ROUNDS           = 10;   // A/B retry budget

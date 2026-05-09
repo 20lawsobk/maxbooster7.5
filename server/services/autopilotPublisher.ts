@@ -713,6 +713,7 @@ class AutopilotPublisher {
       const campaign = await storage.createAdCampaign({
         userId,
         name: bestCampaign.name || `Auto ${bestCampaign.mediaType} Campaign - ${primaryPlatform}`,
+        platform: primaryPlatform,
         objective,
         budget: bestCampaign.suggestedBudget || 0,
         spent: 0,

@@ -49,6 +49,29 @@ const isDevelopmentMode = (): boolean => !isProductionEnv();
 let _lastRateLimitCongestionWarnAt = 0;
 const RATE_LIMIT_CONGESTION_THROTTLE_MS = 30_000;
 
+// In-process fallback for when PDIM is unavailable.
+// Fixed-window counter: Map<key, {count, resetAt}>.
+// Resets each window period so keys don't accumulate indefinitely.
+const _localRateCounts = new Map<string, { count: number; resetAt: number }>();
+
+function _localRateCheck(key: string, maxRequests: number, windowMs: number): { limited: boolean; remaining: number } {
+  const now = Date.now();
+  const entry = _localRateCounts.get(key);
+  if (!entry || now >= entry.resetAt) {
+    _localRateCounts.set(key, { count: 1, resetAt: now + windowMs });
+    // Prune stale keys periodically (1-in-100 chance to avoid O(n) every call)
+    if (Math.random() < 0.01) {
+      for (const [k, v] of _localRateCounts) {
+        if (now >= v.resetAt) _localRateCounts.delete(k);
+      }
+    }
+    return { limited: false, remaining: maxRequests - 1 };
+  }
+  entry.count++;
+  if (entry.count > maxRequests) return { limited: true, remaining: 0 };
+  return { limited: false, remaining: maxRequests - entry.count };
+}
+
 const isLoadTestMode = (): boolean =>
   process.env.LOAD_TEST_MODE === 'true' || process.env.DISABLE_RATE_LIMIT === 'true';
 
@@ -152,14 +175,14 @@ export class DistributedRateLimiter {
       try {
         result = await this.isRateLimited(key);
       } catch (err) {
-        // PDIM queue temporarily congested — pass request through uncounted rather
-        // than fail it. PDIM is always reachable; this is transient backpressure.
+        // PDIM unavailable — fall back to in-process fixed-window counter so the
+        // rate limit is still enforced per worker rather than bypassed entirely.
         const now = Date.now();
         if (now - _lastRateLimitCongestionWarnAt >= RATE_LIMIT_CONGESTION_THROTTLE_MS) {
           _lastRateLimitCongestionWarnAt = now;
-          logger.warn('[RateLimit] PDIM congested — passing request through uncounted:', (err as Error).message);
+          logger.warn('[RateLimit] PDIM unavailable — using in-process fallback counter:', (err as Error).message);
         }
-        result = { limited: false, remaining: -1 };
+        result = _localRateCheck(key, this.config.maxRequests, this.config.windowMs);
       }
 
       res.setHeader('X-RateLimit-Limit', this.config.maxRequests);

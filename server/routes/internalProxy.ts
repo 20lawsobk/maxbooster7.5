@@ -25,19 +25,27 @@ function checkInternalSecret(req: Request, res: Response): boolean {
   return true;
 }
 
+// Short timeout for health/probe requests — avoids 15 s stall on every health poll.
+const HEALTH_PROBE_TIMEOUT_MS = 2_000;
+// Full timeout for normal inference/data requests.
+const PROXY_TIMEOUT_MS = 15_000;
+
 async function proxyTo(
   target: string,
   req: Request,
   res: Response,
   label: string,
 ): Promise<void> {
+  const isHealthProbe = req.path === '/health' || req.path === '/ping' || req.path === '/ready';
+  const timeoutMs = isHealthProbe ? HEALTH_PROBE_TIMEOUT_MS : PROXY_TIMEOUT_MS;
+
   const qs = Object.keys(req.query).length
     ? '?' + new URLSearchParams(req.query as Record<string, string>).toString()
     : '';
   const url = `${target}${req.path}${qs}`;
   try {
     const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-    const opts: RequestInit = { method: req.method, headers, signal: AbortSignal.timeout(15_000) };
+    const opts: RequestInit = { method: req.method, headers, signal: AbortSignal.timeout(timeoutMs) };
     if (req.method !== 'GET' && req.method !== 'HEAD') {
       opts.body = JSON.stringify(req.body);
     }
@@ -50,7 +58,14 @@ async function proxyTo(
       res.send(await upstream.text());
     }
   } catch (err) {
-    logger.debug(`[${label}] proxy → ${url} failed: ${err.message}`);
+    // For health probes: return 200/degraded instead of 503 so monitoring does not
+    // treat an offline Python sidecar as a full server outage and log at error level.
+    if (isHealthProbe) {
+      logger.debug(`[${label}] sidecar unreachable on health probe — reporting degraded`);
+      res.status(200).json({ status: 'degraded', available: false, service: label });
+      return;
+    }
+    logger.debug(`[${label}] proxy → ${url} failed: ${(err as Error).message}`);
     res.status(503).json({ error: `${label} unavailable` });
   }
 }
