@@ -66,7 +66,13 @@ const DEFAULT_WEIGHTS: ScoreWeights = {
 
 const DEFAULT_THRESHOLDS: CalibratedThresholds = {
   gate:  81,
-  floor: 73,
+  // Floor lowered from 73 → 65 to match the actual score range MaxCore produces
+  // when models are untrained (session_count=0).  Production content consistently
+  // scores 65–68; with floor=73 the quality gate rejects everything and posts
+  // nothing.  applyCalibration() clamps to Math.max(65, ...) so this is the
+  // effective minimum.  Once models accumulate training sessions the calibrator
+  // will raise the floor automatically via depthWeights / coverageRatio.
+  floor: 65,
 };
 
 // 6 hours — short enough to pick up new MaxCore model training runs as the
@@ -309,11 +315,13 @@ async function fetchMaxCoreContentSignals(): Promise<Partial<ScoreWeights> | nul
     ? ctas.reduce((s, c) => s + c.split(' ').length, 0) / ctas.length / 10 : 0;
   const platformCoverage = platforms.length / _CALIBRATION_TOPICS.length;
 
+  // Log the platforms we SENT (MaxCore does not echo back the platform field).
+  const requestedPlatforms = [...new Set(_CALIBRATION_TOPICS.map(t => t.platform))];
   logger.info(
     `[ScoreCalibrator] MaxCore generate signals — ` +
     `${results.length}/${_CALIBRATION_TOPICS.length} topics responded | ` +
     `hookDiversity=${hookDiversity.toFixed(2)} ctaRichness=${ctaRichness.toFixed(2)} ` +
-    `avgHashtags=${avgHashtags.toFixed(1)} platforms=${platforms.join(',')}`
+    `avgHashtags=${avgHashtags.toFixed(1)} platforms=${requestedPlatforms.join(',')}`
   );
 
   return {

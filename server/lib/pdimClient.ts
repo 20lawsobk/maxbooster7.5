@@ -19,6 +19,9 @@ import {
   cbRecordFailure as cbRecord503,
   cbRecordSuccess,
   cbHalfOpenFailed,
+  cbForceClose,
+  cbIsOpen,
+  cbGetState,
 } from './pdimCircuitBreaker.js';
 
 // ── Adaptive PDIM Rate Limiter (AIMD) ────────────────────────────────────────
@@ -1145,11 +1148,68 @@ let _pdimInstance: PdimRedisClient | null = null;
 export function getPdimClient(): PdimRedisClient {
   if (!_pdimInstance) {
     _pdimInstance = new PdimRedisClient();
+    // Start the direct-HTTP recovery prober on first use so the circuit can
+    // close even when PDIM's Lua layer is lagging behind its HTTP layer.
+    startPdimDirectProber();
   }
   return _pdimInstance;
 }
 
 export function isPdimConfigured(): boolean {
   return !!(process.env.PDIM_HTTP_EXEC_URL && process.env.PDIM_BEARER_TOKEN);
+}
+
+// ── Direct-HTTP circuit-recovery prober ──────────────────────────────────────
+// When the circuit is OPEN the only probe that fires is the HALF-OPEN one,
+// which goes through the full Lua executor path.  On deep cold-starts PDIM's
+// plain HTTP layer recovers ~60 s before its Lua/scripting layer does, so the
+// Lua-based probe keeps returning 500 even though PDIM is already serving
+// regular GET/SET commands.
+//
+// This background timer makes a lightweight direct POST (bypassing Lua) every
+// DIRECT_PROBE_INTERVAL_MS.  On HTTP 200 it calls cbForceClose() so the
+// circuit closes immediately — no more 60-s re-open/re-close cycling.
+//
+const DIRECT_PROBE_INTERVAL_MS = 15_000;
+const DIRECT_PROBE_TIMEOUT_MS  =  5_000;
+
+let _directProbeTimer: ReturnType<typeof setInterval> | null = null;
+
+export function startPdimDirectProber(): void {
+  if (_directProbeTimer) return; // already running
+
+  const pdimUrl   = process.env.PDIM_HTTP_EXEC_URL  || process.env.PDIM_EXEC_URL   || '';
+  const pdimToken = process.env.PDIM_BEARER_TOKEN    || process.env.PDIM_EXEC_TOKEN || '';
+  if (!pdimUrl || !pdimToken) return; // PDIM not configured — nothing to probe
+
+  _directProbeTimer = setInterval(async () => {
+    const state = cbGetState();
+    if (state === 'CLOSED') return; // circuit healthy — nothing to do
+
+    try {
+      const res = await fetch(pdimUrl, {
+        method : 'POST',
+        headers: {
+          'Content-Type' : 'application/json',
+          Authorization  : `Bearer ${pdimToken}`,
+        },
+        body  : JSON.stringify({ cmd: 'PING', args: [] }),
+        signal: AbortSignal.timeout(DIRECT_PROBE_TIMEOUT_MS),
+      });
+
+      if (res.ok) {
+        if (cbGetState() !== 'CLOSED') {
+          logger.info('[PDIM] Direct HTTP probe OK — force-closing circuit breaker');
+          cbForceClose();
+        }
+      } else {
+        logger.debug(`[PDIM] Direct probe: HTTP ${res.status} (circuit stays ${cbGetState()})`);
+      }
+    } catch (err) {
+      logger.debug(`[PDIM] Direct probe error: ${(err as Error).message}`);
+    }
+  }, DIRECT_PROBE_INTERVAL_MS);
+
+  _directProbeTimer.unref?.(); // don't block process exit
 }
 

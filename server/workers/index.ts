@@ -195,27 +195,89 @@ process.on('uncaughtException', (error) => {
   // EPIPE/ECONNRESET/ECONNABORTED are non-fatal stream/pipe errors (e.g. FFmpeg exits mid-render)
   const code = (error as NodeJS.ErrnoException).code;
   if (code === 'EPIPE' || code === 'ECONNRESET' || code === 'ECONNABORTED') return;
-  logger.warn({ err: error }, '❌ Uncaught exception:');
+  // PDIM 500/502 during cold-start: the circuit breaker slow-lane already
+  // handles these — no additional log or shutdown.
+  const eMsg = error?.message ?? '';
+  if (/PDIM HTTP 5/i.test(eMsg)) return;
+  // Truncate to first line so pino-pretty doesn't emit bare stack-trace lines
+  // without timestamp prefixes.
+  const summary = eMsg.split('\n')[0] ?? eMsg;
+  logger.warn({ errMsg: summary }, '❌ Uncaught exception:');
   gracefulShutdown('uncaughtException');
 });
 
 process.on('unhandledRejection', (reason: Record<string, unknown>) => {
-  const msg = reason?.message || String(reason);
+  const full = String(reason?.message ?? reason ?? '');
+  // Truncate to first line — pino-pretty prints multi-line strings as bare
+  // continuation lines without timestamp prefixes, flooding the log.
+  const msg  = full.split('\n')[0] ?? full;
   const code = reason?.code;
   // Never crash the worker process on transient/stream/network errors.
-  // Includes PDIM circuit-open, LuaExecutor timeout, and BullMQ non-array
-  // return from PDIM — all handled automatically by the ChainFixer.
+  // Includes PDIM cold-start 5xx, circuit-open, LuaExecutor timeout, and
+  // BullMQ non-array return — all handled automatically by the ChainFixer.
   const isNonFatal = (
     code === 'EPIPE' || code === 'ECONNRESET' || code === 'ECONNABORTED' ||
-    /EPIPE|ECONNRESET|ECONNABORTED|ECONNREFUSED|socket|fetch failed|Failed to fetch|Command timed out|Connection is closed|AbortError|\[PDIM\] Circuit OPEN|\[LuaExecutor\]|erroredJobIds|PDIM.*Circuit|script timeout/i.test(msg)
+    /EPIPE|ECONNRESET|ECONNABORTED|ECONNREFUSED|socket|fetch failed|Failed to fetch|Command timed out|Connection is closed|AbortError|\[PDIM\] Circuit OPEN|\[LuaExecutor\]|erroredJobIds|PDIM.*Circuit|script timeout|PDIM HTTP 5/i.test(msg)
   );
-  if (isNonFatal) {
-    logger.warn('⚠️ Non-fatal worker rejection (ignoring):', msg);
-    return;
-  }
+  if (isNonFatal) return; // circuit breaker / ChainFixer already handles these
   // Log but do NOT shut down — BullMQ retries handle job-level failures.
   logger.warn('❌ Unhandled rejection (workers):', msg);
 });
+
+/**
+ * Poll PDIM with a lightweight PING until it returns 200 or the deadline passes.
+ *
+ * Why: PDIM (pocketdimensionstorage.replit.app) may be in a sleeping/cold-start
+ * state when Max Booster restarts.  The first few hundred requests during its
+ * ~45-second wake-up window return HTTP 500/502.  BullMQ's initial
+ * moveStalledJobsToWait Lua scripts each make ~35 sequential redis.call()s,
+ * so even 4 workers × 2 concurrency = 8 initial scripts × 35 calls = 280 PDIM
+ * requests fire in the first 5 s, completely overwhelming PDIM before it is
+ * ready.  Waiting here costs ~45 s of startup delay in exchange for eliminating
+ * the 45-s flood of 500s, the circuit-breaker open cycle, and the PDIM chain
+ * stall (up to 90 callers queued) that previously degraded the app for 2-3 min.
+ *
+ * The probe goes directly to the PDIM HTTP endpoint, bypassing the circuit
+ * breaker and AIMD chain, so it does not add traffic to the chain itself.
+ */
+async function waitForPdimReady(maxWaitMs = 130_000, retryMs = 2_000): Promise<void> {
+  const pdimUrl   = process.env.PDIM_HTTP_EXEC_URL;
+  const pdimToken = process.env.PDIM_BEARER_TOKEN;
+  if (!pdimUrl || !pdimToken) return; // no PDIM configured — skip gate
+
+  const deadline = Date.now() + maxWaitMs;
+  let attempt    = 0;
+
+  while (Date.now() < deadline) {
+    attempt++;
+    try {
+      const res = await fetch(pdimUrl, {
+        method : 'POST',
+        headers: {
+          'Content-Type' : 'application/json',
+          'Authorization': `Bearer ${pdimToken}`,
+        },
+        body  : JSON.stringify({ cmd: 'PING', args: [] }),
+        signal: AbortSignal.timeout(5_000),
+      });
+      if (res.ok) {
+        const elapsed = Date.now() - (deadline - maxWaitMs);
+        logger.info(
+          `[Workers] PDIM ready after ${attempt} probe(s) (${elapsed}ms) — starting BullMQ workers`
+        );
+        return;
+      }
+      logger.debug(`[Workers] PDIM probe #${attempt}: HTTP ${res.status} — retrying in ${retryMs}ms`);
+    } catch (err) {
+      logger.debug(`[Workers] PDIM probe #${attempt} error: ${(err as Error).message}`);
+    }
+    await new Promise<void>(r => setTimeout(r, retryMs));
+  }
+
+  logger.warn(
+    `[Workers] PDIM not ready after ${maxWaitMs / 1000}s — starting BullMQ workers anyway`
+  );
+}
 
 export async function initializeWorkers(): Promise<void> {
   logger.info('🚀 BullMQ workers initializing (Redis-backed, ack + DLQ + retry)...');
@@ -227,6 +289,27 @@ export async function initializeWorkers(): Promise<void> {
   analyticsWorker = createAnalyticsWorker();
   emailWorker     = createEmailWorker();
 
+  logger.info('📋 Active BullMQ workers (staggered startup — 5s apart after PDIM is ready):');
+  logger.info(`   - Audio     (concurrency: ${config.queue.concurrency.audio})`);
+  logger.info(`   - CSV       (concurrency: ${config.queue.concurrency.csv})`);
+  logger.info(`   - Analytics (concurrency: ${config.queue.concurrency.analytics})`);
+  logger.info(`   - Email     (concurrency: ${config.queue.concurrency.email})`);
+
+  try {
+    const { initializeWeeklyInsightsCron } = await import('./weeklyInsightsCron.js');
+    initializeWeeklyInsightsCron();
+  } catch (error) {
+    logger.warn({ err: error }, '⚠️  Could not initialize weekly insights cron:');
+  }
+
+  // ── PDIM readiness gate ───────────────────────────────────────────────────
+  // Block here until PDIM responds to a PING.  All four BullMQ worker run()
+  // calls are held until PDIM is confirmed healthy, preventing the startup
+  // Lua-script flood that previously caused 380+ 500 errors and a circuit-open
+  // cycle on every restart.  Worker objects are already created above so job
+  // submissions can still queue up while we wait — only polling is deferred.
+  await waitForPdimReady();
+
   // Stagger run() calls by STAGGER_MS per worker to prevent all four workers from
   // firing their initial moveStalledJobsToWait Lua script simultaneously on startup.
   // With stalledInterval=300s the stall checks are: audio@0s, csv@5s, analytics@10s,
@@ -236,19 +319,6 @@ export async function initializeWorkers(): Promise<void> {
   setTimeout(() => startWorkerSafe(csvWorker!,       'csv'),       1 * STAGGER_MS);
   setTimeout(() => startWorkerSafe(analyticsWorker!, 'analytics'), 2 * STAGGER_MS);
   setTimeout(() => startWorkerSafe(emailWorker!,     'email'),     3 * STAGGER_MS);
-
-  logger.info('📋 Active BullMQ workers (staggered startup — 5s apart):');
-  logger.info(`   - Audio     (concurrency: ${config.queue.concurrency.audio}, starts now)`);
-  logger.info(`   - CSV       (concurrency: ${config.queue.concurrency.csv},       starts +5s)`);
-  logger.info(`   - Analytics (concurrency: ${config.queue.concurrency.analytics}, starts +10s)`);
-  logger.info(`   - Email     (concurrency: ${config.queue.concurrency.email},     starts +15s)`);
-
-  try {
-    const { initializeWeeklyInsightsCron } = await import('./weeklyInsightsCron.js');
-    initializeWeeklyInsightsCron();
-  } catch (error) {
-    logger.warn({ err: error }, '⚠️  Could not initialize weekly insights cron:');
-  }
 
   logger.info('⏳ BullMQ workers listening for jobs (staggered)...');
 }

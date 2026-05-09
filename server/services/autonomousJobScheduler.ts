@@ -208,8 +208,12 @@ function createAutonomousWorker(): Worker {
     logger.warn(`[AutonomousScheduler] ❌ ${job?.name} failed: ${msg}`);
   });
   worker.on('error', err => {
-    const msg = err?.message ?? '';
-    if (/Missing lock for job|PDIM circuit OPEN|Circuit OPEN/i.test(msg)) return;
+    const full = err?.message ?? '';
+    // Strip Lua/Node.js stack traces — keep only the first line of the message.
+    const msg = full.split('\n')[0] ?? full;
+    // Silence PDIM circuit-open and 5xx during cold-start — the circuit breaker
+    // slow-lane already handles these and logs its own diagnostics.
+    if (/Missing lock for job|PDIM circuit OPEN|Circuit OPEN|PDIM HTTP 5/i.test(msg)) return;
     logger.warn('[AutonomousScheduler] Worker error:', msg);
   });
 
@@ -263,7 +267,14 @@ export async function setupRepeatableJobs(): Promise<void> {
   await Promise.allSettled(
     REPEATABLE_JOBS.map(({ name, every }) =>
       queue.upsertJobScheduler(name, { every }, { data: {}, opts: SCHED_DEFAULTS })
-        .catch((err: Error) => logger.warn(`[AutonomousScheduler] Failed to register ${name}: ${err?.message}`))
+        .catch((err: Error) => {
+          // Truncate Lua stack traces to a single line; silence PDIM 5xx cold-start
+          // errors (the scheduler retries automatically on the next boot cycle).
+          const full = err?.message ?? '';
+          const msg  = full.split('\n')[0] ?? full;
+          if (/PDIM HTTP 5/i.test(msg)) return;
+          logger.warn(`[AutonomousScheduler] Failed to register ${name}: ${msg}`);
+        })
     )
   );
 

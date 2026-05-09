@@ -257,18 +257,26 @@ export function startRetentionWorker(): Worker {
   });
 
   worker.on('error', err => {
-    const msg = err.message ?? '';
+    const full = err.message ?? '';
+    // Strip Lua/Node.js stack traces: only keep the first line of the message
+    // so logs stay single-line during PDIM cold-starts (the remainder is
+    // always the Lua "stack traceback:" block plus Node.js call frames).
+    const msg = full.split('\n')[0] ?? full;
     // "Missing lock for job X. moveToFinished" is a BullMQ-internal race that
     // fires when a slow LuaExecutor round-trip causes the job lock to expire
     // before the Lua moveToFinished script runs.  It is fully self-healing —
     // BullMQ re-queues the job automatically — so log it at WARN, not ERROR.
-    // PDIM HTTP 429 during post-restart stale-job flood is also transient
+    // PDIM HTTP 5xx / 429 during post-restart cold-start is also transient
     // and self-healing — log at WARN so it doesn't pollute error dashboards.
     if (
       // Circuit-open rejections are expected during PDIM outages — completely
       // silent: the circuit breaker already logs the open/probe events.
       msg.includes('PDIM circuit OPEN') ||
-      msg.includes('Circuit OPEN')
+      msg.includes('Circuit OPEN') ||
+      // PDIM 500/502 during cold-start: circuit breaker slow-lane already
+      // handles these; no additional log needed.
+      msg.includes('PDIM HTTP 500') ||
+      msg.includes('PDIM HTTP 502')
     ) {
       // intentionally silent
     } else if (

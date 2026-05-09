@@ -477,10 +477,17 @@ app.use((req: Request, res: Response, next: NextFunction) => {
     logger.warn(`[ChainFixer] Failed to start: ${e.message}`);
   }
 
-  // Start platform auto-fixer — proactive subsystem health probing + runtime patching
+  // Start platform auto-fixer — proactive subsystem health probing + runtime patching.
+  // The probe loop (DB/PDIM/session queries, MaxCore pings) only runs on worker 0 to
+  // avoid doubling all health-check traffic across every cluster worker.
+  // The middleware (per-route 5xx rate tracker) always runs — it has no external I/O.
   try {
     const { platformAutoFixer, platformFixerMiddleware } = await import('./services/platformAutoFixer.js');
-    platformAutoFixer.start();
+    if (isBgWorker) {
+      platformAutoFixer.start();
+    } else {
+      logger.info(`[PlatformAutoFixer] Worker ${clusterId} — middleware active, probe loop handled by worker 0`);
+    }
     app.use(platformFixerMiddleware);
   } catch (e) {
     logger.warn(`[PlatformAutoFixer] Failed to start: ${e.message}`);
@@ -1303,22 +1310,35 @@ app.use((req: Request, res: Response, next: NextFunction) => {
           initMaxCoreSync().catch((e) => logger.warn('[MaxCoreSync] Init error:', e?.message));
         }).catch(() => {});
 
-        // MaxCore Score Calibrator — calibrates VeoGate weights/thresholds against 8TB corpus
-        import('./services/maxcoreScoreCalibrator.js').then(({ initScoreCalibrator }) => {
-          initScoreCalibrator();
-        }).catch(() => {});
+        // MaxCore Score Calibrator — calibrates VeoGate weights/thresholds against 8TB corpus.
+        // Runs on worker 0 only: each calibration fires 5 sequential MaxCore generate calls
+        // (~31 s total).  Both workers running it would double that to 10 calls with duplicate
+        // results and redundant log noise.
+        if (isBgWorker) {
+          import('./services/maxcoreScoreCalibrator.js').then(({ initScoreCalibrator }) => {
+            initScoreCalibrator();
+          }).catch(() => {});
+        } else {
+          logger.info(`[ScoreCalibrator] Worker ${clusterId} — calibration handled by worker 0`);
+        }
 
         // Diffusion self-training: starts 60s after boot so server is stable first.
+        // Runs on worker 0 only: spawning Python synthesizer.py from multiple workers
+        // causes file-lock contention on meta.json / memory.json and doubles CPU load.
         // startBackgroundTraining() checks the MaxCore Diffusion Gateway on port 8008
         // first — if the Gateway is running, the local synthesizer is skipped (MaxCore
         // is the authoritative diffusion training source).
-        setTimeout(() => {
-          import('./services/diffusionBackgroundTrainer.js').then(({ startBackgroundTraining }) => {
-            startBackgroundTraining().then((result?: void) => {
-              logger.info('🎬 [DiffBG] Diffusion trainer initialised (MaxCore Gateway or local fallback)');
-            }).catch((e) => logger.warn('[DiffBG] Background trainer init error:', e?.message));
-          }).catch((e) => logger.warn('[DiffBG] Could not import background trainer:', e?.message));
-        }, 60_000);
+        if (isBgWorker) {
+          setTimeout(() => {
+            import('./services/diffusionBackgroundTrainer.js').then(({ startBackgroundTraining }) => {
+              startBackgroundTraining().then((result?: void) => {
+                logger.info('🎬 [DiffBG] Diffusion trainer initialised (MaxCore Gateway or local fallback)');
+              }).catch((e) => logger.warn('[DiffBG] Background trainer init error:', e?.message));
+            }).catch((e) => logger.warn('[DiffBG] Could not import background trainer:', e?.message));
+          }, 60_000);
+        } else {
+          logger.info(`[DiffBG] Worker ${clusterId} — diffusion training handled by worker 0`);
+        }
 
         // Neon keepalive: pool idleTimeoutMillis=60s, keepalive pings every 25s so
         // connections are refreshed well before the idle timeout fires.  Without this,
@@ -1417,7 +1437,14 @@ process.on('uncaughtException', (error: Error) => {
   // EPIPE/ECONNRESET/ECONNABORTED are non-fatal stream/pipe errors (e.g. FFmpeg exits mid-render)
   const code = (error as NodeJS.ErrnoException).code;
   if (code === 'EPIPE' || code === 'ECONNRESET' || code === 'ECONNABORTED') return;
-  logger.warn({ err: error }, '[Process] Uncaught exception — shutting down:');
+  const eMsg = error?.message ?? '';
+  // PDIM 500/502 during cold-start: the circuit breaker slow-lane already
+  // handles these — no additional log or shutdown needed.
+  if (/PDIM HTTP 5/i.test(eMsg)) return;
+  // Truncate to first line so pino-pretty doesn't emit bare multi-line stack
+  // traces that appear without timestamp prefixes in the workflow logs.
+  const summary = eMsg.split('\n')[0] ?? eMsg;
+  logger.warn({ errMsg: summary }, '[Process] Uncaught exception — shutting down:');
   gracefulShutdown('uncaughtException', 1);
 });
 
@@ -1429,7 +1456,7 @@ process.on('unhandledRejection', (reason: unknown) => {
   // handle automatically.  Suppress them so they do not trigger a restart.
   const isNonFatal = (
     (code && ['EPIPE', 'ECONNRESET', 'ECONNABORTED'].includes(code)) ||
-    /EPIPE|ECONNRESET|ECONNABORTED|ECONNREFUSED|AbortError|fetch failed|Failed to fetch|Command timed out|Connection is closed|\[PDIM\] Circuit OPEN|\[LuaExecutor\] script timeout|\[LuaExecutor\] Wait queue saturated|erroredJobIds|PDIM.*Circuit|script timeout exceeded/i.test(err.message)
+    /EPIPE|ECONNRESET|ECONNABORTED|ECONNREFUSED|AbortError|fetch failed|Failed to fetch|Command timed out|Connection is closed|\[PDIM\] Circuit OPEN|\[LuaExecutor\] script timeout|\[LuaExecutor\] Wait queue saturated|erroredJobIds|PDIM.*Circuit|script timeout exceeded|PDIM HTTP 5/i.test(err.message)
   );
 
   if (isNonFatal) return; // instrument.ts already logs as warn

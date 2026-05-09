@@ -63,6 +63,26 @@ const MAX_QUEUE_SIZE = 2000;
 // the event loop and preventing HTTP requests from being handled.
 const CIRCUIT_OPEN_BACKOFF_MS = 5_000;
 
+// ── Consecutive PDIM error backoff ────────────────────────────────────────────
+// When PDIM returns 5xx errors on Lua script calls the slot is normally
+// released immediately, causing BullMQ to retry at full speed (~14 retries/s
+// with 4 workers).  That flood itself can push PDIM from HTTP 500 → HTTP 502.
+// We track consecutive script-level PDIM 5xx errors and exponentially delay
+// slot release so BullMQ's effective retry rate backs off:
+//   1 error  →  0 ms  (first failure, no delay)
+//   2 errors →  1 s
+//   3 errors →  2 s
+//   4 errors →  4 s
+//   5+       →  8 s  (capped — still recovers fast when PDIM stabilises)
+// On any successful script completion the counter resets to 0.
+let _luaConsecutivePdimErrors = 0;
+const LUA_PDIM_ERR_BACKOFF_CAP_MS = 8_000;
+
+function _luaComputeBackoff(): number {
+  if (_luaConsecutivePdimErrors < 2) return 0;
+  return Math.min(LUA_PDIM_ERR_BACKOFF_CAP_MS, 500 * Math.pow(2, _luaConsecutivePdimErrors - 2));
+}
+
 let _activeWorkers = 0;
 
 // Each queued waiter stores its resolve fn and timeout handle separately.
@@ -293,6 +313,30 @@ export async function execLuaViaPdim(
     return typeof arg === 'string' ? arg : String(arg);
   });
 
+  // ── Pre-flight PDIM health throttle ─────────────────────────────────────────
+  // When PDIM has been returning 5xx errors on recent Lua scripts, every new
+  // caller waits the computed backoff BEFORE entering the slot queue.  This is
+  // the only reliable place to throttle BullMQ's retry rate:
+  //
+  //   • The 'error' message handler fires after worker.on('exit'), so any sleep
+  //     there is bypassed by the exit handler settling first.
+  //   • A pre-flight await runs before the slot is acquired, so ALL queued
+  //     callers (BullMQ pollers) must wait — retry rate drops proportionally.
+  //
+  // Backoff schedule (consecutive errors → wait):
+  //   0-1 errors → 0ms     (no delay — first failure is allowed immediately)
+  //   2 errors   → 500ms
+  //   3 errors   → 1000ms
+  //   4 errors   → 2000ms
+  //   5+ errors  → cap (8000ms)  → ~0.5 retries/s for 4 workers combined
+  if (_luaConsecutivePdimErrors >= 2) {
+    const preflightWaitMs = _luaComputeBackoff();
+    if (preflightWaitMs > 0) {
+      logger.debug(`[LuaExecutor] pre-flight backoff ${preflightWaitMs}ms (${_luaConsecutivePdimErrors} consecutive PDIM errors)`);
+      await new Promise<void>(r => setTimeout(r, preflightWaitMs));
+    }
+  }
+
   // Skip Worker spawn entirely when PDIM is known to be down.
   // The circuit breaker trips after 5 consecutive failures and backs off.
   // This prevents wasmoon WASM Workers from accumulating and causing a segfault.
@@ -326,6 +370,10 @@ export async function execLuaViaPdim(
 
   return new Promise((resolve, reject) => {
     let settled = false;
+    // Guards against double-counting the same failure in both the 'error' message
+    // handler and the exit handler — both can observe the same execution failure.
+    let pdim5xxCounted = false;
+
     const settle = (fn: () => void) => {
       if (!settled) {
         settled = true;
@@ -378,10 +426,10 @@ export async function execLuaViaPdim(
           status  = 1; // success
         } catch (e) {
           const short = (e.message as string).slice(0, 200);
-          // 502 means PDIM itself is down — the circuit breaker already logs
-          // this at WARN/ERROR level; repeat per-command logs add no value and
-          // flood the console during extended outages.  Use debug for 5xx/down.
-          if (short.includes('502') || short.includes('Circuit OPEN')) {
+          // 5xx responses and circuit-open fast-fails are already captured at
+          // WARN/ERROR by the circuit breaker itself.  Repeating them per-command
+          // floods the console during startup bursts — use debug for all PDIM 5xx.
+          if (short.includes('500') || short.includes('502') || short.includes('Circuit OPEN')) {
             logger.debug(`[LuaExecutor] redis.call(${msg.cmd}) → ${short}`);
           } else {
             logger.warn(`[LuaExecutor] redis.call(${msg.cmd}) → ${short}`);
@@ -400,10 +448,24 @@ export async function execLuaViaPdim(
         Atomics.notify(ctrl, 0, 1);
       } else if (msg.type === 'result') {
         clearInterval(watchdog);
+        // Script completed successfully — reset the consecutive PDIM error counter
+        // so the next call gets no pre-flight delay.
+        _luaConsecutivePdimErrors = 0;
         settle(() => { worker.terminate(); resolve(msg.result); });
       } else if (msg.type === 'error') {
         clearInterval(watchdog);
-        settle(() => { worker.terminate(); reject(new Error(msg.error)); });
+        const errMsg = String(msg.error ?? '');
+        const isPdim5xx = errMsg.includes('HTTP 500') || errMsg.includes('HTTP 502');
+        if (isPdim5xx && !pdim5xxCounted) {
+          // Count this failure so the NEXT call's pre-flight wait is longer.
+          // The pre-flight await (above the slot acquire) is where throttling
+          // actually happens — no backoff sleep needed here.
+          pdim5xxCounted = true;
+          _luaConsecutivePdimErrors++;
+        } else if (!isPdim5xx) {
+          _luaConsecutivePdimErrors = 0;
+        }
+        settle(() => { worker.terminate(); reject(new Error(errMsg)); });
       }
     });
 
@@ -417,9 +479,30 @@ export async function execLuaViaPdim(
     // bypasses the try/catch).  Without this handler _activeWorkers never
     // decrements, drifting above MAX_CONCURRENT_WORKERS and permanently
     // congesting the semaphore (observed: active=7 with cap=6).
+    //
+    // IMPORTANT: In Node.js, worker.on('exit') often fires BEFORE a pending
+    // postMessage from that worker is processed by worker.on('message').  This
+    // means the 'error'/'result' message handler may not have run yet when exit
+    // fires.  We defer settlement by one event-loop iteration (setImmediate) so
+    // pending messages get a chance to call settle() first.  If neither
+    // 'result' nor 'error' was received by then, we settle here and also count
+    // the exit as a potential PDIM 5xx error (code=0 means the Lua script
+    // completed but threw — almost always because redis.call() got a 5xx).
     worker.on('exit', (code) => {
       clearInterval(watchdog);
-      settle(() => reject(new Error(`[LuaExecutor] worker exited unexpectedly (code=${code})`)));
+      setImmediate(() => {
+        if (!settled) {
+          // Neither 'result' nor 'error' message was processed before exit.
+          // For code=0 (clean exit after a throw), this is most likely a PDIM
+          // 5xx that caused Lua to raise an error — count it so the next
+          // pre-flight wait is longer, unless already counted by the message handler.
+          if (code === 0 && !pdim5xxCounted) {
+            pdim5xxCounted = true;
+            _luaConsecutivePdimErrors++;
+          }
+          settle(() => reject(new Error(`[LuaExecutor] worker exited unexpectedly (code=${code})`)));
+        }
+      });
     });
   });
 }

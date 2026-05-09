@@ -231,6 +231,10 @@ export class APIResponseCache {
    */
   async pollTick(): Promise<void> {
     if (!distributedCache.isConnected()) return;
+    // Skip PDIM calls while PDIM is in any warm-up phase or circuit is open —
+    // the 100 ms interval would otherwise flood the exec queue during cold-start.
+    const { cbIsPdimUnhealthy } = await import('../lib/pdimCircuitBreaker.js');
+    if (cbIsPdimUnhealthy()) return;
     try {
       const redis = getRedisClient();
 

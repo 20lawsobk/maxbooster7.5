@@ -79,7 +79,10 @@ class ModelWeightStorage {
         logger.info(`[WeightStorage] ${name} stored in Pocket Dimension (${Math.round(buf.length / 1024)} KB uncompressed)`);
       } catch (err) {
         const msg = err instanceof Error ? err.message : String(err);
-        logger.warn(`[WeightStorage] Pocket Dimension write failed for ${name}: ${msg}`);
+        // Downgraded from warn→debug: local file write already succeeded above,
+        // so data is safe in ai_model/weights/.  PDIM is a secondary backup;
+        // its failure here is not data loss.  Warn-level floods logs every 10 min.
+        logger.debug(`[WeightStorage] Pocket Dimension write failed for ${name} (local file safe): ${msg}`);
       }
     }
   }

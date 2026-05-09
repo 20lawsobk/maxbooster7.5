@@ -728,11 +728,14 @@ class PlatformAutoFixer extends EventEmitter {
 
     try {
       // Ping the session store via a direct DB query (the session store uses the same pool).
+      // Timeout raised 3s → 5s: Neon cold-starts on the first post-boot probe routinely
+      // exceed 3s, triggering a false "sessions degraded" alert and escalating the probe
+      // interval to 5s for the rest of the boot window.
       const { pool } = await import('../db.js');
       const start = Date.now();
       await Promise.race([
         pool.query('SELECT 1 FROM session WHERE expire > NOW() LIMIT 1'),
-        new Promise((_, rej) => setTimeout(() => rej(new Error('session ping timeout')), 3000)),
+        new Promise((_, rej) => setTimeout(() => rej(new Error('session ping timeout')), 5000)),
       ]) as Record<string, unknown>;
       const pingMs = Date.now() - start;
       details = { pingMs };
@@ -743,11 +746,18 @@ class PlatformAutoFixer extends EventEmitter {
         message = `Session store OK (${pingMs}ms)`;
       }
     } catch (err) {
-      const msg = err.message ?? '';
+      const msg = (err as Error).message ?? '';
       // 'session' table may not exist (no sessions yet) — not a real failure.
       if (msg.includes('does not exist') || msg.includes('relation "session"')) {
         status  = 'unknown';
         message = 'Session table not yet created (no sessions)';
+      } else if (msg.includes('session ping timeout') && process.uptime() < 90) {
+        // First-probe timeout within 90s of startup is almost always Neon cold-start,
+        // not a genuine session-store failure.  Report unknown (not degraded) to avoid
+        // triggering the 5s critical probe interval during normal boot.
+        status  = 'unknown';
+        message = `Session probe timed out during startup warm-up — likely Neon cold-start`;
+        details = { error: msg, uptimeSec: Math.round(process.uptime()) };
       } else {
         status  = 'degraded';
         message = `Session probe failed: ${msg}`;
