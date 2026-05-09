@@ -502,6 +502,18 @@ function variance(arr: number[]): number {
 
 let _refreshTimer: ReturnType<typeof setInterval> | null = null;
 
+/**
+ * Invalidate the calibration cache so the next runCalibration() call
+ * bypasses the 6-hour TTL guard and runs immediately.
+ *
+ * Called by maxcoreSync after a successful weight pull — ensures the quality
+ * gate thresholds are refreshed within the same 10-minute training cycle
+ * rather than waiting up to 6 hours for the scheduled refresh.
+ */
+export function invalidateCalibrationCache(): void {
+  _lastCalibrated = 0;
+}
+
 export function initScoreCalibrator(): void {
   // Start the LLM warmth pinger immediately.
   // It fires its first ping right away, so the LLM is fully warm before the

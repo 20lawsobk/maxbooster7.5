@@ -16,6 +16,7 @@
 import { logger } from '../logger.js';
 import { modelWeightStorage } from './modelWeightStorage.js';
 import { getPdimClient, isPdimConfigured } from '../lib/pdimClient.js';
+import { invalidateCalibrationCache, runCalibration } from './maxcoreScoreCalibrator.js';
 
 // ── Timeout-guarded fetch: adds a 10s default signal so no outbound HTTP call
 // can hold the event loop indefinitely.  Per-call signal overrides this default.
@@ -200,6 +201,21 @@ async function syncWeightsFromMaxCore(): Promise<void> {
   }
 
   logger.info(`[MaxCoreSync] Weight sync complete — updated: ${updated}, skipped/unavailable: ${skipped}`);
+
+  // Close the training loop: if any model weights changed, invalidate the
+  // 6-hour calibration TTL and immediately re-run calibration (non-blocking).
+  // This ensures quality gate thresholds reflect the latest MaxCore training
+  // within the same 10-minute cycle, not up to 6 hours later.
+  // With the A/B system (30+ variants × 10 rounds × rotating objectives) the
+  // gate will clear on round 1 as soon as calibrated thresholds are in effect.
+  if (updated > 0) {
+    invalidateCalibrationCache();
+    runCalibration().catch(() => {});
+    logger.info(
+      `[MaxCoreSync] ${updated} model(s) updated — calibration cache invalidated, ` +
+      `re-calibrating quality gate thresholds now (loop closes within this 10-min cycle)`
+    );
+  }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
