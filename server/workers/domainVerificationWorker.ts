@@ -21,11 +21,13 @@
 import { pool } from '../db.js';
 import { verifyStorefrontDomain, runDomainHealthSweep } from '../services/storefrontDnsService.js';
 import { logger } from '../logger.js';
+import { pMap } from '../lib/concurrencyPool.js';
 
-const POLL_INTERVAL_MS   = parseInt(process.env.DOMAIN_VERIFY_INTERVAL_MS ?? '60000', 10);
-const BATCH_SIZE         = 20;   // max domains per tick — avoids thundering herd
-const MAX_FAILURE_BACKOFF = 60;  // after N failures, back off to hourly retry
-const BACKOFF_MODULO      = 60;  // tick count modulo for backed-off domains (1/hr at 1/min poll)
+const POLL_INTERVAL_MS    = parseInt(process.env.DOMAIN_VERIFY_INTERVAL_MS ?? '60000', 10);
+const BATCH_SIZE          = 20;   // max domains fetched per tick
+const VERIFY_CONCURRENCY  = parseInt(process.env.DOMAIN_VERIFY_CONCURRENCY ?? '5', 10); // parallel DoH checks
+const MAX_FAILURE_BACKOFF = 60;   // after N failures, back off to hourly retry
+const BACKOFF_MODULO      = 60;   // tick count modulo for backed-off domains (1/hr at 1/min poll)
 const HEALTH_SWEEP_TICKS  = 12 * 60; // 12-hour cadence in ticks
 
 let intervalHandle: ReturnType<typeof setInterval> | null = null;
@@ -61,28 +63,31 @@ async function runVerificationTick(): Promise<void> {
     return;
   }
 
-  if (rows.length > 0) {
-    logger.debug({ count: rows.length, tick: tickCount }, '[domainVerify] checking pending domains');
+  const eligible = rows.filter(r => shouldCheckDomain(r.verification_failures));
+
+  if (eligible.length > 0) {
+    logger.debug(
+      { total: rows.length, eligible: eligible.length, concurrency: VERIFY_CONCURRENCY, tick: tickCount },
+      '[domainVerify] checking pending domains (parallel)',
+    );
   }
 
-  for (const { id, domain, verification_failures } of rows) {
-    if (!shouldCheckDomain(verification_failures)) continue;
-
-    try {
+  // Run up to VERIFY_CONCURRENCY DoH checks concurrently instead of one-at-a-time.
+  // Each check is independent (different domain, different DNS query) so full
+  // parallelism is safe. A small inter-batch gap (200 ms) keeps DoH traffic from
+  // bursting when all BATCH_SIZE slots fire simultaneously.
+  await pMap(
+    eligible,
+    async ({ id, domain }) => {
       const result = await verifyStorefrontDomain(id);
       if (result === 'verified') {
         logger.info({ domain }, '[domainVerify] ✅ domain verified and activated');
       } else if (result === 'failed') {
         logger.warn({ domain }, '[domainVerify] domain verification permanently failed');
       }
-      // 'pending' — still waiting; nothing to log at info level
-    } catch (err) {
-      logger.warn({ err, domain }, '[domainVerify] error checking domain');
-    }
-
-    // Small gap between checks to avoid bursting DoH
-    await new Promise(r => setTimeout(r, 250));
-  }
+    },
+    VERIFY_CONCURRENCY,
+  );
 
   // ── Domain health sweep every 12 hours ───────────────────────────────────
   if (tickCount % HEALTH_SWEEP_TICKS === 0) {

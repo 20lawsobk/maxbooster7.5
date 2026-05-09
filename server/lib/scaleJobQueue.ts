@@ -212,21 +212,19 @@ export function startRetentionWorker(): Worker {
     },
     {
       connection,
-      concurrency: 1,
+      // Use WORKER_CONCURRENCY (env BULLMQ_CONCURRENCY, default 3) instead of
+      // hard-coding 1. All retention job types (health-score, dunning, re-engagement,
+      // feature-event-flush) are independent — they read/write disjoint DB tables —
+      // so running them concurrently is safe and cuts total wall-clock time.
+      concurrency: WORKER_CONCURRENCY,
       runRetryDelay: 30000,
       autorun: false,
       drainDelay: 120_000,
-      // stalledInterval: 5 min — moveStalledJobsToWait runs ~35 PDIM redis.call()s;
-      // raising from 60 s to 5 min reduces these Lua script executions 5× and
-      // reduces overall PDIM load from stall checks (scripts run to natural
-      // completion via the 50ms fast-lane; the 5 min cadence remains optimal).
       stalledInterval: 300_000,
       maxStalledCount: 1,
-      // lockDuration: 10 min — lock renewal fires every lockDuration/2 = 5 min.
-      // Raising from 60 s cuts lock-renewal Lua scripts from 1/min to 1/5min.
       lockDuration: 600_000,
       limiter: {
-        max: 1,
+        max: WORKER_CONCURRENCY,
         duration: 5_000,
       },
     }

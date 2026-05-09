@@ -512,7 +512,11 @@ export class SelfHealingSecurityEngine extends EventEmitter {
   }
 
   private async respondToThreat(assessment: ThreatAssessment): Promise<void> {
-    for (const actionType of assessment.recommendedActions) {
+    // All recommended actions are independent (block_ip, rate_limit, alert, etc.)
+    // so run them concurrently instead of sequentially. Each action registers
+    // itself into healingActions before awaiting so the dashboard sees all of
+    // them immediately, regardless of execution order.
+    const actions: HealingAction[] = assessment.recommendedActions.map(actionType => {
       const action: HealingAction = {
         id: randomBytes(8).toString('hex'),
         threatId: assessment.id,
@@ -521,20 +525,24 @@ export class SelfHealingSecurityEngine extends EventEmitter {
         startTime: Date.now(),
         details: {},
       };
-
       this.healingActions.set(action.id, action);
+      return action;
+    });
 
-      try {
-        await this.executeAction(action, assessment);
-        action.status = 'completed';
-        action.endTime = Date.now();
-      } catch (error) {
-        action.status = 'failed';
-        action.endTime = Date.now();
-        action.details.error = String(error);
-        logger.warn({ err: error }, `Healing action ${actionType} failed:`);
-      }
-    }
+    await Promise.allSettled(
+      actions.map(async (action) => {
+        try {
+          await this.executeAction(action, assessment);
+          action.status = 'completed';
+          action.endTime = Date.now();
+        } catch (error) {
+          action.status = 'failed';
+          action.endTime = Date.now();
+          action.details.error = String(error);
+          logger.warn({ err: error }, `Healing action ${action.type} failed:`);
+        }
+      })
+    );
   }
 
   private async executeAction(action: HealingAction, assessment: ThreatAssessment): Promise<void> {
@@ -654,13 +662,15 @@ export class SelfHealingSecurityEngine extends EventEmitter {
 
   private startDetectionLoop(): void {
     setInterval(() => {
-      while (this.eventQueue.length > 0 && this.eventQueue.length > 100) {
-        const events = this.eventQueue.splice(0, 50);
-        for (const event of events) {
-          this.detectThreat(event).catch(err => 
-            logger.warn({ err: err }, 'Detection error:')
-          );
-        }
+      // Process any queued events, not just when >100 are present.
+      // Drain up to 50 per tick; each detectThreat fires concurrently
+      // (non-blocking — no await) so the full batch starts simultaneously.
+      if (this.eventQueue.length === 0) return;
+      const events = this.eventQueue.splice(0, 50);
+      for (const event of events) {
+        this.detectThreat(event).catch(err =>
+          logger.warn({ err }, 'Detection error:')
+        );
       }
     }, 10);
   }

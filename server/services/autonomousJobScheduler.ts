@@ -83,20 +83,37 @@ async function pruneUploadDirs(days = 7): Promise<void> {
   ];
   const cutoffMs = Date.now() - days * 86_400_000;
   let total = 0;
-  for (const dir of dirs) {
-    let entries: string[];
-    try { entries = await fsPromises.readdir(dir); } catch { continue; }
-    for (const name of entries) {
-      const full = path.join(dir, name);
-      try {
-        const stat = await fsPromises.stat(full);
-        if (stat.isFile() && stat.mtimeMs < cutoffMs) {
-          await fsPromises.unlink(full);
-          total++;
-        }
-      } catch { /* file gone or permission issue — skip */ }
-    }
-  }
+
+  // Scan all directories in parallel — each dir is independent I/O.
+  await Promise.allSettled(
+    dirs.map(async (dir) => {
+      let entries: string[];
+      try { entries = await fsPromises.readdir(dir); } catch { return; }
+
+      // Delete eligible files within each dir in parallel (up to 8 concurrent unlinks).
+      const cutoffEntries = (
+        await Promise.allSettled(
+          entries.map(async (name) => {
+            const full = path.join(dir, name);
+            try {
+              const stat = await fsPromises.stat(full);
+              return stat.isFile() && stat.mtimeMs < cutoffMs ? full : null;
+            } catch { return null; }
+          })
+        )
+      )
+        .filter((r): r is { status: 'fulfilled'; value: string } =>
+          r.status === 'fulfilled' && r.value !== null)
+        .map(r => r.value);
+
+      await Promise.allSettled(
+        cutoffEntries.map(async (full) => {
+          try { await fsPromises.unlink(full); total++; } catch { /* gone */ }
+        })
+      );
+    })
+  );
+
   if (total > 0) logger.info(`[Maintenance] Pruned ${total} upload cache files older than ${days}d`);
 }
 
@@ -185,7 +202,12 @@ function createAutonomousWorker(): Worker {
     },
     {
       connection,
-      concurrency: 1,
+      // concurrency: 4 — allows up to 4 independent jobs (e.g. multiple prune
+      // jobs or a prune + analytics) to run simultaneously on this pod.
+      // BullMQ's Redis lock still ensures each repeatable job fires exactly once
+      // across all pods, so raising concurrency only helps when the queue has
+      // multiple jobs ready at the same time (e.g. at restart drain).
+      concurrency: 4,
       autorun: false,
       drainDelay: 120_000,
       runRetryDelay: 30_000,

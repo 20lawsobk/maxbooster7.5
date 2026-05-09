@@ -9,6 +9,10 @@ import { autopilotLearningService } from './autopilotLearningService.js';
 import { detectHookPattern } from './postingUtils.js';
 import { notificationService } from './notificationService.js';
 
+// Max posts to dequeue and process concurrently per 2-second tick.
+// Override with AUTO_POST_BATCH_SIZE env var.
+const AUTO_POST_BATCH_SIZE = parseInt(process.env.AUTO_POST_BATCH_SIZE ?? '5', 10);
+
 /**
  * Auto-Posting Service V2 — BoosterQueue-backed persistent posting.
  * Used by autopilotPublisher. For OAuth direct posting, see autoPostingService (V1).
@@ -90,76 +94,94 @@ class AutoPostingServiceV2 {
     }
   }
 
+  private async processSinglePost(post: ScheduledPost): Promise<void> {
+    logger.info(`🚀 Processing auto-post job ${post.id} for user ${post.userId}`);
+    try {
+      await storage.updateScheduledPost(post.id, { status: 'posting' });
+      const results = await this.executePost(post);
+
+      await storage.updateScheduledPost(post.id, {
+        status: results.every(r => r.success) ? 'completed' : 'failed',
+        results,
+      });
+
+      for (const result of results) {
+        if (result.success) {
+          autopilotLearningService.recordPerformance(
+            post.userId,
+            {
+              platform: result.platform,
+              contentType: post.content.mediaType ? 'media_post' : 'text_post',
+              hookType: detectHookPattern(post.content.text || ''),
+              hashtags: post.content.hashtags || [],
+              contentText: post.content.text,
+              mediaType: post.content.mediaType || null,
+              postId: result.postId || null,
+              postedAt: new Date(),
+              metadata: { scheduledPostId: post.id, source: 'autopilot_v2', createdBy: post.createdBy },
+            },
+            { likes: 0, comments: 0, shares: 0, impressions: 0, clicks: 0, saves: 0, reach: 0 }
+          ).catch(err => logger.warn('Learning record failed (non-fatal):', err?.message));
+        }
+      }
+
+      await storage.trackSocialPost({
+        userId: post.userId,
+        content: post.content,
+        mediaType: post.content.mediaType,
+        createdBy: post.createdBy,
+        results,
+      });
+
+      const successfulPlatforms = results.filter(r => r.success).map(r => r.platform);
+      if (successfulPlatforms.length > 0 && post.createdBy === 'social_autopilot') {
+        const platformLabel = successfulPlatforms[0].charAt(0).toUpperCase() + successfulPlatforms[0].slice(1);
+        notificationService.sendAutoPostPublishedNotification(
+          post.userId,
+          platformLabel,
+          (post.content.text || '').slice(0, 100)
+        ).catch(err => logger.warn('[AutoPost] notification error (non-fatal):', err?.message));
+      }
+    } catch (error) {
+      logger.warn({ err: error }, `Failed to process auto-post ${post.id}:`);
+      await storage.updateScheduledPost(post.id, { status: 'failed' });
+    }
+  }
+
   private startWorker() {
     this.workerInterval = setInterval(async () => {
       try {
         const client = await getBoosterStateClient();
 
-        const item = await client.queuePop('scheduled-posts');
-        if (!item) return;
+        // Drain up to AUTO_POST_BATCH_SIZE items per tick and process them
+        // concurrently. Each post targets different social platforms for a
+        // different user, so parallel execution is fully safe.
+        const pops = await Promise.allSettled(
+          Array.from({ length: AUTO_POST_BATCH_SIZE }, () =>
+            client.queuePop('scheduled-posts')
+          )
+        );
 
-        const parsed = JSON.parse(item.data);
-        const post: ScheduledPost = parsed.data || parsed;
+        const items = pops
+          .filter((r): r is { status: 'fulfilled'; value: NonNullable<Awaited<ReturnType<typeof client.queuePop>>> } =>
+            r.status === 'fulfilled' && r.value !== null)
+          .map(r => r.value);
 
-        logger.info(`🚀 Processing auto-post job ${post.id} for user ${post.userId}`);
+        if (items.length === 0) return;
 
-        try {
-          await storage.updateScheduledPost(post.id, { status: 'posting' });
-          const results = await this.executePost(post);
-
-          await storage.updateScheduledPost(post.id, {
-            status: results.every(r => r.success) ? 'completed' : 'failed',
-            results,
-          });
-
-          for (const result of results) {
-            if (result.success) {
-              autopilotLearningService.recordPerformance(
-                post.userId,
-                {
-                  platform: result.platform,
-                  contentType: post.content.mediaType ? 'media_post' : 'text_post',
-                  hookType: detectHookPattern(post.content.text || ''),
-                  hashtags: post.content.hashtags || [],
-                  contentText: post.content.text,
-                  mediaType: post.content.mediaType || null,
-                  postId: result.postId || null,
-                  postedAt: new Date(),
-                  metadata: { scheduledPostId: post.id, source: 'autopilot_v2', createdBy: post.createdBy },
-                },
-                { likes: 0, comments: 0, shares: 0, impressions: 0, clicks: 0, saves: 0, reach: 0 }
-              ).catch(err => logger.warn('Learning record failed (non-fatal):', err?.message));
-            }
-          }
-
-          await storage.trackSocialPost({
-            userId: post.userId,
-            content: post.content,
-            mediaType: post.content.mediaType,
-            createdBy: post.createdBy,
-            results,
-          });
-
-          // Fire auto-post published notification for autopilot-generated posts
-          const successfulPlatforms = results.filter(r => r.success).map(r => r.platform);
-          if (successfulPlatforms.length > 0 && post.createdBy === 'social_autopilot') {
-            const platformLabel = successfulPlatforms[0].charAt(0).toUpperCase() + successfulPlatforms[0].slice(1);
-            notificationService.sendAutoPostPublishedNotification(
-              post.userId,
-              platformLabel,
-              (post.content.text || '').slice(0, 100)
-            ).catch(err => logger.warn('[AutoPost] notification error (non-fatal):', err?.message));
-          }
-        } catch (error) {
-          logger.warn({ err: error }, `Failed to process auto-post ${post.id}:`);
-          await storage.updateScheduledPost(post.id, { status: 'failed' });
-        }
+        await Promise.allSettled(
+          items.map(item => {
+            const parsed = JSON.parse(item.data as unknown as string);
+            const post: ScheduledPost = parsed.data || parsed;
+            return this.processSinglePost(post);
+          })
+        );
       } catch (error) {
-        logger.warn('⚠️  Auto-posting worker poll error:', error?.message || error);
+        logger.warn('⚠️  Auto-posting worker poll error:', (error as Error)?.message || error);
       }
     }, 2000);
 
-    logger.info('✅ Auto-posting worker started (poll interval: 2s)');
+    logger.info(`✅ Auto-posting worker started (poll interval: 2s, batch: ${AUTO_POST_BATCH_SIZE})`);
   }
 
   async schedulePost(
