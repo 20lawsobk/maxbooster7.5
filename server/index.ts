@@ -494,6 +494,15 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   // PG_CODE 53100 retry storms that pollute the logs.  Stdout captures all log
   // output already (pino JSON transport), so DB persistence is redundant.
 
+  // Start system intelligence layer — must be first so it sees all log entries
+  // and events from subsequent service startups.
+  try {
+    const { systemIntelligence } = await import('./services/systemIntelligence.js');
+    systemIntelligence.initialize();
+  } catch (e) {
+    logger.warn(`[SystemIntelligence] Failed to initialize: ${(e as Error).message}`);
+  }
+
   // Start chain error auto-fixer — must run early so it catches errors from
   // autonomous systems, BullMQ workers, and PDIM during their own startup
   try {

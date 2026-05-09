@@ -11,6 +11,7 @@ import { platformAutoFixer } from '../services/platformAutoFixer.js';
 import { permanentFixRegistry } from '../services/permanentFixRegistry.js';
 import { env } from '../config/env.js';
 import { require2FA } from '../middleware/auth.js';
+import { systemIntelligence } from '../services/systemIntelligence.js';
 
 const adminRouter = Router();
 
@@ -1104,6 +1105,89 @@ adminRouter.get('/permanent-fixes', async (_req, res) => {
   } catch (err) {
     logger.warn({ err: err }, 'Admin route error:');
     res.status(500).json({ error: err.message });
+  }
+});
+
+// ─── System Intelligence endpoints ────────────────────────────────────────────
+adminRouter.get('/intelligence/status', (_req, res) => {
+  try {
+    res.json(systemIntelligence.getStatus());
+  } catch (err) {
+    logger.warn({ err }, '[IntelligenceRoute] /status error');
+    res.status(500).json({ error: 'Intelligence layer unavailable' });
+  }
+});
+
+adminRouter.get('/intelligence/narrative', (_req, res) => {
+  try {
+    res.json(systemIntelligence.narrateSystemState());
+  } catch (err) {
+    logger.warn({ err }, '[IntelligenceRoute] /narrative error');
+    res.status(500).json({ error: 'Intelligence layer unavailable' });
+  }
+});
+
+adminRouter.get('/intelligence/insights', (_req, res) => {
+  try {
+    const insights = systemIntelligence.getInsights();
+    res.json({ insights, count: insights.length, generatedAt: Date.now() });
+  } catch (err) {
+    logger.warn({ err }, '[IntelligenceRoute] /insights error');
+    res.status(500).json({ error: 'Intelligence layer unavailable' });
+  }
+});
+
+adminRouter.get('/intelligence/security', (_req, res) => {
+  try {
+    res.json(systemIntelligence.getSecurityReport());
+  } catch (err) {
+    logger.warn({ err }, '[IntelligenceRoute] /security error');
+    res.status(500).json({ error: 'Intelligence layer unavailable' });
+  }
+});
+
+adminRouter.get('/intelligence/events', (req, res) => {
+  try {
+    const limit = Math.min(500, Math.max(10, parseInt(String(req.query.limit ?? '100'), 10)));
+    const events = systemIntelligence.getEventWindow(limit);
+    res.json({ events, count: events.length, windowMinutes: 10, generatedAt: Date.now() });
+  } catch (err) {
+    logger.warn({ err }, '[IntelligenceRoute] /events error');
+    res.status(500).json({ error: 'Intelligence layer unavailable' });
+  }
+});
+
+adminRouter.post('/intelligence/analyze', (req, res) => {
+  try {
+    const body = req.body as Record<string, unknown>;
+    const text = typeof body?.text === 'string' ? body.text.slice(0, 2000) : '';
+    if (!text) {
+      return res.status(400).json({ error: 'Provide { "text": "..." } in request body' });
+    }
+    const understandings = systemIntelligence.analyzeCurrentState();
+    const narrative = systemIntelligence.narrateSystemState();
+    const hintedClass =
+      /pdim.*5\d\d|5\d\d.*pdim/i.test(text) ? 'pdim_cold_start' :
+      /lua.*executor|luaexecutor/i.test(text) ? 'lua_executor_saturation' :
+      /missing lock|bullmq.*lock/i.test(text) ? 'bullmq_lock_race' :
+      /heap|memory|oom/i.test(text) ? 'memory_pressure' :
+      /sql|injection|union.*select/i.test(text.toLowerCase()) ? 'sql_injection' :
+      /xss|<script|javascript:/i.test(text.toLowerCase()) ? 'xss_attempt' :
+      /\.\.\/|path.*travers/i.test(text.toLowerCase()) ? 'path_traversal' :
+      null;
+    const hintedUnderstanding = hintedClass
+      ? understandings.find(u => u.errorClass === hintedClass) ?? understandings[0]
+      : understandings[0];
+    res.json({
+      inputText: text.slice(0, 200) + (text.length > 200 ? '…' : ''),
+      mostLikelyUnderstanding: hintedUnderstanding ?? null,
+      allActiveUnderstandings: understandings,
+      narrative,
+      analyzedAt: Date.now(),
+    });
+  } catch (err) {
+    logger.warn({ err }, '[IntelligenceRoute] /analyze error');
+    res.status(500).json({ error: 'Intelligence layer unavailable' });
   }
 });
 
