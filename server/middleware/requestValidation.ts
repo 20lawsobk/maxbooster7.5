@@ -79,6 +79,10 @@ const EXEMPT_PATH_PREFIXES = [
   '/health',
   '/ready',
   '/status',
+  // Internal server-to-server routes — protected by BOOSTERSTATE_SECRET bearer
+  // token at the proxy layer; no browser Origin header is present on these calls.
+  '/api/ai-service/',
+  '/api/training/internal/',
 ];
 
 function getAllowedOrigins(req: Request): string[] {

@@ -142,6 +142,34 @@ else
   echo "[start.sh] boosterstate already running"
 fi
 
+# ── 3b. Start Python AI Content Sidecar ──────────────────────────────────────
+# The sidecar provides all /generate/content, /generate/script, /analyze/audio,
+# etc. endpoints consumed by pythonAIService.ts.  It must start alongside the
+# main server so tier-1 AI content generation works in production.
+if ! pgrep -f "ai_content_sidecar.py" >/dev/null 2>&1; then
+  _PY_BIN=""
+  # Prefer the venv Python that was just activated (has dependencies)
+  if [ "$_PYENV_ACTIVATED" = "1" ] && command -v python3 >/dev/null 2>&1; then
+    _PY_BIN="$(command -v python3)"
+  fi
+  # Fallback: try well-known paths
+  if [ -z "$_PY_BIN" ]; then
+    for _p in /home/runner/.nix-profile/bin/python3 /usr/bin/python3 /usr/local/bin/python3; do
+      if "$_p" --version >/dev/null 2>&1; then _PY_BIN="$_p"; break; fi
+    done
+  fi
+
+  if [ -n "$_PY_BIN" ]; then
+    PYTHON_AI_PORT="${PYTHON_AI_PORT:-9878}" "$_PY_BIN" server/services/ai_content_sidecar.py \
+      >> /tmp/ai_content_sidecar.log 2>&1 &
+    echo "[start.sh] Python AI Content Sidecar started (pid $!) on port ${PYTHON_AI_PORT:-9878} via $_PY_BIN"
+  else
+    echo "[start.sh] WARNING: Python not found — Python AI Sidecar not started (content generation will use fallback)"
+  fi
+else
+  echo "[start.sh] Python AI Content Sidecar already running"
+fi
+
 # ── 4. Set up @tensorflow/tfjs-node native library path ──────────────────────
 # @tensorflow/tfjs-node ships libtensorflow.so.2.9.1 inside its npm package but
 # the .node binding looks for the unversioned soname libtensorflow.so.2 via the

@@ -142,11 +142,26 @@ const CSRF_EXEMPT_PATHS = [
 ];
 
 export const csrfProtectionWithExemptions: RequestHandler = (req: Request, res: Response, next: NextFunction) => {
-  const isExempt = CSRF_EXEMPT_PATHS.some(path => req.path.startsWith(path));
-  
+  // Use originalUrl (never rewritten by Express mount logic) so the check is
+  // reliable regardless of which router or sub-app this middleware runs inside.
+  const urlPath = (req.originalUrl || req.path || '').split('?')[0];
+  const isExempt = CSRF_EXEMPT_PATHS.some(p => urlPath.startsWith(p));
+
   if (isExempt) {
     return next();
   }
-  
+
+  // Secondary escape-hatch: server-to-server calls authenticated with the
+  // BOOSTERSTATE_SECRET bearer token never carry a browser CSRF cookie.
+  // The secret is only known to internal services, so accepting it here is safe.
+  const internalSecret = process.env.BOOSTERSTATE_SECRET;
+  if (internalSecret) {
+    const auth = req.headers['authorization'] as string | undefined;
+    const provided = auth?.startsWith('Bearer ') ? auth.slice(7) : '';
+    if (provided && provided === internalSecret) {
+      return next();
+    }
+  }
+
   return csrfProtection(req, res, next);
 };

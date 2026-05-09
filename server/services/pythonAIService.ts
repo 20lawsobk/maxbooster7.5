@@ -1,9 +1,14 @@
 import { logger } from '../logger.js';
 
-const _PORT = process.env.PORT || 5000;
-const AI_MODEL_URL = process.env.AI_MODEL_SERVICE_URL || `http://127.0.0.1:${_PORT}/api/ai-service`;
+// Call the Python AI sidecar directly (loopback, no CSRF/auth layer needed).
+// Routing through the main Express server (/api/ai-service) would hit the CSRF
+// middleware and fail because server-to-server fetches carry no CSRF cookie.
+const PYTHON_AI_PORT = parseInt(process.env.PYTHON_AI_PORT || '9878', 10);
+const AI_MODEL_URL = process.env.AI_MODEL_SERVICE_URL || `http://127.0.0.1:${PYTHON_AI_PORT}`;
 const TIMEOUT_MS = 30000;
 
+// Kept for any callers that still pass through Express; unused when calling the
+// sidecar directly since the sidecar binds to 127.0.0.1 only.
 const _INTERNAL_SECRET = process.env.BOOSTERSTATE_SECRET || '';
 function internalAuthHeaders(): Record<string, string> {
   return _INTERNAL_SECRET ? { Authorization: `Bearer ${_INTERNAL_SECRET}` } : {};

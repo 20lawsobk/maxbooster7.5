@@ -5,15 +5,15 @@ Thin MaxCore proxy that fulfils every endpoint consumed by
 server/services/pythonAIService.ts.  Uses only Python stdlib
 so zero pip installs are required.
 
-Architecture:
-  Express (port 5000) → /api/ai-service/*
-    → internalProxy.ts  (BOOSTERSTATE_SECRET auth layer)
-      → THIS SIDECAR  (port 9878, 127.0.0.1 only)
-        → MaxCore  (AI_SERVER_URL)
+Architecture (direct-call path — bypasses Express CSRF):
+  pythonAIService.ts  →  THIS SIDECAR (port 9878, 127.0.0.1 only)
+                                ↓
+                          MaxCore  (AI_SERVER_URL)
 
-All requests arrive already authenticated by internalProxy.ts;
-no secondary auth is needed here because the server binds to
-loopback and is not reachable from outside the container.
+The sidecar also remains reachable via the Express proxy for any
+browser-side callers that go through /api/ai-service/* (BOOSTERSTATE_SECRET
+auth layer in internalProxy.ts).  The loopback-only bind ensures external
+callers cannot reach this service directly.
 """
 
 import json
@@ -32,7 +32,10 @@ HOST   = '127.0.0.1'
 PORT   = int(os.environ.get('PYTHON_AI_PORT', 9878))
 MC_URL = (os.environ.get('AI_SERVER_URL') or '').rstrip('/')
 MC_KEY = os.environ.get('AI_SERVER_KEY', '')
-TIMEOUT = 25
+# Keep TIMEOUT comfortably below pythonAIService.ts's 30 s client timeout so
+# the sidecar always finishes (and can write the response) before the caller
+# gives up and closes the connection.
+TIMEOUT = 20
 
 logging.basicConfig(
     level  = logging.INFO,
@@ -314,13 +317,27 @@ class SidecarHandler(BaseHTTPRequestHandler):
         except Exception:
             return {}
 
-    def _send(self, data: dict, status: int = 200):
-        body = json.dumps(data, ensure_ascii=False, default=str).encode()
-        self.send_response(status)
-        self.send_header('Content-Type', 'application/json')
-        self.send_header('Content-Length', str(len(body)))
-        self.end_headers()
-        self.wfile.write(body)
+    def _send(self, data: dict, status: int = 200) -> bool:
+        """Serialize *data* as JSON and write the HTTP response.
+
+        Returns True on success, False if the client has already disconnected
+        (BrokenPipeError / ConnectionResetError).  All other errors are
+        re-raised so callers can decide how to handle them.
+        """
+        try:
+            body = json.dumps(data, ensure_ascii=False, default=str).encode()
+            self.send_response(status)
+            self.send_header('Content-Type', 'application/json')
+            self.send_header('Content-Length', str(len(body)))
+            self.send_header('Connection', 'close')
+            self.end_headers()
+            self.wfile.write(body)
+            return True
+        except (BrokenPipeError, ConnectionResetError):
+            # Client disconnected before we could send — not an error on our side.
+            log.debug('%s %s — client disconnected before response was sent',
+                      getattr(self, 'command', '?'), getattr(self, 'path', '?'))
+            return False
 
     def do_OPTIONS(self):
         self.send_response(204)
@@ -365,6 +382,8 @@ class SidecarHandler(BaseHTTPRequestHandler):
                 self._send(result)
             else:
                 self._send({'error': 'Not found'}, 404)
+        except (BrokenPipeError, ConnectionResetError):
+            log.debug('GET %s — client disconnected', path)
         except Exception as exc:
             log.error('GET %s error: %s', path, exc)
             self._send({'error': str(exc)}, 500)
@@ -513,8 +532,12 @@ class SidecarHandler(BaseHTTPRequestHandler):
                 else:
                     self._send({'error': f'Endpoint {path} not available'}, 404)
 
+        except (BrokenPipeError, ConnectionResetError):
+            # Client dropped the connection mid-request — nothing to respond to.
+            log.debug('POST %s — client disconnected mid-request', path)
         except Exception as exc:
             log.error('POST %s error: %s\n%s', path, exc, traceback.format_exc())
+            # Best-effort error response — ignore if the pipe is already gone.
             self._send({'error': str(exc)}, 500)
 
 
