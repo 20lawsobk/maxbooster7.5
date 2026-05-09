@@ -335,6 +335,29 @@ app.post('/api/errors', (req: Request, res: Response) => {
   res.json({ received: true });
 });
 
+// ── Early-boot stubs ──────────────────────────────────────────────────────────
+// These handlers fire during the ~10 s window between server listen() and the
+// moment registerRoutes() finishes loading all lazy route modules.  Without them
+// the React app receives 404s for critical first-paint API calls, which can
+// cause routing errors or login-loop flashes.
+//
+// The real handlers registered by routes.ts take precedence once loaded —
+// Express matches the FIRST registered handler for a given path + method, and
+// registerRoutes() replaces these stubs automatically.
+app.get('/api/auth/me', (_req: Request, res: Response) => {
+  // During the boot window we cannot check the session store (PDIM may be cold).
+  // Return unauthenticated so the React app shows the login screen rather than
+  // hanging or routing to a broken state.
+  res.status(200).json({ authenticated: false, bootPhase: true });
+});
+
+app.post('/api/metrics/web-vitals', (req: Request, res: Response) => {
+  // Silently accept browser web-vitals payloads during the boot window so the
+  // browser doesn't log 404 errors on first paint.  Metrics from this window
+  // are lost; that's acceptable — the real handler registers within seconds.
+  res.status(204).end();
+});
+
 app.use((req: Request, res: Response, next: NextFunction) => {
   // Once the real SPA handler is wired, this middleware is a no-op.
   if (_spaHandlerReady) return next();

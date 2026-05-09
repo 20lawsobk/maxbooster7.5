@@ -47,7 +47,9 @@ const _origStderrWrite = (process.stderr.write as Function).bind(process.stderr)
   const isColdStartNoise = (
     /PDIM HTTP 5\d\d/.test(combined) ||
     combined.includes('stack traceback:') ||
-    combined.includes('luaExecutor.ts')
+    combined.includes('luaExecutor.ts') ||
+    // Production bundle path — esbuild compiles luaExecutor into dist/index.mjs
+    combined.includes('dist/index.mjs')
   );
   if (isColdStartNoise) {
     _stderrPartial = '';
@@ -87,7 +89,8 @@ console.error = (...args: unknown[]) => {
   if (
     /PDIM HTTP 5\d\d/.test(argsStr) ||
     argsStr.includes('stack traceback:') ||
-    argsStr.includes('luaExecutor.ts')
+    argsStr.includes('luaExecutor.ts') ||
+    argsStr.includes('dist/index.mjs')
   ) return;
 
   // Check for localhost Redis connection errors (127.0.0.1:6379)

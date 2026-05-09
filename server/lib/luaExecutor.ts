@@ -368,7 +368,22 @@ export async function execLuaViaPdim(
     return [];
   }
 
-  return new Promise((resolve, reject) => {
+  // ── Unhandled-rejection guard ─────────────────────────────────────────────
+  // Node.js's internal worker-thread MessagePort machinery writes the raw
+  // "Error: Error: ERR PDIM HTTP 5xx" block to stderr using a C++ fast-path
+  // that fires BEFORE JavaScript-level unhandledRejection / uncaughtException
+  // handlers run, and BEFORE our process.stderr.write interceptor can suppress
+  // it.  The trigger is a brief window between the moment reject() is called
+  // inside the 'message' event handler and the moment BullMQ's job-processor
+  // `await` registers its own .catch().
+  //
+  // Fix: capture the Promise, attach a silent no-op .catch() immediately, then
+  // return it.  Node.js sees at least one rejection handler attached before the
+  // microtask queue drains, so it never marks the Promise "unhandled" and never
+  // invokes the stderr fast-path.  BullMQ's own `await` still receives the
+  // rejection because direct `await` uses the Promise's internal state directly,
+  // not the derived Promise created by .catch().
+  const _execPromise = new Promise<unknown[]>((resolve, reject) => {
     let settled = false;
     // Guards against double-counting the same failure in both the 'error' message
     // handler and the exit handler — both can observe the same execution failure.
@@ -505,4 +520,11 @@ export async function execLuaViaPdim(
       });
     });
   });
+
+  // Attach the silent no-op catch BEFORE returning so that Node.js's
+  // unhandled-rejection detector sees a handler in place from the start.
+  // This is the key line that stops bare "Error: Error: ERR PDIM HTTP 5xx"
+  // blocks from appearing in stderr/deployment logs.
+  _execPromise.catch(() => {});
+  return _execPromise;
 }

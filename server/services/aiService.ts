@@ -120,11 +120,23 @@ export class AIService {
     return await getRedisClient();
   }
 
+  private _seedRetryTimer: ReturnType<typeof setTimeout> | null = null;
+
+  private _scheduleAudioDataRetry(delayMs = 60_000): void {
+    if (this._seedRetryTimer) return; // already scheduled
+    this._seedRetryTimer = setTimeout(() => {
+      this._seedRetryTimer = null;
+      this.initializeAudioData();
+    }, delayMs);
+  }
+
   private async initializeAudioData(): Promise<void> {
-    // If the PDIM circuit is already OPEN at startup, seeding will fail for every
-    // key.  Skip the attempt and schedule a retry for when PDIM recovers.
+    // If the PDIM circuit is already OPEN, or PDIM hasn't had its first
+    // successful response yet (slow-lane cold-start), seeding will fail for
+    // every key.  Schedule a retry for when PDIM warms up rather than
+    // generating a wall of "Could not seed" warnings.
     if (cbIsOpen()) {
-      setTimeout(() => this.initializeAudioData(), 30_000);
+      this._scheduleAudioDataRetry(30_000);
       return;
     }
 
@@ -135,6 +147,8 @@ export class AIService {
         return;
       }
 
+      let anyFailed = false;
+
       const seedIfMissing = async (key: string, value: object) => {
         try {
           const existing = await redis.get(key);
@@ -143,10 +157,10 @@ export class AIService {
             logger.info(`[AIService] Seeded audio data for ${key}`);
           }
         } catch (e) {
-          // Only log if the circuit is not already OPEN (circuit-OPEN failures are expected).
-          if (!cbIsOpen()) {
-            logger.warn(`[AIService] Could not seed ${key}: ${e.message}`);
-          }
+          // Suppress per-key warnings during PDIM cold-start — the retry
+          // timer will try again once PDIM is warm.
+          anyFailed = true;
+          if (cbIsOpen()) return; // circuit just tripped — retry via open-guard above
         }
       };
 
@@ -174,8 +188,18 @@ export class AIService {
           high:     { range: [4000, 20000], characteristics: ['air', 'brightness', 'cymbals'] },
         }),
       ]);
+      // If any individual key failed to seed (PDIM still waking up during
+      // cold-start slow-lane), schedule a silent full retry.  The retry will
+      // succeed once PDIM is healthy and won't re-warn for keys already seeded.
+      if (anyFailed) {
+        this._scheduleAudioDataRetry(60_000);
+      }
     } catch (error: unknown) {
-      if (process.env.NODE_ENV !== 'development' || !!process.env.REPLIT_DEPLOYMENT) {
+      const msg = error instanceof Error ? error.message : String(error);
+      if (msg.includes('HTTP 5') || msg.includes('PDIM')) {
+        // PDIM cold-start error — retry silently instead of warning
+        this._scheduleAudioDataRetry(60_000);
+      } else if (process.env.NODE_ENV !== 'development' || !!process.env.REPLIT_DEPLOYMENT) {
         logger.warn({ err: error }, 'Failed to initialize AI service audio data in Redis:');
       }
     }
