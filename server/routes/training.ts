@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { requireAdmin } from '../middleware/auth.js';
 import { logger } from '../logger.js';
+import { syncWeightsNow } from '../services/maxcoreSync.js';
 
 const router = Router();
 
@@ -99,6 +100,29 @@ router.get('/schedule', requireAdmin, async (_req: Request, res: Response) => {
     logger.warn({ err: err }, '[Training] /schedule error:');
     res.status(500).json({ error: 'Failed to get training schedule' });
   }
+});
+
+// POST /api/training/internal/session-complete
+// Called by the Diffusion Gateway after each training session completes.
+// Triggers an immediate weight pull from MaxCore + calibration, rather than
+// waiting up to 10 minutes for the periodic sync timer to fire.
+// Protected by BOOSTERSTATE_SECRET bearer token (CSRF-exempt via csrf.ts).
+const _INTERNAL_SECRET_HOOK = process.env.BOOSTERSTATE_SECRET || '';
+router.post('/internal/session-complete', async (req: Request, res: Response) => {
+  const auth = (req.headers['authorization'] as string | undefined) ?? '';
+  const token = auth.startsWith('Bearer ') ? auth.slice(7) : '';
+  if (!_INTERNAL_SECRET_HOOK || token !== _INTERNAL_SECRET_HOOK) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+  const { session_label, simulated_years, total_sessions } = req.body ?? {};
+  logger.info(
+    { session_label, simulated_years, total_sessions },
+    '[Training] Internal session-complete hook — triggering immediate weight sync',
+  );
+  syncWeightsNow().catch(err =>
+    logger.warn('[Training] Post-session weight sync error:', err instanceof Error ? err.message : String(err)),
+  );
+  return res.json({ ok: true, sync: 'triggered' });
 });
 
 export default router;

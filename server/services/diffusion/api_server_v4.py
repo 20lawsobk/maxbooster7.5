@@ -732,6 +732,14 @@ def _train_worker(req: TrainRequest) -> None:
         logger.info(f'[Train] Manual done — loss={meta.get("final_loss", 0):.4f}')
         _reload_live_model()
 
+        # Push sync notification to MaxCore (fire-and-forget) — same as continuous loop
+        threading.Thread(
+            target=_push_weights_to_maxcore,
+            args=(req.session_label,),
+            daemon=True,
+            name=f'WeightPush-manual-{req.session_label}',
+        ).start()
+
         with _train_lock:
             _train_status.update({
                 'running':        False,

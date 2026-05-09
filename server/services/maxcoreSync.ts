@@ -331,7 +331,7 @@ export async function initMaxCoreSync(): Promise<void> {
     );
   }, 120_000);
 
-  // 3. Periodic weight sync every 6 hours
+  // 3. Periodic weight sync every 10 min (aligned with each training session)
   _syncTimer = setInterval(() => {
     syncWeightsFromMaxCore().catch(err =>
       logger.warn('[MaxCoreSync] Periodic weight sync error:', err instanceof Error ? err.message : String(err))

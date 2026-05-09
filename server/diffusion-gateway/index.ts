@@ -38,6 +38,10 @@ const MC_KEY       = process.env.AI_SERVER_KEY   || '';
 const PDIM_URL     = process.env.PDIM_BASE_URL   || 'https://pocketdimensionstorage.replit.app';
 const PDIM_TOKEN   = process.env.PDIM_AUTH_TOKEN || process.env.PDIM_BEARER_TOKEN || process.env.POCKET_DIMENSION_KEY || '';
 const PDIM_INST    = process.env.PDIM_INSTANCE_ID || process.env.REPLIT_BUCKET_ID || '';
+// Max Booster internal URL — used to trigger an immediate weight sync after each session
+const APP_PORT     = parseInt(process.env.PORT ?? '5000', 10);
+const APP_URL      = `http://127.0.0.1:${APP_PORT}`;
+const APP_SECRET   = process.env.BOOSTERSTATE_SECRET || '';
 
 const DIFFUSION_DIR  = path.join(__dirname, '..', 'services', 'diffusion');
 const TRAINING_STATE = path.join(DIFFUSION_DIR, 'training_state.json');
@@ -347,6 +351,11 @@ async function runSession(sessionNum: number, nSamples: number) {
   // Notify MaxCore (fire-and-forget)
   notifyMaxCore(label, simYears);
 
+  // Notify Max Booster directly — triggers an immediate weight sync + calibration
+  // so the scoring system uses the freshest weights without waiting for the
+  // 10-minute periodic sync timer to fire.
+  notifyMaxBooster(label, simYears, tState.total_sessions);
+
   // Sync memory snapshot to PDIM (fire-and-forget)
   syncMemoryToPdim();
 
@@ -401,6 +410,26 @@ function notifyMaxCore(label: string, simYears: number) {
     body:    payload,
     signal:  AbortSignal.timeout(8_000),
   }).catch(() => { /* fire-and-forget */ });
+}
+
+// Notify Max Booster directly so it pulls fresh weights + re-calibrates immediately
+// rather than waiting for the 10-minute periodic sync timer.
+function notifyMaxBooster(label: string, simYears: number, totalSessions: number) {
+  if (!APP_SECRET) return;
+  const payload = JSON.stringify({
+    session_label:   label,
+    simulated_years: simYears,
+    total_sessions:  totalSessions,
+  });
+  fetch(`${APP_URL}/api/training/internal/session-complete`, {
+    method:  'POST',
+    headers: {
+      'Content-Type':  'application/json',
+      'Authorization': `Bearer ${APP_SECRET}`,
+    },
+    body:   payload,
+    signal: AbortSignal.timeout(10_000),
+  }).catch(() => { /* fire-and-forget — periodic sync is the fallback */ });
 }
 
 // ── PDIM memory sync ───────────────────────────────────────────────────────────

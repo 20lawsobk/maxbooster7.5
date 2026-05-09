@@ -136,6 +136,9 @@ const CSRF_EXEMPT_PATHS = [
   '/health',
   '/ready',
   '/status',
+  // Internal server-to-server paths — already protected by BOOSTERSTATE_SECRET bearer token
+  '/api/ai-service/',
+  '/api/training/internal/',
 ];
 
 export const csrfProtectionWithExemptions: RequestHandler = (req: Request, res: Response, next: NextFunction) => {
