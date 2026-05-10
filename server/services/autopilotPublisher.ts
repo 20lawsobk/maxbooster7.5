@@ -59,7 +59,7 @@ class AutopilotPublisher {
   private startAttemptMapCleanup(): void {
     // Run every 6 hours; each pass is O(n) over active users — fast.
     setInterval(() => {
-      const cutoff = Date.now() - AutopilotPublisherService.ATTEMPT_TTL_MS;
+      const cutoff = Date.now() - AutopilotPublisher.ATTEMPT_TTL_MS;
       for (const [userId, lastAttempt] of this.lastPublishAttempt) {
         if (lastAttempt.getTime() < cutoff) {
           this.lastPublishAttempt.delete(userId);
@@ -67,8 +67,8 @@ class AutopilotPublisher {
       }
       // Safety valve: if the map is still over cap after TTL eviction (e.g. a
       // burst of new users), drop the oldest entries until we're back under cap.
-      if (this.lastPublishAttempt.size > AutopilotPublisherService.MAX_TRACKED_USERS) {
-        const overflow = this.lastPublishAttempt.size - AutopilotPublisherService.MAX_TRACKED_USERS;
+      if (this.lastPublishAttempt.size > AutopilotPublisher.MAX_TRACKED_USERS) {
+        const overflow = this.lastPublishAttempt.size - AutopilotPublisher.MAX_TRACKED_USERS;
         let evicted = 0;
         for (const key of this.lastPublishAttempt.keys()) {
           if (evicted >= overflow) break;
