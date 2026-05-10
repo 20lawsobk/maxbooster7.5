@@ -290,7 +290,14 @@ export function applyMandatoryMiddleware(app: Express): MandatoryMiddlewareResul
           origin.startsWith('http://localhost:') ||
           origin.startsWith('http://127.0.0.1:');
 
-        if (isReplitDomain || isLocalOrigin) {
+        // Always allow the platform's own custom domain and all its subdomains
+        // (artist storefronts live at *.max-booster.com).
+        const isPlatformDomain =
+          origin === 'https://max-booster.com' ||
+          origin === 'https://www.max-booster.com' ||
+          origin.endsWith('.max-booster.com');
+
+        if (isReplitDomain || isLocalOrigin || isPlatformDomain) {
           callback(null, true);
           return;
         }

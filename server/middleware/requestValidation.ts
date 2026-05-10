@@ -108,6 +108,9 @@ function getAllowedOrigins(req: Request): string[] {
     }
   }
 
+  // Always allow the platform's own custom domain and artist storefront subdomains.
+  origins.push('https://max-booster.com', 'https://www.max-booster.com');
+
   return origins;
 }
 
