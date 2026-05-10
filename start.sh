@@ -170,6 +170,26 @@ else
   echo "[start.sh] Python AI Content Sidecar already running"
 fi
 
+# ── 3c. Start MaxCore Diffusion Gateway ──────────────────────────────────────
+# The Diffusion Gateway runs on port 8008 and acts as the middle tier between
+# Max Booster and MaxCore AI for video/image diffusion training and relay.
+# diffusionBackgroundTrainer.ts checks localhost:8008 before deciding whether to
+# run the local fallback loop — if the gateway is not up it falls back to local
+# training instead of routing through MaxCore.
+if ! pgrep -f "dist/gateway.mjs" >/dev/null 2>&1; then
+  if [ -f "dist/gateway.mjs" ]; then
+    "$_NODE_BIN" dist/gateway.mjs >> /tmp/diffusion_gateway.log 2>&1 &
+    _GW_PID=$!
+    echo "[start.sh] MaxCore Diffusion Gateway started (pid $_GW_PID) on port 8008"
+    # Brief pause so the gateway is listening before the cluster boots and checks it
+    sleep 2
+  else
+    echo "[start.sh] WARNING: dist/gateway.mjs not found — Diffusion Gateway not started"
+  fi
+else
+  echo "[start.sh] MaxCore Diffusion Gateway already running"
+fi
+
 # ── 4. Set up @tensorflow/tfjs-node native library path ──────────────────────
 # @tensorflow/tfjs-node ships libtensorflow.so.2.9.1 inside its npm package but
 # the .node binding looks for the unversioned soname libtensorflow.so.2 via the
