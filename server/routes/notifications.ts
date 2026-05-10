@@ -439,8 +439,6 @@ router.post('/sms/verify', async (req: Request, res: Response) => {
 
     const verificationCode = crypto.randomInt(100000, 1000000).toString();
 
-    logger.info(`[SMS Verification] Code sent to ${phoneNumber.slice(0, 3)}***${phoneNumber.slice(-2)} for user ${req.user.id}`);
-
     const user = await storage.getUser(req.user.id);
     const currentSettings = (user?.notificationSettings as Record<string, unknown>) || {};
 
@@ -452,17 +450,49 @@ router.post('/sms/verify', async (req: Request, res: Response) => {
           phoneNumber,
           verified: false,
           pendingVerification: verificationCode,
+          pendingVerificationExpiry: Date.now() + 10 * 60 * 1000,
         },
       },
     });
 
+    // ── Attempt real SMS delivery via Twilio ──────────────────────────────────
+    const twilioSid        = process.env.TWILIO_ACCOUNT_SID;
+    const twilioToken      = process.env.TWILIO_AUTH_TOKEN;
+    const verifyServiceSid = process.env.TWILIO_VERIFY_SERVICE_SID;
+    const twilioPhone      = process.env.TWILIO_PHONE_NUMBER;
+
+    if (twilioSid && twilioToken && verifyServiceSid) {
+      // Preferred: Twilio Verify — handles expiry, retries, and fraud guard.
+      // Service friendly name appears in the message:
+      //   "Your Max Booster verification code is: XXXXXX"
+      const twilio = (await import('twilio')).default;
+      const client = twilio(twilioSid, twilioToken);
+      const templateSid = process.env.TWILIO_VERIFY_TEMPLATE_SID;
+      const params: Record<string, string> = { to: phoneNumber, channel: 'sms' };
+      if (templateSid) params.templateSid = templateSid;
+      await client.verify.v2.services(verifyServiceSid).verifications.create(params);
+      logger.info(`[SMS] Max Booster verify code dispatched via Twilio Verify to ${phoneNumber.slice(0, 5)}*** for user ${req.user.id}`);
+    } else if (twilioSid && twilioToken && twilioPhone) {
+      // Fallback: Twilio Messages API with fully branded body.
+      const twilio = (await import('twilio')).default;
+      const client = twilio(twilioSid, twilioToken);
+      const smsBody =
+        `Your Max Booster verification code is: ${verificationCode}\n\n` +
+        `This code expires in 10 minutes. If you didn't request this, you can safely ignore this message.\n\n` +
+        `— The Max Booster Team`;
+      await client.messages.create({ to: phoneNumber, from: twilioPhone, body: smsBody });
+      logger.info(`[SMS] Max Booster branded code sent via Messages API to ${phoneNumber.slice(0, 5)}*** for user ${req.user.id}`);
+    } else {
+      logger.info(`[SMS DEV] Max Booster verification code for ${phoneNumber.slice(0, 5)}***: ${verificationCode}`);
+    }
+
     return res.json({
       success: true,
-      message: 'Verification code sent',
+      message: 'A Max Booster verification code has been sent to your phone.',
     });
   } catch (error) {
     logger.warn({ err: error }, 'SMS verify error:');
-    return res.status(500).json({ error: 'Failed to send verification code' });
+    return res.status(500).json({ error: 'Failed to send Max Booster verification code' });
   }
 });
 
@@ -476,35 +506,45 @@ router.post('/sms/confirm', async (req: Request, res: Response) => {
 
     const user = await storage.getUser(req.user.id);
     const currentSettings = (user?.notificationSettings as Record<string, unknown>) || {};
-    const pendingCode = currentSettings.sms?.pendingVerification;
+    const smsSettings = (currentSettings.sms as Record<string, unknown>) || {};
+    const pendingCode  = smsSettings.pendingVerification as string | undefined;
+    const expiry       = smsSettings.pendingVerificationExpiry as number | undefined;
 
-    if (!pendingCode || pendingCode !== code) {
-      return res.status(400).json({ error: 'Invalid verification code' });
+    if (!pendingCode) {
+      return res.status(400).json({ error: 'No pending verification. Please request a new Max Booster code.' });
+    }
+    if (expiry && Date.now() > expiry) {
+      return res.status(400).json({ error: 'Code expired. Please request a new Max Booster verification code.' });
+    }
+    if (pendingCode !== (code as string)?.trim()) {
+      return res.status(400).json({ error: 'Invalid verification code. Please check your SMS and try again.' });
     }
 
     await storage.updateUser(req.user.id, {
       notificationSettings: {
         ...currentSettings,
         sms: {
-          ...currentSettings.sms,
+          ...smsSettings,
           verified: true,
           pendingVerification: null,
+          pendingVerificationExpiry: null,
         },
       },
     });
 
+    logger.info(`[SMS] Phone verified for user ${req.user.id} — Max Booster SMS notifications active`);
     return res.json({
       success: true,
-      message: 'Phone number verified',
+      message: 'Phone number verified — Max Booster SMS notifications are now active.',
       outcome: {
         type: 'channel_toggled',
         success: true,
-        message: 'SMS notifications enabled and verified',
+        message: 'Max Booster SMS notifications enabled and verified',
       },
     });
   } catch (error) {
     logger.warn({ err: error }, 'SMS confirm error:');
-    return res.status(500).json({ error: 'Failed to confirm verification code' });
+    return res.status(500).json({ error: 'Failed to confirm Max Booster verification code' });
   }
 });
 

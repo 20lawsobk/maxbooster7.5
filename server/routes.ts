@@ -2487,19 +2487,28 @@ export async function registerRoutes(
       const twilioToken      = process.env.TWILIO_AUTH_TOKEN;
       const verifyServiceSid = process.env.TWILIO_VERIFY_SERVICE_SID;
 
+      const twilioPhone      = process.env.TWILIO_PHONE_NUMBER;
+      const verifyTemplateSid = process.env.TWILIO_VERIFY_TEMPLATE_SID;
+
       if (twilioSid && twilioToken && verifyServiceSid) {
         // ✅ Production path — Twilio Verify API handles code generation, delivery,
         // expiry, retry limits, fraud guard, and global routing automatically.
+        // The Verify Service friendly name ("Max Booster") appears in the default
+        // message: "Your Max Booster verification code is: XXXXXX"
+        // Set TWILIO_VERIFY_TEMPLATE_SID to use a fully custom branded template.
         const twilio = (await import('twilio')).default;
         const client = twilio(twilioSid, twilioToken);
 
+        const verifyParams: Record<string, string> = { to: e164Phone, channel: 'sms' };
+        if (verifyTemplateSid) verifyParams.templateSid = verifyTemplateSid;
+
         const verification = await client.verify.v2
           .services(verifyServiceSid)
-          .verifications.create({ to: e164Phone, channel: 'sms' });
+          .verifications.create(verifyParams);
 
         if (verification.status !== 'pending') {
           logger.warn({ status: verification.status }, '[SMS] Unexpected Verify status');
-          return res.status(502).json({ message: "Failed to send verification code. Please try again." });
+          return res.status(502).json({ message: "Failed to send your Max Booster verification code. Please try again." });
         }
 
         // Store the normalized phone number (code is managed by Twilio — no DB storage needed)
@@ -2516,12 +2525,42 @@ export async function registerRoutes(
           },
         });
 
-        logger.info(`[SMS] Verify code dispatched to ${e164Phone.slice(0, 5)}*** (sid: ${verification.sid})`);
-        return res.json({ success: true, message: "Verification code sent to your phone." });
+        logger.info(`[SMS] Max Booster verify code dispatched to ${e164Phone.slice(0, 5)}*** (sid: ${verification.sid})`);
+        return res.json({ success: true, message: "A Max Booster verification code has been sent to your phone." });
       }
 
-      // 🔧 Dev/demo fallback — no Twilio Verify Service configured
+      // ✅ Middle path — Twilio credentials + phone number but no Verify Service.
+      // Sends a branded SMS directly via Twilio Messages API.
       const verificationCode = crypto.randomInt(100000, 1000000).toString();
+      if (twilioSid && twilioToken && twilioPhone) {
+        const twilio = (await import('twilio')).default;
+        const client = twilio(twilioSid, twilioToken);
+        const smsBody =
+          `Your Max Booster verification code is: ${verificationCode}\n\n` +
+          `This code expires in 10 minutes. If you didn't request this, you can safely ignore this message.\n\n` +
+          `— The Max Booster Team`;
+        await client.messages.create({ to: e164Phone, from: twilioPhone, body: smsBody });
+
+        const user = await storage.getUser(req.user.id);
+        const currentSettings = (user?.notificationSettings as Record<string, unknown>) || {};
+        await storage.updateUser(req.user.id, {
+          notificationSettings: {
+            ...currentSettings,
+            sms: {
+              ...((currentSettings.sms as Record<string, unknown>) || {}),
+              phoneNumber: e164Phone,
+              verified: false,
+              pendingVerification: verificationCode,
+              pendingVerificationExpiry: Date.now() + 10 * 60 * 1000,
+            },
+          },
+        });
+
+        logger.info(`[SMS] Max Booster branded code sent to ${e164Phone.slice(0, 5)}*** via Messages API`);
+        return res.json({ success: true, message: "A Max Booster verification code has been sent to your phone." });
+      }
+
+      // 🔧 Dev/demo fallback — no Twilio credentials configured
       const user = await storage.getUser(req.user.id);
       const currentSettings = (user?.notificationSettings as Record<string, unknown>) || {};
       await storage.updateUser(req.user.id, {
@@ -2536,10 +2575,10 @@ export async function registerRoutes(
           },
         },
       });
-      logger.info(`[SMS DEV] Verification code for ${e164Phone.slice(0, 5)}***: ${verificationCode}`);
+      logger.info(`[SMS DEV] Max Booster verification code for ${e164Phone.slice(0, 5)}***: ${verificationCode}`);
       return res.json({
         success: true,
-        message: "Add TWILIO_VERIFY_SERVICE_SID to enable real SMS. Demo code shown below.",
+        message: "Configure TWILIO_VERIFY_SERVICE_SID or TWILIO_PHONE_NUMBER to enable real SMS delivery. Demo code shown below.",
         devCode: verificationCode,
       });
     } catch (error: unknown) {
