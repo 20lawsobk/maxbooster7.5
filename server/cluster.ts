@@ -154,36 +154,94 @@ if (!ENABLE_CLUSTER || DISABLE_CLUSTER) {
   const freeMemGB = os.freemem() / (1024 ** 3);
   const totalMemGB = os.totalmem() / (1024 ** 3);
 
-  // Deployed VM worker sizing (covers both Autoscale and Reserved VM):
-  //   - Each worker V8 heap: 4 GiB (--max-old-space-size=4096, set via execArgv below)
-  //   - Native overhead (libuv, TensorFlow, ioredis, BullMQ): ~0.5 GiB
-  //   - Effective footprint per worker: ~4.5 GiB
+  // ── Worker auto-sizing — why this matters at scale ───────────────────────
   //
-  //   Autoscale replica  (8 vCPU / 32 GiB):  ~6 workers auto-detected
-  //   Reserved VM        (16 vCPU / 64 GiB): ~12 workers auto-detected
+  // Max Booster is designed for Replit Autoscale: as concurrent users grow,
+  // Replit spins up additional replica VMs.  Throughput therefore scales in
+  // two dimensions:
   //
-  //   Auto-detection uses Math.min(cpuLimit, memLimit) so no CLUSTER_WORKERS
-  //   override is needed — the cluster expands to fill all available CPUs and RAM.
-  //   Use CLUSTER_WORKERS only to intentionally constrain below the auto cap.
+  //   Horizontal (replicas):  Replit adds/removes VMs based on traffic.
+  //   Vertical   (workers):   Each VM runs N workers, one per CPU core.
   //
-  // Dev / non-deployment: use conservative 6 GiB per worker to avoid OOM.
+  // Every worker is a full independent Node.js process sharing the same port
+  // via SO_REUSEPORT.  The OS kernel distributes incoming connections across
+  // all listening workers — no proxy, no round-robin at the app layer.
+  // Sessions and queues live in PDIM (shared across all workers and all
+  // replicas), so any worker can serve any user without affinity.
+  //
+  // WHY NOT SET CLUSTER_WORKERS MANUALLY:
+  //   Setting a hard number locks the replica to that count regardless of
+  //   the VM it lands on.  If Autoscale places a replica on an 8-vCPU VM
+  //   and CLUSTER_WORKERS=2, 6 cores sit idle — the replica delivers ~33%
+  //   of its purchased throughput.  At 100M-user scale that idle capacity
+  //   is expensive and directly increases the number of additional replicas
+  //   Replit must spin up to compensate, raising cost proportionally.
+  //
+  // WHY NOT USE ALL CORES:
+  //   One core is reserved for the primary process and the OS scheduler.
+  //   The primary owns the health-check socket from t=0 so Replit's load
+  //   balancer never sees a gap, manages rolling restarts, and propagates
+  //   SIGTERM to all workers on scale-down.  Starving it causes health-check
+  //   timeouts and false-positive replica evictions under load.
+  //
+  // MEMORY GUARD:
+  //   Each worker carries a 4 GiB V8 heap + ~0.5 GiB native overhead
+  //   (libuv thread pool, TensorFlow.js, ioredis, BullMQ).  The memory
+  //   limit floor ensures we never fork more workers than RAM can safely
+  //   hold, preventing the OOM killer from wiping mid-request workers.
+  //   Math.min(cpuLimit, memLimit) is the safe ceiling — whichever resource
+  //   runs out first is the real constraint on that particular VM.
+  //
+  // EXPECTED WORKER COUNTS (auto-detected, no override needed):
+  //   Autoscale replica  (8 vCPU  / 32 GiB): ~6 workers  → 6× throughput
+  //   Reserved VM        (16 vCPU / 64 GiB): ~12 workers → 12× throughput
+  //   Dev container      (8 vCPU  / 16 GiB): single-process (ENABLE_CLUSTER
+  //                                           not set in dev, cluster skipped)
+  //
+  // PDIM AWARENESS:
+  //   PDIM_CLUSTER_WORKERS is passed to every forked worker at fork time.
+  //   The AIMD rate limiter inside each worker uses this count to divide its
+  //   per-worker ZPOPMIN poll budget proportionally, so total PDIM throughput
+  //   stays constant regardless of how many workers are running.  Adding more
+  //   workers does not increase PDIM load — it is automatically redistributed.
+  //
+  // OVERRIDE (use only to intentionally constrain for testing/debugging):
+  //   Set CLUSTER_WORKERS=N to pin to exactly N workers.
+  //   Remove the env var entirely to restore full auto-sizing.
+  // ─────────────────────────────────────────────────────────────────────────
+
   const isDeployment = !!process.env.REPLIT_DEPLOYMENT;
+
+  // Deployed workers get the full 4 GiB heap; dev gets 3 GiB to avoid OOM
+  // on smaller dev containers that share RAM with the IDE and sidecars.
   const memPerWorkerGB = isDeployment ? 4.5 : 6.0;
 
-  // V8 heap cap applied to each forked worker (MiB)
+  // V8 heap cap applied to each forked worker (MiB).
+  // Workers do NOT inherit the primary's --max-old-space-size CLI flag —
+  // it must be passed explicitly via execArgv (done below).
   const workerHeapMB = isDeployment ? 4096 : 3072;
 
-  // Cap workers by both CPU count and available RAM.
-  // cpuLimit reserves 1 core for the primary process + OS scheduler.
+  // cpuLimit: reserve 1 core for the primary process + OS scheduler.
+  // memLimit: never fork more workers than RAM can hold at memPerWorkerGB each.
+  // The real worker count is the lesser of the two — whichever resource
+  // is exhausted first on the current VM is the binding constraint.
   const cpuLimit = Math.max(1, numCPUs - 1);
   const memLimit = Math.max(1, Math.floor(freeMemGB / memPerWorkerGB));
 
-  // CLUSTER_WORKERS env var allows explicit operator override.
-  // Leave unset to let auto-detection use all available CPUs and RAM.
+  // CLUSTER_WORKERS is intentionally left unset in production so auto-sizing
+  // fills every available CPU core and RAM slot on whatever VM Autoscale
+  // provisions.  Only set it when deliberately constraining for debugging.
   const envOverride = process.env.CLUSTER_WORKERS ? parseInt(process.env.CLUSTER_WORKERS, 10) : null;
 
   const workerCount = envOverride && envOverride > 0
-    ? envOverride
+    ? (() => {
+        console.warn(
+          `[Cluster] ⚠️  CLUSTER_WORKERS override active — pinned to ${envOverride} worker(s). ` +
+          `Auto-sizing would have chosen ${Math.min(cpuLimit, memLimit)}. ` +
+          `Remove CLUSTER_WORKERS to restore full VM utilisation.`
+        );
+        return envOverride;
+      })()
     : Math.min(cpuLimit, memLimit);
 
   const workerScript = path.join(__dirname, 'index.mjs');
