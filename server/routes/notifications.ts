@@ -459,12 +459,13 @@ router.post('/sms/verify', async (req: Request, res: Response) => {
     const twilioSid        = process.env.TWILIO_ACCOUNT_SID;
     const twilioToken      = process.env.TWILIO_AUTH_TOKEN;
     const verifyServiceSid = process.env.TWILIO_VERIFY_SERVICE_SID;
-    const twilioPhone      = process.env.TWILIO_PHONE_NUMBER;
+    const twilioPhone         = process.env.TWILIO_PHONE_NUMBER;
+    const messagingServiceSid = process.env.TWILIO_MESSAGING_SERVICE_SID;
 
     if (twilioSid && twilioToken && verifyServiceSid) {
       // Preferred: Twilio Verify — handles expiry, retries, and fraud guard.
-      // Service friendly name appears in the message:
-      //   "Your Max Booster verification code is: XXXXXX"
+      // Both the Verify Service and Messaging Service are named "Max Booster",
+      // so the default SMS reads: "Your Max Booster verification code is: XXXXXX"
       const twilio = (await import('twilio')).default;
       const client = twilio(twilioSid, twilioToken);
       const templateSid = process.env.TWILIO_VERIFY_TEMPLATE_SID;
@@ -472,16 +473,22 @@ router.post('/sms/verify', async (req: Request, res: Response) => {
       if (templateSid) params.templateSid = templateSid;
       await client.verify.v2.services(verifyServiceSid).verifications.create(params);
       logger.info(`[SMS] Max Booster verify code dispatched via Twilio Verify to ${phoneNumber.slice(0, 5)}*** for user ${req.user.id}`);
-    } else if (twilioSid && twilioToken && twilioPhone) {
+    } else if (twilioSid && twilioToken && (messagingServiceSid || twilioPhone)) {
       // Fallback: Twilio Messages API with fully branded body.
+      // Uses Messaging Service SID (preferred — matches service name "Max Booster")
+      // or falls back to a raw phone number.
       const twilio = (await import('twilio')).default;
       const client = twilio(twilioSid, twilioToken);
       const smsBody =
         `Your Max Booster verification code is: ${verificationCode}\n\n` +
         `This code expires in 10 minutes. If you didn't request this, you can safely ignore this message.\n\n` +
         `— The Max Booster Team`;
-      await client.messages.create({ to: phoneNumber, from: twilioPhone, body: smsBody });
-      logger.info(`[SMS] Max Booster branded code sent via Messages API to ${phoneNumber.slice(0, 5)}*** for user ${req.user.id}`);
+      const msgParams = messagingServiceSid
+        ? { to: phoneNumber, messagingServiceSid, body: smsBody }
+        : { to: phoneNumber, from: twilioPhone as string, body: smsBody };
+      await client.messages.create(msgParams);
+      const sender = messagingServiceSid ? `MessagingService(${messagingServiceSid.slice(0, 6)}***)` : `from(${twilioPhone})`;
+      logger.info(`[SMS] Max Booster branded code sent via ${sender} to ${phoneNumber.slice(0, 5)}*** for user ${req.user.id}`);
     } else {
       logger.info(`[SMS DEV] Max Booster verification code for ${phoneNumber.slice(0, 5)}***: ${verificationCode}`);
     }

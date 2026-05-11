@@ -2487,8 +2487,9 @@ export async function registerRoutes(
       const twilioToken      = process.env.TWILIO_AUTH_TOKEN;
       const verifyServiceSid = process.env.TWILIO_VERIFY_SERVICE_SID;
 
-      const twilioPhone      = process.env.TWILIO_PHONE_NUMBER;
-      const verifyTemplateSid = process.env.TWILIO_VERIFY_TEMPLATE_SID;
+      const twilioPhone         = process.env.TWILIO_PHONE_NUMBER;
+      const messagingServiceSid = process.env.TWILIO_MESSAGING_SERVICE_SID;
+      const verifyTemplateSid   = process.env.TWILIO_VERIFY_TEMPLATE_SID;
 
       if (twilioSid && twilioToken && verifyServiceSid) {
         // ✅ Production path — Twilio Verify API handles code generation, delivery,
@@ -2529,17 +2530,21 @@ export async function registerRoutes(
         return res.json({ success: true, message: "A Max Booster verification code has been sent to your phone." });
       }
 
-      // ✅ Middle path — Twilio credentials + phone number but no Verify Service.
+      // ✅ Middle path — Twilio credentials + Messaging Service or phone number but no Verify Service.
       // Sends a branded SMS directly via Twilio Messages API.
+      // Messaging Service SID is preferred (matches "Max Booster" service name in console).
       const verificationCode = crypto.randomInt(100000, 1000000).toString();
-      if (twilioSid && twilioToken && twilioPhone) {
+      if (twilioSid && twilioToken && (messagingServiceSid || twilioPhone)) {
         const twilio = (await import('twilio')).default;
         const client = twilio(twilioSid, twilioToken);
         const smsBody =
           `Your Max Booster verification code is: ${verificationCode}\n\n` +
           `This code expires in 10 minutes. If you didn't request this, you can safely ignore this message.\n\n` +
           `— The Max Booster Team`;
-        await client.messages.create({ to: e164Phone, from: twilioPhone, body: smsBody });
+        const msgParams = messagingServiceSid
+          ? { to: e164Phone, messagingServiceSid, body: smsBody }
+          : { to: e164Phone, from: twilioPhone as string, body: smsBody };
+        await client.messages.create(msgParams);
 
         const user = await storage.getUser(req.user.id);
         const currentSettings = (user?.notificationSettings as Record<string, unknown>) || {};
