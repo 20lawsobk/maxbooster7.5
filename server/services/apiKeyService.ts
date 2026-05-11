@@ -165,29 +165,11 @@ export async function rateLimitApiKey(req: ApiKeyRequest, res: Response, next: N
     const redisKey = `api_rate_limit:${keyId}`;
 
     try {
-      // Use Redis sorted set with sliding window
-      const pipeline = redisClient.pipeline();
-
-      // Remove old entries outside the window
-      pipeline.zremrangebyscore(redisKey, 0, now - windowSize);
-
-      // Count requests in current window
-      pipeline.zcard(redisKey);
-
-      // Add current request
-      pipeline.zadd(redisKey, now, `${now}-${crypto.randomUUID()}`);
-
-      // Set expiration on the key (2 seconds)
-      pipeline.expire(redisKey, 2);
-
-      const results = await pipeline.exec();
-
-      if (!results) {
-        throw new Error('Redis pipeline failed');
-      }
-
-      // Get request count (index 1 is zcard result)
-      const requestCount = (results[1]?.[1] as number) || 0;
+      // Use Redis sorted set with sliding window.
+      // PDIM does not support ZREMRANGEBYSCORE or atomic pipelines, so we use
+      // ZCOUNT (count only in-window members) instead of ZREMRANGEBYSCORE+ZCARD.
+      const windowStart = now - windowSize;
+      const requestCount = await redisClient.zcount(redisKey, windowStart, '+inf');
 
       // Check if rate limit exceeded
       if (requestCount >= rateLimit) {
@@ -208,6 +190,12 @@ export async function rateLimitApiKey(req: ApiKeyRequest, res: Response, next: N
           },
         });
       }
+
+      // Record this request and set expiry (fire-and-forget — not on critical path)
+      Promise.resolve(
+        redisClient.zadd(redisKey, now, `${now}-${crypto.randomUUID()}`)
+          .then(() => redisClient.expire(redisKey, 2))
+      ).catch(() => {});
 
       // Add rate limit headers
       res.setHeader('X-RateLimit-Limit', rateLimit.toString());

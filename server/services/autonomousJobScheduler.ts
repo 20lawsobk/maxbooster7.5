@@ -286,6 +286,29 @@ export async function setupRepeatableJobs(): Promise<void> {
 
   const queue = getQueue();
 
+  // ── Prune stale repeatable jobs from prior deploys ────────────────────────
+  // BullMQ persists repeatable-job schedules in Redis across restarts.  When a
+  // job is renamed, removed, or registered differently (e.g. after a deploy),
+  // the old entry keeps firing with the old key but the worker sees job.name as
+  // undefined (because upsertJobScheduler stores the name differently from the
+  // legacy queue.add(..., { repeat }) format).  Remove any repeatable job whose
+  // name is NOT in the current REPEATABLE_JOBS list so stale entries don't
+  // accumulate and spam the logs on every tick.
+  const knownNames = new Set(REPEATABLE_JOBS.map(j => j.name));
+  try {
+    const existing = await queue.getRepeatableJobs().catch(() => []);
+    await Promise.allSettled(
+      existing
+        .filter(j => !j.name || !knownNames.has(j.name))
+        .map(j => {
+          logger.info(`[AutonomousScheduler] Removing stale repeatable job: name=${j.name ?? '(none)'} key=${j.key}`);
+          return queue.removeRepeatableByKey(j.key).catch(() => {});
+        })
+    );
+  } catch {
+    // Non-fatal: stale jobs will still be skipped by the worker guard
+  }
+
   await Promise.allSettled(
     REPEATABLE_JOBS.map(({ name, every }) =>
       queue.upsertJobScheduler(name, { every }, { data: {}, opts: SCHED_DEFAULTS })

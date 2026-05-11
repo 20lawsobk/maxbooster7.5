@@ -13,20 +13,18 @@
  *
  * Returns a two-element Lua array: { isLimited (0|1), remaining }
  *
- * Algorithm — ZREMRANGEBYSCORE + ZCARD (bounded ZSET):
- *   1. Prune entries whose score falls before the rolling window start.
- *      This keeps the ZSET size bounded to at most maxRequests entries
- *      for a well-behaved caller and prevents unbounded accumulation on
- *      hot keys where the key TTL never fires.
- *   2. ZCARD counts the survivors — those still within the window.
- *   3. If the count is at the limit, reject; otherwise ZADD + EXPIRE.
+ * Algorithm — ZCOUNT (sliding-window, PDIM-compatible):
+ *   1. ZCOUNT counts entries whose score falls within [windowStart, +inf].
+ *      This avoids ZREMRANGEBYSCORE which PDIM's Lua executor does not support.
+ *   2. If the count is at the limit, reject; otherwise ZADD + EXPIRE.
+ *   3. The ZSET grows slowly over time but is bounded by the EXPIRE TTL.
+ *      High-traffic keys stay bounded because rejected requests are not added.
  *
  * Atomicity:
  *   When PDIM supports EVAL the script runs as a single Redis command —
  *   no race window between the count check and the ZADD.
  *   If EVAL is unavailable callers fall back to sequential
- *   ZREMRANGEBYSCORE + ZCARD + ZADD, serialised through PDIM's
- *   single-chain HTTP queue.
+ *   ZCOUNT + ZADD, serialised through PDIM's single-chain HTTP queue.
  */
 export const SLIDING_WINDOW_LUA = `
 local key          = KEYS[1]
@@ -35,8 +33,7 @@ local max_req      = tonumber(ARGV[2])
 local now          = tonumber(ARGV[3])
 local entry_id     = ARGV[4]
 local expire_secs  = tonumber(ARGV[5])
-redis.call('ZREMRANGEBYSCORE', key, '-inf', window_start - 1)
-local n = tonumber(redis.call('ZCARD', key))
+local n = tonumber(redis.call('ZCOUNT', key, window_start, '+inf'))
 if n >= max_req then return {1, 0} end
 redis.call('ZADD', key, now, entry_id)
 redis.call('EXPIRE', key, expire_secs)

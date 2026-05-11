@@ -410,6 +410,10 @@ export const storefrontDomains = pgTable("storefront_domains", {
   verificationFailures: integer("verification_failures").default(0),
   // When the domain was last successfully verified
   verifiedAt: timestamp("verified_at"),
+  // Flexible JSONB bag for health-sweep counters and other runtime metadata
+  // (e.g. { healthFailures: 2 }).  Kept separate from structured columns so
+  // the schema doesn't need a migration every time a new counter is added.
+  metadata: jsonb("metadata"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 }, (t) => ({

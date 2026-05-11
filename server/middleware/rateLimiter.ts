@@ -152,10 +152,9 @@ async function slidingWindowCheck(
   try {
     const result = await Promise.race<SlidingWindowResult>([
       (async () => {
-        // ioredis API: all commands are lowercase
-        await redis.zremrangebyscore(redisKey, '-inf', windowStart);
-
-        const requestCount: number = await redis.zcard(redisKey);
+        // PDIM does not support ZREMRANGEBYSCORE; use ZCOUNT to count only
+        // in-window members (scores >= windowStart) without pruning old entries.
+        const requestCount: number = await redis.zcount(redisKey, windowStart, '+inf');
 
         if (requestCount >= maxRequests) {
           const oldest: string[] = await redis.zrange(redisKey, 0, 0);
@@ -605,8 +604,7 @@ export async function getRateLimitStatus(
     const windowStart = now - config.windowMs;
     const redisKey = `${REDIS_KEY_PREFIX}${key}`;
 
-    await redis.zremrangebyscore(redisKey, '-inf', windowStart);
-    const count: number = await redis.zcard(redisKey);
+    const count: number = await redis.zcount(redisKey, windowStart, '+inf');
 
     return {
       remaining: Math.max(0, config.max - count),

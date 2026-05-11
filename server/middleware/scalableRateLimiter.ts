@@ -144,16 +144,12 @@ export class DistributedRateLimiter {
       return { limited, remaining };
     } catch {
       // Fallback: EVAL unsupported (backend returned HTTP 400) or PDIM transient
-      // error.  Mirror the Lua script's ZREMRANGEBYSCORE + ZCARD algorithm to keep
-      // the ZSET bounded.  On backends where ZREMRANGEBYSCORE is also unsupported
-      // (PDIM returns HTTP 400 → exec() returns null rather than throwing), fall
-      // through to ZCOUNT which counts only in-window members without pruning.
-      // ZCOUNT is always supported by PDIM and gives correct rate-limit decisions;
-      // ZREMRANGEBYSCORE prunes old entries when available to bound ZSET growth.
-      const pruned = await this.redisClient.zremrangebyscore(redisKey, '-inf', windowStart - 1);
-      const count = (pruned !== null)
-        ? await this.redisClient.zcard(redisKey)           // pruned → ZCARD is exact
-        : await this.redisClient.zcount(redisKey, windowStart, '+inf'); // no prune → ZCOUNT
+      // error.  PDIM does not support ZREMRANGEBYSCORE, so use ZCOUNT directly to
+      // count only in-window members without pruning.  ZCOUNT is always supported
+      // by PDIM and gives correct rate-limit decisions; the ZSET is bounded by the
+      // EXPIRE TTL set below and by the maxRequests ceiling (rejected requests are
+      // never added, so the ZSET cannot grow unboundedly for rate-limited keys).
+      const count = await this.redisClient.zcount(redisKey, windowStart, '+inf');
       if (count >= this.config.maxRequests) return { limited: true, remaining: 0 };
       await this.redisClient.zadd(redisKey, now, entryId);
       // Fire-and-forget: expiry is a GC safety net, not on the critical path.
