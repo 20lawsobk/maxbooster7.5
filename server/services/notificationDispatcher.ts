@@ -252,12 +252,15 @@ class NotificationDispatcher {
         .limit(1);
 
       const settings = (user?.notificationSettings as Record<string, unknown>) || {};
-      const push = settings.push || {};
+      const push = (settings.push as Record<string, unknown>) || {};
+      // Default push.enabled to true: a user who has granted browser permission
+      // and registered a subscription endpoint has already opted in.  Only block
+      // if they have explicitly set enabled=false in their preferences.
       return {
-        enabled: push.enabled ?? false,
+        enabled: push.enabled !== false,
         muteAll: settings.muteAll ?? false,
-        allowUrgentDuringQuietHours: settings.quietHours?.allowUrgent ?? true,
-        categories: push.categories || {},
+        allowUrgentDuringQuietHours: (settings.quietHours as Record<string, unknown>)?.allowUrgent ?? true,
+        categories: (push.categories as Record<string, boolean>) || {},
       };
     } catch {
       return { enabled: true, muteAll: false, allowUrgentDuringQuietHours: true, categories: {} };

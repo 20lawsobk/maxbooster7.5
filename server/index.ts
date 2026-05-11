@@ -862,13 +862,19 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 
   await registerRoutes(httpServer, app);
 
-  // Eagerly initialize mobile push service so FCM credentials are validated
-  // and the init log appears at startup rather than on first route hit.
+  // Eagerly initialize push services so credentials are validated and status
+  // is logged at startup rather than on first route hit.
   try {
     const { mobilePushService } = await import('./services/mobilePushService.js');
     logger.info(`📱 Mobile Push Service mode: ${mobilePushService.getMode()}`);
   } catch (e) {
     logger.warn('[MobilePush] Failed to initialize at startup:', (e as Error).message);
+  }
+  try {
+    const { desktopPushService } = await import('./services/desktopPushService.js');
+    logger.info(`🖥️  Desktop Push Service ready: ${desktopPushService.isReady()}`);
+  } catch (e) {
+    logger.warn('[DesktopPush] Failed to initialize at startup:', (e as Error).message);
   }
 
   // Register subsystem health probes (DB, Redis, audit, automation) so

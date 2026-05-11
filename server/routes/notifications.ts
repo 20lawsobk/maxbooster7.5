@@ -2,7 +2,7 @@ import { Router, Request, Response } from 'express';
 import { storage } from '../storage';
 import { db, dbRead } from '../db';
 import { eq, and, desc, sql, isNotNull } from 'drizzle-orm';
-import { notifications } from '../../shared/schema';
+import { notifications, users } from '../../shared/schema';
 import { requireAuth } from '../middleware/auth';
 import { logger } from '../logger.js';
 import crypto from 'crypto';
@@ -838,6 +838,7 @@ router.get('/push-key', (req: Request, res: Response) => {
 });
 
 // Save a new push subscription (writes to pushSubscriptions DB table)
+// Also auto-enables push in notification settings so the dispatcher delivers.
 router.post('/push-subscriptions', async (req: Request, res: Response) => {
   if (!req.user) return res.status(401).json({ error: 'Not authenticated' });
 
@@ -849,6 +850,27 @@ router.post('/push-subscriptions', async (req: Request, res: Response) => {
 
     const ua = req.headers['user-agent'] || undefined;
     await webPushService.saveSubscription(req.user.id, { endpoint, keys }, ua);
+
+    // Auto-enable push in notification settings when user subscribes.
+    // The user has already granted browser permission — honour that intent.
+    try {
+      const currentSettings = (req.user.notificationSettings as Record<string, unknown>) || {};
+      const currentPush = (currentSettings.push as Record<string, unknown>) || {};
+      if (currentPush.enabled !== true) {
+        await db
+          .update(users)
+          .set({
+            notificationSettings: {
+              ...currentSettings,
+              push: { ...currentPush, enabled: true },
+            },
+            updatedAt: new Date(),
+          })
+          .where(eq(users.id, req.user.id));
+      }
+    } catch (settingsErr) {
+      logger.warn({ err: settingsErr }, 'Push subscribe: could not auto-enable push setting (non-fatal)');
+    }
 
     return res.json({ success: true, message: 'Push subscription registered' });
   } catch (error) {

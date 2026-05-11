@@ -2384,6 +2384,27 @@ export async function registerRoutes(
         });
       }
 
+      // Auto-enable push in notification settings when user subscribes.
+      // The user has already granted browser permission — honour that intent.
+      try {
+        const currentSettings = (req.user.notificationSettings as Record<string, unknown>) || {};
+        const currentPush = (currentSettings.push as Record<string, unknown>) || {};
+        if (currentPush.enabled !== true) {
+          await db
+            .update(users)
+            .set({
+              notificationSettings: {
+                ...currentSettings,
+                push: { ...currentPush, enabled: true },
+              },
+              updatedAt: new Date(),
+            })
+            .where(eq(users.id, req.user.id));
+        }
+      } catch (settingsErr) {
+        logger.warn({ err: settingsErr }, 'Push subscribe: could not auto-enable push setting (non-fatal)');
+      }
+
       return res.json({ success: true, message: "Push subscription saved" });
     } catch (error) {
       logger.warn({ err: error }, "Save push subscription error");
