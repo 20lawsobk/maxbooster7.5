@@ -80,6 +80,7 @@ const Contracts = lazy(() => import('@/pages/Contracts'));
 const Workspaces = lazy(() => import('@/pages/Workspaces'));
 const Collaborations = lazy(() => import('@/pages/Collaborations'));
 const CareerCoach = lazy(() => import('@/pages/CareerCoach'));
+const Assistant = lazy(() => import('@/pages/Assistant'));
 const ReleaseCountdown = lazy(() => import('@/pages/ReleaseCountdown'));
 const Invoices = lazy(() => import('@/pages/Invoices'));
 const HandleLink = lazy(() => import('@/pages/HandleLink'));
@@ -170,6 +171,7 @@ function Router() {
       <Route path="/workspaces" component={Workspaces} />
       <Route path="/collaborations" component={Collaborations} />
       <Route path="/career-coach" component={CareerCoach} />
+      <Route path="/assistant" component={Assistant} />
       <Route path="/release-countdown" component={ReleaseCountdown} />
       <Route path="/invoices" component={Invoices} />
       <Route path="/handle-link" component={HandleLink} />

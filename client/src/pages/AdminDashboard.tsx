@@ -646,7 +646,7 @@ export default function AdminDashboard() {
                     <CardHeader>
                       <CardTitle className="flex items-center">
                         <AlertTriangle className="h-5 w-5 mr-2" />
-                        Issues {auditData && `(${auditData.issues.length})`}
+                        Issues {auditData && `(${auditData.issues?.length ?? 0})`}
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
@@ -677,7 +677,7 @@ export default function AdminDashboard() {
                               </AlertDescription>
                             </Alert>
                           ))}
-                          {auditData.issues.length === 0 && (
+                          {(auditData.issues?.length ?? 0) === 0 && (
                             <div className="text-center py-8">
                               <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-4" />
                               <p className="text-gray-600">No issues found!</p>
@@ -693,7 +693,7 @@ export default function AdminDashboard() {
                     <CardHeader>
                       <CardTitle className="flex items-center">
                         <Info className="h-5 w-5 mr-2" />
-                        Recommendations {auditData && `(${auditData.recommendations.length})`}
+                        Recommendations {auditData && `(${auditData.recommendations?.length ?? 0})`}
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
@@ -717,7 +717,7 @@ export default function AdminDashboard() {
                               </div>
                             </div>
                           ))}
-                          {auditData.recommendations.length === 0 && (
+                          {(auditData.recommendations?.length ?? 0) === 0 && (
                             <div className="text-center py-8">
                               <Star className="h-12 w-12 text-blue-500 mx-auto mb-4" />
                               <p className="text-gray-600">No recommendations at this time</p>
@@ -907,7 +907,7 @@ export default function AdminDashboard() {
                       <Activity className="h-12 w-12 text-gray-600 mx-auto mb-4" />
                       <p className="text-gray-600">Performance metrics will be displayed here</p>
                       <p className="text-sm text-gray-500 mt-2">
-                        Response Time: {metricsData.responseTime}ms
+                        Response Time: {metricsData.avgResponseTime ?? metricsData.responseTime ?? 0}ms
                       </p>
                     </div>
                   )}

@@ -18,6 +18,7 @@ import {
   Brain,
   Sparkles,
   GraduationCap,
+  Bot,
   X,
   FileText,
   Users,
@@ -82,6 +83,7 @@ const navItems: NavItem[] = [
   { labelKey: 'navigation.workspaces', path: '/workspaces', icon: Building2 },
   { labelKey: 'navigation.releaseCountdown', path: '/release-countdown', icon: Timer },
   { labelKey: 'navigation.careerCoach', path: '/career-coach', icon: GraduationCap },
+  { labelKey: 'navigation.assistant', path: '/assistant', icon: Bot },
   { labelKey: 'navigation.workflowAutomations', path: '/workflow-automations', icon: Zap },
   { labelKey: 'navigation.verification', path: '/verification', icon: ShieldCheck },
 
