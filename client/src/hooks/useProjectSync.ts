@@ -332,7 +332,7 @@ export function useProjectSync(projectId: string | null) {
           startTime: c.startTime,
           duration: c.duration,
           offset: c.offset ?? 0,
-          gain: c.gain ?? 0,
+          gain: c.gain != null ? c.gain : 1,
           fadeIn: c.fadeIn ?? 0,
           fadeOut: c.fadeOut ?? 0,
           color: c.color,

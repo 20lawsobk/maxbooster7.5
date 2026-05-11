@@ -74,6 +74,7 @@ export class AudioWorkletEngine {
     analyzer: AnalyserNode;
     muted: boolean;
     solo: boolean;
+    volume: number;
   }> = new Map();
   
   private scheduledSources: Map<string, AudioBufferSourceNode[]> = new Map();
@@ -290,6 +291,7 @@ export class AudioWorkletEngine {
       analyzer,
       muted: false,
       solo: false,
+      volume: 1,
     });
   }
   
@@ -312,7 +314,13 @@ export class AudioWorkletEngine {
     if (!nodes || !this.audioContext) return;
     
     const linearGain = Math.pow(10, volume / 20);
-    nodes.gain.gain.setTargetAtTime(linearGain, this.audioContext.currentTime, 0.01);
+    nodes.volume = linearGain;
+    
+    const hasSolo = Array.from(this.trackNodes.values()).some(n => n.solo);
+    const shouldMute = nodes.muted || (hasSolo && !nodes.solo);
+    if (!shouldMute) {
+      nodes.gain.gain.setTargetAtTime(linearGain, this.audioContext.currentTime, 0.01);
+    }
   }
   
   setTrackPan(trackId: string, pan: number): void {
@@ -350,7 +358,7 @@ export class AudioWorkletEngine {
         shouldMute = true;
       }
       
-      const targetGain = shouldMute ? 0 : 1;
+      const targetGain = shouldMute ? 0 : nodes.volume;
       nodes.gain.gain.setTargetAtTime(targetGain, this.audioContext!.currentTime, 0.01);
     });
   }
@@ -478,22 +486,24 @@ export class AudioWorkletEngine {
       return;
     }
     
+    const doPlay = () => {
+      this.state.isPlaying = true;
+      this.lastScheduleTime = this.audioContext!.currentTime;
+      
+      if (this.workletNode && this.workletReady) {
+        this.workletNode.port.postMessage({ type: 'play' });
+      }
+      
+      this.scheduleAllClips();
+      this.startSchedulerLoop();
+      this.emit({ type: 'state-change', data: { isPlaying: true } });
+    };
+    
     if (this.audioContext.state === 'suspended') {
-      this.audioContext.resume();
+      this.audioContext.resume().then(doPlay).catch(() => doPlay());
+    } else {
+      doPlay();
     }
-    
-    this.state.isPlaying = true;
-    this.lastScheduleTime = this.audioContext.currentTime;
-    
-    if (this.workletNode && this.workletReady) {
-      this.workletNode.port.postMessage({ type: 'play' });
-    }
-    
-    this.scheduleAllClips();
-    
-    this.startSchedulerLoop();
-    
-    this.emit({ type: 'state-change', data: { isPlaying: true } });
   }
   
   pause(): void {
