@@ -67,7 +67,9 @@ async function getStorefrontSlugForSubdomain(subdomain: string): Promise<string 
 
     // Fallback: storefront_domains table for managed_subdomain rows created via the
     // "Find Domain" UI flow before the storefront.subdomain field was backfilled.
-    const baseDomainFqdn = `${subdomain}.${process.env.BASE_DOMAIN || 'max-booster.com'}`;
+    // Always use max-booster.com as the platform base domain regardless of
+    // the BASE_DOMAIN env var (which can be set to a dev/preview value).
+    const baseDomainFqdn = `${subdomain}.max-booster.com`;
     const [domRow] = await db
       .select({ slug: storefronts.slug })
       .from(storefrontDomains)
