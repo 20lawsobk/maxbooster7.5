@@ -134,7 +134,10 @@ VALUES (
 )
 ON CONFLICT (id) DO UPDATE SET value = '34.117.33.233', updated_at = now();
 
--- CAA record (restrict cert issuance to Let's Encrypt only)
+-- CAA records (restrict cert issuance to Let's Encrypt only)
+-- Value format: "flags tag \"value\"" — full CAA wire format stored in the value column.
+-- The zonestore buildRR passes this verbatim to dns.NewRR as:
+--   max-booster.com. 3600 IN CAA 0 issue "letsencrypt.org"
 INSERT INTO dns_zone_records (id, zone_id, user_id, domain, type, name, value, ttl, tag)
 VALUES (
   'system-caa-max-booster-00000000',
@@ -143,9 +146,23 @@ VALUES (
   'max-booster.com',
   'CAA',
   '@',
-  'letsencrypt.org',
+  '0 issue "letsencrypt.org"',
   3600,
   'issue'
+)
+ON CONFLICT (id) DO UPDATE SET value = '0 issue "letsencrypt.org"', updated_at = now();
+
+INSERT INTO dns_zone_records (id, zone_id, user_id, domain, type, name, value, ttl, tag)
+VALUES (
+  'system-caa-wild-max-booster-0000',
+  'system-max-booster-zone-00000000',
+  'system',
+  'max-booster.com',
+  'CAA',
+  '@',
+  '0 issuewild "letsencrypt.org"',
+  3600,
+  'issuewild'
 )
 ON CONFLICT (id) DO NOTHING;
 

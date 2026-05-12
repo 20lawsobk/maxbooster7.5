@@ -118,6 +118,23 @@ httpServer.on('upgrade', (req: http.IncomingMessage, socket: net.Socket, head: B
   socket.on('error', () => backendSocket.destroy());
 });
 
+// ── HTTP → HTTPS redirect (port 80) ──────────────────────────────────────────
+// Browsers hitting http://max-booster.com or http://artist.max-booster.com
+// get a permanent redirect to the HTTPS equivalent.
+
+const HTTP_REDIRECT_PORT = parseInt(process.env.HTTP_REDIRECT_PORT || '80');
+
+const httpRedirectServer = http.createServer((req, res) => {
+  const host = (req.headers.host ?? 'max-booster.com').replace(/:\d+$/, '');
+  const location = `https://${host}${req.url ?? '/'}`;
+  res.writeHead(301, {
+    Location:       location,
+    'Cache-Control': 'no-store',
+    'Content-Length': '0',
+  });
+  res.end();
+});
+
 // ── Health endpoint ───────────────────────────────────────────────────────────
 
 const healthServer = http.createServer((req, res) => {
@@ -169,32 +186,49 @@ export async function startProxy(): Promise<void> {
     console.error('[TLS] Server error:', err.message);
   });
 
-  // Start health server on port 8080
   const healthPort = parseInt(process.env.HEALTH_PORT || '8080');
-  await new Promise<void>((resolve, reject) => {
-    healthServer.listen(healthPort, '0.0.0.0', () => {
-      console.log(`[health] HTTP health check on :${healthPort}`);
-      resolve();
-    });
-    healthServer.on('error', reject);
-  });
 
-  // Start TLS proxy
-  await new Promise<void>((resolve, reject) => {
-    tlsServer.listen(PROXY_PORT, PROXY_HOST, () => {
-      console.log(`[TLS SNI Proxy] Listening on ${PROXY_HOST}:${PROXY_PORT}`);
-      console.log(`[TLS SNI Proxy] Backend: ${BACKEND_USE_TLS ? 'https' : 'http'}://${BACKEND_HOST}:${BACKEND_PORT}`);
-      resolve();
-    });
-    tlsServer.on('error', reject);
-  });
+  // Start all three listeners concurrently
+  await Promise.all([
+    // Health check (port 8080)
+    new Promise<void>((resolve, reject) => {
+      healthServer.listen(healthPort, '0.0.0.0', () => {
+        console.log(`[health]   HTTP health check on :${healthPort}`);
+        resolve();
+      });
+      healthServer.on('error', reject);
+    }),
+
+    // HTTP → HTTPS redirect (port 80)
+    new Promise<void>((resolve) => {
+      httpRedirectServer.listen(HTTP_REDIRECT_PORT, '0.0.0.0', () => {
+        console.log(`[redirect] HTTP→HTTPS redirect on :${HTTP_REDIRECT_PORT}`);
+        resolve();
+      });
+      httpRedirectServer.on('error', (err) => {
+        // Non-fatal: port 80 needs root or CAP_NET_BIND_SERVICE on Linux
+        console.warn(`[redirect] Could not bind :${HTTP_REDIRECT_PORT}: ${err.message}`);
+        resolve();
+      });
+    }),
+
+    // TLS SNI proxy (port 443)
+    new Promise<void>((resolve, reject) => {
+      tlsServer.listen(PROXY_PORT, PROXY_HOST, () => {
+        console.log(`[tls]      TLS SNI proxy on ${PROXY_HOST}:${PROXY_PORT}`);
+        console.log(`[tls]      Backend: ${BACKEND_USE_TLS ? 'https' : 'http'}://${BACKEND_HOST}:${BACKEND_PORT}`);
+        resolve();
+      });
+      tlsServer.on('error', reject);
+    }),
+  ]);
 
   // Graceful shutdown
   const shutdown = (sig: string): void => {
     console.log(`[proxy] ${sig} — shutting down`);
-    tlsServer.close(() => {
-      healthServer.close(() => process.exit(0));
-    });
+    tlsServer.close();
+    httpRedirectServer.close();
+    healthServer.close(() => process.exit(0));
     setTimeout(() => process.exit(1), 10_000).unref();
   };
   process.once('SIGTERM', () => shutdown('SIGTERM'));
