@@ -1173,18 +1173,22 @@ app.use((req: Request, res: Response, next: NextFunction) => {
           await hybridStorageService.initialize();
           logger.info('✅ [Storage] Hybrid Storage initialized (Replit Object Storage + Pocket Dimension)');
 
-          const autoTierInterval = 6 * 60 * 60 * 1000;
-          setInterval(async () => {
-            try {
-              const result = await hybridStorageService.runAutoTiering();
-              if (result.tieredDown > 0 || result.tieredUp > 0) {
-                logger.info(`[Storage] Auto-tiering: ${result.tieredDown} files moved to cold, ${result.tieredUp} promoted to hot`);
+          // Auto-tiering runs on worker 0 only — it's a maintenance sweep that
+          // reads/writes PDIM and does not need to run on every cluster worker.
+          if (isBgWorker) {
+            const autoTierInterval = 6 * 60 * 60 * 1000;
+            setInterval(async () => {
+              try {
+                const result = await hybridStorageService.runAutoTiering();
+                if (result.tieredDown > 0 || result.tieredUp > 0) {
+                  logger.info(`[Storage] Auto-tiering: ${result.tieredDown} files moved to cold, ${result.tieredUp} promoted to hot`);
+                }
+              } catch (e) {
+                logger.warn(`[Storage] Auto-tiering error: ${e.message}`);
               }
-            } catch (e) {
-              logger.warn(`[Storage] Auto-tiering error: ${e.message}`);
-            }
-          }, autoTierInterval);
-          logger.info('✅ [Storage] Auto-tiering scheduler started (every 6 hours)');
+            }, autoTierInterval);
+            logger.info('✅ [Storage] Auto-tiering scheduler started (every 6 hours)');
+          }
         } catch (e) {
           logger.warn(`⚠️ [Storage] Hybrid Storage init: ${e.message}`);
         }
@@ -1207,11 +1211,22 @@ app.use((req: Request, res: Response, next: NextFunction) => {
           const mod = await import('./services/autonomousService.js');
           const svc = mod.autonomousService;
           if (svc && typeof svc.getStatus === 'function') {
+            // Only start autonomous operations on the background worker (worker 0).
+            // All other workers serve HTTP only — running autonomous ops on every
+            // worker multiplies PDIM load and MaxCoreAI calls by the worker count.
+            if (isBgWorker) {
+              if (typeof svc.startAutonomousOperations === 'function') {
+                svc.startAutonomousOperations();
+              }
+              logger.info(`✅ [Autonomy] Autonomous Service started on worker 0`);
+            } else {
+              logger.info(`[Autonomy] Worker ${clusterId} — autonomous ops handled by worker 0`);
+            }
             const status = svc.getStatus();
             logger.info(`✅ [Autonomy] Autonomous Service initialized - Running: ${status.isRunning}`);
             killSwitch.registerSystem('autonomous-service', {
               kill: () => { if (typeof svc.stopAutonomousOperations === 'function') svc.stopAutonomousOperations(); },
-              resume: () => { if (typeof svc.startAutonomousOperations === 'function') svc.startAutonomousOperations(); },
+              resume: () => { if (isBgWorker && typeof svc.startAutonomousOperations === 'function') svc.startAutonomousOperations(); },
             });
           }
         } catch (e) {
@@ -1351,14 +1366,22 @@ app.use((req: Request, res: Response, next: NextFunction) => {
           startDNSServer().catch((e) => logger.warn('[DNS] Start error:', e?.message));
         }).catch(() => {});
 
-        import('./services/baseModelTrainer.js').then(({ runBaseModelTraining }) => {
-          runBaseModelTraining().catch((e) => { logger.warn(`[BaseTrainer] Background training error: ${e instanceof Error ? e.message : String(e)}`); });
-        }).catch(() => {});
+        // Base model trainer and MaxCore weight sync run on worker 0 only.
+        // Each worker running its own sync cycle multiplies MaxCore HTTP calls
+        // and PDIM writes by the cluster worker count (seen as N identical
+        // [MaxCoreSync] ✅ synced log lines in production at the same timestamp).
+        if (isBgWorker) {
+          import('./services/baseModelTrainer.js').then(({ runBaseModelTraining }) => {
+            runBaseModelTraining().catch((e) => { logger.warn(`[BaseTrainer] Background training error: ${e instanceof Error ? e.message : String(e)}`); });
+          }).catch(() => {});
 
-        // MaxCore + PDIM connectivity probe, weight sync, and training feedback wiring
-        import('./services/maxcoreSync.js').then(({ initMaxCoreSync }) => {
-          initMaxCoreSync().catch((e) => logger.warn('[MaxCoreSync] Init error:', e?.message));
-        }).catch(() => {});
+          // MaxCore + PDIM connectivity probe, weight sync, and training feedback wiring
+          import('./services/maxcoreSync.js').then(({ initMaxCoreSync }) => {
+            initMaxCoreSync().catch((e) => logger.warn('[MaxCoreSync] Init error:', e?.message));
+          }).catch(() => {});
+        } else {
+          logger.info(`[Sync] Worker ${clusterId} — base trainer + MaxCore sync handled by worker 0`);
+        }
 
         // MaxCore Score Calibrator — calibrates VeoGate weights/thresholds against 8TB corpus.
         // Runs on worker 0 only: each calibration fires 5 sequential MaxCore generate calls

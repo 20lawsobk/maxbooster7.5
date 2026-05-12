@@ -32,11 +32,20 @@ const router = Router();
 
 // Delay first learning cycle by 90 seconds so it doesn't compete with
 // cold-start DB connections and slow down the initial page load.
-setTimeout(() => {
-  hyperLearningEngine.start().catch(err => {
-    logger.warn({ err: err }, 'HyperLearning Engine failed to auto-start:');
-  });
-}, 90_000);
+// Only start on the background worker (CLUSTER_WORKER_ID === '0', or undefined
+// in single-process mode). Running HyperLearning on every cluster worker
+// fires 5+ expensive aggregate DB queries per cycle per worker and piles up
+// PDIM calls N× at the same time — defeating the in-process cache entirely.
+const _isBgWorkerForHL = process.env.CLUSTER_WORKER_ID === undefined || process.env.CLUSTER_WORKER_ID === '0';
+if (_isBgWorkerForHL) {
+  setTimeout(() => {
+    hyperLearningEngine.start().catch(err => {
+      logger.warn({ err: err }, 'HyperLearning Engine failed to auto-start:');
+    });
+  }, 90_000);
+} else {
+  logger.info(`[HyperLearning] Worker ${process.env.CLUSTER_WORKER_ID} — engine managed by worker 0`);
+}
 
 router.get('/status', requireAuth, async (req, res) => {
   try {

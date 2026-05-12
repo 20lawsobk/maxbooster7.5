@@ -502,6 +502,11 @@ class ChainErrorAutoFixer extends EventEmitter {
       cooldownMs: 90_000,
       maxAttempts: 5,
       autoFix: async () => {
+        // Only restart autonomous operations on the background worker (worker 0).
+        // ChainFixer runs on all workers, but only worker 0 owns autonomous ops.
+        const _wid = process.env.CLUSTER_WORKER_ID;
+        const _isBg = _wid === undefined || _wid === '0';
+        if (!_isBg) return; // non-background workers: nothing to restart here
         await new Promise(r => setTimeout(r, 5_000));
         try {
           const { autonomousService } = await import('./autonomousService.js');
@@ -1307,23 +1312,29 @@ class ChainErrorAutoFixer extends EventEmitter {
     // ── Pre-condition: Autonomous system is running but has stale heartbeat ──
     // Detect if the autonomous service has silently stalled (not crashed but
     // not ticking) and restart it before any error is emitted.
-    try {
-      const { autonomousService } = await import('./autonomousService.js');
-      const status = autonomousService.getStatus();
-      const now = Date.now();
-      const lastActivity = (status as Record<string, unknown>).lastActivityAt ?? 0;
-      const stalledMs = lastActivity > 0 ? now - lastActivity : 0;
-      // If supposedly running but no activity for > 10 min, it has silently stalled
-      if (status.isRunning && stalledMs > 10 * 60_000) {
-        logger.warn(
-          `[ChainFixer] 🎯 OFFENSIVE: Autonomous service silently stalled ` +
-          `(no activity for ${Math.round(stalledMs / 60_000)} min) — restarting pre-emptively`
-        );
-        autonomousService.startAutonomousOperations();
-        this._offensiveActionsTotal++;
-        this._preConditionHitsTotal++;
-      }
-    } catch { /* non-fatal — service may not be loaded yet */ }
+    // Only run on the background worker (worker 0) — autonomous ops are
+    // intentionally not started on other workers.
+    const _cwid = process.env.CLUSTER_WORKER_ID;
+    const _isBgForOffensive = _cwid === undefined || _cwid === '0';
+    if (_isBgForOffensive) {
+      try {
+        const { autonomousService } = await import('./autonomousService.js');
+        const status = autonomousService.getStatus();
+        const now = Date.now();
+        const lastActivity = (status as Record<string, unknown>).lastActivityAt ?? 0;
+        const stalledMs = lastActivity > 0 ? now - lastActivity : 0;
+        // If supposedly running but no activity for > 10 min, it has silently stalled
+        if (status.isRunning && stalledMs > 10 * 60_000) {
+          logger.warn(
+            `[ChainFixer] 🎯 OFFENSIVE: Autonomous service silently stalled ` +
+            `(no activity for ${Math.round(stalledMs / 60_000)} min) — restarting pre-emptively`
+          );
+          autonomousService.startAutonomousOperations();
+          this._offensiveActionsTotal++;
+          this._preConditionHitsTotal++;
+        }
+      } catch { /* non-fatal — service may not be loaded yet */ }
+    }
   }
 
   /**

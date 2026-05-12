@@ -921,4 +921,9 @@ export class AutonomousService extends EventEmitter {
 
 export const autonomousService = new AutonomousService();
 
-autonomousService.startAutonomousOperations();
+// startAutonomousOperations() is NOT called here at module-load time.
+// It is called explicitly by server/index.ts on worker 0 only (isBgWorker guard).
+// Calling it here caused all cluster workers to start autonomous operations the
+// moment this module was first imported (e.g. by chainErrorAutoFixer on any worker),
+// which multiplied PDIM load and MaxCoreAI generate calls by the worker count (×15).
+

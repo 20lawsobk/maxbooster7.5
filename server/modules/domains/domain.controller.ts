@@ -89,6 +89,9 @@ export async function reserveManaged(req: Request, res: Response) {
     if (sf.userId !== (req.user as Record<string, unknown>).id)
       return res.status(403).json({ ok: false, error: "Unauthorized." });
 
+    const label = labelResult.normalized;
+
+    // Check storefront_domains uniqueness on the full FQDN.
     const existing = await db
       .select({ id: storefrontDomains.id })
       .from(storefrontDomains)
@@ -97,6 +100,18 @@ export async function reserveManaged(req: Request, res: Response) {
 
     if (existing.length > 0)
       return res.status(409).json({ ok: false, error: "Domain already taken." });
+
+    // Also check storefronts.subdomain uniqueness early — the column has a DB
+    // unique constraint.  Without this check, the INSERT below can succeed but
+    // the subsequent UPDATE throws a constraint violation (unlogged 500).
+    const subdomainTaken = await db
+      .select({ id: storefronts.id })
+      .from(storefronts)
+      .where(and(eq(storefronts.subdomain, label), eq(storefronts.isSubdomainActive, true)))
+      .limit(1);
+
+    if (subdomainTaken.length > 0)
+      return res.status(409).json({ ok: false, error: "Subdomain label already in use." });
 
     const [record] = await db
       .insert(storefrontDomains)
@@ -111,7 +126,6 @@ export async function reserveManaged(req: Request, res: Response) {
 
     // Activate subdomain routing: update the storefront row so static.ts can resolve it
     // by querying storefronts.subdomain + isSubdomainActive (only set if not already taken).
-    const label = labelResult.normalized;
     await db
       .update(storefronts)
       .set({ subdomain: label, isSubdomainActive: true, updatedAt: new Date() })
@@ -134,7 +148,8 @@ export async function reserveManaged(req: Request, res: Response) {
     logger.info(`[domains] Managed subdomain reserved: ${fqdn} → storefront ${storefrontId} (public: ${publicShortUrl})`);
     return res.status(201).json({ ok: true, domain: record.domain, id: record.id, publicUrl: publicShortUrl, label });
   } catch (err) {
-    logger.warn("[domains] reserveManaged error:", err);
+    // Use pino's (object, message) signature so the full error is captured in logs.
+    logger.warn({ err }, "[domains] reserveManaged error");
     return res.status(500).json({ ok: false, error: "Internal error." });
   }
 }
