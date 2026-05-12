@@ -549,5 +549,112 @@ export function stopAcmeRenewalCron(): void {
   }
 }
 
+// ─── DNS-PERSIST-01 support (IETF draft-ietf-acme-dns-persist-01) ────────────
+//
+// One persistent TXT record pre-authorizes all future wildcard cert renewals:
+//   _validation-persist.max-booster.com. IN TXT
+//     "letsencrypt.org; accounturi=<url>; policy=wildcard"
+//
+// Once deployed in LE production (expected late 2026), renewals for
+// *.max-booster.com require no further DNS changes — no TXT rotation,
+// no propagation wait, no DNS credentials in the renewal pipeline.
+//
+// Until LE production supports it, the record is inert but harmless to have.
+// Call activateAcmePersistValidation() once after first ACME account creation.
+
+const ACME_ACCOUNT_URL_SETTING = 'acme_account_url';
+
+async function getOrCreateAccountUrl(): Promise<string | null> {
+  // Return cached value if present in platform_settings.
+  const { rows } = await pool.query<{ value: string }>(
+    `SELECT value FROM platform_settings WHERE key = $1`,
+    [ACME_ACCOUNT_URL_SETTING],
+  );
+  if (rows[0]?.value) return rows[0].value;
+
+  // Initialise the ACME client (which registers/retrieves the account).
+  try {
+    const client = await getOrCreateClient();
+    // acme-client v5+ exposes getAccountUrl() after createAccount().
+    const url = (client as any).getAccountUrl?.() as string | undefined;
+    if (url) {
+      await pool.query(
+        `INSERT INTO platform_settings (key, value, description)
+         VALUES ($1, $2, $3)
+         ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value`,
+        [
+          ACME_ACCOUNT_URL_SETTING,
+          url,
+          'ACME account URL — used in DNS-PERSIST-01 _validation-persist TXT record',
+        ],
+      );
+      logger.info({ url }, '[acme] persisted ACME account URL');
+      return url;
+    }
+    logger.warn('[acme] acme-client does not expose getAccountUrl() — upgrade to v5+');
+    return null;
+  } catch (err) {
+    logger.warn({ err }, '[acme] could not retrieve account URL');
+    return null;
+  }
+}
+
+/**
+ * Write the DNS-PERSIST-01 _validation-persist TXT record into dns_zone_records.
+ *
+ * The dns-os authoritative server will pick this up on its next 5-second refresh
+ * and serve it to Let's Encrypt's validators.
+ *
+ * This is a no-op if the record is already correct. Safe to call repeatedly.
+ */
+export async function activateAcmePersistValidation(
+  rootDomain: string,
+): Promise<{ recordValue: string; accountUri: string | null; status: 'written' | 'unchanged' | 'no_account_url' }> {
+  const accountUri = await getOrCreateAccountUrl();
+
+  if (!accountUri) {
+    logger.warn('[acme/persist] No account URI available — record will contain PLACEHOLDER');
+  }
+
+  const recordValue = accountUri
+    ? `letsencrypt.org; accounturi=${accountUri}; policy=wildcard`
+    : 'letsencrypt.org; accounturi=PLACEHOLDER; policy=wildcard';
+
+  // Find the zone
+  const zoneInfo = await dnsZoneIdForHost(rootDomain);
+  if (!zoneInfo) {
+    throw new Error(`No dns_zone found for '${rootDomain}' — run zone seed migration first`);
+  }
+
+  // Upsert the TXT record
+  const result = await pool.query<{ id: string }>(
+    `INSERT INTO dns_zone_records
+       (zone_id, user_id, domain, type, name, value, ttl)
+     VALUES ($1, $2, $3, 'TXT', '_validation-persist', $4, 3600)
+     ON CONFLICT DO NOTHING
+     RETURNING id`,
+    [zoneInfo.zoneId, zoneInfo.userId, zoneInfo.rootDomain, recordValue],
+  );
+
+  if (result.rowCount === 0) {
+    // Row already exists — update it if value changed
+    const upd = await pool.query(
+      `UPDATE dns_zone_records
+       SET value = $1, updated_at = now()
+       WHERE zone_id = $2 AND type = 'TXT' AND name = '_validation-persist'
+         AND value != $1`,
+      [recordValue, zoneInfo.zoneId],
+    );
+    await pool.query(`UPDATE dns_zones SET updated_at = now() WHERE id = $1`, [zoneInfo.zoneId]);
+    const status = (upd.rowCount ?? 0) > 0 ? 'written' : 'unchanged';
+    logger.info({ domain: rootDomain, status }, '[acme/persist] _validation-persist TXT');
+    return { recordValue, accountUri, status };
+  }
+
+  await pool.query(`UPDATE dns_zones SET updated_at = now() WHERE id = $1`, [zoneInfo.zoneId]);
+  logger.info({ domain: rootDomain, recordValue }, '[acme/persist] _validation-persist TXT written');
+  return { recordValue, accountUri, status: accountUri ? 'written' : 'no_account_url' };
+}
+
 // Exposed for tests / admin scripts.
-export const __internal = { runRenewalSweep, getOrCreateClient, encryptKey, decryptKey };
+export const __internal = { runRenewalSweep, getOrCreateClient, encryptKey, decryptKey, getOrCreateAccountUrl };

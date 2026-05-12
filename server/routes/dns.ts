@@ -1,5 +1,5 @@
 import { Router, raw as expressRaw } from 'express';
-import { db } from '../db';
+import { db, pool } from '../db';
 import { eq, and } from 'drizzle-orm';
 import { z } from 'zod';
 import { logger } from '../logger.js';
@@ -728,6 +728,134 @@ router.post('/:storefrontId/templates/:templateId/apply', async (req, res) => {
   } catch (error: unknown) {
     logger.warn('Error applying DNS template', { error });
     res.status(500).json({ error: 'Failed to apply template' });
+  }
+});
+
+// ── Internal zone sync endpoint (for dns-node ZONE_SYNC_URL) ─────────────────
+
+const DNS_SYNC_SECRET = process.env.DNS_SYNC_SECRET || '';
+
+/**
+ * GET /api/dns/zone/:domain
+ *
+ * Returns the full zone as JSON in the format dns-node/zone.ts expects
+ * (ZoneData: { domain, serial, records[] }).
+ * Used as ZONE_SYNC_URL on the GCP dns-node instances so they hot-reload
+ * zone data from PostgreSQL without a restart.
+ *
+ * Protected by X-DNS-Sync-Secret header when DNS_SYNC_SECRET is set.
+ * No auth required otherwise — zone data is public DNS information.
+ */
+router.get('/zone/:domain', async (req, res) => {
+  if (DNS_SYNC_SECRET) {
+    const provided = req.headers['x-dns-sync-secret'];
+    if (provided !== DNS_SYNC_SECRET) {
+      return res.status(401).json({ error: 'Invalid or missing X-DNS-Sync-Secret' });
+    }
+  }
+
+  const { domain } = req.params;
+  if (!domain || !/^[a-z0-9][a-z0-9.-]{0,252}$/.test(domain)) {
+    return res.status(400).json({ error: 'Invalid domain name' });
+  }
+
+  try {
+    const zoneRes = await pool.query<{ id: string; serial: string }>(
+      `SELECT id,
+              EXTRACT(EPOCH FROM COALESCE(updated_at, created_at))::bigint AS serial
+       FROM   dns_zones
+       WHERE  domain = $1 AND status = 'active'`,
+      [domain],
+    );
+    if (!zoneRes.rows[0]) {
+      return res.status(404).json({ error: `Zone '${domain}' not found or inactive` });
+    }
+
+    const { id: zoneId, serial } = zoneRes.rows[0];
+
+    const recRes = await pool.query<{
+      type: string;
+      name: string;
+      value: string;
+      ttl: number;
+      priority: number | null;
+    }>(
+      `SELECT type, name, value, COALESCE(ttl, 3600) AS ttl, priority
+       FROM   dns_zone_records
+       WHERE  zone_id = $1
+       ORDER  BY type, name`,
+      [zoneId],
+    );
+
+    const records = recRes.rows.map((r) => ({
+      type: r.type,
+      name: r.name,
+      value: r.value,
+      ttl: r.ttl,
+      ...(r.priority !== null ? { priority: r.priority } : {}),
+    }));
+
+    res.set('Cache-Control', 'no-store');
+    res.json({ domain, serial: parseInt(serial, 10), records });
+  } catch (err) {
+    logger.error({ err }, '[dns/zone-sync] Error fetching zone');
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// ── Admin: provision wildcard cert ────────────────────────────────────────────
+
+/**
+ * POST /api/dns/provision-wildcard
+ *
+ * Triggers ACME DNS-01 certificate issuance for *.max-booster.com.
+ * Requires the zone to be authoritative (NS records pointing to this app's
+ * DNS server) before calling — otherwise DNS-01 validation will fail.
+ *
+ * Admin-only.
+ */
+router.post('/provision-wildcard', async (req, res) => {
+  if (!req.isAuthenticated() || !(req.user as any)?.isAdmin) {
+    return res.status(403).json({ error: 'Admin required' });
+  }
+  try {
+    const { provisionCertificate } = await import('../services/acmeClient.js');
+    const [wildcardResult, rootResult] = await Promise.all([
+      provisionCertificate('*.max-booster.com'),
+      provisionCertificate('max-booster.com'),
+    ]);
+    res.json({ ok: true, wildcard: wildcardResult, root: rootResult });
+  } catch (err) {
+    logger.error({ err }, '[dns] provision-wildcard error');
+    res.status(500).json({ error: 'Cert provisioning failed' });
+  }
+});
+
+// ── Admin: activate DNS-PERSIST-01 validation ─────────────────────────────────
+
+/**
+ * POST /api/dns/activate-persist-validation
+ *
+ * Writes the _validation-persist TXT record that pre-authorizes wildcard cert
+ * renewals under the DNS-PERSIST-01 ACME challenge type (IETF draft
+ * draft-ietf-acme-dns-persist-01, Let's Encrypt production rollout: late 2026).
+ *
+ * Once set, the wildcard cert can renew without any further DNS updates.
+ * Call once after first successful ACME account registration.
+ *
+ * Admin-only.
+ */
+router.post('/activate-persist-validation', async (req, res) => {
+  if (!req.isAuthenticated() || !(req.user as any)?.isAdmin) {
+    return res.status(403).json({ error: 'Admin required' });
+  }
+  try {
+    const { activateAcmePersistValidation } = await import('../services/acmeClient.js');
+    const result = await activateAcmePersistValidation('max-booster.com');
+    res.json({ ok: true, ...result });
+  } catch (err) {
+    logger.error({ err }, '[dns] activate-persist-validation error');
+    res.status(500).json({ error: 'Failed to activate DNS-PERSIST-01 validation' });
   }
 });
 
