@@ -6,7 +6,7 @@ import {
   RefreshCw, Search, Edit2, Save, X, Zap, BarChart2,
   Shield, Download, Upload, Link2, Activity, Network,
   Dna, History, ScanSearch, GitBranch, Hash, Star,
-  TriangleAlert, Fingerprint, BookOpen, Share2,
+  TriangleAlert, Fingerprint, BookOpen, Share2, Disc3, SendHorizonal,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -102,6 +102,27 @@ type DiscoverPayload = {
   upcDiscovered?: boolean;
 };
 
+interface CatalogRelease {
+  id: string;
+  title: string;
+  artist: string;
+  releaseDate: string | null;
+  upc: string | null;
+  coverUrl: string | null;
+  releaseType: 'album' | 'ep' | 'single';
+  trackCount: number;
+  genre: string | null;
+  platforms: string[];
+  tracks: {
+    id: string;
+    title: string;
+    isrc: string | null;
+    trackNumber: number;
+    duration: number | null;
+  }[];
+  alreadyDistributed: boolean;
+}
+
 interface Props {
   profile: ArtistProfile;
   onUpdated: () => void;
@@ -187,6 +208,12 @@ export default function AutoArtistSync({ profile, onUpdated }: Props) {
   const [multiFixerIds, setMultiFixerIds] = useState<Record<string, string>>({});
   const [graphOpen, setGraphOpen] = useState(false);
   const [watchRunning, setWatchRunning] = useState(false);
+
+  // ── Catalog Scanner ───────────────────────────────────────────────────────
+  const [catalogOpen, setCatalogOpen] = useState(false);
+  const [catalogReleases, setCatalogReleases] = useState<CatalogRelease[] | null>(null);
+  const [catalogRunning, setCatalogRunning] = useState(false);
+  const [distributingId, setDistributingId] = useState<string | null>(null);
 
   const { data: hub, isLoading, refetch: refetchHub } = useQuery<HubData>({
     queryKey: [`/api/artist-profiles/${profile.id}/profile-hub`],
@@ -439,6 +466,59 @@ export default function AutoArtistSync({ profile, onUpdated }: Props) {
     a.download = `${profile.artistName.replace(/\s+/g, '_')}_artist_identity.json`;
     a.click();
     URL.revokeObjectURL(url);
+  };
+
+  // ── Catalog Scanner ───────────────────────────────────────────────────────
+  const handleScanCatalog = async () => {
+    setCatalogRunning(true);
+    setCatalogReleases(null);
+    try {
+      const res = await apiRequest('GET', `/api/artist-profiles/${profile.id}/catalog`);
+      const data = await res.json();
+      setCatalogReleases(data.releases ?? []);
+      toast({
+        title: 'Catalog scanned',
+        description: `${data.total ?? 0} release(s) found in your catalog`,
+      });
+    } catch {
+      toast({ title: 'Catalog scan failed', variant: 'destructive' });
+    } finally {
+      setCatalogRunning(false);
+    }
+  };
+
+  const handleDistributeRelease = async (release: CatalogRelease) => {
+    setDistributingId(release.id);
+    try {
+      const res = await apiRequest('POST', `/api/artist-profiles/${profile.id}/distribute-release`, {
+        title:       release.title,
+        releaseType: release.releaseType,
+        releaseDate: release.releaseDate ?? undefined,
+        upc:         release.upc ?? undefined,
+        coverUrl:    release.coverUrl ?? undefined,
+        genre:       release.genre ?? undefined,
+        platforms:   release.platforms,
+        tracks:      release.tracks.map(t => ({
+          title:       t.title,
+          isrc:        t.isrc ?? undefined,
+          trackNumber: t.trackNumber,
+          duration:    t.duration ?? undefined,
+        })),
+      });
+      const data = await res.json();
+      // Mark the release as already distributed in local state
+      setCatalogReleases(prev =>
+        prev ? prev.map(r => r.id === release.id ? { ...r, alreadyDistributed: true } : r) : prev
+      );
+      toast({
+        title: 'Distribution draft created',
+        description: `"${data.title}" saved as a draft — open the Distribution tab to complete and submit.`,
+      });
+    } catch {
+      toast({ title: 'Failed to create distribution draft', variant: 'destructive' });
+    } finally {
+      setDistributingId(null);
+    }
   };
 
   // ── Profile Watch ─────────────────────────────────────────────────────────
@@ -1011,10 +1091,32 @@ export default function AutoArtistSync({ profile, onUpdated }: Props) {
           </CollapsibleTrigger>
           <CollapsibleContent>
             <div className="rounded-lg border bg-muted/30 p-3 space-y-2 mt-1">
+              {/* Cover art */}
+              <div className="flex items-start gap-2">
+                <span className="text-xs text-muted-foreground w-24 shrink-0">Cover Art</span>
+                {hub.profileImageUrl ? (
+                  <div className="flex items-center gap-2">
+                    <img
+                      src={hub.profileImageUrl}
+                      alt="Artist cover"
+                      className="h-10 w-10 rounded object-cover border border-border/50 flex-shrink-0"
+                    />
+                    <span className="text-xs text-green-500 flex items-center gap-1">
+                      <CheckCircle2 className="h-3 w-3" /> Synced
+                    </span>
+                  </div>
+                ) : (
+                  <span className="text-xs text-amber-500 flex items-center gap-1">
+                    <AlertCircle className="h-3.5 w-3.5" /> Not set — run sync or find profiles to auto-fill
+                  </span>
+                )}
+              </div>
+              {/* Artist name */}
               <div className="flex items-start gap-2">
                 <span className="text-xs text-muted-foreground w-24 shrink-0">Artist Name</span>
                 <span className="text-xs font-medium">{hub.metadataKeys.artistName}</span>
               </div>
+              {/* Platform IDs */}
               {Object.entries(hub.metadataKeys.storedIds).map(([platform, id]) => (
                 <div key={platform} className="flex items-start gap-2">
                   <span className="text-xs text-muted-foreground w-24 shrink-0">{platform} ID</span>
@@ -1028,7 +1130,7 @@ export default function AutoArtistSync({ profile, onUpdated }: Props) {
                 </div>
               )}
               <p className="text-xs text-muted-foreground border-t pt-2 mt-2">
-                Keep your artist name and ISRCs identical across all releases. DSPs use these keys to attach new music to your existing profile — inconsistencies create duplicate or split profiles.
+                Keep your artist name, cover art, and ISRCs identical across all releases. DSPs use these keys to attach new music to your existing profile — inconsistencies create duplicate or split profiles.
               </p>
             </div>
           </CollapsibleContent>
@@ -1624,6 +1726,135 @@ export default function AutoArtistSync({ profile, onUpdated }: Props) {
               <Button size="sm" className="w-full h-8 text-xs gap-1.5" onClick={() => refetchGraph()}>
                 <Network className="h-3.5 w-3.5" /> Load Identity Graph
               </Button>
+            )}
+          </div>
+        </CollapsibleContent>
+      </Collapsible>
+
+      {/* ── Catalog Scanner + Distribute ── */}
+      <Collapsible open={catalogOpen} onOpenChange={setCatalogOpen}>
+        <CollapsibleTrigger asChild>
+          <button className="w-full flex items-center justify-between text-xs text-muted-foreground hover:text-foreground transition-colors py-1 border-t pt-3">
+            <span className="flex items-center gap-1.5">
+              <Disc3 className="h-3.5 w-3.5" />
+              Collected Releases
+              {catalogReleases && (
+                <Badge variant="outline" className="text-xs py-0 ml-1 text-blue-500 border-blue-500/40">
+                  {catalogReleases.length} found
+                </Badge>
+              )}
+            </span>
+            {catalogOpen ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+          </button>
+        </CollapsibleTrigger>
+        <CollapsibleContent>
+          <div className="rounded-lg border p-3 space-y-3 mt-1">
+            <p className="text-xs text-muted-foreground">
+              Scan your LabelGrid catalog to see releases already collected during distribution. Any release found here can be re-distributed or imported as a distribution draft with one click — all metadata including cover art, UPC, genre, and tracks is pre-filled automatically.
+            </p>
+
+            <Button
+              size="sm"
+              className="w-full h-8 text-xs gap-1.5"
+              onClick={handleScanCatalog}
+              disabled={catalogRunning}
+            >
+              {catalogRunning
+                ? <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Scanning catalog…</>
+                : <><Disc3 className="h-3.5 w-3.5" /> {catalogReleases ? 'Re-scan Catalog' : 'Scan Catalog'}</>}
+            </Button>
+
+            {catalogReleases && catalogReleases.length === 0 && (
+              <Alert>
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription className="text-xs">
+                  No releases found in your LabelGrid catalog for <strong>{profile.artistName}</strong>. Distribute your first release to see it here.
+                </AlertDescription>
+              </Alert>
+            )}
+
+            {catalogReleases && catalogReleases.length > 0 && (
+              <div className="space-y-2 border-t pt-2 max-h-[480px] overflow-y-auto pr-0.5">
+                {catalogReleases.map(release => (
+                  <div
+                    key={release.id}
+                    className="rounded-lg border bg-muted/20 p-2.5 flex items-start gap-3"
+                  >
+                    {/* Cover art thumbnail */}
+                    {release.coverUrl ? (
+                      <img
+                        src={release.coverUrl}
+                        alt={release.title}
+                        className="h-14 w-14 rounded object-cover border border-border/50 flex-shrink-0"
+                      />
+                    ) : (
+                      <div className="h-14 w-14 rounded border border-border/50 bg-muted flex items-center justify-center flex-shrink-0">
+                        <Disc3 className="h-6 w-6 text-muted-foreground/40" />
+                      </div>
+                    )}
+
+                    {/* Release info */}
+                    <div className="flex-1 min-w-0 space-y-0.5">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <span className="text-xs font-semibold truncate">{release.title}</span>
+                        <Badge variant="outline" className="text-xs py-0 capitalize shrink-0">
+                          {release.releaseType}
+                        </Badge>
+                        {release.alreadyDistributed && (
+                          <Badge className="text-xs py-0 bg-green-600 shrink-0">
+                            <CheckCircle2 className="h-2.5 w-2.5 mr-1" /> Distributed
+                          </Badge>
+                        )}
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        {release.trackCount} track{release.trackCount !== 1 ? 's' : ''}
+                        {release.genre ? ` · ${release.genre}` : ''}
+                        {release.releaseDate ? ` · ${release.releaseDate.slice(0, 10)}` : ''}
+                      </div>
+                      {release.upc && (
+                        <div className="text-xs font-mono text-muted-foreground">UPC: {release.upc}</div>
+                      )}
+                      {release.platforms.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          {release.platforms.slice(0, 6).map(p => (
+                            <Badge key={p} variant="outline" className="text-xs py-0 text-muted-foreground/70">
+                              {p}
+                            </Badge>
+                          ))}
+                          {release.platforms.length > 6 && (
+                            <Badge variant="outline" className="text-xs py-0 text-muted-foreground/50">
+                              +{release.platforms.length - 6}
+                            </Badge>
+                          )}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Distribute button */}
+                    <div className="flex-shrink-0 self-center">
+                      <Button
+                        size="sm"
+                        variant={release.alreadyDistributed ? 'outline' : 'default'}
+                        className="h-7 text-xs gap-1"
+                        onClick={() => handleDistributeRelease(release)}
+                        disabled={distributingId === release.id}
+                        title={release.alreadyDistributed ? 'Re-distribute / create a new draft' : 'Create distribution draft'}
+                      >
+                        {distributingId === release.id
+                          ? <Loader2 className="h-3 w-3 animate-spin" />
+                          : <SendHorizonal className="h-3 w-3" />}
+                        {distributingId === release.id ? '' : release.alreadyDistributed ? 'Re-dist.' : 'Distribute'}
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {catalogReleases && catalogReleases.length > 0 && (
+              <p className="text-xs text-muted-foreground border-t pt-2">
+                Clicking <strong>Distribute</strong> creates a draft in the Distribution tab with all metadata pre-filled. Open the Distribution tab to review, add audio, and submit.
+              </p>
             )}
           </div>
         </CollapsibleContent>

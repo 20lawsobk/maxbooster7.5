@@ -7,6 +7,8 @@ import { CLAIM_STATES } from '../services/artistProfileService.js';
 import { requireAuth } from '../middleware/auth.js';
 import { logger } from '../logger.js';
 import { requireUUIDParam } from '../middleware/requestValidation.js';
+import { labelGridService } from '../services/labelgrid-service.js';
+import { storage } from '../storage.js';
 
 const router = Router();
 
@@ -490,6 +492,130 @@ router.post('/:id/watch', requireAuth, requireUUIDParam('id'), async (req: Reque
     logger.warn({ err: err }, '[ArtistProfiles] POST /:id/watch error:');
     if (err.message === 'Artist profile not found') return res.status(404).json({ error: err.message });
     res.status(500).json({ error: 'Profile watch failed' });
+  }
+});
+
+// ── Catalog Scanner: fetch collected releases from LabelGrid ───────────────────
+// Returns the artist's LabelGrid catalog, cross-referenced against locally
+// stored distro releases so the UI knows which ones are already distributed.
+router.get('/:id/catalog', requireAuth, requireUUIDParam('id'), async (req: Request, res: Response) => {
+  try {
+    const profile = await artistProfileService.getProfile(req.params.id, req.user!.id);
+    if (!profile) return res.status(404).json({ error: 'Artist profile not found' });
+
+    // Fetch LabelGrid catalog and local releases in parallel
+    const [lgReleases, localReleases] = await Promise.all([
+      labelGridService.getUserCatalog(),
+      storage.getDistroReleasesByArtist(req.user!.id),
+    ]);
+
+    // Build a set of UPCs and titles already in local distro releases
+    const localUpcs = new Set(
+      localReleases
+        .map(r => (r.metadata as Record<string, unknown>)?.upc as string | undefined)
+        .filter(Boolean)
+    );
+    const localTitles = new Set(
+      localReleases.map(r => (r.title ?? '').toLowerCase().trim())
+    );
+
+    // Annotate each catalog release with whether it's already distributed locally
+    const annotated = lgReleases
+      .filter(r => {
+        // Only include releases that belong to this artist (by name match)
+        const artistMatch =
+          !r.artist ||
+          r.artist.toLowerCase().trim() === profile.artistName.toLowerCase().trim();
+        return artistMatch;
+      })
+      .map(r => ({
+        id: r.id,
+        title: r.title,
+        artist: r.artist,
+        releaseDate: r.releaseDate,
+        upc: r.upc,
+        coverUrl: r.coverUrl ?? null,
+        releaseType: r.releaseType,
+        trackCount: r.trackCount,
+        genre: r.genre,
+        platforms: r.platforms ?? [],
+        tracks: (r.tracks ?? []).map(t => ({
+          id: t.id,
+          title: t.title,
+          isrc: t.isrc,
+          trackNumber: t.trackNumber,
+          duration: t.duration,
+        })),
+        alreadyDistributed:
+          (r.upc && localUpcs.has(r.upc)) ||
+          localTitles.has((r.title ?? '').toLowerCase().trim()),
+      }));
+
+    res.json({ releases: annotated, total: annotated.length });
+  } catch (err) {
+    logger.warn({ err }, '[ArtistProfiles] GET /:id/catalog error:');
+    res.status(500).json({ error: 'Catalog fetch failed' });
+  }
+});
+
+// ── Distribute a collected catalog release ─────────────────────────────────────
+// Creates a local distribution draft from a LabelGrid catalog release so the
+// artist can complete and submit it without re-entering metadata manually.
+const distributeCatalogReleaseSchema = z.object({
+  title:       z.string().min(1),
+  releaseType: z.enum(['single', 'EP', 'album']).default('single'),
+  releaseDate: z.string().optional(),
+  upc:         z.string().optional(),
+  coverUrl:    z.string().url().optional(),
+  genre:       z.string().optional(),
+  platforms:   z.array(z.string()).optional(),
+  tracks:      z.array(z.object({
+    title:       z.string(),
+    isrc:        z.string().optional(),
+    trackNumber: z.number().int().optional(),
+    duration:    z.number().optional(),
+  })).optional(),
+});
+
+router.post('/:id/distribute-release', requireAuth, requireUUIDParam('id'), async (req: Request, res: Response) => {
+  try {
+    const profile = await artistProfileService.getProfile(req.params.id, req.user!.id);
+    if (!profile) return res.status(404).json({ error: 'Artist profile not found' });
+
+    const data = distributeCatalogReleaseSchema.parse(req.body);
+
+    const release = await storage.createDistroRelease({
+      artistId: req.user!.id,
+      title: data.title,
+      releaseDate: data.releaseDate ? new Date(data.releaseDate) : null,
+      metadata: {
+        artistName:      profile.artistName,
+        releaseType:     data.releaseType,
+        primaryGenre:    data.genre ?? '',
+        upc:             data.upc ?? null,
+        coverUrl:        data.coverUrl ?? null,
+        selectedPlatforms: data.platforms ?? [],
+        // Pre-fill artist platform IDs gathered by the sync system so the
+        // distributor routes the release to the correct existing profiles.
+        spotifyArtistId:   profile.spotifyArtistId ?? null,
+        appleArtistId:     profile.appleArtistId ?? null,
+        deezerArtistId:    profile.deezerArtistId ?? null,
+        source:            'catalog_import',
+      },
+      tracks: (data.tracks ?? []).map((t, idx) => ({
+        title:       t.title,
+        isrc:        t.isrc ?? null,
+        trackNumber: t.trackNumber ?? idx + 1,
+        duration:    t.duration ?? null,
+      })),
+    });
+
+    logger.info(`[ArtistProfiles] Catalog release imported: profile=${req.params.id} release=${release.id} title="${data.title}"`);
+    res.json({ releaseId: release.id, title: release.title, status: 'draft' });
+  } catch (err) {
+    if (err instanceof z.ZodError) return res.status(400).json({ error: 'Invalid release data', details: err.errors });
+    logger.warn({ err }, '[ArtistProfiles] POST /:id/distribute-release error:');
+    res.status(500).json({ error: 'Failed to create distribution draft' });
   }
 });
 
