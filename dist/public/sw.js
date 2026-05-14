@@ -30,7 +30,7 @@ const IS_DEV = self.location.hostname === 'localhost' ||
                self.location.hostname.endsWith('.replit.dev') ||
                self.location.hostname.endsWith('.picard.replit.dev');
 
-const CACHE_VER    = 'v8';
+const CACHE_VER    = 'v9';
 const STATIC_CACHE = 'max-booster-static-' + CACHE_VER;
 const DYNAMIC_CACHE= 'max-booster-dynamic-' + CACHE_VER;
 const API_CACHE    = 'max-booster-api-' + CACHE_VER;
