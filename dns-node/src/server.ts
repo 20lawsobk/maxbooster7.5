@@ -259,10 +259,11 @@ async function processQuery(rawQuery: Buffer, clientIp: string): Promise<Buffer>
   // Truncation for UDP if over size limit
   const limit = edns ? Math.min(udpSize, MAX_UDP_SIZE) : 512;
   if (resp.length > limit) {
-    // Return TC=1 so client retries over TCP
+    // Return TC=1 so client retries over TCP (RFC 1035 §4.2.1)
     return encodePacket({
       id,
       aa,
+      tc: 1,
       rd,
       rcode: RCODE_NOERROR,
       questions: pkt.questions,
@@ -270,7 +271,6 @@ async function processQuery(rawQuery: Buffer, clientIp: string): Promise<Buffer>
       authority: [],
       additional: [],
     });
-    // TODO: set TC bit in flags — for now return empty + let client use TCP
   }
 
   return resp;
