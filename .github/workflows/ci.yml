@@ -57,14 +57,29 @@ jobs:
       - name: Install dependencies
         run: npm ci --no-audit --no-fund --legacy-peer-deps
 
-      - name: Run ESLint (warnings allowed, errors fail)
-        # --max-warnings is intentionally large during the rollout. Ratchet
-        # this down as type-erosion (`as any`) and console.log usage are
-        # cleaned up. The job still hard-fails on any rule classified as error.
-        run: npx eslint . --max-warnings=99999 || true
+      - name: Run ESLint (collect warnings)
+        # Explicit glob paths — avoids scanning node_modules and generated
+        # directories, which is faster and prevents OOM on large runners.
+        # --max-warnings keeps the step green while informational; the hard
+        # gate below is the real enforcement point.
+        run: >
+          npx eslint
+          "server/**/*.ts"
+          "shared/**/*.ts"
+          "client/src/**/*.ts"
+          "client/src/**/*.tsx"
+          --max-warnings=50 || true
 
-      - name: ESLint hard gate (errors only)
-        run: npx eslint . --quiet
+      - name: ESLint hard gate (zero errors allowed)
+        # --quiet suppresses warnings, exits 1 only on rule-classified errors.
+        # Explicit paths mirror the step above for consistency.
+        run: >
+          npx eslint
+          "server/**/*.ts"
+          "shared/**/*.ts"
+          "client/src/**/*.ts"
+          "client/src/**/*.tsx"
+          --quiet
 
   test:
     name: Unit Tests
@@ -89,6 +104,26 @@ jobs:
           NODE_ENV: test
           SESSION_SECRET: ci-test-session-secret-minimum-32-chars-xxxx
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/maxbooster_test
+
+      - name: Enforce coverage thresholds
+        # Runs vitest with --coverage so the thresholds defined in
+        # vitest.config.ts (statements/functions/lines ≥ 20%) are enforced.
+        # Kept as a separate step so a threshold breach does not swallow
+        # the test result upload that follows.
+        run: npx vitest run --coverage --config vitest.config.ts
+        env:
+          NODE_ENV: test
+          SESSION_SECRET: ci-test-session-secret-minimum-32-chars-xxxx
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/maxbooster_test
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage-report
+          path: coverage/lcov.info
+          if-no-files-found: ignore
+          retention-days: 7
 
       - name: Upload test results
         uses: actions/upload-artifact@v4
