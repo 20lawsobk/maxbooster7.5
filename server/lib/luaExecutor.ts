@@ -402,21 +402,38 @@ export async function execLuaViaPdim(
       workerData: { script, keys, argv },
     });
 
-    // Watchdog: logs a warning every 60s if a script is still running, but
-    // NEVER terminates the Worker.  Scripts run until they complete naturally.
+    // Watchdog: logs a warning every 60s if a script is still running.
+    // Hard-kills the Worker after SCRIPT_HARD_KILL_MS (300s = 5 min).
     //
-    // Why infinite time:
-    //   BullMQ scripts make ~35 sequential redis.call()s serialised through
-    //   the PDIM chain.  With the fast-lane (50ms gap) each call takes
-    //   PDIM_RTT + 50ms ≈ 250ms → 35 × 250ms = ~8.75s total.  Even at high
-    //   load or elevated RTT (e.g., 800ms) a script takes 35 × 850ms = ~30s.
-    //   Any hard timeout risks killing a legitimately in-progress script.
-    //   We let it run to completion and log progress every 60s so stuck
-    //   scripts (WASM crash, infinite Lua loop) are visible in the logs.
+    // Why 300s:
+    //   BullMQ scripts make ~35 sequential redis.call()s.  At worst-case RTT
+    //   (800ms) that is 35 × 810ms ≈ 28s.  300s gives 10× headroom for
+    //   legitimate PDIM slowness before we conclude the Worker is truly stuck
+    //   (e.g. Atomics.wait blocked forever because PDIM stopped responding
+    //   mid-script, which was observed as scripts running > 19 000s in prod).
+    const SCRIPT_HARD_KILL_MS = 300_000; // 5 minutes
     const _scriptStart = Date.now();
     const watchdog = setInterval(() => {
-      const elapsedS = Math.round((Date.now() - _scriptStart) / 1000);
-      logger.warn(`[LuaExecutor] script still running after ${elapsedS}s — active=${_activeWorkers}, queued=${_waitQueue.length}`);
+      const elapsedMs = Date.now() - _scriptStart;
+      const elapsedS  = Math.round(elapsedMs / 1000);
+      if (elapsedMs >= SCRIPT_HARD_KILL_MS) {
+        logger.error(
+          `[LuaExecutor] script hard-killed after ${elapsedS}s ` +
+          `(active=${_activeWorkers}, queued=${_waitQueue.length}) — ` +
+          `Atomics.wait stall detected; releasing semaphore slot`
+        );
+        clearInterval(watchdog);
+        settle(() => {
+          worker.terminate();
+          _luaConsecutivePdimErrors++;
+          reject(new Error(`[LuaExecutor] worker hard-killed after ${elapsedS}s (stuck script timeout)`));
+        });
+      } else {
+        logger.warn(
+          `[LuaExecutor] script still running after ${elapsedS}s — ` +
+          `active=${_activeWorkers}, queued=${_waitQueue.length}`
+        );
+      }
     }, 60_000);
 
     worker.on('message', async (msg: Record<string, unknown>) => {

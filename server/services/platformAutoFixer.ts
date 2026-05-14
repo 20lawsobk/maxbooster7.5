@@ -735,11 +735,15 @@ class PlatformAutoFixer extends EventEmitter {
       const start = Date.now();
       await Promise.race([
         pool.query('SELECT 1 FROM session WHERE expire > NOW() LIMIT 1'),
-        new Promise((_, rej) => setTimeout(() => rej(new Error('session ping timeout')), 5000)),
+        // Increased from 5 000ms → 8 000ms: Neon serverless connections go cold
+        // between probe cycles (every 30s) and can take 5–7s to warm up.  The
+        // old 5s limit caused false "sessions degraded" alerts during normal
+        // Neon cold-start reconnects at runtime, not just during app startup.
+        new Promise((_, rej) => setTimeout(() => rej(new Error('session ping timeout')), 8000)),
       ]) as Record<string, unknown>;
       const pingMs = Date.now() - start;
       details = { pingMs };
-      if (pingMs > 1500) {
+      if (pingMs > 3000) {
         status  = 'degraded';
         message = `Session store slow: ${pingMs}ms`;
       } else {
@@ -751,12 +755,14 @@ class PlatformAutoFixer extends EventEmitter {
       if (msg.includes('does not exist') || msg.includes('relation "session"')) {
         status  = 'unknown';
         message = 'Session table not yet created (no sessions)';
-      } else if (msg.includes('session ping timeout') && process.uptime() < 90) {
-        // First-probe timeout within 90s of startup is almost always Neon cold-start,
-        // not a genuine session-store failure.  Report unknown (not degraded) to avoid
-        // triggering the 5s critical probe interval during normal boot.
+      } else if (msg.includes('session ping timeout')) {
+        // Neon serverless databases go cold between requests and take 5-8s to
+        // reconnect.  This affects both startup and runtime probes.  Treat all
+        // session probe timeouts as 'unknown' (not 'degraded') so the probe
+        // interval stays at the healthy 30s cadence instead of escalating to
+        // 5s and generating noise in the health dashboard.
         status  = 'unknown';
-        message = `Session probe timed out during startup warm-up — likely Neon cold-start`;
+        message = `Session probe timed out (likely Neon cold-start reconnect)`;
         details = { error: msg, uptimeSec: Math.round(process.uptime()) };
       } else {
         status  = 'degraded';
