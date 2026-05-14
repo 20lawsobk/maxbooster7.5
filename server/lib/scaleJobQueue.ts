@@ -284,8 +284,23 @@ export function startRetentionWorker(): Worker {
       msg.includes('ERR PDIM')
     ) {
       logger.warn(`[Worker] Recoverable (self-healing): ${msg}`);
+    } else if (
+      // BullMQ lock extension errors — fired when a job processor takes longer
+      // than the job's lockDuration (default 30s).  BullMQ re-queues the job
+      // automatically; no action needed.
+      msg.includes('Maximum lock renew count reached') ||
+      msg.includes('lock is lost') ||
+      msg.includes('Lock renewal failed') ||
+      msg.includes('lock expired') ||
+      // Stalled-job checker race during normal shutdown / restart
+      msg.includes('StalledJobsError') ||
+      // Worker thread hard-killed by LuaExecutor timeout — already logged at ERROR
+      msg.includes('worker hard-killed')
+    ) {
+      logger.warn(`[Worker] BullMQ lock / stall (self-healing): ${msg}`);
     } else {
-      logger.warn('[Worker] Worker error:', msg);
+      // Unknown error — log with full error object so we can diagnose it
+      logger.warn({ err: err }, `[Worker] Unexpected error: ${msg}`);
     }
   });
 
