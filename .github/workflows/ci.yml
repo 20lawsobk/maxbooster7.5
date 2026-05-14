@@ -35,7 +35,7 @@ jobs:
           cache: 'npm'
 
       - name: Install dependencies
-        run: npm ci --no-audit --no-fund
+        run: npm ci --no-audit --no-fund --legacy-peer-deps
 
       - name: Run TypeScript type check
         run: npm run check
@@ -55,7 +55,7 @@ jobs:
           cache: 'npm'
 
       - name: Install dependencies
-        run: npm ci --no-audit --no-fund
+        run: npm ci --no-audit --no-fund --legacy-peer-deps
 
       - name: Run ESLint (warnings allowed, errors fail)
         # --max-warnings is intentionally large during the rollout. Ratchet
@@ -81,7 +81,7 @@ jobs:
           cache: 'npm'
 
       - name: Install dependencies
-        run: npm ci --no-audit --no-fund
+        run: npm ci --no-audit --no-fund --legacy-peer-deps
 
       - name: Run unit tests
         run: npm run test:ci
@@ -113,7 +113,7 @@ jobs:
           cache: 'npm'
 
       - name: Install dependencies
-        run: npm ci --no-audit --no-fund
+        run: npm ci --no-audit --no-fund --legacy-peer-deps
 
       - name: Build web assets
         run: npx tsx script/build.ts
@@ -125,11 +125,13 @@ jobs:
         run: |
           echo "=== Build Outputs ==="
           ls -lh dist/public/ 2>/dev/null || echo "No dist/public found"
-          ls -lh dist/*.js 2>/dev/null || echo "No dist JS files found"
+          ls -lh dist/*.mjs 2>/dev/null || echo "No dist MJS files found"
           echo "=== Checking index.html ==="
           test -f dist/public/index.html && echo "✅ index.html present" || echo "❌ index.html missing"
           echo "=== Checking server bundle ==="
-          test -f dist/index.js && echo "✅ Server bundle present" || echo "❌ Server bundle missing"
+          test -f dist/index.mjs && echo "✅ Server bundle (index.mjs) present" || echo "❌ Server bundle missing"
+          echo "=== Checking cluster bundle ==="
+          test -f dist/cluster.mjs && echo "✅ Cluster bundle present" || echo "❌ Cluster bundle missing"
 
       - name: Upload build artifacts (for inspection)
         uses: actions/upload-artifact@v4
@@ -138,7 +140,8 @@ jobs:
           name: build-dist
           path: |
             dist/public/index.html
-            dist/index.js
+            dist/index.mjs
+            dist/cluster.mjs
           if-no-files-found: warn
           retention-days: 3
 
@@ -159,7 +162,7 @@ jobs:
           cache: 'npm'
 
       - name: Install dependencies
-        run: npm ci --no-audit --no-fund
+        run: npm ci --no-audit --no-fund --legacy-peer-deps
 
       - name: Run npm audit (high severity and above)
         # `npm audit` returns non-zero when vulns exist; capture JSON either way
@@ -233,7 +236,7 @@ jobs:
           cache: 'npm'
 
       - name: Install dependencies
-        run: npm ci --no-audit --no-fund
+        run: npm ci --no-audit --no-fund --legacy-peer-deps
 
       - name: Push database schema
         run: npx drizzle-kit push --force
