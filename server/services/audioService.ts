@@ -575,15 +575,80 @@ export class AudioService {
 
   private async detectKey(waveformData: number[], sampleRate: number): Promise<string> {
     try {
-      // Simplified key detection - in reality this would use FFT and harmonic analysis
-      const keys = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
-      const modes = ['Major', 'Minor'];
-      
-      // Mock detection based on spectral characteristics
-      const keyIndex = Math.floor(waveformData.length * 7 % keys.length);
-      const modeIndex = waveformData[0] > 0 ? 0 : 1;
-      
-      return `${keys[keyIndex]} ${modes[modeIndex]}`;
+      // Krumhansl-Schmuckler key-finding algorithm using a chroma-based approach.
+      // 1. Build a 12-bin chromagram by folding energy across octaves.
+      const numBins = 12;
+      const chroma = new Float64Array(numBins);
+
+      // Compute a basic chromagram: for each sample, map its energy to a pitch class
+      // using zero-crossing rate as a proxy for dominant frequency.
+      // We process the signal in overlapping 50 ms frames.
+      const frameSize = Math.max(1, Math.floor(sampleRate * 0.05));
+      const hopSize = Math.floor(frameSize / 2);
+      const A4 = 440;
+      const A4_MIDI = 69;
+
+      for (let start = 0; start + frameSize <= waveformData.length; start += hopSize) {
+        // Count zero crossings in the frame to estimate frequency
+        let zcr = 0;
+        let rms = 0;
+        for (let i = start + 1; i < start + frameSize; i++) {
+          if ((waveformData[i] >= 0) !== (waveformData[i - 1] >= 0)) zcr++;
+          rms += waveformData[i] * waveformData[i];
+        }
+        rms = Math.sqrt(rms / frameSize);
+        if (rms < 0.001) continue; // Skip silent frames
+
+        // ZCR → approximate frequency
+        const freq = (zcr / 2) * (sampleRate / frameSize);
+        if (freq < 20 || freq > 8000) continue;
+
+        // Frequency → MIDI pitch → pitch class
+        const midi = 12 * Math.log2(freq / A4) + A4_MIDI;
+        const pitchClass = ((Math.round(midi) % 12) + 12) % 12;
+        chroma[pitchClass] += rms;
+      }
+
+      // Normalize chroma vector
+      const chromaSum = chroma.reduce((a, b) => a + b, 0);
+      if (chromaSum > 0) {
+        for (let i = 0; i < numBins; i++) chroma[i] /= chromaSum;
+      }
+
+      // 2. Krumhansl-Kessler key profiles
+      const majorProfile = [6.35, 2.23, 3.48, 2.33, 4.38, 4.09, 2.52, 5.19, 2.39, 3.66, 2.29, 2.88];
+      const minorProfile = [6.33, 2.68, 3.52, 5.38, 2.60, 3.53, 2.54, 4.75, 3.98, 2.69, 3.34, 3.17];
+      const keyNames   = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+
+      // Pearson correlation helper
+      const pearson = (a: number[] | Float64Array, b: number[]): number => {
+        const n = a.length;
+        let sumA = 0, sumB = 0, sumAB = 0, sumA2 = 0, sumB2 = 0;
+        for (let i = 0; i < n; i++) {
+          sumA += a[i]; sumB += b[i];
+          sumAB += a[i] * b[i];
+          sumA2 += a[i] * a[i];
+          sumB2 += b[i] * b[i];
+        }
+        const num = n * sumAB - sumA * sumB;
+        const den = Math.sqrt((n * sumA2 - sumA * sumA) * (n * sumB2 - sumB * sumB));
+        return den === 0 ? 0 : num / den;
+      };
+
+      // 3. Test all 24 keys (12 major + 12 minor) via rotation
+      let bestKey = 'C';
+      let bestMode = 'Major';
+      let bestCorr = -Infinity;
+
+      for (let i = 0; i < 12; i++) {
+        const rotated = [...chroma.slice(i), ...chroma.slice(0, i)];
+        const majCorr = pearson(rotated, majorProfile);
+        const minCorr = pearson(rotated, minorProfile);
+        if (majCorr > bestCorr) { bestCorr = majCorr; bestKey = keyNames[i]; bestMode = 'Major'; }
+        if (minCorr > bestCorr) { bestCorr = minCorr; bestKey = keyNames[i]; bestMode = 'Minor'; }
+      }
+
+      return `${bestKey} ${bestMode}`;
     } catch (error: unknown) {
       logger.warn({ err: error }, 'Error detecting key:');
       return 'C Major';

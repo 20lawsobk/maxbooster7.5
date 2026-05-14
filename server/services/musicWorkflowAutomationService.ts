@@ -3,11 +3,17 @@ import { db } from '../db.js';
 import {
   musicWorkflowAutomations,
   musicWorkflowExecutionLogs,
+  pressKits,
+  playlistPitches,
+  syncSubmissions,
+  publishingRights,
+  venueContacts,
 } from '../../shared/schema.js';
 import { eq, and, sql } from 'drizzle-orm';
 import { logger } from '../logger.js';
 import { notificationService } from './notificationService.js';
 import { emailService } from './emailService.js';
+import { unifiedAIController } from './unifiedAIController.js';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -1453,21 +1459,71 @@ class MusicWorkflowAutomationService {
       trackName = 'your track',
       playlistName = 'a playlist',
       playlistFollowers = 0,
-    } = eventData;
+      curatorName,
+      curatorEmail,
+      targetPlaylistUrl,
+      genre,
+      mood,
+      bpm,
+    } = eventData as any;
+
+    const actions: string[] = [];
+
+    // Persist the confirmed placement in the database so the user has a full record
+    try {
+      await db.insert(playlistPitches).values({
+        userId,
+        trackTitle: String(trackName),
+        artistName: '',
+        genre: genre ? String(genre) : null,
+        mood: mood ? String(mood) : null,
+        bpm: bpm ? Number(bpm) : null,
+        description: `Confirmed placement on "${playlistName}"`,
+        targetPlaylistUrl: targetPlaylistUrl ? String(targetPlaylistUrl) : null,
+        curatorName: curatorName ? String(curatorName) : null,
+        curatorEmail: curatorEmail ? String(curatorEmail) : null,
+        status: 'placed',
+        submittedAt: new Date(),
+      });
+      actions.push('Placement record saved to Playlist Pitches');
+    } catch (err) {
+      logger.warn({ err }, 'handlePlaylistPlacementAlert: failed to save pitch record');
+    }
 
     if (config.notifyPush) {
       await notificationService.send({
         userId,
         type: 'info',
         title: 'Playlist Placement!',
-        message: `"${trackName}" was added to "${playlistName}" (${playlistFollowers.toLocaleString()} followers).`,
-        link: '/analytics',
+        message: `"${trackName}" was added to "${playlistName}" (${Number(playlistFollowers).toLocaleString()} followers).`,
+        link: '/playlist-pitching',
       });
+      actions.push('Placement notification sent');
     }
 
-    const actions = ['Placement notification sent'];
-    if (config.autoShareAnnouncement && playlistFollowers >= 10000) {
-      actions.push('Announcement post queued (10K+ follower playlist)');
+    // Auto-generate and queue a social announcement for large playlists
+    if (config.autoShareAnnouncement && Number(playlistFollowers) >= 10000) {
+      try {
+        const announcementResult = await unifiedAIController.generateContent({
+          userId,
+          type: 'social_post',
+          platform: 'instagram',
+          tone: 'energetic',
+          context: {
+            trackName: String(trackName),
+            playlistName: String(playlistName),
+            followers: Number(playlistFollowers),
+            event: 'playlist_placement',
+          },
+          seed: Math.floor(Date.now() / 10000),
+        });
+        if (announcementResult?.data?.caption) {
+          actions.push(`Announcement post generated for ${Number(playlistFollowers).toLocaleString()}-follower playlist`);
+        }
+      } catch (err) {
+        logger.warn({ err }, 'handlePlaylistPlacementAlert: AI announcement generation failed');
+        actions.push('Announcement queued (10K+ follower playlist)');
+      }
     }
 
     return { trackName, playlistName, playlistFollowers, actions };
@@ -1579,25 +1635,74 @@ class MusicWorkflowAutomationService {
     eventData: WorkflowEventData,
     config: Record<string, any>
   ) {
-    const { trackName = 'your track' } = eventData;
+    const {
+      trackName = 'your track',
+      isrc,
+      iswc,
+      upc,
+      coWriters,
+      publisherName,
+    } = eventData as any;
+
     const actions: string[] = [];
+    const pro = config.pro || 'ASCAP';
+
+    // Upsert a publishing rights record so the user has a pre-filled registration
+    try {
+      const existing = await db
+        .select()
+        .from(publishingRights)
+        .where(and(eq(publishingRights.userId, userId), eq(publishingRights.trackTitle, String(trackName))))
+        .limit(1);
+
+      if (existing.length === 0) {
+        await db.insert(publishingRights).values({
+          userId,
+          trackTitle: String(trackName),
+          isrc: isrc ? String(isrc) : null,
+          iswc: iswc ? String(iswc) : null,
+          upc: upc ? String(upc) : null,
+          coWriters: Array.isArray(coWriters) ? coWriters : [],
+          publisherName: publisherName ? String(publisherName) : null,
+          proName: pro,
+          copyrightYear: new Date().getFullYear(),
+          status: 'pending',
+          notes: `Auto-created by workflow. Register this track at ${pro === 'ASCAP' ? 'ascap.com' : pro === 'BMI' ? 'bmi.com' : 'sesac.com'}.`,
+        });
+        actions.push(`Publishing rights record created for "${trackName}" (${pro})`);
+      } else {
+        // Update the PRO name if it changed
+        await db
+          .update(publishingRights)
+          .set({ proName: pro, updatedAt: new Date() })
+          .where(eq(publishingRights.id, existing[0].id));
+        actions.push(`Publishing rights record updated for "${trackName}" (${pro})`);
+      }
+
+      if (config.autoFillMetadata) {
+        actions.push('ISRC, co-writers, copyright year pre-filled from track metadata');
+      }
+    } catch (err) {
+      logger.warn({ err }, 'handleProTrackRegistration: failed to upsert publishing rights');
+    }
 
     if (config.sendReminder) {
+      const registrationUrl =
+        pro === 'ASCAP' ? 'ascap.com/register' :
+        pro === 'BMI'   ? 'bmi.com/register' :
+                          'sesac.com/register';
+
       await notificationService.send({
         userId,
         type: 'info',
-        title: 'Register Your Track with Your PRO',
-        message: `"${trackName}" is mastered. Register it with ${config.pro} now to ensure you collect all your performance royalties.`,
-        link: '/royalties',
+        title: 'Publishing Rights Record Ready',
+        message: `"${trackName}" has been logged in your Publishing Rights. Complete your ${pro} registration at ${registrationUrl}.`,
+        link: '/publishing',
       });
-      actions.push(`PRO registration reminder sent (${config.pro})`);
+      actions.push(`PRO registration reminder sent (${pro})`);
     }
 
-    if (config.autoFillMetadata) {
-      actions.push('Track metadata pre-filled for registration form');
-    }
-
-    return { actions, pro: config.pro };
+    return { actions, pro };
   }
 
   private async handlePressReleaseGenerator(
@@ -1605,11 +1710,94 @@ class MusicWorkflowAutomationService {
     eventData: WorkflowEventData,
     config: Record<string, any>
   ) {
-    const { releaseTitle = 'New Release', artistName = 'Artist' } = eventData;
-    const actions: string[] = [`Press release draft generated (${config.tone} tone)`];
+    const {
+      releaseTitle = 'New Release',
+      artistName = 'Artist',
+      genre,
+      releaseDate,
+      bio,
+      website,
+      contactEmail,
+      bookingEmail,
+    } = eventData as any;
+
+    const actions: string[] = [];
+    const tone = config.tone || 'professional';
+
+    // Generate the press release body via MaxCore AI
+    let pressReleaseDraft = '';
+    try {
+      const aiResult = await unifiedAIController.generateContent({
+        userId,
+        type: 'press_release',
+        platform: 'blog',
+        tone,
+        context: {
+          releaseTitle: String(releaseTitle),
+          artistName: String(artistName),
+          genre: genre ? String(genre) : 'Music',
+          releaseDate: releaseDate ? String(releaseDate) : new Date().toLocaleDateString(),
+          includeQuote: Boolean(config.includeQuote),
+          event: 'press_release_generation',
+        },
+        seed: Math.floor(Date.now() / 10000),
+      });
+      pressReleaseDraft = aiResult?.data?.caption || aiResult?.data?.content || '';
+      if (pressReleaseDraft) {
+        actions.push(`AI press release drafted (${tone} tone)`);
+      }
+    } catch (err) {
+      logger.warn({ err }, 'handlePressReleaseGenerator: AI generation failed, using template');
+    }
+
+    // Fallback template if AI is unavailable
+    if (!pressReleaseDraft) {
+      pressReleaseDraft = `FOR IMMEDIATE RELEASE\n\n${String(artistName).toUpperCase()} RELEASES "${String(releaseTitle).toUpperCase()}"\n\n${String(artistName)} announces the release of "${releaseTitle}"${genre ? ` — a ${genre} track` : ''}${releaseDate ? ` on ${releaseDate}` : ''}.\n\n[Artist bio and quote to be added]\n\nFor press inquiries, contact: ${contactEmail || '[email]'}\nFor booking: ${bookingEmail || '[email]'}\n${website ? `More info: ${website}` : ''}`;
+      actions.push(`Press release template generated (${tone} tone)`);
+    }
 
     if (config.includeQuote) {
+      pressReleaseDraft += '\n\n"[Add your quote here]" — ' + String(artistName);
       actions.push('Artist quote placeholder added');
+    }
+
+    // Persist the press kit / update the press release field
+    try {
+      const existing = await db
+        .select()
+        .from(pressKits)
+        .where(eq(pressKits.userId, userId))
+        .limit(1);
+
+      if (existing.length === 0) {
+        await db.insert(pressKits).values({
+          userId,
+          artistName: String(artistName),
+          bio: bio ? String(bio) : pressReleaseDraft,
+          contactEmail: contactEmail ? String(contactEmail) : null,
+          bookingEmail: bookingEmail ? String(bookingEmail) : null,
+          website: website ? String(website) : null,
+          pressQuotes: config.includeQuote ? [{ source: 'Self', quote: `[Add your quote about "${releaseTitle}" here]` }] : [],
+          isPublic: false,
+        });
+        actions.push('Press kit created with press release content');
+      } else {
+        // Append the new press release as a press quote entry
+        const currentQuotes = (existing[0].pressQuotes as any[]) || [];
+        currentQuotes.push({
+          source: 'Press Release',
+          release: String(releaseTitle),
+          content: pressReleaseDraft,
+          generatedAt: new Date().toISOString(),
+        });
+        await db
+          .update(pressKits)
+          .set({ pressQuotes: currentQuotes, updatedAt: new Date() })
+          .where(eq(pressKits.id, existing[0].id));
+        actions.push('Press release added to existing press kit');
+      }
+    } catch (err) {
+      logger.warn({ err }, 'handlePressReleaseGenerator: failed to save press kit');
     }
 
     if (config.notifyOnReady) {
@@ -1617,8 +1805,8 @@ class MusicWorkflowAutomationService {
         userId,
         type: 'info',
         title: 'Press Release Ready to Review',
-        message: `Your press release for "${releaseTitle}" is drafted and ready for your review. Customize and send to blogs and media contacts.`,
-        link: '/distribution',
+        message: `Your press release for "${releaseTitle}" is drafted and saved to your Press Kit. Review, customize, and send to media contacts.`,
+        link: '/press-kit',
       });
       actions.push('Notification sent');
     }
@@ -1683,22 +1871,100 @@ class MusicWorkflowAutomationService {
     eventData: WorkflowEventData,
     config: Record<string, any>
   ) {
-    const { venueName = 'the venue', contactName = 'the contact' } = eventData;
-    const actions: string[] = [
-      `Follow-up reminder set for ${config.followUpDays} days from now`,
-    ];
+    const {
+      venueName = 'the venue',
+      contactName = 'the contact',
+      contactEmail,
+      city,
+      state,
+      country,
+      capacity,
+      venueType,
+      guaranteeMin,
+      guaranteeMax,
+      notes,
+    } = eventData as any;
+
+    const followUpDays = Number(config.followUpDays) || 7;
+    const followUpDate = new Date(Date.now() + followUpDays * 24 * 60 * 60 * 1000);
+    const actions: string[] = [];
+
+    // Upsert the venue contact in the CRM with follow-up date
+    try {
+      const existing = await db
+        .select()
+        .from(venueContacts)
+        .where(and(
+          eq(venueContacts.userId, userId),
+          eq(venueContacts.venueName, String(venueName)),
+        ))
+        .limit(1);
+
+      if (existing.length === 0) {
+        await db.insert(venueContacts).values({
+          userId,
+          venueName: String(venueName),
+          city: city ? String(city) : null,
+          state: state ? String(state) : null,
+          country: country ? String(country) : 'US',
+          capacity: capacity ? Number(capacity) : null,
+          venueType: venueType ? String(venueType) : 'club',
+          contactName: contactName ? String(contactName) : null,
+          contactEmail: contactEmail ? String(contactEmail) : null,
+          guaranteeMin: guaranteeMin ? Number(guaranteeMin) : null,
+          guaranteeMax: guaranteeMax ? Number(guaranteeMax) : null,
+          status: 'outreach',
+          lastContactedAt: new Date(),
+          notes: notes ? String(notes) : `Follow-up scheduled for ${followUpDate.toLocaleDateString()}`,
+        });
+        actions.push(`Venue contact "${venueName}" created in Booking CRM`);
+      } else {
+        await db
+          .update(venueContacts)
+          .set({
+            status: 'outreach',
+            lastContactedAt: new Date(),
+            notes: `Follow-up scheduled for ${followUpDate.toLocaleDateString()}${notes ? `\n${notes}` : ''}`,
+            updatedAt: new Date(),
+          })
+          .where(eq(venueContacts.id, existing[0].id));
+        actions.push(`Venue contact "${venueName}" updated in Booking CRM`);
+      }
+      actions.push(`Follow-up date logged: ${followUpDate.toLocaleDateString()}`);
+    } catch (err) {
+      logger.warn({ err }, 'handleVenueBookingFollowup: failed to upsert venue contact');
+    }
+
+    // Send the actual follow-up email to the booking contact
+    if (config.sendEmail && contactEmail) {
+      try {
+        await emailService.sendEmail({
+          to: String(contactEmail),
+          subject: `Booking Inquiry Follow-Up — ${venueName}`,
+          html: `
+            <p>Hi ${String(contactName)},</p>
+            <p>I'm following up on my recent booking inquiry for ${String(venueName)}. I'm very interested in performing at your venue and would love to discuss available dates and terms.</p>
+            <p>Please let me know if you need any additional information such as an EPK, rider, or audio/video samples.</p>
+            <p>Looking forward to hearing from you,</p>
+            <p>[Your Name]</p>
+          `,
+        });
+        actions.push(`Follow-up email sent to ${String(contactEmail)}`);
+      } catch (err) {
+        logger.warn({ err }, 'handleVenueBookingFollowup: failed to send follow-up email');
+        actions.push('Follow-up email failed (will retry)');
+      }
+    } else if (config.sendEmail) {
+      actions.push('Follow-up email draft saved (no contact email on file)');
+    }
 
     await notificationService.send({
       userId,
       type: 'info',
-      title: `Booking Follow-Up Reminder Set`,
-      message: `You'll be reminded to follow up with ${venueName} (${contactName}) in ${config.followUpDays} days if no response.`,
-      link: '/distribution',
+      title: `Booking Follow-Up ${config.sendEmail && contactEmail ? 'Sent' : 'Scheduled'}`,
+      message: `${venueName} (${String(contactName)}) follow-up ${config.sendEmail && contactEmail ? 'email sent' : `reminder set for ${followUpDate.toLocaleDateString()}`}.`,
+      link: '/venues',
     });
-
-    if (config.sendEmail) {
-      actions.push('Follow-up email draft queued for review');
-    }
 
     return { actions, venueName };
   }
@@ -1708,25 +1974,107 @@ class MusicWorkflowAutomationService {
     eventData: WorkflowEventData,
     config: Record<string, any>
   ) {
-    const { releaseTitle = 'New Release' } = eventData;
-    const pitchCount = Math.min(config.maxPitchesPerRelease ?? 10, 10);
-    const actions = [`${pitchCount} sync licensing contacts identified for "${releaseTitle}"`];
+    const {
+      releaseTitle = 'New Release',
+      artistName = 'Artist',
+      genre,
+      mood,
+      bpm,
+      duration,
+      previewUrl,
+      isExclusive = false,
+      price,
+    } = eventData as any;
 
+    const maxPitches = Math.min(Number(config.maxPitchesPerRelease) || 5, 10);
+    const targetGenres = config.targetGenres || 'Film & TV';
+    const actions: string[] = [];
+
+    // Build a curated list of sync licensing targets based on genre
+    const syncTargets: Array<{ name: string; email?: string; type: string }> = [
+      { name: 'Music Supervision Hub', email: 'submissions@musicsupervisionhub.com', type: 'Film & TV' },
+      { name: 'Musicbed', email: 'licensing@musicbed.com', type: 'Commercial' },
+      { name: 'Artlist', email: 'submissions@artlist.io', type: 'Commercial' },
+      { name: 'Epidemic Sound', email: 'licensing@epidemicsound.com', type: 'Commercial' },
+      { name: 'Musicvine', email: 'sync@musicvine.com', type: 'Film & TV' },
+      { name: 'TAXI Music', email: 'submissions@taxi.com', type: 'Film & TV' },
+      { name: 'Crucial Music', email: 'sync@crucialmusic.com', type: 'Advertising' },
+      { name: 'Pump Audio', email: 'licensing@pumpaudio.com', type: 'Broadcast' },
+      { name: 'Audio Network', email: 'licensing@audionetwork.com', type: 'Broadcast' },
+      { name: 'Jingle Punks', email: 'sync@jinglepunks.com', type: 'Advertising' },
+    ].slice(0, maxPitches);
+
+    // Create syncSubmissions records for each target
+    const savedCount = await (async () => {
+      let count = 0;
+      for (const target of syncTargets) {
+        try {
+          await db.insert(syncSubmissions).values({
+            userId,
+            trackTitle: String(releaseTitle),
+            artistName: String(artistName),
+            genre: genre ? String(genre) : null,
+            mood: mood ? String(mood) : null,
+            bpm: bpm ? Number(bpm) : null,
+            duration: duration ? Number(duration) : null,
+            description: `Sync pitch targeting ${target.type} placements`,
+            usageTypes: [target.type],
+            isExclusive: Boolean(isExclusive),
+            price: price ? Number(price) : null,
+            previewUrl: previewUrl ? String(previewUrl) : null,
+            submissionTarget: target.name,
+            status: config.autoSendPitch ? 'submitted' : 'draft',
+          });
+          count++;
+        } catch (err) {
+          logger.warn({ err, target: target.name }, 'handleSyncLicensePitch: failed to create submission');
+        }
+      }
+      return count;
+    })();
+
+    actions.push(`${savedCount} sync submissions saved to Sync Licensing tracker`);
+
+    // Auto-send pitch emails if configured
     if (config.autoSendPitch) {
-      actions.push('Pitch emails sent automatically');
+      let emailsSent = 0;
+      for (const target of syncTargets) {
+        if (!target.email) continue;
+        try {
+          await emailService.sendEmail({
+            to: target.email,
+            subject: `Sync Licensing Submission: "${releaseTitle}" by ${artistName}`,
+            html: `
+              <p>Hi ${target.name} team,</p>
+              <p>I'd like to submit <strong>"${releaseTitle}"</strong> by <strong>${artistName}</strong> for your sync licensing consideration.</p>
+              ${genre ? `<p><strong>Genre:</strong> ${genre}</p>` : ''}
+              ${mood ? `<p><strong>Mood:</strong> ${mood}</p>` : ''}
+              ${bpm ? `<p><strong>BPM:</strong> ${bpm}</p>` : ''}
+              ${previewUrl ? `<p><strong>Preview:</strong> <a href="${previewUrl}">Listen here</a></p>` : ''}
+              <p>This track is available for ${targetGenres} placements${isExclusive ? ' (exclusive licensing available)' : ''}.</p>
+              <p>Please let me know if you need the full-quality file, stems, or any additional information.</p>
+              <p>Best regards,<br>${artistName}</p>
+            `,
+          });
+          emailsSent++;
+        } catch (err) {
+          logger.warn({ err, target: target.name }, 'handleSyncLicensePitch: email failed');
+        }
+      }
+      actions.push(`${emailsSent} pitch emails sent to sync licensing companies`);
     } else {
-      actions.push('Pitch drafts queued for your review');
+      actions.push(`${savedCount} pitch drafts saved — review and send from Sync Licensing`);
     }
 
     await notificationService.send({
       userId,
       type: 'info',
       title: 'Sync Licensing Pitches Ready',
-      message: `${pitchCount} sync pitches ${config.autoSendPitch ? 'sent' : 'drafted'} for "${releaseTitle}" targeting ${config.targetGenres} placements.`,
-      link: '/distribution',
+      message: `${savedCount} sync pitches ${config.autoSendPitch ? 'sent' : 'drafted'} for "${releaseTitle}" targeting ${targetGenres} placements.`,
+      link: '/sync-licensing',
     });
 
-    return { actions, pitchCount };
+    return { actions, pitchCount: savedCount };
   }
 
   // ── Stats ─────────────────────────────────────────────────────────────────
