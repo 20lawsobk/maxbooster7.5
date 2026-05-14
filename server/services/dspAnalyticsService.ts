@@ -2,12 +2,14 @@ import { db } from '../db';
 import {
   dspAnalytics,
   dspUserPlatformStatus,
+  releases,
   InsertDspAnalytics,
   DspAnalytics,
   DspUserPlatformStatus,
 } from '@shared/schema';
 import { eq, and, gte, lte, desc, sql, asc } from 'drizzle-orm';
 import { logger } from '../logger.js';
+import { labelGridService } from './labelgrid-service';
 
 // ── Timeout-guarded fetch: adds a 10s default signal so no outbound HTTP call
 // can hold the event loop indefinitely.  Per-call signal overrides this default.
@@ -144,72 +146,78 @@ class DSPAnalyticsService {
     ['instagram', { apiBaseUrl: 'https://graph.instagram.com/v18.0', rateLimitPerMinute: 60 }],
   ]);
 
+  /**
+   * Fetch Spotify analytics via LabelGrid — no per-user OAuth required.
+   * Queries the local DB for this user's releases that have been distributed
+   * to Spotify via LabelGrid, then aggregates the 'spotify' platform slice
+   * from each release's analytics response.
+   */
   async fetchSpotifyAnalytics(
     userId: string,
-    credentials: PlatformCredentials,
+    _credentials: PlatformCredentials,
     startDate: Date,
     endDate: Date
   ): Promise<SpotifyArtistAnalytics | null> {
-    if (!credentials.accessToken) {
-      logger.info(`No Spotify access token for user ${userId}, skipping fetch`);
-      return null;
-    }
-
     try {
-      logger.info(`Fetching Spotify analytics for user ${userId}`);
-      const config = this.platformConfigs.get('spotify');
-      if (!config) return null;
+      logger.info(`Fetching Spotify analytics for user ${userId} via LabelGrid`);
 
-      const authHeaders = { 'Authorization': `Bearer ${credentials.accessToken}` };
+      // 1. Find user's releases that have been submitted to LabelGrid
+      const userReleases = await db
+        .select({ id: releases.id, metadata: releases.metadata })
+        .from(releases)
+        .where(
+          and(
+            eq(releases.userId, userId),
+            sql`${releases.metadata}->>'labelGridReleaseId' IS NOT NULL`
+          )
+        );
 
-      // Fetch profile, top tracks, top artists, and saved-track count in parallel
-      const [profileRes, topTracksRes, topArtistsRes, savedTracksRes, recentlyPlayedRes] = await Promise.all([
-        timedFetch(`${config.apiBaseUrl}/me`, { headers: authHeaders }),
-        timedFetch(`${config.apiBaseUrl}/me/top/tracks?limit=50&time_range=short_term`, { headers: authHeaders }),
-        timedFetch(`${config.apiBaseUrl}/me/top/artists?limit=20&time_range=short_term`, { headers: authHeaders }),
-        timedFetch(`${config.apiBaseUrl}/me/tracks?limit=1`, { headers: authHeaders }),
-        timedFetch(`${config.apiBaseUrl}/me/player/recently-played?limit=50`, { headers: authHeaders }),
-      ]);
-
-      if (!profileRes.ok) {
-        logger.warn(`Spotify profile API error: ${profileRes.status} ${profileRes.statusText}`);
-        return null;
+      if (userReleases.length === 0) {
+        logger.info(`No LabelGrid-distributed releases found for user ${userId} — no Spotify data`);
+        return { streams: 0, listeners: 0, saves: 0, popularity: 0, demographics: [], topCities: [] };
       }
 
-      const profile = await profileRes.json();
-      const topTracks = topTracksRes.ok ? await topTracksRes.json() : { items: [] };
-      const topArtists = topArtistsRes.ok ? await topArtistsRes.json() : { items: [] };
-      const savedTracks = savedTracksRes.ok ? await savedTracksRes.json() : { total: 0 };
-      const recentlyPlayed = recentlyPlayedRes.ok ? await recentlyPlayedRes.json() : { items: [] };
+      // 2. Fetch analytics for each release in parallel, then extract the spotify slice
+      let totalStreams   = 0;
+      let totalListeners = 0;
+      let totalRevenue   = 0;
 
-      // Estimate stream count from recently played (each play = 1 stream) weighted by followers
-      const recentPlayCount = recentlyPlayed.items?.length || 0;
-      const followerCount = profile.followers?.total || 0;
-      // Stream estimate: recent plays in the window scaled to the period length
-      const periodDays = Math.max(1, Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)));
-      const streamEstimate = Math.max(followerCount, recentPlayCount * Math.ceil(periodDays / 1));
+      await Promise.all(
+        userReleases.map(async (release) => {
+          try {
+            const meta = release.metadata as Record<string, unknown> | null;
+            const lgReleaseId = meta?.labelGridReleaseId as string | undefined;
+            if (!lgReleaseId) return;
 
-      const totalPopularity = topTracks.items?.reduce((sum: number, t: Record<string, unknown>) => sum + ((t.popularity as number) || 0), 0) || 0;
-      const avgPopularity = topTracks.items?.length > 0 ? Math.round(totalPopularity / topTracks.items.length) : 0;
+            const analytics = await labelGridService.getReleaseAnalytics(lgReleaseId);
 
-      // Build demographics from top artists' genres
-      const genreMap: Record<string, number> = {};
-      for (const artist of (topArtists.items || [])) {
-        for (const genre of (artist.genres || [])) {
-          genreMap[genre] = (genreMap[genre] || 0) + 1;
-        }
-      }
+            // Prefer the per-platform spotify slice; fall back to totals
+            const spotifySlice = analytics.platforms?.['spotify'] ?? analytics.platforms?.['Spotify'];
+            if (spotifySlice) {
+              totalStreams    += spotifySlice.streams   || 0;
+              totalListeners  += spotifySlice.listeners || 0;
+              totalRevenue    += spotifySlice.revenue   || 0;
+            } else {
+              // Release has no platform breakdown — use totals as a proxy
+              totalStreams    += analytics.totalStreams  || 0;
+              totalRevenue    += analytics.totalRevenue || 0;
+            }
+          } catch (err) {
+            logger.warn({ err, releaseId: release.id }, 'LabelGrid analytics fetch failed for one release — skipping');
+          }
+        })
+      );
 
       return {
-        streams: streamEstimate,
-        listeners: followerCount,
-        saves: savedTracks.total || 0,
-        popularity: avgPopularity || profile.popularity || 0,
+        streams:     totalStreams,
+        listeners:   totalListeners,
+        saves:       0,     // LabelGrid does not expose playlist saves
+        popularity:  0,     // LabelGrid does not expose a popularity score
         demographics: [],
-        topCities: [],
+        topCities:   [],
       };
     } catch (error) {
-      logger.warn({ err: error }, 'Error fetching Spotify analytics:');
+      logger.warn({ err: error }, 'Error fetching Spotify analytics via LabelGrid:');
       return null;
     }
   }
@@ -851,6 +859,20 @@ class DSPAnalyticsService {
           },
         });
 
+      // Spotify analytics are fetched via LabelGrid (server-side API key) — no per-user OAuth needed.
+      if (platform === 'spotify') {
+        const data = await this.fetchSpotifyAnalytics(userId, {} as PlatformCredentials, startDate, endDate);
+        const normalizedData = data ? this.normalizeSpotifyData(data, startDate, endDate) : null;
+        if (normalizedData) {
+          await this.storeDSPAnalytics(userId, normalizedData);
+          await db
+            .update(dspUserPlatformStatus)
+            .set({ syncStatus: 'success', lastSuccessAt: new Date(), dataRangeStart: startDate, dataRangeEnd: endDate, recordsProcessed: 1, errorMessage: null, errorCount: 0, updatedAt: new Date() })
+            .where(and(eq(dspUserPlatformStatus.userId, userId), eq(dspUserPlatformStatus.platform, platform)));
+        }
+        return normalizedData;
+      }
+
       if (!syncStatus?.credentials) {
         logger.info(`No OAuth credentials stored for ${platform} for user ${userId} — platform not connected, skipping sync`);
         await db
@@ -868,11 +890,6 @@ class DSPAnalyticsService {
       let normalizedData: NormalizedDSPAnalytics | null = null;
 
       switch (platform) {
-        case 'spotify': {
-          const data = await this.fetchSpotifyAnalytics(userId, credentials, startDate, endDate);
-          if (data) normalizedData = this.normalizeSpotifyData(data, startDate, endDate);
-          break;
-        }
         case 'apple': {
           const data = await this.fetchAppleMusicAnalytics(userId, credentials, startDate, endDate);
           if (data) normalizedData = this.normalizeAppleMusicData(data, startDate, endDate);
