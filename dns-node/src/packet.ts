@@ -255,6 +255,7 @@ export interface EncodeOpts {
   id:         number;
   opcode?:    number;
   aa?:        number;
+  tc?:        number;
   rd?:        number;
   ra?:        number;
   ad?:        number;
@@ -271,7 +272,7 @@ export function encodePacket(opts: EncodeOpts): Buffer {
   const qr     = 1;
   const opcode = opts.opcode ?? 0;
   const aa     = opts.aa     ?? 0;
-  const tc     = 0;
+  const tc     = opts.tc     ?? 0;
   const rd     = opts.rd     ?? 0;
   const ra     = opts.ra     ?? 0;
   const ad     = opts.ad     ?? 0;
