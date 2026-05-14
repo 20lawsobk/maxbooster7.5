@@ -611,7 +611,7 @@ router.post('/subscribe/:tierId', async (req, res) => {
       return res.status(503).json({ error: 'Payment service unavailable. Please try again later.' });
     }
 
-    const stripe = new Stripe(stripeKey, { apiVersion: '2024-06-20' as '2024-06-20' });
+    const stripe = new Stripe(stripeKey, { apiVersion: '2024-06-20' as const });
 
     let stripeCustomerId = (user as Record<string, unknown>).stripeCustomerId as string | undefined;
     if (!stripeCustomerId) {
@@ -1191,7 +1191,7 @@ router.post('/:id/checkout', async (req, res) => {
       logger.warn('Stripe secret key is not configured');
       return res.status(503).json({ error: 'Payment processing is not available. Please contact support.' });
     }
-    const stripe = new Stripe(stripeKey, { apiVersion: '2024-06-20' as '2024-06-20' });
+    const stripe = new Stripe(stripeKey, { apiVersion: '2024-06-20' as const });
 
     const [storefront] = await db.select().from(storefronts).where(eq(storefronts.id, storefrontId)).limit(1);
     if (!storefront) return res.status(404).json({ error: 'Storefront not found' });
