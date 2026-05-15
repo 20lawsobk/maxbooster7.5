@@ -119,9 +119,13 @@ export class MaxCoreAIClient {
   /**
    * Call MaxCore's generation endpoint with retry + back-off.
    */
-  private static readonly MAX_GENERATE_ATTEMPTS = 3;
+  private static readonly MAX_GENERATE_ATTEMPTS  = 3;
   private static readonly GENERATE_BACKOFF_BASE  = 1_500;
   private static readonly GENERATE_BACKOFF_MAX   = 8_000;
+  // 60 s matches INFER_TIMEOUT_MS.  Content generation on MaxCore takes
+  // up to ~50 s under diffusion training load; 35 s was causing consistent
+  // timeouts even though MaxCore is always running.
+  private static readonly GENERATE_TIMEOUT_MS    = 60_000;
 
   static async generate<T = any>(endpoint: string, body: Record<string, unknown>): Promise<T | null> {
     if (!MC_AI_URL || !MC_AI_KEY) return null;
@@ -145,8 +149,9 @@ export class MaxCoreAIClient {
           method:  'POST',
           headers: { 'Content-Type': 'application/json', ...MaxCoreAIClient.authHeaders() },
           body:    JSON.stringify(body),
-          // 35 s covers MaxCore cold-start latency (~16 s warm, up to ~30 s cold).
-          signal:  AbortSignal.timeout(35_000),
+          // 60 s covers MaxCore generation latency under diffusion training load
+          // (~16 s warm, up to ~50 s when the training loop is active).
+          signal:  AbortSignal.timeout(MaxCoreAIClient.GENERATE_TIMEOUT_MS),
         });
 
         if (r.ok && MaxCoreAIClient.isJson(r)) {
@@ -275,8 +280,9 @@ export function startMaxCoreLLMWarmth(): void {
         'Authorization': `Bearer ${MC_AI_KEY}`,
       },
       body:   JSON.stringify({ topic: 'music artist brand new release', platform: 'instagram', tone: 'energetic' }),
-      // Match the generate() timeout so warmth pings survive cold-start latency.
-      signal: AbortSignal.timeout(35_000),
+      // Match the generate() timeout so warmth pings actually complete when
+      // MaxCore is busy with the diffusion training loop.
+      signal: AbortSignal.timeout(MaxCoreAIClient.GENERATE_TIMEOUT_MS),
     }).catch(() => {});
   };
 
