@@ -1111,7 +1111,11 @@ class AdvancedSocialAIService {
     });
 
     if (!mc?.hook && !mc?.caption) {
-      throw new Error('[AdvancedSocialAI] MaxCore returned no content (transient call failure)');
+      // MaxCore returned null — either the endpoint is suppressed after a burst
+      // exhausted all retries (rate-limit / 503 / timeout) or the response shape
+      // didn't carry the expected hook/caption fields.  Throw so the caller's
+      // Tier-3 local pattern fallback can take over immediately.
+      throw new Error('[AdvancedSocialAI] MaxCore infer returned null — rate-limited or response shape mismatch');
     }
 
     const hook        = mc.hook || '';
