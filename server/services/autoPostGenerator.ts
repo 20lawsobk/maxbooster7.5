@@ -20,8 +20,9 @@ async function translateViaMaxCore(
   const results: TranslatedContent[] = [];
   for (const lang of targetLanguages) {
     const mcResult = await MaxCoreAIClient.generate<{
-      content?: string; body?: string; text?: string;
-      headline?: string; hashtags?: string[];
+      caption?: string; hook?: string; body?: string; cta?: string;
+      content?: string; text?: string;
+      headline?: string; hashtags?: string[]; confidence?: number;
     }>('/api/generate/content', {
       topic: content,
       platform: platform || 'instagram',
@@ -319,6 +320,26 @@ class AutoPostGenerator {
       }
     }
 
+    // MaxCore is the primary text source — try it before static templates.
+    if (!headline) {
+      try {
+        const mc = await MaxCoreAIClient.generate<{
+          caption?: string; hook?: string; body?: string; cta?: string; hashtags?: string[];
+        }>('/api/generate/content', {
+          topic,
+          platform: platforms[0],
+          tone,
+          artist_name: artistName,
+        });
+        if (mc?.caption || mc?.hook) {
+          headline    = mc.hook ?? mc.caption?.split('\n')[0] ?? '';
+          body        = mc.caption ?? [mc.hook, mc.body, mc.cta].filter(Boolean).join('\n\n');
+          callToAction = mc.cta ?? 'Check it out!';
+          if (mc.hashtags?.length) aiHashtags = mc.hashtags;
+        }
+      } catch { /* non-fatal — fall through to templates */ }
+    }
+
     if (!headline) {
       switch (request.objective) {
         case 'awareness':
@@ -411,6 +432,26 @@ class AutoPostGenerator {
       } catch (err) {
         logger.warn({ err: err }, '[AutoPost] Python AI failed for viral content:');
       }
+    }
+
+    // MaxCore is the primary text source — try it before static templates.
+    if (!headline) {
+      try {
+        const mc = await MaxCoreAIClient.generate<{
+          caption?: string; hook?: string; body?: string; cta?: string; hashtags?: string[];
+        }>('/api/generate/content', {
+          topic,
+          platform: platforms[0],
+          tone: request.tone || 'energetic',
+          artist_name: artistName,
+        });
+        if (mc?.caption || mc?.hook) {
+          headline     = mc.hook ?? mc.caption?.split('\n')[0] ?? '';
+          body         = mc.caption ?? [mc.hook, mc.body, mc.cta].filter(Boolean).join('\n\n');
+          callToAction = mc.cta ?? callToAction;
+          if (mc.hashtags?.length) hashtags = mc.hashtags;
+        }
+      } catch { /* non-fatal — fall through to templates */ }
     }
 
     if (!headline) {
