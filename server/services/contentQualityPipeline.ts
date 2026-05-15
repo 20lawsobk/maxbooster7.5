@@ -394,7 +394,9 @@ class ContentQualityPipeline {
           logger.info(`[ContentQuality] Variant ${index} generated via Python AI`);
         }
       } catch (err) {
-        logger.warn({ err: err }, '[ContentQuality] Python AI failed for variant, falling through to advanced AI:');
+        // Python AI is optional — falling through to Tier 2 (Advanced AI) is expected.
+        // Log only the message so repeated failures don't dump stack traces.
+        logger.debug(`[ContentQuality] Python AI skipped for variant ${index}: ${(err as Error)?.message ?? String(err)}`);
       }
     }
 
@@ -428,7 +430,15 @@ class ContentQualityPipeline {
         hashtags = advancedResult.primary.hashtags;
         logger.info(`[ContentQuality] Variant ${index} generated via Advanced AI (${contentType})`);
       } catch (err) {
-        logger.warn({ err: err }, '[ContentQuality] Advanced AI also failed for variant:');
+        // Advanced AI (Tier 2) failed — Tier 3 local fallback below handles this.
+        // Downgrade to debug when caused by MaxCore being unavailable (already
+        // surfaced once per suppression window by maxcoreClient).
+        const advErrMsg = (err as Error)?.message ?? String(err);
+        if (/MaxCore.*null|returned null|infer returned null/i.test(advErrMsg)) {
+          logger.debug(`[ContentQuality] Advanced AI unavailable for variant ${index} (MaxCore null) — using local fallback`);
+        } else {
+          logger.warn(`[ContentQuality] Advanced AI failed for variant ${index}: ${advErrMsg}`);
+        }
 
         // ── Tier 3: Local pattern-data fallback (always available) ────────────
         // Both Python AI (Tier 1) and MaxCore-backed AdvancedSocialAI (Tier 2)
@@ -1349,8 +1359,16 @@ class ContentQualityPipeline {
       };
     } catch (error) {
       const errMsg = (error as Error)?.message ?? String(error);
-      const errStack = (error as Error)?.stack?.split('\n')[1]?.trim() ?? '';
-      logger.warn(`[AdvancedAI] Content pipeline failed (${errMsg}) ${errStack}`);
+      // MaxCore returning null is the upstream suppressed warn (already logged by
+      // maxcoreClient once per suppression window).  Cascading here at WARN with a
+      // full stack trace multiplies the noise × workers × autopilot users.
+      // Use debug so the call-graph is still traceable when needed.
+      const isMaxCoreNull = /MaxCore infer returned null|MaxCore.*null|returned null/i.test(errMsg);
+      if (isMaxCoreNull) {
+        logger.debug(`[AdvancedAI] Content pipeline skipped — MaxCore unavailable: ${errMsg}`);
+      } else {
+        logger.warn(`[AdvancedAI] Content pipeline failed: ${errMsg}`);
+      }
       throw error;
     }
   }

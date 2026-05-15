@@ -81,6 +81,12 @@ class ChainErrorAutoFixer extends EventEmitter {
   // but the WARN log is suppressed to once per 5 min so it doesn't flood.
   private _lastHeapWarnMs = 0;
   private readonly _HEAP_WARN_COOLDOWN_MS = 5 * 60 * 1000;
+  // Dedicated cooldown for PDIM chain-congestion warns (separate from heap warns).
+  // Previous code reused _lastHeapWarnMs here (a bug), causing the PDIM warn to
+  // fire every 15 s whenever heap GC had recently run.  5 min is appropriate:
+  // PDIM congestion is self-resolving; we only need one reminder per episode.
+  private _lastPdimCongestionWarnMs = 0;
+  private readonly _PDIM_CONGESTION_WARN_COOLDOWN_MS = 5 * 60 * 1000;
 
   // Unknown error log — novel errors that matched no known pattern
   private _unknownErrors: Array<{ ts: number; msg: string }> = [];
@@ -1060,7 +1066,8 @@ class ChainErrorAutoFixer extends EventEmitter {
         const depth = getPdimQueueDepth();
         const gap   = getPdimAdaptiveGapMs();
         const now   = Date.now();
-        if (depth > 15 && now - this._lastHeapWarnMs > 60_000) {
+        if (depth > 15 && now - this._lastPdimCongestionWarnMs > this._PDIM_CONGESTION_WARN_COOLDOWN_MS) {
+          this._lastPdimCongestionWarnMs = now;
           logger.warn(
             `[ChainFixer] PDIM chain congested — ${depth} callers queued (gap ${gap}ms). ` +
             `If this persists, a 429 cascade or exec timeout may follow.`

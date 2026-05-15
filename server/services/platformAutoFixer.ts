@@ -865,11 +865,14 @@ class PlatformAutoFixer extends EventEmitter {
       return;
     }
 
-    // Log degradation/critical state (rate-limited to avoid spam)
+    // Log degradation/critical state (rate-limited to avoid spam).
+    // Cooldown is 5 min: chronic PDIM-congestion / queue-stall states can persist
+    // for many minutes; the 1-min window caused a warn every probe cycle.
     const key = `${subsystem}:${status}`;
     const last = this.logErrorCounts.get(`probe:${key}`) ?? 0;
     const now  = Date.now();
-    if (now - last > 60_000) {
+    const cooldownMs = status === 'critical' ? 120_000 : 300_000; // 2 min critical, 5 min degraded
+    if (now - last > cooldownMs) {
       logger.warn(`[PlatformAutoFixer] ${subsystem} ${status}: ${result.message}`);
       this.logErrorCounts.set(`probe:${key}`, now);
     }

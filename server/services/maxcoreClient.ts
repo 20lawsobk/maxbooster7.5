@@ -128,10 +128,16 @@ export class MaxCoreAIClient {
 
     const path = endpoint.startsWith('/api/') ? endpoint : `/api${endpoint}`;
 
-    // Clear suppression flag on re-entry so a recovered MaxCore gets re-logged.
-    if (!MaxCoreAIClient.isEndpointSuppressed(path)) {
-      MaxCoreAIClient._endpointSuppressed.delete(path);
+    // Short-circuit when this endpoint recently exhausted all retries.
+    // Concurrent callers (e.g. score-calibrator warmup + autopilot burst) skip
+    // their own 3-attempt loops and return null immediately, giving MaxCore
+    // breathing room and surfacing the failure faster.
+    if (MaxCoreAIClient.isEndpointSuppressed(path)) {
+      logger.debug(`[MaxCoreAI] generate ${path} — skipping (endpoint suppressed)`);
+      return null;
     }
+
+    let lastFailReason = 'unknown';
 
     for (let attempt = 0; attempt < MaxCoreAIClient.MAX_GENERATE_ATTEMPTS; attempt++) {
       try {
@@ -145,15 +151,17 @@ export class MaxCoreAIClient {
 
         if (r.ok && MaxCoreAIClient.isJson(r)) {
           const data = await r.json();
-          // On success, clear any active suppression so failures are visible again after recovery.
+          // On success, clear suppression so next failure window is fresh.
           MaxCoreAIClient._endpointSuppressed.delete(path);
           logger.debug(`[MaxCoreAI] generate ${path} → success (attempt ${attempt + 1})`);
           return data as T;
         }
 
-        logger.debug(`[MaxCoreAI] generate ${path} attempt ${attempt + 1} → HTTP ${r.status}`);
+        lastFailReason = `HTTP ${r.status} (content-type: ${r.headers.get('content-type') ?? 'none'})`;
+        logger.debug(`[MaxCoreAI] generate ${path} attempt ${attempt + 1} → ${lastFailReason}`);
       } catch (e) {
-        logger.debug(`[MaxCoreAI] generate ${path} attempt ${attempt + 1} failed: ${e.message}`);
+        lastFailReason = (e as Error).message ?? String(e);
+        logger.debug(`[MaxCoreAI] generate ${path} attempt ${attempt + 1} failed: ${lastFailReason}`);
       }
 
       if (attempt < MaxCoreAIClient.MAX_GENERATE_ATTEMPTS - 1) {
@@ -165,9 +173,12 @@ export class MaxCoreAIClient {
       }
     }
 
-    // Throttle repeated failures: only log WARN once per ENDPOINT_SUPPRESS_MS window.
+    // Log WARN once per suppression window; include the actual failure reason.
     if (!MaxCoreAIClient.isEndpointSuppressed(path)) {
-      logger.warn(`[MaxCoreAI] generate ${path} — all ${MaxCoreAIClient.MAX_GENERATE_ATTEMPTS} attempts failed (returning null)`);
+      logger.warn(
+        `[MaxCoreAI] generate ${path} — all ${MaxCoreAIClient.MAX_GENERATE_ATTEMPTS} attempts failed` +
+        ` (last failure: ${lastFailReason})`
+      );
       MaxCoreAIClient._endpointSuppressed.set(path, Date.now() + MaxCoreAIClient.ENDPOINT_SUPPRESS_MS);
     }
     return null;
