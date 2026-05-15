@@ -113,7 +113,7 @@ async function _acquireWorkerSlot(): Promise<void> {
       timer: setTimeout(() => {
         const idx = _waitQueue.indexOf(entry);
         if (idx !== -1) _waitQueue.splice(idx, 1);
-        reject(new Error('[LuaExecutor] Timeout waiting for worker slot (30s)'));
+        reject(new Error(`[LuaExecutor] Timeout waiting for worker slot (${Math.round(_maxWaitMs / 1000)}s)`));
       }, _maxWaitMs),
     };
     _waitQueue.push(entry);
@@ -182,7 +182,15 @@ function syncRedisCall(cmd, args) {
   const lenBuf  = new Int32Array(sab, 4, 1);
   Atomics.store(control, 0, 0);
   parentPort.postMessage({ type: 'redis', cmd, args, sab });
-  Atomics.wait(control, 0, 0); // blocks worker until main thread signals
+  // 60 s timeout: if the main thread does not signal within 60 s the PDIM
+  // chain is so congested that waiting longer wastes the semaphore slot.
+  // Throwing here causes the Lua error path below to propagate the error
+  // back to the main thread, which releases the slot gracefully — much
+  // cleaner than waiting for the 90s hard-kill watchdog.
+  const _awaitResult = Atomics.wait(control, 0, 0, 60000);
+  if (_awaitResult === 'timed-out') {
+    throw new Error('[LuaExecutor] redis.call timed out after 60s — PDIM chain congested');
+  }
   const status = Atomics.load(control, 0);
   const len    = Atomics.load(lenBuf, 0);
   const raw    = Buffer.from(new Uint8Array(sab, SAB_HEADER_BYTES, len)).toString('utf8');
@@ -403,21 +411,23 @@ export async function execLuaViaPdim(
     });
 
     // Watchdog: logs a warning every 60s if a script is still running.
-    // Hard-kills the Worker after SCRIPT_HARD_KILL_MS (300s = 5 min).
+    // Hard-kills the Worker after SCRIPT_HARD_KILL_MS as a last resort.
     //
-    // Why 300s:
+    // Why 90s (reduced from 300s):
     //   BullMQ scripts make ~35 sequential redis.call()s.  At worst-case RTT
-    //   (800ms) that is 35 × 810ms ≈ 28s.  300s gives 10× headroom for
-    //   legitimate PDIM slowness before we conclude the Worker is truly stuck
-    //   (e.g. Atomics.wait blocked forever because PDIM stopped responding
-    //   mid-script, which was observed as scripts running > 19 000s in prod).
-    const SCRIPT_HARD_KILL_MS = 300_000; // 5 minutes
+    //   (800ms) that is 35 × 810ms ≈ 28s.  90s gives 3× headroom.
+    //   The Atomics.wait timeout (60s) now self-terminates the worker before
+    //   this watchdog fires in most congestion cases, so 300s was masking the
+    //   issue and holding semaphore slots for 5× longer than necessary.
+    const SCRIPT_HARD_KILL_MS = 90_000; // 90 s (3× worst-case script runtime)
     const _scriptStart = Date.now();
-    // Watchdog tick counter — used to reduce log frequency for long-running
-    // scripts.  Logs at ticks 1-3 (60s, 120s, 180s) so the first three minutes
-    // are always visible, then only every 5th tick (every 5 min) thereafter.
-    // During heavy PDIM back-pressure thousands of scripts queue simultaneously;
-    // logging every 60s per script floods the console without adding signal.
+    // Watchdog tick counter — fires every 30s.
+    // With a 90s hard-kill, ticks 1-3 (30s, 60s, 90s) are all relevant:
+    //   Tick 1 (30s): early stall warning — script taking longer than expected
+    //   Tick 2 (60s): sustained stall — Atomics.wait probably blocked
+    //   Tick 3 (90s): hard-kill fires → slot released
+    // During heavy PDIM back-pressure thousands of scripts may stall; the
+    // depth check below demotes those to debug to avoid log avalanche.
     let _watchdogTick = 0;
     const watchdog = setInterval(async () => {
       const elapsedMs = Date.now() - _scriptStart;
@@ -436,10 +446,10 @@ export async function execLuaViaPdim(
           reject(new Error(`[LuaExecutor] worker hard-killed after ${elapsedS}s (stuck script timeout)`));
         });
       } else {
-        // Log at ticks 1-3 (60s, 120s, 180s) always; after that every 5 ticks.
+        // Always log ticks 1-2 (30s, 60s); they precede the 90s hard-kill.
         // When PDIM is heavily congested, scripts stall expectedly — demote to
         // debug in that case to avoid amplifying the congestion noise.
-        const shouldLog = _watchdogTick <= 3 || _watchdogTick % 5 === 0;
+        const shouldLog = _watchdogTick <= 2;
         if (!shouldLog) return;
         try {
           const { getPdimQueueDepth } = await import('./pdimClient.js');
@@ -459,7 +469,7 @@ export async function execLuaViaPdim(
           `active=${_activeWorkers}, queued=${_waitQueue.length}`
         );
       }
-    }, 60_000);
+    }, 30_000);
 
     worker.on('message', async (msg: Record<string, unknown>) => {
       if (msg.type === 'redis') {

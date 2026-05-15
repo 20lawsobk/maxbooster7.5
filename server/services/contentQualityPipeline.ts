@@ -345,10 +345,31 @@ class ContentQualityPipeline {
     const variants: ContentVariant[] = [];
     const strategies = this.getGenerationStrategies(context.objective);
 
+    // Accumulate per-variant Advanced AI failures silently during the loop.
+    // A single summary warn is logged after all variants are generated — this
+    // prevents N identical (or near-identical) warn lines per cycle.
+    const _failAcc: { count: number; reason: string; localCount: number } =
+      { count: 0, reason: '', localCount: 0 };
+
     for (let i = 0; i < count; i++) {
       const strategy = strategies[i % strategies.length];
-      const variant = await this.generateSingleVariant(context, strategy, i);
+      const variant = await this.generateSingleVariant(context, strategy, i, _failAcc);
       variants.push(variant);
+    }
+
+    // Emit one summary warn if any variants fell back to local.
+    // This replaces the N per-variant warns that previously flooded the log.
+    if (_failAcc.count > 0) {
+      logger.warn(
+        `[ContentQuality] Advanced AI failed for ${_failAcc.count}/${count} variants ` +
+        `— all using local fallback: ${_failAcc.reason}`,
+      );
+      if (_failAcc.localCount > 0) {
+        logger.info(
+          `[ContentQuality] ${_failAcc.localCount}/${count} variants generated via ` +
+          `local pattern fallback (Tier 3)`,
+        );
+      }
     }
 
     return variants.sort((a, b) => b.scores.overall - a.scores.overall);
@@ -367,7 +388,8 @@ class ContentQualityPipeline {
   private async generateSingleVariant(
     context: ContentContext,
     strategy: string,
-    index: number
+    index: number,
+    _failAcc?: { count: number; reason: string; localCount: number },
   ): Promise<ContentVariant> {
     let headline: string | undefined;
     let body: string | undefined;
@@ -432,12 +454,18 @@ class ContentQualityPipeline {
       } catch (err) {
         // Advanced AI (Tier 2) failed — Tier 3 local fallback below handles this.
         // MaxCore is always running, so any failure here is a real signal
-        // (shape mismatch, transient timeout, wrong endpoint).  Log the message
-        // only — no stack trace — to keep the line readable without drowning in
-        // frames.  The maxcoreClient already emits the first-occurrence WARN with
-        // the root reason once per suppression window.
+        // (shape mismatch, transient timeout, wrong endpoint).
+        // If a failure accumulator was supplied (by generateVariants), record
+        // the failure silently; generateVariants will emit one summary WARN
+        // after the loop so N variants don't produce N identical warn lines.
+        // Without an accumulator (standalone call), log immediately.
         const advErrMsg = (err as Error)?.message ?? String(err);
-        logger.warn(`[ContentQuality] Advanced AI failed for variant ${index} — using local fallback: ${advErrMsg}`);
+        if (_failAcc) {
+          _failAcc.count++;
+          if (!_failAcc.reason) _failAcc.reason = advErrMsg;
+        } else {
+          logger.warn(`[ContentQuality] Advanced AI failed for variant ${index} — using local fallback: ${advErrMsg}`);
+        }
 
         // ── Tier 3: Local pattern-data fallback (always available) ────────────
         // Both Python AI (Tier 1) and MaxCore-backed AdvancedSocialAI (Tier 2)
@@ -513,7 +541,13 @@ class ContentQualityPipeline {
           ]);
           hashtags = getHashtagsForGenre(genre).slice(0, 8);
 
-          logger.info(`[ContentQuality] Variant ${index} generated via local pattern fallback (Tier 3 — MaxCore unavailable)`);
+          // Per-variant local-fallback info is suppressed when an accumulator
+          // is present — generateVariants logs one summary line after the loop.
+          if (_failAcc) {
+            _failAcc.localCount++;
+          } else {
+            logger.info(`[ContentQuality] Variant ${index} generated via local pattern fallback (Tier 3)`);
+          }
         } catch (localErr) {
           throw new Error(`[ContentQuality] All generation tiers failed for variant ${index}: ${err}`);
         }

@@ -329,6 +329,17 @@ export async function setupRepeatableJobs(): Promise<void> {
           const full = err?.message ?? '';
           const msg  = full.split('\n')[0] ?? full;
           if (/PDIM HTTP 5/i.test(msg)) return;
+          // LuaExecutor killed the BullMQ Lua script during registration — this
+          // happens when PDIM is heavily congested at startup.  BullMQ retries
+          // registration automatically on the next boot, so this is self-healing.
+          // LuaExecutor already logged the kill at ERROR; no redundant WARN needed.
+          if (/worker hard-killed|stuck script timeout/i.test(msg)) {
+            logger.info(
+              `[AutonomousScheduler] ${name} registration deferred ` +
+              `(LuaExecutor slot busy during startup — will retry next boot)`,
+            );
+            return;
+          }
           logger.warn(`[AutonomousScheduler] Failed to register ${name}: ${msg}`);
         })
     )
