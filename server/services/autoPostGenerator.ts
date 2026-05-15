@@ -29,7 +29,7 @@ async function translateViaMaxCore(
       extra_context: `Translate and culturally adapt the following music social media post to ${lang}. Maintain the artist's voice, energy, and promotional intent. Adapt hashtags for ${lang}-speaking audiences where appropriate. Return the translated post content.`,
     });
 
-    const translatedBody = mcResult?.content || mcResult?.body || mcResult?.text || content;
+    const translatedBody = mcResult?.caption || mcResult?.content || mcResult?.body || mcResult?.text || content;
     const translatedHeadline = mcResult?.headline || headline;
     const translatedHashtags: string[] = (mcResult?.hashtags && mcResult.hashtags.length > 0)
       ? mcResult.hashtags
