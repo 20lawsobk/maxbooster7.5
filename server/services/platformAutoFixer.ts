@@ -179,6 +179,10 @@ class PlatformAutoFixer extends EventEmitter {
   private _routeErrTimestamps: number[] = [];
   /** Last time the offensive sweep ran */
   private _lastOffensiveSweepAt: number = 0;
+  /** Timestamp of the last "LuaExecutor pre-emptively cleared" WARN — 2-min cooldown. */
+  private _lastLuaPreemptiveWarnMs: number = 0;
+  /** Last time the "threat trajectory" WARN was emitted (2-min cooldown) */
+  private _threatTrajectoryLastWarn: number = 0;
 
   // ─── Lifecycle ─────────────────────────────────────────────────────────────
 
@@ -608,16 +612,24 @@ class PlatformAutoFixer extends EventEmitter {
     let details: Record<string, unknown> = {};
 
     try {
-      const { getLuaExecutorStats } = await import('../lib/luaExecutor.js');
+      const { getLuaExecutorStats, isLuaRegistrationMode } = await import('../lib/luaExecutor.js');
       const stats = getLuaExecutorStats();
       details = { active: stats.active, queued: stats.queued, max: stats.max };
 
+      // While BullMQ repeatable-job registration is in progress, each
+      // upsertJobScheduler call legitimately holds the LuaExecutor slot for
+      // ~50 s under boot PDIM back-pressure.  Other callers queue behind it,
+      // causing transient queued≥3.  That is not overload — suppress the
+      // degraded/critical rating for the duration of the registration window
+      // so the probe does not emit a false WARN.
+      if (isLuaRegistrationMode()) {
+        message = `${stats.active}/${stats.max} slots active, ${stats.queued} queued (registration in progress)`;
       // With MAX_CONCURRENT_WORKERS=1, active=1/max=1 (utilization=100%) is the
       // normal steady state during any BullMQ Lua script execution.  Alerting on
       // utilization >= 0.8 causes a permanent warn flood every 60 s.  Instead,
       // grade on *queue buildup* — a growing wait queue is the real signal that
       // the executor is overloaded and callers are being rejected.
-      if (stats.queued > 8) {
+      } else if (stats.queued > 8) {
         status  = 'critical';
         message = `LuaExecutor saturated: ${stats.queued} queued, ${stats.active}/${stats.max} active`;
       } else if (stats.queued >= 3) {
@@ -1305,12 +1317,20 @@ class PlatformAutoFixer extends EventEmitter {
     const FIVE_MINUTES_MS = 5 * 60_000;
     const THREE_MINUTES_MS = 3 * 60_000;
 
+    const TWO_MINUTES_MS = 2 * 60_000;
     if (estMsToCritical < FIVE_MINUTES_MS) {
-      logger.warn(
-        `[PlatformAutoFixer] 🎯 OFFENSIVE: Threat trajectory detected — ` +
-        `full-critical state projected in ~${Math.round(estMsToCritical / 60_000 * 10) / 10} min ` +
-        `(slope=${slope.toFixed(2)} score-units/scan, current=${currentScore}). Pre-emptive action triggered.`
-      );
+      // Emit at most once every 2 minutes — during sustained worsening the
+      // trajectory forecaster fires every probe scan (5s in critical mode),
+      // which would produce dozens of identical WARNs per incident window.
+      const now2 = Date.now();
+      if (now2 - this._threatTrajectoryLastWarn >= TWO_MINUTES_MS) {
+        this._threatTrajectoryLastWarn = now2;
+        logger.warn(
+          `[PlatformAutoFixer] 🎯 OFFENSIVE: Threat trajectory detected — ` +
+          `full-critical state projected in ~${Math.round(estMsToCritical / 60_000 * 10) / 10} min ` +
+          `(slope=${slope.toFixed(2)} score-units/scan, current=${currentScore}). Pre-emptive action triggered.`
+        );
+      }
 
       // Pre-emptive actions: force probe interval to degraded, trigger GC,
       // and flag a synthetic incident so the admin dashboard shows the forecast.
@@ -1330,11 +1350,18 @@ class PlatformAutoFixer extends EventEmitter {
       this._threatsNeutralized++;
 
       if (estMsToCritical < THREE_MINUTES_MS) {
-        // Imminent — also reset LuaExecutor proactively
+        // Imminent — also reset LuaExecutor proactively.
+        // The semaphore reset runs every cycle to prevent timeout cascades; the
+        // WARN is gated to once per 2 min so it doesn't flood in critical mode
+        // (health-check fires every 5 s when critical).
         try {
           const { resetLuaExecutorSemaphore } = await import('../lib/luaExecutor.js');
           resetLuaExecutorSemaphore();
-          logger.warn('[PlatformAutoFixer] 🎯 OFFENSIVE: LuaExecutor pre-emptively cleared (imminent critical state)');
+          const _nowP = Date.now();
+          if (_nowP - this._lastLuaPreemptiveWarnMs >= TWO_MINUTES_MS) {
+            this._lastLuaPreemptiveWarnMs = _nowP;
+            logger.warn('[PlatformAutoFixer] 🎯 OFFENSIVE: LuaExecutor pre-emptively cleared (imminent critical state)');
+          }
         } catch { /* non-fatal */ }
       }
     } else {

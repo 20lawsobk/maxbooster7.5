@@ -999,12 +999,21 @@ class ChainErrorAutoFixer extends EventEmitter {
     // ── Offensive pre-condition scan runs every health-check cycle ────────────
     this._runOffensivePreConditionScan().catch(() => { /* non-fatal */ });
 
-    // Check LuaExecutor semaphore for deadlock
+    // Check LuaExecutor semaphore for deadlock.
+    // Skip entirely while BullMQ repeatable-job registration is in progress:
+    // each upsertJobScheduler call legitimately holds the slot for ~50s under
+    // boot PDIM back-pressure — that is not a deadlock.  Firing the reset mid-
+    // registration causes a thundering-herd PDIM burst (all queued callers
+    // unblock simultaneously) and a cascade of PDIM congestion WARNs.
     try {
-      const { getLuaExecutorStats, resetLuaExecutorSemaphore } = await import('../lib/luaExecutor.js');
+      const { getLuaExecutorStats, resetLuaExecutorSemaphore, isLuaRegistrationMode } = await import('../lib/luaExecutor.js');
       const stats = getLuaExecutorStats();
       this._luaStats = stats;
-      if (stats.active >= stats.max && stats.queued > 3) {
+      if (isLuaRegistrationMode()) {
+        // Known-slow window — reset congestion counter so the clock restarts
+        // fresh once registration completes.
+        this._consecutiveCongestedChecks = 0;
+      } else if (stats.active >= stats.max && stats.queued > 3) {
         this._consecutiveCongestedChecks++;
         if (this._consecutiveCongestedChecks >= ChainErrorAutoFixer._CONGESTION_DEADLOCK_THRESHOLD) {
           logger.warn(
