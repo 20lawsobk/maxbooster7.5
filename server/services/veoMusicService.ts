@@ -2,7 +2,7 @@ import { logger } from '../logger.js';
 
 const PYTHON_AI_PORT = parseInt(process.env.PYTHON_AI_PORT || '9878', 10);
 const AI_MODEL_URL = process.env.AI_MODEL_SERVICE_URL || `http://127.0.0.1:${PYTHON_AI_PORT}`;
-const VEO_TIMEOUT_MS = 60000;
+const VEO_TIMEOUT_MS = 180_000; // raised: full Veo campaign generation and multi-platform video rendering
 
 const _INTERNAL_SECRET = process.env.BOOSTERSTATE_SECRET || '';
 function internalAuthHeaders(): Record<string, string> {

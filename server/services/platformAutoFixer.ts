@@ -39,8 +39,8 @@ import { permanentFixRegistry } from './permanentFixRegistry.js';
 const PROBE_INTERVAL_HEALTHY_MS  = 30_000;   // normal cadence
 const PROBE_INTERVAL_DEGRADED_MS = 10_000;   // speed up when degraded
 const PROBE_INTERVAL_CRITICAL_MS =  5_000;   // fastest when critical
-const SLOW_QUERY_THRESHOLD_MS    = 400;
-const PDIM_SLOW_THRESHOLD_MS     = 800;
+const SLOW_QUERY_THRESHOLD_MS    = 1_000; // raised: Neon serverless cold-starts can exceed 400ms without being degraded
+const PDIM_SLOW_THRESHOLD_MS     = 1_500; // raised: PDIM under burst load routinely exceeds 800ms without being degraded
 const HEAP_WARN_RATIO     = 0.80;   // warn when heap > 80 % of limit
 const HEAP_PATCH_RATIO    = 0.92;   // patch when heap > 92 %
 const ROUTE_ERROR_WINDOW_MS = 60_000;
@@ -412,7 +412,7 @@ class PlatformAutoFixer extends EventEmitter {
       const pingStart = Date.now();
       await Promise.race([
         p.query('SELECT 1'),
-        new Promise((_, reject) => setTimeout(() => reject(new Error('DB ping timeout')), 3000)),
+        new Promise((_, reject) => setTimeout(() => reject(new Error('DB ping timeout')), 8_000)),
       ]);
       const pingMs = Date.now() - pingStart;
 
@@ -486,7 +486,7 @@ class PlatformAutoFixer extends EventEmitter {
         method:  'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body:    JSON.stringify({ cmd: 'PING', args: [] }),
-        signal:  AbortSignal.timeout(12_000),
+        signal:  AbortSignal.timeout(20_000),
       });
       const pingMs = Date.now() - pingStart;
 

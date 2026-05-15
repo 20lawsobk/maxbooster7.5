@@ -85,7 +85,8 @@ export class DatabaseStorage implements IStorage {
   // Authentication requires the latest committed data; replica lag cannot be tolerated here.
   private async _retryQuery<T>(fn: () => Promise<T>, label: string): Promise<T> {
     let lastErr: unknown;
-    for (let attempt = 1; attempt <= 3; attempt++) {
+    const MAX_ATTEMPTS = 5;
+    for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
       try {
         return await fn();
       } catch (err) {
@@ -96,9 +97,9 @@ export class DatabaseStorage implements IStorage {
         const permanentCodes = new Set(['42703', '42P01', '42601', '23505', '23503', '22001', '22P02']);
         const isPermanent = permanentCodes.has(causeCode);
         const isTransient = !isPermanent && (msg.includes('Failed query') || causeMsg.includes('timeout') || causeMsg.includes('connection') || causeMsg.includes('ECONNRESET') || causeMsg.includes('WebSocket') || causeMsg.includes('closed'));
-        if (isTransient && attempt < 3) {
-          logger.warn(`[Storage] ${label} transient DB error (attempt ${attempt}/3), retrying in ${150 * attempt}ms:`, msg, '| cause:', causeMsg || 'none', '| code:', causeCode || 'none');
-          await new Promise(r => setTimeout(r, 150 * attempt));
+        if (isTransient && attempt < MAX_ATTEMPTS) {
+          logger.warn(`[Storage] ${label} transient DB error (attempt ${attempt}/${MAX_ATTEMPTS}), retrying in ${250 * attempt}ms:`, msg, '| cause:', causeMsg || 'none', '| code:', causeCode || 'none');
+          await new Promise(r => setTimeout(r, 250 * attempt));
           continue;
         }
         logger.warn(`[Storage] ${label} final DB error after ${attempt} attempts:`, msg, '| cause:', causeMsg || 'none', '| code:', causeCode || 'none', '| causeDetail:', JSON.stringify(err?.cause ?? null));
