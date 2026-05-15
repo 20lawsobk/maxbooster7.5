@@ -219,16 +219,12 @@ export class ContentQualityGate {
             `best=${variants[0]?.scores.overall.toFixed(1) ?? 'N/A'}`
           );
         } catch (err) {
-          // AdvancedAI failure is expected when MaxCore is unavailable: already
-          // logged once per suppression window by maxcoreClient.  Log at debug to
-          // avoid amplifying noise × workers × autopilot users.  For unexpected
-          // failures (not MaxCore null), surface at warn with the message only.
+          // MaxCore is always running — any AdvancedAI failure is a real signal
+          // (shape mismatch, timeout, wrong endpoint path).  Log message only; no
+          // stack trace.  The maxcoreClient already emits the first-occurrence root
+          // cause WARN once per suppression window so the trace is not lost.
           const gateErrMsg = (err as Error)?.message ?? String(err);
-          if (/MaxCore.*null|returned null|infer returned null/i.test(gateErrMsg)) {
-            logger.debug(`[QualityGate] AdvancedAI skipped (MaxCore unavailable) — falling back to template`);
-          } else {
-            logger.warn(`[QualityGate] AdvancedAI round failed, falling back to template: ${gateErrMsg}`);
-          }
+          logger.warn(`[QualityGate] AdvancedAI round failed, falling back to template: ${gateErrMsg}`);
           const res = await contentQualityPipeline.generateAndSelect(
             userId,
             { ...baseContext, objective: this.rotateObjective(baseContext.objective, round) },

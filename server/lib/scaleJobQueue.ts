@@ -295,7 +295,11 @@ export function startRetentionWorker(): Worker {
       // Stalled-job checker race during normal shutdown / restart
       msg.includes('StalledJobsError') ||
       // Worker thread hard-killed by LuaExecutor timeout — already logged at ERROR
-      msg.includes('worker hard-killed')
+      msg.includes('worker hard-killed') ||
+      // LuaExecutor slot-queue timeout — all MAX_CONCURRENT_WORKERS slots were
+      // occupied for 30 s; happens under PDIM back-pressure.  The semaphore
+      // releases as soon as a running script completes or is hard-killed.
+      msg.includes('Timeout waiting for worker slot')
     ) {
       logger.warn(`[Worker] BullMQ lock / stall (self-healing): ${msg}`);
     } else {
