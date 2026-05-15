@@ -83,6 +83,10 @@ function _luaComputeBackoff(): number {
   return Math.min(LUA_PDIM_ERR_BACKOFF_CAP_MS, 500 * Math.pow(2, _luaConsecutivePdimErrors - 2));
 }
 
+// Module-level boot timestamp — used to gate the 30s/60s watchdog WARNs
+// during the initial 120s PDIM settling window (stalls are expected at boot).
+const _executorBootTs = Date.now();
+
 let _activeWorkers = 0;
 
 // Each queued waiter stores its resolve fn and timeout handle separately.
@@ -479,6 +483,27 @@ export async function execLuaViaPdim(
           logger.debug(
             `[LuaExecutor] script still running after ${elapsedS}s — ` +
             `semaphore was externally reset (active counter zeroed by ChainFixer)`
+          );
+          return;
+        }
+        // During BullMQ repeatable-job registration each upsertJobScheduler
+        // call legitimately holds the slot for ~50 s under boot back-pressure.
+        // Demote the watchdog tick to debug so it doesn't produce a false WARN
+        // cascade for every job in the registration for-loop.
+        if (_luaRegistrationMode) {
+          logger.debug(
+            `[LuaExecutor] script still running after ${elapsedS}s — ` +
+            `registration in progress (active=${_activeWorkers}, queued=${_waitQueue.length})`
+          );
+          return;
+        }
+        // During the first 120s of boot the PDIM settling burst causes
+        // LuaExecutor stalls that look alarming but are entirely expected.
+        // Demote to debug so the log stream stays clean during boot.
+        if (Date.now() - _executorBootTs < 120_000) {
+          logger.debug(
+            `[LuaExecutor] script still running after ${elapsedS}s — ` +
+            `boot settling window (active=${_activeWorkers}, queued=${_waitQueue.length})`
           );
           return;
         }

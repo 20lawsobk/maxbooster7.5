@@ -223,8 +223,19 @@ export class ContentQualityGate {
           // (shape mismatch, timeout, wrong endpoint path).  Log message only; no
           // stack trace.  The maxcoreClient already emits the first-occurrence root
           // cause WARN once per suppression window so the trace is not lost.
+          // During BullMQ registration, MaxCore is rate-limited by PDIM pressure —
+          // demote to debug since this is an expected transient, not a real fault.
           const gateErrMsg = (err as Error)?.message ?? String(err);
-          logger.warn(`[QualityGate] AdvancedAI round failed, falling back to template: ${gateErrMsg}`);
+          let inRegistration = false;
+          try {
+            const { isLuaRegistrationMode } = await import('../lib/luaExecutor.js');
+            inRegistration = isLuaRegistrationMode();
+          } catch { /* non-fatal */ }
+          if (inRegistration) {
+            logger.debug(`[QualityGate] AdvancedAI deferred (registration in progress): ${gateErrMsg}`);
+          } else {
+            logger.warn(`[QualityGate] AdvancedAI round failed, falling back to template: ${gateErrMsg}`);
+          }
           const res = await contentQualityPipeline.generateAndSelect(
             userId,
             { ...baseContext, objective: this.rotateObjective(baseContext.objective, round) },

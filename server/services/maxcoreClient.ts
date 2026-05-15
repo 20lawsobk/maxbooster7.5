@@ -119,9 +119,9 @@ export class MaxCoreAIClient {
   /**
    * Call MaxCore's generation endpoint with retry + back-off.
    */
-  private static readonly MAX_GENERATE_ATTEMPTS  = 3;
+  private static readonly MAX_GENERATE_ATTEMPTS  = 4;
   private static readonly GENERATE_BACKOFF_BASE  = 1_500;
-  private static readonly GENERATE_BACKOFF_MAX   = 8_000;
+  private static readonly GENERATE_BACKOFF_MAX   = 10_000;
   // 60 s matches INFER_TIMEOUT_MS.  Content generation on MaxCore takes
   // up to ~50 s under diffusion training load; 35 s was causing consistent
   // timeouts even though MaxCore is always running.
@@ -196,7 +196,7 @@ export class MaxCoreAIClient {
    * Two extra retries cover transient network blips only.
    */
   private static readonly INFER_TIMEOUT_MS  = 60_000;
-  private static readonly INFER_MAX_RETRIES = 2;
+  private static readonly INFER_MAX_RETRIES = 3;
   private static readonly INFER_BACKOFF_BASE = 800;
 
   static async infer<T = any>(endpoint: string, body: Record<string, unknown>): Promise<T | null> {

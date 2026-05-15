@@ -285,6 +285,15 @@ export function startRetentionWorker(): Worker {
     ) {
       logger.warn(`[Worker] Recoverable (self-healing): ${msg}`);
     } else if (
+      // LuaExecutor slot-queue timeout — all MAX_CONCURRENT_WORKERS slots were
+      // occupied for 30-55 s; happens under PDIM back-pressure during boot settling
+      // and job registration.  The semaphore releases when a running script completes
+      // or is hard-killed.  Demoted to INFO: this is always self-healing and is
+      // already acknowledged by the autonomousJobScheduler registration handler.
+      msg.includes('Timeout waiting for worker slot')
+    ) {
+      logger.info(`[Worker] LuaExecutor slot busy (self-healing): ${msg}`);
+    } else if (
       // BullMQ lock extension errors — fired when a job processor takes longer
       // than the job's lockDuration (default 30s).  BullMQ re-queues the job
       // automatically; no action needed.
@@ -295,11 +304,7 @@ export function startRetentionWorker(): Worker {
       // Stalled-job checker race during normal shutdown / restart
       msg.includes('StalledJobsError') ||
       // Worker thread hard-killed by LuaExecutor timeout — already logged at ERROR
-      msg.includes('worker hard-killed') ||
-      // LuaExecutor slot-queue timeout — all MAX_CONCURRENT_WORKERS slots were
-      // occupied for 30 s; happens under PDIM back-pressure.  The semaphore
-      // releases as soon as a running script completes or is hard-killed.
-      msg.includes('Timeout waiting for worker slot')
+      msg.includes('worker hard-killed')
     ) {
       logger.warn(`[Worker] BullMQ lock / stall (self-healing): ${msg}`);
     } else {

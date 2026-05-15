@@ -359,11 +359,26 @@ class ContentQualityPipeline {
 
     // Emit one summary warn if any variants fell back to local.
     // This replaces the N per-variant warns that previously flooded the log.
+    // During BullMQ registration, MaxCore is under PDIM pressure and
+    // rate-limited — demote to debug since local fallback is the correct
+    // behaviour in that window and the failure is not a system fault.
     if (_failAcc.count > 0) {
-      logger.warn(
-        `[ContentQuality] Advanced AI failed for ${_failAcc.count}/${count} variants ` +
-        `— all using local fallback: ${_failAcc.reason}`,
-      );
+      let inRegistration = false;
+      try {
+        const { isLuaRegistrationMode } = await import('../lib/luaExecutor.js');
+        inRegistration = isLuaRegistrationMode();
+      } catch { /* non-fatal */ }
+      if (inRegistration) {
+        logger.debug(
+          `[ContentQuality] Advanced AI deferred for ${_failAcc.count}/${count} variants ` +
+          `(registration in progress) — using local fallback`
+        );
+      } else {
+        logger.warn(
+          `[ContentQuality] Advanced AI failed for ${_failAcc.count}/${count} variants ` +
+          `— all using local fallback: ${_failAcc.reason}`,
+        );
+      }
       if (_failAcc.localCount > 0) {
         logger.info(
           `[ContentQuality] ${_failAcc.localCount}/${count} variants generated via ` +
