@@ -112,7 +112,12 @@ logger.info(
 let   _PDIM_GAP_FLOOR_MS  = 1;      // PDIM at 120M req/s — no artificial floor needed
 const _PDIM_GAP_CEIL_MS   = 2_000;  // ceiling after sustained 429 cascade (recovers in <60 successful requests)
 const _PDIM_GAP_INIT_MS   = 1;      // start at minimum — AIMD self-tunes from here
-const _PDIM_MULT_429      = 1.5;    // multiplicative back-off on each 429 (was 2.0 — 1.5 recovers 33% faster)
+// 2.5× matches the research-backed AIMD recommendation: aggressive multiplicative
+// decrease so the ceiling is reached in ~9 consecutive 429s instead of ~60.
+// With 1.5× the gap grows: 1ms→1.5→2.25→…→2000ms (60 steps).
+// With 2.5×: 1ms→2.5→6.25→15.6→39→97→244→610→1525→ceil (9 steps).
+// Recovery is still smooth: additive increase on success (1-100ms step).
+const _PDIM_MULT_429      = 2.5;
 
 /** Permanently raise the PDIM gap floor — called by PermanentFixRegistry on startup
  *  and after each escalation.  Floor can only move upward (min 1 ms, max 2 000 ms).
@@ -290,9 +295,20 @@ function _enqueueScriptExec(fn: () => Promise<unknown>): Promise<unknown> {
 //   • Different status code: always logged (indicates a new condition).
 //   • After DEDUP_WINDOW_MS silence, the next occurrence is logged again.
 //
-// 429 rate-limit errors are NOT deduplicated — each one adjusts the AIMD gap
-// and the gap value in the message changes, so every log is meaningful.
-const _EXEC_DEDUP_WINDOW_MS = 30_000; // 30 s
+// 429 dedup — a burst of simultaneous 429s (e.g. diffusion gateway + main app
+// both hitting PDIM at once) can produce 8+ identical warn lines within 700ms.
+// Deduplicate within a 2s burst window: log the first occurrence immediately,
+// suppress the rest, then flush a "+ N suppressed" summary on the next 429
+// that arrives after the window has elapsed or when a non-429 is logged.
+// The gap value in each 429 is slightly different (AIMD multiplies it) but the
+// actionable signal is "429 received, gap is now X" — the final gap is what
+// matters, not the intermediate values during a burst.
+const _429_DEDUP_MS = 2_000; // burst window (ms)
+let _last429LoggedAt    = 0;
+let _suppressed429Count = 0;
+let _last429Gap         = 0;
+
+const _EXEC_DEDUP_WINDOW_MS = 30_000; // 30 s (for 5xx / 3xx errors)
 let _lastExecErrorStatus  = -1;
 let _lastExecErrorLoggedAt = 0;
 let _suppressedExecErrors  = 0;
@@ -536,7 +552,8 @@ export class PdimRedisClient extends EventEmitter {
         if (!res.ok) {
           const text = await res.text().catch(() => '');
           if (res.status === 429) {
-            // AIMD multiplicative increase: gap jumps to gap × 2.5.
+            // AIMD multiplicative increase: gap jumps to gap × 2.5 (aggressive,
+            // reaching the 2000ms ceiling in ~9 consecutive hits rather than ~60).
             // _enqueueExec reads _pdimGapMs AFTER the throw, so the next caller
             // in the chain automatically waits the new (larger) gap before firing.
             // The static _rateLimitedUntil mirrors the new gap so that even if a
@@ -544,8 +561,28 @@ export class PdimRedisClient extends EventEmitter {
             const newGap = _pdimAdapt429();
             PdimRedisClient._rateLimitedUntil = Date.now() + newGap;
             const errMsg = `PDIM HTTP 429: Too many requests (gap→${newGap}ms)`;
-            logger.warn(`[PDIM] exec error [${cmd}]: PDIM HTTP 429: Too many requests`);
             _counted = true;
+
+            // Burst dedup: a simultaneous 429 storm (multiple commands within
+            // 2 s) produces near-identical warn lines.  Log the first occurrence
+            // immediately; accumulate subsequent ones and flush a summary on the
+            // next 429 after the window expires.
+            const now429 = Date.now();
+            _last429Gap = newGap;
+            if (now429 - _last429LoggedAt < _429_DEDUP_MS) {
+              _suppressed429Count++;
+            } else {
+              if (_suppressed429Count > 0) {
+                logger.warn(
+                  `[PDIM] exec error [${cmd}]: PDIM HTTP 429 — gap→${newGap}ms ` +
+                  `(+ ${_suppressed429Count} suppressed in last ${_429_DEDUP_MS}ms burst)`,
+                );
+                _suppressed429Count = 0;
+              } else {
+                logger.warn(`[PDIM] exec error [${cmd}]: PDIM HTTP 429 — gap→${newGap}ms`);
+              }
+              _last429LoggedAt = now429;
+            }
             throw new Error(errMsg);
           }
           // Only trip the circuit breaker on 5xx server errors or when PDIM is
