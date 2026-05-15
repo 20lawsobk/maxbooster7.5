@@ -305,7 +305,7 @@ const SCHED_DEFAULTS = {
 async function waitForPdimSettled(
   maxDepth = 40,
   minWaitMs = 75_000,
-  extraTimeoutMs = 180_000,
+  extraTimeoutMs = 300_000,
 ): Promise<void> {
   // Fixed initial wait — the burst is coming even if the queue is empty now.
   logger.info(
@@ -328,9 +328,11 @@ async function waitForPdimSettled(
     );
     await new Promise(r => setTimeout(r, 5_000));
   }
-  logger.warn(
+  // Log at INFO not WARN — a long settling period is an operational note, not an error.
+  // The hard-kills that may follow are self-healing via ChainFixer and LuaExecutor recovery.
+  logger.info(
     `[AutonomousScheduler] PDIM still congested after ${(minWaitMs + extraTimeoutMs) / 1000}s — ` +
-    `proceeding with job registration (hard-kills may follow but are self-healing)`,
+    `proceeding with job registration (hard-kills are self-healing)`,
   );
 }
 
@@ -387,7 +389,18 @@ export async function setupRepeatableJobs(): Promise<void> {
   // boot PDIM back-pressure (not a true deadlock); without the flag, ChainFixer
   // declares "deadlock confirmed" after 3 × 15s congested readings and resets
   // the semaphore mid-registration, causing a PDIM burst WARN cascade.
+  //
+  // MINIMUM HOLD: Under extreme PDIM congestion (depth 300+) all
+  // upsertJobScheduler calls fail immediately with PDIM HTTP 5xx errors, so
+  // the for-loop can complete in seconds instead of ~5 min.  If the flag is
+  // cleared immediately after the loop, ChainFixer and PlatformAutoFixer see
+  // a non-registration state and emit false congestion WARNs for the rest of
+  // the settling window.  We always hold the flag for at least REG_MIN_HOLD_MS
+  // from the moment it was raised, deferring the clear via setTimeout if the
+  // loop finishes sooner.
+  const REG_MIN_HOLD_MS = 5 * 60_000; // 5-minute minimum window
   const { setLuaRegistrationMode } = await import('../lib/luaExecutor.js');
+  const regStart = Date.now();
   setLuaRegistrationMode(true);
   try {
     for (const { name, every } of REPEATABLE_JOBS) {
@@ -402,11 +415,12 @@ export async function setupRepeatableJobs(): Promise<void> {
           // on the next boot.  Both are already logged by pdimClient — no
           // redundant WARN needed here.
           if (/PDIM HTTP 4|PDIM HTTP 5/i.test(msg)) return;
-          // LuaExecutor killed the BullMQ Lua script during registration — this
-          // happens when PDIM is heavily congested at startup.  BullMQ retries
+          // LuaExecutor killed the BullMQ Lua script during registration, or the
+          // caller timed out waiting to acquire the semaphore slot — both happen
+          // when PDIM is heavily congested at startup.  BullMQ retries
           // registration automatically on the next boot, so this is self-healing.
           // LuaExecutor already logged the kill at ERROR; no redundant WARN needed.
-          if (/worker hard-killed|stuck script timeout/i.test(msg)) {
+          if (/worker hard-killed|stuck script timeout|Timeout waiting for worker slot/i.test(msg)) {
             logger.info(
               `[AutonomousScheduler] ${name} registration deferred ` +
               `(LuaExecutor slot busy during startup — will retry next boot)`,
@@ -417,7 +431,18 @@ export async function setupRepeatableJobs(): Promise<void> {
         });
     }
   } finally {
-    setLuaRegistrationMode(false);
+    // Two-part minimum hold:
+    //   fromStart: minimum 5 min from when registration mode was raised.
+    //     Ensures protection persists under extreme PDIM congestion (all jobs
+    //     fail in <1s because of PDIM 5xx, loop ends immediately).
+    //   fromEnd:   minimum 2 min after the loop ends.
+    //     Covers the BullMQ worker-startup PDIM spike that occurs when the newly
+    //     registered workers begin executing their first cycle simultaneously.
+    const elapsed   = Date.now() - regStart;
+    const fromStart = Math.max(0, REG_MIN_HOLD_MS - elapsed);
+    const fromEnd   = 2 * 60_000;
+    const holdMs    = Math.max(fromStart, fromEnd);
+    setTimeout(() => setLuaRegistrationMode(false), holdMs);
   }
 
   _worker = createAutonomousWorker();

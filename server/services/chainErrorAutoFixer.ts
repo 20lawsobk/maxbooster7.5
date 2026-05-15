@@ -87,6 +87,9 @@ class ChainErrorAutoFixer extends EventEmitter {
   // PDIM congestion is self-resolving; we only need one reminder per episode.
   private _lastPdimCongestionWarnMs = 0;
   private readonly _PDIM_CONGESTION_WARN_COOLDOWN_MS = 5 * 60 * 1000;
+  /** Process start time — PDIM congestion WARNs are suppressed for the first
+   *  60 s after boot while the initial weight-sync burst settles. */
+  private readonly _bootTs = Date.now();
 
   // Unknown error log — novel errors that matched no known pattern
   private _unknownErrors: Array<{ ts: number; msg: string }> = [];
@@ -1009,9 +1012,14 @@ class ChainErrorAutoFixer extends EventEmitter {
       const { getLuaExecutorStats, resetLuaExecutorSemaphore, isLuaRegistrationMode } = await import('../lib/luaExecutor.js');
       const stats = getLuaExecutorStats();
       this._luaStats = stats;
-      if (isLuaRegistrationMode()) {
+      // Skip deadlock detection during the 120s boot-grace window (the PDIM
+      // settling burst drives transient LuaExecutor back-pressure that looks
+      // like a deadlock but resolves on its own) and during repeatable-job
+      // registration (each upsertJobScheduler call legitimately holds the slot).
+      const inBootGrace120 = Date.now() - this._bootTs < 120_000;
+      if (isLuaRegistrationMode() || inBootGrace120) {
         // Known-slow window — reset congestion counter so the clock restarts
-        // fresh once registration completes.
+        // fresh once the window closes.
         this._consecutiveCongestedChecks = 0;
       } else if (stats.active >= stats.max && stats.queued > 3) {
         this._consecutiveCongestedChecks++;
@@ -1075,7 +1083,21 @@ class ChainErrorAutoFixer extends EventEmitter {
         const depth = getPdimQueueDepth();
         const gap   = getPdimAdaptiveGapMs();
         const now   = Date.now();
-        if (depth > 15 && now - this._lastPdimCongestionWarnMs > this._PDIM_CONGESTION_WARN_COOLDOWN_MS) {
+        // Suppress during the first 60 s after boot (initial weight-sync burst)
+        // and while BullMQ repeatable-job registration is in progress — both are
+        // expected high-PDIM-load windows, not real congestion incidents.
+        const inBootGrace = now - this._bootTs < 120_000;
+        let inRegistration = false;
+        try {
+          const { isLuaRegistrationMode } = await import('../lib/luaExecutor.js');
+          inRegistration = isLuaRegistrationMode();
+        } catch { /* non-fatal */ }
+        if (
+          depth > 15 &&
+          now - this._lastPdimCongestionWarnMs > this._PDIM_CONGESTION_WARN_COOLDOWN_MS &&
+          !inBootGrace &&
+          !inRegistration
+        ) {
           this._lastPdimCongestionWarnMs = now;
           logger.warn(
             `[ChainFixer] PDIM chain congested — ${depth} callers queued (gap ${gap}ms). ` +

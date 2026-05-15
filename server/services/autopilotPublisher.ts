@@ -81,6 +81,17 @@ class AutopilotPublisher {
 
   private startScheduler(): void {
     this.cronJob = cron.schedule('*/15 * * * *', async () => {
+      // Skip cycles that land while BullMQ repeatable-job registration is still
+      // running.  Registration holds the LuaExecutor slot for ~50 s per job and
+      // causes PDIM back-pressure that makes MaxCore infer calls time out.
+      // The next cron tick (15 min later) will fire normally.
+      try {
+        const { isLuaRegistrationMode } = await import('../lib/luaExecutor.js');
+        if (isLuaRegistrationMode()) {
+          logger.info('⏰ Autopilot cycle deferred — BullMQ job registration in progress');
+          return;
+        }
+      } catch { /* non-fatal — proceed normally */ }
       logger.info('⏰ Autopilot scheduler triggered');
       await this.publishForAllUsers();
     });

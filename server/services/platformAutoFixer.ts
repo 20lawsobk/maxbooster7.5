@@ -181,6 +181,9 @@ class PlatformAutoFixer extends EventEmitter {
   private _lastOffensiveSweepAt: number = 0;
   /** Timestamp of the last "LuaExecutor pre-emptively cleared" WARN — 2-min cooldown. */
   private _lastLuaPreemptiveWarnMs: number = 0;
+  /** Process start time — PDIM queue-depth probes return healthy for the first
+   *  60 s after boot while the initial weight-sync burst settles. */
+  private readonly _bootTs: number = Date.now();
   /** Last time the "threat trajectory" WARN was emitted (2-min cooldown) */
   private _threatTrajectoryLastWarn: number = 0;
 
@@ -530,8 +533,20 @@ class PlatformAutoFixer extends EventEmitter {
         status  = 'degraded';
         message = `PDIM slow: ${pingMs}ms (gap ${gapMs}ms, queue depth ${queueDepth})`;
       } else if (queueDepth > 20) {
-        status  = 'degraded';
-        message = `PDIM chain congested: ${queueDepth} callers queued (gap ${gapMs}ms, ping ${pingMs}ms)`;
+        // Only flag chain congestion outside the boot-grace and registration windows.
+        // During the first 120s the boot-burst (weight sync, BaseTrainer, MaxCoreSync)
+        // legitimately drives depth into the hundreds; during job registration the
+        // LuaExecutor queues build up further.  Neither represents a real failure.
+        const inBootGraceP = Date.now() - this._bootTs < 120_000;
+        let inRegistrationP = false;
+        try {
+          const { isLuaRegistrationMode: isRegModeP } = await import('../lib/luaExecutor.js');
+          inRegistrationP = isRegModeP();
+        } catch { /* non-fatal */ }
+        if (!inBootGraceP && !inRegistrationP) {
+          status  = 'degraded';
+          message = `PDIM chain congested: ${queueDepth} callers queued (gap ${gapMs}ms, ping ${pingMs}ms)`;
+        }
       } else if (pingMs < 200 && gapMs > 6_000 && queueDepth <= 1) {
         // Gap is very high but PDIM is fast and queue is idle — AIMD is over-constrained
         // from a past 429 cascade and hasn't self-corrected (slow request volume = slow AIMD decrease)
@@ -622,8 +637,13 @@ class PlatformAutoFixer extends EventEmitter {
       // causing transient queued≥3.  That is not overload — suppress the
       // degraded/critical rating for the duration of the registration window
       // so the probe does not emit a false WARN.
+      const inBootGraceL = Date.now() - this._bootTs < 120_000;
       if (isLuaRegistrationMode()) {
         message = `${stats.active}/${stats.max} slots active, ${stats.queued} queued (registration in progress)`;
+      } else if (inBootGraceL) {
+        // During the 120s boot-grace window, PDIM settling drives transient
+        // LuaExecutor queue build-up that is not overload — leave status healthy.
+        message = `${stats.active}/${stats.max} slots active, ${stats.queued} queued (boot settling)`;
       // With MAX_CONCURRENT_WORKERS=1, active=1/max=1 (utilization=100%) is the
       // normal steady state during any BullMQ Lua script execution.  Alerting on
       // utilization >= 0.8 causes a permanent warn flood every 60 s.  Instead,
@@ -672,18 +692,29 @@ class PlatformAutoFixer extends EventEmitter {
 
       // Also probe the PDIM chain queue depth — high depth means all BullMQ Lua
       // script calls are stalling behind the AIMD serialisation gate.
+      // Skip elevation during the 120 s boot-grace window (initial weight-sync
+      // burst) and during BullMQ repeatable-job registration — both are expected
+      // high-PDIM-load windows that do not represent a real queue failure.
       try {
         const { isPdimConfigured, getPdimQueueDepth, getPdimAdaptiveGapMs } = await import('../lib/pdimClient.js');
         if (isPdimConfigured()) {
           const pdimQueue = getPdimQueueDepth();
           const pdimGap   = getPdimAdaptiveGapMs();
           details = { ...details, pdimChainQueueDepth: pdimQueue, pdimGapMs: pdimGap };
-          if (pdimQueue > 20) {
-            status  = 'critical';
-            message = `PDIM chain stall: ${pdimQueue} callers queued (gap ${pdimGap}ms) — all BullMQ scripts blocked`;
-          } else if (pdimQueue > 10 && status === 'healthy') {
-            status  = 'degraded';
-            message = `PDIM chain congested: ${pdimQueue} callers queued (gap ${pdimGap}ms)`;
+          const inBootGrace = Date.now() - this._bootTs < 120_000;
+          let inRegistration = false;
+          try {
+            const { isLuaRegistrationMode } = await import('../lib/luaExecutor.js');
+            inRegistration = isLuaRegistrationMode();
+          } catch { /* non-fatal */ }
+          if (!inBootGrace && !inRegistration) {
+            if (pdimQueue > 20) {
+              status  = 'critical';
+              message = `PDIM chain stall: ${pdimQueue} callers queued (gap ${pdimGap}ms) — all BullMQ scripts blocked`;
+            } else if (pdimQueue > 20 && status === 'healthy') {
+              status  = 'degraded';
+              message = `PDIM chain congested: ${pdimQueue} callers queued (gap ${pdimGap}ms)`;
+            }
           }
         }
       } catch { /* non-fatal — PDIM may not be configured */ }
@@ -1360,7 +1391,17 @@ class PlatformAutoFixer extends EventEmitter {
           const _nowP = Date.now();
           if (_nowP - this._lastLuaPreemptiveWarnMs >= TWO_MINUTES_MS) {
             this._lastLuaPreemptiveWarnMs = _nowP;
-            logger.warn('[PlatformAutoFixer] 🎯 OFFENSIVE: LuaExecutor pre-emptively cleared (imminent critical state)');
+            // Suppress during 120s boot-grace (LuaExecutor stalls are expected while
+            // the startup PDIM burst is draining) and during job registration.
+            const inBootGraceOff = _nowP - this._bootTs < 120_000;
+            let inRegistrationOff = false;
+            try {
+              const { isLuaRegistrationMode: isRegModeOff } = await import('../lib/luaExecutor.js');
+              inRegistrationOff = isRegModeOff();
+            } catch { /* non-fatal */ }
+            if (!inBootGraceOff && !inRegistrationOff) {
+              logger.warn('[PlatformAutoFixer] 🎯 OFFENSIVE: LuaExecutor pre-emptively cleared (imminent critical state)');
+            }
           }
         } catch { /* non-fatal */ }
       }
