@@ -45,18 +45,19 @@ const MAX_CONCURRENT_WORKERS = 1;
 // With the fast-lane (10ms inter-call gap):
 //   typical script: 35 × (200ms RTT + 10ms gap) = ~7.35s
 //   high-RTT case:  35 × (800ms RTT + 10ms gap) = ~28.35s
-// So a slot-wait of 55s is extremely conservative — a slot frees well before.
-let _maxWaitMs = 55_000;
+// Slot-wait raised to 90s to handle sustained PDIM congestion events without
+// premature rejection — scripts always free their slot well within this window.
+let _maxWaitMs = 90_000;
 /** Permanently increase the LuaExecutor slot-wait timeout — called by PermanentFixRegistry. */
 export function setLuaScriptTimeout(ms: number): void {
-  _maxWaitMs = Math.max(55_000, Math.min(120_000, ms));
+  _maxWaitMs = Math.max(90_000, Math.min(180_000, ms));
 }
 export function getLuaScriptTimeout(): number { return _maxWaitMs; }
 // Backpressure cap: reject immediately when the wait queue exceeds this size.
 // Without a cap, sustained BullMQ load causes _waitQueue to grow without bound,
-// holding thousands of 60-second timer handles and consuming unbounded memory.
-// 2000 slots: handles sustained burst workloads without premature shedding.
-const MAX_QUEUE_SIZE = 2000;
+// holding thousands of timer handles and consuming unbounded memory.
+// 5000 slots: matches real-world 100M+ caller burst peaks without premature shedding.
+const MAX_QUEUE_SIZE = 5000;
 // How long to sleep before rejecting when the circuit is OPEN.
 // BullMQ uses onlyEmitError:true so our rejection is swallowed and treated as
 // "no job" — without this sleep the poll loop runs at full speed, saturating

@@ -64,7 +64,7 @@ const DIT24_PROXY_PATHS = new Set([
   '/analyze/sentiment',
 ]);
 
-async function maxcorePost(path: string, body: unknown, timeoutMs = 30_000): Promise<unknown> {
+async function maxcorePost(path: string, body: unknown, timeoutMs = 90_000): Promise<unknown> {
   // Route through the port-8008 training gateway when the path is supported.
   // The gateway server proxies to MaxCore internally (and will eventually
   // serve locally once the local model is trained). This makes port 8008
