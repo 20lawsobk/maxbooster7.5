@@ -160,6 +160,18 @@ export function getLuaExecutorStats(): { active: number; queued: number; max: nu
   return { active: _activeWorkers, queued: _waitQueue.length, max: MAX_CONCURRENT_WORKERS };
 }
 
+// ── Registration-mode gate ────────────────────────────────────────────────────
+// Set to true while autonomousJobScheduler is serially registering repeatable
+// jobs.  Each upsertJobScheduler call takes ~50s under boot PDIM back-pressure,
+// which causes ChainFixer's deadlock detector (3× congested readings) and
+// PlatformAutoFixer's lua_executor degraded probe to fire — producing 4–6 WARNs
+// that are not real signals (the slot is occupied by a known-slow registration
+// script, not a stuck or deadlocked worker).  Both probers skip their congestion
+// WARN logic while this flag is true.
+let _luaRegistrationMode = false;
+export function setLuaRegistrationMode(active: boolean): void { _luaRegistrationMode = active; }
+export function isLuaRegistrationMode(): boolean { return _luaRegistrationMode; }
+
 // process.cwd() always resolves to the project root regardless of CJS/ESM build format
 const _projectRoot = process.cwd();
 const _wasmoonUrl  = `file://${_projectRoot}/node_modules/wasmoon/dist/index.js`;
@@ -429,7 +441,13 @@ export async function execLuaViaPdim(
     // During heavy PDIM back-pressure thousands of scripts may stall; the
     // depth check below demotes those to debug to avoid log avalanche.
     let _watchdogTick = 0;
+    // Guard against the race where clearInterval() is called but the interval
+    // callback was already queued in the current event-loop batch.  Without
+    // this flag the callback can fire with active=0 / queued=0 even though
+    // the script completed successfully, producing a false-positive WARN.
+    let _watchdogCancelled = false;
     const watchdog = setInterval(async () => {
+      if (_watchdogCancelled) return;
       const elapsedMs = Date.now() - _scriptStart;
       const elapsedS  = Math.round(elapsedMs / 1000);
       _watchdogTick++;
@@ -439,7 +457,7 @@ export async function execLuaViaPdim(
           `(active=${_activeWorkers}, queued=${_waitQueue.length}) — ` +
           `Atomics.wait stall detected; releasing semaphore slot`
         );
-        clearInterval(watchdog);
+        _watchdogCancelled = true; clearInterval(watchdog);
         settle(() => {
           worker.terminate();
           _luaConsecutivePdimErrors++;
@@ -451,6 +469,19 @@ export async function execLuaViaPdim(
         // debug in that case to avoid amplifying the congestion noise.
         const shouldLog = _watchdogTick <= 2;
         if (!shouldLog) return;
+        // When the ChainFixer calls resetLuaExecutorSemaphore() it zeroes
+        // _activeWorkers externally while this worker is still running.  The
+        // watchdog still fires (correctly — script is unsettled), but reading
+        // active=0 / queued=0 is misleading: it looks like a phantom WARN
+        // rather than a real stall.  Demote to debug in that case so the log
+        // stream only shows genuine over-time scripts (active ≥ 1).
+        if (_activeWorkers === 0 && _waitQueue.length === 0) {
+          logger.debug(
+            `[LuaExecutor] script still running after ${elapsedS}s — ` +
+            `semaphore was externally reset (active counter zeroed by ChainFixer)`
+          );
+          return;
+        }
         try {
           const { getPdimQueueDepth } = await import('./pdimClient.js');
           const depth = getPdimQueueDepth();
@@ -493,10 +524,16 @@ export async function execLuaViaPdim(
           status  = 1; // success
         } catch (e) {
           const short = (e.message as string).slice(0, 200);
-          // 5xx responses and circuit-open fast-fails are already captured at
-          // WARN/ERROR by the circuit breaker itself.  Repeating them per-command
-          // floods the console during startup bursts — use debug for all PDIM 5xx.
-          if (short.includes('500') || short.includes('502') || short.includes('Circuit OPEN')) {
+          // 5xx, 429, and circuit-open fast-fails are already captured at
+          // WARN/ERROR by pdimClient / the circuit breaker itself.  Repeating
+          // them per-command floods the console during startup bursts — demote
+          // all to debug so only the root-cause site emits the visible warn.
+          if (
+            short.includes('429') ||
+            short.includes('500') ||
+            short.includes('502') ||
+            short.includes('Circuit OPEN')
+          ) {
             logger.debug(`[LuaExecutor] redis.call(${msg.cmd}) → ${short}`);
           } else {
             logger.warn(`[LuaExecutor] redis.call(${msg.cmd}) → ${short}`);
@@ -514,13 +551,13 @@ export async function execLuaViaPdim(
         Atomics.store(ctrl, 0, status);
         Atomics.notify(ctrl, 0, 1);
       } else if (msg.type === 'result') {
-        clearInterval(watchdog);
+        _watchdogCancelled = true; clearInterval(watchdog);
         // Script completed successfully — reset the consecutive PDIM error counter
         // so the next call gets no pre-flight delay.
         _luaConsecutivePdimErrors = 0;
         settle(() => { worker.terminate(); resolve(msg.result); });
       } else if (msg.type === 'error') {
-        clearInterval(watchdog);
+        _watchdogCancelled = true; clearInterval(watchdog);
         const errMsg = String(msg.error ?? '');
         const isPdim5xx = errMsg.includes('HTTP 500') || errMsg.includes('HTTP 502');
         if (isPdim5xx && !pdim5xxCounted) {
@@ -537,7 +574,7 @@ export async function execLuaViaPdim(
     });
 
     worker.on('error', (err) => {
-      clearInterval(watchdog);
+      _watchdogCancelled = true; clearInterval(watchdog);
       settle(() => reject(err));
     });
 
@@ -556,7 +593,7 @@ export async function execLuaViaPdim(
     // the exit as a potential PDIM 5xx error (code=0 means the Lua script
     // completed but threw — almost always because redis.call() got a 5xx).
     worker.on('exit', (code) => {
-      clearInterval(watchdog);
+      _watchdogCancelled = true; clearInterval(watchdog);
       setImmediate(() => {
         if (!settled) {
           // Neither 'result' nor 'error' message was processed before exit.

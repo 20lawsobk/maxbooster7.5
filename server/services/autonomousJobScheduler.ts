@@ -289,11 +289,64 @@ const SCHED_DEFAULTS = {
  * This function is idempotent: BullMQ deduplicates repeatable jobs by
  * (name + every), so calling it on multiple pods at startup is safe.
  */
+/**
+ * Wait until the PDIM caller queue has genuinely settled before registering
+ * BullMQ repeatable jobs.
+ *
+ * The startup PDIM burst arrives 10–30 s after boot (as BaseTrainer, MaxCoreSync,
+ * ScoreCalibrator, HyperLearning, etc. all initialise simultaneously) and
+ * typically takes 60–90 s to drain.  `waitForPdimSettled()` always waits at
+ * least `minWaitMs` (default 75 s) before even checking depth — this covers
+ * the burst even when the queue appears empty at call time (which is always,
+ * because `setupRepeatableJobs` is called very early in the boot sequence).
+ * After the initial wait it polls every 5 s until depth < `maxDepth` (40) or
+ * the total deadline (minWait + 180 s) is reached.
+ */
+async function waitForPdimSettled(
+  maxDepth = 40,
+  minWaitMs = 75_000,
+  extraTimeoutMs = 180_000,
+): Promise<void> {
+  // Fixed initial wait — the burst is coming even if the queue is empty now.
+  logger.info(
+    `[AutonomousScheduler] Waiting ${minWaitMs / 1000}s for startup PDIM burst to settle ` +
+    `before registering BullMQ repeatable jobs…`,
+  );
+  await new Promise(r => setTimeout(r, minWaitMs));
+
+  const { getPdimQueueDepth } = await import('../lib/pdimClient.js');
+  const deadline = Date.now() + extraTimeoutMs;
+  while (Date.now() < deadline) {
+    const depth = getPdimQueueDepth();
+    if (depth < maxDepth) {
+      logger.info(`[AutonomousScheduler] PDIM settled (depth=${depth}) — registering jobs now`);
+      return;
+    }
+    logger.info(
+      `[AutonomousScheduler] PDIM depth=${depth} ≥ ${maxDepth} — ` +
+      `waiting ${Math.round((deadline - Date.now()) / 1000)}s more`,
+    );
+    await new Promise(r => setTimeout(r, 5_000));
+  }
+  logger.warn(
+    `[AutonomousScheduler] PDIM still congested after ${(minWaitMs + extraTimeoutMs) / 1000}s — ` +
+    `proceeding with job registration (hard-kills may follow but are self-healing)`,
+  );
+}
+
 export async function setupRepeatableJobs(): Promise<void> {
   if (_worker) {
     await _worker.close().catch(() => {});
     _worker = null;
   }
+
+  // ── Wait for startup PDIM burst to drain ─────────────────────────────────
+  // On every cold start, dozens of services hit PDIM simultaneously during
+  // the first ~90s.  Launching BullMQ Lua scripts into that burst causes 7+
+  // LuaExecutor workers to stall and hit the 90s hard-kill (one per
+  // REPEATABLE_JOBS entry).  Waiting for the queue to settle first lets the
+  // upsertJobScheduler calls complete cleanly in a few hundred ms each.
+  await waitForPdimSettled();
 
   const queue = getQueue();
 
@@ -320,15 +373,35 @@ export async function setupRepeatableJobs(): Promise<void> {
     // Non-fatal: stale jobs will still be skipped by the worker guard
   }
 
-  await Promise.allSettled(
-    REPEATABLE_JOBS.map(({ name, every }) =>
-      queue.upsertJobScheduler(name, { every }, { data: {}, opts: SCHED_DEFAULTS })
+  // ── Serialise repeatable-job registration ────────────────────────────────
+  // Previously this used Promise.allSettled (all 7 at once).  That caused all
+  // 7 LuaExecutor workers to queue simultaneously; the one holding the slot
+  // stalled under PDIM congestion while the other 6 waited.  Sequential
+  // processing ensures only ONE LuaExecutor worker is active at a time, so
+  // each upsertJobScheduler call gets a clean PDIM window.  At ~200–500 ms
+  // per job (healthy PDIM), all 7 complete in under 4 s total.
+  //
+  // Registration-mode flag: raises the LuaExecutor registration-mode flag so
+  // ChainFixer and PlatformAutoFixer skip their congestion-WARN / deadlock-reset
+  // logic during this window.  Each upsertJobScheduler call takes ~50 s under
+  // boot PDIM back-pressure (not a true deadlock); without the flag, ChainFixer
+  // declares "deadlock confirmed" after 3 × 15s congested readings and resets
+  // the semaphore mid-registration, causing a PDIM burst WARN cascade.
+  const { setLuaRegistrationMode } = await import('../lib/luaExecutor.js');
+  setLuaRegistrationMode(true);
+  try {
+    for (const { name, every } of REPEATABLE_JOBS) {
+      await queue.upsertJobScheduler(name, { every }, { data: {}, opts: SCHED_DEFAULTS })
         .catch((err: Error) => {
           // Truncate Lua stack traces to a single line; silence PDIM 5xx cold-start
           // errors (the scheduler retries automatically on the next boot cycle).
           const full = err?.message ?? '';
           const msg  = full.split('\n')[0] ?? full;
-          if (/PDIM HTTP 5/i.test(msg)) return;
+          // 429 (rate-limit) and 5xx cold-start errors are self-healing:
+          // pdimClient's AIMD backoff recovers 429s; the scheduler retries 5xx
+          // on the next boot.  Both are already logged by pdimClient — no
+          // redundant WARN needed here.
+          if (/PDIM HTTP 4|PDIM HTTP 5/i.test(msg)) return;
           // LuaExecutor killed the BullMQ Lua script during registration — this
           // happens when PDIM is heavily congested at startup.  BullMQ retries
           // registration automatically on the next boot, so this is self-healing.
@@ -341,9 +414,11 @@ export async function setupRepeatableJobs(): Promise<void> {
             return;
           }
           logger.warn(`[AutonomousScheduler] Failed to register ${name}: ${msg}`);
-        })
-    )
-  );
+        });
+    }
+  } finally {
+    setLuaRegistrationMode(false);
+  }
 
   _worker = createAutonomousWorker();
   logger.info('[AutonomousScheduler] ✅ Repeatable jobs registered (BullMQ, Redis-backed, exactly-once per interval)');
