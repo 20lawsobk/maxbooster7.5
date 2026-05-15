@@ -233,10 +233,21 @@ function createAutonomousWorker(): Worker {
     const full = err?.message ?? '';
     // Strip Lua/Node.js stack traces — keep only the first line of the message.
     const msg = full.split('\n')[0] ?? full;
-    // Silence PDIM circuit-open and 5xx during cold-start — the circuit breaker
-    // slow-lane already handles these and logs its own diagnostics.
+    // Completely silent: circuit-open and PDIM 5xx are handled by the
+    // circuit breaker which already emits its own diagnostics.
     if (/Missing lock for job|PDIM circuit OPEN|Circuit OPEN|PDIM HTTP 5/i.test(msg)) return;
-    logger.warn('[AutonomousScheduler] Worker error:', msg);
+    // BullMQ lock-renewal errors: job held the lock longer than lockDuration
+    // (600 s here).  BullMQ re-queues automatically — self-healing.
+    // Also silence hard-killed worker messages (LuaExecutor already logged them at ERROR).
+    if (
+      /Maximum lock renew count reached|lock is lost|Lock renewal failed|lock expired/i.test(msg) ||
+      /StalledJobsError|worker hard-killed|moveToFinished/i.test(msg)
+    ) {
+      logger.warn(`[AutonomousScheduler] BullMQ lock/stall (self-healing): ${msg}`);
+      return;
+    }
+    // Unknown — log full error object so we can diagnose it
+    logger.warn({ err }, `[AutonomousScheduler] Unexpected worker error: ${msg}`);
   });
 
   return worker;

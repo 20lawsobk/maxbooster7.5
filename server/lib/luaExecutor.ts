@@ -413,9 +413,16 @@ export async function execLuaViaPdim(
     //   mid-script, which was observed as scripts running > 19 000s in prod).
     const SCRIPT_HARD_KILL_MS = 300_000; // 5 minutes
     const _scriptStart = Date.now();
-    const watchdog = setInterval(() => {
+    // Watchdog tick counter — used to reduce log frequency for long-running
+    // scripts.  Logs at ticks 1-3 (60s, 120s, 180s) so the first three minutes
+    // are always visible, then only every 5th tick (every 5 min) thereafter.
+    // During heavy PDIM back-pressure thousands of scripts queue simultaneously;
+    // logging every 60s per script floods the console without adding signal.
+    let _watchdogTick = 0;
+    const watchdog = setInterval(async () => {
       const elapsedMs = Date.now() - _scriptStart;
       const elapsedS  = Math.round(elapsedMs / 1000);
+      _watchdogTick++;
       if (elapsedMs >= SCRIPT_HARD_KILL_MS) {
         logger.error(
           `[LuaExecutor] script hard-killed after ${elapsedS}s ` +
@@ -429,6 +436,24 @@ export async function execLuaViaPdim(
           reject(new Error(`[LuaExecutor] worker hard-killed after ${elapsedS}s (stuck script timeout)`));
         });
       } else {
+        // Log at ticks 1-3 (60s, 120s, 180s) always; after that every 5 ticks.
+        // When PDIM is heavily congested, scripts stall expectedly — demote to
+        // debug in that case to avoid amplifying the congestion noise.
+        const shouldLog = _watchdogTick <= 3 || _watchdogTick % 5 === 0;
+        if (!shouldLog) return;
+        try {
+          const { getPdimQueueDepth } = await import('./pdimClient.js');
+          const depth = getPdimQueueDepth();
+          if (depth > 100) {
+            // Hundreds of callers queued: stall is due to PDIM back-pressure,
+            // not a WASM/Lua bug.  Log at debug to avoid log avalanche.
+            logger.debug(
+              `[LuaExecutor] script paused ${elapsedS}s — PDIM back-pressure ` +
+              `(${depth} queued, active=${_activeWorkers})`
+            );
+            return;
+          }
+        } catch { /* pdimClient not yet loaded — fall through to warn */ }
         logger.warn(
           `[LuaExecutor] script still running after ${elapsedS}s — ` +
           `active=${_activeWorkers}, queued=${_waitQueue.length}`
