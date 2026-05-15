@@ -188,6 +188,18 @@ export class MaxCoreAIClient {
 
     const path = endpoint.startsWith('/api/') ? endpoint : `/api${endpoint}`;
 
+    // Short-circuit within this process when the endpoint recently exhausted all
+    // retries.  Concurrent autopilot requests that were already in-flight when
+    // the first caller sets suppression will skip their own 3-attempt loop and
+    // return null immediately — avoiding a pile-on of failing fetches against
+    // an overloaded MaxCore and getting the Tier-3 local fallback faster.
+    if (MaxCoreAIClient.isEndpointSuppressed(path)) {
+      logger.debug(`[MaxCoreAI] infer ${path} — skipping (endpoint suppressed, using fallback)`);
+      return null;
+    }
+
+    let lastFailReason = 'unknown';
+
     for (let attempt = 0; attempt <= MaxCoreAIClient.INFER_MAX_RETRIES; attempt++) {
       try {
         const r = await fetch(`${MC_AI_URL}${path}`, {
@@ -201,12 +213,16 @@ export class MaxCoreAIClient {
           const data = await r.json();
           logger.debug(`[MaxCoreAI] infer ${path} → success (attempt ${attempt + 1})`);
           MaxCoreAIClient._remoteAvailable = true;
+          // Clear suppression on success so the next failure window is fresh.
+          MaxCoreAIClient._endpointSuppressed.delete(path);
           return data as T;
         }
 
-        logger.debug(`[MaxCoreAI] infer ${path} attempt ${attempt + 1} → HTTP ${r.status}`);
+        lastFailReason = `HTTP ${r.status} (content-type: ${r.headers.get('content-type') ?? 'none'})`;
+        logger.debug(`[MaxCoreAI] infer ${path} attempt ${attempt + 1} → ${lastFailReason}`);
       } catch (e) {
-        logger.debug(`[MaxCoreAI] infer ${path} attempt ${attempt + 1} failed: ${e.message}`);
+        lastFailReason = (e as Error).message ?? String(e);
+        logger.debug(`[MaxCoreAI] infer ${path} attempt ${attempt + 1} failed: ${lastFailReason}`);
       }
 
       if (attempt < MaxCoreAIClient.INFER_MAX_RETRIES) {
@@ -215,7 +231,17 @@ export class MaxCoreAIClient {
       }
     }
 
-    logger.warn(`[MaxCoreAI] infer ${path} — all ${MaxCoreAIClient.INFER_MAX_RETRIES + 1} attempts failed`);
+    // Only log the WARN once per suppression window to avoid log flooding when
+    // multiple concurrent callers (e.g. autopilot bulk-publish) all fail at once.
+    // Include lastFailReason so we can diagnose whether it's 429, 503, or a
+    // timeout — without needing to change the per-attempt logs to WARN.
+    if (!MaxCoreAIClient.isEndpointSuppressed(path)) {
+      logger.warn(
+        `[MaxCoreAI] infer ${path} — all ${MaxCoreAIClient.INFER_MAX_RETRIES + 1} attempts failed` +
+        ` (last failure: ${lastFailReason})`
+      );
+      MaxCoreAIClient._endpointSuppressed.set(path, Date.now() + MaxCoreAIClient.ENDPOINT_SUPPRESS_MS);
+    }
     return null;
   }
 }
