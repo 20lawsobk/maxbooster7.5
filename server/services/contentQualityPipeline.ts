@@ -357,11 +357,11 @@ class ContentQualityPipeline {
       variants.push(variant);
     }
 
-    // Emit one summary warn if any variants fell back to local.
-    // This replaces the N per-variant warns that previously flooded the log.
-    // During BullMQ registration, MaxCore is under PDIM pressure and
-    // rate-limited — demote to debug since local fallback is the correct
-    // behaviour in that window and the failure is not a system fault.
+    // Emit one summary log if any variants fell back to local.
+    // MaxCore is always running — a null return means it was temporarily busy
+    // (e.g. 504 under diffusion training load); the Tier-3 local fallback is
+    // the designed response, not an error condition.  Log at INFO so it is
+    // visible without polluting the WARN channel.
     if (_failAcc.count > 0) {
       let inRegistration = false;
       try {
@@ -374,9 +374,9 @@ class ContentQualityPipeline {
           `(registration in progress) — using local fallback`
         );
       } else {
-        logger.warn(
-          `[ContentQuality] Advanced AI failed for ${_failAcc.count}/${count} variants ` +
-          `— all using local fallback: ${_failAcc.reason}`,
+        logger.info(
+          `[ContentQuality] Advanced AI used local fallback for ${_failAcc.count}/${count} variants` +
+          (_failAcc.reason ? ` (${_failAcc.reason})` : ''),
         );
       }
       if (_failAcc.localCount > 0) {
@@ -479,7 +479,7 @@ class ContentQualityPipeline {
           _failAcc.count++;
           if (!_failAcc.reason) _failAcc.reason = advErrMsg;
         } else {
-          logger.warn(`[ContentQuality] Advanced AI failed for variant ${index} — using local fallback: ${advErrMsg}`);
+          logger.info(`[ContentQuality] Advanced AI used local fallback for variant ${index}: ${advErrMsg}`);
         }
 
         // ── Tier 3: Local pattern-data fallback (always available) ────────────
@@ -1407,10 +1407,9 @@ class ContentQualityPipeline {
       };
     } catch (error) {
       const errMsg = (error as Error)?.message ?? String(error);
-      // MaxCore is always running — any failure is a real signal worth surfacing.
-      // Log message only (no stack trace) since the root cause is already in
-      // the maxcoreClient WARN emitted once per suppression window.
-      logger.warn(`[AdvancedAI] Content pipeline failed: ${errMsg}`);
+      // MaxCore is always running — a failure here means it was temporarily
+      // busy; the caller's local fallback handles it.  Log at INFO.
+      logger.info(`[AdvancedAI] Content pipeline used local fallback: ${errMsg}`);
       throw error;
     }
   }

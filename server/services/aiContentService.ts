@@ -263,7 +263,7 @@ export class AIContentService {
         const caption = d.caption || [d.hook, d.body, d.cta].filter(Boolean).join('\n\n');
         content = caption ? [caption] : (d.content || []);
       } else {
-        logger.warn('[AIContentService] MaxCore returned no content (transient call failure)');
+        logger.debug('[AIContentService] MaxCore returned no content — local fallback');
         content = [];
       }
 
@@ -880,7 +880,7 @@ export class AIContentService {
             changes: [spec.desc, `Source: ${aiResult.source || 'AI'}`],
           } as ABVariant;
         } catch (err) {
-          logger.warn({ err: err }, `[AIContentService] generateABVariants MaxCore call failed for tone=${spec.tone}:`);
+          logger.debug(`[AIContentService] generateABVariants MaxCore call used local fallback for tone=${spec.tone}: ${(err as Error)?.message ?? String(err)}`);
           throw err;
         }
       })
@@ -952,7 +952,7 @@ export class AIContentService {
       const caption = d.caption || [d.hook, d.body, d.cta].filter(Boolean).join('\n\n');
       content = caption ? [caption] : (d.content || []);
     } else {
-      logger.warn('[AIContentService] MaxCore returned no content (transient call failure)');
+      logger.debug('[AIContentService] MaxCore returned no content — local fallback');
       content = [];
     }
 
