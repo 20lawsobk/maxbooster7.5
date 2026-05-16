@@ -92,8 +92,17 @@ export class DistributedCache {
 
     if (!this.redis) { this.stats.misses++; return null; }
 
+    // Timeout guard: under PDIM congestion the ioredis call can hang indefinitely.
+    // After 500 ms we treat the result as a cache miss and let the fetcher run.
+    // This is safe: the data path (fetcher → DB) always works without cache.
+    const PDIM_GET_TIMEOUT_MS = 500;
     try {
-      const value = await this.redis.get(key);
+      const value = await Promise.race([
+        this.redis.get(key),
+        new Promise<null>((resolve) =>
+          setTimeout(() => resolve(null), PDIM_GET_TIMEOUT_MS)
+        ),
+      ]);
       if (value) {
         this.l1Set(key, value);
         this.stats.hits++;

@@ -102,7 +102,7 @@ class RedisRateLimitStore implements Store {
           }
         })(),
         new Promise<never>((_, reject) =>
-          setTimeout(() => reject(new Error('[GlobalRateLimit] Sliding-window ops timed out (400ms)')), 400)
+          setTimeout(() => reject(new Error('[GlobalRateLimit] Sliding-window ops timeout (400ms)')), 400)
         ),
       ]);
       const resetTime = new Date(now + this.windowMs);

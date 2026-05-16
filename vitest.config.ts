@@ -25,6 +25,12 @@ export default defineConfig({
     setupFiles: ['tests/setup.ts'],
     testTimeout: 15000,
     hookTimeout: 15000,
+    pool: 'forks',
+    poolOptions: {
+      forks: {
+        execArgv: ['--max-old-space-size=4096'],
+      },
+    },
     reporters: ['verbose'],
     coverage: {
       provider: 'v8',

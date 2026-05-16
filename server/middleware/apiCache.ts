@@ -431,7 +431,15 @@ export function cacheMiddleware(options: CacheOptions = {}) {
     const cacheKey = `u:${userId}:${req.path}:${queryStr}`;
 
     try {
-      const cached = await apiCache.get(cacheKey, userId !== 'shared' ? userId : undefined);
+      // Timeout guard: if PDIM is congested, the cache read can hang indefinitely.
+      // After 500 ms we skip the cache and serve the route handler directly.
+      const CACHE_PDIM_TIMEOUT_MS = 500;
+      const cached = await Promise.race([
+        apiCache.get(cacheKey, userId !== 'shared' ? userId : undefined),
+        new Promise<undefined>((resolve) =>
+          setTimeout(() => resolve(undefined), CACHE_PDIM_TIMEOUT_MS),
+        ),
+      ]);
       if (cached) {
         const age = Date.now() - cached.timestamp;
         if (age < ttlSeconds * 1000) {
