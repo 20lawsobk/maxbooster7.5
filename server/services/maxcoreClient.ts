@@ -122,9 +122,9 @@ export class MaxCoreAIClient {
    * (e.g. 504 under diffusion training load).  The caller's local fallback
    * handles the null return, so there is nothing to retry.
    */
-  // 60 s covers MaxCore generation latency under diffusion training load
-  // (~16 s warm, up to ~50 s when the training loop is active).
-  private static readonly GENERATE_TIMEOUT_MS = 60_000;
+  // Measured post-upgrade warm latency: ~11 s.  22 s gives 2× headroom for
+  // occasional spikes without blocking the event loop for a full minute.
+  private static readonly GENERATE_TIMEOUT_MS = 22_000;
 
   static async generate<T = any>(endpoint: string, body: Record<string, unknown>): Promise<T | null> {
     if (!MC_AI_URL || !MC_AI_KEY) return null;
@@ -169,10 +169,10 @@ export class MaxCoreAIClient {
    * MaxCore is always running; if it returns an error it is temporarily busy
    * (e.g. 504 under diffusion training load).  The caller's local fallback
    * handles the null return immediately — no retry needed.
-   * Timeout is deliberately generous (60 s) so video-job submissions and other
-   * heavy operations complete even under diffusion training load.
+   * 25 s covers content generation (~11 s observed) and video-job submission
+   * (queue insertion only — actual render is async, polled via poll()).
    */
-  private static readonly INFER_TIMEOUT_MS = 60_000;
+  private static readonly INFER_TIMEOUT_MS = 25_000;
 
   static async infer<T = any>(endpoint: string, body: Record<string, unknown>): Promise<T | null> {
     if (!MC_AI_URL || !MC_AI_KEY) return null;
