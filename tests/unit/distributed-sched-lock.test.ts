@@ -18,10 +18,11 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 const mocks = vi.hoisted(() => {
   // BullMQ Queue mock functions
-  const mockAdd               = vi.fn().mockResolvedValue({ id: 'job-1' });
-  const mockGetRepeatableJobs = vi.fn().mockResolvedValue([]);
+  const mockAdd                   = vi.fn().mockResolvedValue({ id: 'job-1' });
+  const mockUpsertJobScheduler    = vi.fn().mockResolvedValue({ id: 'job-1' });
+  const mockGetRepeatableJobs     = vi.fn().mockResolvedValue([]);
   const mockRemoveRepeatableByKey = vi.fn().mockResolvedValue(true);
-  const mockQueueClose        = vi.fn().mockResolvedValue(undefined);
+  const mockQueueClose            = vi.fn().mockResolvedValue(undefined);
 
   // BullMQ Worker mock functions
   const mockWorkerRun   = vi.fn().mockResolvedValue(undefined);
@@ -30,10 +31,11 @@ const mocks = vi.hoisted(() => {
 
   // Queue constructor — use function declaration so `new Queue()` works
   const MockQueue = vi.fn(function(this: Record<string, unknown>) {
-    this.add               = mockAdd;
-    this.getRepeatableJobs = mockGetRepeatableJobs;
+    this.add                   = mockAdd;
+    this.upsertJobScheduler    = mockUpsertJobScheduler;
+    this.getRepeatableJobs     = mockGetRepeatableJobs;
     this.removeRepeatableByKey = mockRemoveRepeatableByKey;
-    this.close             = mockQueueClose;
+    this.close                 = mockQueueClose;
   });
 
   // Worker constructor
@@ -56,7 +58,7 @@ const mocks = vi.hoisted(() => {
   const mockIsPdimConfigured = vi.fn(() => pdimState.configured);
 
   return {
-    mockAdd, mockGetRepeatableJobs, mockRemoveRepeatableByKey, mockQueueClose,
+    mockAdd, mockUpsertJobScheduler, mockGetRepeatableJobs, mockRemoveRepeatableByKey, mockQueueClose,
     mockWorkerRun, mockWorkerClose, mockWorkerOn,
     MockQueue, MockWorker,
     mockRedisSet, mockRedisGet, mockRedisDel, mockGetRedisClient,
@@ -85,6 +87,10 @@ vi.mock('../../server/logger.js', () => ({
   logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn() },
 }));
 
+vi.mock('../../server/lib/luaExecutor.js', () => ({
+  setLuaRegistrationMode: vi.fn(),
+}));
+
 // ── Module under test ─────────────────────────────────────────────────────────
 
 import {
@@ -101,6 +107,7 @@ import {
 
 function resetMocks() {
   mocks.mockAdd.mockClear().mockResolvedValue({ id: 'job-1' });
+  mocks.mockUpsertJobScheduler.mockClear().mockResolvedValue({ id: 'job-1' });
   mocks.mockGetRepeatableJobs.mockClear().mockResolvedValue([]);
   mocks.mockRemoveRepeatableByKey.mockClear().mockResolvedValue(true);
   mocks.mockQueueClose.mockClear();
@@ -121,9 +128,9 @@ describe('BullMQ autonomous scheduler — setupRepeatableJobs()', () => {
   beforeEach(resetMocks);
   afterEach(() => closeScheduler().catch(() => {}));
 
-  it('registers all 7 recurring tasks via queue.add()', async () => {
+  it('registers all 7 recurring tasks via queue.upsertJobScheduler()', async () => {
     await setupRepeatableJobs();
-    const names = mocks.mockAdd.mock.calls.map(([n]: [string]) => n);
+    const names = mocks.mockUpsertJobScheduler.mock.calls.map(([n]: [string]) => n);
     expect(names).toContain('content-dispatch');
     expect(names).toContain('analytics');
     expect(names).toContain('metrics-persist');
@@ -131,14 +138,15 @@ describe('BullMQ autonomous scheduler — setupRepeatableJobs()', () => {
     expect(names).toContain('prune-audit-log');
     expect(names).toContain('prune-notifications');
     expect(names).toContain('prune-upload-dirs');
-    expect(mocks.mockAdd).toHaveBeenCalledTimes(7);
+    expect(mocks.mockUpsertJobScheduler).toHaveBeenCalledTimes(7);
   });
 
   it('passes repeat.every to every registered job (BullMQ dashboard visibility)', async () => {
     await setupRepeatableJobs();
-    for (const [, , opts] of mocks.mockAdd.mock.calls) {
-      expect(opts).toHaveProperty('repeat.every');
-      expect(typeof (opts as { repeat: { every: number } }).repeat.every).toBe('number');
+    // upsertJobScheduler(name, { every }, { data, opts }) — every is the 2nd arg
+    for (const [, repeatOpts] of mocks.mockUpsertJobScheduler.mock.calls) {
+      expect(repeatOpts).toHaveProperty('every');
+      expect(typeof (repeatOpts as { every: number }).every).toBe('number');
     }
   });
 
@@ -147,7 +155,7 @@ describe('BullMQ autonomous scheduler — setupRepeatableJobs()', () => {
     expect(mocks.MockWorker).toHaveBeenCalledWith(
       AUTONOMOUS_QUEUE,
       expect.any(Function),
-      expect.objectContaining({ concurrency: 1 }),
+      expect.objectContaining({ concurrency: 4, autorun: false }),
     );
   });
 
@@ -166,29 +174,30 @@ describe('BullMQ autonomous scheduler — setupRepeatableJobs()', () => {
 
   it('content-dispatch repeats every 60 seconds', async () => {
     await setupRepeatableJobs();
-    const call = mocks.mockAdd.mock.calls.find(([n]: [string]) => n === 'content-dispatch');
-    expect((call![2] as { repeat: { every: number } }).repeat.every).toBe(60_000);
+    const call = mocks.mockUpsertJobScheduler.mock.calls.find(([n]: [string]) => n === 'content-dispatch');
+    expect((call![1] as { every: number }).every).toBe(60_000);
   });
 
   it('analytics repeats every hour', async () => {
     await setupRepeatableJobs();
-    const call = mocks.mockAdd.mock.calls.find(([n]: [string]) => n === 'analytics');
-    expect((call![2] as { repeat: { every: number } }).repeat.every).toBe(3_600_000);
+    const call = mocks.mockUpsertJobScheduler.mock.calls.find(([n]: [string]) => n === 'analytics');
+    expect((call![1] as { every: number }).every).toBe(3_600_000);
   });
 
   it('all prune jobs repeat at least hourly (≥ 3_600_000 ms)', async () => {
     await setupRepeatableJobs();
-    for (const [name, , opts] of mocks.mockAdd.mock.calls) {
+    for (const [name, repeatOpts] of mocks.mockUpsertJobScheduler.mock.calls) {
       if ((name as string).startsWith('prune-')) {
-        expect((opts as { repeat: { every: number } }).repeat.every).toBeGreaterThanOrEqual(3_600_000);
+        expect((repeatOpts as { every: number }).every).toBeGreaterThanOrEqual(3_600_000);
       }
     }
   });
 
   it('all jobs have removeOnComplete:true', async () => {
     await setupRepeatableJobs();
-    for (const [, , opts] of mocks.mockAdd.mock.calls) {
-      expect((opts as Record<string, unknown>).removeOnComplete).toBe(true);
+    // upsertJobScheduler(name, { every }, { data, opts }) — opts contains SCHED_DEFAULTS
+    for (const [, , jobData] of mocks.mockUpsertJobScheduler.mock.calls) {
+      expect((jobData as { opts: Record<string, unknown> }).opts.removeOnComplete).toBe(true);
     }
   });
 });

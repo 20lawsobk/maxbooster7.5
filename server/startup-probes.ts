@@ -341,4 +341,24 @@ export function setupStartupEndpoints(app: import('express').Express): void {
       });
     }
   });
+
+  // /readyz — Kubernetes-style readiness probe alias for /ready.
+  // Registered before middleware so uptime monitors never hit the middleware chain.
+  app.get('/readyz', (_req, res) => {
+    if (startupProbes.isReady()) {
+      res.status(200).json({
+        status: 'ready',
+        phase: startupProbes.getStatus().phase,
+        uptime: startupProbes.getUptimeSeconds(),
+        timestamp: new Date().toISOString(),
+      });
+    } else {
+      res.status(503).json({
+        status: 'not_ready',
+        phase: startupProbes.getStatus().phase,
+        probes: startupProbes.getStatus().probes,
+        timestamp: new Date().toISOString(),
+      });
+    }
+  });
 }

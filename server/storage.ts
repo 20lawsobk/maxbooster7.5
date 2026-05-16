@@ -85,7 +85,11 @@ export class DatabaseStorage implements IStorage {
   // Authentication requires the latest committed data; replica lag cannot be tolerated here.
   private async _retryQuery<T>(fn: () => Promise<T>, label: string): Promise<T> {
     let lastErr: unknown;
-    const MAX_ATTEMPTS = 5;
+    // 2 attempts (1 retry) with a 300 ms backoff.  Kept small so that a
+    // congested Neon WebSocket connection doesn't stall foreground requests
+    // for multiple seconds — the caller (attachUser, route handlers) must
+    // respond within the HTTP client's AbortSignal budget.
+    const MAX_ATTEMPTS = 2;
     for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
       try {
         return await fn();
@@ -98,8 +102,8 @@ export class DatabaseStorage implements IStorage {
         const isPermanent = permanentCodes.has(causeCode);
         const isTransient = !isPermanent && (msg.includes('Failed query') || causeMsg.includes('timeout') || causeMsg.includes('connection') || causeMsg.includes('ECONNRESET') || causeMsg.includes('WebSocket') || causeMsg.includes('closed'));
         if (isTransient && attempt < MAX_ATTEMPTS) {
-          logger.warn(`[Storage] ${label} transient DB error (attempt ${attempt}/${MAX_ATTEMPTS}), retrying in ${250 * attempt}ms:`, msg, '| cause:', causeMsg || 'none', '| code:', causeCode || 'none');
-          await new Promise(r => setTimeout(r, 250 * attempt));
+          logger.warn(`[Storage] ${label} transient DB error (attempt ${attempt}/${MAX_ATTEMPTS}), retrying in 300ms:`, msg, '| cause:', causeMsg || 'none', '| code:', causeCode || 'none');
+          await new Promise(r => setTimeout(r, 300));
           continue;
         }
         logger.warn(`[Storage] ${label} final DB error after ${attempt} attempts:`, msg, '| cause:', causeMsg || 'none', '| code:', causeCode || 'none', '| causeDetail:', JSON.stringify(err?.cause ?? null));
@@ -147,14 +151,11 @@ export class DatabaseStorage implements IStorage {
       .values(insertUser)
       .returning();
     
-    // Initialize Pocket Dimension storage for new user
-    try {
-      const { userPocketService } = await import('./services/userPocketDimensionService.js');
-      await userPocketService.initializeUserStorage(user.id, user.email);
-    } catch (error) {
-      logger.warn({ err: error }, `[Storage] Failed to initialize pocket dimension for user ${user.id}:`);
-      // Don't fail user creation if storage init fails
-    }
+    // Initialize Pocket Dimension storage for new user — fire-and-forget so
+    // PDIM congestion never blocks or fails the user-creation response.
+    import('./services/userPocketDimensionService.js')
+      .then(({ userPocketService }) => userPocketService.initializeUserStorage(user.id, user.email))
+      .catch((error) => logger.warn({ err: error }, `[Storage] Failed to initialize pocket dimension for user ${user.id}:`));
     
     return user;
   }

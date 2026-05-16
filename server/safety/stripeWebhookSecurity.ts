@@ -152,13 +152,27 @@ const PROCESSED_EVENTS_TTL_SECONDS = 24 * 60 * 60; // 24 hours
 // In-memory fallback for when Redis is unavailable
 const processedEventsFallback = new Set<string>();
 
+const REDIS_TIMEOUT_MS = 500;
+
+function withTimeout<T>(p: Promise<T>, ms: number, fallback: T): Promise<T> {
+  return Promise.race([
+    p,
+    new Promise<T>((resolve) => setTimeout(() => resolve(fallback), ms)),
+  ]);
+}
+
 // Check if event has already been successfully processed
 export async function isEventProcessed(eventId: string): Promise<boolean> {
   try {
     const redis = await getRedisClient();
     if (redis) {
-      const val = await redis.get(`${STRIPE_IDEMPOTENCY_PREFIX}${eventId}`);
-      return val === '1';
+      const val = await withTimeout(
+        (redis as { get(k: string): Promise<string | null> }).get(`${STRIPE_IDEMPOTENCY_PREFIX}${eventId}`),
+        REDIS_TIMEOUT_MS,
+        null,
+      );
+      if (val !== null) return val === '1';
+      // timeout → fall through to memory fallback
     }
   } catch (e) {
     logger.warn(`[Stripe Webhook] Redis check failed, using memory fallback: ${e}`);
@@ -168,17 +182,24 @@ export async function isEventProcessed(eventId: string): Promise<boolean> {
 
 // Mark event as successfully processed
 export async function markEventProcessed(eventId: string): Promise<void> {
+  // Always update in-memory fallback immediately so later checks within the same
+  // process are consistent even if the PDIM write times out.
+  processedEventsFallback.add(eventId);
+  setTimeout(() => processedEventsFallback.delete(eventId), PROCESSED_EVENTS_TTL_SECONDS * 1000);
+
   try {
     const redis = await getRedisClient();
     if (redis) {
-      await redis.set(`${STRIPE_IDEMPOTENCY_PREFIX}${eventId}`, '1', { EX: PROCESSED_EVENTS_TTL_SECONDS });
-      return;
+      await withTimeout(
+        (redis as { set(k: string, v: string, opts: { EX: number }): Promise<unknown> })
+          .set(`${STRIPE_IDEMPOTENCY_PREFIX}${eventId}`, '1', { EX: PROCESSED_EVENTS_TTL_SECONDS }),
+        REDIS_TIMEOUT_MS,
+        null,
+      );
     }
   } catch (e) {
-    logger.warn(`[Stripe Webhook] Redis mark failed, using memory fallback: ${e}`);
+    logger.warn(`[Stripe Webhook] Redis mark failed, memory fallback already applied: ${e}`);
   }
-  processedEventsFallback.add(eventId);
-  setTimeout(() => processedEventsFallback.delete(eventId), PROCESSED_EVENTS_TTL_SECONDS * 1000);
 }
 
 // Legacy function for backward compatibility

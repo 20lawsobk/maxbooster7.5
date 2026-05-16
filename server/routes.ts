@@ -110,6 +110,31 @@ declare global {
   }
 }
 
+// ── Per-process user object cache (30 s TTL) ─────────────────────────────────
+// Eliminates repeated Neon round-trips for the same user across sequential
+// requests.  Auth state changes (password reset, role change) invalidate via
+// cache expiry within 30 s — acceptable for non-critical reads.
+// The cache is keyed by userId (UUID string) and bounded to 2 000 entries.
+interface _UserCacheEntry { user: import("../shared/schema.js").User; expiresAt: number; }
+const _userCache = new Map<string, _UserCacheEntry>();
+const _USER_CACHE_TTL_MS = 30_000; // 30 seconds
+const _USER_CACHE_MAX    = 2_000;
+
+function _userCacheGet(userId: string): import("../shared/schema.js").User | undefined {
+  const e = _userCache.get(userId);
+  if (!e) return undefined;
+  if (Date.now() > e.expiresAt) { _userCache.delete(userId); return undefined; }
+  return e.user;
+}
+function _userCacheSet(user: import("../shared/schema.js").User): void {
+  if (_userCache.size >= _USER_CACHE_MAX) {
+    const oldest = _userCache.keys().next().value;
+    if (oldest) _userCache.delete(oldest);
+  }
+  _userCache.set(user.id, { user, expiresAt: Date.now() + _USER_CACHE_TTL_MS });
+}
+export function _userCacheInvalidate(userId: string): void { _userCache.delete(userId); }
+
 // Middleware to attach user to request
 async function attachUser(req: Request, res: Response, next: NextFunction) {
   const isProduction = isProductionEnv();
@@ -117,11 +142,19 @@ async function attachUser(req: Request, res: Response, next: NextFunction) {
 
   if (req.session?.userId) {
     try {
-      const user = await storage.getUser(req.session.userId);
-      if (user) {
-        req.user = user;
-      } else if (isProduction && isApiRoute) {
-        logger.info(`[Session] User not found for userId: ${req.session.userId}, path: ${req.path}`);
+      // L1 process cache: avoids a Neon round-trip on every request for the
+      // same user — critical when background tasks hold DB connections.
+      const cached = _userCacheGet(req.session.userId);
+      if (cached) {
+        req.user = cached;
+      } else {
+        const user = await storage.getUser(req.session.userId);
+        if (user) {
+          req.user = user;
+          _userCacheSet(user);
+        } else if (isProduction && isApiRoute) {
+          logger.info(`[Session] User not found for userId: ${req.session.userId}, path: ${req.path}`);
+        }
       }
     } catch (error) {
       logger.warn({ err: error }, "Error fetching user for request");
@@ -302,13 +335,20 @@ export async function registerRoutes(
         return res.status(500).json({ message: 'Registration failed - session error' });
       }
 
+      // Pre-warm the per-process user cache so the very next requests (profile,
+      // sessions, login-history) don't need a DB round-trip while background
+      // tasks from register/login still hold Neon connections.
+      _userCacheSet(user as import("../shared/schema.js").User);
+
       emailService.sendWelcomeEmail({
         firstName: firstName || username || 'there',
         email,
       }).catch((err: unknown) => logger.info({ err: err }, 'Welcome email failed (non-blocking)'));
 
-      notificationService.sendAdminNewUserNotification(email, user.id)
-        .catch((err: unknown) => logger.info({ err: err }, 'Admin new-user notification failed (non-blocking)'));
+      Promise.race([
+        notificationService.sendAdminNewUserNotification(email, user.id),
+        new Promise<never>((_, rej) => setTimeout(() => rej(new Error('bg-timeout')), 3000)),
+      ]).catch((err: unknown) => logger.info({ err: err }, 'Admin new-user notification failed (non-blocking)'));
 
       if (artistName && typeof artistName === 'string' && artistName.trim().length > 0) {
         const trimmedName = artistName.trim();
@@ -401,15 +441,26 @@ export async function registerRoutes(
 
         logger.info({ userId: user.id }, '[Login] SUCCESS for userId');
 
-        achievementService.updateStreak(user.id, 'login').catch((e: unknown) =>
-          logger.warn({ err: e }, '[Login] Failed to update login streak:')
-        );
+        // Pre-warm the per-process user cache so subsequent requests (profile,
+        // sessions, login-history) need zero DB round-trips even while background
+        // tasks are still holding Neon connections.
+        _userCacheSet(user);
 
-        notificationService.sendLoginSecurityNotification(
-          user.id,
-          req.ip || undefined,
-          req.headers['user-agent'] || undefined
-        ).catch(() => {});
+        // Background tasks — fire-and-forget with 3 s hard timeout so Neon
+        // DB connections are released quickly and don't starve foreground requests.
+        const _bgTimeout = (ms: number) =>
+          new Promise<never>((_, rej) => setTimeout(() => rej(new Error('bg-timeout')), ms));
+        Promise.race([achievementService.updateStreak(user.id, 'login'), _bgTimeout(3000)])
+          .catch((e: unknown) => logger.warn({ err: e }, '[Login] Failed to update login streak:'));
+
+        Promise.race([
+          notificationService.sendLoginSecurityNotification(
+            user.id,
+            req.ip || undefined,
+            req.headers['user-agent'] || undefined
+          ),
+          _bgTimeout(3000),
+        ]).catch(() => {});
 
         const { password: _, twoFactorSecret: _2fa, passwordResetToken: _prt, emailVerificationToken: _evt, ...safeUser } = user as Record<string, unknown>;
 
@@ -1312,6 +1363,8 @@ export async function registerRoutes(
       const otpauthUrl = authenticator.keyuri(accountName, appName, secret);
 
       await storage.updateUser(req.user.id, { twoFactorSecret: secret });
+      // Invalidate stale user cache so the next request (2fa/verify) sees the new secret
+      _userCacheInvalidate(req.user.id);
 
       const qrCodeDataUrl = await QRCode.toDataURL(otpauthUrl, {
         width: 256,
@@ -1365,6 +1418,7 @@ export async function registerRoutes(
       }
 
       await storage.updateUser(req.user.id, { twoFactorEnabled: true });
+      _userCacheInvalidate(req.user.id);
 
       return res.json({ success: true, message: "2FA enabled successfully" });
     } catch (error) {
@@ -1412,6 +1466,7 @@ export async function registerRoutes(
         twoFactorEnabled: false,
         twoFactorSecret: null
       });
+      _userCacheInvalidate(req.user.id);
 
       return res.json({ success: true, message: "2FA disabled successfully" });
     } catch (error) {

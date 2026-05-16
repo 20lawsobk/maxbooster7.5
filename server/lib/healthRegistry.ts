@@ -50,9 +50,15 @@ class HealthRegistry {
       this.cache.set(name, result);
       return result;
     } catch (err) {
+      // Distinguish a connectivity timeout from a hard probe failure.
+      // A timed-out probe is "degraded" (dependency unreachable / busy), not
+      // "down" (dependency definitively failed).  This prevents PDIM congestion
+      // — which causes slow pings but not hard errors — from flipping the
+      // overall readiness status to "down" and returning HTTP 503.
+      const isTimeout = (err as Error)?.message === 'probe timeout';
       const result: SubsystemHealth = {
         name,
-        status: 'down',
+        status: isTimeout ? 'degraded' : 'down',
         detail: (err as Error)?.message ?? 'probe failed',
         lastChecked: Date.now(),
         latencyMs: Date.now() - start,

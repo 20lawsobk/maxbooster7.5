@@ -161,13 +161,18 @@ export const config: AppConfig = {
     // Scale the per-worker pool so all workers combined stay ≤ 15 connections:
     //   ceil(15 / CLUSTER_WORKERS) → 5 for 3 workers, 3 for 6 workers, etc.
     // The DB_POOL_SIZE env var always wins if set explicitly.
+    // Dev uses 8 to avoid a cold-start storm (too many simultaneous new Neon
+    // WebSocket connections stall each other and delay foreground requests).
     poolSize: parseEnvInt('DB_POOL_SIZE',
       isReplitDeployment
         ? Math.max(2, Math.ceil(15 / (parseInt(process.env.PDIM_CLUSTER_WORKERS || '1', 10) || 1)))
-        : 20),
+        : 8),
     maxConnections: parseEnvInt('DB_MAX_CONNECTIONS', 200),
     idleTimeout: parseEnvInt('DB_IDLE_TIMEOUT', 60000),
-    connectionTimeout: parseEnvInt('DB_CONNECTION_TIMEOUT', 20000),
+    // 3 s connection-checkout timeout: if the pool is momentarily exhausted by
+    // background tasks, _retryQuery (2 attempts, 300 ms gap) fails within 6.3 s
+    // — well under a 10 s HTTP client AbortSignal — instead of hanging 20 s.
+    connectionTimeout: parseEnvInt('DB_CONNECTION_TIMEOUT', 3000),
   },
 
   redis: {

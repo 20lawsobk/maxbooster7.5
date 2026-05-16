@@ -259,7 +259,11 @@ async function isRevoked(userId: string): Promise<boolean> {
 
   try {
     const redis = getRedisClient();
-    const val = await redis.get(`session:revoke:${userId}`);
+    // 500 ms race guard — PDIM congestion must never stall session middleware
+    const val = await Promise.race<string | null>([
+      redis.get(`session:revoke:${userId}`),
+      new Promise<null>((resolve) => setTimeout(() => resolve(null), 500)),
+    ]);
     const revoked = val !== null && val !== undefined;
     _revokeL1Set(userId, revoked); // uses asymmetric TTL internally
     return revoked;
@@ -344,7 +348,32 @@ class PdimSessionStore extends session.Store {
       return cb(null, cached);
     }
 
+    // Timeout guard: if PDIM is congested, the inner.get() call can hang for
+    // tens of seconds.  After SESSION_PDIM_TIMEOUT_MS we trigger the PG
+    // fallback directly so the request does not hang indefinitely.
+    const SESSION_PDIM_TIMEOUT_MS = 2_000;
+    let settled = false;
+
+    const timeoutHandle = setTimeout(() => {
+      if (settled) return;
+      settled = true;
+      const now = Date.now();
+      if (now - _lastFetchWarnAt >= WARN_THROTTLE_MS) {
+        _lastFetchWarnAt = now;
+        logger.warn('[SessionStore] PDIM session fetch timed out — falling back to PostgreSQL');
+      }
+      pgSessionGet(sid).then(pgData => {
+        if (pgData) { this.l1.set(sid, pgData); return cb(null, pgData); }
+        this.l1.set(sid, null, L1_ERR_TTL_MS);
+        return cb(null, null);
+      }).catch(() => { this.l1.set(sid, null, L1_ERR_TTL_MS); cb(null, null); });
+    }, SESSION_PDIM_TIMEOUT_MS);
+
     this.inner.get(sid, (err, data) => {
+      if (settled) return; // timeout already fired
+      settled = true;
+      clearTimeout(timeoutHandle);
+
       if (err) {
         // PDIM unavailable — fall back to the PostgreSQL session store before
         // giving up and serving a session-less (logged-out) response.  This
@@ -396,13 +425,15 @@ class PdimSessionStore extends session.Store {
     this.l1.set(sid, sess);
     // Write to PG first (async, best-effort) so the session survives PDIM outages.
     pgSessionSet(sid, sess).catch(() => {});
-    // Write through to PDIM; swallow errors because L1 + PG already hold the
-    // authoritative copy — the session is functional even if PDIM is temporarily down.
+    // Write through to PDIM as fire-and-forget: L1 + PG already hold the
+    // authoritative copy so the session is functional immediately.
+    // Calling cb() here (before PDIM responds) prevents PDIM congestion
+    // from blocking the HTTP response.
+    cb?.();
     this.inner.set(sid, sess, (err?: unknown) => {
       if (err) {
         logger.warn({ err: err instanceof Error ? err.message : String(err) }, '[SessionStore] PDIM session write failed (session held in L1+PG)');
       }
-      cb?.();
     });
   }
 
@@ -410,31 +441,32 @@ class PdimSessionStore extends session.Store {
     this.l1.invalidate(sid);
     // Remove from PG fallback too (async, best-effort).
     pgSessionDestroy(sid).catch(() => {});
-    // Best-effort delete from PDIM; L1 is already invalidated so the session
-    // will not be served from cache regardless of whether PDIM succeeds.
+    // Call cb() immediately — L1 is already invalidated so the session will
+    // not be served from cache.  The PDIM delete is best-effort/fire-and-forget.
+    cb?.();
     this.inner.destroy(sid, (err?: unknown) => {
       if (err) {
         logger.warn({ err: err instanceof Error ? err.message : String(err) }, '[SessionStore] PDIM session destroy failed (L1 already invalidated)');
       }
-      cb?.();
     });
   }
 
   touch(sid: string, sess: session.SessionData, cb?: (err?: unknown) => void): void {
     this.l1.set(sid, sess);
+    // Call cb() IMMEDIATELY — express-session with rolling:true intercepts res.end()
+    // and waits for cb() before flushing the HTTP response to the client.
+    // Waiting for the PDIM round-trip here blocks every request by the PDIM
+    // queue depth (can be 3 000+ ms when the chain is congested).
+    // The L1 in-process cache already holds the refreshed session; the PDIM
+    // TTL refresh is best-effort / fire-and-forget exactly like set() and destroy().
+    cb?.();
     const primaryTouch = (this.inner as unknown as Record<string, unknown>).touch;
     if (primaryTouch) {
       (primaryTouch as Function).call(this.inner, sid, sess, (err?: unknown) => {
         if (err) {
-          // PDIM congestion during TTL refresh is non-critical — the session
-          // remains valid at its original TTL. Swallow the error so express-session
-          // does not propagate it after the response has already been sent.
-          logger.warn({ err: err instanceof Error ? err.message : String(err) }, '[SessionStore] PDIM congested during touch — TTL refresh skipped');
+          logger.warn({ err: err instanceof Error ? err.message : String(err) }, '[SessionStore] PDIM congested during touch — TTL refresh skipped (best-effort)');
         }
-        cb?.();
       });
-    } else {
-      cb?.();
     }
   }
 }

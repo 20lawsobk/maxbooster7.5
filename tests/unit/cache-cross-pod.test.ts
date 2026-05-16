@@ -88,6 +88,11 @@ vi.mock('../../server/lib/pdimClient', () => ({
   isPdimConfigured: () => true,
 }));
 
+// ── Mock: PDIM circuit breaker (pollTick dynamic-imports this) ────────────────
+vi.mock('../../server/lib/pdimCircuitBreaker.js', () => ({
+  cbIsPdimUnhealthy: () => false,
+}));
+
 // ── Mock: logger (suppress test noise) ───────────────────────────────────────
 vi.mock('../../server/logger', () => ({
   logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() },

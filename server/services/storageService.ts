@@ -79,10 +79,15 @@ class PocketDimensionStorageProvider implements StorageProvider {
       logger.warn(`[Storage] Local filesystem write failed for key=${key}:`, fsErr);
     }
 
-    // Also write to PDIM
+    // Also write to PDIM (with timeout so a congested queue never blocks the response)
     try {
       await this.ensure();
-      await this.pocket.write(`files/${key}`, file);
+      await Promise.race([
+        (this.pocket as Record<string, (...a: unknown[]) => Promise<unknown>>).write(`files/${key}`, file),
+        new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error('PDIM write timeout')), 6000)
+        ),
+      ]);
     } catch (pdimErr) {
       logger.warn(`[Storage] PDIM write failed for key=${key}, file is on disk only:`, pdimErr);
     }

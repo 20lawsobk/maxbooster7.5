@@ -307,6 +307,10 @@ async function waitForPdimSettled(
   minWaitMs = 75_000,
   extraTimeoutMs = 300_000,
 ): Promise<void> {
+  // Single-instance mode: no concurrent PDIM writers, no burst to wait for.
+  const { isPdimConfigured } = await import('../lib/pdimClient.js');
+  if (!isPdimConfigured()) return;
+
   // Fixed initial wait — the burst is coming even if the queue is empty now.
   logger.info(
     `[AutonomousScheduler] Waiting ${minWaitMs / 1000}s for startup PDIM burst to settle ` +
