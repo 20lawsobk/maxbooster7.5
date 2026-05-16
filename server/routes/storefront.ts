@@ -101,13 +101,12 @@ router.get('/public/:slug', async (req, res) => {
 
     res.json(storefront);
   } catch (error: unknown) {
-    logger.warn({ err: error }, 'Error fetching public storefront:');
-
     const errorMessage = error instanceof Error ? error.message : 'Failed to fetch storefront';
     if (errorMessage === 'Storefront not found') {
       return res.status(404).json({ error: errorMessage });
     }
 
+    logger.warn({ err: error }, 'Error fetching public storefront:');
     res.status(500).json({ error: errorMessage });
   }
 });
@@ -186,11 +185,11 @@ router.get('/preview/:slug', async (req, res) => {
     }
     res.json(storefront);
   } catch (error: unknown) {
-    logger.warn({ err: error }, 'Error fetching storefront preview:');
     const errMsg = getErrorMessage(error);
     if (errMsg === 'Storefront not found') {
       return res.status(404).json({ error: errMsg });
     }
+    logger.warn({ err: error }, 'Error fetching storefront preview:');
     res.status(500).json({ error: errMsg || 'Failed to fetch storefront preview' });
   }
 });
@@ -232,13 +231,13 @@ router.get('/:slug', async (req, res) => {
     const storefront = await storefrontService.getStorefrontBySlug(slug);
     res.json(storefront);
   } catch (error: unknown) {
-    logger.warn({ err: error }, 'Error fetching storefront:');
     const errMsg = getErrorMessage(error);
 
     if (errMsg === 'Storefront not found') {
       return res.status(404).json({ error: errMsg });
     }
 
+    logger.warn({ err: error }, 'Error fetching storefront:');
     res.status(500).json({ error: errMsg || 'Failed to fetch storefront' });
   }
 });
@@ -322,7 +321,6 @@ router.put('/:id/customize', async (req, res) => {
 
     res.json(updatedStorefront);
   } catch (error: unknown) {
-    logger.warn({ err: error }, 'Error updating storefront:');
     const errMsg = getErrorMessage(error);
 
     if (errMsg === 'Storefront not found') {
@@ -341,6 +339,7 @@ router.put('/:id/customize', async (req, res) => {
       return res.status(400).json({ error: 'Validation error', details: error.errors });
     }
 
+    logger.warn({ err: error }, 'Error updating storefront:');
     res.status(500).json({ error: errMsg || 'Failed to update storefront' });
   }
 });
@@ -408,7 +407,6 @@ router.delete('/:id', async (req, res) => {
 
     res.json({ success: true, message: 'Storefront deleted successfully' });
   } catch (error: unknown) {
-    logger.warn({ err: error }, 'Error deleting storefront:');
     const errMsg = getErrorMessage(error);
 
     if (errMsg === 'Storefront not found') {
@@ -419,6 +417,7 @@ router.delete('/:id', async (req, res) => {
       return res.status(403).json({ error: errMsg });
     }
 
+    logger.warn({ err: error }, 'Error deleting storefront:');
     res.status(500).json({ error: errMsg || 'Failed to delete storefront' });
   }
 });
@@ -473,7 +472,6 @@ router.post('/:storefrontId/membership-tiers', async (req, res) => {
 
     res.status(201).json(tier);
   } catch (error: unknown) {
-    logger.warn({ err: error }, 'Error creating membership tier:');
     const errMsg = getErrorMessage(error);
 
     if (errMsg === 'Storefront not found') {
@@ -484,6 +482,7 @@ router.post('/:storefrontId/membership-tiers', async (req, res) => {
       return res.status(400).json({ error: 'Validation error', details: error.errors });
     }
 
+    logger.warn({ err: error }, 'Error creating membership tier:');
     res.status(500).json({ error: errMsg || 'Failed to create membership tier' });
   }
 });
@@ -505,7 +504,6 @@ router.put('/membership-tiers/:tierId', async (req, res) => {
 
     res.json(tier);
   } catch (error: unknown) {
-    logger.warn({ err: error }, 'Error updating membership tier:');
     const errMsg = getErrorMessage(error);
 
     if (errMsg === 'Membership tier not found') {
@@ -520,6 +518,7 @@ router.put('/membership-tiers/:tierId', async (req, res) => {
       return res.status(400).json({ error: 'Validation error', details: error.errors });
     }
 
+    logger.warn({ err: error }, 'Error updating membership tier:');
     res.status(500).json({ error: errMsg || 'Failed to update membership tier' });
   }
 });
@@ -540,7 +539,6 @@ router.delete('/membership-tiers/:tierId', async (req, res) => {
 
     res.json({ success: true, message: 'Membership tier deleted successfully' });
   } catch (error: unknown) {
-    logger.warn({ err: error }, 'Error deleting membership tier:');
     const errMsg = getErrorMessage(error);
 
     if (errMsg === 'Membership tier not found') {
@@ -555,6 +553,7 @@ router.delete('/membership-tiers/:tierId', async (req, res) => {
       return res.status(400).json({ error: errMsg });
     }
 
+    logger.warn({ err: error }, 'Error deleting membership tier:');
     res.status(500).json({ error: errMsg || 'Failed to delete membership tier' });
   }
 });

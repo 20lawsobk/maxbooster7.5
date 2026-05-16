@@ -319,6 +319,10 @@ app.use((req, res, next) => {
 // all API route setup.  This shim is the minimal-footprint alternative.
 // ─────────────────────────────────────────────────────────────────────────────
 let _spaHandlerReady = false;
+// Set to true when registerRoutes() completes and the real API handlers are active.
+// The early-boot stubs check this flag and call next() once routes are loaded,
+// handing off to the real handlers in routes.ts.
+let _routesReady = false;
 const _spaFallbackIndexPath = path.resolve(process.cwd(), 'dist', 'public', 'index.html');
 
 // Lightweight boot-status endpoint — always available, no proxy/header issues.
@@ -341,10 +345,12 @@ app.post('/api/errors', (req: Request, res: Response) => {
 // the React app receives 404s for critical first-paint API calls, which can
 // cause routing errors or login-loop flashes.
 //
-// The real handlers registered by routes.ts take precedence once loaded —
-// Express matches the FIRST registered handler for a given path + method, and
-// registerRoutes() replaces these stubs automatically.
-app.get('/api/auth/me', (_req: Request, res: Response) => {
+// Once _routesReady is true the stub calls next() so the real handler registered
+// by registerRoutes() (which sits later in the stack) takes over.  This avoids
+// the "bootPhase: true forever" regression where the first-registered stub
+// permanently shadows the real handler.
+app.get('/api/auth/me', (_req: Request, res: Response, next: NextFunction) => {
+  if (_routesReady) return next();
   // During the boot window we cannot check the session store (PDIM may be cold).
   // Return unauthenticated so the React app shows the login screen rather than
   // hanging or routing to a broken state.
@@ -861,6 +867,10 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   });
 
   await registerRoutes(httpServer, app);
+  _routesReady = true;
+  const { setRoutesReady: _setRoutesReady } = await import('./lib/bootState.js');
+  _setRoutesReady();
+  logger.info('[Boot] Routes registered — boot stubs deactivated, real handlers active');
 
   // Eagerly initialize push services so credentials are validated and status
   // is logged at startup rather than on first route hit.

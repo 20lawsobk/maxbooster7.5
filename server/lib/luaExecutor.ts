@@ -457,6 +457,21 @@ export async function execLuaViaPdim(
       const elapsedS  = Math.round(elapsedMs / 1000);
       _watchdogTick++;
       if (elapsedMs >= SCRIPT_HARD_KILL_MS) {
+        // ── False-positive guard ──────────────────────────────────────────────
+        // When PlatformAutoFixer calls resetLuaExecutorSemaphore() it zeroes
+        // _activeWorkers externally while this watchdog is still armed.  By the
+        // time the 90 s hard-kill tick fires the semaphore has already been
+        // released; logging an ERROR and calling worker.terminate() is a
+        // false-positive that can interfere with the already-clean state.
+        // Demote to debug and skip terminate() — the slot is already free.
+        if (_activeWorkers === 0 && _waitQueue.length === 0) {
+          logger.debug(
+            `[LuaExecutor] watchdog 90s tick — semaphore already externally reset ` +
+            `(elapsed ${elapsedS}s); skipping hard-kill`
+          );
+          _watchdogCancelled = true; clearInterval(watchdog);
+          return;
+        }
         logger.error(
           `[LuaExecutor] script hard-killed after ${elapsedS}s ` +
           `(active=${_activeWorkers}, queued=${_waitQueue.length}) — ` +

@@ -11,6 +11,7 @@ import helmet from 'helmet';
 import cors from 'cors';
 import { logger } from '../logger.js';
 import { randomUUID } from 'crypto';
+import { isRoutesReady } from '../lib/bootState.js';
 import { selfHealingSecurityMiddleware } from '../middleware/selfHealingMiddleware.js';
 import { Sentry } from '../instrument.js';
 import { DistributedRateLimiter } from '../middleware/scalableRateLimiter.js';
@@ -203,7 +204,10 @@ export function requestLoggingMiddleware(
       req.path.startsWith('/@vite') ||
       /\.(js|css|map|woff2?|ttf|eot|svg|png|ico|webp)(\?|$)/.test(req.path);
     const isAsset404 = res.statusCode === 404 && isStaticAsset;
-    const level = res.statusCode >= 500 ? 'error' : (res.statusCode >= 400 && !isAuthStatus && !isAsset404) ? 'warn' : 'info';
+    // 404s during the boot window (before registerRoutes() completes) are startup
+    // races — the route is not yet mounted, not a real missing-endpoint error.
+    const isBootWindow404 = res.statusCode === 404 && !isRoutesReady();
+    const level = res.statusCode >= 500 ? 'error' : (res.statusCode >= 400 && !isAuthStatus && !isAsset404 && !isBootWindow404) ? 'warn' : 'info';
     
     logger[level](`[${requestId}] ${req.method} ${req.path} - ${res.statusCode} (${duration}ms)`);
   });
