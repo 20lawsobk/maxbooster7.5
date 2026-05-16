@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { logger } from '../logger.js';
 import { auditLogger } from './auditLogger.js';
+import { isRoutesReady } from '../lib/bootState.js';
 
 interface RequestLogData {
   timestamp: string;
@@ -101,9 +102,12 @@ export function requestLogger(req: Request, res: Response, next: NextFunction): 
       if ((process.env.NODE_ENV !== 'production' && !process.env.REPLIT_DEPLOYMENT) || isServerError) {
         // 401/403 are expected auth flows (e.g. unauthenticated polling) — log at INFO.
         // 404s on static/asset paths are browser SW cache artifacts — log at INFO.
+        // 404s during the boot window (before registerRoutes() completes) are startup
+        // races — the route is not yet mounted, not a real missing-endpoint error.
         const isAuthStatus = res.statusCode === 401 || res.statusCode === 403;
         const isAsset404 = res.statusCode === 404 && isStaticAssetRequest;
-        const logLevel = isServerError ? 'error' : (isError && !isAuthStatus && !isAsset404) ? 'warn' : 'info';
+        const isBootWindow404 = res.statusCode === 404 && !isRoutesReady();
+        const logLevel = isServerError ? 'error' : (isError && !isAuthStatus && !isAsset404 && !isBootWindow404) ? 'warn' : 'info';
         const message = `${logData.method} ${logData.url} - ${logData.statusCode} in ${responseTime}ms`;
 
         if (logLevel === 'error') {

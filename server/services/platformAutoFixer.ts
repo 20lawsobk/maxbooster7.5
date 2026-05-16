@@ -999,43 +999,13 @@ class PlatformAutoFixer extends EventEmitter {
       });
     }
 
-    if (subsystem === 'pdim' && (status === 'degraded' || status === 'critical')) {
-      const alreadyPatched = [...this.patches.values()].some(
-        p => p.subsystem === 'pdim' && p.name === 'PDIM backoff increase' && p.status === 'active',
-      );
-      if (!alreadyPatched) {
-        this.applyPatch({
-          subsystem: 'pdim',
-          name: 'PDIM backoff increase',
-          description: 'PDIM degraded — increasing adaptive polling gap to reduce load',
-          triggeredBy: result.message,
-          runtimeEffect: 'PDIM polling gap increased to 2000ms',
-          action: async () => {
-            try {
-              const { setPdimAdaptiveGap, getPdimAdaptiveGapMs } = await import('../lib/pdimClient.js');
-              const current = getPdimAdaptiveGapMs?.() ?? 0;
-              const target  = 2000;
-              if (current >= target) {
-                logger.info(`[PlatformAutoFixer] PDIM gap already at ${current}ms — no backoff raise needed`);
-                return;
-              }
-              setPdimAdaptiveGap?.(target);
-              logger.info(`[PlatformAutoFixer] PDIM adaptive polling gap raised ${current}ms → ${target}ms`);
-            } catch { /* function may not exist */ }
-          },
-          revert: async () => {
-            try {
-              const { setPdimAdaptiveGap, getPdimGapFloor } = await import('../lib/pdimClient.js');
-              // Revert to the permanent floor (not a hardcoded 500ms — the floor
-              // has been raised by permanentFixRegistry if 429s have been recurring)
-              const floor = getPdimGapFloor?.() ?? permanentFixRegistry.getPdimGapFloorMs();
-              setPdimAdaptiveGap?.(floor);
-              logger.info(`[PlatformAutoFixer] PDIM polling gap reverted to floor ${floor}ms`);
-            } catch { /* not critical */ }
-          },
-        });
-      }
-    }
+    // NOTE: The "PDIM backoff increase" patch that previously raised the adaptive
+    // chain gap to 2000ms has been removed.  That patch was counterproductive:
+    // it triggered on queue-depth growth (not on 429 errors), and raising the gap
+    // reduced chain throughput from ~8 req/s to ~0.5 req/s — making the backlog
+    // drain 16× slower and turning a transient burst into a runaway cascade.
+    // The AIMD mechanism in pdimClient.ts already handles 429-based backoff
+    // correctly; no manual gap raise is needed for high-queue-depth situations.
 
     if (subsystem === 'database' && status === 'critical') {
       this.applyPatch({
