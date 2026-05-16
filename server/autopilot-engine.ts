@@ -513,8 +513,9 @@ export class AutopilotEngine extends EventEmitter {
         viralScore: advancedResult.viralPotential.score,
       };
     } catch (error) {
-      // Fallback to legacy custom AI if Advanced AI fails
-      logger.warn({ err: error }, '[Autopilot] Advanced AI failed, falling back to legacy:');
+      // MaxCore is always running — a null return means temporarily busy;
+      // fall back to legacy custom AI silently.
+      logger.info(`[Autopilot] Advanced AI used legacy fallback: ${(error as Error)?.message ?? String(error)}`);
       
       const generatedContent = await customAI.generateContent({
         topic: params.topic,

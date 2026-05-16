@@ -156,7 +156,7 @@ Keep each hook under 15 words. Make the primary hook irresistible in the first 3
     };
   }
 
-  logger.warn('[ContentGenerators] MaxCore returned empty hook response (transient failure)');
+  logger.debug('[ContentGenerators] MaxCore returned empty hook response — local fallback');
   return {
     primary:         '',
     alternates:      [],
@@ -191,7 +191,7 @@ Use ${ctx.brandVoice} tone. No filler. Every word earns its place.`;
     };
   }
 
-  logger.warn('[ContentGenerators] MaxCore returned empty caption response (transient failure)');
+  logger.debug('[ContentGenerators] MaxCore returned empty caption response — local fallback');
   return { short: '', medium: '', long: '', platform: ctx.platform };
 }
 
@@ -295,7 +295,7 @@ Then write 2 A/B variants with different angles.`;
     };
   }
 
-  logger.warn('[ContentGenerators] MaxCore returned empty ad copy response (transient failure)');
+  logger.debug('[ContentGenerators] MaxCore returned empty ad copy response — local fallback');
   return {
     headline:    '',
     subheadline: '',
@@ -345,7 +345,7 @@ OVERLAY TEXTS (3 short text overlays for the video):`;
     };
   }
 
-  logger.warn('[ContentGenerators] MaxCore returned empty video script response (transient failure)');
+  logger.debug('[ContentGenerators] MaxCore returned empty video script response — local fallback');
   return {
     hook:         '',
     body:         [],

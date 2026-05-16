@@ -117,148 +117,100 @@ export class MaxCoreAIClient {
   }
 
   /**
-   * Call MaxCore's generation endpoint with retry + back-off.
+   * Call MaxCore's generation endpoint — single attempt, no retries.
+   * MaxCore is always running; if it returns an error it is temporarily busy
+   * (e.g. 504 under diffusion training load).  The caller's local fallback
+   * handles the null return, so there is nothing to retry.
    */
-  private static readonly MAX_GENERATE_ATTEMPTS  = 4;
-  private static readonly GENERATE_BACKOFF_BASE  = 1_500;
-  private static readonly GENERATE_BACKOFF_MAX   = 10_000;
-  // 60 s matches INFER_TIMEOUT_MS.  Content generation on MaxCore takes
-  // up to ~50 s under diffusion training load; 35 s was causing consistent
-  // timeouts even though MaxCore is always running.
-  private static readonly GENERATE_TIMEOUT_MS    = 60_000;
+  // 60 s covers MaxCore generation latency under diffusion training load
+  // (~16 s warm, up to ~50 s when the training loop is active).
+  private static readonly GENERATE_TIMEOUT_MS = 60_000;
 
   static async generate<T = any>(endpoint: string, body: Record<string, unknown>): Promise<T | null> {
     if (!MC_AI_URL || !MC_AI_KEY) return null;
 
     const path = endpoint.startsWith('/api/') ? endpoint : `/api${endpoint}`;
 
-    // Short-circuit when this endpoint recently exhausted all retries.
-    // Concurrent callers (e.g. score-calibrator warmup + autopilot burst) skip
-    // their own 3-attempt loops and return null immediately, giving MaxCore
-    // breathing room and surfacing the failure faster.
+    // Short-circuit when this endpoint recently returned an error — prevents
+    // concurrent callers (e.g. score-calibrator + autopilot burst) from all
+    // hammering MaxCore at the same moment.
     if (MaxCoreAIClient.isEndpointSuppressed(path)) {
       logger.debug(`[MaxCoreAI] generate ${path} — skipping (endpoint suppressed)`);
       return null;
     }
 
-    let lastFailReason = 'unknown';
+    try {
+      const r = await fetch(`${MC_AI_URL}${path}`, {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json', ...MaxCoreAIClient.authHeaders() },
+        body:    JSON.stringify(body),
+        signal:  AbortSignal.timeout(MaxCoreAIClient.GENERATE_TIMEOUT_MS),
+      });
 
-    for (let attempt = 0; attempt < MaxCoreAIClient.MAX_GENERATE_ATTEMPTS; attempt++) {
-      try {
-        const r = await fetch(`${MC_AI_URL}${path}`, {
-          method:  'POST',
-          headers: { 'Content-Type': 'application/json', ...MaxCoreAIClient.authHeaders() },
-          body:    JSON.stringify(body),
-          // 60 s covers MaxCore generation latency under diffusion training load
-          // (~16 s warm, up to ~50 s when the training loop is active).
-          signal:  AbortSignal.timeout(MaxCoreAIClient.GENERATE_TIMEOUT_MS),
-        });
-
-        if (r.ok && MaxCoreAIClient.isJson(r)) {
-          const data = await r.json();
-          // On success, clear suppression so next failure window is fresh.
-          MaxCoreAIClient._endpointSuppressed.delete(path);
-          logger.debug(`[MaxCoreAI] generate ${path} → success (attempt ${attempt + 1})`);
-          return data as T;
-        }
-
-        lastFailReason = `HTTP ${r.status} (content-type: ${r.headers.get('content-type') ?? 'none'})`;
-        logger.debug(`[MaxCoreAI] generate ${path} attempt ${attempt + 1} → ${lastFailReason}`);
-      } catch (e) {
-        lastFailReason = (e as Error).message ?? String(e);
-        logger.debug(`[MaxCoreAI] generate ${path} attempt ${attempt + 1} failed: ${lastFailReason}`);
+      if (r.ok && MaxCoreAIClient.isJson(r)) {
+        const data = await r.json();
+        MaxCoreAIClient._endpointSuppressed.delete(path);
+        logger.debug(`[MaxCoreAI] generate ${path} → success`);
+        return data as T;
       }
 
-      if (attempt < MaxCoreAIClient.MAX_GENERATE_ATTEMPTS - 1) {
-        const ceiling = Math.min(
-          MaxCoreAIClient.GENERATE_BACKOFF_MAX,
-          MaxCoreAIClient.GENERATE_BACKOFF_BASE * Math.pow(2, attempt)
-        );
-        await new Promise(res => setTimeout(res, Math.random() * ceiling));
-      }
-    }
-
-    // Log WARN once per suppression window; include the actual failure reason.
-    if (!MaxCoreAIClient.isEndpointSuppressed(path)) {
-      logger.warn(
-        `[MaxCoreAI] generate ${path} — all ${MaxCoreAIClient.MAX_GENERATE_ATTEMPTS} attempts failed` +
-        ` (last failure: ${lastFailReason})`
-      );
+      const failReason = `HTTP ${r.status} (content-type: ${r.headers.get('content-type') ?? 'none'})`;
+      logger.debug(`[MaxCoreAI] generate ${path} → ${failReason} — local fallback`);
       MaxCoreAIClient._endpointSuppressed.set(path, Date.now() + MaxCoreAIClient.ENDPOINT_SUPPRESS_MS);
+      return null;
+    } catch (e) {
+      logger.debug(`[MaxCoreAI] generate ${path} failed: ${(e as Error).message} — local fallback`);
+      return null;
     }
-    return null;
   }
 
   /**
-   * Infer via MaxCore remote server.
+   * Infer via MaxCore remote server — single attempt, no retries.
+   * MaxCore is always running; if it returns an error it is temporarily busy
+   * (e.g. 504 under diffusion training load).  The caller's local fallback
+   * handles the null return immediately — no retry needed.
    * Timeout is deliberately generous (60 s) so video-job submissions and other
-   * heavy operations never time out during cold-start or a busy queue.
-   * Two extra retries cover transient network blips only.
+   * heavy operations complete even under diffusion training load.
    */
-  private static readonly INFER_TIMEOUT_MS  = 60_000;
-  private static readonly INFER_MAX_RETRIES = 3;
-  private static readonly INFER_BACKOFF_BASE = 800;
+  private static readonly INFER_TIMEOUT_MS = 60_000;
 
   static async infer<T = any>(endpoint: string, body: Record<string, unknown>): Promise<T | null> {
     if (!MC_AI_URL || !MC_AI_KEY) return null;
 
     const path = endpoint.startsWith('/api/') ? endpoint : `/api${endpoint}`;
 
-    // Short-circuit within this process when the endpoint recently exhausted all
-    // retries.  Concurrent autopilot requests that were already in-flight when
-    // the first caller sets suppression will skip their own 3-attempt loop and
-    // return null immediately — avoiding a pile-on of failing fetches against
-    // an overloaded MaxCore and getting the Tier-3 local fallback faster.
+    // Short-circuit within this process when the endpoint recently returned an
+    // error — prevents concurrent autopilot requests from all hammering MaxCore
+    // at the same moment and gets the Tier-3 local fallback faster.
     if (MaxCoreAIClient.isEndpointSuppressed(path)) {
       logger.debug(`[MaxCoreAI] infer ${path} — skipping (endpoint suppressed, using fallback)`);
       return null;
     }
 
-    let lastFailReason = 'unknown';
+    try {
+      const r = await fetch(`${MC_AI_URL}${path}`, {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json', ...MaxCoreAIClient.authHeaders() },
+        body:    JSON.stringify(body),
+        signal:  AbortSignal.timeout(MaxCoreAIClient.INFER_TIMEOUT_MS),
+      });
 
-    for (let attempt = 0; attempt <= MaxCoreAIClient.INFER_MAX_RETRIES; attempt++) {
-      try {
-        const r = await fetch(`${MC_AI_URL}${path}`, {
-          method:  'POST',
-          headers: { 'Content-Type': 'application/json', ...MaxCoreAIClient.authHeaders() },
-          body:    JSON.stringify(body),
-          signal:  AbortSignal.timeout(MaxCoreAIClient.INFER_TIMEOUT_MS),
-        });
-
-        if (r.ok && MaxCoreAIClient.isJson(r)) {
-          const data = await r.json();
-          logger.debug(`[MaxCoreAI] infer ${path} → success (attempt ${attempt + 1})`);
-          MaxCoreAIClient._remoteAvailable = true;
-          // Clear suppression on success so the next failure window is fresh.
-          MaxCoreAIClient._endpointSuppressed.delete(path);
-          return data as T;
-        }
-
-        lastFailReason = `HTTP ${r.status} (content-type: ${r.headers.get('content-type') ?? 'none'})`;
-        logger.debug(`[MaxCoreAI] infer ${path} attempt ${attempt + 1} → ${lastFailReason}`);
-      } catch (e) {
-        lastFailReason = (e as Error).message ?? String(e);
-        logger.debug(`[MaxCoreAI] infer ${path} attempt ${attempt + 1} failed: ${lastFailReason}`);
+      if (r.ok && MaxCoreAIClient.isJson(r)) {
+        const data = await r.json();
+        logger.debug(`[MaxCoreAI] infer ${path} → success`);
+        MaxCoreAIClient._remoteAvailable = true;
+        MaxCoreAIClient._endpointSuppressed.delete(path);
+        return data as T;
       }
 
-      if (attempt < MaxCoreAIClient.INFER_MAX_RETRIES) {
-        const delay = Math.random() * MaxCoreAIClient.INFER_BACKOFF_BASE * Math.pow(2, attempt);
-        await new Promise(res => setTimeout(res, delay));
-      }
-    }
-
-    // Only log the WARN once per suppression window to avoid log flooding when
-    // multiple concurrent callers (e.g. autopilot bulk-publish) all fail at once.
-    // Include lastFailReason so we can diagnose whether it's 429, 503, or a
-    // timeout — without needing to change the per-attempt logs to WARN.
-    if (!MaxCoreAIClient.isEndpointSuppressed(path)) {
-      logger.warn(
-        `[MaxCoreAI] infer ${path} — all ${MaxCoreAIClient.INFER_MAX_RETRIES + 1} attempts failed` +
-        ` (last failure: ${lastFailReason})`
-      );
+      const failReason = `HTTP ${r.status} (content-type: ${r.headers.get('content-type') ?? 'none'})`;
+      logger.debug(`[MaxCoreAI] infer ${path} → ${failReason} — local fallback`);
       MaxCoreAIClient._endpointSuppressed.set(path, Date.now() + MaxCoreAIClient.ENDPOINT_SUPPRESS_MS);
+      return null;
+    } catch (e) {
+      logger.debug(`[MaxCoreAI] infer ${path} failed: ${(e as Error).message} — local fallback`);
+      return null;
     }
-    return null;
   }
 }
 
