@@ -8,7 +8,9 @@ export default defineConfig({
     // with each other's sessions, DB writes, or rate-limit counters.
     // Run via: npm run test:integration
     fileParallelism: false,
+    globalSetup: ['tests/globalSetup.ts'],
     include: [
+      // Core platform
       'tests/health.test.ts',
       'tests/api-guards.test.ts',
       'tests/auth-flows.test.ts',
@@ -22,6 +24,12 @@ export default defineConfig({
       'tests/file-management.test.ts',
       'tests/billing-lifecycle.test.ts',
       'tests/auth-2fa.test.ts',
+      // Feature coverage — previously untested platform areas
+      'tests/feature-press-pitching-ar.test.ts',
+      'tests/feature-catalog-production.test.ts',
+      'tests/feature-revenue-merch.test.ts',
+      'tests/feature-marketplace-distribution.test.ts',
+      'tests/feature-storefront-dns.test.ts',
     ],
     environment: 'node',
     globals: true,
