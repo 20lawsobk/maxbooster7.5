@@ -132,7 +132,7 @@ describe('Feature: Storefront, Storefront Domains, DNS Manager, Domain Registrar
 
     it('PATCH /api/storefront/:id/publish publishes the storefront', async () => {
       if (!storefrontId) return;
-      const r = await api('PATCH', `/api/storefront/${storefrontId}/publish`, { published: true });
+      const r = await api('PATCH', `/api/storefront/${storefrontId}/publish`, { isPublished: true });
       expect([200, 204]).toContain(r.status);
     });
 
