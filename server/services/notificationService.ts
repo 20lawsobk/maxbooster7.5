@@ -1,4 +1,4 @@
-import sgMail from '@sendgrid/mail';
+import { Resend } from 'resend';
 import { db } from '../db';
 import { notifications, users } from '@shared/schema';
 import { eq } from 'drizzle-orm';
@@ -24,17 +24,18 @@ interface EmailTemplate {
 
 class NotificationService {
   private isInitialized = false;
+  private resend: Resend | null = null;
 
   constructor() {
     this.initialize();
   }
 
   private initialize() {
-    if (!this.isInitialized && env.SENDGRID_API_KEY) {
+    if (!this.isInitialized && env.RESEND_API_KEY) {
       try {
-        sgMail.setApiKey(env.SENDGRID_API_KEY);
+        this.resend = new Resend(env.RESEND_API_KEY);
         this.isInitialized = true;
-        logger.info('✅ SendGrid initialized for email notifications');
+        logger.info('✅ Resend initialized for email notifications');
       } catch (error: unknown) {
         logger.warn({ err: error }, '❌ Failed to initialize SendGrid:');
       }
@@ -107,8 +108,8 @@ class NotificationService {
     message: string,
     link?: string
   ): Promise<void> {
-    if (!this.isInitialized) {
-      logger.warn('SendGrid not initialized, skipping email');
+    if (!this.isInitialized || !this.resend) {
+      logger.warn('Resend not initialized, skipping email');
       return;
     }
 
@@ -116,7 +117,7 @@ class NotificationService {
     const fromEmail = env.SENDGRID_FROM_EMAIL || 'blawzmusic@gmail.com';
 
     try {
-      await sgMail.send({
+      await this.resend.emails.send({
         to: user.email,
         from: fromEmail,
         subject: template.subject,
@@ -125,7 +126,7 @@ class NotificationService {
       });
       logger.info(`📧 Email sent to ${user.email}`);
     } catch (error: unknown) {
-      logger.warn('SendGrid error:', error?.response?.body || error);
+      logger.warn('Resend error:', (error as Error)?.message || error);
     }
   }
 
