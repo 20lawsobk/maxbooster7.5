@@ -113,7 +113,7 @@ class NotificationService {
     }
 
     const template = this.getEmailTemplate(type, title, message, link);
-    const fromEmail = env.SENDGRID_FROM_EMAIL || 'notifications@maxbooster.ai';
+    const fromEmail = env.SENDGRID_FROM_EMAIL || 'blawzmusic@gmail.com';
 
     try {
       await sgMail.send({

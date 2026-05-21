@@ -253,7 +253,7 @@ class WeeklyInsightsService {
     const clickTrackUrl = `${baseUrl}/api/emails/track/${emailId}/click`;
 
     const html = this.generateEmailTemplate(report, trackingPixel, clickTrackUrl);
-    const fromEmail = env.SENDGRID_FROM_EMAIL || 'insights@maxbooster.ai';
+    const fromEmail = env.SENDGRID_FROM_EMAIL || 'blawzmusic@gmail.com';
 
     try {
       await sgMail.send({

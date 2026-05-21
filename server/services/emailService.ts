@@ -111,7 +111,7 @@ class EmailService {
     }
 
     const template = this.getInvitationTemplate(data);
-    const fromEmail = env.SENDGRID_FROM_EMAIL || 'invitations@maxbooster.ai';
+    const fromEmail = env.SENDGRID_FROM_EMAIL || 'blawzmusic@gmail.com';
 
     const emailData = {
       to: data.to,
@@ -186,7 +186,7 @@ class EmailService {
       return false;
     }
 
-    const fromEmail = env.SENDGRID_FROM_EMAIL || 'support@maxbooster.ai';
+    const fromEmail = env.SENDGRID_FROM_EMAIL || 'blawzmusic@gmail.com';
 
     const emailData = {
       to,
@@ -239,7 +239,7 @@ class EmailService {
       return false;
     }
 
-    const fromEmail = env.SENDGRID_FROM_EMAIL || 'support@maxbooster.ai';
+    const fromEmail = env.SENDGRID_FROM_EMAIL || 'blawzmusic@gmail.com';
     const truncatedMessage =
       replyMessage.length > 200 ? replyMessage.substring(0, 200) + '...' : replyMessage;
 
@@ -292,7 +292,7 @@ class EmailService {
       return false;
     }
 
-    const fromEmail = env.SENDGRID_FROM_EMAIL || 'support@maxbooster.ai';
+    const fromEmail = env.SENDGRID_FROM_EMAIL || 'blawzmusic@gmail.com';
     const statusMessages: Record<string, string> = {
       open: 'Your ticket is now open and awaiting review.',
       in_progress: 'Our team is actively working on your ticket.',
@@ -344,7 +344,7 @@ class EmailService {
       return false;
     }
 
-    const fromEmail = env.SENDGRID_FROM_EMAIL || 'welcome@maxbooster.ai';
+    const fromEmail = env.SENDGRID_FROM_EMAIL || 'blawzmusic@gmail.com';
     const html = `
 <!DOCTYPE html>
 <html>
@@ -397,7 +397,7 @@ class EmailService {
       return false;
     }
 
-    const fromEmail = env.SENDGRID_FROM_EMAIL || 'security@maxbooster.ai';
+    const fromEmail = env.SENDGRID_FROM_EMAIL || 'blawzmusic@gmail.com';
     const html = `
 <!DOCTYPE html>
 <html>
@@ -468,7 +468,7 @@ class EmailService {
       failed: 'Distribution Failed',
     };
 
-    const fromEmail = env.SENDGRID_FROM_EMAIL || 'distribution@maxbooster.ai';
+    const fromEmail = env.SENDGRID_FROM_EMAIL || 'blawzmusic@gmail.com';
     const platformsTags = data.platforms
       .map(
         (p) =>
@@ -532,7 +532,7 @@ class EmailService {
       return false;
     }
 
-    const fromEmail = env.SENDGRID_FROM_EMAIL || 'billing@maxbooster.ai';
+    const fromEmail = env.SENDGRID_FROM_EMAIL || 'blawzmusic@gmail.com';
     const html = `
 <!DOCTYPE html>
 <html>
@@ -730,7 +730,7 @@ If you did not expect this invitation, you can safely ignore this email.
   async sendTransactional(to: string, subject: string, html: string): Promise<boolean> {
     const emailData: sgMail.MailDataRequired = {
       to,
-      from: env.SENDGRID_FROM_EMAIL ?? 'noreply@maxbooster.app',
+      from: env.SENDGRID_FROM_EMAIL ?? 'blawzmusic@gmail.com',
       subject,
       html,
     };
@@ -747,7 +747,7 @@ If you did not expect this invitation, you can safely ignore this email.
     }
     const emailData: sgMail.MailDataRequired = {
       to: options.to,
-      from: options.from ?? env.SENDGRID_FROM_EMAIL ?? 'noreply@maxbooster.app',
+      from: options.from ?? env.SENDGRID_FROM_EMAIL ?? 'blawzmusic@gmail.com',
       subject: options.subject,
       html: options.html,
       text: options.text ?? options.html.replace(/<[^>]+>/g, ''),
