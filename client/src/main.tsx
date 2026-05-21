@@ -52,6 +52,23 @@ const root = ReactDOM.createRoot(rootElement);
 // Uses sendBeacon when available so reports survive page unload.
 reportWebVitals();
 
+// Register the service worker for offline support and background sync.
+// Run only in browsers that support it; errors are non-fatal.
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker
+      .register('/sw.js', { scope: '/' })
+      .then((registration) => {
+        // Trigger an update check whenever the page gains focus.
+        registration.update().catch(() => {});
+      })
+      .catch((err) => {
+        // SW registration failure is non-fatal — the app still works online.
+        console.warn('[SW] Registration failed:', err);
+      });
+  });
+}
+
 root.render(
   <React.StrictMode>
     <ErrorBoundary>
