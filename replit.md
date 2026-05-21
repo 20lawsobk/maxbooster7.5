@@ -6,6 +6,8 @@ Max Booster is an AI-powered, full-stack TypeScript web application designed to 
 ## User Preferences
 I prefer iterative development, with clear communication before significant changes. Please prioritize stability and performance. Do not make changes to folder `AI training server/ai_model/` or file `server/services/hybridStorageService.ts` unless explicitly instructed. Ensure that all new features integrate seamlessly with the existing hybrid storage system.
 
+**Agent reminder:** At the end of every task, update the "Accomplishments Log" section in this file AND `.local/agent-notes.md` with what was built, which files were changed, and the test baseline. This compensates for context-window limits across sessions.
+
 ## System Architecture
 The Max Booster application uses a monorepo structure, separating concerns into `client/`, `server/`, `shared/`, `boosterstate/`, `server/pocket-dimension/`, and `AI training server/`. The UI/UX emphasizes a clean, responsive design and a Studio DAW-like interface with TopBar, LeftSidebar Browser, MainArea with view tabs (Timeline / Mixer / Node Graph / Flow), and RightSidebar Universal Inspector.
 
