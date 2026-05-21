@@ -401,9 +401,11 @@ function AppWithKeyboardShortcuts() {
     <>
       <ScrollToTop />
       <SkipLinks />
-      <Suspense fallback={null}>
-        <KeyboardShortcutsDialog open={showShortcutsDialog} onOpenChange={setShowShortcutsDialog} />
-      </Suspense>
+      <ErrorBoundary fallback={null}>
+        <Suspense fallback={null}>
+          <KeyboardShortcutsDialog open={showShortcutsDialog} onOpenChange={setShowShortcutsDialog} />
+        </Suspense>
+      </ErrorBoundary>
       <Router />
     </>
   );
@@ -431,20 +433,24 @@ function App() {
           {/* Security-critical — must start timers synchronously on first render */}
           <TokenRefreshHandler refreshInterval={5 * 60 * 1000} silentRefresh={true} />
           <InactivityManager />
-          {/* Deferred UI — loaded after first paint, render nothing until ready */}
-          <Suspense fallback={null}>
-            <CookieConsentBanner />
-            <InstallBanner />
-            <OAuthCallbackHandler />
-            <DeepLinkHandler />
-            <AIAssistantManager />
-            <NPSSurveyManager />
-            <UndoToast />
-            <CommandPalette />
-            <ShortcutGuide />
-            <QuickActionBar position="bottom-right" />
-            <ConnectionStatusBar />
-          </Suspense>
+          {/* Deferred UI — loaded after first paint, render nothing until ready.
+              ErrorBoundary(fallback=null) ensures a failed chunk never crashes
+              the core app — these components are progressive enhancement only. */}
+          <ErrorBoundary fallback={null}>
+            <Suspense fallback={null}>
+              <CookieConsentBanner />
+              <InstallBanner />
+              <OAuthCallbackHandler />
+              <DeepLinkHandler />
+              <AIAssistantManager />
+              <NPSSurveyManager />
+              <UndoToast />
+              <CommandPalette />
+              <ShortcutGuide />
+              <QuickActionBar position="bottom-right" />
+              <ConnectionStatusBar />
+            </Suspense>
+          </ErrorBoundary>
           <div id="main-content" role="main" tabIndex={-1}>
             <ErrorBoundary>
               <Suspense
