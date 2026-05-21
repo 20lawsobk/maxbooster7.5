@@ -4,30 +4,42 @@ import { Switch, Route, useLocation } from 'wouter';
 import { Toaster } from '@/components/ui/toaster';
 import { InstantSkeleton } from '@/components/ui/instant-skeleton';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
-import { KeyboardShortcutsDialog } from '@/components/dialogs/KeyboardShortcutsDialog';
 import { SkipLinks } from '@/components/SkipLinks';
-import { CookieConsentBanner } from '@/components/CookieConsentBanner';
-import { NPSSurvey } from '@/components/retention/NPSSurvey';
 import { useNPSSurvey } from '@/hooks/useNPSSurvey';
-import { AIAssistantPublic } from '@/components/support/AIAssistantPublic';
-import { AIAssistantPersonalized } from '@/components/support/AIAssistantPersonalized';
-import { InstallBanner } from '@/components/pwa/InstallBanner';
-import { DeepLinkHandler } from '@/components/DeepLinkHandler';
-import { OAuthCallbackHandler } from '@/components/OAuthCallbackHandler';
 import TokenRefreshHandler from '@/components/auth/TokenRefreshHandler';
 import { InactivityManager } from '@/components/auth/InactivityManager';
 import { UndoProvider } from '@/contexts/UndoContext';
-import { UndoToast } from '@/components/undo/UndoToast';
 import { ShortcutProvider } from '@/contexts/ShortcutContext';
 import { OfflineProvider } from '@/components/offline/OfflineProvider';
-import { ConnectionStatusBar } from '@/components/ConnectionStatusBar';
-import { CommandPalette } from '@/components/commands/CommandPalette';
-import { ShortcutGuide, QuickActionBar } from '@/components/shortcuts';
 import { useAuth } from '@/hooks/useAuth';
 import { useAutoUpdate } from '@/hooks/useAutoUpdate';
 import { useKeyboardShortcuts, announce } from '@/lib/accessibility';
 import { setupLinkPrefetching, prefetchAdjacentRoutes, setAuthState, bootstrapUserData, prefetchAllAuthChunks } from '@/lib/prefetch';
-import Landing from '@/pages/Landing';
+
+// Landing is the first route most visitors see. We kick off its chunk fetch the
+// instant this module is parsed (before React renders) so there is zero extra
+// round-trip compared to a synchronous import — but it no longer inflates the
+// entry chunk parse cost.
+const _landingChunk = import('@/pages/Landing');
+const Landing = lazy(() => _landingChunk);
+
+// ── Deferred global UI ──────────────────────────────────────────────────────
+// These components are never visible on first paint (they open on keypress,
+// show only for new visitors, or trigger via async events). Lazy-loading them
+// removes their module code from the initial JS parse budget entirely.
+const KeyboardShortcutsDialog = lazy(() => import('@/components/dialogs/KeyboardShortcutsDialog').then(m => ({ default: m.KeyboardShortcutsDialog })));
+const CookieConsentBanner     = lazy(() => import('@/components/CookieConsentBanner').then(m => ({ default: m.CookieConsentBanner })));
+const NPSSurvey               = lazy(() => import('@/components/retention/NPSSurvey').then(m => ({ default: m.NPSSurvey })));
+const AIAssistantPublic       = lazy(() => import('@/components/support/AIAssistantPublic').then(m => ({ default: m.AIAssistantPublic })));
+const AIAssistantPersonalized = lazy(() => import('@/components/support/AIAssistantPersonalized').then(m => ({ default: m.AIAssistantPersonalized })));
+const InstallBanner           = lazy(() => import('@/components/pwa/InstallBanner').then(m => ({ default: m.InstallBanner })));
+const DeepLinkHandler         = lazy(() => import('@/components/DeepLinkHandler').then(m => ({ default: m.DeepLinkHandler })));
+const OAuthCallbackHandler    = lazy(() => import('@/components/OAuthCallbackHandler').then(m => ({ default: m.OAuthCallbackHandler })));
+const UndoToast               = lazy(() => import('@/components/undo/UndoToast').then(m => ({ default: m.UndoToast })));
+const CommandPalette          = lazy(() => import('@/components/commands/CommandPalette').then(m => ({ default: m.CommandPalette })));
+const ShortcutGuide           = lazy(() => import('@/components/shortcuts').then(m => ({ default: m.ShortcutGuide })));
+const QuickActionBar          = lazy(() => import('@/components/shortcuts').then(m => ({ default: m.QuickActionBar })));
+const ConnectionStatusBar     = lazy(() => import('@/components/ConnectionStatusBar').then(m => ({ default: m.ConnectionStatusBar })));
 const Login = lazy(() => import('@/pages/Login'));
 const Register = lazy(() => import('@/pages/Register'));
 const RegisterPayment = lazy(() => import('@/pages/RegisterPayment'));
@@ -389,7 +401,9 @@ function AppWithKeyboardShortcuts() {
     <>
       <ScrollToTop />
       <SkipLinks />
-      <KeyboardShortcutsDialog open={showShortcutsDialog} onOpenChange={setShowShortcutsDialog} />
+      <Suspense fallback={null}>
+        <KeyboardShortcutsDialog open={showShortcutsDialog} onOpenChange={setShowShortcutsDialog} />
+      </Suspense>
       <Router />
     </>
   );
@@ -414,19 +428,23 @@ function App() {
       <UndoProvider maxHistorySize={100} persistToStorage={true}>
         <ShortcutProvider persistConfig={true}>
           <Toaster />
-          <CookieConsentBanner />
-          <InstallBanner />
-          <OAuthCallbackHandler />
-          <DeepLinkHandler />
+          {/* Security-critical — must start timers synchronously on first render */}
           <TokenRefreshHandler refreshInterval={5 * 60 * 1000} silentRefresh={true} />
           <InactivityManager />
-          <AIAssistantManager />
-          <NPSSurveyManager />
-          <UndoToast />
-          <CommandPalette />
-          <ShortcutGuide />
-          <QuickActionBar position="bottom-right" />
-          <ConnectionStatusBar />
+          {/* Deferred UI — loaded after first paint, render nothing until ready */}
+          <Suspense fallback={null}>
+            <CookieConsentBanner />
+            <InstallBanner />
+            <OAuthCallbackHandler />
+            <DeepLinkHandler />
+            <AIAssistantManager />
+            <NPSSurveyManager />
+            <UndoToast />
+            <CommandPalette />
+            <ShortcutGuide />
+            <QuickActionBar position="bottom-right" />
+            <ConnectionStatusBar />
+          </Suspense>
           <div id="main-content" role="main" tabIndex={-1}>
             <ErrorBoundary>
               <Suspense
