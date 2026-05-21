@@ -1,6 +1,7 @@
 import path from 'path';
 import fs from 'fs/promises';
 import { randomBytes } from 'crypto';
+import { musicIndustryContextFilter } from './musicIndustryContextFilter.js';
 import wavefilePkg from 'wavefile';
 const WaveFile = (wavefilePkg as Record<string, unknown>).WaveFile || wavefilePkg;
 
@@ -251,6 +252,25 @@ export function parseTextToParameters(text: string): MusicParameters {
     key = keyMatch[1].toUpperCase();
     if (keyMatch[2]) {
       scale = keyMatch[2].toLowerCase() as 'major' | 'minor';
+    }
+  }
+
+  // When text parsing found only defaults, enrich with live industry context.
+  // getSuggestedMoodSync / getSuggestedGenreSync are sync cache reads — never block.
+  if (mood === 'happy') {
+    const suggestedMood = musicIndustryContextFilter.getSuggestedMoodSync();
+    if (suggestedMood && suggestedMood in moodKeywords) {
+      const moodData = moodKeywords[suggestedMood as keyof typeof moodKeywords];
+      mood  = suggestedMood;
+      scale = moodData.scale;
+      tempo = moodData.tempo;
+    }
+  }
+  if (genre === 'pop') {
+    const suggestedGenre = musicIndustryContextFilter.getSuggestedGenreSync();
+    if (suggestedGenre) {
+      const normalized = suggestedGenre.toLowerCase().replace(/[^a-z]/g, '');
+      if (normalized in genreTemplates) genre = normalized;
     }
   }
 

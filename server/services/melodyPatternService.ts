@@ -1,4 +1,5 @@
 import { logger } from '../logger.js';
+import { musicIndustryContextFilter } from './musicIndustryContextFilter.js';
 
 export interface MelodyPattern {
   notes: number[];
@@ -486,36 +487,63 @@ class MelodyPatternService {
 
   public generateMelody(params: GenerationParams): MelodyPattern {
     const key = `${params.genre}_${params.instrument}`;
-    const patterns = this.trainedPatterns.get(key) || this.trainedPatterns.get('trap_synth_lead') || [];
-    
+    // When the requested genre has no trained patterns, try the industry-trending
+    // genre (sync cache read — never blocks) before falling back to the hard-coded
+    // trap baseline.  This makes the fallback path culturally current.
+    let patterns = this.trainedPatterns.get(key);
+    if (!patterns || patterns.length === 0) {
+      const trending = musicIndustryContextFilter.getSuggestedGenreSync();
+      if (trending) {
+        const trendKey = `${trending.toLowerCase().replace(/[^a-z]/g, '')}_${params.instrument}`;
+        patterns = this.trainedPatterns.get(trendKey);
+      }
+    }
+    patterns = patterns || this.trainedPatterns.get('trap_synth_lead') || [];
+
     if (patterns.length === 0) {
       return this.generateFallbackMelody(params);
     }
-    
+
     const basePattern = patterns[Math.floor(Math.random() * patterns.length)];
     return this.transformPattern(basePattern, params);
   }
 
   public generateDrums(params: GenerationParams): DrumPattern {
     const key = `${params.genre}_${params.instrument}`;
-    const patterns = this.drumPatterns.get(key) || this.drumPatterns.get('trap_trap_kit') || [];
-    
+    let patterns = this.drumPatterns.get(key);
+    if (!patterns || patterns.length === 0) {
+      const trending = musicIndustryContextFilter.getSuggestedGenreSync();
+      if (trending) {
+        const trendKey = `${trending.toLowerCase().replace(/[^a-z]/g, '')}_${params.instrument}`;
+        patterns = this.drumPatterns.get(trendKey);
+      }
+    }
+    patterns = patterns || this.drumPatterns.get('trap_trap_kit') || [];
+
     if (patterns.length === 0) {
       return this.generateFallbackDrums(params);
     }
-    
+
     const basePattern = patterns[Math.floor(Math.random() * patterns.length)];
     return this.applyHumanization(basePattern, params.humanize);
   }
 
   public generatePercussion(params: GenerationParams): DrumPattern {
     const key = `${params.genre}_${params.instrument}`;
-    const patterns = this.percussionPatterns.get(key) || this.percussionPatterns.get('trap_congas') || [];
-    
+    let patterns = this.percussionPatterns.get(key);
+    if (!patterns || patterns.length === 0) {
+      const trending = musicIndustryContextFilter.getSuggestedGenreSync();
+      if (trending) {
+        const trendKey = `${trending.toLowerCase().replace(/[^a-z]/g, '')}_${params.instrument}`;
+        patterns = this.percussionPatterns.get(trendKey);
+      }
+    }
+    patterns = patterns || this.percussionPatterns.get('trap_congas') || [];
+
     if (patterns.length === 0) {
       return this.generateFallbackPercussion(params);
     }
-    
+
     const basePattern = patterns[Math.floor(Math.random() * patterns.length)];
     return this.applyHumanization(basePattern, params.humanize);
   }
