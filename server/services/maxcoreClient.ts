@@ -82,7 +82,13 @@ export class MaxCoreAIClient {
         redirect: 'manual',
       });
       if (!r.ok || !MaxCoreAIClient.isJson(r)) {
-        MaxCoreAIClient.suppressEndpoint(path);
+        // Only suppress 404/405 — endpoint permanently absent from this MaxCore build.
+        // 5xx (busy/training), 3xx (proxy redirect), and non-JSON 200 (warm-up page)
+        // are transient; suppressing them for 2 min blocks model-state reads while
+        // MaxCore is fully operational.
+        if (r.status === 404 || r.status === 405) {
+          MaxCoreAIClient.suppressEndpoint(path);
+        }
         return null;
       }
       return await r.json() as T;
@@ -162,7 +168,14 @@ export class MaxCoreAIClient {
 
       const failReason = `HTTP ${r.status} (content-type: ${r.headers.get('content-type') ?? 'none'})`;
       logger.debug(`[MaxCoreAI] generate ${path} → ${failReason} — local fallback`);
-      MaxCoreAIClient._endpointSuppressed.set(path, Date.now() + MaxCoreAIClient.ENDPOINT_SUPPRESS_MS);
+      // Only suppress on 404/405 — those mean the endpoint does not exist on this
+      // MaxCore build and retrying is pointless.  5xx (busy / training load),
+      // 3xx (Replit proxy redirect on cold-start), and 200-non-JSON (warm-up splash
+      // page) are all transient; suppressing them would block ALL content generation
+      // for 2 min even while MaxCore is fully operational.
+      if (r.status === 404 || r.status === 405) {
+        MaxCoreAIClient._endpointSuppressed.set(path, Date.now() + MaxCoreAIClient.ENDPOINT_SUPPRESS_MS);
+      }
       return null;
     } catch (e) {
       logger.debug(`[MaxCoreAI] generate ${path} failed: ${(e as Error).message} — local fallback`);
@@ -212,7 +225,13 @@ export class MaxCoreAIClient {
 
       const failReason = `HTTP ${r.status} (content-type: ${r.headers.get('content-type') ?? 'none'})`;
       logger.debug(`[MaxCoreAI] infer ${path} → ${failReason} — local fallback`);
-      MaxCoreAIClient._endpointSuppressed.set(path, Date.now() + MaxCoreAIClient.ENDPOINT_SUPPRESS_MS);
+      // Only suppress on 404/405 — endpoint permanently absent from this MaxCore build.
+      // Never suppress on 5xx (training load / busy), 3xx (proxy redirect on cold-start),
+      // or 200-non-JSON (warm-up splash) — all transient; suppressing them for 2 min
+      // would block all inference even while MaxCore is fully operational.
+      if (r.status === 404 || r.status === 405) {
+        MaxCoreAIClient._endpointSuppressed.set(path, Date.now() + MaxCoreAIClient.ENDPOINT_SUPPRESS_MS);
+      }
       return null;
     } catch (e) {
       logger.debug(`[MaxCoreAI] infer ${path} failed: ${(e as Error).message} — local fallback`);

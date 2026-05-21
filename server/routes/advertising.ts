@@ -911,37 +911,22 @@ router.post('/generate-image', requireAuthOnly, async (req: AuthenticatedRequest
       return res.json({ success: true, ...mcImageData });
     }
 
-    // ── Tier 2: Python AI sidecar (fallback if MaxCore image endpoint unavailable) ─
-    const result = await pythonAIService.generateImage({
-      topic,
-      platform: platform || 'instagram',
-      tone: tone || 'energetic',
-      goal: goal || 'growth',
-      artist_name,
-      style: style || 'modern',
-    });
-
-    if (!result.success) {
-      const specResult = await pythonAIService.generateVisualSpec({
+    // MaxCore is the sole image generation source — no Python AI fallback.
+    // Return a structured visual spec so the caller can render a placeholder
+    // until the next MaxCore request succeeds.
+    return res.json({
+      success: false,
+      image_url: null,
+      visual_spec: {
         topic,
-        platform: platform || 'instagram',
-        tone: tone || 'energetic',
-        goal: goal || 'growth',
-        artist_name,
-        style: style || 'modern',
-      });
-
-      if (!specResult.success) {
-        return res.status(500).json({
-          success: false,
-          message: specResult.error || 'Image generation failed',
-        });
-      }
-
-      return res.json({ success: true, visual_spec: specResult.data, image_url: null });
-    }
-
-    res.json({ success: true, ...result.data });
+        platform:    platform    || 'instagram',
+        tone:        tone        || 'energetic',
+        goal:        goal        || 'growth',
+        artist_name: artist_name || '',
+        style:       style       || 'modern',
+      },
+      message: 'MaxCore image generation temporarily unavailable — retry shortly',
+    });
   } catch (error) {
     logger.warn({ err: error }, 'Failed to generate ad image:');
     res.status(500).json({ success: false, message: 'Image generation failed' });

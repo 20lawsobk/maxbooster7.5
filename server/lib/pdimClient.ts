@@ -1242,11 +1242,14 @@ export function startPdimDirectProber(): void {
         redirect: 'manual',
       });
 
-      // Only accept a genuine JSON 200 — redirect landing pages return 200 HTML.
-      const isJson = (res.headers.get('content-type') ?? '').includes('application/json');
-      if (res.ok && isJson) {
+      // Accept any HTTP 200 OK as proof that PDIM is alive — the content-type of
+      // a PING response is irrelevant.  We still reject 3xx (opaque redirect from
+      // Replit proxy when PDIM is sleeping) and 5xx (PDIM error) via !res.ok.
+      if (res.ok) {
         if (cbGetState() !== 'CLOSED') {
-          logger.info('[PDIM] Direct HTTP probe OK — force-closing circuit breaker');
+          logger.info(
+            `[PDIM] Direct HTTP probe OK (HTTP ${res.status}) — force-closing circuit breaker`,
+          );
           cbForceClose();
         }
       } else {
