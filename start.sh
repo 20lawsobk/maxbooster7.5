@@ -159,6 +159,25 @@ if ! pgrep -f "ai_content_sidecar.py" >/dev/null 2>&1; then
     done
   fi
 
+  # Nix store glob — exec triggers ztoc lazy-load in the deployment run container.
+  # Mirrors the same strategy used above for Node (sections e-g).
+  # Patterns ordered: cpython release builds first, then wrapped/python-only.
+  if [ -z "$_PY_BIN" ]; then
+    for _pd in \
+      /nix/store/*-python3-3*/bin \
+      /nix/store/*-python3.*/bin \
+      /nix/store/*-python-3*/bin \
+      /nix/store/*-python-wrapped*/bin \
+      /nix/store/*-python3*/bin; do
+      [ -f "${_pd}/python3" ] || continue
+      if "${_pd}/python3" --version >/dev/null 2>&1; then
+        _PY_BIN="${_pd}/python3"
+        echo "[start.sh] Python [nix-glob]: $_PY_BIN ($("$_PY_BIN" --version 2>&1))"
+        break
+      fi
+    done
+  fi
+
   if [ -n "$_PY_BIN" ]; then
     PYTHON_AI_PORT="${PYTHON_AI_PORT:-9878}" "$_PY_BIN" server/services/ai_content_sidecar.py \
       >> /tmp/ai_content_sidecar.log 2>&1 &
