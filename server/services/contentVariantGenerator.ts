@@ -2,7 +2,7 @@ import { randomBytes } from 'crypto';
 import { logger } from '../logger.js';
 import { getRedisClient, RedisClientType } from '../lib/redisConnectionFactory.js';
 
-import { pythonAIService } from './pythonAIService.js';
+import { MaxCoreAIClient } from './maxcoreClient.js';
 
 function seededIndex(seed: string, len: number): number {
   let h = 0x811c9dc5;
@@ -158,22 +158,26 @@ class ContentVariantGeneratorService {
     const tones = ['energetic', 'chill', 'inspirational', 'curious', 'bold', 'intimate'];
     const goals = ['growth', 'engagement', 'conversion', 'awareness', 'retention'];
 
+    // ── MaxCore (sole AI source) ──────────────────────────────────────────────
+    // Call MaxCore directly for every variant slot.  Falls back to string
+    // templates below if MaxCore is unavailable or returns empty content.
     let aiVariantsGenerated = 0;
-    if (await pythonAIService.isAvailable()) {
-      try {
-        for (let i = 0; i < count && aiVariantsGenerated < count; i++) {
-          const platform = platforms[i % platforms.length];
-          const tone    = tones[i % tones.length];
-          const goal    = goals[i % goals.length];
-          const result  = await pythonAIService.generateContent(platform, topic, tone, goal, false);
-          if (result.success && result.data && result.data.hook) {
-            variants.push(`${result.data.hook}\n\n${result.data.body}\n\n${result.data.cta}`);
-            aiVariantsGenerated++;
-          }
+    try {
+      for (let i = 0; i < count && aiVariantsGenerated < count; i++) {
+        const platform = platforms[i % platforms.length];
+        const tone    = tones[i % tones.length];
+        const goal    = goals[i % goals.length];
+        const mc = await MaxCoreAIClient.infer<{ hook?: string; body?: string; cta?: string; caption?: string }>(
+          '/api/generate/content',
+          { platform, topic, tone, goal },
+        );
+        if (mc?.hook) {
+          variants.push(`${mc.hook}\n\n${mc.body || ''}\n\n${mc.cta || ''}`.trim());
+          aiVariantsGenerated++;
         }
-      } catch (err) {
-        logger.warn({ err: err }, '[VariantGen] Python AI failed, filling with template variants:');
       }
+    } catch (err) {
+      logger.warn({ err: err }, '[VariantGen] MaxCore unavailable, filling with template variants:');
     }
 
     // Fill remaining slots by cycling all hook templates across multiple passes
