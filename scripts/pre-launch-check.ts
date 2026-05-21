@@ -38,7 +38,7 @@ for (const key of required) {
   check(`${key} is set`, !!process.env[key], process.env[key] ? 'present' : 'MISSING');
 }
 
-const optionalWarned = ['STRIPE_SECRET_KEY', 'SENDGRID_API_KEY', 'MAXCORE_API_KEY'];
+const optionalWarned = ['STRIPE_SECRET_KEY', 'SENDGRID_API_KEY', 'AI_SERVER_KEY', 'AI_SERVER_URL'];
 for (const key of optionalWarned) {
   const present = !!process.env[key];
   check(`${key} (optional)`, true, present ? 'present' : 'not set (feature degraded)');
