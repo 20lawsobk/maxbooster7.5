@@ -114,7 +114,7 @@ class NotificationService {
     }
 
     const template = this.getEmailTemplate(type, title, message, link);
-    const fromEmail = env.SENDGRID_FROM_EMAIL || 'blawzmusic@gmail.com';
+    const fromEmail = env.SENDGRID_FROM_EMAIL || 'noreply@max-booster.com';
 
     try {
       await this.resend.emails.send({
@@ -607,7 +607,7 @@ Manage your notification preferences: ${link || 'https://maxbooster.ai/settings'
 
   private async getAdminUserId(): Promise<string | null> {
     try {
-      const adminEmail = process.env.ADMIN_EMAIL || 'blawzmusic@gmail.com';
+      const adminEmail = process.env.ADMIN_EMAIL || 'noreply@max-booster.com';
       const admin = await db.query.users.findFirst({
         where: eq(users.email, adminEmail),
         columns: { id: true },

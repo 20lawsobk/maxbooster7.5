@@ -254,7 +254,7 @@ class WeeklyInsightsService {
     const clickTrackUrl = `${baseUrl}/api/emails/track/${emailId}/click`;
 
     const html = this.generateEmailTemplate(report, trackingPixel, clickTrackUrl);
-    const fromEmail = env.SENDGRID_FROM_EMAIL || 'blawzmusic@gmail.com';
+    const fromEmail = env.SENDGRID_FROM_EMAIL || 'noreply@max-booster.com';
 
     try {
       await this.resend!.emails.send({
