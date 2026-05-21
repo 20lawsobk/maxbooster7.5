@@ -24,7 +24,6 @@ import { storage } from '../storage.js';
 import { musicIndustryContextFilter } from './musicIndustryContextFilter.js';
 import { AIService } from './aiService.js';
 import * as aiAnalyticsService from './aiAnalyticsService.js';
-import { pythonAIService } from './pythonAIService.js';
 import { ContentGenerator, type GenerationOptions, type CaptionResult } from '../../shared/ml/nlp/ContentGenerator.js';
 import { MaxCoreAIClient } from './maxcoreClient.js';
 export { MaxCoreAIClient } from './maxcoreClient.js';
