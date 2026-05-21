@@ -105,6 +105,13 @@ export default defineConfig({
               return 'vendor-forms';
             }
 
+            // Icons — @icons-pack/react-simple-icons contains hundreds of SVG
+            // brand icons and is only used on specific pages (social, marketplace).
+            // Isolating it prevents it from bloating any route chunk.
+            if (id.includes('@icons-pack/react-simple-icons') || id.includes('simple-icons')) {
+              return 'vendor-icons';
+            }
+
             // Utils (no React dependency)
             if (id.includes('date-fns') || id.includes('zod')) {
               return 'vendor-utils';
@@ -117,7 +124,20 @@ export default defineConfig({
     modulePreload: {
       polyfill: false,
       resolveDependencies(filename, deps) {
-        const HEAVY = ['studio', 'vendor-charts', 'jspdf', 'html2canvas', 'vendor-audio-engine', 'vendor-canvas', 'index.es'];
+        // Never eagerly preload heavy or rarely-needed chunks — let them load
+        // on demand when the relevant route or feature is first accessed.
+        const HEAVY = [
+          'studio',
+          'vendor-charts',
+          'vendor-audio-engine',
+          'vendor-canvas',
+          'vendor-icons',
+          'vendor-forms',
+          'vendor-animation',
+          'jspdf',
+          'html2canvas',
+          'index.es',
+        ];
         return deps.filter(dep => !HEAVY.some(h => dep.includes(h)));
       },
     },
