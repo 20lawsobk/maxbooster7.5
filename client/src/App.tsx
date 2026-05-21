@@ -16,12 +16,7 @@ import { useAutoUpdate } from '@/hooks/useAutoUpdate';
 import { useKeyboardShortcuts, announce } from '@/lib/accessibility';
 import { setupLinkPrefetching, prefetchAdjacentRoutes, setAuthState, bootstrapUserData, prefetchAllAuthChunks } from '@/lib/prefetch';
 
-// Landing is the first route most visitors see. We kick off its chunk fetch the
-// instant this module is parsed (before React renders) so there is zero extra
-// round-trip compared to a synchronous import — but it no longer inflates the
-// entry chunk parse cost.
-const _landingChunk = import('@/pages/Landing');
-const Landing = lazy(() => _landingChunk);
+const Landing = lazy(() => import('@/pages/Landing'));
 
 // ── Deferred global UI ──────────────────────────────────────────────────────
 // These components are never visible on first paint (they open on keypress,
