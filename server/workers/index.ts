@@ -156,7 +156,7 @@ function createEmailWorker(): Worker {
       }
 
       const resend = new Resend(process.env.RESEND_API_KEY);
-      const fromEmail = from || process.env.SENDGRID_FROM_EMAIL || 'blawzmusic@gmail.com';
+      const fromEmail = from || process.env.SENDGRID_FROM_EMAIL || 'noreply@max-booster.com';
       await resend.emails.send({ to, from: fromEmail, subject, html });
       logger.info(`✅ Email sent to ${to}`);
     },
