@@ -51,8 +51,9 @@ export class MaxCoreAIClient {
       const now = Date.now();
       if (MaxCoreAIClient._remoteAvailable === null || now - MaxCoreAIClient._lastCheck >= MaxCoreAIClient.CHECK_TTL) {
         fetch(`${MC_AI_URL}/api/health`, {
-          headers: MaxCoreAIClient.authHeaders(),
-          signal:  AbortSignal.timeout(4000),
+          headers:  MaxCoreAIClient.authHeaders(),
+          signal:   AbortSignal.timeout(4000),
+          redirect: 'manual', // treat 3xx as unavailable — Replit proxy redirects when sleeping
         }).then(r => {
           MaxCoreAIClient._remoteAvailable = r.ok && MaxCoreAIClient.isJson(r);
           if (MaxCoreAIClient._remoteAvailable) logger.info('[MaxCoreAI] Remote server is online ✅');
@@ -75,9 +76,10 @@ export class MaxCoreAIClient {
     if (MaxCoreAIClient.isEndpointSuppressed(path)) return null;
     try {
       const r = await fetch(`${MC_AI_URL}${path}`, {
-        method:  'GET',
-        headers: MaxCoreAIClient.authHeaders(),
-        signal:  AbortSignal.timeout(8000),
+        method:   'GET',
+        headers:  MaxCoreAIClient.authHeaders(),
+        signal:   AbortSignal.timeout(8000),
+        redirect: 'manual',
       });
       if (!r.ok || !MaxCoreAIClient.isJson(r)) {
         MaxCoreAIClient.suppressEndpoint(path);
@@ -100,9 +102,10 @@ export class MaxCoreAIClient {
     const path = endpoint.startsWith('/api/') ? endpoint : `/api${endpoint}`;
     try {
       const r = await fetch(`${MC_AI_URL}${path}`, {
-        method:  'GET',
-        headers: MaxCoreAIClient.authHeaders(),
-        signal:  AbortSignal.timeout(15_000),
+        method:   'GET',
+        headers:  MaxCoreAIClient.authHeaders(),
+        signal:   AbortSignal.timeout(15_000),
+        redirect: 'manual',
       });
       if (!r.ok || !MaxCoreAIClient.isJson(r)) {
         // Not suppressed — log at debug and let caller continue polling
@@ -141,14 +144,17 @@ export class MaxCoreAIClient {
 
     try {
       const r = await fetch(`${MC_AI_URL}${path}`, {
-        method:  'POST',
-        headers: { 'Content-Type': 'application/json', ...MaxCoreAIClient.authHeaders() },
-        body:    JSON.stringify(body),
-        signal:  AbortSignal.timeout(MaxCoreAIClient.GENERATE_TIMEOUT_MS),
+        method:   'POST',
+        headers:  { 'Content-Type': 'application/json', ...MaxCoreAIClient.authHeaders() },
+        body:     JSON.stringify(body),
+        signal:   AbortSignal.timeout(MaxCoreAIClient.GENERATE_TIMEOUT_MS),
+        redirect: 'manual',
       });
 
       if (r.ok && MaxCoreAIClient.isJson(r)) {
         const data = await r.json();
+        MaxCoreAIClient._remoteAvailable = true;
+        MaxCoreAIClient._lastCheck = Date.now();
         MaxCoreAIClient._endpointSuppressed.delete(path);
         logger.debug(`[MaxCoreAI] generate ${path} → success`);
         return data as T;
@@ -189,10 +195,11 @@ export class MaxCoreAIClient {
 
     try {
       const r = await fetch(`${MC_AI_URL}${path}`, {
-        method:  'POST',
-        headers: { 'Content-Type': 'application/json', ...MaxCoreAIClient.authHeaders() },
-        body:    JSON.stringify(body),
-        signal:  AbortSignal.timeout(MaxCoreAIClient.INFER_TIMEOUT_MS),
+        method:   'POST',
+        headers:  { 'Content-Type': 'application/json', ...MaxCoreAIClient.authHeaders() },
+        body:     JSON.stringify(body),
+        signal:   AbortSignal.timeout(MaxCoreAIClient.INFER_TIMEOUT_MS),
+        redirect: 'manual',
       });
 
       if (r.ok && MaxCoreAIClient.isJson(r)) {
@@ -225,16 +232,18 @@ export function startMaxCoreLLMWarmth(): void {
 
   const ping = () => {
     fetch(`${MC_AI_URL}/api/generate/content`, {
-      method:  'POST',
-      headers: {
-        'Content-Type':  'application/json',
-        'X-API-Key':     MC_AI_KEY,
-        'Authorization': `Bearer ${MC_AI_KEY}`,
-      },
-      body:   JSON.stringify({ topic: 'music artist brand new release', platform: 'instagram', tone: 'energetic' }),
+      method:   'POST',
+      headers:  { 'Content-Type': 'application/json', ...MaxCoreAIClient.authHeaders() },
+      body:     JSON.stringify({ topic: 'music artist brand new release', platform: 'instagram', tone: 'energetic' }),
       // Match the generate() timeout so warmth pings actually complete when
       // MaxCore is busy with the diffusion training loop.
-      signal: AbortSignal.timeout(MaxCoreAIClient.GENERATE_TIMEOUT_MS),
+      signal:   AbortSignal.timeout(MaxCoreAIClient.GENERATE_TIMEOUT_MS),
+      redirect: 'manual',
+    }).then(r => {
+      if (r.ok && MaxCoreAIClient.isJson(r)) {
+        MaxCoreAIClient._remoteAvailable = true;
+        MaxCoreAIClient._lastCheck = Date.now();
+      }
     }).catch(() => {});
   };
 

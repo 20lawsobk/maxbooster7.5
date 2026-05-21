@@ -541,7 +541,7 @@ export class PdimRedisClient extends EventEmitter {
             'Authorization': `Bearer ${this.bearerToken}`,
           },
           body: JSON.stringify({ cmd, args }),
-          signal: AbortSignal.timeout(15_000),
+          signal: AbortSignal.timeout(PDIM_EXEC_TIMEOUT_MS),
           // Do not follow redirects automatically — if PDIM's proxy returns 302
           // (Replit redirecting to an error/login page when the service is down)
           // we need to see the raw 302 status so our 3xx handler can trip the
@@ -1209,6 +1209,10 @@ export function isPdimConfigured(): boolean {
 //
 const DIRECT_PROBE_INTERVAL_MS = 15_000;
 const DIRECT_PROBE_TIMEOUT_MS  =  5_000;
+// Timeout for every individual PDIM exec() call.
+// 15 s covers the worst-case BullMQ Lua script redis.call() round-trip
+// under PDIM load (observed RTT ~200ms; 15 s gives 75× headroom).
+const PDIM_EXEC_TIMEOUT_MS     = 15_000;
 
 let _directProbeTimer: ReturnType<typeof setInterval> | null = null;
 
@@ -1225,22 +1229,32 @@ export function startPdimDirectProber(): void {
 
     try {
       const res = await fetch(pdimUrl, {
-        method : 'POST',
-        headers: {
+        method  : 'POST',
+        headers : {
           'Content-Type' : 'application/json',
           Authorization  : `Bearer ${pdimToken}`,
         },
-        body  : JSON.stringify({ cmd: 'PING', args: [] }),
-        signal: AbortSignal.timeout(DIRECT_PROBE_TIMEOUT_MS),
+        body    : JSON.stringify({ cmd: 'PING', args: [] }),
+        signal  : AbortSignal.timeout(DIRECT_PROBE_TIMEOUT_MS),
+        // Do not follow Replit proxy redirects — a 3xx → 200 HTML response
+        // (e.g. "deployment not reachable" page) would look like a successful
+        // probe and incorrectly force-close the circuit while PDIM is still down.
+        redirect: 'manual',
       });
 
-      if (res.ok) {
+      // Only accept a genuine JSON 200 — redirect landing pages return 200 HTML.
+      const isJson = (res.headers.get('content-type') ?? '').includes('application/json');
+      if (res.ok && isJson) {
         if (cbGetState() !== 'CLOSED') {
           logger.info('[PDIM] Direct HTTP probe OK — force-closing circuit breaker');
           cbForceClose();
         }
       } else {
-        logger.debug(`[PDIM] Direct probe: HTTP ${res.status} (circuit stays ${cbGetState()})`);
+        logger.debug(
+          `[PDIM] Direct probe: HTTP ${res.status} ` +
+          `content-type=${res.headers.get('content-type') ?? 'none'} ` +
+          `(circuit stays ${cbGetState()})`,
+        );
       }
     } catch (err) {
       logger.debug(`[PDIM] Direct probe error: ${(err as Error).message}`);
