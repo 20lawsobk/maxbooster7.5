@@ -4,7 +4,6 @@ import { userBrandVoices, autopilotPreferences } from '@shared/schema';
 import { eq } from 'drizzle-orm';
 import { aiService } from './aiService';
 import { advancedSocialAIService, type AdvancedContentRequest, type ContentScoring as AdvancedScoring } from './advancedSocialAIService.js';
-import { pythonAIService } from './pythonAIService.js';
 import { MaxCoreAIClient } from './unifiedAIController.js';
 import { platformAlgorithmOptimizer } from './platformAlgorithmOptimizer.js';
 import { getCalibratedWeights } from './maxcoreScoreCalibrator.js';
@@ -382,7 +381,7 @@ class ContentQualityPipeline {
       if (_failAcc.localCount > 0) {
         logger.info(
           `[ContentQuality] ${_failAcc.localCount}/${count} variants generated via ` +
-          `local pattern fallback (Tier 3)`,
+          `local pattern fallback (Tier 2)`,
         );
       }
     }
@@ -411,37 +410,12 @@ class ContentQualityPipeline {
     let cta: string | undefined;
     let hashtags: string[] | undefined;
 
-    // ── Tier 1: Python AI (external trained model) ────────────────────────────
-    // Always attempted first.  Falls through cleanly if unavailable or failing.
-    if (await pythonAIService.isAvailable()) {
-      try {
-        const goalMap: Record<string, string> = {
-          awareness: 'growth', engagement: 'engagement', conversions: 'conversion', viral: 'growth',
-        };
-        const aiResult = await pythonAIService.generateContent(
-          context.platform, context.topic, context.tone || 'energetic',
-          goalMap[context.objective] || 'growth', true,
-          context.genre, context.artistName
-        );
-        if (aiResult.success && aiResult.data?.hook && aiResult.data.body && aiResult.data.cta) {
-          headline = aiResult.data.hook;
-          body     = aiResult.data.body;
-          cta      = aiResult.data.cta;
-          hashtags = aiResult.data.hashtags || [];
-          logger.info(`[ContentQuality] Variant ${index} generated via Python AI`);
-        }
-      } catch (err) {
-        // Python AI is optional — falling through to Tier 2 (Advanced AI) is expected.
-        // Log only the message so repeated failures don't dump stack traces.
-        logger.debug(`[ContentQuality] Python AI skipped for variant ${index}: ${(err as Error)?.message ?? String(err)}`);
-      }
-    }
-
-    // ── Tier 2: Advanced Social AI (always available, intelligently generated) ─
-    // Uses platform profiles, tone profiles, audience profiles, and content-type
-    // differentiation to produce genuinely varied, high-quality content.
-    // Strategy is mapped to contentType so different variants differ meaningfully.
-    if (!headline) {
+    // ── Tier 1: MaxCore Advanced AI (sole AI source) ─────────────────────────
+    // MaxCore is always the first and primary source for content generation.
+    // advancedSocialAIService.generateAdvancedContent() routes to MaxCore
+    // (secure-ai-forge.replit.app) via MaxCoreAIClient.infer().
+    // Falls through to Tier 2 (local pattern fallback) only on transient failure.
+    {
       try {
         const contentType = this.strategyToContentType(strategy);
         const advancedRequest: AdvancedContentRequest = {
@@ -467,7 +441,7 @@ class ContentQualityPipeline {
         hashtags = advancedResult.primary.hashtags;
         logger.info(`[ContentQuality] Variant ${index} generated via Advanced AI (${contentType})`);
       } catch (err) {
-        // Advanced AI (Tier 2) failed — Tier 3 local fallback below handles this.
+        // MaxCore (Tier 1) failed — Tier 2 local fallback below handles this.
         // MaxCore is always running, so any failure here is a real signal
         // (shape mismatch, transient timeout, wrong endpoint).
         // If a failure accumulator was supplied (by generateVariants), record
@@ -479,14 +453,14 @@ class ContentQualityPipeline {
           _failAcc.count++;
           if (!_failAcc.reason) _failAcc.reason = advErrMsg;
         } else {
-          logger.info(`[ContentQuality] Advanced AI used local fallback for variant ${index}: ${advErrMsg}`);
+          logger.info(`[ContentQuality] MaxCore used local fallback for variant ${index}: ${advErrMsg}`);
         }
 
-        // ── Tier 3: Local pattern-data fallback (always available) ────────────
-        // Both Python AI (Tier 1) and MaxCore-backed AdvancedSocialAI (Tier 2)
-        // are unavailable.  Generate content from music industry training data
-        // patterns — no network calls, no external dependencies, zero failure
-        // modes.  Content quality is lower than AI tiers but always publishable.
+        // ── Tier 2: Local pattern-data fallback (always available) ────────────
+        // MaxCore (Tier 1) is unavailable.  Generate content from music industry
+        // training data patterns — no network calls, no external dependencies,
+        // zero failure modes.  Content quality is lower than MaxCore but always
+        // publishable.
         try {
           const {
             getHashtagsForGenre,
@@ -561,7 +535,7 @@ class ContentQualityPipeline {
           if (_failAcc) {
             _failAcc.localCount++;
           } else {
-            logger.info(`[ContentQuality] Variant ${index} generated via local pattern fallback (Tier 3)`);
+            logger.info(`[ContentQuality] Variant ${index} generated via local pattern fallback (Tier 2)`);
           }
         } catch (localErr) {
           throw new Error(`[ContentQuality] All generation tiers failed for variant ${index}: ${err}`);

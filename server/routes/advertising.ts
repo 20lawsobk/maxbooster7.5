@@ -5,6 +5,7 @@ import { unifiedAIController } from '../services/unifiedAIController.js';
 import { storage } from '../storage.js';
 import { notificationService } from '../services/notificationService.js';
 import { pythonAIService } from '../services/pythonAIService.js';
+import { MaxCoreAIClient } from '../services/maxcoreClient.js';
 import { renderVideo as renderAdvancedVideo } from '../services/advancedVideoRendererService.js';
 import { storeUploadedFile, handleUploadError, createHardenedUpload } from '../middleware/uploadHandler.js';
 import { db } from '../db.js';
@@ -890,6 +891,27 @@ router.post('/generate-image', requireAuthOnly, async (req: AuthenticatedRequest
       return res.status(400).json({ success: false, message: 'Topic is required' });
     }
 
+    // ── Tier 1: MaxCore (sole AI source) ─────────────────────────────────────
+    type McImageResp = { url?: string; image_url?: string; width?: number; height?: number; format?: string; prompt_used?: string };
+    let mcImageData: McImageResp | null = null;
+    try {
+      mcImageData = await MaxCoreAIClient.infer<McImageResp>('/api/generate/image', {
+        topic,
+        platform: platform || 'instagram',
+        tone: tone || 'energetic',
+        goal: goal || 'growth',
+        artist_name,
+        style: style || 'modern',
+      });
+    } catch {
+      mcImageData = null;
+    }
+
+    if (mcImageData?.url || mcImageData?.image_url) {
+      return res.json({ success: true, ...mcImageData });
+    }
+
+    // ── Tier 2: Python AI sidecar (fallback if MaxCore image endpoint unavailable) ─
     const result = await pythonAIService.generateImage({
       topic,
       platform: platform || 'instagram',
