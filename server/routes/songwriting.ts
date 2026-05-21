@@ -8,6 +8,7 @@ import { z } from 'zod';
 import { parsePaginationParams } from '../middleware/pagination.js';
 import { queryCache, createCacheKey } from '../lib/queryCache.js';
 import { unifiedAIController } from '../services/unifiedAIController.js';
+import { musicIndustryContextFilter } from '../services/musicIndustryContextFilter.js';
 
 const router = Router();
 const CACHE_TTL = 120;
@@ -210,6 +211,12 @@ router.post('/ai-assist', requireAuth, async (req, res) => {
     let suggestions: string[] = [];
     let rhymes: string[] = [];
 
+    // Fetch live industry context for songwriting — appended as extraContext so
+    // MaxCore understands what lyrical themes and genres are culturally resonant now.
+    // Falls back gracefully to undefined (no behaviour change) if filter is unavailable.
+    const _swCtx = await musicIndustryContextFilter.getContextForMode('songwriting').catch(() => null);
+    const _swExtraContext = _swCtx?.contextString || undefined;
+
     const [lyricResult, rhymeResult] = await Promise.allSettled([
       unifiedAIController.generateContent({
         topic: `${genreNorm} song lyric ideas about "${prompt || 'music'}", ${moodNorm} mood${existing ? ', continuing: ' + existing.slice(0, 200) : ''}`,
@@ -218,6 +225,7 @@ router.post('/ai-assist', requireAuth, async (req, res) => {
         platform: 'instagram',
         includeHashtags: false,
         includeEmojis: false,
+        extraContext: _swExtraContext,
       }),
       prompt
         ? unifiedAIController.generateContent({

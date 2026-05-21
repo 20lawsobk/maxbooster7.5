@@ -21,6 +21,7 @@
 import { logger } from '../logger.js';
 import { MLModelRegistry } from './mlModelRegistry.js';
 import { storage } from '../storage.js';
+import { musicIndustryContextFilter } from './musicIndustryContextFilter.js';
 import { AIService } from './aiService.js';
 import * as aiAnalyticsService from './aiAnalyticsService.js';
 import { pythonAIService } from './pythonAIService.js';
@@ -327,6 +328,13 @@ export class UnifiedAIController {
         const clean = options.description.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 180);
         if (clean) extraParts.push(clean);
       }
+      // Append live music industry context as the final supporting layer.
+      // User instruction (extraParts[0]) remains the primary directive — industry
+      // context is always last so MaxCore treats it as background signal, not a command.
+      // getContextForMode() uses a 30-min cache, so latency after first fetch is negligible.
+      const _industryCtx = await musicIndustryContextFilter.getContextForMode('social').catch(() => null);
+      if (_industryCtx?.contextString) extraParts.push(_industryCtx.contextString);
+
       const combinedExtra = extraParts.length ? extraParts.join(' | ') : undefined;
 
       // /api/generate/content is the structured endpoint on the remote server.
