@@ -155,7 +155,7 @@ function createEmailWorker(): Worker {
         return;
       }
 
-      const fromEmail = from || process.env.SENDGRID_FROM_EMAIL || 'noreply@maxbooster.ai';
+      const fromEmail = from || process.env.SENDGRID_FROM_EMAIL || 'blawzmusic@gmail.com';
       await sgMail.send({ to, from: fromEmail, subject, html });
       logger.info(`✅ Email sent to ${to}`);
     },
