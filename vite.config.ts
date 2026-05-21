@@ -216,8 +216,6 @@ export default defineConfig({
       "tailwind-merge",
       // Charts (heavy but frequently used)
       "recharts",
-      // Social / brand icons — explicit include so Vite pre-bundles the ESM export
-      "@icons-pack/react-simple-icons",
     ],
     // Exclude server-only or native packages from browser pre-bundling
     exclude: [
