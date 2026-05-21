@@ -4,7 +4,7 @@ import { config } from '../config/defaults.js';
 import { AudioService } from '../services/audioService.js';
 import { RoyaltiesCSVImportService } from '../services/royaltiesCSVImportService.js';
 import { AnalyticsAnomalyService } from '../services/analyticsAnomalyService.js';
-import sgMail from '@sendgrid/mail';
+import { Resend } from 'resend';
 import { logger } from '../logger.js';
 import type {
   AudioConvertJobData,
@@ -150,13 +150,14 @@ function createEmailWorker(): Worker {
       logger.info(`📧 Email job ${job.id} → ${to}`);
       checkMemoryUsage('EmailWorker');
 
-      if (!process.env.SENDGRID_API_KEY) {
-        logger.warn('⚠️  SendGrid not configured, skipping email send');
+      if (!process.env.RESEND_API_KEY) {
+        logger.warn('⚠️  Resend not configured, skipping email send');
         return;
       }
 
+      const resend = new Resend(process.env.RESEND_API_KEY);
       const fromEmail = from || process.env.SENDGRID_FROM_EMAIL || 'blawzmusic@gmail.com';
-      await sgMail.send({ to, from: fromEmail, subject, html });
+      await resend.emails.send({ to, from: fromEmail, subject, html });
       logger.info(`✅ Email sent to ${to}`);
     },
     workerOpts(config.queue.concurrency.email),

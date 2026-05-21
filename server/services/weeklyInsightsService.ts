@@ -10,7 +10,7 @@ import {
   careerCoachRecommendations
 } from '../../shared/schema.js';
 import { eq, and, gte, lte, desc, sql } from 'drizzle-orm';
-import sgMail from '@sendgrid/mail';
+import { Resend } from 'resend';
 import { logger } from '../logger.js';
 import { notificationService } from './notificationService.js';
 import { env } from '../config/env.js';
@@ -33,15 +33,16 @@ interface WeeklyReport {
 
 class WeeklyInsightsService {
   private isInitialized = false;
+  private resend: Resend | null = null;
 
   constructor() {
     this.initialize();
   }
 
   private initialize() {
-    if (!this.isInitialized && env.SENDGRID_API_KEY) {
+    if (!this.isInitialized && env.RESEND_API_KEY) {
       try {
-        sgMail.setApiKey(env.SENDGRID_API_KEY);
+        this.resend = new Resend(env.RESEND_API_KEY);
         this.isInitialized = true;
         logger.info('✅ Weekly Insights Service initialized');
       } catch (error) {
@@ -231,7 +232,7 @@ class WeeklyInsightsService {
   }
 
   private async sendWeeklyEmail(report: WeeklyReport): Promise<boolean> {
-    if (!this.isInitialized) {
+    if (!this.isInitialized || !this.resend) {
       logger.warn('SendGrid not initialized, skipping weekly insights email');
       return false;
     }
@@ -256,7 +257,7 @@ class WeeklyInsightsService {
     const fromEmail = env.SENDGRID_FROM_EMAIL || 'blawzmusic@gmail.com';
 
     try {
-      await sgMail.send({
+      await this.resend!.emails.send({
         to: report.userEmail,
         from: fromEmail,
         subject: `📊 Your Week in Music - ${new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`,

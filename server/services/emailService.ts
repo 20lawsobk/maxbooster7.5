@@ -1,9 +1,16 @@
-import sgMail from '@sendgrid/mail';
+import { Resend } from 'resend';
 import { emailMonitor } from '../monitoring/emailMonitor';
 import { logger } from '../logger.js';
-import { sendgridCircuit, queueForRetry } from './externalServices.js';
-import { CircuitBreakerError, TimeoutError } from './circuitBreaker.js';
+import { queueForRetry } from './externalServices.js';
 import { env } from '../config/env.js';
+
+interface EmailData {
+  to: string | string[];
+  from: string;
+  subject: string;
+  html?: string;
+  text?: string;
+}
 
 interface InvitationEmailData {
   to: string;
@@ -43,63 +50,53 @@ interface SubscriptionEmailData {
 
 class EmailService {
   private isInitialized = false;
+  private resend: Resend | null = null;
 
   constructor() {
     this.initialize();
   }
 
   private initialize() {
-    if (!this.isInitialized && env.SENDGRID_API_KEY) {
+    if (!this.isInitialized && env.RESEND_API_KEY) {
       try {
-        sgMail.setApiKey(env.SENDGRID_API_KEY);
+        this.resend = new Resend(env.RESEND_API_KEY);
         this.isInitialized = true;
-        logger.info('✅ SendGrid EmailService initialized');
+        logger.info('✅ Resend EmailService initialized');
       } catch (error: unknown) {
-        logger.warn({ err: error }, '❌ Failed to initialize SendGrid EmailService:');
+        logger.warn({ err: error }, '❌ Failed to initialize Resend EmailService:');
       }
-    } else if (!env.SENDGRID_API_KEY) {
-      logger.warn('⚠️  SendGrid API key not configured. Email features will be disabled.');
+    } else if (!env.RESEND_API_KEY) {
+      logger.warn('⚠️  Resend API key not configured. Email features will be disabled.');
     }
   }
 
   private async sendWithCircuitBreaker(
-    emailData: sgMail.MailDataRequired,
+    emailData: EmailData,
     shouldQueue: boolean = true
   ): Promise<boolean> {
+    if (!this.resend) return false;
     const startTime = Date.now();
 
     try {
-      await sendgridCircuit.execute(() => sgMail.send(emailData));
+      await this.resend.emails.send({
+        from: emailData.from,
+        to: emailData.to as string,
+        subject: emailData.subject,
+        html: emailData.html,
+        text: emailData.text,
+      });
       const deliveryTime = Date.now() - startTime;
-      emailMonitor.logEmail(emailData, 'sent', undefined, deliveryTime);
+      emailMonitor.logEmail(emailData as any, 'sent', undefined, deliveryTime);
       return true;
     } catch (error: unknown) {
       const deliveryTime = Date.now() - startTime;
-      let errorMessage: string;
-
-      if (error instanceof CircuitBreakerError) {
-        errorMessage = `Circuit breaker open: ${error.message}`;
-        logger.warn(`⚡ SendGrid circuit breaker is OPEN, skipping email to ${emailData.to}`);
-      } else if (error instanceof TimeoutError) {
-        errorMessage = `Timeout: ${error.message}`;
-        logger.warn(`⏱️ SendGrid timeout for email to ${emailData.to}`);
-      } else {
-        errorMessage =
-          (error as Record<string, unknown>)?.response?.body?.errors?.[0]?.message ||
-          (error as Error).message ||
-          'Unknown error';
-      }
-
-      emailMonitor.logEmail(emailData, 'failed', errorMessage, deliveryTime);
-
-      if (shouldQueue && !(error instanceof CircuitBreakerError)) {
-        queueForRetry('sendgrid', 'send_email', {
-          to: emailData.to,
-          subject: emailData.subject,
-        });
+      const errorMessage = (error as Error).message || 'Unknown error';
+      logger.warn(`⚠️ Resend error for ${emailData.to}: ${errorMessage}`);
+      emailMonitor.logEmail(emailData as any, 'failed', errorMessage, deliveryTime);
+      if (shouldQueue) {
+        queueForRetry('resend', 'send_email', { to: emailData.to, subject: emailData.subject });
         logger.info(`📥 Email to ${emailData.to} queued for retry`);
       }
-
       return false;
     }
   }
