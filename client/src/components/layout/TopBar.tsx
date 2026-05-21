@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { NotificationCenter } from '@/components/notifications/NotificationCenter';
+import { PendingChangesIndicator } from '@/components/offline/PendingChangesIndicator';
 import { Button } from '@/components/ui/button';
 import { Menu, LogOut, Loader2, Settings } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
@@ -59,6 +60,7 @@ export function TopBar({ title, subtitle, onMenuClick }: TopBarProps = {}) {
           </div>
         </div>
         <div className="flex items-center space-x-2">
+          <PendingChangesIndicator variant="badge" showDropdown={true} />
           <NotificationCenter />
           <Link to="/settings">
             <Button
