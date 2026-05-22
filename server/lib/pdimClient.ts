@@ -132,7 +132,18 @@ export function setPdimGapFloor(ms: number): void {
 export function getPdimGapFloor(): number { return _PDIM_GAP_FLOOR_MS; }
 
 // ── AIMD state (module-level, shared across all PdimRedisClient instances) ───
-let _pdimGapMs      = _PDIM_GAP_INIT_MS;
+//
+// Per-process startup desynchronization.
+// Production autoscale runs 10–15 worker processes that all start at approximately
+// the same time.  Without jitter every process fires PDIM requests in lockstep:
+// they back off together after a 429, wait the same duration, and retry together —
+// a thundering herd that repeats indefinitely regardless of the AIMD ceiling.
+//
+// Fix: initialise each process's gap with a random offset in [0, JITTER_INIT_MS).
+// Workers drift apart within the first AIMD cycle and never re-synchronise because
+// each subsequent 429 backoff also adds a random fraction (see _pdimAdapt429).
+const _PDIM_JITTER_INIT_MS = 1_500; // spread initial gaps over 1.5 s window
+let _pdimGapMs      = _PDIM_GAP_INIT_MS + Math.floor(Math.random() * _PDIM_JITTER_INIT_MS);
 let _pdimQueueDepth = 0;    // callers waiting in the chain (not yet executing)
 let _pdimGlobalChain: Promise<unknown> = Promise.resolve();
 
@@ -157,23 +168,38 @@ let _fastFailLoggedAt = 0;
  *
  * The step is queue-depth-proportional — "fluid" expansion:
  *   idle  (0–1) : 1 ms  — gap barely moves; conserves PDIM quota at rest
- *   light (2–4) : 8 ms  — gentle ramp for background/internal traffic
- *   busy  (5–9) : 30 ms — fast ramp for real user sessions
- *   peak  (10+) : 100 ms — instant drop to PDIM's natural ceiling
+ *   light (2–4) : 5 ms  — gentle ramp for background/internal traffic
+ *   busy  (5–9) : 12 ms — moderate ramp for real user sessions
+ *   peak  (10+) : 15 ms — conservative ramp; avoids 429-sawtooth overshoot
+ *
+ * Why the peak step was reduced from 100ms → 15ms:
+ *   At queue depth ≥10, a 100ms/success step drops the gap from the 2000ms
+ *   ceiling to the 1ms floor in only ~20 requests.  PDIM then returns 429,
+ *   the gap jumps back to 2.5ms, and the same 20-request collapse repeats
+ *   indefinitely — a 429/sawtooth cycle with no stable equilibrium.
+ *   At 15ms/success, the descent from 2000ms takes ~133 requests (~27s at
+ *   200ms PDIM RTT), giving PDIM time to signal its true ceiling through a
+ *   429 before the floor is reached.
  *
  * The real operational floor is set by PDIM's own 429 responses via
  * _pdimAdapt429() — not by the constant _PDIM_GAP_FLOOR_MS.
  */
 function _pdimAdaptSuccess(): void {
   const q = _pdimQueueDepth;
-  const step = q >= 10 ? 100 : q >= 5 ? 30 : q >= 2 ? 8 : 1;
+  const step = q >= 10 ? 15 : q >= 5 ? 12 : q >= 2 ? 5 : 1;
   _pdimGapMs = Math.max(_PDIM_GAP_FLOOR_MS, _pdimGapMs - step);
 }
 
 /** On each 429 response: multiply the gap (back off hard) and return new gap
- *  so exec() can set the static rate-limit deadline to the same value. */
+ *  so exec() can set the static rate-limit deadline to the same value.
+ *
+ *  Jitter rationale: without jitter, all autoscale workers that backed off to
+ *  the same ceiling (2000ms) will all retry at exactly the same wall-clock time,
+ *  re-triggering a synchronized 429 storm.  Adding ±25% random noise to each
+ *  backoff step ensures processes drift apart within 2–3 cycles and stay apart. */
 function _pdimAdapt429(): number {
-  _pdimGapMs = Math.min(_PDIM_GAP_CEIL_MS, _pdimGapMs * _PDIM_MULT_429);
+  const jitter = 0.75 + Math.random() * 0.5; // uniform [0.75, 1.25]
+  _pdimGapMs = Math.min(_PDIM_GAP_CEIL_MS, _pdimGapMs * _PDIM_MULT_429 * jitter);
   return _pdimGapMs;
 }
 
@@ -559,8 +585,22 @@ export class PdimRedisClient extends EventEmitter {
             // The static _rateLimitedUntil mirrors the new gap so that even if a
             // caller somehow got through, the per-fn() rate-limit check holds it.
             const newGap = _pdimAdapt429();
-            PdimRedisClient._rateLimitedUntil = Date.now() + newGap;
-            const errMsg = `PDIM HTTP 429: Too many requests (gap→${newGap}ms)`;
+            // Respect the Retry-After header if PDIM sends one.
+            // PDIM knows its own rate limit and can tell us exactly how long to
+            // wait — more accurate than our AIMD estimate alone.  Honour whichever
+            // is larger so we never under-wait relative to PDIM's own signal.
+            let retryAfterMs = 0;
+            const retryAfterHdr = res.headers.get('retry-after');
+            if (retryAfterHdr) {
+              const secs = parseFloat(retryAfterHdr);
+              if (!isNaN(secs) && secs > 0) retryAfterMs = Math.ceil(secs * 1000);
+            }
+            const holdMs = Math.max(newGap, retryAfterMs);
+            // Add per-call random jitter to _rateLimitedUntil so that processes
+            // which got 429 at the same wall-clock time don't all release their
+            // hold at the exact same moment — they'll be spread 0–500ms apart.
+            PdimRedisClient._rateLimitedUntil = Date.now() + holdMs + Math.floor(Math.random() * 500);
+            const errMsg = `PDIM HTTP 429: Too many requests (gap→${newGap}ms${retryAfterMs > 0 ? `, retry-after=${retryAfterMs}ms` : ''})`;
             _counted = true;
 
             // Burst dedup: a simultaneous 429 storm (multiple commands within
