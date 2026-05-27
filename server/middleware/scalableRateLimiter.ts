@@ -102,31 +102,71 @@ const skipRateLimiting = (req: Request): boolean => {
   return false;
 };
 
+/**
+ * Per-key coalesce state.  Lets a worker batch many local rate-limit checks
+ * into one PDIM round-trip, while still updating the cluster-wide count
+ * accurately via the Lua script's `batch_count` arg.
+ *
+ *   pendingLocal           – hits counted locally since last successful sync
+ *                            (a snapshot becomes the next PDIM batch_count)
+ *   lastRemainingFromPdim  – `remaining` from the last sync's PDIM response
+ *                            (the live remaining = this minus pendingLocal)
+ *   lastSyncAt             – wall-clock ms of the last successful sync
+ *   inflight               – in-flight sync promise; concurrent callers await
+ *                            it so we never issue two parallel PDIM calls for
+ *                            the same key
+ *   lastVerdictLimited     – true when the most recent sync returned
+ *                            limited=true.  Until the next sync supersedes
+ *                            it (after COALESCE_MAX_AGE_MS), callers see
+ *                            limited=true without re-consulting PDIM —
+ *                            stops rate-limit storms from re-flooding PDIM
+ *                            at exactly the worst time
+ */
+interface CoalesceState {
+  pendingLocal: number;
+  lastRemainingFromPdim: number | undefined;
+  lastSyncAt: number;
+  inflight: Promise<{ limited: boolean; remaining: number }> | null;
+  lastVerdictLimited: boolean;
+}
+
+/** Max requests coalesced into one PDIM call.  Bounds ZSET ZADD-per-call
+ *  cost in Redis and bounds per-worker overshoot at the limit boundary. */
+const COALESCE_MAX_BATCH = 10;
+/** Force a PDIM resync at least this often even when local count is small.
+ *  Keeps `lastRemainingFromPdim` fresh after the 60s window resets. */
+const COALESCE_MAX_AGE_MS = 1_000;
+/** When (lastRemainingFromPdim - pendingLocal) drops to this, sync to PDIM
+ *  on the next request so the boundary decision is cluster-accurate. */
+const COALESCE_SAFETY_BUFFER = 5;
+
 export class DistributedRateLimiter {
   private config: RateLimiterConfig;
   private redisClient: SlidingWindowRedis;
+  /** Per-key coalesce state.  Owned by this limiter instance — instances for
+   *  different prefixes (global/api/ai/auth/etc.) keep separate maps. */
+  private coalesce: Map<string, CoalesceState> = new Map();
+  /** Last time we pruned stale coalesce entries (probabilistic GC). */
+  private lastPruneAt = 0;
 
   constructor(config: RateLimiterConfig, redisClient: SlidingWindowRedis) {
     this.config = config;
     this.redisClient = redisClient;
   }
 
-  async isRateLimited(key: string): Promise<{ limited: boolean; remaining: number }> {
-    // 'sw' suffix distinguishes sliding-window keys from any legacy fixed-window
-    // (INCR+EXPIRE) keys that may still exist in Redis under the old prefix.
-    // Intentional: old keys are left to expire naturally; no counter reset needed.
+  /**
+   * Issue one PDIM rate-limit check that represents `batchCount` user hits.
+   * Returns the cluster-wide verdict from PDIM.  This is the ONLY method that
+   * actually talks to PDIM — all coalescing logic lives in isRateLimited().
+   */
+  private async syncWithPdim(key: string, batchCount: number): Promise<{ limited: boolean; remaining: number }> {
     const redisKey = `ratelimit:sw:${key}`;
     const now = Date.now();
     const windowStart = now - this.config.windowMs;
-    // Key auto-expires well after the window closes — avoids stale ZSET accumulation.
     const windowExpireSecs = Math.ceil(this.config.windowMs / 1000) + 60;
-    // Unique member prevents score-collision loss when multiple callers land on
-    // the same millisecond (common under high concurrency).
     const entryId = `${now}:${Math.random().toString(36).slice(2, 9)}`;
 
     // Primary path: atomic EVAL — single PDIM round-trip, no race window.
-    // The Lua script runs ZREMRANGEBYSCORE + ZCARD + ZADD + EXPIRE in one
-    // operation, making the check-and-increment indivisible.
     try {
       const raw = await this.redisClient.eval(
         SLIDING_WINDOW_LUA,
@@ -137,24 +177,117 @@ export class DistributedRateLimiter {
         String(now),
         entryId,
         String(windowExpireSecs),
+        String(batchCount),
       );
       const result = Array.isArray(raw) ? raw : [];
       const limited   = Number(result[0] ?? 1) === 1;
       const remaining = Number(result[1] ?? 0);
       return { limited, remaining };
     } catch {
-      // Fallback: EVAL unsupported (backend returned HTTP 400) or PDIM transient
-      // error.  PDIM does not support ZREMRANGEBYSCORE, so use ZCOUNT directly to
-      // count only in-window members without pruning.  ZCOUNT is always supported
-      // by PDIM and gives correct rate-limit decisions; the ZSET is bounded by the
-      // EXPIRE TTL set below and by the maxRequests ceiling (rejected requests are
-      // never added, so the ZSET cannot grow unboundedly for rate-limited keys).
+      // Fallback: EVAL unsupported or PDIM transient error.  Use ZCOUNT
+      // followed by ZADD of `batchCount` unique entries.
       const count = await this.redisClient.zcount(redisKey, windowStart, '+inf');
-      if (count >= this.config.maxRequests) return { limited: true, remaining: 0 };
-      await this.redisClient.zadd(redisKey, now, entryId);
+      if (count + batchCount > this.config.maxRequests) return { limited: true, remaining: 0 };
+      if (batchCount === 1) {
+        await this.redisClient.zadd(redisKey, now, entryId);
+      } else {
+        const args: unknown[] = [];
+        for (let i = 1; i <= batchCount; i++) args.push(now, `${entryId}:${i}`);
+        await this.redisClient.zadd(redisKey, ...args);
+      }
       // Fire-and-forget: expiry is a GC safety net, not on the critical path.
       Promise.resolve(this.redisClient.expire(redisKey, windowExpireSecs)).catch(() => {});
-      return { limited: false, remaining: this.config.maxRequests - count - 1 };
+      return { limited: false, remaining: this.config.maxRequests - count - batchCount };
+    }
+  }
+
+  async isRateLimited(key: string): Promise<{ limited: boolean; remaining: number }> {
+    // 'sw' suffix distinguishes sliding-window keys from any legacy fixed-window
+    // (INCR+EXPIRE) keys that may still exist in Redis under the old prefix.
+    // Intentional: old keys are left to expire naturally; no counter reset needed.
+
+    let state = this.coalesce.get(key);
+    if (!state) {
+      state = {
+        pendingLocal: 0,
+        lastRemainingFromPdim: undefined,
+        lastSyncAt: 0,
+        inflight: null,
+        lastVerdictLimited: false,
+      };
+      this.coalesce.set(key, state);
+    }
+
+    // Probabilistic GC of cold keys so the map can't grow unboundedly under
+    // attack (many distinct IPs).  Same pattern as _localRateCounts above.
+    if (Math.random() < 0.005) this.pruneStaleCoalesce();
+
+    // If a sync is already in flight for this key, wait for it before deciding.
+    // Concurrent callers naturally coalesce around that single PDIM round-trip.
+    while (state.inflight) {
+      try { await state.inflight; } catch { /* sync failed; we'll re-sync below */ }
+    }
+
+    // Sticky rate-limit verdict.  When PDIM most recently said limited=true,
+    // every caller short-circuits to limited=true until COALESCE_MAX_AGE_MS
+    // elapses (after which we force a fresh sync — the window may have rolled
+    // over).  Without this, every rejected request during a rate-limit storm
+    // would issue its own PDIM call — the exact opposite of what coalescing
+    // should achieve.
+    const nowMs = Date.now();
+    if (state.lastVerdictLimited && nowMs - state.lastSyncAt < COALESCE_MAX_AGE_MS) {
+      return { limited: true, remaining: 0 };
+    }
+
+    // Count this request locally.
+    state.pendingLocal += 1;
+
+    const hypothetical = (state.lastRemainingFromPdim ?? Number.POSITIVE_INFINITY) - state.pendingLocal;
+    const noPdimDataYet = state.lastRemainingFromPdim === undefined;
+    const stale         = nowMs - state.lastSyncAt >= COALESCE_MAX_AGE_MS;
+    const overBatch     = state.pendingLocal >= COALESCE_MAX_BATCH;
+    const nearBoundary  = hypothetical <= COALESCE_SAFETY_BUFFER;
+
+    if (noPdimDataYet || stale || overBatch || nearBoundary) {
+      // Snapshot the batch and reset BEFORE issuing the PDIM call.  Concurrent
+      // callers that arrive during the in-flight sync will await `inflight`,
+      // then re-evaluate — they will not also send their hits to this sync.
+      const batchCount = state.pendingLocal;
+      state.pendingLocal = 0;
+      const p = this.syncWithPdim(key, batchCount);
+      state.inflight = p;
+      try {
+        const result = await p;
+        state.lastRemainingFromPdim = result.remaining;
+        state.lastSyncAt = Date.now();
+        state.lastVerdictLimited = result.limited;
+        return result;
+      } catch (err) {
+        // PDIM failed — mark our PDIM view as unknown so the next request
+        // will sync again rather than rely on a stale cached remaining.
+        state.lastRemainingFromPdim = undefined;
+        throw err;
+      } finally {
+        if (state.inflight === p) state.inflight = null;
+      }
+    }
+
+    // Fast path — local cache is fresh and we're nowhere near the boundary.
+    return { limited: false, remaining: Math.max(0, hypothetical) };
+  }
+
+  /** Drop coalesce entries whose last sync is older than the rate-limit
+   *  window.  Such entries are guaranteed-stale because PDIM's count for
+   *  that key has reset; a fresh sync on the next request rebuilds state. */
+  private pruneStaleCoalesce(): void {
+    const now = Date.now();
+    if (now - this.lastPruneAt < this.config.windowMs) return;
+    this.lastPruneAt = now;
+    const cutoff = now - this.config.windowMs;
+    for (const [k, v] of this.coalesce) {
+      if (v.lastSyncAt < cutoff && !v.inflight && v.pendingLocal === 0) {
+        this.coalesce.delete(k);
+      }
     }
   }
 
