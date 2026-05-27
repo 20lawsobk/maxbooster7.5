@@ -330,7 +330,11 @@ describe('Sliding-Window — Real PDIM Integration', () => {
       const redis = getRedisClient();
 
       const LIMIT = 3;
-      const WINDOW_MS = 500;
+      // WINDOW_MS must comfortably exceed (LIMIT+1) × PDIM round-trip latency
+      // so phase-1 ZADD entries don't drift out of the sliding window by the
+      // time phase 2 fires.  With ~300ms PDIM RTT and AIMD gap, a 500ms window
+      // is too tight (entry@0 ages out before call 4 evaluates).
+      const WINDOW_MS = 5_000;
       const limiter = new DistributedRateLimiter(
         { windowMs: WINDOW_MS, maxRequests: LIMIT },
         // PdimRedisClient satisfies SlidingWindowRedis
@@ -350,12 +354,14 @@ describe('Sliding-Window — Real PDIM Integration', () => {
       expect(blocked.limited).toBe(true);
       expect(blocked.remaining).toBe(0);
 
-      // Phase 3: wait for the window to expire, then one more must pass
-      await new Promise(resolve => setTimeout(resolve, WINDOW_MS + 150));
+      // Phase 3: wait for the window to expire, then one more must pass.
+      // 1000ms margin > coalesceMaxAgeMs (=min(1000, WINDOW/2)=1000) so the
+      // sticky-limited cache has also expired and we'll resync against PDIM.
+      await new Promise(resolve => setTimeout(resolve, WINDOW_MS + 1_000));
       const recovered = await limiter.isRateLimited(key);
       expect(recovered.limited).toBe(false);
     },
-    12_000,
+    15_000,
   );
 
   it.skipIf(!_pdimConfigured)(
@@ -377,9 +383,14 @@ describe('Sliding-Window — Real PDIM Integration', () => {
       const redis = getRedisClient();
 
       const LIMIT     = 3;
-      const WINDOW_MS = 1500; // wider window gives phase-1 entries more room to stay fresh
-      const BURST_AT  = 200;  // fire phase 2 only 200ms after t0; entries (at t0…t0+300ms)
-                              // are well inside [now-1500ms, now] when phase 2 fires
+      // WINDOW_MS must be ≫ phase-1 duration (≈ LIMIT × PDIM RTT ≈ 900ms)
+      // plus phase-2 duration (≈ LIMIT × PDIM RTT ≈ 900ms when sticky cache
+      // misses) so the oldest phase-1 entry stays in window throughout phase 2.
+      const WINDOW_MS = 5_000;
+      // BURST_AT must be ≥ phase-1 duration; setting it lower just causes the
+      // `Math.max(0, …)` wait to be 0.  With WINDOW=5s, 1.5s gives sliding
+      // window room without affecting correctness.
+      const BURST_AT  = 1_500;
 
       const limiter = new DistributedRateLimiter(
         { windowMs: WINDOW_MS, maxRequests: LIMIT },
@@ -408,14 +419,16 @@ describe('Sliding-Window — Real PDIM Integration', () => {
       }
       expect(nearBoundaryBlocked).toBe(LIMIT);
 
-      // Phase 3: wait until t0 + WINDOW_MS + 300ms (all phase-1 entries have aged out)
-      const toWaitForExpiry = Math.max(0, WINDOW_MS + 300 - (Date.now() - t0));
+      // Phase 3: wait until t0 + WINDOW_MS + 1500ms (all phase-1 entries have
+      // aged out, AND the sticky limited-verdict cache has expired —
+      // coalesceMaxAgeMs = min(1000, WINDOW_MS/2) = 1000ms, so 1500ms is safe).
+      const toWaitForExpiry = Math.max(0, WINDOW_MS + 1_500 - (Date.now() - t0));
       await new Promise(resolve => setTimeout(resolve, toWaitForExpiry));
 
       const afterExpiry = await limiter.isRateLimited(key);
       expect(afterExpiry.limited).toBe(false);
     },
-    15_000,
+    20_000,
   );
 
 });
