@@ -260,15 +260,27 @@ class PermanentFixRegistry {
         logger.info('[PermanentFixer] No permanent overrides saved yet — running with default constants');
       }
 
-      // Restore AIMD gap so PDIM resumes where the last session left off
+      // Restore AIMD gap so PDIM resumes where the last session left off.
+      // Cap at 400ms even if the last session ended at ceiling (2000ms).
+      // Rationale: with 780+ direct callers queued at startup, restoring to
+      // 2000ms means 780 × (200ms RTT + 2000ms) ≈ 28 minutes to drain.
+      // Workers time out at 60s waiting for main-thread redis.call dispatch.
+      // 400ms gives a safe anti-thundering-herd spacing while draining in
+      // ~4 minutes (780 × 600ms) instead of 28.  AIMD self-tunes from there.
+      const _AIMD_RESTORE_CAP_MS = 400;
       if (rawAimdGap) {
         const saved = parseInt(rawAimdGap, 10);
         if (!isNaN(saved) && saved > this._overrides.pdimGapFloorMs) {
           try {
             const { setPdimAdaptiveGap } = await import('../lib/pdimClient.js');
             if (typeof setPdimAdaptiveGap === 'function') {
-              setPdimAdaptiveGap(saved);
-              logger.info(`[PermanentFixer] ✅ AIMD gap restored to ${saved}ms (session continuity — AIMD will self-tune from here)`);
+              const capped = Math.min(saved, _AIMD_RESTORE_CAP_MS);
+              setPdimAdaptiveGap(capped);
+              logger.info(
+                `[PermanentFixer] ✅ AIMD gap restored to ${capped}ms` +
+                (saved > _AIMD_RESTORE_CAP_MS ? ` (capped from ${saved}ms — startup drain guard)` : '') +
+                ` (session continuity — AIMD will self-tune from here)`,
+              );
             }
           } catch { /* optional */ }
         }
