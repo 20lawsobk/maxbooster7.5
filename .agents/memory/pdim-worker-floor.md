@@ -1,24 +1,26 @@
 ---
-name: PDIM worker-count gap floor — size it empirically, not theoretically
-description: Why the AIMD floor must scale with cluster worker count, and why the per-worker BASE must be sized from observed 429 evidence — not from PDIM's documented limit.
+name: PDIM worker-count gap floor — there's a window between 429s and starvation
+description: Why the per-worker BASE must sit between two empirical failure modes, and why direct callers need a fast-fail when the chain stalls.
 ---
 
 ## The rule
-`_PDIM_GAP_FLOOR_MS = clusterWorkers × _PDIM_GAP_FLOOR_BASE_MS`, with `setPdimGapFloor()` enforcing a hard minimum of `_PDIM_GAP_FLOOR_WORKER_MIN` so no external caller (including PermanentFixer) can lower it below the worker-aware minimum.
+`_PDIM_GAP_FLOOR_MS = clusterWorkers × _PDIM_GAP_FLOOR_BASE_MS`. The BASE must be picked from the **window between two production failure modes**, not from PDIM's documented capacity. Direct calls must fast-fail (drop to fallback storage) when the chain wait exceeds a small bound — never queue unbounded.
 
 ## Why
-Each Node.js cluster worker has its own AIMD state. A floor that gives each worker rate `R` produces combined load `N × R`, where N = cluster worker count. If `N × R` exceeds PDIM's per-instance limit you get a permanent 429 sawtooth: every worker recovers back down to floor, the combined rate trips PDIM, multiplicative backoff fires, recovery resumes, repeat.
+There are two opposing failure modes and BASE must thread the needle between them:
 
-Initial fix used BASE=4ms (combined target 250 req/s) on the theory PDIM tolerated 250–500 req/s. Production logs disproved that theory. Repeated 429 waves showed the pre-multiplier gap was right at the floor (~50ms in a 13-worker deployment), proving workers were AT floor when PDIM rejected them. PDIM's real per-instance limit is **below** 250 combined req/s in this deployment.
+1. **Too low (combined rate > PDIM threshold):** every cluster worker has its own AIMD state; combined steady-state rate = `N × 1000/floor`. When that overruns PDIM's per-instance limit you get a permanent 429 sawtooth — workers recover to floor, combined load 429s them, multiplicative backoff fires, recovery resumes, repeat. Empirical: BASE=4ms (combined ~250 req/s with N=13) produced recurring 429 waves where the pre-multiplier gap was right at floor.
+2. **Too high (combined rate < arrival rate):** chain depth grows unbounded because drain can't keep up with what sessions, BullMQ cleanup, schedulers, and probes are putting in. Empirical: BASE=10ms (combined ~100 req/s with N=13) drove chain depth to 29,000+ callers within minutes; session fetches timed out; login broke. No 429s in the logs at this point — just a starved-throughput stall.
 
-Compounding factor: the script-chain split means direct and script chains run in parallel per worker. The shared `_rateLimitedUntil` only engages **after** a 429, not as a budget ceiling, so the steady-state combined rate is direct-chain rate + script-chain rate. The floor sizing must leave headroom for both.
+The working middle: BASE=6ms (combined ~167 req/s with N=13) — ~30 % below the 429 trigger, ~70 % above the starvation threshold.
 
-BASE was raised 4ms → 10ms (combined target ~100 req/s direct chain) which gives real headroom under PDIM's threshold.
+A defensive second layer is essential because the safe window narrows under load: direct user-facing callers (sessions, distributed cache, rate-limiter) must **fast-fail** when the estimated chain wait exceeds a small bound (we use 2500 ms) so their PG / in-memory fallback actually runs. Without a fast-fail, a temporary throttling spike turns into a user-visible outage even when fallbacks exist in the code.
 
 ## How to apply
-- Always size the per-worker BASE from **observed 429 evidence**, not from PDIM's documented capacity. If 429s recur with the pre-multiplier gap sitting at or near floor, raise BASE.
-- `_PDIM_GAP_FLOOR_WORKER_MIN = Math.max(BASE, clusterWorkers × BASE)` computed at module load.
-- `setPdimGapFloor(ms)` must clamp to `Math.max(_PDIM_GAP_FLOOR_WORKER_MIN, Math.min(2000, ms))` — never lower than the worker minimum.
-- `_pdimAdaptSuccess()` decay must `Math.max(_PDIM_GAP_FLOOR_MS, ...)` so floor is enforced on every ramp-down.
-- Boot log must print `floor=Xms (Nworkers×BASEms, combined≤Y req/s)` so the live budget is visible in prod logs without grepping the source.
-- When checking whether a 429 storm warrants raising BASE: look at the `gap→Xms` values in the 429 log lines. Divide by 2.5 (the AIMD multiplier) to get the pre-429 gap. If that pre-429 gap ≈ per-worker floor, the floor is too low and BASE must rise.
+- Always size BASE from **observed evidence**, not PDIM's documented capacity. There is a window, and PDIM's docs do not tell you where it is.
+- When 429s recur: divide `gap→Xms` in the 429 log lines by 2.5 (the AIMD multiplier). If the pre-429 gap ≈ per-worker floor, BASE is too low — raise it.
+- When chain depth grows unbounded with no 429s: BASE is too high — lower it.
+- `setPdimGapFloor(ms)` must clamp to `Math.max(_PDIM_GAP_FLOOR_WORKER_MIN, Math.min(2000, ms))` so no external caller (e.g. PermanentFixer) can drop the floor below the worker-aware minimum.
+- `_pdimAdaptSuccess()` decay must enforce `Math.max(_PDIM_GAP_FLOOR_MS, ...)` on every ramp-down.
+- `_MAX_DIRECT_WAIT_MS` must be a real value (not `MAX_SAFE_INTEGER`). The fast-fail path is load-bearing: it is the thing that keeps login working when the chain is degraded but fallbacks exist.
+- Boot log must print `floor=Xms (Nworkers×BASEms, combined≤Y req/s)` so the live budget is visible without grepping source.
