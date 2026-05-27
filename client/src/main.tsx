@@ -8,6 +8,7 @@ import { AuthProvider } from '@/components/auth/AuthProvider';
 import { ThemeProvider } from '@/contexts/ThemeContext';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
+import { OfflineProvider } from '@/components/offline/OfflineProvider';
 import App from './App';
 import './index.css';
 import './i18n/config';
@@ -73,34 +74,39 @@ root.render(
   <React.StrictMode>
     <ErrorBoundary>
       <ThemeProvider>
-        <PersistQueryClientProvider
-          client={queryClient}
-          persistOptions={{
-            persister,
-            maxAge: 24 * 60 * 60 * 1000,
-            buster: 'mb-v3',
-            dehydrateOptions: {
-              shouldDehydrateQuery: (query) =>
-                query.state.status === 'success' &&
-                !query.queryKey.some((k) =>
-                  typeof k === 'string' &&
-                  (k.includes('payment') ||
-                    k.includes('stripe') ||
-                    k.includes('billing') ||
-                    k.includes('contracts') ||
-                    k.includes('invoices') ||
-                    k.includes('presence') ||
-                    k.includes('heartbeat'))
-                ),
-            },
-          }}
-        >
-          <AuthProvider>
-            <TooltipProvider>
-              <App />
-            </TooltipProvider>
-          </AuthProvider>
-        </PersistQueryClientProvider>
+        {/* OfflineProvider wraps the ENTIRE platform — auth, query cache,
+            tooltips, and all of App — so every layer can read isOnline /
+            isOffline / pending-sync state via useOffline(). */}
+        <OfflineProvider showToasts={true} autoSync={true}>
+          <PersistQueryClientProvider
+            client={queryClient}
+            persistOptions={{
+              persister,
+              maxAge: 24 * 60 * 60 * 1000,
+              buster: 'mb-v3',
+              dehydrateOptions: {
+                shouldDehydrateQuery: (query) =>
+                  query.state.status === 'success' &&
+                  !query.queryKey.some((k) =>
+                    typeof k === 'string' &&
+                    (k.includes('payment') ||
+                      k.includes('stripe') ||
+                      k.includes('billing') ||
+                      k.includes('contracts') ||
+                      k.includes('invoices') ||
+                      k.includes('presence') ||
+                      k.includes('heartbeat'))
+                  ),
+              },
+            }}
+          >
+            <AuthProvider>
+              <TooltipProvider>
+                <App />
+              </TooltipProvider>
+            </AuthProvider>
+          </PersistQueryClientProvider>
+        </OfflineProvider>
       </ThemeProvider>
     </ErrorBoundary>
   </React.StrictMode>
