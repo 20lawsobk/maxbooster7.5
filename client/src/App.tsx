@@ -10,7 +10,6 @@ import TokenRefreshHandler from '@/components/auth/TokenRefreshHandler';
 import { InactivityManager } from '@/components/auth/InactivityManager';
 import { UndoProvider } from '@/contexts/UndoContext';
 import { ShortcutProvider } from '@/contexts/ShortcutContext';
-import { OfflineProvider } from '@/components/offline/OfflineProvider';
 import { useAuth } from '@/hooks/useAuth';
 import { useAutoUpdate } from '@/hooks/useAutoUpdate';
 import { useKeyboardShortcuts, announce } from '@/lib/accessibility';
@@ -421,8 +420,10 @@ function App() {
   useAutoUpdate();
 
   return (
-    <OfflineProvider showToasts={true} autoSync={true}>
-      <UndoProvider maxHistorySize={100} persistToStorage={true}>
+    /* OfflineProvider lives at the root of the tree (see main.tsx) so that
+       AuthProvider, PersistQueryClientProvider, and every layer below can
+       consume offline state via useOffline(). */
+    <UndoProvider maxHistorySize={100} persistToStorage={true}>
         <ShortcutProvider persistConfig={true}>
           <Toaster />
           {/* Security-critical — must start timers synchronously on first render */}
@@ -461,7 +462,6 @@ function App() {
           </div>
         </ShortcutProvider>
       </UndoProvider>
-    </OfflineProvider>
   );
 }
 
