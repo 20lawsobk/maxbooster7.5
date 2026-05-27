@@ -80,38 +80,33 @@ const _clusterWorkers = Math.max(1, parseInt(process.env.PDIM_CLUSTER_WORKERS ??
 const _cpuCores       = Math.max(1, os.cpus().length);
 const _autoMultiplier = _clusterWorkers * Math.max(1, Math.ceil(_cpuCores / 2));
 
-logger.info(
-  `[PDIM] Auto multiplier: ${_autoMultiplier} ` +
-  `(clusterWorkers=${_clusterWorkers} × ceil(cpuCores=${_cpuCores}/2)=` +
-  `${Math.max(1, Math.ceil(_cpuCores / 2))}) — ` +
-  `AIMD init=1ms (self-tuning, LuaExecutor-safe), ZPOPMIN gap=${Math.max(1, _autoMultiplier)}ms`,
-);
-
 // ── AIMD parameters ──────────────────────────────────────────────────────────
 //
-// "Fluid as water": stable and conservative at rest, expands freely under
-// genuine userbase demand, hard back-off when PDIM signals its limit.
+// Worker-count-aware floor (defined before the logger so the logger can print it).
 //
-//   IDLE  (queue 0–1) : step = 1 ms   — gap barely drifts; system stays quiet
-//   LIGHT (queue 2–4) : step = 8 ms   — gentle expansion for moderate activity
-//   BUSY  (queue 5–9) : step = 30 ms  — rapid expansion for real user load
-//   PEAK  (queue 10+) : step = 100 ms — instant expansion; PDIM 429s set ceiling
+// Root cause of sustained 429 floods in production:
+//   In a multi-worker deployment (e.g. PDIM_CLUSTER_WORKERS=13) each Node.js
+//   cluster worker has its own AIMD state.  A floor of 1ms means each worker
+//   eventually ramps back down to 1ms after backing off.  With 13 workers all
+//   at 1ms simultaneously the combined rate = 13,000 req/s — far above PDIM's
+//   per-instance limit (~250–500 req/s), causing relentless 429 cycling.
 //
-// FLOOR: 400 ms — applies only to direct PDIM calls (session ops, cache, locks).
-//        BullMQ Lua scripts use the _enqueueScriptExec fast-lane (10ms gap),
-//        which shares the same global serialisation chain but bypasses the AIMD
-//        gap.  Scripts are Atomics-serialized so the AIMD gap is not needed.
-//        The _autoMultiplier MUST NOT be applied to FLOOR or INIT because
-//        doing so could inflate direct-call latency without benefit.
-//        The multiplier is applied only to the ZPOPMIN secondary gap — those
-//        are single-command calls with a separate secondary chain.
+// Fix: floor = clusterWorkers × BASE_MS so that combined steady-state rate
+//   ≈ 1000/BASE req/s regardless of how many workers are running.
+//   BASE=4ms → 250 combined req/s.
+//   Dev (1 worker):  floor = 4ms  — negligible latency.
+//   Prod (13 workers): floor = 52ms each → ~250 req/s combined.
 //
-// INIT:  1 ms — PDIM rated for 120M req/s; start at minimum and let AIMD
-//        self-tune.  The demand step ramps down from ceiling on any 429.
+// CEIL: 2000ms — ceiling after sustained 429 cascade.
+// INIT: 1ms    — still start at minimum; AIMD+jitter ramp up naturally.
 //
-let   _PDIM_GAP_FLOOR_MS  = 1;      // PDIM at 120M req/s — no artificial floor needed
-const _PDIM_GAP_CEIL_MS   = 2_000;  // ceiling after sustained 429 cascade (recovers in <60 successful requests)
-const _PDIM_GAP_INIT_MS   = 1;      // start at minimum — AIMD self-tunes from here
+// Scripts (BullMQ Lua redis.call()s) use the _enqueueScriptExec fast-lane
+// (10ms gap, dedicated chain) and are NOT subject to this floor.
+const _PDIM_GAP_FLOOR_BASE_MS    = 4;
+const _PDIM_GAP_FLOOR_WORKER_MIN = Math.max(_PDIM_GAP_FLOOR_BASE_MS, _clusterWorkers * _PDIM_GAP_FLOOR_BASE_MS);
+let   _PDIM_GAP_FLOOR_MS         = _PDIM_GAP_FLOOR_WORKER_MIN;
+const _PDIM_GAP_CEIL_MS          = 2_000;
+const _PDIM_GAP_INIT_MS          = 1;      // start at minimum — AIMD self-tunes from here
 // 2.5× matches the research-backed AIMD recommendation: aggressive multiplicative
 // decrease so the ceiling is reached in ~9 consecutive 429s instead of ~60.
 // With 1.5× the gap grows: 1ms→1.5→2.25→…→2000ms (60 steps).
@@ -119,11 +114,22 @@ const _PDIM_GAP_INIT_MS   = 1;      // start at minimum — AIMD self-tunes from
 // Recovery is still smooth: additive increase on success (1-100ms step).
 const _PDIM_MULT_429      = 2.5;
 
+logger.info(
+  `[PDIM] Auto multiplier: ${_autoMultiplier} ` +
+  `(clusterWorkers=${_clusterWorkers} × ceil(cpuCores=${_cpuCores}/2)=` +
+  `${Math.max(1, Math.ceil(_cpuCores / 2))}) — ` +
+  `AIMD init=1ms, floor=${_PDIM_GAP_FLOOR_MS}ms (${_clusterWorkers}workers×${_PDIM_GAP_FLOOR_BASE_MS}ms, combined≤${Math.round(1000 / _PDIM_GAP_FLOOR_BASE_MS)} req/s), ` +
+  `ZPOPMIN gap=${Math.max(1, _autoMultiplier)}ms`,
+);
+
 /** Permanently raise the PDIM gap floor — called by PermanentFixRegistry on startup
- *  and after each escalation.  Floor can only move upward (min 1 ms, max 2 000 ms).
+ *  and after each escalation.  Floor can only move upward (min = worker-count-scaled
+ *  minimum, max 2 000 ms) so external callers can never accidentally lower the floor
+ *  below the safe per-worker minimum derived from _clusterWorkers.
  *  Applies only to direct PDIM calls; BullMQ Lua scripts use the 10ms fast-lane. */
 export function setPdimGapFloor(ms: number): void {
-  _PDIM_GAP_FLOOR_MS = Math.max(1, Math.min(2_000, Math.round(ms)));
+  // Never allow floor to drop below the worker-count-aware minimum.
+  _PDIM_GAP_FLOOR_MS = Math.max(_PDIM_GAP_FLOOR_WORKER_MIN, Math.min(2_000, Math.round(ms)));
   // If the live gap is below the new floor, snap it up immediately so the change
   // takes effect on the very next enqueued request without waiting for AIMD.
   if (_pdimGapMs < _PDIM_GAP_FLOOR_MS) _pdimGapMs = _PDIM_GAP_FLOOR_MS;
