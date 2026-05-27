@@ -638,6 +638,48 @@ export const beats = pgTable("beats", {
 }));
 
 // ============================================================================
+// BEAT MONEY LOOP — autonomous scan→generate→upload→advertise loop (admin-only)
+// ============================================================================
+export const beatMoneyLoopState = pgTable("beat_money_loop_state", {
+  id: text("id").primaryKey().default("singleton"),
+  enabled: boolean("enabled").default(false).notNull(),
+  nextRunAt: timestamp("next_run_at"),
+  lastCycleAt: timestamp("last_cycle_at"),
+  totalCycles: integer("total_cycles").default(0).notNull(),
+  successfulCycles: integer("successful_cycles").default(0).notNull(),
+  failedCycles: integer("failed_cycles").default(0).notNull(),
+  totalRevenueCents: integer("total_revenue_cents").default(0).notNull(),
+  consecutiveFailures: integer("consecutive_failures").default(0).notNull(),
+  currentCadenceMs: integer("current_cadence_ms").default(14400000).notNull(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const beatMoneyLoopCycles = pgTable("beat_money_loop_cycles", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  triggeredBy: text("triggered_by").notNull(), // 'schedule' | 'manual'
+  status: text("status").default("pending").notNull(), // pending|generating|uploading|advertising|completed|failed
+  scanContext: jsonb("scan_context"), // { genre, mood, tempo, confidence, hooks }
+  audioGenBackend: text("audio_gen_backend"), // 'ts-native' | 'maxcore' | 'audio-synth-v2'
+  beatId: varchar("beat_id"), // → beats.id (no FK so the row survives if beat is deleted)
+  beatTitle: text("beat_title"),
+  price: real("price"),
+  campaignId: varchar("campaign_id"),
+  errorMessage: text("error_message"),
+  plays: integer("plays").default(0).notNull(),
+  downloads: integer("downloads").default(0).notNull(),
+  revenueCents: integer("revenue_cents").default(0).notNull(),
+  durationMs: integer("duration_ms"),
+  startedAt: timestamp("started_at").defaultNow().notNull(),
+  completedAt: timestamp("completed_at"),
+}, (t) => ({
+  statusStartedAtIdx: index("bml_cycles_status_started_at_idx").on(t.status, t.startedAt),
+  startedAtIdx: index("bml_cycles_started_at_idx").on(t.startedAt),
+}));
+
+export type BeatMoneyLoopState = typeof beatMoneyLoopState.$inferSelect;
+export type BeatMoneyLoopCycle = typeof beatMoneyLoopCycles.$inferSelect;
+
+// ============================================================================
 // HYPERFOLLOW PAGES
 // ============================================================================
 export const hyperFollowPages = pgTable("hyperfollow_pages", {

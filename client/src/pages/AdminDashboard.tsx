@@ -344,9 +344,12 @@ export default function AdminDashboard() {
 
           {/* Main Content Tabs */}
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-            <TabsList className="grid w-full grid-cols-9">
+            <TabsList className="grid w-full grid-cols-10">
               <TabsTrigger value="overview" data-testid="tab-overview">
                 Overview
+              </TabsTrigger>
+              <TabsTrigger value="money-loop" data-testid="tab-money-loop">
+                Beat Loop
               </TabsTrigger>
               <TabsTrigger value="audit" data-testid="tab-audit">
                 Audit
@@ -1195,6 +1198,11 @@ export default function AdminDashboard() {
             <TabsContent value="logs" className="space-y-6">
               <LogViewerTab />
             </TabsContent>
+
+            {/* Beat Money Loop Tab */}
+            <TabsContent value="money-loop" className="space-y-6">
+              <BeatMoneyLoopTab />
+            </TabsContent>
           </Tabs>
         </div>
     </AppLayout>
@@ -1539,6 +1547,234 @@ function LogViewerTab() {
           </CardContent>
         </Card>
       )}
+    </div>
+  );
+}
+
+// ============================================================================
+// Beat Money Loop Tab — admin-only autonomous revenue loop
+// ============================================================================
+function BeatMoneyLoopTab() {
+  const { toast } = useToast();
+  const queryKey = ['/api/admin/beat-money-loop/status'];
+
+  const { data: status, isLoading, refetch } = useQuery<{
+    enabled: boolean;
+    nextRunAt: string | null;
+    lastCycleAt: string | null;
+    totalCycles: number;
+    successfulCycles: number;
+    failedCycles: number;
+    consecutiveFailures: number;
+    totalRevenueCents: number;
+    currentCadenceMs: number;
+    msUntilNextRun: number | null;
+    recentCycles: Array<{
+      id: string;
+      status: string;
+      triggeredBy: string;
+      beatTitle: string | null;
+      beatId: string | null;
+      price: number | null;
+      campaignId: string | null;
+      scanContext: any;
+      errorMessage: string | null;
+      plays: number;
+      downloads: number;
+      revenueCents: number;
+      durationMs: number | null;
+      startedAt: string;
+      completedAt: string | null;
+    }>;
+  }>({
+    queryKey,
+    refetchInterval: 15000,
+  });
+
+  const callAction = async (action: 'enable' | 'disable' | 'run-now') => {
+    const csrf = getCsrfTokenFromCookie();
+    const res = await fetch(`/api/admin/beat-money-loop/${action}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...(csrf ? { 'x-csrf-token': csrf } : {}) },
+      credentials: 'include',
+    });
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      throw new Error(body.error || `Action ${action} failed (${res.status})`);
+    }
+    return res.json();
+  };
+
+  const enableMut = useMutation({
+    mutationFn: () => callAction('enable'),
+    onSuccess: () => { toast({ title: 'Beat Money Loop enabled' }); refetch(); },
+    onError: (e: Error) => toast({ title: 'Enable failed', description: e.message, variant: 'destructive' }),
+  });
+  const disableMut = useMutation({
+    mutationFn: () => callAction('disable'),
+    onSuccess: () => { toast({ title: 'Beat Money Loop disabled' }); refetch(); },
+    onError: (e: Error) => toast({ title: 'Disable failed', description: e.message, variant: 'destructive' }),
+  });
+  const runNowMut = useMutation({
+    mutationFn: () => callAction('run-now'),
+    onSuccess: (data: any) => {
+      const r = data?.result;
+      toast({
+        title: r?.status === 'completed' ? 'Cycle completed' : 'Cycle finished',
+        description: r?.beatId
+          ? `Beat ${r.beatId.slice(0, 8)} listed${r.campaignId ? `, campaign ${r.campaignId.slice(0, 8)}` : ''} in ${r.durationMs}ms`
+          : (r?.error || 'See cycles table for details'),
+        variant: r?.status === 'failed' ? 'destructive' : 'default',
+      });
+      refetch();
+    },
+    onError: (e: Error) => toast({ title: 'Manual cycle failed', description: e.message, variant: 'destructive' }),
+  });
+
+  if (isLoading || !status) {
+    return <Skeleton className="h-64 w-full" />;
+  }
+
+  const fmtTime = (iso: string | null) => iso ? new Date(iso).toLocaleString() : '—';
+  const fmtIn = (ms: number | null) => {
+    if (ms == null) return '—';
+    if (ms <= 0) return 'now';
+    const mins = Math.round(ms / 60000);
+    if (mins < 60) return `${mins} min`;
+    const hrs = Math.round(mins / 60);
+    return `${hrs} h`;
+  };
+
+  return (
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center justify-between">
+            <span className="flex items-center gap-2">
+              <Activity className="h-5 w-5" />
+              Beat Money Loop
+              <Badge variant={status.enabled ? 'default' : 'secondary'} data-testid="badge-bml-status">
+                {status.enabled ? 'RUNNING' : 'PAUSED'}
+              </Badge>
+            </span>
+            <div className="flex gap-2">
+              {status.enabled ? (
+                <Button
+                  variant="outline"
+                  onClick={() => disableMut.mutate()}
+                  disabled={disableMut.isPending}
+                  data-testid="btn-bml-disable"
+                >
+                  Pause
+                </Button>
+              ) : (
+                <Button
+                  onClick={() => enableMut.mutate()}
+                  disabled={enableMut.isPending}
+                  data-testid="btn-bml-enable"
+                >
+                  Enable
+                </Button>
+              )}
+              <Button
+                variant="secondary"
+                onClick={() => runNowMut.mutate()}
+                disabled={runNowMut.isPending}
+                data-testid="btn-bml-run-now"
+              >
+                {runNowMut.isPending ? 'Running…' : 'Run cycle now'}
+              </Button>
+            </div>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Alert className="mb-4">
+            <AlertDescription>
+              Autonomous: scan trending music context → generate beat → list on marketplace
+              at competitive price → trigger organic ad campaign (MaxCore/PDIM, no paid spend) →
+              analyse → repeat. Cadence adapts to industry confidence. Admin-only.
+            </AlertDescription>
+          </Alert>
+
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div>
+              <div className="text-xs text-gray-500">Cycles (total)</div>
+              <div className="text-2xl font-semibold" data-testid="stat-bml-total">{status.totalCycles}</div>
+              <div className="text-xs text-gray-500">
+                {status.successfulCycles} ok · {status.failedCycles} failed
+              </div>
+            </div>
+            <div>
+              <div className="text-xs text-gray-500">Revenue</div>
+              <div className="text-2xl font-semibold" data-testid="stat-bml-revenue">
+                ${(status.totalRevenueCents / 100).toFixed(2)}
+              </div>
+            </div>
+            <div>
+              <div className="text-xs text-gray-500">Current cadence</div>
+              <div className="text-2xl font-semibold">{Math.round(status.currentCadenceMs / 60000)} min</div>
+              {status.consecutiveFailures > 0 && (
+                <div className="text-xs text-red-500">backoff: {status.consecutiveFailures} fails</div>
+              )}
+            </div>
+            <div>
+              <div className="text-xs text-gray-500">Next cycle</div>
+              <div className="text-2xl font-semibold" data-testid="stat-bml-next">{fmtIn(status.msUntilNextRun)}</div>
+              <div className="text-xs text-gray-500">{fmtTime(status.nextRunAt)}</div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Recent cycles</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {status.recentCycles.length === 0 ? (
+            <p className="text-sm text-gray-500">No cycles yet. Enable the loop or click "Run cycle now" to start.</p>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Started</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Trigger</TableHead>
+                  <TableHead>Beat</TableHead>
+                  <TableHead>Price</TableHead>
+                  <TableHead>Plays / DLs</TableHead>
+                  <TableHead>Revenue</TableHead>
+                  <TableHead>Duration</TableHead>
+                  <TableHead>Error</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {status.recentCycles.map((c) => (
+                  <TableRow key={c.id} data-testid={`row-bml-cycle-${c.id}`}>
+                    <TableCell className="text-xs">{new Date(c.startedAt).toLocaleString()}</TableCell>
+                    <TableCell>
+                      <Badge variant={
+                        c.status === 'completed' ? 'default'
+                          : c.status === 'failed' ? 'destructive'
+                          : 'secondary'
+                      }>
+                        {c.status}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-xs">{c.triggeredBy}</TableCell>
+                    <TableCell className="text-xs max-w-xs truncate">{c.beatTitle || '—'}</TableCell>
+                    <TableCell>{c.price != null ? `$${c.price.toFixed(2)}` : '—'}</TableCell>
+                    <TableCell className="text-xs">{c.plays} / {c.downloads}</TableCell>
+                    <TableCell>${(c.revenueCents / 100).toFixed(2)}</TableCell>
+                    <TableCell className="text-xs">{c.durationMs != null ? `${Math.round(c.durationMs / 1000)}s` : '—'}</TableCell>
+                    <TableCell className="text-xs text-red-500 max-w-xs truncate">{c.errorMessage || ''}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }

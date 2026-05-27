@@ -4900,6 +4900,7 @@ export async function registerRoutes(
     { path: "/api/executive", name: "executiveDashboard", loader: () => import("./routes/executiveDashboard") },
     { path: "/api/admin", name: "admin", loader: () => import("./routes/admin/index") },
     { path: "/api/admin/metrics", name: "adminMetrics", loader: () => import("./routes/admin/metrics") },
+    { path: "/api/admin/beat-money-loop", name: "adminBeatMoneyLoop", loader: () => import("./routes/admin/beatMoneyLoop") },
     { path: "/api/audit", name: "audit", loader: () => import("./routes/audit") },
     { path: "/api/testing", name: "testing", loader: () => import("./routes/testing") },
     { path: "/api/admin/webhooks", name: "webhooksAdmin", loader: () => import("./routes/webhooks-admin") },
