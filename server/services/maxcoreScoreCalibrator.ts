@@ -114,13 +114,18 @@ export async function runCalibration(): Promise<void> {
     }
 
     // Always call MaxCore. POST /api/generate/content does not require local data.
-    const calibration = await fetchMaxCoreCalibration(summary);
+    const { calibration, reachable } = await fetchMaxCoreCalibration(summary);
     if (calibration) {
       applyCalibration(calibration, summary ?? EMPTY_SUMMARY);
     } else if (summary) {
       applyDataDrivenCalibration(summary);
-    } else {
+    } else if (!reachable) {
       logger.info('[ScoreCalibrator] MaxCore unreachable and no local data — retaining defaults');
+    } else {
+      // MaxCore IS reachable but provided no calibration data yet (models not
+      // trained, no live content signals). This is normal during early-life
+      // operation — defaults are correct, no error condition.
+      logger.info('[ScoreCalibrator] MaxCore reachable but no calibration data yet — retaining defaults');
     }
 
     _lastCalibrated = Date.now();
@@ -353,7 +358,7 @@ async function fetchModelStates(): Promise<Array<{ domain: string; state: MaxCor
  */
 async function fetchMaxCoreCalibration(
   summary: PerformanceSummary | null
-): Promise<MaxCoreCalibrationResponse | null> {
+): Promise<{ calibration: MaxCoreCalibrationResponse | null; reachable: boolean }> {
   try {
     // Fire model-state fetches AND content-signal fetches simultaneously
     const [stateResults, contentSignals] = await Promise.all([
@@ -361,9 +366,16 @@ async function fetchMaxCoreCalibration(
       fetchMaxCoreContentSignals(),
     ]);
 
+    // "Reachable" = any MaxCore endpoint produced a parsed response.  Even an
+    // empty/initialised model state proves the network round-trip succeeded.
+    // We distinguish reachable-but-no-data from genuine network failure so the
+    // caller can log accurately instead of falsely claiming "unreachable".
+    const anyStateResponded = stateResults.some(({ state }) => state != null);
+    const reachable = anyStateResponded || contentSignals != null;
+
     const ready = stateResults.filter(({ state }) => state?.weights?.ready === true);
 
-    if (ready.length === 0 && !contentSignals) return null;
+    if (ready.length === 0 && !contentSignals) return { calibration: null, reachable };
 
     if (ready.length > 0) {
       logger.info(
@@ -422,18 +434,23 @@ async function fetchMaxCoreCalibration(
       }
     }
 
-    if (Object.keys(mergedWeights).length === 0) return null;
+    if (Object.keys(mergedWeights).length === 0) return { calibration: null, reachable };
 
     return {
-      weights:    mergedWeights,
-      gate,
-      floor,
-      confidence: contentSignals ? 0.5 + coverageRatio * 0.5 : coverageRatio,
+      calibration: {
+        weights:    mergedWeights,
+        gate,
+        floor,
+        confidence: contentSignals ? 0.5 + coverageRatio * 0.5 : coverageRatio,
+      },
+      reachable,
     };
   } catch (err) {
+    // Thrown error from Promise.all (network failure, DNS error, etc.) — this
+    // is the ONLY case where MaxCore is genuinely unreachable.
     logger.info(`[ScoreCalibrator] MaxCore calibration fetch failed: ${err.message}`);
+    return { calibration: null, reachable: false };
   }
-  return null;
 }
 
 
