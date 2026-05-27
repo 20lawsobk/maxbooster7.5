@@ -156,6 +156,18 @@ async function processAutonomousJob(job: Job): Promise<void> {
     case 'prune-upload-dirs':
       await pruneUploadDirs(7);
       break;
+    case 'beat-money-loop-tick': {
+      const { beatMoneyLoopService } = await import('./beatMoneyLoopService.js');
+      const result = await beatMoneyLoopService.tick();
+      if (result.ran) {
+        logger.info(`[AutonomousScheduler] beat-money-loop-tick fired cycle ${result.cycleId} (${result.reason})`);
+      }
+      // Always opportunistically refresh analytics so dashboards stay current
+      await beatMoneyLoopService.analyseRecentCycles().catch(err =>
+        logger.warn({ err }, '[AutonomousScheduler] beat-money-loop analyseRecentCycles failed'),
+      );
+      break;
+    }
     default:
       if (job.name.startsWith('campaign-optimize-')) {
         const campaignId = job.data?.campaignId as string | undefined;
@@ -263,6 +275,7 @@ const REPEATABLE_JOBS = [
   { name: 'prune-audit-log',     every: 86_400_000 },
   { name: 'prune-notifications', every: 86_400_000 },
   { name: 'prune-upload-dirs',   every: 86_400_000 },
+  { name: 'beat-money-loop-tick', every: 1_800_000 }, // 30 min heartbeat; cycle fires only when due
 ] as const;
 
 const SCHED_DEFAULTS = {
