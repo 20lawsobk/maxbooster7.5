@@ -93,16 +93,29 @@ const _autoMultiplier = _clusterWorkers * Math.max(1, Math.ceil(_cpuCores / 2));
 //
 // Fix: floor = clusterWorkers × BASE_MS so that combined steady-state rate
 //   ≈ 1000/BASE req/s regardless of how many workers are running.
-//   BASE=4ms → 250 combined req/s.
-//   Dev (1 worker):  floor = 4ms  — negligible latency.
-//   Prod (13 workers): floor = 52ms each → ~250 req/s combined.
+//
+// BASE was 4ms (combined 250 req/s) but production 429 storms continued: prod
+// logs showed waves of `gap→102-148ms` and `gap→102-319ms` 429s where the
+// pre-multiplier gap was ~50ms — i.e. workers were sitting AT the 52ms floor
+// when PDIM rejected them.  Empirical evidence: PDIM's real per-instance
+// limit is BELOW the 250 req/s the 4ms base produced, ESPECIALLY now that the
+// script-chain split makes direct and script chains run concurrently per
+// worker (shared 429 throttle via _rateLimitedUntil only engages AFTER a 429,
+// not as a budget ceiling).
+//
+// BASE=10ms → ~100 combined req/s for the direct chain, which leaves real
+// headroom under PDIM's threshold and stops the steady-state 429 sawtooth.
+//   Dev (1 worker):     floor = 10ms — still negligible latency.
+//   Prod (13 workers):  floor = 130ms each → ~100 req/s combined direct.
 //
 // CEIL: 2000ms — ceiling after sustained 429 cascade.
 // INIT: 1ms    — still start at minimum; AIMD+jitter ramp up naturally.
 //
 // Scripts (BullMQ Lua redis.call()s) use the _enqueueScriptExec fast-lane
-// (10ms gap, dedicated chain) and are NOT subject to this floor.
-const _PDIM_GAP_FLOOR_BASE_MS    = 4;
+// (10ms gap, dedicated chain) and are NOT subject to this floor.  Their
+// throughput is bounded indirectly: any 429 they receive raises
+// _rateLimitedUntil which BOTH chains honour on the next call.
+const _PDIM_GAP_FLOOR_BASE_MS    = 10;
 const _PDIM_GAP_FLOOR_WORKER_MIN = Math.max(_PDIM_GAP_FLOOR_BASE_MS, _clusterWorkers * _PDIM_GAP_FLOOR_BASE_MS);
 let   _PDIM_GAP_FLOOR_MS         = _PDIM_GAP_FLOOR_WORKER_MIN;
 const _PDIM_GAP_CEIL_MS          = 2_000;
