@@ -244,8 +244,50 @@ function _pdimAdaptSuccess(): void {
 function _pdimAdapt429(): number {
   const jitter = 0.75 + Math.random() * 0.5; // uniform [0.75, 1.25]
   _pdimGapMs = Math.min(_PDIM_GAP_CEIL_MS, _pdimGapMs * _PDIM_MULT_429 * jitter);
+  _last429At = Date.now();
   return _pdimGapMs;
 }
+
+/** Wall-clock timestamp of the most recent 429.  Unlike
+ *  PdimRedisClient._rateLimitedUntil (a deadline that gets cleared to 0 on the
+ *  next success), this is monotonic and only ever advances on a fresh 429 —
+ *  so the passive decay timer can use it as an exact "no 429 in last N ms"
+ *  signal.  0 means no 429 has ever been observed in this process. */
+let _last429At = 0;
+
+/** Passive geometric decay — runs on a timer, independent of traffic.
+ *
+ *  Without this, a single 429 burst can pin _pdimGapMs near _PDIM_GAP_CEIL_MS
+ *  (2000ms) for many minutes.  Production evidence: a startup-burst 429 at
+ *  17:05:39 pushed gap to ~2000ms on multiple workers; 3+ minutes later
+ *  workers were still at gap≈1700ms.  Why so slow?
+ *
+ *  - _pdimAdaptSuccess() step depends on _pdimQueueDepth.  At depth < 2 it
+ *    decays only 1ms per successful call.
+ *  - When the fast-fail path is active (chain wait > 2500ms), most callers
+ *    fall back to PG/in-memory and never enter the chain — so they produce
+ *    no success events to drive decay.  Vicious cycle: high gap → fast-fail
+ *    → no successes → gap stays high.
+ *
+ *  Fix: a 2s timer that geometrically pulls gap toward floor when the
+ *  system is unambiguously idle (queue near-empty AND no 429 in last 5s).
+ *  Under sustained load the queue stays deep and this never fires, so the
+ *  no-sawtooth invariant of the additive under-load decay (see comment on
+ *  _pdimAdaptSuccess) is preserved.  Under transient 429 spike followed by
+ *  quiet, gap recovers from 2000ms to floor in ~25s (geometric 0.8/step). */
+const _PASSIVE_DECAY_INTERVAL_MS = 2_000;
+const _PASSIVE_DECAY_FACTOR      = 0.8;
+const _PASSIVE_DECAY_IDLE_QUIET_MS = 5_000;
+setInterval(() => {
+  if (_pdimGapMs <= _PDIM_GAP_FLOOR_MS) return;
+  const totalDepth = _directQueueDepth + _scriptQueueDepth;
+  if (totalDepth >= 2) return; // load present — defer to additive decay
+  // Use _last429At (monotonic, only updated on actual 429) rather than
+  // _rateLimitedUntil (a deadline that gets cleared to 0 on next success).
+  // The latter would let a single success unmask a still-active cascade.
+  if (_last429At > 0 && (Date.now() - _last429At) < _PASSIVE_DECAY_IDLE_QUIET_MS) return;
+  _pdimGapMs = Math.max(_PDIM_GAP_FLOOR_MS, Math.floor(_pdimGapMs * _PASSIVE_DECAY_FACTOR));
+}, _PASSIVE_DECAY_INTERVAL_MS).unref();
 
 /** Expose live state for diagnostics (ChainFixer, health endpoints). */
 export function getPdimAdaptiveGapMs():  number { return _pdimGapMs; }
