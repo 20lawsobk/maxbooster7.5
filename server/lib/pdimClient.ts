@@ -103,10 +103,16 @@ const _autoMultiplier = _clusterWorkers * Math.max(1, Math.ceil(_cpuCores / 2));
 // worker (shared 429 throttle via _rateLimitedUntil only engages AFTER a 429,
 // not as a budget ceiling).
 //
-// BASE=10ms → ~100 combined req/s for the direct chain, which leaves real
-// headroom under PDIM's threshold and stops the steady-state 429 sawtooth.
-//   Dev (1 worker):     floor = 10ms — still negligible latency.
-//   Prod (13 workers):  floor = 130ms each → ~100 req/s combined direct.
+// BASE=10ms (combined ~100 req/s) overcorrected: prod chain depth grew to
+// 29,000+ callers because steady-state arrival rate exceeded the throttled
+// drain rate, sessions timed out, login broke.  BASE=4ms (combined ~250) had
+// the opposite problem — burst 429s — but kept up with steady-state.
+//
+// Middle ground: BASE=6ms → ~167 combined req/s for the direct chain.
+//   Dev (1 worker):     floor = 6ms  — negligible latency.
+//   Prod (13 workers):  floor = 78ms each → ~167 req/s combined direct.
+//   Margin: ~30% below the empirical 429 trigger, ~70% above the starved-drain
+//   threshold where chain depth grew unbounded.
 //
 // CEIL: 2000ms — ceiling after sustained 429 cascade.
 // INIT: 1ms    — still start at minimum; AIMD+jitter ramp up naturally.
@@ -115,7 +121,7 @@ const _autoMultiplier = _clusterWorkers * Math.max(1, Math.ceil(_cpuCores / 2));
 // (10ms gap, dedicated chain) and are NOT subject to this floor.  Their
 // throughput is bounded indirectly: any 429 they receive raises
 // _rateLimitedUntil which BOTH chains honour on the next call.
-const _PDIM_GAP_FLOOR_BASE_MS    = 10;
+const _PDIM_GAP_FLOOR_BASE_MS    = 6;
 const _PDIM_GAP_FLOOR_WORKER_MIN = Math.max(_PDIM_GAP_FLOOR_BASE_MS, _clusterWorkers * _PDIM_GAP_FLOOR_BASE_MS);
 let   _PDIM_GAP_FLOOR_MS         = _PDIM_GAP_FLOOR_WORKER_MIN;
 const _PDIM_GAP_CEIL_MS          = 2_000;
@@ -182,10 +188,22 @@ let _directQueueDepth = 0;  // non-script callers currently in the chain
 let _scriptQueueDepth = 0;  // LuaExecutor redis.call() callers in the chain
 
 // Maximum estimated queue wait before a direct (user-facing) call is fast-failed.
-// PDIM is rated for 120M req/s — no artificial fast-fail gate needed.
-// The AIMD gap self-tunes from 1ms floor; only a sustained 429 cascade raises it.
-// Set to MAX_SAFE_INTEGER so the fast-fail path is permanently disabled.
-const _MAX_DIRECT_WAIT_MS = Number.MAX_SAFE_INTEGER;
+//
+// Previously set to MAX_SAFE_INTEGER (fast-fail disabled) on the theory that
+// the chain never stalls.  Production proved otherwise: when PDIM throughput
+// gets throttled (raised gap floor, sustained 429 backoff, or PDIM-side
+// slowdown) the chain depth can grow to 29,000+ callers in minutes.  Session
+// fetches that get stuck in that queue time out and login breaks — even though
+// the PG fallback path would have returned in <50ms had it been allowed to run.
+//
+// 2500ms picked so that:
+//   • Session fetches fast-fail to PG well before the 5s session probe timeout
+//     and well before any user-facing request times out.
+//   • Normal-load wait stays comfortably below: at floor=78ms (prod), even a
+//     ~30-deep chain (typical busy moment) waits 2340ms — still allowed.
+//   • Pathological backups (thousands queued) fail fast so callers with
+//     fallbacks (PG-backed session store, in-memory cache) actually USE them.
+const _MAX_DIRECT_WAIT_MS = 2_500;
 
 // Log fast-fail events at most once every 5s to avoid flooding the log.
 let _fastFailLoggedAt = 0;

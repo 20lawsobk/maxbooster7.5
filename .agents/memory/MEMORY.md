@@ -1,4 +1,4 @@
 - [PDIM script-chain split](pdim-script-chain.md) — scripts must use a dedicated chain or Workers time out behind the direct-call queue
 - [PDIM startup gap cap](pdim-startup-gap-cap.md) — PermanentFixer restored gap must be capped at 400ms or the startup queue takes 28 min to drain
-- [PDIM worker-count floor](pdim-worker-floor.md) — floor scales with cluster worker count; per-worker BASE must be sized from observed 429 evidence, not PDIM's documented limit
+- [PDIM worker-count floor](pdim-worker-floor.md) — BASE sits in a window between 429 sawtooth (too low) and chain-starvation stall (too high); direct callers must fast-fail to fallback storage when chain wait exceeds a small bound
 - [MaxCore reachability distinction](maxcore-reachability-distinction.md) — fetchers must return `{value, reachable}` so callers don't log "unreachable" when MaxCore is up but has no data yet
