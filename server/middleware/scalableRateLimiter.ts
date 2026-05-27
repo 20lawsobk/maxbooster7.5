@@ -117,7 +117,7 @@ const skipRateLimiting = (req: Request): boolean => {
  *                            the same key
  *   lastVerdictLimited     – true when the most recent sync returned
  *                            limited=true.  Until the next sync supersedes
- *                            it (after COALESCE_MAX_AGE_MS), callers see
+ *                            it (after coalesceMaxAgeMs), callers see
  *                            limited=true without re-consulting PDIM —
  *                            stops rate-limit storms from re-flooding PDIM
  *                            at exactly the worst time
@@ -133,9 +133,13 @@ interface CoalesceState {
 /** Max requests coalesced into one PDIM call.  Bounds ZSET ZADD-per-call
  *  cost in Redis and bounds per-worker overshoot at the limit boundary. */
 const COALESCE_MAX_BATCH = 10;
-/** Force a PDIM resync at least this often even when local count is small.
- *  Keeps `lastRemainingFromPdim` fresh after the 60s window resets. */
-const COALESCE_MAX_AGE_MS = 1_000;
+/** Upper bound on how stale a PDIM sync may be before we force a resync,
+ *  AND on how long the sticky limited-verdict cache may outlive its sync.
+ *  Per-instance value (`this.coalesceMaxAgeMs`) clamps this further to
+ *  `windowMs / 2` so the cache can never outlive the rate-limit window —
+ *  otherwise short-window limiters (≤1s, common in tests) would return
+ *  stale verdicts after the window has rolled over. */
+const COALESCE_MAX_AGE_MS_CEIL = 1_000;
 /** When (lastRemainingFromPdim - pendingLocal) drops to this, sync to PDIM
  *  on the next request so the boundary decision is cluster-accurate. */
 const COALESCE_SAFETY_BUFFER = 5;
@@ -148,10 +152,29 @@ export class DistributedRateLimiter {
   private coalesce: Map<string, CoalesceState> = new Map();
   /** Last time we pruned stale coalesce entries (probabilistic GC). */
   private lastPruneAt = 0;
+  /** Per-instance max sync staleness.  Capped at windowMs/2 so the sticky
+   *  verdict cache and `stale`-check never outlive the rate-limit window —
+   *  without this cap, a 500ms window with a 1s cache would keep serving a
+   *  limited verdict an entire window after it should have rolled over. */
+  private readonly coalesceMaxAgeMs: number;
 
   constructor(config: RateLimiterConfig, redisClient: SlidingWindowRedis) {
+    if (!Number.isFinite(config.windowMs) || config.windowMs <= 0) {
+      throw new Error(
+        `DistributedRateLimiter: windowMs must be > 0 (got ${config.windowMs})`,
+      );
+    }
+    if (!Number.isFinite(config.maxRequests) || config.maxRequests <= 0) {
+      throw new Error(
+        `DistributedRateLimiter: maxRequests must be > 0 (got ${config.maxRequests})`,
+      );
+    }
     this.config = config;
     this.redisClient = redisClient;
+    this.coalesceMaxAgeMs = Math.max(
+      50,
+      Math.min(COALESCE_MAX_AGE_MS_CEIL, Math.floor(config.windowMs / 2)),
+    );
   }
 
   /**
@@ -229,13 +252,13 @@ export class DistributedRateLimiter {
     }
 
     // Sticky rate-limit verdict.  When PDIM most recently said limited=true,
-    // every caller short-circuits to limited=true until COALESCE_MAX_AGE_MS
+    // every caller short-circuits to limited=true until coalesceMaxAgeMs
     // elapses (after which we force a fresh sync — the window may have rolled
     // over).  Without this, every rejected request during a rate-limit storm
     // would issue its own PDIM call — the exact opposite of what coalescing
     // should achieve.
     const nowMs = Date.now();
-    if (state.lastVerdictLimited && nowMs - state.lastSyncAt < COALESCE_MAX_AGE_MS) {
+    if (state.lastVerdictLimited && nowMs - state.lastSyncAt < this.coalesceMaxAgeMs) {
       return { limited: true, remaining: 0 };
     }
 
@@ -244,7 +267,7 @@ export class DistributedRateLimiter {
 
     const hypothetical = (state.lastRemainingFromPdim ?? Number.POSITIVE_INFINITY) - state.pendingLocal;
     const noPdimDataYet = state.lastRemainingFromPdim === undefined;
-    const stale         = nowMs - state.lastSyncAt >= COALESCE_MAX_AGE_MS;
+    const stale         = nowMs - state.lastSyncAt >= this.coalesceMaxAgeMs;
     const overBatch     = state.pendingLocal >= COALESCE_MAX_BATCH;
     const nearBoundary  = hypothetical <= COALESCE_SAFETY_BUFFER;
 
