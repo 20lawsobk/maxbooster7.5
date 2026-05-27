@@ -146,6 +146,13 @@ const _PDIM_JITTER_INIT_MS = 1_500; // spread initial gaps over 1.5 s window
 let _pdimGapMs      = _PDIM_GAP_INIT_MS + Math.floor(Math.random() * _PDIM_JITTER_INIT_MS);
 let _pdimQueueDepth = 0;    // callers waiting in the chain (not yet executing)
 let _pdimGlobalChain: Promise<unknown> = Promise.resolve();
+// Dedicated chain for LuaExecutor script redis.call()s — kept separate from the
+// AIMD direct-call chain so that script Workers are NEVER blocked behind hundreds
+// of direct callers waiting on the 2000ms AIMD gap.  429 protection is still
+// enforced because _rateLimitedUntil is checked inside every exec() invocation
+// (inside fn()) before the HTTP request is sent.  Both chains can fire one request
+// concurrently, which is fine — PDIM handles concurrent connections.
+let _pdimScriptChain: Promise<unknown> = Promise.resolve();
 
 // ── Per-category queue depth tracking ────────────────────────────────────────
 // Direct calls (sessions, cache, rate-limiting) and script fast-lane calls
@@ -267,21 +274,23 @@ function _enqueueExec(fn: () => Promise<unknown>): Promise<unknown> {
 // Worker thread — each call blocks the Worker until the main thread signals,
 // guaranteeing that no two redis.call()s from the same script can overlap.
 //
-// Using the full AIMD gap (1100ms after escalations) for every redis.call()
-// inside a BullMQ script means:
-//   35 calls × 1100ms gap = 38.5s dead-wait time, before adding PDIM RTT.
+// Using the full AIMD gap (2000ms ceiling) for every redis.call() inside a
+// BullMQ script means:
+//   35 calls × 2000ms gap = 70s dead-wait — Workers time out at 60s.
 //
-// The fast-lane uses a minimal 10ms gap (just enough to let the event loop
-// breathe between calls) while sharing the same global serialisation chain.
-// Sharing the chain guarantees:
-//   • No script redis.call() interleaves with a direct PDIM call
-//   • No parallel PDIM requests are ever fired
-//   • AIMD 429-backoff on the main chain is respected (script calls still
-//     queue behind the inflated main gap if a 429 was just received)
+// Root cause of "redis.call timed out after 60s — PDIM chain congested":
+//   At startup, 780+ direct callers are queued in _pdimGlobalChain with the
+//   PermanentFixer-restored 2000ms gap.  If scripts share that chain they must
+//   wait behind all 780 callers: 780 × (200ms RTT + 2000ms) ≈ 28 minutes.
+//   Workers time out at 60s, long before their turn arrives.
 //
-// Result: 35 calls × (PDIM RTT ≈ 200ms + 10ms gap) = ~7.35s per script.
-//         Previously 50ms gap: 35 × (200ms + 50ms) = ~8.75s — 19% slower.
-//         Original AIMD gap:   35 × (200ms + 1100ms) = ~45.5s — scripts timed out.
+// Fix: scripts use a DEDICATED _pdimScriptChain that runs independently of the
+//   direct-call chain.  Workers never queue behind session-store or cache calls.
+//   429 protection is preserved because _rateLimitedUntil is checked inside
+//   every exec() call (inside fn()) before the HTTP request is dispatched.
+//   Both chains can fire one request concurrently — PDIM handles that fine.
+//
+// Throughput: 35 calls × (PDIM RTT ≈ 200ms + 10ms gap) = ~7.35s per script.
 const _SCRIPT_CALL_GAP_MS = 10;
 
 function _enqueueScriptExec(fn: () => Promise<unknown>): Promise<unknown> {
@@ -291,7 +300,7 @@ function _enqueueScriptExec(fn: () => Promise<unknown>): Promise<unknown> {
   //     each, not AIMD gap) so it does not over-estimate the wait time
   _scriptQueueDepth++;
   _pdimQueueDepth++;
-  const next = _pdimGlobalChain.then(async () => {
+  const next = _pdimScriptChain.then(async () => {
     _scriptQueueDepth = Math.max(0, _scriptQueueDepth - 1);
     _pdimQueueDepth   = Math.max(0, _pdimQueueDepth - 1);
     const result = await fn();
@@ -305,7 +314,7 @@ function _enqueueScriptExec(fn: () => Promise<unknown>): Promise<unknown> {
     await new Promise(r => setTimeout(r, _SCRIPT_CALL_GAP_MS));
     throw err;
   });
-  _pdimGlobalChain = next.catch(() => {});
+  _pdimScriptChain = next.catch(() => {});
   return next;
 }
 
