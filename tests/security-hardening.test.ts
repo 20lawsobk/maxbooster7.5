@@ -280,8 +280,13 @@ describe('Sliding-Window — Algorithm Unit Tests (mock Redis, fallback path)', 
       }
       expect(passed).toBe(0); // sliding window: 0 pass (not 2×LIMIT as fixed-window would allow)
 
-      // Phase 3 — advance 1ms past boundary: windowStart = T_BASE+1 > T_BASE → entries expire → allowed.
-      vi.setSystemTime(T_BASE + WINDOW_MS + 1);
+      // Phase 3 — advance past the boundary AND past the limiter's sticky
+      // limited-verdict cache (coalesceMaxAgeMs = min(1000, windowMs/2) = 500ms
+      // for a 1000ms window). The sticky cache deliberately short-circuits to
+      // limited=true within that window to relieve PDIM during rate-limit
+      // storms; once it expires, a fresh ZCOUNT(windowStart, '+inf') with
+      // windowStart > T_BASE finds 0 entries and allows the request.
+      vi.setSystemTime(T_BASE + WINDOW_MS + 501);
       expect((await limiter.isRateLimited(key)).limited).toBe(false);
     } finally {
       vi.useRealTimers();
