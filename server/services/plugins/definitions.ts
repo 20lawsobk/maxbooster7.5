@@ -40,6 +40,18 @@ export interface PluginDefinition {
   defaultPreset: Record<string, number | boolean | string>;
   oscillators?: OscillatorConfig[];
   envelope?: EnvelopeConfig;
+  /** Genre-specific preset banks keyed by genre id. Populated by the
+   *  enrichment layer (`server/services/plugins/enrichCatalog.ts`).
+   *  Each entry is a full parameter override the user can recall. */
+  genrePresets?: Record<string, Record<string, number | boolean | string>>;
+  /** Human-readable note describing the industry reference whose control
+   *  surface (parameter names/ranges/units — functional, not signature DSP)
+   *  inspired this plugin's parameter set. Populated by enrichment. */
+  referenceNote?: string;
+  /** True once the enrichment layer has merged canonical parameters into
+   *  this plugin's parameter list.  Helps the seeding pipeline detect
+   *  catalog changes that need to propagate to existing DB rows. */
+  enriched?: boolean;
 }
 
 export interface OscillatorConfig {
