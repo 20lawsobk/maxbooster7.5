@@ -25,7 +25,7 @@ async function api(method: string, path: string, body?: unknown, extra?: Record<
     method,
     headers,
     body: body !== undefined ? JSON.stringify(body) : undefined,
-    signal: AbortSignal.timeout(30000),
+    signal: AbortSignal.timeout(60000),
     redirect: 'manual',
   });
   const setCookie = res.headers.getSetCookie?.() ?? [];

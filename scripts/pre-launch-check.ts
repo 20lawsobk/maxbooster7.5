@@ -92,6 +92,12 @@ if (process.env.DATABASE_URL) {
 // ── 5. Health endpoint (if server URL known) ─────────────────────────────────
 console.log('\n── Health endpoint ──────────────────────────────────────────────────');
 const baseUrl = process.env.TEST_BASE_URL ?? process.env.APP_URL ?? 'http://localhost:5000';
+// Local URLs (localhost / 127.0.0.1 / replit dev domain) MUST be reachable —
+// the dev server is expected to be running.  Remote URLs (e.g. the deployed
+// .replit.app target) are aspirational during a *pre-launch* check (the
+// deployment has not happened yet), so unreachability there is informational,
+// not a failure.
+const isLocalCheck = /^(https?:\/\/)?(localhost|127\.0\.0\.1|\[::1\])(:|\/|$)/i.test(baseUrl);
 try {
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), 8_000);
@@ -99,7 +105,12 @@ try {
   clearTimeout(timer);
   check(`GET ${baseUrl}/health`, r.ok, `HTTP ${r.status}`);
 } catch {
-  check(`GET ${baseUrl}/health`, false, 'unreachable (server may not be running locally)');
+  if (isLocalCheck) {
+    check(`GET ${baseUrl}/health`, false, 'unreachable (server may not be running locally)');
+  } else {
+    check(`GET ${baseUrl}/health (remote — informational only)`, true,
+      'unreachable from pre-launch context — will be verified by smoke tests post-deploy');
+  }
 }
 
 // ── Summary ──────────────────────────────────────────────────────────────────

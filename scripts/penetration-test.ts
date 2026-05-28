@@ -18,7 +18,11 @@
 import crypto from 'crypto';
 
 const BASE = process.env.TEST_BASE_URL ?? 'http://localhost:5000';
-const TIMEOUT_MS = 10_000;
+// Boot-time DB / PDIM cascade can stall individual requests for 30-60s on a
+// freshly-started dev server. The pen-test must tolerate that window, otherwise
+// a slow response is mis-reported as a missing auth guard.
+const TIMEOUT_MS = 30_000;
+const RETRY_DELAY_MS = 2_000;
 
 let passed = 0;
 let failed = 0;
@@ -30,16 +34,30 @@ function signal() {
   return ctrl.signal;
 }
 
+async function fetchWithRetry(url: string, init: RequestInit): Promise<Response> {
+  try {
+    return await fetch(url, { ...init, signal: signal() });
+  } catch (err) {
+    // Single retry — transient slow query / cold connection should not be
+    // reported as a security failure.
+    await new Promise(r => setTimeout(r, RETRY_DELAY_MS));
+    try {
+      return await fetch(url, { ...init, signal: signal() });
+    } catch {
+      throw err;
+    }
+  }
+}
+
 async function get(path: string, headers?: Record<string, string>) {
-  return fetch(`${BASE}${path}`, { headers, signal: signal(), redirect: 'manual' });
+  return fetchWithRetry(`${BASE}${path}`, { headers, redirect: 'manual' });
 }
 
 async function post(path: string, body: unknown, headers?: Record<string, string>) {
-  return fetch(`${BASE}${path}`, {
+  return fetchWithRetry(`${BASE}${path}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...headers },
     body: JSON.stringify(body),
-    signal: signal(),
     redirect: 'manual',
   });
 }
