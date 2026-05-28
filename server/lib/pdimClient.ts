@@ -298,22 +298,34 @@ let _last429At = 0;
  *    no success events to drive decay.  Vicious cycle: high gap → fast-fail
  *    → no successes → gap stays high.
  *
- *  Fix: a 2s timer that geometrically pulls gap toward floor when the
- *  system is unambiguously idle (queue near-empty AND no 429 in last 5s).
- *  Under sustained load the queue stays deep and this never fires, so the
- *  no-sawtooth invariant of the additive under-load decay (see comment on
- *  _pdimAdaptSuccess) is preserved.  Under transient 429 spike followed by
- *  quiet, gap recovers from 2000ms to floor in ~25s (geometric 0.8/step). */
+ *  Fix: a 2s timer that geometrically pulls gap toward floor whenever no 429
+ *  has been observed in the last QUIET_MS window.  PDIM is provably healthy
+ *  during such a quiet window, so the elevated gap is over-conservative
+ *  regardless of queue depth.
+ *
+ *  Earlier version gated additionally on `totalDepth < 2` — production
+ *  proved that gate wrong: it conflated "load" with "PDIM pressure".  Real
+ *  prod fast-fail incidents (deployment logs, May 28) showed pids 221/260/
+ *  299/338 each with direct depths of 3–10 callers AND gaps stuck at
+ *  500–1900ms for many minutes.  The depth gate blocked passive decay, the
+ *  fast-fail prevented new chain entries from generating successes, and the
+ *  additive decay (1ms/success at q<2) was effectively zero — gap stayed
+ *  pinned far above the floor for the full duration of the incident.
+ *
+ *  The no-sawtooth invariant is preserved by the 429-recency check alone:
+ *  under sustained PDIM pressure 429s keep arriving, _last429At stays
+ *  recent, and passive decay defers to additive.  Without recent 429s, the
+ *  gap is over-paced by definition. */
 const _PASSIVE_DECAY_INTERVAL_MS = 2_000;
 const _PASSIVE_DECAY_FACTOR      = 0.8;
 const _PASSIVE_DECAY_IDLE_QUIET_MS = 5_000;
 setInterval(() => {
   if (_pdimGapMs <= _PDIM_GAP_FLOOR_MS) return;
-  const totalDepth = _directQueueDepth + _scriptQueueDepth;
-  if (totalDepth >= 2) return; // load present — defer to additive decay
   // Use _last429At (monotonic, only updated on actual 429) rather than
   // _rateLimitedUntil (a deadline that gets cleared to 0 on next success).
   // The latter would let a single success unmask a still-active cascade.
+  // `_last429At === 0` means no 429 has ever been observed in this process —
+  // treat as "infinitely quiet" so decay still drains startup-jitter init.
   if (_last429At > 0 && (Date.now() - _last429At) < _PASSIVE_DECAY_IDLE_QUIET_MS) return;
   _pdimGapMs = Math.max(_PDIM_GAP_FLOOR_MS, Math.floor(_pdimGapMs * _PASSIVE_DECAY_FACTOR));
 }, _PASSIVE_DECAY_INTERVAL_MS).unref();

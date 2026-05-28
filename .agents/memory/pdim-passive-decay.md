@@ -18,8 +18,8 @@ Together: a single startup-burst 429 pinned several workers at gap≈1700ms for 
 ## How to apply
 - A 2-second timer that geometrically pulls gap toward floor (factor 0.8) when:
   1. `_pdimGapMs > _PDIM_GAP_FLOOR_MS` (something to decay), AND
-  2. total queue depth < 2 (load is absent — under sustained load defer to additive decay to preserve no-sawtooth), AND
-  3. no 429 in the last 5s (don't fight an active 429 cascade).
+  2. no 429 in the last 5s (don't fight an active 429 cascade).
+- **Do NOT gate on queue depth.** An earlier version added a `totalDepth < 2` gate as a "preserve no-sawtooth under load" guard. That gate is wrong: depth conflates `load` with `PDIM pressure`. In prod, the fast-fail path keeps direct queue depth pinned at the boundary (e.g. 417 for 2500ms/6ms) under steady background traffic with PDIM perfectly healthy — exactly the case where decay is most needed. The 429-recency check alone is sufficient to preserve no-sawtooth: a real 429 cascade sets `_last429At` and blocks decay; absence of recent 429s is provable proof PDIM is healthy regardless of how many callers are queued.
 - Recovery from 2000ms ceiling to 78ms floor takes ~25s of quiet at factor 0.8.
 - Use `setInterval(...).unref()` so it doesn't keep the process alive.
 - The closure can reference class statics declared later in the file — TypeScript resolves the reference at call time, not at definition time.
