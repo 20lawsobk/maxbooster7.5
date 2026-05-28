@@ -5,4 +5,5 @@
 - [Rate-limiter coalescing](rate-limiter-coalescing.md) — every high-volume PDIM-direct caller needs an L1 cache; the limiter was the dominant one and had none
 - [PDIM passive AIMD decay](pdim-passive-decay.md) — traffic-driven additive decay leaves workers pinned at the 429 ceiling for many minutes; a passive time-based geometric pull toward floor is required
 - [Plugin catalog seeding path](plugin-catalog-seeding.md) — two seed paths existed; only `storage.seedPluginCatalog` is wired from init-admin, and Drizzle silently dropped fields written to columns that didn't exist
+- [PDIM direct parallel lanes](pdim-direct-parallel-lanes.md) — when chain pins at fast-fail boundary with gap at floor, the constraint is concurrency; split direct chain into N round-robin lanes
 - [Plugin enrichment rev marker](plugin-enrichment-rev.md) — built-in plugin parameter/preset bumps gate on `presets._rev` and `metadata._rev`; bump `MANIFEST_REV` to force re-upsert across all rows

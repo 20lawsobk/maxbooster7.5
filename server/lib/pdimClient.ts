@@ -170,7 +170,36 @@ export function getPdimGapFloor(): number { return _PDIM_GAP_FLOOR_MS; }
 const _PDIM_JITTER_INIT_MS = 1_500; // spread initial gaps over 1.5 s window
 let _pdimGapMs      = _PDIM_GAP_INIT_MS + Math.floor(Math.random() * _PDIM_JITTER_INIT_MS);
 let _pdimQueueDepth = 0;    // callers waiting in the chain (not yet executing)
-let _pdimGlobalChain: Promise<unknown> = Promise.resolve();
+
+// ── Parallel direct-call lanes ───────────────────────────────────────────────
+// Previously a single _pdimGlobalChain serialized every direct PDIM call in this
+// process.  At RTT≈80ms + AIMD gap, single-lane throughput is ~11 ops/sec.  Under
+// sustained background load (audit pump, presence, session writes, multiple
+// autonomous schedulers) arrivals exceed that, the chain saturates, and the
+// fast-fail boundary (417 callers at gap=6ms) becomes the steady-state depth —
+// every new direct caller fast-fails to PG/in-memory fallback.
+//
+// PDIM handles concurrent connections; the script chain already runs in parallel
+// with the direct chain (see _pdimScriptChain).  Splitting direct calls across N
+// parallel lanes multiplies throughput by N while preserving AIMD correctness:
+//   • _pdimGapMs, _rateLimitedUntil, _pdimAdaptSuccess/429 are all global; every
+//     lane reads the same gap and honours the same rate-limit deadline.
+//   • Per-lane gap still enforces spacing within a lane; N lanes × (1/(RTT+gap))
+//     is the new combined throughput per worker.
+//   • Combined cluster-wide rate stays within PDIM's per-instance limit because
+//     the worker-count-aware floor (_PDIM_GAP_FLOOR_WORKER_MIN) already scales
+//     with worker count.  Dev: 4 lanes × 1 worker × 1000/(4+80) ≈ 47 req/s.
+//     Prod: 2 lanes × 13 workers × 1000/(52+80) ≈ 197 req/s combined.
+//
+// Dev uses 4 lanes because there's only one worker process and the in-process
+// background load is the same.  Prod uses 2 lanes/worker to stay modest per-worker
+// while still gaining 2× throughput per worker over the prior single-lane chain.
+const _PDIM_DIRECT_LANES = _clusterWorkers <= 1 ? 4 : 2;
+const _pdimDirectChains: Promise<unknown>[] = Array.from(
+  { length: _PDIM_DIRECT_LANES },
+  () => Promise.resolve(),
+);
+let _pdimDirectLaneRR = 0; // round-robin index into _pdimDirectChains
 // Dedicated chain for LuaExecutor script redis.call()s — kept separate from the
 // AIMD direct-call chain so that script Workers are NEVER blocked behind hundreds
 // of direct callers waiting on the 2000ms AIMD gap.  429 protection is still
@@ -302,20 +331,24 @@ export function setPdimAdaptiveGap(ms: number): void {
 
 function _enqueueExec(fn: () => Promise<unknown>): Promise<unknown> {
   // ── Fast-fail: protect user-facing callers from unbounded queue waits ────────
-  // Estimate how long a new direct caller would wait behind existing queue:
-  //   direct callers × AIMD gap  +  script callers × 10ms fast-lane gap
-  // When that exceeds _MAX_DIRECT_WAIT_MS (4s), reject immediately so session
-  // stores and distributed caches fall back to PG / in-memory in <1ms instead
-  // of blocking for 20+ seconds and triggering "request took too long" errors.
-  const estimatedWaitMs = (_directQueueDepth * _pdimGapMs) + (_scriptQueueDepth * 10);
+  // Estimate how long a new direct caller would wait behind existing queue.
+  // Work parallelizes across _PDIM_DIRECT_LANES (round-robin), so a new arrival
+  // joins the shortest lane — average per-lane depth is _directQueueDepth/lanes:
+  //   per-lane direct wait  = (directDepth / lanes) × AIMD gap
+  //   script fast-lane wait = scriptDepth × 10ms  (independent chain)
+  // When the combined estimate exceeds _MAX_DIRECT_WAIT_MS, reject immediately
+  // so callers with fallbacks (PG-backed sessions, in-memory caches) use them.
+  const perLaneDirectWaitMs = (_directQueueDepth / _PDIM_DIRECT_LANES) * _pdimGapMs;
+  const estimatedWaitMs = perLaneDirectWaitMs + (_scriptQueueDepth * 10);
   if (estimatedWaitMs > _MAX_DIRECT_WAIT_MS) {
     const now = Date.now();
     if (now - _fastFailLoggedAt > 5_000) {
       _fastFailLoggedAt = now;
       logger.warn(
         `[PDIM] Direct-call fast-fail — est. queue wait ${Math.round(estimatedWaitMs)}ms ` +
-        `(${_directQueueDepth} direct × ${_pdimGapMs}ms + ${_scriptQueueDepth} script × 10ms) ` +
-        `> ${_MAX_DIRECT_WAIT_MS}ms threshold; caller falls back to PG/in-memory`,
+        `(${_directQueueDepth} direct / ${_PDIM_DIRECT_LANES} lanes × ${_pdimGapMs}ms + ` +
+        `${_scriptQueueDepth} script × 10ms) > ${_MAX_DIRECT_WAIT_MS}ms threshold; ` +
+        `caller falls back to PG/in-memory`,
       );
     }
     return Promise.reject(new Error(
@@ -325,13 +358,19 @@ function _enqueueExec(fn: () => Promise<unknown>): Promise<unknown> {
 
   _directQueueDepth++;
   _pdimQueueDepth++;
-  const next = _pdimGlobalChain.then(async () => {
+  // Round-robin lane assignment — each enqueue picks the next lane.  Skewed
+  // mixes of slow/fast calls (e.g. one lane stalled on a 429 backoff) still get
+  // balanced over time because the RR counter advances regardless of lane state.
+  const laneIdx = _pdimDirectLaneRR++ % _PDIM_DIRECT_LANES;
+  if (_pdimDirectLaneRR >= 1_000_000) _pdimDirectLaneRR = 0; // prevent integer drift
+  const next = _pdimDirectChains[laneIdx].then(async () => {
     _directQueueDepth = Math.max(0, _directQueueDepth - 1);
     _pdimQueueDepth   = Math.max(0, _pdimQueueDepth - 1);
     const result = await fn();
-    // Adaptive gap fires AFTER the request completes — next caller must wait
-    // this long before it starts.  Gap is read at completion time so it
-    // reflects any 429-driven adjustment made by the just-completed request.
+    // Adaptive gap fires AFTER the request completes — next caller in THIS lane
+    // must wait this long before it starts.  Gap is read at completion time so
+    // it reflects any 429-driven adjustment made by the just-completed request.
+    // (Other lanes' callers are paced by the same global _pdimGapMs.)
     if (_pdimGapMs > 0) await new Promise(r => setTimeout(r, _pdimGapMs));
     return result;
   }).catch(async (err: unknown) => {
@@ -343,8 +382,8 @@ function _enqueueExec(fn: () => Promise<unknown>): Promise<unknown> {
     if (_pdimGapMs > 0) await new Promise(r => setTimeout(r, _pdimGapMs));
     throw err;
   });
-  // Suppress unhandled rejection on the chain tail — each caller handles its own.
-  _pdimGlobalChain = next.catch(() => {});
+  // Suppress unhandled rejection on the lane tail — each caller handles its own.
+  _pdimDirectChains[laneIdx] = next.catch(() => {});
   return next;
 }
 
@@ -618,8 +657,29 @@ export class PdimRedisClient extends EventEmitter {
   // Static rate-limit deadline — shared across ALL PdimRedisClient instances.
   // Updated by exec() on each 429 to mirror the current AIMD gap, providing a
   // secondary hold that keeps any caller from firing during the backoff window.
-  // Reset to 0 on each success so the AIMD gap alone governs steady-state pacing.
+  //
+  // Cleared opportunistically by successful responses, BUT only when the deadline
+  // has already expired (Date.now() >= deadline).  Race-safety under parallel
+  // direct lanes: with _PDIM_DIRECT_LANES > 1, an in-flight request that started
+  // before a sibling lane's 429 can complete successfully *after* the 429 has
+  // set a new future deadline.  Naively clearing to 0 on that success would
+  // wipe out the active backoff and release the next caller immediately.  The
+  // "only clear if already expired" rule makes the assignment a no-op cleanup
+  // for live holds and a tidy reset once the hold has naturally elapsed.
   private static _rateLimitedUntil = 0;
+  private static _clearRateLimitIfExpired(): void {
+    if (Date.now() >= PdimRedisClient._rateLimitedUntil) {
+      PdimRedisClient._rateLimitedUntil = 0;
+    }
+  }
+  // 429 setter — monotonic: never lowers an existing future deadline.  Without
+  // this guard, two lanes racing on 429s with jittered holds could let the
+  // shorter jitter overwrite the longer one and release callers early.
+  private static _set429Deadline(deadlineMs: number): void {
+    if (deadlineMs > PdimRedisClient._rateLimitedUntil) {
+      PdimRedisClient._rateLimitedUntil = deadlineMs;
+    }
+  }
 
   private async exec(command: (string | number | null)[]): Promise<unknown> {
     const [cmd, ...rawArgs] = command;
@@ -687,7 +747,7 @@ export class PdimRedisClient extends EventEmitter {
             // Add per-call random jitter to _rateLimitedUntil so that processes
             // which got 429 at the same wall-clock time don't all release their
             // hold at the exact same moment — they'll be spread 0–500ms apart.
-            PdimRedisClient._rateLimitedUntil = Date.now() + holdMs + Math.floor(Math.random() * 500);
+            PdimRedisClient._set429Deadline(Date.now() + holdMs + Math.floor(Math.random() * 500));
             const errMsg = `PDIM HTTP 429: Too many requests (gap→${newGap}ms${retryAfterMs > 0 ? `, retry-after=${retryAfterMs}ms` : ''})`;
             _counted = true;
 
@@ -741,16 +801,18 @@ export class PdimRedisClient extends EventEmitter {
           // a cbRecordSuccess so any open circuit closes (PDIM IS up), and return
           // null so callers get a safe empty result instead of an error.
           _counted = true;
-          PdimRedisClient._rateLimitedUntil = 0;
+          PdimRedisClient._clearRateLimitIfExpired();
           _pdimAdaptSuccess();
           cbRecordSuccess();
           logger.warn(`[PDIM] ${String(cmd)} → HTTP ${res.status} (unsupported/not-found) — returning null`);
           return null;
         }
 
-        // Successful response — reset static rate-limit deadline and let the
-        // AIMD gap shrink additively toward the floor.
-        PdimRedisClient._rateLimitedUntil = 0;
+        // Successful response — opportunistically clear the rate-limit deadline
+        // (only if already expired, to avoid wiping out a concurrent 429-set
+        // hold under parallel lanes — see _clearRateLimitIfExpired comment),
+        // and let the AIMD gap shrink additively toward the floor.
+        PdimRedisClient._clearRateLimitIfExpired();
         _pdimAdaptSuccess();
 
         // Detect when PDIM returns non-JSON (e.g. Replit's "app not running" HTML page).
@@ -833,7 +895,24 @@ export class PdimRedisClient extends EventEmitter {
       zrem:       (k: string, ...m: unknown[]) => { cmds.push(['ZREM', k, ...m]); return pipe; },
       lpush:      (k: string, ...v: unknown[]) => { cmds.push(['LPUSH', k, ...v]); return pipe; },
       rpush:      (k: string, ...v: unknown[]) => { cmds.push(['RPUSH', k, ...v]); return pipe; },
-      exec: async () => Promise.all(cmds.map(c => self.exec(c).catch(e => e))),
+      // Sequential execution preserves per-pipeline ordering.  Under parallel
+      // direct lanes (_PDIM_DIRECT_LANES > 1), Promise.all would let commands
+      // in one pipeline fan out across lanes and race (e.g. a pipeline's SET
+      // then GET could complete out of order if assigned to different lanes
+      // with different in-flight RTTs).  Awaiting sequentially keeps each
+      // command's enqueue-then-complete strictly before the next command's
+      // enqueue, which gives ioredis-compatible pipeline semantics.  Cost:
+      // pipelines lose intra-pipeline parallelism — acceptable because real
+      // throughput parallelism still comes from concurrent *different* pipelines
+      // landing in different lanes.
+      exec: async () => {
+        const results: unknown[] = [];
+        for (const c of cmds) {
+          try { results.push(await self.exec(c)); }
+          catch (e) { results.push(e); }
+        }
+        return results;
+      },
     };
     return pipe;
   }
@@ -940,13 +1019,13 @@ export class PdimRedisClient extends EventEmitter {
           const text = await res.text().catch(() => '');
           if (res.status === 429) {
             const newGap = _pdimAdapt429();
-            PdimRedisClient._rateLimitedUntil = Date.now() + newGap;
+            PdimRedisClient._set429Deadline(Date.now() + newGap);
             throw new Error(`PDIM HTTP 429 (script ${cmd}): gap→${newGap}ms`);
           }
           throw new Error(`PDIM HTTP ${res.status} (script ${cmd}): ${text.slice(0, 200)}`);
         }
 
-        PdimRedisClient._rateLimitedUntil = 0;
+        PdimRedisClient._clearRateLimitIfExpired();
         _pdimAdaptSuccess();
 
         const contentType = res.headers.get('content-type') ?? '';
