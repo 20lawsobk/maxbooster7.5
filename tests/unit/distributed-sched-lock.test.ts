@@ -128,7 +128,7 @@ describe('BullMQ autonomous scheduler — setupRepeatableJobs()', () => {
   beforeEach(resetMocks);
   afterEach(() => closeScheduler().catch(() => {}));
 
-  it('registers all 7 recurring tasks via queue.upsertJobScheduler()', async () => {
+  it('registers all 8 recurring tasks via queue.upsertJobScheduler()', async () => {
     await setupRepeatableJobs();
     const names = mocks.mockUpsertJobScheduler.mock.calls.map(([n]: [string]) => n);
     expect(names).toContain('content-dispatch');
@@ -138,7 +138,8 @@ describe('BullMQ autonomous scheduler — setupRepeatableJobs()', () => {
     expect(names).toContain('prune-audit-log');
     expect(names).toContain('prune-notifications');
     expect(names).toContain('prune-upload-dirs');
-    expect(mocks.mockUpsertJobScheduler).toHaveBeenCalledTimes(7);
+    expect(names).toContain('beat-money-loop-tick');
+    expect(mocks.mockUpsertJobScheduler).toHaveBeenCalledTimes(8);
   });
 
   it('passes repeat.every to every registered job (BullMQ dashboard visibility)', async () => {
