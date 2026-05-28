@@ -1488,7 +1488,18 @@ async function gracefulShutdown(signal: string, exitCode = 0): Promise<void> {
   }
 
   try {
-    // 3. Stop the built-in DNS server.
+    // 3. Flush any debounced autopilot-coordinator PDIM persists so the last
+    //    ≤ debounce-window of queue/insight mutations isn't lost on shutdown.
+    const { autopilotCoordinatorService } = await import('./services/autopilotCoordinatorService.js');
+    await Promise.race([
+      autopilotCoordinatorService.flushPendingPersists(),
+      new Promise<void>((resolve) => setTimeout(resolve, 3_000)),
+    ]);
+    logger.info('[Shutdown] Autopilot coordinator persists flushed');
+  } catch { /* non-critical */ }
+
+  try {
+    // 4. Stop the built-in DNS server.
     const { stopDNSServer } = await import('./services/dnsServer.js');
     await stopDNSServer();
   } catch { /* non-critical */ }

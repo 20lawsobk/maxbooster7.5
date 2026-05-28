@@ -161,15 +161,20 @@ export class AutonomousService extends EventEmitter {
   }
 
   private getDefaultConfig(): AutonomousConfig {
+    // Spend-capable categories (advertising, distribution, marketplace) default
+    // OFF — they must be enabled explicitly per user via `configure()` so that
+    // turning on autonomous mode never silently authorises budget, licensing
+    // or fulfilment actions. Read-only / analysis-only categories stay on so
+    // the user gets immediate value the moment they opt in.
     return {
       socialPosting: true,
-      advertising: true,
-      distribution: true,
+      advertising: false,
+      distribution: false,
       analytics: true,
       contentOptimization: true,
       imageProcessing: true,
       audioProcessing: true,
-      marketplaceManagement: true,
+      marketplaceManagement: false,
       royaltyOptimization: true,
       growthHacking: true,
       viralOptimization: true,

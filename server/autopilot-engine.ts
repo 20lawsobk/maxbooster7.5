@@ -1,9 +1,9 @@
 import { EventEmitter } from 'events';
 import { randomUUID } from 'crypto';
 import { platformAPI } from './platform-apis.js';
-import { customAI } from './custom-ai-engine.js';
 import { logger } from './logger.js';
 import { advancedSocialAIService } from './services/advancedSocialAIService.js';
+import { autopilotLearningService } from './services/autopilotLearningService.js';
 
 // ── Deterministic PRNG — FNV-1a 32-bit ──────────────────────────────────────
 function seededIndex(seed: string, length: number): number {
@@ -201,7 +201,7 @@ export class AutopilotEngine extends EventEmitter {
     if (!this.config.enabled || this.config.platforms.length === 0) return;
 
     for (const platform of this.config.platforms) {
-      const nextPostTime = this.calculateNextPostTime(platform);
+      const nextPostTime = await this.calculateNextPostTime(platform);
 
       // Schedule content generation 30 minutes before posting
       const generationTime = new Date(nextPostTime.getTime() - 30 * 60 * 1000);
@@ -245,9 +245,9 @@ export class AutopilotEngine extends EventEmitter {
     }, nextBatchTime - Date.now());
   }
 
-  private calculateNextPostTime(platform: string): Date {
+  private async calculateNextPostTime(platform: string): Promise<Date> {
     const now = new Date();
-    const optimalTimes = this.getOptimalTimesForPlatform(platform);
+    const optimalTimes = await this.getOptimalTimesForPlatform(platform);
 
     // Find next optimal time
     let nextTime = new Date(now);
@@ -269,11 +269,19 @@ export class AutopilotEngine extends EventEmitter {
           nextTime.setHours(morningHour, 0, 0, 0);
         }
         break;
-      case 'daily':
+      case 'daily': {
         const optimalHour = optimalTimes[0] || 14;
-        nextTime.setDate(nextTime.getDate() + 1);
-        nextTime.setHours(optimalHour, 0, 0, 0);
+        // If the optimal hour hasn't passed yet today, schedule for today
+        // (the prior implementation always pushed to tomorrow, wasting up
+        // to a full day's posting window on every reschedule).
+        if (now.getHours() < optimalHour) {
+          nextTime.setHours(optimalHour, 0, 0, 0);
+        } else {
+          nextTime.setDate(nextTime.getDate() + 1);
+          nextTime.setHours(optimalHour, 0, 0, 0);
+        }
         break;
+      }
       case 'weekly':
         nextTime.setDate(nextTime.getDate() + 7);
         nextTime.setHours(optimalTimes[0] || 14, 0, 0, 0);
@@ -301,17 +309,37 @@ export class AutopilotEngine extends EventEmitter {
     }
   }
 
-  private getOptimalTimesForPlatform(platform: string): number[] {
-    // Real implementation would query actual audience activity data
-    const platformTimes: Record<string, number[]> = {
-      Twitter: [9, 12, 15, 18],
-      Instagram: [8, 11, 14, 19],
-      LinkedIn: [8, 12, 17],
-      Facebook: [9, 13, 15, 20],
-      TikTok: [6, 10, 16, 19],
-    };
+  private async getOptimalTimesForPlatform(platform: string): Promise<number[]> {
+    // Prefer learned times derived from this artist's real performance data
+    // — autopilotLearningService aggregates the last 30 days from
+    // autopilot_learning_data by (hour, dayOfWeek) and returns descending
+    // average engagement. Fall back to industry-average hours when there
+    // is not yet enough history for this user/platform pair.
+    try {
+      const platformKey = platform.toLowerCase();
+      const learned = await autopilotLearningService.getOptimalPostingTimes(
+        this.userId,
+        platformKey,
+      );
+      if (learned && learned.length > 0) {
+        const hours = Array.from(new Set(learned.map((r) => r.hour))).slice(0, 5);
+        if (hours.length > 0) return hours;
+      }
+    } catch (err) {
+      logger.warn(
+        { err },
+        `[Autopilot] Failed to load learned optimal times for ${platform}, using defaults`,
+      );
+    }
 
-    return platformTimes[platform] || [14];
+    const platformTimes: Record<string, number[]> = {
+      twitter: [9, 12, 15, 18],
+      instagram: [8, 11, 14, 19],
+      linkedin: [8, 12, 17],
+      facebook: [9, 13, 15, 20],
+      tiktok: [6, 10, 16, 19],
+    };
+    return platformTimes[platform.toLowerCase()] || [14];
   }
 
   private selectNextTopic(): string {
@@ -466,10 +494,19 @@ export class AutopilotEngine extends EventEmitter {
         const oldestKey = this.performanceData.keys().next().value;
         if (oldestKey !== undefined) this.performanceData.delete(oldestKey);
       }
+      const publishedContent = this.contentQueue.get(job.platform)?.find((c) => c.id === contentId);
       this.performanceData.set(contentId, {
         platform: job.platform,
         engagement: analytics,
         timestamp: new Date(),
+        publishedAt: publishedContent?.publishedAt instanceof Date
+          ? publishedContent.publishedAt
+          : new Date(Date.now() - 2 * 60 * 60 * 1000),
+        contentType: publishedContent?.type ?? 'social_post',
+        hashtags: publishedContent?.hashtags ?? [],
+        text: publishedContent?.text,
+        postId,
+        topic: publishedContent?.topic,
       });
 
       // Learn from performance
@@ -513,23 +550,17 @@ export class AutopilotEngine extends EventEmitter {
         viralScore: advancedResult.viralPotential.score,
       };
     } catch (error) {
-      // MaxCore is always running — a null return means temporarily busy;
-      // fall back to legacy custom AI silently.
-      logger.info(`[Autopilot] Advanced AI used legacy fallback: ${(error as Error)?.message ?? String(error)}`);
-      
-      const generatedContent = await customAI.generateContent({
-        topic: params.topic,
-        platform: params.platform,
-        brandVoice: params.brandVoice,
-        contentType: params.contentType,
-        targetAudience: params.targetAudience,
-        businessGoals: params.businessGoals,
-      });
-
-      return {
-        text: generatedContent.text,
-        hashtags: generatedContent.hashtags,
-      };
+      // Advanced Social AI routes exclusively through MaxCore. If it fails,
+      // surface the error rather than degrading to a generic on-box generator
+      // — silent fallback was producing low-quality, off-brand content and
+      // hiding real MaxCore outages from the operator.
+      logger.warn(
+        { err: error },
+        `[Autopilot] Advanced AI generation failed for ${params.platform} — skipping this generation cycle`,
+      );
+      throw error instanceof Error
+        ? error
+        : new Error(`Advanced Social AI generation failed: ${String(error)}`);
     }
   }
 
@@ -569,38 +600,51 @@ export class AutopilotEngine extends EventEmitter {
 
   // Performance Learning
   private async learnFromPerformance(contentId: string, analytics: unknown): Promise<void> {
-    // Get content details to extract template information
-    // In this minimal integration, we don't persist content externally.
-    const content = { id: contentId, text: '', contentType: 'tips', platform: 'Twitter' } as Record<string, unknown>;
+    // Persist real engagement to autopilot_learning_data via the canonical
+    // learning service. This is the same store consumed by
+    // getOptimalPostingTimes(), getContentPatternWeights() and the
+    // recommendations engine — so every published piece of content now
+    // measurably tightens the feedback loop for this artist.
+    const a = (analytics ?? {}) as Record<string, unknown>;
+    const cached = this.performanceData.get(contentId) as Record<string, unknown> | undefined;
+    const platform = String(cached?.platform ?? a.platform ?? 'unknown');
+    const engagementRate = Number(a.engagementRate ?? 0);
 
-    // Extract content metadata for learning
-    const contentType = content.contentType || 'tips';
-    const platform = content.platform || 'Twitter';
+    try {
+      await autopilotLearningService.recordPerformance(
+        this.userId,
+        {
+          platform,
+          contentType: String(cached?.contentType ?? 'social_post'),
+          hookType: cached?.hookType ? String(cached.hookType) : undefined,
+          hashtags: Array.isArray(cached?.hashtags) ? (cached!.hashtags as string[]) : [],
+          contentText: cached?.text ? String(cached.text) : undefined,
+          postId: cached?.postId ? String(cached.postId) : undefined,
+          postedAt: cached?.publishedAt instanceof Date
+            ? (cached.publishedAt as Date)
+            : new Date(),
+          metadata: { contentId },
+        },
+        {
+          impressions: Number(a.impressions ?? 0),
+          clicks: Number(a.clicks ?? 0),
+          shares: Number(a.shares ?? 0),
+          likes: Number(a.likes ?? 0),
+          comments: Number(a.comments ?? 0),
+          saves: Number(a.saves ?? 0),
+          reach: Number(a.reach ?? 0),
+          engagementRate,
+        },
+      );
+    } catch (err) {
+      logger.warn({ err }, `[Autopilot] Failed to record performance for ${contentId}`);
+    }
 
-    // Determine template index based on content patterns
-    const templateIndex = this.extractTemplateIndex(content.text, contentType);
-
-    // Feed performance data back to AI engine for learning
-    customAI.updatePerformanceData(contentType, platform, templateIndex, analytics);
-
-    const engagementRate = analytics.engagementRate;
-
-    // Adjust future content strategy based on performance
     if (engagementRate > this.config.engagementThreshold * 2) {
       logger.info(`High performing content detected: ${contentId} (${engagementRate}% engagement)`);
     } else if (engagementRate < this.config.engagementThreshold * 0.5) {
       logger.info(`Low performing content detected: ${contentId} (${engagementRate}% engagement)`);
     }
-  }
-
-  private extractTemplateIndex(text: string, contentType: string): number {
-    // Simple heuristic to determine which template was likely used
-    if (text.includes('💡') || text.includes('Pro tip')) return 0;
-    if (text.includes('🔥') || text.includes('Quick tip')) return 1;
-    if (text.includes('✨') || text.includes('Want to')) return 2;
-    if (text.includes('📈')) return 3;
-
-    return 0; // Default
   }
 
   // Status and Monitoring
