@@ -2,6 +2,14 @@ import { randomBytes } from 'crypto';
 import { EventEmitter } from 'events';
 import { logger } from '../logger.js';
 import { notificationService } from './notificationService.js';
+import { getRedisClient, type RedisClientType } from '../lib/redisConnectionFactory.js';
+
+// PDIM persistence — schedule queue + shared insights survive process restarts.
+// TTL keeps the dataset bounded for inactive users without an explicit purge.
+const PDIM_TTL_SECONDS = 14 * 24 * 60 * 60; // 14 days
+const PDIM_PERSIST_DEBOUNCE_MS = 1500;
+const pdimKeyPosts = (uid: string) => `coord:${uid}:posts`;
+const pdimKeyInsights = (uid: string) => `coord:${uid}:insights`;
 
 
 const MINIMUM_GAP_HOURS = 2;
@@ -63,9 +71,123 @@ class AutopilotCoordinatorService extends EventEmitter {
   private sharedInsights: Map<string, SharedInsight[]> = new Map();
   private connectedAutopilots: Map<string, Set<AutopilotType>> = new Map();
   private lastSyncTimes: Map<string, Date> = new Map();
+  private loadedFromPdim: Set<string> = new Set();
+  private pendingPersist: Map<string, NodeJS.Timeout> = new Map();
 
   private static readonly MAX_CONNECTED_USERS = 20_000;
   private static readonly SYNC_STALE_MS = 4 * 60 * 60 * 1000; // 4 hours
+
+  private async loadUserStateFromPdim(userId: string): Promise<void> {
+    if (this.loadedFromPdim.has(userId)) return;
+    // Mark loaded only AFTER a successful read — otherwise a transient PDIM
+    // failure on the first connect would permanently suppress reload until
+    // stale/cap eviction clears the flag.
+    try {
+      const redis = (await getRedisClient()) as RedisClientType;
+      if (!redis) return;
+      const [postsRaw, insightsRaw] = await Promise.all([
+        redis.get(pdimKeyPosts(userId)).catch(() => null),
+        redis.get(pdimKeyInsights(userId)).catch(() => null),
+      ]);
+      if (postsRaw) {
+        const arr = JSON.parse(postsRaw) as ScheduledPost[];
+        // Revive Date fields
+        const revived = arr.map((p) => ({
+          ...p,
+          scheduledTime: new Date(p.scheduledTime),
+          createdAt: new Date(p.createdAt),
+          postedAt: p.postedAt ? new Date(p.postedAt) : undefined,
+        }));
+        // Merge by id — `connectAutopilot` pre-creates empty arrays for
+        // synchronous reads, and mutations may have landed in-memory while
+        // this async load was in flight. Dedupe by post id and prefer the
+        // in-memory copy (it represents newer state than what was persisted
+        // before the restart).
+        const current = this.scheduleQueue.get(userId) ?? [];
+        const currentIds = new Set(current.map((p) => p.id));
+        const merged = [
+          ...revived.filter((p) => !currentIds.has(p.id)),
+          ...current,
+        ];
+        this.scheduleQueue.set(userId, merged);
+      }
+      if (insightsRaw) {
+        const arr = JSON.parse(insightsRaw) as SharedInsight[];
+        const revived = arr.map((i) => ({ ...i, createdAt: new Date(i.createdAt) }));
+        const current = this.sharedInsights.get(userId) ?? [];
+        const currentIds = new Set(current.map((i) => i.id));
+        const merged = [
+          ...revived.filter((i) => !currentIds.has(i.id)),
+          ...current,
+        ];
+        this.sharedInsights.set(userId, merged);
+      }
+      this.loadedFromPdim.add(userId);
+    } catch (err) {
+      logger.warn({ err }, `[AutopilotCoordinator] Failed to load PDIM state for ${userId}`);
+    }
+  }
+
+  /**
+   * Flush every pending debounced persist immediately. Called on shutdown to
+   * avoid losing the last ≤ PDIM_PERSIST_DEBOUNCE_MS of queue/insight
+   * mutations. Best-effort: PDIM errors do not throw.
+   */
+  async flushPendingPersists(): Promise<void> {
+    const userIds = Array.from(this.pendingPersist.keys());
+    for (const uid of userIds) {
+      const t = this.pendingPersist.get(uid);
+      if (t) clearTimeout(t);
+      this.pendingPersist.delete(uid);
+    }
+    await Promise.all(
+      userIds.map((uid) => this.persistUserStateToPdim(uid).catch(() => {}))
+    );
+  }
+
+  /**
+   * Drop in-memory PDIM-load tracking for a user. Required so that a
+   * subsequent `connectAutopilot()` after eviction or full disconnect can
+   * re-hydrate from PDIM instead of permanently short-circuiting on the
+   * `loadedFromPdim` guard. Also flushes any debounced persist timer.
+   */
+  private resetUserPdimTracking(userId: string): void {
+    this.loadedFromPdim.delete(userId);
+    const t = this.pendingPersist.get(userId);
+    if (t) {
+      clearTimeout(t);
+      this.pendingPersist.delete(userId);
+    }
+  }
+
+  private schedulePersist(userId: string): void {
+    const existing = this.pendingPersist.get(userId);
+    if (existing) clearTimeout(existing);
+    const t = setTimeout(() => {
+      this.pendingPersist.delete(userId);
+      this.persistUserStateToPdim(userId).catch(() => {});
+    }, PDIM_PERSIST_DEBOUNCE_MS);
+    t.unref();
+    this.pendingPersist.set(userId, t);
+  }
+
+  private async persistUserStateToPdim(userId: string): Promise<void> {
+    try {
+      const redis = (await getRedisClient()) as RedisClientType;
+      if (!redis) return;
+      const posts = this.scheduleQueue.get(userId) || [];
+      const insights = this.sharedInsights.get(userId) || [];
+      await Promise.all([
+        redis.set(pdimKeyPosts(userId), JSON.stringify(posts), 'EX', PDIM_TTL_SECONDS).catch(() => null),
+        redis.set(pdimKeyInsights(userId), JSON.stringify(insights), 'EX', PDIM_TTL_SECONDS).catch(() => null),
+      ]);
+    } catch (err) {
+      // Persistence is best-effort — never bubble up. PDIM outages are
+      // already handled by the AIMD/coalesce layer; the in-memory state
+      // remains the source of truth until PDIM recovers.
+      logger.warn({ err }, `[AutopilotCoordinator] Failed to persist PDIM state for ${userId}`);
+    }
+  }
 
   constructor() {
     super();
@@ -78,6 +200,7 @@ class AutopilotCoordinatorService extends EventEmitter {
           this.sharedInsights.delete(uid);
           this.connectedAutopilots.delete(uid);
           this.lastSyncTimes.delete(uid);
+          this.resetUserPdimTracking(uid);
         }
       }
       // Hard cap — drop oldest
@@ -88,6 +211,7 @@ class AutopilotCoordinatorService extends EventEmitter {
         this.sharedInsights.delete(k);
         this.connectedAutopilots.delete(k);
         this.lastSyncTimes.delete(k);
+        this.resetUserPdimTracking(k);
       }
     }, 30 * 60 * 1000).unref();
     logger.info('AutopilotCoordinatorService initialized');
@@ -98,14 +222,20 @@ class AutopilotCoordinatorService extends EventEmitter {
       this.connectedAutopilots.set(userId, new Set());
     }
     this.connectedAutopilots.get(userId)!.add(autopilotType);
-    
+
+    // Load any previously-persisted schedule queue + insights from PDIM so
+    // a process restart doesn't drop in-flight posts on the floor. Runs
+    // fire-and-forget — first read after connect will see whatever is loaded;
+    // before that the user simply sees an empty queue (same as today).
+    this.loadUserStateFromPdim(userId).catch(() => {});
+
     if (!this.scheduleQueue.has(userId)) {
       this.scheduleQueue.set(userId, []);
     }
     if (!this.sharedInsights.has(userId)) {
       this.sharedInsights.set(userId, []);
     }
-    
+
     this.emit('autopilotConnected', { userId, autopilotType });
     logger.info(`Autopilot connected: ${autopilotType} for user ${userId}`);
   }
@@ -203,6 +333,7 @@ class AutopilotCoordinatorService extends EventEmitter {
     }
     this.scheduleQueue.get(userId)!.push(post);
 
+    this.schedulePersist(userId);
     this.emit('postRegistered', post);
     logger.info(`Post registered: ${post.id} for ${autopilotType} on ${platform} at ${scheduledTime.toISOString()}`);
     
@@ -249,6 +380,7 @@ class AutopilotCoordinatorService extends EventEmitter {
       post.performance = performance;
     }
 
+    this.schedulePersist(userId);
     this.emit('postUpdated', post);
     return post;
   }
@@ -307,6 +439,7 @@ class AutopilotCoordinatorService extends EventEmitter {
     }
     this.sharedInsights.get(userId)!.push(insight);
 
+    this.schedulePersist(userId);
     this.emit('insightShared', insight);
     logger.info(`Insight shared: ${insight.id} from ${sourceAutopilot} (${insightType})`);
     
@@ -350,6 +483,7 @@ class AutopilotCoordinatorService extends EventEmitter {
 
     if (!insight.appliedBy.includes(autopilotType)) {
       insight.appliedBy.push(autopilotType);
+      this.schedulePersist(userId);
       this.emit('insightApplied', { insight, appliedBy: autopilotType });
       logger.info(`Insight ${insightId} applied by ${autopilotType}`);
       return true;
@@ -504,9 +638,10 @@ class AutopilotCoordinatorService extends EventEmitter {
     if (!post || post.status !== 'scheduled') return false;
 
     post.status = 'cancelled';
+    this.schedulePersist(userId);
     this.emit('postCancelled', post);
     logger.info(`Post cancelled: ${postId}`);
-    
+
     return true;
   }
 
@@ -518,14 +653,15 @@ class AutopilotCoordinatorService extends EventEmitter {
     const filtered = schedule.filter(
       p => new Date(p.scheduledTime) >= olderThan || p.status === 'scheduled'
     );
-    
+
     this.scheduleQueue.set(userId, filtered);
     const removed = initialCount - filtered.length;
-    
+
     if (removed > 0) {
+      this.schedulePersist(userId);
       logger.info(`Cleared ${removed} old posts for user ${userId}`);
     }
-    
+
     return removed;
   }
 

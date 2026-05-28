@@ -1,11 +1,12 @@
 import { EventEmitter } from 'events';
 import { randomUUID } from 'crypto';
 import { platformAPI } from './platform-apis.js';
-import { customAI } from './custom-ai-engine.js';
 import { logger } from './logger.js';
 import { autopilotCoordinatorService, type AutopilotType } from './services/autopilotCoordinatorService.js';
 import { hyperLearningEngine } from './services/hyperLearningEngine.js';
 import { updateSchedulePressure } from './services/contentQualityPipeline.js';
+import { advancedSocialAIService } from './services/advancedSocialAIService.js';
+import { autopilotLearningService } from './services/autopilotLearningService.js';
 
 // ── Deterministic PRNG — FNV-1a 32-bit ──────────────────────────────────────
 function seededIndex(seed: string, length: number): number {
@@ -256,7 +257,7 @@ export class AutonomousAutopilot extends EventEmitter {
     this.config.enabled = false;
 
     if (this.contentGenerationInterval) {
-      clearInterval(this.contentGenerationInterval);
+      clearTimeout(this.contentGenerationInterval);
       this.contentGenerationInterval = null;
     }
 
@@ -302,14 +303,20 @@ export class AutonomousAutopilot extends EventEmitter {
       }
     };
 
-    // Initial generation
-    setTimeout(generateContent, 5000); // Start in 5 seconds
-
-    // Set up regular intervals with adaptive timing
-    this.contentGenerationInterval = setInterval(
-      generateContent,
-      this.calculateNextGenerationInterval()
-    );
+    // Self-rescheduling loop — recompute the interval on every tick so
+    // pressure spikes (Caffeine Mode), engagement shifts and config changes
+    // re-tune the cadence dynamically. A static setInterval, computed once
+    // at start(), would stay frozen at the cold-start cadence for the life
+    // of the process even when the situation demands much faster posting.
+    const runLoop = async () => {
+      await generateContent();
+      if (!this.isRunning) return;
+      this.contentGenerationInterval = setTimeout(
+        runLoop,
+        this.calculateNextGenerationInterval(),
+      );
+    };
+    this.contentGenerationInterval = setTimeout(runLoop, 5000); // Start in 5s
   }
 
   private async shouldGenerateContentForPlatform(platform: string): Promise<boolean> {
@@ -403,8 +410,27 @@ export class AutonomousAutopilot extends EventEmitter {
       const successfulPublish = publishResults.find((r: unknown) => r.success);
 
       if (successfulPublish) {
+        const realPublishedAt = new Date();
         savedContent.status = 'published';
-        (savedContent as Record<string, unknown>).publishedAt = new Date();
+        (savedContent as Record<string, unknown>).publishedAt = realPublishedAt;
+
+        // Seed performance history at PUBLISH time with topic + true publish time
+        // so UCB1 topic feedback and optimal-time learning train on the real
+        // posting hour, not the +2h analysis hour.
+        this.contentPerformanceHistory.push({
+          contentId: savedContent.id,
+          postId: successfulPublish.postId,
+          platform,
+          topic,
+          contentText: content.text,
+          hashtags: content.hashtags,
+          publishedAt: realPublishedAt,
+          analytics: { engagementRate: 0 },
+          analyzed: false,
+        });
+        if (this.contentPerformanceHistory.length > 200) {
+          this.contentPerformanceHistory.shift();
+        }
 
         // Update coordinator with post status
         if (coordinatorPostId) {
@@ -419,7 +445,7 @@ export class AutonomousAutopilot extends EventEmitter {
         // Schedule autonomous performance analysis
         setTimeout(
           () => {
-            this.analyzeContentPerformance(savedContent.id, successfulPublish.postId!, platform);
+            this.analyzeContentPerformance(savedContent.id as string, successfulPublish.postId!, platform);
           },
           2 * 60 * 60 * 1000
         ); // Analyze after 2 hours
@@ -448,7 +474,10 @@ export class AutonomousAutopilot extends EventEmitter {
     }
   }
 
-  // Autonomous Content Generation using custom AI engine
+  // Autonomous Content Generation routed through MaxCore via Advanced Social AI.
+  // Matches autopilot-engine's pipeline so both code paths produce the same
+  // GPT-5.2 level, viral-scored, music-industry-tuned output and share the
+  // same engagement-driven feedback loop.
   private async autonomousContentGeneration(params: {
     platform: string;
     topic: string;
@@ -456,19 +485,53 @@ export class AutonomousAutopilot extends EventEmitter {
     targetAudience: string;
     businessVertical: string;
     objectives: string[];
-  }): Promise<{ text: string; hashtags: string[] }> {
-    const generatedContent = await customAI.generateContent({
+  }): Promise<{ text: string; hashtags: string[]; hook?: string; cta?: string }> {
+    const goalsLower = params.objectives.map((g) => g.toLowerCase()).join(' ');
+    const objective: 'awareness' | 'engagement' | 'conversions' | 'viral' =
+      goalsLower.includes('sales') || goalsLower.includes('conversion') || goalsLower.includes('revenue')
+        ? 'conversions'
+        : goalsLower.includes('viral') || goalsLower.includes('reach') || goalsLower.includes('growth')
+          ? 'viral'
+          : goalsLower.includes('brand') || goalsLower.includes('awareness')
+            ? 'awareness'
+            : 'engagement';
+
+    const voice = params.brandPersonality.toLowerCase();
+    const tone: 'professional' | 'casual' | 'energetic' | 'inspirational' | 'humorous' | 'storytelling' =
+      voice === 'professional' || voice === 'authoritative'
+        ? 'professional'
+        : voice === 'innovative'
+          ? 'energetic'
+          : voice === 'friendly'
+            ? 'casual'
+            : (voice as 'casual') || 'casual';
+
+    const ctMap: Record<string, 'announcement' | 'behind_scenes' | 'engagement' | 'promotional' | 'storytelling'> = {
+      questions: 'engagement',
+      announcements: 'announcement',
+      insights: 'storytelling',
+      tips: 'storytelling',
+    };
+    const contentType = ctMap[this.selectContentTypeFromObjectives(params.objectives)] ?? 'engagement';
+
+    const advancedResult = await advancedSocialAIService.generateAdvancedContent({
+      userId: this.userId,
       topic: params.topic,
-      platform: params.platform,
-      brandVoice: params.brandPersonality,
-      contentType: this.selectContentTypeFromObjectives(params.objectives),
-      targetAudience: params.targetAudience,
-      businessGoals: params.objectives,
+      platforms: [params.platform.toLowerCase()],
+      objective,
+      tone,
+      targetAudience: params.targetAudience?.toLowerCase().replace(/\s+/g, '_'),
+      contentType,
+      includeHashtags: true,
+      includeEmojis: true,
+      variantCount: 3,
     });
 
     return {
-      text: generatedContent.text,
-      hashtags: generatedContent.hashtags,
+      text: advancedResult.primary.body,
+      hashtags: advancedResult.primary.hashtags,
+      hook: advancedResult.primary.hook,
+      cta: advancedResult.primary.callToAction,
     };
   }
 
@@ -628,25 +691,34 @@ export class AutonomousAutopilot extends EventEmitter {
       const analytics = await platformAPI.collectEngagementData(postId, platform, this.userId);
 
       if (analytics) {
-        // Persist analytics via external API if available (optional)
-
-        // Add to performance history for learning (capped to prevent unbounded growth
-        // across long-running autopilot sessions — 200 entries is ample for meaningful
-        // trend analysis and learning while keeping memory bounded).
-        this.contentPerformanceHistory.push({
-          contentId,
-          postId,
-          platform,
-          publishedAt: new Date(),
-          analytics,
-          analyzed: true,
-        });
-        if (this.contentPerformanceHistory.length > 200) {
-          this.contentPerformanceHistory.shift();
+        // Update the seeded publish-time entry rather than pushing a duplicate.
+        // The entry was created at publish time with topic + true publishedAt so
+        // UCB1 topic feedback and optimal-time learning train on the real
+        // posting hour, not the +2h analysis hour.
+        const existing = this.contentPerformanceHistory.find(
+          (p) => p.contentId === contentId
+        );
+        if (existing) {
+          existing.analytics = analytics;
+          existing.analyzed = true;
+        } else {
+          // Fallback: seed entry was evicted from the 200-cap window.
+          this.contentPerformanceHistory.push({
+            contentId,
+            postId,
+            platform,
+            publishedAt: new Date(Date.now() - 2 * 60 * 60 * 1000),
+            analytics,
+            analyzed: true,
+          });
+          if (this.contentPerformanceHistory.length > 200) {
+            this.contentPerformanceHistory.shift();
+          }
         }
 
-        // Autonomous learning from performance
-        await this.learnFromPerformance(analytics, platform);
+        // Autonomous learning from performance — pass the seeded context so
+        // recordPerformance receives true publish time + topic + content.
+        await this.learnFromPerformance(analytics, platform, existing);
 
         this.emit('autonomousAnalysisCompleted', { contentId, platform, analytics });
       }
@@ -759,12 +831,55 @@ export class AutonomousAutopilot extends EventEmitter {
     });
   }
 
-  private async learnFromPerformance(analytics: unknown, platform: string): Promise<void> {
-    const engagementRate = (analytics as Record<string, unknown>).engagementRate;
+  private async learnFromPerformance(
+    analytics: unknown,
+    platform: string,
+    context?: Record<string, unknown>
+  ): Promise<void> {
+    const a = (analytics ?? {}) as Record<string, unknown>;
+    const engagementRate = Number(a.engagementRate ?? 0);
 
-    // Feed performance data to custom AI for learning
-    // Default to 'tips' content type and template index 0 since we don't track these in autonomous mode
-    customAI.updatePerformanceData('tips', platform, 0, analytics);
+    // Persist the performance signal to the DB-backed learning store so the
+    // optimal-times / hashtag / hook analytics in autopilotLearningService can
+    // consume autonomous-mode posts the same way published-mode posts feed it.
+    // Best-effort: a learning-store failure must not block the autopilot loop.
+    try {
+      const ctx = (context ?? {}) as Record<string, unknown>;
+      const realPostedAt = ctx.publishedAt instanceof Date
+        ? (ctx.publishedAt as Date)
+        : new Date(Date.now() - 2 * 60 * 60 * 1000);
+      await autopilotLearningService.recordPerformance(
+        this.userId,
+        {
+          platform,
+          contentType: 'tips',
+          hashtags: Array.isArray(ctx.hashtags) ? (ctx.hashtags as string[]) : [],
+          contentText: typeof ctx.contentText === 'string' ? (ctx.contentText as string) : undefined,
+          postId: typeof ctx.postId === 'string' ? (ctx.postId as string) : undefined,
+          postedAt: realPostedAt,
+          metadata: {
+            source: 'autonomous-autopilot',
+            topic: typeof ctx.topic === 'string' ? ctx.topic : undefined,
+            contentId: typeof ctx.contentId === 'string' ? ctx.contentId : undefined,
+          },
+        },
+        {
+          impressions: Number(a.impressions ?? 0),
+          clicks: Number(a.clicks ?? 0),
+          shares: Number(a.shares ?? 0),
+          likes: Number(a.likes ?? 0),
+          comments: Number(a.comments ?? 0),
+          saves: Number(a.saves ?? 0),
+          reach: Number(a.reach ?? 0),
+          engagementRate,
+        },
+      );
+    } catch (err) {
+      logger.warn(
+        { err, userId: this.userId, platform },
+        '[AutonomousAutopilot] recordPerformance failed — continuing learning loop',
+      );
+    }
 
     // Store platform-specific learning data
     const platformData = this.adaptiveLearningData.get(platform) || {
@@ -864,12 +979,18 @@ export class AutonomousAutopilot extends EventEmitter {
     if (this.topicPerformanceMap.size === 0) {
       // Default topics for initial content — seeded from userId so the same user
       // gets a consistent starting topic rather than a random one each cold start.
+      // Music-artist topics — the prior generic-business defaults
+      // ('industry trends', 'leadership', etc.) produced off-brand posts
+      // that hurt engagement before the UCB1 loop had any data to learn
+      // from. These reflect what actually performs for working artists.
       const defaultTopics = [
-        'business insights',
-        'industry trends',
-        'productivity tips',
-        'innovation',
-        'leadership',
+        'new release',
+        'studio session',
+        'behind the scenes',
+        'fan stories',
+        'tour update',
+        'songwriting process',
+        'gear & production',
       ];
       return defaultTopics[seededIndex(this.userId + ':default', defaultTopics.length)];
     }

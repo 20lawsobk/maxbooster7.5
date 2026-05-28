@@ -58,7 +58,7 @@ router.get('/status', requireAuth, async (req, res) => {
       autopilotLearningService.getRecommendations(userId),
       autopilotLearningService.getPerformanceHistory(userId, { limit: 1 }),
       autopilotLearningService.getPlatformStatistics(userId),
-      getPdimArtistLearningData('artist-001'),
+      getPdimArtistLearningData(userId),
     ]);
 
     res.json({

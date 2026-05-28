@@ -11,6 +11,7 @@ import type { PostContent } from './autoPostingServiceV2.js';
 import { aiContentService } from './aiContentService.js';
 import { advancedSocialAIService } from './advancedSocialAIService.js';
 import { contentQualityGate } from './contentQualityGate.js';
+import { autopilotLearningService } from './autopilotLearningService.js';
 
 /**
  * Automated Autopilot Publisher
@@ -425,9 +426,10 @@ class AutopilotPublisher {
           mediaType: 'text',
         };
 
-        const nextOptimalTime = this.calculateNextOptimalPostingTime(
+        const nextOptimalTime = await this.calculateNextOptimalPostingTime(
           targetPlatform,
-          config.postingFrequency || 'daily'
+          config.postingFrequency || 'daily',
+          userId
         );
 
         const scheduledPost = await autoPostingServiceV2.schedulePost(
@@ -602,9 +604,10 @@ class AutopilotPublisher {
       };
 
       // Calculate next optimal posting time for this platform
-      const nextOptimalTime = this.calculateNextOptimalPostingTime(
+      const nextOptimalTime = await this.calculateNextOptimalPostingTime(
         targetPlatform,
-        config.postingFrequency || 'daily'
+        config.postingFrequency || 'daily',
+        userId
       );
 
       // Schedule post for optimal time (not immediate)
@@ -709,9 +712,10 @@ class AutopilotPublisher {
 
       // Calculate next optimal posting time for advertising
       const primaryPlatform = bestCampaign.platforms?.[0] || 'facebook';
-      const nextOptimalTime = this.calculateNextOptimalPostingTime(
+      const nextOptimalTime = await this.calculateNextOptimalPostingTime(
         primaryPlatform,
-        config.postingFrequency || 'daily'
+        config.postingFrequency || 'daily',
+        userId
       );
 
       // Append storefront URL + beat/promo context to the ad content body
@@ -810,20 +814,45 @@ class AutopilotPublisher {
    * Calculate next optimal posting time based on platform and frequency
    * Returns the next available optimal time slot that respects user constraints
    */
-  private calculateNextOptimalPostingTime(platform: string, frequency: string): Date {
+  private async calculateNextOptimalPostingTime(
+    platform: string,
+    frequency: string,
+    userId?: string,
+  ): Promise<Date> {
     const now = new Date();
     const currentHour = now.getHours();
 
-    // Platform-specific optimal posting hours
-    const optimalHours = {
-      twitter: [9, 12, 17],      // 9 AM, 12 PM, 5 PM
-      instagram: [11, 13, 19],   // 11 AM, 1 PM, 7 PM
-      facebook: [13, 15, 19],    // 1 PM, 3 PM, 7 PM
-      tiktok: [6, 10, 19, 22],   // 6 AM, 10 AM, 7 PM, 10 PM
-      youtube: [14, 17, 20],     // 2 PM, 5 PM, 8 PM
+    // Industry-average fallbacks — used only when the per-artist learning
+    // history has fewer than ~5 posts on this platform.
+    const defaultHours: Record<string, number[]> = {
+      twitter: [9, 12, 17],
+      instagram: [11, 13, 19],
+      facebook: [13, 15, 19],
+      tiktok: [6, 10, 19, 22],
+      youtube: [14, 17, 20],
     };
 
-    const platformHours = optimalHours[platform] || [9, 12, 17];
+    let platformHours: number[] | undefined;
+    if (userId) {
+      try {
+        const learned = await autopilotLearningService.getOptimalPostingTimes(
+          userId,
+          platform.toLowerCase(),
+        );
+        if (learned && learned.length > 0) {
+          const hours = Array.from(new Set(learned.map((r) => r.hour))).sort((a, b) => a - b);
+          if (hours.length > 0) platformHours = hours;
+        }
+      } catch (err) {
+        logger.warn(
+          { err },
+          `[AutopilotPublisher] Learned-time lookup failed for ${userId}/${platform} — using defaults`,
+        );
+      }
+    }
+    if (!platformHours) {
+      platformHours = defaultHours[platform.toLowerCase()] || [9, 12, 17];
+    }
 
     // Find the next optimal hour (>= currentHour so we don't skip the current hour slot)
     const currentMinute = now.getMinutes();
