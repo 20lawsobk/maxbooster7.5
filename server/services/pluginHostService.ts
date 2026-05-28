@@ -82,30 +82,8 @@ class PluginHostService {
 
   async ensurePluginCatalogSeeded(): Promise<void> {
     try {
-      const existing = await db.query.pluginCatalog.findFirst();
-      if (existing) {
-        return;
-      }
-
-      const allPlugins = this.getAllPlugins();
-      for (const plugin of allPlugins) {
-        await db.insert(pluginCatalog).values({
-          slug: plugin.slug,
-          name: plugin.name,
-          kind: plugin.category,
-          version: plugin.version,
-          manifest: {
-            description: plugin.description,
-            author: plugin.author,
-            type: plugin.type,
-            parameters: plugin.parameters,
-            defaultPreset: plugin.defaultPreset,
-            oscillators: plugin.oscillators,
-            envelope: plugin.envelope,
-          },
-        }).onConflictDoNothing();
-      }
-      logger.info(`Seeded ${allPlugins.length} plugins to catalog`);
+      const { storage } = await import('../storage');
+      await storage.seedPluginCatalog();
     } catch (error) {
       logger.warn({ err: error }, 'Error seeding plugin catalog:');
     }
