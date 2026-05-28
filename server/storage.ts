@@ -15,6 +15,7 @@ import {
   notifications,
   analytics,
   pluginCatalog,
+  pluginPresets,
   distroReleases,
   distroTracks,
   instantPayouts,
@@ -1225,15 +1226,13 @@ export class DatabaseStorage implements IStorage {
 
   async seedPluginCatalog(): Promise<void> {
     const { ALL_PLUGINS } = await import('./services/plugins/index');
+    const { buildFactoryPresetRows } = await import('./services/plugins/pluginEnrichment.js');
 
-    const existingCount = await dbRead.select({ count: sql<number>`count(*)` }).from(pluginCatalog);
-    const currentCount = Number(existingCount[0]?.count || 0);
+    // Bumped whenever the enrichment layer ships new reference parameters or
+    // genre presets. Forces an upsert across all rows (presets._rev mismatch).
+    const MANIFEST_REV = 'rev-enrich-v1';
 
-    if (currentCount >= ALL_PLUGINS.length) return;
-
-    logger.info(`🎹 Seeding plugin catalog (${currentCount} existing, ${ALL_PLUGINS.length} total)...`);
-    
-    // Bulk-insert all plugins in a single round-trip instead of N separate queries.
+    // Bulk upsert via single round-trip. parameters/presets are jsonb columns.
     const pluginRows = ALL_PLUGINS.map(plugin => ({
       id: plugin.id,
       name: plugin.name,
@@ -1243,13 +1242,114 @@ export class DatabaseStorage implements IStorage {
       vendor: plugin.author || 'Max Booster',
       version: plugin.version,
       description: plugin.description,
+      parameters: plugin.parameters as unknown as Record<string, unknown>,
+      presets: {
+        _rev: MANIFEST_REV,
+        defaultPreset: plugin.defaultPreset ?? {},
+        genrePresets: plugin.genrePresets ?? {},
+        referenceNote: plugin.referenceNote ?? null,
+      } as Record<string, unknown>,
       isBuiltIn: true,
       isActive: true,
     }));
-    const result = await db.insert(pluginCatalog).values(pluginRows).onConflictDoNothing();
-    const inserted = result.rowCount ?? 0;
-    
-    logger.info(`   ✓ Plugin catalog: ${inserted} new plugins added (${currentCount + inserted} total)`);
+
+    const existingRows = await dbRead
+      .select({ slug: pluginCatalog.slug, presets: pluginCatalog.presets })
+      .from(pluginCatalog);
+    const existingBySlug = new Map<string, { presets: unknown }>(
+      existingRows.map(r => [r.slug, { presets: r.presets }])
+    );
+
+    const toInsert: typeof pluginRows = [];
+    const toUpdate: typeof pluginRows = [];
+    for (const row of pluginRows) {
+      const existing = existingBySlug.get(row.slug);
+      if (!existing) {
+        toInsert.push(row);
+        continue;
+      }
+      const currentRev = (existing.presets as { _rev?: string } | null)?._rev;
+      if (currentRev !== MANIFEST_REV) toUpdate.push(row);
+    }
+
+    if (toInsert.length > 0) {
+      await db.insert(pluginCatalog).values(toInsert).onConflictDoNothing();
+    }
+    for (const row of toUpdate) {
+      await db.update(pluginCatalog).set({
+        name: row.name,
+        type: row.type,
+        category: row.category,
+        vendor: row.vendor,
+        version: row.version,
+        description: row.description,
+        parameters: row.parameters,
+        presets: row.presets,
+        isBuiltIn: true,
+        isActive: true,
+      }).where(eq(pluginCatalog.slug, row.slug));
+    }
+
+    if (toInsert.length > 0 || toUpdate.length > 0) {
+      logger.info(`   ✓ Plugin catalog: ${toInsert.length} inserted, ${toUpdate.length} updated (rev ${MANIFEST_REV})`);
+    }
+
+    // Seed factory genre presets. pluginPresets.pluginId stores the catalog
+    // slug for portability across environments.
+    const presetRows = buildFactoryPresetRows(ALL_PLUGINS);
+    if (presetRows.length === 0) return;
+
+    const existingPresets = await dbRead
+      .select({ id: pluginPresets.id, pluginId: pluginPresets.pluginId, name: pluginPresets.name, metadata: pluginPresets.metadata })
+      .from(pluginPresets)
+      .where(eq(pluginPresets.isFactory, true));
+    const presetKey = (slug: string, name: string) => `${slug}::${name}`;
+    const existingPresetMap = new Map<string, { id: string; metadata: unknown }>();
+    for (const p of existingPresets) {
+      existingPresetMap.set(presetKey(p.pluginId, p.name), { id: p.id, metadata: p.metadata });
+    }
+
+    const presetInserts: Array<{
+      pluginId: string;
+      userId: string | null;
+      name: string;
+      isFactory: boolean;
+      parameters: Record<string, unknown>;
+      metadata: Record<string, unknown>;
+    }> = [];
+    let presetRefreshed = 0;
+    for (const row of presetRows) {
+      const metadata = { ...row.metadata, _rev: MANIFEST_REV };
+      const existing = existingPresetMap.get(presetKey(row.pluginSlug, row.name));
+      if (!existing) {
+        presetInserts.push({
+          pluginId: row.pluginSlug,
+          userId: null,
+          name: row.name,
+          isFactory: true,
+          parameters: row.parameters as Record<string, unknown>,
+          metadata,
+        });
+      } else {
+        const currentRev = (existing.metadata as { _rev?: string } | null)?._rev;
+        if (currentRev !== MANIFEST_REV) {
+          await db.update(pluginPresets)
+            .set({ parameters: row.parameters as Record<string, unknown>, metadata, isFactory: true })
+            .where(eq(pluginPresets.id, existing.id));
+          presetRefreshed++;
+        }
+      }
+    }
+    if (presetInserts.length > 0) {
+      // Insert in chunks to keep the parameterised statement size reasonable.
+      const CHUNK = 200;
+      for (let i = 0; i < presetInserts.length; i += CHUNK) {
+        await db.insert(pluginPresets).values(presetInserts.slice(i, i + CHUNK));
+      }
+    }
+    if (presetInserts.length > 0 || presetRefreshed > 0) {
+      logger.info(`   ✓ Factory genre presets: ${presetInserts.length} inserted, ${presetRefreshed} refreshed (rev ${MANIFEST_REV})`);
+    }
   }
 
   async getProducers(): Promise<any[]> {
