@@ -356,6 +356,15 @@ router.post("/platform/claim", async (req, res) => {
       .limit(1);
     if (existing) {
       if (existing.storefrontId === storefrontId) {
+        // Heal any prior claim that never wrote the routing projection so the
+        // already-owned domain actually resolves via the multi-tenant router.
+        await db
+          .insert(storefrontHosts)
+          .values({ host: domain, storefrontId, certStatus: "pending" })
+          .onConflictDoUpdate({
+            target: storefrontHosts.host,
+            set: { storefrontId, updatedAt: new Date() },
+          });
         return res.json({ ok: true, domain, url: `https://${domain}`, alreadyOwned: true });
       }
       return res.status(409).json({ ok: false, error: "This domain is already registered on another storefront." });
@@ -381,18 +390,42 @@ router.post("/platform/claim", async (req, res) => {
       });
     }
 
-    // Replace existing platform domain for this storefront (swap is allowed within the same slot)
-    await db
-      .delete(storefrontDomains)
-      .where(and(eq(storefrontDomains.storefrontId, storefrontId), eq(storefrontDomains.type, "platform_subdomain")));
+    // Swap is allowed within the same slot. Do the domain row + routing projection
+    // (storefront_hosts) mutations atomically so the two tables can never diverge —
+    // a divergence (domain written, host missing) is exactly the bug this fixes.
+    await db.transaction(async (tx) => {
+      // Fetch the old domain(s) first so we can drop their stale routing rows.
+      const oldPlatform = await tx
+        .select({ domain: storefrontDomains.domain })
+        .from(storefrontDomains)
+        .where(and(eq(storefrontDomains.storefrontId, storefrontId), eq(storefrontDomains.type, "platform_subdomain")));
+      await tx
+        .delete(storefrontDomains)
+        .where(and(eq(storefrontDomains.storefrontId, storefrontId), eq(storefrontDomains.type, "platform_subdomain")));
+      for (const old of oldPlatform) {
+        if (old.domain && old.domain !== domain) {
+          await tx.delete(storefrontHosts).where(eq(storefrontHosts.host, old.domain));
+        }
+      }
 
-    // Register — immediately active (provisioned via Max Booster's managed DNS)
-    await db.insert(storefrontDomains).values({
-      storefrontId,
-      domain,
-      type: "platform_subdomain",
-      status: "active",
-      isPrimary: true,
+      // Register — immediately active (provisioned via Max Booster's managed DNS)
+      await tx.insert(storefrontDomains).values({
+        storefrontId,
+        domain,
+        type: "platform_subdomain",
+        status: "active",
+        isPrimary: true,
+      });
+
+      // Write the routing projection so the multi-tenant router + lookupStorefrontByHost
+      // can actually resolve this host. Without this the domain shows "live" but 404s.
+      await tx
+        .insert(storefrontHosts)
+        .values({ host: domain, storefrontId, certStatus: "pending" })
+        .onConflictDoUpdate({
+          target: storefrontHosts.host,
+          set: { storefrontId, updatedAt: new Date() },
+        });
     });
 
     logger.info(`[domains] Free domain claimed: ${domain} → storefront ${storefrontId}`);
