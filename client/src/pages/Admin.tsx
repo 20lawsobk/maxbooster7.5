@@ -1578,6 +1578,10 @@ export default function Admin() {
             <CardTitle>Quick Actions</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
+            <Button variant="outline" className="w-full justify-start" onClick={() => setLocation('/admin/dashboard')} data-testid="link-admin-dashboard">
+              <LayoutDashboard className="h-4 w-4 mr-2" />
+              Admin Dashboard (Beat Money Loop)
+            </Button>
             <Button variant="outline" className="w-full justify-start" onClick={() => setLocation('/admin/kyc')}>
               <Shield className="h-4 w-4 mr-2" />
               KYC Verification Review
