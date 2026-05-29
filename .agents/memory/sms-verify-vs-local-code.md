@@ -27,3 +27,16 @@ time; mixing them silently breaks verification with a misleading "invalid code".
 in the response (`devCode`) so the built-in demo UI can display it — but ONLY when
 `NODE_ENV !== 'production'` AND no real SMS was delivered. Returning it in
 production would be a phone-verification bypass.
+
+## Live config in this project (do not confuse SMS with Resend)
+
+SMS verification/notifications go through **Twilio**, NOT Resend. Resend is
+**email-only** (it cannot send SMS at all). A user once said "we swapped SMS
+providers to Resend" — that was a misnomer; they meant Twilio (SMS) and Resend
+(email) were both configured/upgraded in Secrets.
+
+Configured Twilio secrets put the code on the **Twilio Verify** path:
+`TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_VERIFY_SERVICE_SID`,
+`TWILIO_PHONE_NUMBER` present; `TWILIO_MESSAGING_SERVICE_SID` absent. Because the
+verify branch is checked first (verifyServiceSid present), confirm must validate
+via Twilio `verificationChecks`, never a locally stored code.

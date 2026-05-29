@@ -42,7 +42,8 @@ Key architectural decisions include:
 - **Storage / Queuing / Cache (unified)**: PDIM — Pocket Dimension (`pocketdimensionstorage.replit.app`).
 - **Machine Learning**: `@tensorflow/tfjs`.
 - **Payment Processing**: Stripe.
-- **Email Delivery**: Resend (`RESEND_API_KEY`), verified sender domain `max-booster.com`, from `noreply@max-booster.com`. SendGrid deprecated (permanently quota-locked).
+- **Email Delivery**: Resend (`RESEND_API_KEY`), verified sender domain `max-booster.com`, from `noreply@max-booster.com`. SendGrid deprecated (permanently quota-locked). Note: Resend is email-only — it does NOT send SMS.
+- **SMS Delivery**: Twilio with a provisioned phone number. Configured secrets (`TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_VERIFY_SERVICE_SID`, `TWILIO_PHONE_NUMBER`) put phone verification on the Twilio **Verify** path; `/sms/confirm` validates the user's code via Twilio `verificationChecks` (never a locally stored code).
 - **Error Tracking**: Sentry.
 - **Push Notifications**: Web Push, Desktop Push, Mobile Push (FCM v1 API / legacy FCM).
 - **Music Integrations**: Spotify, LabelGrid.
