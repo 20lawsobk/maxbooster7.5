@@ -56,6 +56,13 @@ export class AutopilotEngine extends EventEmitter {
   private schedulerInterval: NodeJS.Timeout | null = null;
   private contentQueue: Map<string, any[]> = new Map();
   private performanceData: Map<string, any> = new Map();
+  // Durable publish context keyed by contentId, captured at PUBLISH time.
+  // The published item is shift()-ed off contentQueue immediately, so the
+  // later (+2h) performance-analysis job can no longer recover its true
+  // publishedAt / topic / contentType / hashtags / text from the queue.
+  // This map preserves that context so optimal-time + topic learning train on
+  // the real signal rather than synthetic now-2h / undefined fallbacks.
+  private publishContext: Map<string, any> = new Map();
   private userId: string;
 
   constructor(userId: string) {
@@ -416,13 +423,18 @@ export class AutopilotEngine extends EventEmitter {
         businessGoals: this.config.businessGoals,
       });
 
-      // Store generated content in-memory queue item
+      // Store generated content in-memory queue item.
+      // Persist topic + contentType so publish context (captured after the
+      // item is shift()-ed off the queue) carries the real values into
+      // performance analysis instead of synthetic 'social_post' / undefined.
       const content = {
         id: randomUUID(),
         text: generatedContent.text,
         hashtags: generatedContent.hashtags,
         platforms: [job.platform],
         status: 'draft',
+        type: contentType,
+        topic,
         createdAt: new Date(),
       };
 
@@ -459,6 +471,20 @@ export class AutopilotEngine extends EventEmitter {
         content.status = 'published';
         content.publishedAt = new Date();
 
+        // Persist publish context durably (content is no longer in the queue
+        // after shift()). Evict oldest first when at cap, matching performanceData.
+        if (this.publishContext.size >= AutopilotEngine.MAX_PERF_ENTRIES) {
+          const oldestKey = this.publishContext.keys().next().value;
+          if (oldestKey !== undefined) this.publishContext.delete(oldestKey);
+        }
+        this.publishContext.set(content.id, {
+          publishedAt: content.publishedAt,
+          type: content.type ?? 'social_post',
+          hashtags: content.hashtags ?? [],
+          text: content.text,
+          topic: content.topic,
+        });
+
         // Schedule performance analysis for later
         const analysisJob: AutopilotJob = {
           id: randomUUID(),
@@ -494,20 +520,29 @@ export class AutopilotEngine extends EventEmitter {
         const oldestKey = this.performanceData.keys().next().value;
         if (oldestKey !== undefined) this.performanceData.delete(oldestKey);
       }
-      const publishedContent = this.contentQueue.get(job.platform)?.find((c) => c.id === contentId);
+      // Recover publish context from the durable map captured at publish time.
+      // (The content was shift()-ed off contentQueue at publish, so a queue
+      // lookup here would miss and fall back to synthetic now-2h / undefined.)
+      const ctx = this.publishContext.get(contentId);
       this.performanceData.set(contentId, {
         platform: job.platform,
         engagement: analytics,
         timestamp: new Date(),
-        publishedAt: publishedContent?.publishedAt instanceof Date
-          ? publishedContent.publishedAt
+        publishedAt: ctx?.publishedAt instanceof Date
+          ? ctx.publishedAt
           : new Date(Date.now() - 2 * 60 * 60 * 1000),
-        contentType: publishedContent?.type ?? 'social_post',
-        hashtags: publishedContent?.hashtags ?? [],
-        text: publishedContent?.text,
+        contentType: ctx?.type ?? 'social_post',
+        hashtags: ctx?.hashtags ?? [],
+        text: ctx?.text,
         postId,
-        topic: publishedContent?.topic,
+        topic: ctx?.topic,
       });
+      // NOTE: do NOT delete publishContext here. performance_analysis jobs
+      // have maxRetries=2; if a downstream step throws after this point the
+      // job is retried, and an early delete would leave the retry without
+      // context (falling back to synthetic now-2h / 'social_post'). Memory is
+      // already bounded by the cap-based eviction at publish time, so stale
+      // entries are reclaimed there.
 
       // Learn from performance
       await this.learnFromPerformance(contentId, analytics);

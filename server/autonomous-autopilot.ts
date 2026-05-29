@@ -46,6 +46,15 @@ export class AutonomousAutopilot extends EventEmitter {
   private performanceAnalysisInterval: NodeJS.Timeout | null = null;
   private adaptationInterval: NodeJS.Timeout | null = null;
   private platformPerformance: Map<string, any> = new Map();
+  private static readonly DEFAULT_TOPICS = [
+    'new release',
+    'studio session',
+    'behind the scenes',
+    'fan stories',
+    'tour update',
+    'songwriting process',
+    'gear & production',
+  ] as const;
   private contentPerformanceHistory: Array<Record<string, unknown>> = [];
   private optimalTimingCache: Map<string, number[]> = new Map();
   private topicPerformanceMap: Map<string, number> = new Map();
@@ -896,8 +905,14 @@ export class AutonomousAutopilot extends EventEmitter {
 
     this.adaptiveLearningData.set(platform, platformData);
 
-    // Share engagement insights with coordinator for cross-autopilot learning
-    const currentHour = new Date().getHours();
+    // Share engagement insights with coordinator for cross-autopilot learning.
+    // Use the REAL posting hour from context (the +2h analysis time would skew
+    // every cross-autopilot timing insight by the analytics delay).
+    const ctxForHour = (context ?? {}) as Record<string, unknown>;
+    const postedHour = ctxForHour.publishedAt instanceof Date
+      ? (ctxForHour.publishedAt as Date).getHours()
+      : new Date(Date.now() - 2 * 60 * 60 * 1000).getHours();
+    const currentHour = postedHour;
     await this.shareInsightWithCoordinator('engagement', {
       platform,
       engagementRate,
@@ -976,23 +991,41 @@ export class AutonomousAutopilot extends EventEmitter {
 
   // Topic Selection with Learning
   private selectOptimalTopic(): string {
-    if (this.topicPerformanceMap.size === 0) {
-      // Default topics for initial content — seeded from userId so the same user
-      // gets a consistent starting topic rather than a random one each cold start.
-      // Music-artist topics — the prior generic-business defaults
-      // ('industry trends', 'leadership', etc.) produced off-brand posts
-      // that hurt engagement before the UCB1 loop had any data to learn
-      // from. These reflect what actually performs for working artists.
-      const defaultTopics = [
-        'new release',
-        'studio session',
-        'behind the scenes',
-        'fan stories',
-        'tour update',
-        'songwriting process',
-        'gear & production',
-      ];
-      return defaultTopics[seededIndex(this.userId + ':default', defaultTopics.length)];
+    // Candidate arm set is the UNION of the canonical default topics and any
+    // topic ever seen in history. Seeding with the full default set is what
+    // lets UCB1 keep exploring beyond the single cold-start topic — without it
+    // the bandit would only ever have one arm (the first topic learned) and
+    // could never converge to the true best topic across the catalogue.
+    // Music-artist topics — the prior generic-business defaults
+    // ('industry trends', 'leadership', etc.) produced off-brand posts
+    // that hurt engagement, so these reflect what performs for working artists.
+    const defaultTopics = AutonomousAutopilot.DEFAULT_TOPICS;
+
+    // Derive per-topic trial count + reward sum directly from history so the
+    // arm statistics are never stale relative to the periodic adaptation cycle,
+    // and posts that are published-but-not-yet-analysed still count as trials
+    // (prevents the cold-start loop from hammering one topic before the ~2h
+    // analytics delay records any feedback).
+    const statsByTopic = new Map<string, { n: number; sum: number }>();
+    for (const post of this.contentPerformanceHistory) {
+      const topic = typeof post.topic === 'string' ? post.topic : undefined;
+      if (!topic) continue;
+      const er = Number((post.analytics as Record<string, unknown> | undefined)?.engagementRate ?? 0);
+      const s = statsByTopic.get(topic) || { n: 0, sum: 0 };
+      s.n += 1;
+      s.sum += er;
+      statsByTopic.set(topic, s);
+    }
+
+    const candidates = new Set<string>([...defaultTopics, ...statsByTopic.keys()]);
+
+    // Forced exploration: any candidate arm never tried (n=0) must be sampled
+    // before exploitation begins. Pick deterministically (seeded by userId +
+    // remaining-untried count) so exploration order is stable yet spreads
+    // across distinct topics as each gets its first post.
+    const untried = Array.from(candidates).filter((t) => (statsByTopic.get(t)?.n ?? 0) === 0);
+    if (untried.length > 0) {
+      return untried[seededIndex(`${this.userId}:explore:${untried.length}`, untried.length)];
     }
 
     // ── UCB1 Multi-Armed Bandit topic selection ──────────────────────────────
@@ -1003,13 +1036,15 @@ export class AutonomousAutopilot extends EventEmitter {
     // maximum long-run engagement. Fully deterministic — no Math.random().
     // C = 0.25 tuned for engagement-rate reward signals in the 0–1 range.
     const UCB1_C = 0.25;
-    const totalTrials = Array.from(this.topicTrialCountMap.values()).reduce((s, n) => s + n, 0)
-      || this.topicPerformanceMap.size;
+    const totalTrials =
+      Array.from(statsByTopic.values()).reduce((s, v) => s + v.n, 0) || 1;
 
-    let bestTopic = '';
+    let bestTopic = defaultTopics[0];
     let bestScore = -Infinity;
-    this.topicPerformanceMap.forEach((avgRate, topic) => {
-      const n = this.topicTrialCountMap.get(topic) || 1;
+    candidates.forEach((topic) => {
+      const stat = statsByTopic.get(topic);
+      const n = stat?.n || 1;
+      const avgRate = stat ? stat.sum / stat.n : 0;
       const explorationBonus = UCB1_C * Math.sqrt(Math.log(totalTrials) / n);
       const ucb1Score = avgRate + explorationBonus;
       if (ucb1Score > bestScore) {
