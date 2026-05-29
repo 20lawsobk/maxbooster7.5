@@ -223,7 +223,11 @@ export class AutonomousService extends EventEmitter {
     } else {
       this.autonomousWhitelist.delete(userId);
     }
-    await storage.updateUser(userId, { autonomousEnabled: enabled });
+    // NOTE: there is no `autonomousEnabled` column on the users table, so writing
+    // it produced an empty `UPDATE users SET  WHERE ...` and threw a SQL syntax
+    // error on every call. The whitelist is in-memory (rehydrated at startup from
+    // the ADMIN_USER_IDS env var). Persisting per-user autonomous state would
+    // require a schema column; until then we keep this in-memory only.
     this.emit('autonomousModeChanged', { userId, enabled });
   }
 
@@ -326,7 +330,13 @@ export class AutonomousService extends EventEmitter {
           approvedAt: new Date(),
         } as Record<string, unknown>);
 
-        await advertisingDispatchService.startCampaign(newCampaign.id);
+        // NOTE: the real dispatch method is activateCampaign(campaignId, userId)
+        // — there is no startCampaign(). Posting only happens when the user has
+        // connected social accounts; log (non-fatally) when it does not.
+        const dispatch = await advertisingDispatchService.activateCampaign(newCampaign.id, userId);
+        if (!dispatch.success) {
+          logger.warn(`[AUTONOMOUS] Campaign ${newCampaign.id} created but not dispatched: ${dispatch.error ?? dispatch.message}`);
+        }
         scheduleCampaignOptimization(newCampaign.id).catch((err) =>
           logger.warn({ err: err }, '[AUTONOMOUS] Failed to schedule campaign optimization:')
         );
@@ -349,15 +359,13 @@ export class AutonomousService extends EventEmitter {
           approvalStatus: 'pending',
         } as Record<string, unknown>);
 
-        await approvalService.submitForApproval({
-          type: 'ad_campaign',
-          itemId: newCampaign.id,
-          userId,
-          metadata: {
-            budget: campaign.budget,
-            targetAudience: campaign.targetAudience,
-          },
-        });
+        // Campaign is persisted as draft/pending for manual review. There is no
+        // campaign-level review pipeline in approvalService (it is post-centric),
+        // so we do not submit it there — doing so previously threw and silently
+        // discarded the campaign. The pending record is the source of truth.
+        logger.info(
+          `[APPROVAL] Campaign ${newCampaign.id} created as pending for user ${userId} (awaiting manual approval)`
+        );
 
         return {
           success: true,

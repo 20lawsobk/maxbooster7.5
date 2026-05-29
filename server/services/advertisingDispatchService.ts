@@ -28,7 +28,7 @@ export class AdvertisingDispatchService {
    * @returns Activation results with post IDs and errors
    */
   async activateCampaign(
-    campaignId: number,
+    campaignId: string,
     userId: string
   ): Promise<{
     success: boolean;
@@ -86,8 +86,16 @@ export class AdvertisingDispatchService {
         };
       }
 
-      // 4. Determine target platforms
-      const requestedPlatforms = (campaign.platforms as string[]) || [];
+      // 4. Determine target platforms.
+      // NOTE: adCampaigns has a singular `platform` column (NOT `platforms`).
+      // Additional fan-out platforms may be supplied via metadata.fanOutPlatforms.
+      const meta = (campaign.metadata as Record<string, unknown> | null) || {};
+      const fanOut = Array.isArray(meta.fanOutPlatforms)
+        ? (meta.fanOutPlatforms as unknown[]).filter((p): p is string => typeof p === 'string')
+        : [];
+      const requestedPlatforms = Array.from(
+        new Set([campaign.platform, ...fanOut].filter((p): p is string => !!p))
+      );
 
       // 5. Verify user has connected social accounts
       const connectedPlatforms = await this.getConnectedPlatforms(userId);
@@ -124,13 +132,16 @@ export class AdvertisingDispatchService {
       let successfulPosts = 0;
 
       for (const creative of creatives) {
-        // Prepare content for posting
+        // Prepare content for posting.
+        // NOTE: adCreatives stores copy in `description`/`headline` and media in
+        // `mediaUrl` (there are no `normalizedContent`/`rawContent`/`assetUrls`
+        // columns), so read the real columns here.
+        const copy = creative.description || creative.headline || '';
         const content = {
-          text: creative.normalizedContent || creative.rawContent || '',
-          body: creative.normalizedContent || creative.rawContent || '',
-          mediaUrl:
-            creative.assetUrls && creative.assetUrls.length > 0 ? creative.assetUrls[0] : null,
-          hashtags: this.extractHashtags(creative.normalizedContent || creative.rawContent || ''),
+          text: copy,
+          body: copy,
+          mediaUrl: creative.mediaUrl || null,
+          hashtags: this.extractHashtags(copy),
         };
 
         // Post to each platform

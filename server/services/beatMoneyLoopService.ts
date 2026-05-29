@@ -34,6 +34,8 @@ import {
   beats,
   beatMoneyLoopState,
   beatMoneyLoopCycles,
+  adCampaigns,
+  adCreatives,
   type BeatMoneyLoopState,
   type BeatMoneyLoopCycle,
 } from '@shared/schema';
@@ -48,6 +50,7 @@ import {
 } from './musicGenerationService.js';
 import { storageService } from './storageService.js';
 import { autonomousService } from './autonomousService.js';
+import { advertisingDispatchService } from './advertisingDispatchService.js';
 import path from 'path';
 import fsPromises from 'fs/promises';
 
@@ -84,11 +87,24 @@ export interface BeatMoneyLoopStatus {
   recentCycles: BeatMoneyLoopCycle[];
 }
 
+/** Honest outcome of the advertise step. `posted` is true ONLY when at least
+ *  one social post was actually created; otherwise `reason` explains why not. */
+interface AdvertiseOutcome {
+  campaignId: string | null;
+  posted: boolean;
+  reason: string;
+}
+
 export interface RunCycleResult {
   cycleId: string;
-  status: 'completed' | 'failed';
+  // 'completed' = beat listed AND ads actually posted.
+  // 'listed'    = beat listed but ads were NOT posted (see error/reason).
+  // 'failed'    = the cycle failed before the beat was listed.
+  status: 'completed' | 'listed' | 'failed';
   beatId?: string;
   campaignId?: string;
+  advertised?: boolean;
+  note?: string;
   durationMs: number;
   error?: string;
 }
@@ -210,31 +226,47 @@ class BeatMoneyLoopService {
       const price = await this._competitivePrice(scan.genre);
 
       // 4. UPLOAD (persist beat record + upload bytes to hybrid storage)
-      const beatId = await this._createBeatRecord({ scan, price, audioRelUrl, audioAbsPath, title });
+      const { beatId, audioUrl } = await this._createBeatRecord({ scan, price, audioRelUrl, audioAbsPath, title });
       await db.update(beatMoneyLoopCycles)
         .set({ status: 'advertising', beatId, price })
         .where(eq(beatMoneyLoopCycles.id, cycleId));
       logger.info(`[BeatMoneyLoop] ${cycleId} beat ${beatId} listed at $${price.toFixed(2)}`);
 
       // 5. ADVERTISE (organic, MaxCore/PDIM-driven — budget=0)
-      const campaignId = await this._launchCampaign({ beatId, scan, price, title });
+      const ad = await this._launchCampaign({ beatId, scan, price, title, audioUrl });
 
-      // 6. RECORD success + schedule next
+      // 6. RECORD outcome + schedule next.
+      // Be HONEST: only mark the cycle 'completed' when ads were actually posted.
+      // If the beat is listed but ads could not be sent (e.g. no connected social
+      // accounts), record 'listed' with the reason instead of a false 'completed'.
       const durationMs = Date.now() - startedAt;
       const nextCadence = this._computeNextCadenceMs(scan, /* failed */ false, /* state */ null);
       const nextRunAt = new Date(Date.now() + nextCadence);
+      const finalStatus = ad.posted ? 'completed' : 'listed';
       await db.update(beatMoneyLoopCycles)
         .set({
-          status: 'completed',
-          campaignId,
+          status: finalStatus,
+          campaignId: ad.campaignId,
+          errorMessage: ad.posted ? null : `Beat listed; ads not sent: ${ad.reason}`.slice(0, 1000),
           durationMs,
           completedAt: new Date(),
         })
         .where(eq(beatMoneyLoopCycles.id, cycleId));
+      // The beat IS live for sale regardless of ad delivery, so the cycle counts
+      // as a success for cadence/backoff purposes — the ad sub-status is tracked
+      // per-cycle (status + errorMessage), not as a failure.
       await this._updateStateAfterCycle({ success: true, nextRunAt, cadence: nextCadence });
-      logger.info(`[BeatMoneyLoop] ✅ Cycle ${cycleId} completed in ${durationMs}ms — next in ${Math.round(nextCadence / 60000)} min`);
+      logger.info(`[BeatMoneyLoop] ${ad.posted ? '✅' : '⚠️'} Cycle ${cycleId} ${finalStatus} in ${durationMs}ms (ads ${ad.posted ? 'posted' : 'NOT posted: ' + ad.reason}) — next in ${Math.round(nextCadence / 60000)} min`);
 
-      return { cycleId, status: 'completed', beatId, campaignId: campaignId ?? undefined, durationMs };
+      return {
+        cycleId,
+        status: finalStatus,
+        beatId,
+        campaignId: ad.campaignId ?? undefined,
+        advertised: ad.posted,
+        note: ad.posted ? undefined : ad.reason,
+        durationMs,
+      };
     } catch (err) {
       const msg = (err as Error).message ?? String(err);
       const durationMs = Date.now() - startedAt;
@@ -346,7 +378,7 @@ class BeatMoneyLoopService {
     audioRelUrl: string;
     audioAbsPath: string;
     title: string;
-  }): Promise<string> {
+  }): Promise<{ beatId: string; audioUrl: string }> {
     // Read WAV bytes from the file synthesizeToWAV just wrote
     const buf = await fsPromises.readFile(args.audioAbsPath);
     const filename = path.basename(args.audioAbsPath);
@@ -376,7 +408,7 @@ class BeatMoneyLoopService {
       isPublished: true,
     }).returning({ id: beats.id });
 
-    return created.id;
+    return { beatId: created.id, audioUrl };
   }
 
   /**
@@ -393,13 +425,32 @@ class BeatMoneyLoopService {
     scan: { genre: string; mood: string; tempo: number; hooks: string[] };
     price: number;
     title: string;
-  }): Promise<string | null> {
+    audioUrl: string;
+  }): Promise<AdvertiseOutcome> {
+    let campaignId: string | null = null;
     try {
-      const result = await autonomousService.launchCampaign(BEAT_MONEY_LOOP_ADMIN_ID, {
+      // Build the ad copy from the trending scan signals.
+      const hashtags = Array.from(new Set([
+        args.scan.genre.replace(/\s+/g, ''),
+        args.scan.mood.replace(/\s+/g, ''),
+        'typebeat', 'beatsforsale', 'producer',
+      ])).filter(Boolean).map((t) => `#${t}`);
+      const caption =
+        `🔥 New ${args.scan.mood} ${args.scan.genre} type beat — "${args.title}". ` +
+        `${args.scan.tempo} BPM. Lease from $${args.price.toFixed(2)}. ` +
+        `${args.scan.hooks.slice(0, 2).join(' ')} ${hashtags.join(' ')}`.trim();
+
+      // 1. Create the campaign first so the creative can reference its id.
+      //    budget=0: organic distribution only (no paid spend). metadata carries
+      //    the fan-out platforms that activateCampaign reads (adCampaigns only has
+      //    a singular `platform` column).
+      const [campaign] = await db.insert(adCampaigns).values({
+        userId: BEAT_MONEY_LOOP_ADMIN_ID,
         name: `[BML] ${args.title}`,
-        platform: 'instagram',
+        platform: PLATFORMS_FOR_CAMPAIGN[0],
         objective: 'beat_sales',
         budget: 0,
+        status: 'draft',
         targetAudience: {
           genre: args.scan.genre,
           mood: args.scan.mood,
@@ -411,17 +462,45 @@ class BeatMoneyLoopService {
           source: 'beat-money-loop',
           beatId: args.beatId,
           price: args.price,
-          fanOutPlatforms: PLATFORMS_FOR_CAMPAIGN,
+          fanOutPlatforms: [...PLATFORMS_FOR_CAMPAIGN],
         },
-      } as Parameters<typeof autonomousService.launchCampaign>[1]);
-      if (!result.success) {
-        logger.warn(`[BeatMoneyLoop] launchCampaign returned success=false (requiresApproval=${result.requiresApproval})`);
-        return null;
+      }).returning({ id: adCampaigns.id });
+      campaignId = campaign.id;
+
+      // 2. Create the creative linked to the campaign (activateCampaign reads
+      //    adCreatives by campaignId and posts description/headline + mediaUrl).
+      const [creative] = await db.insert(adCreatives).values({
+        userId: BEAT_MONEY_LOOP_ADMIN_ID,
+        campaignId: campaign.id,
+        name: `[BML] ${args.title}`,
+        type: 'social_post',
+        headline: args.title,
+        description: caption,
+        mediaUrl: args.audioUrl,
+        callToAction: 'Listen & Buy',
+        landingUrl: '/marketplace',
+        status: 'active',
+      }).returning({ id: adCreatives.id });
+      await db.update(adCampaigns)
+        .set({ creativeIds: [creative.id] })
+        .where(eq(adCampaigns.id, campaign.id));
+
+      // 3. Dispatch to the connected social accounts. This ACTUALLY posts when
+      //    the admin has connected accounts; otherwise it returns a clear reason
+      //    and the cycle records the truth (beat listed, ads not sent).
+      const result = await advertisingDispatchService.activateCampaign(campaign.id, BEAT_MONEY_LOOP_ADMIN_ID);
+      const postsCreated = result.results?.postsCreated ?? 0;
+      if (result.success && postsCreated > 0) {
+        logger.info(`[BeatMoneyLoop] campaign ${campaign.id} posted to ${result.results?.platformsUsed.join(', ')} (${postsCreated} posts)`);
+        return { campaignId: campaign.id, posted: true, reason: result.message };
       }
-      return result.campaignId ?? null;
+      const reason = result.error || result.message || 'Ad dispatch reported no posts';
+      logger.warn(`[BeatMoneyLoop] campaign ${campaign.id} created but NOT posted: ${reason}`);
+      return { campaignId: campaign.id, posted: false, reason };
     } catch (err) {
-      logger.warn({ err }, '[BeatMoneyLoop] launchCampaign threw');
-      return null;
+      const reason = (err as Error).message ?? String(err);
+      logger.warn({ err }, '[BeatMoneyLoop] advertise step threw');
+      return { campaignId, posted: false, reason };
     }
   }
 
