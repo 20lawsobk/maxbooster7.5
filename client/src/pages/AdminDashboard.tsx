@@ -1619,11 +1619,18 @@ function BeatMoneyLoopTab() {
     mutationFn: () => callAction('run-now'),
     onSuccess: (data: any) => {
       const r = data?.result;
+      const title =
+        r?.status === 'completed' ? 'Cycle completed — beat listed & ads posted'
+          : r?.status === 'listed' ? 'Beat listed — ads NOT posted'
+          : 'Cycle finished';
+      const description = r?.beatId
+        ? (r.status === 'listed'
+            ? `Beat ${r.beatId.slice(0, 8)} listed in ${r.durationMs}ms. Ads not sent: ${r.note || 'no connected social accounts'}`
+            : `Beat ${r.beatId.slice(0, 8)} listed${r.campaignId ? `, campaign ${r.campaignId.slice(0, 8)} posted` : ''} in ${r.durationMs}ms`)
+        : (r?.error || 'See cycles table for details');
       toast({
-        title: r?.status === 'completed' ? 'Cycle completed' : 'Cycle finished',
-        description: r?.beatId
-          ? `Beat ${r.beatId.slice(0, 8)} listed${r.campaignId ? `, campaign ${r.campaignId.slice(0, 8)}` : ''} in ${r.durationMs}ms`
-          : (r?.error || 'See cycles table for details'),
+        title,
+        description,
         variant: r?.status === 'failed' ? 'destructive' : 'default',
       });
       refetch();
