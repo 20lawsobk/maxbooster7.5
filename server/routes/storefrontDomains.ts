@@ -12,7 +12,7 @@ import {
 import { publishStorefront, unpublishStorefront } from "../modules/publish/publish.service.js";
 import { logger } from "../logger.js";
 import { db, pool } from "../db.js";
-import { storefrontDomains, storefronts } from "@shared/schema";
+import { storefrontDomains, storefronts, storefrontHosts } from "@shared/schema";
 import { validateFreeDomain } from "@shared/domainValidation.js";
 import { validateDomain } from "../modules/domains/dnsValidators.js";
 
