@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useRequireAuth } from '@/hooks/useRequireAuth';
+import { useRequireAdmin } from '@/hooks/useRequireAuth';
 import { Sidebar } from '@/components/layout/Sidebar';
 import { TopBar } from '@/components/layout/TopBar';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -42,7 +42,7 @@ const SOURCE_ICON: Record<string, React.ReactNode> = {
 };
 
 export default function AdminAutonomy() {
-  const { user, isLoading: authLoading } = useRequireAuth();
+  const { user, isLoading: authLoading } = useRequireAdmin();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [simRunning, setSimRunning] = useState(false);

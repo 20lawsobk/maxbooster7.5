@@ -15,6 +15,7 @@ import {
   Radio,
   Shield,
   ShieldAlert,
+  Gauge,
   Brain,
   Sparkles,
   GraduationCap,
@@ -89,6 +90,8 @@ const navItems: NavItem[] = [
 
   // ── Admin ─────────────────────────────────────────────────────────────
   { labelKey: 'navigation.adminPanel', path: '/admin', icon: Shield, adminOnly: true, section: 'Admin' },
+  { labelKey: 'navigation.adminDashboard', path: '/admin/dashboard', icon: Gauge, adminOnly: true },
+  { labelKey: 'navigation.adminAutonomy', path: '/admin/autonomy', icon: Brain, adminOnly: true },
   { labelKey: 'navigation.adminSecurity', path: '/admin/security', icon: ShieldAlert, adminOnly: true },
 ];
 

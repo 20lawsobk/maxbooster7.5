@@ -57,6 +57,8 @@
     "publishing": "Publishing",
     "verification": "Verification",
     "adminPanel": "Admin Panel",
+    "adminDashboard": "Admin Dashboard",
+    "adminAutonomy": "Admin Autonomy",
     "adminSecurity": "Admin Security",
     "videoGenerator": "Video Generator"
   },
