@@ -91,6 +91,7 @@ const ReleaseCountdown = lazy(() => import('@/pages/ReleaseCountdown'));
 const Invoices = lazy(() => import('@/pages/Invoices'));
 const HandleLink = lazy(() => import('@/pages/HandleLink'));
 const Notifications = lazy(() => import('@/pages/Notifications'));
+const NotificationDetail = lazy(() => import('@/pages/NotificationDetail'));
 const MusicWorkflowAutomations = lazy(() => import('@/pages/MusicWorkflowAutomations'));
 const Shows = lazy(() => import('@/pages/Shows'));
 const FanHub = lazy(() => import('@/pages/FanHub'));
@@ -181,6 +182,7 @@ function Router() {
       <Route path="/release-countdown" component={ReleaseCountdown} />
       <Route path="/invoices" component={Invoices} />
       <Route path="/handle-link" component={HandleLink} />
+      <Route path="/notifications/:id" component={NotificationDetail} />
       <Route path="/notifications" component={Notifications} />
       <Route path="/workflow-automations" component={MusicWorkflowAutomations} />
       <Route path="/shows" component={Shows} />

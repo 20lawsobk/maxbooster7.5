@@ -7,5 +7,6 @@
 - [Plugin catalog seeding path](plugin-catalog-seeding.md) — two seed paths existed; only `storage.seedPluginCatalog` is wired from init-admin, and Drizzle silently dropped fields written to columns that didn't exist
 - [PDIM direct parallel lanes](pdim-direct-parallel-lanes.md) — when chain pins at fast-fail boundary with gap at floor, the constraint is concurrency; split direct chain into N round-robin lanes
 - [Plugin enrichment rev marker](plugin-enrichment-rev.md) — built-in plugin parameter/preset bumps gate on `presets._rev` and `metadata._rev`; bump `MANIFEST_REV` to force re-upsert across all rows
+- [SMS code ownership](sms-verify-vs-local-code.md) — Twilio Verify owns its code; confirm via verificationChecks not a local code; gate dev `devCode` to non-prod
 - [Autopilot UCB1 arm seeding](autopilot-ucb1-arms.md) — bandit must seed arms from a static default set unioned with history + force-explore untried arms, or it locks to one arm and never converges
 - [Autopilot publish-context recovery](autopilot-publish-context.md) — context captured after queue shift() must be stored durably and NOT deleted on consume (analysis jobs retry); bound it by cap-eviction at publish instead
