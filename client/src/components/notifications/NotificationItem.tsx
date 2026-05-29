@@ -99,27 +99,17 @@ export const NotificationItem = memo(function NotificationItem({
   const Icon = config.icon;
   const priority = notification.priority || 'normal';
 
-  const resolveActionUrl = (url: string): string => {
-    if (url.startsWith('/marketplace/beat/')) return '/marketplace';
-    if (url.startsWith('/marketplace/sell')) return '/marketplace';
-    if (url === '/social') return '/social-media';
-    if (url.startsWith('/social/')) return '/social-media';
-    return url;
-  };
-
   const handleClick = () => {
     if (!notification.isRead) {
       onMarkAsRead(notification.id);
     }
-    if (notification.actionUrl) {
-      if (notification.actionUrl.startsWith('http')) {
-        window.open(notification.actionUrl, '_blank');
-      } else {
-        const resolved = resolveActionUrl(notification.actionUrl);
-        onNavigate(resolved);
-        navigate(resolved);
-      }
+    if (notification.actionUrl?.startsWith('http')) {
+      window.open(notification.actionUrl, '_blank');
+      return;
     }
+    const detailUrl = `/notifications/${notification.id}`;
+    onNavigate(detailUrl);
+    navigate(detailUrl);
   };
 
   const handleMarkAsRead = (e: React.MouseEvent) => {
