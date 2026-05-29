@@ -8,7 +8,8 @@
 - [PDIM direct parallel lanes](pdim-direct-parallel-lanes.md) — when chain pins at fast-fail boundary with gap at floor, the constraint is concurrency; split direct chain into N round-robin lanes
 - [Plugin enrichment rev marker](plugin-enrichment-rev.md) — built-in plugin parameter/preset bumps gate on `presets._rev` and `metadata._rev`; bump `MANIFEST_REV` to force re-upsert across all rows
 - [Admin route gating](admin-route-gating.md) — App.tsx doesn't role-gate routes; every /admin* page must self-gate with useRequireAdmin, and Sidebar adminOnly only hides links
-- [psql tables need a Publish](psql-created-tables-need-publish.md) — tables made via direct psql on dev (Beat Money Loop, plugin_catalog, etc.) are absent in prod until a Publish runs the dev→prod schema diff; never script prod DDL
+- [App DB is NEON_DATABASE_URL](app-db-is-neon-database-url.md) — app uses self-managed NEON_DATABASE_URL (shared dev+prod); executeSql + Publish diff hit a DIFFERENT managed DATABASE_URL, so target NEON_DATABASE_URL for ALL schema/data work & existence checks
+- [psql tables need a Publish](psql-created-tables-need-publish.md) — CAVEAT: superseded for this repo by app-db-is-neon-database-url.md; Publish manages the wrong DB here
 - [storefront_hosts routing projection](storefront-hosts-routing-projection.md) — every active storefront domain MUST upsert storefront_hosts or the URL 404s despite showing "live"; multiTenantRouter reads only that table
 - [SMS code ownership](sms-verify-vs-local-code.md) — Twilio Verify owns its code; confirm via verificationChecks not a local code; gate dev `devCode` to non-prod
 - [Autopilot UCB1 arm seeding](autopilot-ucb1-arms.md) — bandit must seed arms from a static default set unioned with history + force-explore untried arms, or it locks to one arm and never converges
