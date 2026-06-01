@@ -46,8 +46,19 @@ vi.mock('../../server/services/autopilotLearningService.js', () => ({
 // Heavy, unrelated imports pulled in transitively by autopilot-engine. Stub
 // them so importing the real consumer does not boot the whole server.
 vi.mock('../../server/platform-apis.js', () => ({ platformAPI: {} }));
+
+// The autopilot content generator delegates to advancedSocialAIService. We spy
+// on it to observe the exact knobs (variantCount / includeEmojis) the engine
+// passes through from the registry's content_optimization override.
+const mockGenerateAdvancedContent = vi.fn().mockResolvedValue({
+  primary: { body: 'post body', hashtags: ['#music'], hook: 'hook', callToAction: 'cta' },
+  scoring: { overall: 80 },
+  viralPotential: { score: 70 },
+});
 vi.mock('../../server/services/advancedSocialAIService.js', () => ({
-  advancedSocialAIService: {},
+  advancedSocialAIService: {
+    generateAdvancedContent: mockGenerateAdvancedContent,
+  },
 }));
 
 import { evolutionRegistry } from '../../server/services/evolutionRegistry.js';
@@ -226,5 +237,114 @@ describe('Self-Evolution → autopilot posting-window selection (integration-sty
 
     const after = await engine.getOptimalTimesForPlatform('tiktok');
     expect(after).toEqual(STATIC_TIKTOK_DEFAULT);
+  });
+});
+
+describe('Self-Evolution → autopilot content generation (integration-style)', () => {
+  beforeEach(() => {
+    resetRegistry();
+    vi.clearAllMocks();
+    mockGenerateAdvancedContent.mockResolvedValue({
+      primary: { body: 'post body', hashtags: ['#music'], hook: 'hook', callToAction: 'cta' },
+      scoring: { overall: 80 },
+      viralPotential: { score: 70 },
+    });
+  });
+
+  type ContentEngine = {
+    generateContentForAutopilot(params: {
+      topic: string;
+      platform: string;
+      brandVoice: string;
+      contentType: string;
+      targetAudience: string;
+      businessGoals: string[];
+    }): Promise<unknown>;
+  };
+
+  // generateContentForAutopilot is private; the tests below access it via cast,
+  // the same way the posting-time tests cast getOptimalTimesForPlatform.
+  const GEN_PARAMS = {
+    topic: 'new single',
+    platform: 'instagram',
+    brandVoice: 'energetic',
+    contentType: 'announcements',
+    targetAudience: 'fans',
+    businessGoals: ['growth'],
+  };
+
+  it('generates with the static defaults (variantCount=3, includeEmojis=true) when no content_optimization override exists', async () => {
+    const { AutopilotEngine } = await import('../../server/autopilot-engine.js');
+    const engine = new AutopilotEngine('content-user-1') as unknown as ContentEngine;
+
+    await engine.generateContentForAutopilot(GEN_PARAMS);
+
+    expect(mockGenerateAdvancedContent).toHaveBeenCalledTimes(1);
+    const callArg = mockGenerateAdvancedContent.mock.calls[0][0];
+    expect(callArg.variantCount).toBe(3);
+    expect(callArg.includeEmojis).toBe(true);
+  });
+
+  it('a generated content_optimization override (variantCount + visualPriority) changes the real generator inputs, and reverts on rollback', async () => {
+    const { AutopilotEngine } = await import('../../server/autopilot-engine.js');
+    const engine = new AutopilotEngine('content-user-2') as unknown as ContentEngine;
+
+    // Baseline: defaults.
+    await engine.generateContentForAutopilot(GEN_PARAMS);
+    const baselineArg = mockGenerateAdvancedContent.mock.calls[0][0];
+    expect(baselineArg.variantCount).toBe(3);
+    expect(baselineArg.includeEmojis).toBe(true);
+
+    // The engine generates this content_optimization payload for a detected
+    // change; apply it to the live registry. visualPriority=false flips
+    // includeEmojis off, variantCount=5 raises the variant count.
+    const applyResult = await evolutionRegistry.apply({
+      upgradeId: 'up-content-1',
+      changeId: 'chg-content-1',
+      category: 'content_optimization',
+      title: 'Carousel format trending',
+      source: 'tavily',
+      payload: { platform: 'instagram', variantCount: 5, visualPriority: false },
+    });
+    expect(applyResult.applied).toBe(true);
+
+    // The REAL consumer now passes the overridden knobs through to the generator.
+    mockGenerateAdvancedContent.mockClear();
+    await engine.generateContentForAutopilot(GEN_PARAMS);
+    const overriddenArg = mockGenerateAdvancedContent.mock.calls[0][0];
+    expect(overriddenArg.variantCount).toBe(5);
+    expect(overriddenArg.includeEmojis).toBe(false);
+
+    // Deactivating the enhancement reverts the generator to its static defaults.
+    await evolutionRegistry.deactivateAll();
+    mockGenerateAdvancedContent.mockClear();
+    await engine.generateContentForAutopilot(GEN_PARAMS);
+    const revertedArg = mockGenerateAdvancedContent.mock.calls[0][0];
+    expect(revertedArg.variantCount).toBe(3);
+    expect(revertedArg.includeEmojis).toBe(true);
+  });
+
+  it('an advisory (non-effective) content_optimization payload does NOT change the generator inputs', async () => {
+    const { AutopilotEngine } = await import('../../server/autopilot-engine.js');
+    const engine = new AutopilotEngine('content-user-3') as unknown as ContentEngine;
+
+    // hashtagStrategy / captionLength are sanitized & stored but are NOT
+    // effective fields (no live consumer reads them) — so apply() reports
+    // advisory and the generator inputs must stay at their defaults.
+    const applyResult = await evolutionRegistry.apply({
+      upgradeId: 'up-content-2',
+      changeId: 'chg-content-2',
+      category: 'content_optimization',
+      title: 'Hashtag strategy advisory',
+      source: 'exa',
+      payload: { platform: 'instagram', hashtagStrategy: 'trending', captionLength: 'short' },
+    });
+    expect(applyResult.applied).toBe(false);
+    expect(applyResult.reason).toBeTruthy();
+
+    await engine.generateContentForAutopilot(GEN_PARAMS);
+    const callArg = mockGenerateAdvancedContent.mock.calls[0][0];
+    expect(callArg.variantCount).toBe(3);
+    expect(callArg.includeEmojis).toBe(true);
   });
 });
