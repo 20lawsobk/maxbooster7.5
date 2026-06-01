@@ -321,10 +321,14 @@ export class AutonomousService extends EventEmitter {
       if (isAutonomous) {
         logger.info(`[AUTONOMOUS] Launching campaign directly for user ${userId}`);
 
+        // Create as 'draft' — activateCampaign() rejects campaigns that are
+        // already 'active'/'running' and is what actually flips status to
+        // 'active' once posts succeed. Creating as 'active' here would make
+        // activation a no-op and silently skip dispatch.
         const newCampaign = await storage.createAdCampaign({
           ...campaign,
           userId,
-          status: 'active',
+          status: 'draft',
           approvalStatus: 'auto-approved',
           approvedBy: 'autonomous-system',
           approvedAt: new Date(),
