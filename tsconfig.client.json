@@ -1,7 +1,7 @@
 {
   "extends": "./tsconfig.json",
   "compilerOptions": {
-    "tsBuildInfoFile": "./node_modules/typescript/tsbuildinfo.client"
+    "tsBuildInfoFile": "./.cache/tsbuildinfo.client"
   },
   "include": ["client/src/**/*", "shared/**/*"],
   "exclude": [
