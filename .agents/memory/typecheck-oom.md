@@ -10,12 +10,15 @@ The `typecheck` workflow (`tsc --noEmit` over client+shared+server) is extremely
 - With the **default Node heap** it OOMs around ~4GB and crashes — historically this also starved tsx and could take down the running app at boot.
 - With **`NODE_OPTIONS=--max-old-space-size=6144`** it does **not** OOM, but a cold full check runs **very slow (>9 min, no output until the end)** and drives container memory to ~97% (7.7/7.9GB) when run **alongside** the `Start application` workflow — at which point the app's `/api/ready` starts timing out.
 
-**Fix applied:** the `typecheck` workflow command carries the `--max-old-space-size=6144` flag (kept idle / not auto-started).
+**Fix applied (current):** the one monolithic `tsc` is split into two per-area programs that share `tsconfig.json` as a base — `tsconfig.server.json` (server + shared + root `*.ts`) and `tsconfig.client.json` (client/src + shared), each with its own `tsBuildInfoFile` so the incremental caches don't clobber each other. `npm run check` runs both; `check:server` / `check:client` run one. The `typecheck` workflow runs `npm run check` at `--max-old-space-size=4096`, idle (autoStart off). `extends` REPLACES `include`/`exclude` (does not merge) — so each sub-config restates them.
 
-**Why:** the heap bump removes the crash; the remaining cost is time + memory, not OOM.
+**Why split instead of just bumping heap:** each half is a much smaller program, so peak RSS drops to ~3.46GB per half (measured, standalone) — well under the ~4GB default-heap OOM ceiling. So 4096 is generous headroom (was 6144 for the monolith). server↔client are independent (server imports nothing from client; the only "client" hit was `openid-client`); `shared` is included in both (checked twice, but it's tiny: 51 files).
+
+**Why NOT combine the typecheck into the app's run command (`npm run dev`):** memory is ADDITIVE, not shared. The dev app is long-lived at ~4GB; a typecheck spikes ~3.4GB. Co-resident = ~7.4GB in an ~8GB box = guaranteed OOM (this is the exact crash). A check must also run→report→exit (gate semantics) while the app must start fast and stay up; chaining them stalls every app restart behind a 5–9 min check and yields no clean pass/fail. Correct design = separate jobs, typecheck run **standalone** so it gets the whole box.
 
 **How to apply:**
-- Run `typecheck` **standalone** — stop/avoid contention with `Start application` (and other node workloads) or it will push memory to the edge and starve the app.
-- Do not foreground a full `tsc` in a bash tool call: it exceeds the 2-min tool cap. Run it as the workflow (unbounded) or as a detached background process and poll.
-- The real long-term fix for the slowness (not just the OOM) would be splitting into TS project references / scoping the check — larger, riskier work, not yet done.
+- Run `typecheck` **standalone** — stop `Start application` first (app ~4GB + check ~3.4GB OOMs). The merge-gate use case is naturally standalone.
+- Do not foreground a full `tsc` in a bash tool call: it exceeds the 2-min tool cap. Run it as the workflow (unbounded) or as a detached `setsid` background process and poll a done-file.
+- `tsc -p <cfg> --listFilesOnly | wc -l` is a fast way to prove a split config resolves the intended file set without a full (slow) type-check.
+- Even faster future option: TS project references with `tsc --build` (incremental across projects) — not done; would need `composite`/`declaration` which conflicts with the current `noEmit`/`allowImportingTsExtensions` setup, so it's a larger change.
 - Gotcha: `pkill -f 'tsc ...'` / `pgrep -f 'bin/tsc'` will match the killing shell's **own** command line and self-kill (exit 137). Split the pattern in a var (e.g. `PAT="bin""/tsc"`) or kill by PID file. Also note the IDE runs `tsserver.js` (language server) continuously — that is NOT a stray `tsc --noEmit` run.
