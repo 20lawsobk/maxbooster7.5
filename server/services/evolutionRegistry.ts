@@ -49,14 +49,16 @@ export const CONSUMED_CATEGORIES: ReadonlySet<EnhancementCategory> = new Set<Enh
  * consumed category is not enough; the payload must carry a knob a reader uses.
  *
  *  - posting_optimization → `optimalHours` (read by getOptimalHoursOverride,
- *    consumed by autopilot posting-window selection).
+ *    consumed by autopilot posting-window selection), `contentFormatPriority`
+ *    and `engagementTargeting` (read by getPostingOptimization, consumed by
+ *    autopilot content-type selection and the generation objective).
  *  - content_optimization → `variantCount` / `visualPriority` /
  *    `hashtagStrategy` / `captionLength` / `callToActionStrength` (read by
  *    getContentOptimization, consumed by autopilot content generation and
  *    passed through to advancedSocialAIService.generateAdvancedContent).
  */
 const EFFECTIVE_FIELDS: Partial<Record<EnhancementCategory, readonly string[]>> = {
-  posting_optimization: ['optimalHours'],
+  posting_optimization: ['optimalHours', 'contentFormatPriority', 'engagementTargeting'],
   content_optimization: [
     'variantCount',
     'visualPriority',
@@ -420,6 +422,46 @@ class EvolutionRegistry {
       }
     }
     delete merged.platform;
+    return Object.keys(merged).length > 0 ? merged : null;
+  }
+
+  /**
+   * Merged active posting-optimization knobs (excluding optimalHours, which has
+   * its own getter) for a platform (or global), or null. Read by autopilot
+   * content-type selection (contentFormatPriority) and the generation objective
+   * (engagementTargeting). Global entries apply first, then platform-specific
+   * entries override them; most-recent wins within each scope.
+   */
+  getPostingOptimization(platform?: string): {
+    contentFormatPriority?: string[];
+    engagementTargeting?: 'standard' | 'high';
+  } | null {
+    this.maybeRefresh();
+    const key = platform?.toLowerCase();
+    const entries = this.activeOfCategory('posting_optimization').sort((a, b) =>
+      a.appliedAt.localeCompare(b.appliedAt),
+    );
+    if (entries.length === 0) return null;
+    const merged: { contentFormatPriority?: string[]; engagementTargeting?: 'standard' | 'high' } = {};
+    const take = (ep: Record<string, unknown>): void => {
+      if (Array.isArray(ep.contentFormatPriority) && ep.contentFormatPriority.length > 0) {
+        merged.contentFormatPriority = ep.contentFormatPriority as string[];
+      }
+      if (ep.engagementTargeting === 'standard' || ep.engagementTargeting === 'high') {
+        merged.engagementTargeting = ep.engagementTargeting;
+      }
+    };
+    // Apply global first, then platform-specific so the platform override wins.
+    for (const e of entries) {
+      const ep = e.payload as Record<string, unknown>;
+      if (!ep.platform) take(ep);
+    }
+    if (key) {
+      for (const e of entries) {
+        const ep = e.payload as Record<string, unknown>;
+        if (ep.platform === key) take(ep);
+      }
+    }
     return Object.keys(merged).length > 0 ? merged : null;
   }
 

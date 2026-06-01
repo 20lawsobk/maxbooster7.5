@@ -110,25 +110,26 @@ describe('evolutionRegistry.apply() — effective-field honesty rule', () => {
     expect(result.reason).toBeUndefined();
   });
 
-  it('reports applied=false (advisory) for a consumed category WITHOUT an effective field (posting_optimization, only contentFormatPriority/engagementTargeting)', async () => {
+  it('reports applied=true for posting_optimization with contentFormatPriority/engagementTargeting (now effective fields a live consumer reads)', async () => {
     const result = await evolutionRegistry.apply({
       upgradeId: 'up-3',
       changeId: 'chg-3',
       category: 'posting_optimization',
       title: 'Short-form video priority',
       source: 'exa',
-      // These knobs are sanitized & stored, but NO live consumer reads them yet,
-      // so this must NOT count as an applied behavior change.
+      // These knobs are now read by live consumers (autopilot content-type
+      // selection + generation objective), so they ARE applied behavior changes.
       payload: { contentFormatPriority: ['video', 'reel'], engagementTargeting: 'high' },
     });
 
     expect(result.consumed).toBe(true);
-    expect(result.applied).toBe(false);
-    expect(result.reason).toBeTruthy();
-    expect(typeof result.reason).toBe('string');
-    expect(result.reason!.length).toBeGreaterThan(0);
-    // The entry is still recorded (advisory), just not reported as applied.
+    expect(result.applied).toBe(true);
+    expect(result.reason).toBeUndefined();
     expect(result.enhancement).toBeDefined();
+    expect((result.enhancement?.payload as { contentFormatPriority?: string[] }).contentFormatPriority)
+      .toEqual(['video', 'reel']);
+    expect((result.enhancement?.payload as { engagementTargeting?: string }).engagementTargeting)
+      .toBe('high');
   });
 
   it('reports applied=false when the payload sanitizes to nothing usable', async () => {
@@ -232,11 +233,130 @@ describe('Self-Evolution → autopilot posting-window selection (integration-sty
       source: 'exa',
       payload: { platform: 'tiktok', contentFormatPriority: ['video', 'reel'] },
     });
-    // Recorded but not applied — nothing a consumer reads changed.
-    expect(applyResult.applied).toBe(false);
+    // contentFormatPriority IS now an effective field (it changes content-type
+    // selection), so this is applied — but it does NOT touch posting-HOUR
+    // selection, which is driven solely by optimalHours.
+    expect(applyResult.applied).toBe(true);
 
     const after = await engine.getOptimalTimesForPlatform('tiktok');
     expect(after).toEqual(STATIC_TIKTOK_DEFAULT);
+  });
+});
+
+describe('Self-Evolution → autopilot content-format & engagement targeting (integration-style)', () => {
+  beforeEach(() => {
+    resetRegistry();
+    vi.clearAllMocks();
+    mockGenerateAdvancedContent.mockResolvedValue({
+      primary: { body: 'post body', hashtags: ['#music'], hook: 'hook', callToAction: 'cta' },
+      scoring: { overall: 80 },
+      viralPotential: { score: 70 },
+    });
+  });
+
+  type FormatEngine = {
+    selectContentType(platform?: string): string;
+    generateContentForAutopilot(params: {
+      topic: string;
+      platform: string;
+      brandVoice: string;
+      contentType: string;
+      targetAudience: string;
+      businessGoals: string[];
+    }): Promise<unknown>;
+  };
+
+  it('a contentFormatPriority override biases the real selectContentType pick toward the prioritized format, and reverts on rollback', async () => {
+    const { AutopilotEngine } = await import('../../server/autopilot-engine.js');
+    // Default config contentTypes: ['tips','insights','questions','announcements'].
+    // Affinities: tips/insights→carousel, questions→text, announcements→image.
+    const engine = new AutopilotEngine('format-user-1') as unknown as FormatEngine;
+
+    // Baseline (no override): the deterministic seeded pick, a configured type.
+    const baseline = engine.selectContentType('tiktok');
+    expect(['tips', 'insights', 'questions', 'announcements']).toContain(baseline);
+
+    // Prioritize the 'text' format → picks the configured type whose affinity is
+    // 'text' (questions). 'image' would pick 'announcements'. Two distinct
+    // overrides yielding two distinct deterministic picks proves the knob drives
+    // selection (independent of the seeded baseline).
+    await evolutionRegistry.apply({
+      upgradeId: 'up-fmt-1',
+      changeId: 'chg-fmt-1',
+      category: 'posting_optimization',
+      title: 'Text-first format priority',
+      source: 'rss',
+      payload: { platform: 'tiktok', contentFormatPriority: ['text', 'carousel'] },
+    });
+    expect(engine.selectContentType('tiktok')).toBe('questions');
+
+    await evolutionRegistry.deactivateAll();
+    await evolutionRegistry.apply({
+      upgradeId: 'up-fmt-2',
+      changeId: 'chg-fmt-2',
+      category: 'posting_optimization',
+      title: 'Image-first format priority',
+      source: 'rss',
+      payload: { platform: 'tiktok', contentFormatPriority: ['image'] },
+    });
+    expect(engine.selectContentType('tiktok')).toBe('announcements');
+
+    // Deactivating reverts to the seeded baseline.
+    await evolutionRegistry.deactivateAll();
+    expect(engine.selectContentType('tiktok')).toBe(baseline);
+  });
+
+  it('an engagementTargeting=high override steers the real generation objective to "engagement", and reverts on rollback', async () => {
+    const { AutopilotEngine } = await import('../../server/autopilot-engine.js');
+    const engine = new AutopilotEngine('engagement-user-1') as unknown as FormatEngine;
+
+    // businessGoals=['sales'] maps to objective 'conversions' (distinct from the
+    // override's 'engagement'), so the override's effect is unambiguous.
+    const PARAMS = {
+      topic: 'new single',
+      platform: 'instagram',
+      brandVoice: 'energetic',
+      contentType: 'announcements',
+      targetAudience: 'fans',
+      businessGoals: ['sales'],
+    };
+
+    // Baseline: goal-derived objective is used.
+    await engine.generateContentForAutopilot(PARAMS);
+    expect(mockGenerateAdvancedContent.mock.calls[0][0].objective).toBe('conversions');
+
+    await evolutionRegistry.apply({
+      upgradeId: 'up-eng-1',
+      changeId: 'chg-eng-1',
+      category: 'posting_optimization',
+      title: 'Prioritize engagement',
+      source: 'tavily',
+      payload: { platform: 'instagram', engagementTargeting: 'high' },
+    });
+
+    mockGenerateAdvancedContent.mockClear();
+    await engine.generateContentForAutopilot(PARAMS);
+    expect(mockGenerateAdvancedContent.mock.calls[0][0].objective).toBe('engagement');
+
+    // engagementTargeting='standard' does NOT override the goal-derived objective.
+    await evolutionRegistry.deactivateAll();
+    await evolutionRegistry.apply({
+      upgradeId: 'up-eng-2',
+      changeId: 'chg-eng-2',
+      category: 'posting_optimization',
+      title: 'Standard engagement',
+      source: 'tavily',
+      payload: { platform: 'instagram', engagementTargeting: 'standard' },
+    });
+    mockGenerateAdvancedContent.mockClear();
+    await engine.generateContentForAutopilot(PARAMS);
+    expect(mockGenerateAdvancedContent.mock.calls[0][0].objective).toBe('conversions');
+
+    // Rollback fully reverts to the goal-derived objective.
+    await evolutionRegistry.deactivateAll();
+    mockGenerateAdvancedContent.mockClear();
+    await engine.generateContentForAutopilot(PARAMS);
+    expect(mockGenerateAdvancedContent.mock.calls[0][0].objective).toBe('conversions');
   });
 });
 

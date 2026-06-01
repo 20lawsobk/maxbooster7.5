@@ -167,13 +167,14 @@ describe('admin Autonomy /status — honest applied-vs-advisory counts (end to e
       enhancementCategory: 'feature_flag',
       enhancementPayload: { name: 'experimentalThing', enabled: true },
     });
-    // U4 — posting_optimization but only contentFormatPriority (NO effective
-    // field a consumer reads) → must NOT count as applied (false-positive guard).
+    // U4 — posting_optimization whose payload sanitizes to NOTHING usable (no
+    // valid bounded knob survives) → rejected at apply, status 'failed', must
+    // NOT count as applied (false-positive guard).
     const u4 = makeUpgrade({
       id: 'u4-posting-noneffective',
       changeId: 'chg-u4',
       enhancementCategory: 'posting_optimization',
-      enhancementPayload: { platform: 'tiktok', contentFormatPriority: ['video', 'reel'] },
+      enhancementPayload: { platform: 'tiktok', optimalHours: ['not-a-number'] },
     });
 
     const upgrades = [u1, u2, u3, u4];
@@ -202,9 +203,9 @@ describe('admin Autonomy /status — honest applied-vs-advisory counts (end to e
     expect(status.upgradesRecordedNotApplied).toBe(1);
 
     // appliedEnhancements mirrors the registry's active consumed-category count
-    // (U1, U2, U4 all sit in consumed categories) — it may legitimately exceed
-    // upgradesApplied without lying, because being "applied" requires an
-    // effective field, not just consumed-category membership.
+    // (U1 + U2; U4's payload was rejected at sanitize so nothing was stored) —
+    // it may legitimately equal or exceed upgradesApplied without lying, because
+    // being "applied" requires an effective field, not just category membership.
     expect(status.appliedEnhancements).toBe(evolutionRegistry.getStats().consumedActive);
     expect(status.appliedEnhancements as number).toBeGreaterThanOrEqual(status.upgradesApplied as number);
 
@@ -228,8 +229,9 @@ describe('admin Autonomy /status — honest applied-vs-advisory counts (end to e
       deployUpgrades(upgrades: AnyUpgrade[]): Promise<number>;
     };
 
-    // A non-consumed feature_flag (advisory) and a consumed-but-non-effective
-    // posting_optimization — neither is a genuine behavior change.
+    // A non-consumed feature_flag (advisory) and a posting_optimization whose
+    // payload sanitizes to nothing usable (rejected at apply) — neither is a
+    // genuine behavior change.
     const flag = makeUpgrade({
       id: 'only-advisory-flag',
       changeId: 'chg-a1',
@@ -240,7 +242,7 @@ describe('admin Autonomy /status — honest applied-vs-advisory counts (end to e
       id: 'only-noneffective-posting',
       changeId: 'chg-a2',
       enhancementCategory: 'posting_optimization',
-      enhancementPayload: { engagementTargeting: 'high' },
+      enhancementPayload: { optimalHours: [] },
     });
 
     const upgrades = [flag, noneffective];
