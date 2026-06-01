@@ -5516,6 +5516,17 @@ export async function registerRoutes(
   }
 
   try {
+    // Warm the Self-Evolution registry from persisted state so the autopilot
+    // timing/content consumers see active enhancements immediately on boot.
+    const { evolutionRegistry } = await import('./services/evolutionRegistry.js');
+    await evolutionRegistry.load(true);
+    const stats = evolutionRegistry.getStats();
+    log(`Evolution registry loaded: ${stats.active} active enhancement(s), ${stats.consumedActive} live`);
+  } catch (error) {
+    log(`Warning: Could not load evolution registry - ${error instanceof Error ? error.message : String(error)}`);
+  }
+
+  try {
     const { silentDeployment } = await import('./services/silentDeploymentService.js');
     if (process.env.ENABLE_SELF_EVOLUTION === 'true') {
       silentDeployment.enable();

@@ -109,9 +109,8 @@ class SilentDeploymentService extends EventEmitter {
       this.processQueue();
     });
 
-    selfEvolution.on('rollbackCompleted', (payload: { restoredCount: number }) => {
-      logger.info(`[SilentDeploy] Rollback completed (${payload.restoredCount} files restored) — triggering post-rollback reload`);
-      if (this.enabled) this.triggerReload('post-rollback');
+    selfEvolution.on('rollbackCompleted', (payload: { revertedCount: number }) => {
+      logger.info(`[SilentDeploy] Rollback completed (${payload.revertedCount} enhancement(s) deactivated) — no process reload needed (registry reverts in-process)`);
     });
   }
 

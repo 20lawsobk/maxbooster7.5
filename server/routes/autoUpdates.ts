@@ -67,6 +67,11 @@ router.get('/status', requireAuth, async (_req, res) => {
       isRunning: engineStatus.isRunning,
       isCycleRunning: engineStatus.isCycleRunning,
       changesDetected: engineStatus.changesDetected,
+      upgradesGenerated: engineStatus.upgradesGenerated,
+      upgradesApplied: engineStatus.upgradesApplied,
+      upgradesRecordedNotApplied: engineStatus.upgradesRecordedNotApplied,
+      appliedEnhancements: engineStatus.appliedEnhancements,
+      // Retained for back-compat; now reports genuinely-APPLIED upgrades only.
       upgradesDeployed: engineStatus.upgradesDeployed,
       lastCycle: engineStatus.lastCycle,
       lastCycleAt: engineStatus.lastCycleAt,

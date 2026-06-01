@@ -7,6 +7,7 @@ import { hyperLearningEngine } from './services/hyperLearningEngine.js';
 import { updateSchedulePressure } from './services/contentQualityPipeline.js';
 import { advancedSocialAIService } from './services/advancedSocialAIService.js';
 import { autopilotLearningService } from './services/autopilotLearningService.js';
+import { evolutionRegistry } from './services/evolutionRegistry.js';
 
 // ── Deterministic PRNG — FNV-1a 32-bit ──────────────────────────────────────
 function seededIndex(seed: string, length: number): number {
@@ -57,6 +58,10 @@ export class AutonomousAutopilot extends EventEmitter {
   ] as const;
   private contentPerformanceHistory: Array<Record<string, unknown>> = [];
   private optimalTimingCache: Map<string, number[]> = new Map();
+  // Platforms that have received REAL learned timing data (vs. seeded defaults).
+  // Learned data always wins; the self-evolution override only applies when a
+  // platform has no learned data yet.
+  private learnedTimingPlatforms: Set<string> = new Set();
   private topicPerformanceMap: Map<string, number> = new Map();
   private topicTrialCountMap: Map<string, number> = new Map();
   private adaptiveLearningData: Map<string, any> = new Map();
@@ -365,9 +370,21 @@ export class AutonomousAutopilot extends EventEmitter {
       return true; // Must post to meet minimum
     }
 
-    // Use optimal timing for regular posts
+    // Use optimal timing for regular posts. Precedence: real learned data >
+    // self-evolution registry override (from a real detected industry change) >
+    // seeded static defaults.
     const currentHour = new Date().getHours();
-    const optimalHours = this.optimalTimingCache.get(platform) || [14];
+    let optimalHours = this.optimalTimingCache.get(platform) || [14];
+    if (!this.learnedTimingPlatforms.has(platform)) {
+      try {
+        const override = evolutionRegistry.getOptimalHoursOverride(platform);
+        if (override && override.length > 0) {
+          optimalHours = override;
+        }
+      } catch (err) {
+        logger.warn({ err }, `[AutonomousAutopilot] Failed to read evolution hours override for ${platform}`);
+      }
+    }
 
     // Under moderate pressure expand the acceptable posting window from ±1 h to ±2 h
     const window = pressure > 0.5 ? 2 : 1;
@@ -815,6 +832,7 @@ export class AutonomousAutopilot extends EventEmitter {
 
       if (sortedHours.length > 0) {
         this.optimalTimingCache.set(platform, sortedHours);
+        this.learnedTimingPlatforms.add(platform);
       }
     });
   }

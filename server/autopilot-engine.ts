@@ -4,6 +4,7 @@ import { platformAPI } from './platform-apis.js';
 import { logger } from './logger.js';
 import { advancedSocialAIService } from './services/advancedSocialAIService.js';
 import { autopilotLearningService } from './services/autopilotLearningService.js';
+import { evolutionRegistry } from './services/evolutionRegistry.js';
 
 // ── Deterministic PRNG — FNV-1a 32-bit ──────────────────────────────────────
 function seededIndex(seed: string, length: number): number {
@@ -339,6 +340,21 @@ export class AutopilotEngine extends EventEmitter {
       );
     }
 
+    // No real learned data yet — consult the Self-Evolution registry for a
+    // bounded posting_optimization override derived from a real detected
+    // industry change. This sits ABOVE static defaults but BELOW learned data.
+    try {
+      const override = evolutionRegistry.getOptimalHoursOverride(platform);
+      if (override && override.length > 0) {
+        logger.info(
+          `[Autopilot] Using self-evolution posting-hours override for ${platform}: ${override.join(',')}`,
+        );
+        return override;
+      }
+    } catch (err) {
+      logger.warn({ err }, `[Autopilot] Failed to read evolution hours override for ${platform}`);
+    }
+
     const platformTimes: Record<string, number[]> = {
       twitter: [9, 12, 15, 18],
       instagram: [8, 11, 14, 19],
@@ -561,6 +577,17 @@ export class AutopilotEngine extends EventEmitter {
     businessGoals: string[];
   }): Promise<{ text: string; hashtags: string[]; hook?: string; cta?: string; viralScore?: number }> {
     try {
+      // Consult the Self-Evolution registry for a bounded content_optimization
+      // override derived from a real detected industry change. Only the two
+      // already-supported generator knobs (variantCount, includeEmojis) are
+      // touched, so the MaxCore contract is unchanged; absent an override these
+      // fall back to the prior defaults.
+      const contentOpt = evolutionRegistry.getContentOptimization(params.platform.toLowerCase());
+      const variantCount =
+        typeof contentOpt?.variantCount === 'number' ? contentOpt.variantCount : 3;
+      const includeEmojis =
+        typeof contentOpt?.visualPriority === 'boolean' ? contentOpt.visualPriority : true;
+
       // Use Advanced Social AI for GPT-5.2 level content generation
       const advancedResult = await advancedSocialAIService.generateAdvancedContent({
         userId: this.userId,
@@ -571,8 +598,8 @@ export class AutopilotEngine extends EventEmitter {
         targetAudience: params.targetAudience?.toLowerCase().replace(/\s+/g, '_'),
         contentType: this.mapContentType(params.contentType),
         includeHashtags: true,
-        includeEmojis: true,
-        variantCount: 3,
+        includeEmojis,
+        variantCount,
       });
 
       logger.info(`[Autopilot] Generated content with Advanced AI: score=${advancedResult.scoring.overall.toFixed(1)}, viral=${advancedResult.viralPotential.score.toFixed(1)}`);
