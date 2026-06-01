@@ -21,6 +21,7 @@ import { db } from '../db.js';
 import { userBrandVoices, autopilotPreferences, socialConnections } from '@shared/schema';
 import { eq } from 'drizzle-orm';
 import { MaxCoreAIClient } from './unifiedAIController.js';
+import { evolutionRegistry } from './evolutionRegistry.js';
 
 // ============================================================================
 // SEEDED PRNG HELPER
@@ -331,6 +332,23 @@ export interface AdvancedContentRequest {
   beatContext?: string;
   promotionContext?: string;
 }
+
+/**
+ * Affinity between a self-evolution posting_optimization `contentFormatPriority`
+ * media format and this service's contentType enum. When a real detected change
+ * prioritizes a media format, a direct/manual/scheduled generation request that
+ * did NOT pin a contentType is biased toward the matching content type — the
+ * same "bias toward the prioritized format" idea the autopilot engine applies
+ * over its configured content types.
+ */
+const CONTENT_FORMAT_TO_TYPE: Record<string, NonNullable<AdvancedContentRequest['contentType']>> = {
+  video: 'behind_scenes',
+  reel: 'behind_scenes',
+  story: 'behind_scenes',
+  carousel: 'storytelling',
+  image: 'announcement',
+  text: 'engagement',
+};
 
 export interface AdvancedGeneratedContent {
   primary: {
@@ -1087,7 +1105,60 @@ class AdvancedSocialAIService {
     ].join('|');
   }
 
-  async generateAdvancedContent(request: AdvancedContentRequest): Promise<AdvancedGeneratedContent> {
+  /**
+   * Surface the Self-Evolution posting_optimization knobs (derived from a real
+   * detected industry change) into ANY generation request — manual, scheduled,
+   * or the service called directly — the same way the autopilot engine does, so
+   * the AI's format/engagement guidance is consistent everywhere. Sits ABOVE the
+   * caller's defaults and is fully reversible (deactivateAll() reverts it).
+   * Per-artist learned data is never touched here.
+   *
+   *  - engagementTargeting==='high' steers the objective toward 'engagement'
+   *    (mirrors autopilot-engine.generateContentForAutopilot, which overrides the
+   *    goal-derived objective unconditionally).
+   *  - contentFormatPriority biases contentType toward the prioritized media
+   *    format, but ONLY when the caller did not pin a contentType — an explicit
+   *    caller choice always wins.
+   */
+  private applyPostingOptimization(request: AdvancedContentRequest): AdvancedContentRequest {
+    try {
+      const platform = request.platforms?.[0]?.toLowerCase();
+      const posting = platform ? evolutionRegistry.getPostingOptimization(platform) : null;
+      if (!posting) return request;
+
+      const patch: Partial<AdvancedContentRequest> = {};
+
+      if (posting.engagementTargeting === 'high' && request.objective !== 'engagement') {
+        patch.objective = 'engagement';
+      }
+
+      if (!request.contentType && Array.isArray(posting.contentFormatPriority)) {
+        for (const fmt of posting.contentFormatPriority) {
+          const mapped = typeof fmt === 'string' ? CONTENT_FORMAT_TO_TYPE[fmt.toLowerCase()] : undefined;
+          if (mapped) {
+            patch.contentType = mapped;
+            break;
+          }
+        }
+      }
+
+      if (Object.keys(patch).length === 0) return request;
+      logger.info(
+        `[AdvancedSocialAI] Applied self-evolution posting_optimization for ${platform}: ` +
+          `${Object.keys(patch).join(', ')}`,
+      );
+      return { ...request, ...patch };
+    } catch (err) {
+      logger.warn({ err }, '[AdvancedSocialAI] Failed to apply evolution posting_optimization');
+      return request;
+    }
+  }
+
+  async generateAdvancedContent(rawRequest: AdvancedContentRequest): Promise<AdvancedGeneratedContent> {
+    // Surface the Self-Evolution posting_optimization guidance into this request
+    // before anything else (cache key, MaxCore hints, post-processing) so the
+    // override is honored on manual / scheduled / direct paths, not just autopilot.
+    const request = this.applyPostingOptimization(rawRequest);
     const cacheKey = AdvancedSocialAIService._cacheKey(request);
     const cached   = AdvancedSocialAIService._contentCache.get(cacheKey);
     if (cached && Date.now() - cached.ts < AdvancedSocialAIService._CACHE_TTL_MS) {
