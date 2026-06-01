@@ -513,7 +513,7 @@ export class AutonomousAutopilot extends EventEmitter {
     objectives: string[];
   }): Promise<{ text: string; hashtags: string[]; hook?: string; cta?: string }> {
     const goalsLower = params.objectives.map((g) => g.toLowerCase()).join(' ');
-    const objective: 'awareness' | 'engagement' | 'conversions' | 'viral' =
+    let objective: 'awareness' | 'engagement' | 'conversions' | 'viral' =
       goalsLower.includes('sales') || goalsLower.includes('conversion') || goalsLower.includes('revenue')
         ? 'conversions'
         : goalsLower.includes('viral') || goalsLower.includes('reach') || goalsLower.includes('growth')
@@ -521,6 +521,22 @@ export class AutonomousAutopilot extends EventEmitter {
           : goalsLower.includes('brand') || goalsLower.includes('awareness')
             ? 'awareness'
             : 'engagement';
+
+    // A self-evolution posting_optimization override may call for prioritizing
+    // engagement (from a real detected industry change). When engagementTargeting
+    // is 'high', steer the objective toward engagement regardless of the
+    // configured objectives. Fully reversible (deactivating reverts behavior).
+    try {
+      const posting = evolutionRegistry.getPostingOptimization(params.platform.toLowerCase());
+      if (posting?.engagementTargeting === 'high') {
+        objective = 'engagement';
+      }
+    } catch (err) {
+      logger.warn(
+        { err },
+        `[AutonomousAutopilot] Failed to read evolution engagement targeting for ${params.platform}`,
+      );
+    }
 
     const voice = params.brandPersonality.toLowerCase();
     const tone: 'professional' | 'casual' | 'energetic' | 'inspirational' | 'humorous' | 'storytelling' =

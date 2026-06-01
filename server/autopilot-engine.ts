@@ -19,6 +19,25 @@ function seededIndex(seed: string, length: number): number {
 }
 // ────────────────────────────────────────────────────────────────────────────
 
+// Affinity between a self-evolution posting_optimization `contentFormatPriority`
+// (a prioritized list of media formats from a real detected industry change)
+// and the autopilot's configured content types. When a change prioritizes a
+// media format, the autopilot biases its content-type selection toward the
+// configured type that best expresses that format — staying within the artist's
+// configured content types rather than inventing new ones.
+const CONTENT_TYPE_FORMAT_AFFINITY: Record<string, string> = {
+  announcements: 'image',
+  announcement: 'image',
+  'behind-the-scenes': 'video',
+  bts: 'video',
+  questions: 'text',
+  polls: 'text',
+  tips: 'carousel',
+  insights: 'carousel',
+  promotional: 'image',
+  promo: 'image',
+};
+
 interface AutopilotJob {
   id: string;
   type: 'content_generation' | 'content_publishing' | 'performance_analysis';
@@ -222,7 +241,7 @@ export class AutopilotEngine extends EventEmitter {
         data: {
           topic: this.selectNextTopic(),
           brandVoice: this.config.brandVoice,
-          contentType: this.selectContentType(),
+          contentType: this.selectContentType(platform),
         },
         status: 'pending',
         retries: 0,
@@ -375,9 +394,48 @@ export class AutopilotEngine extends EventEmitter {
     return this.config.topics[Math.floor(topicIndex)];
   }
 
-  private selectContentType(): string {
+  private selectContentType(platform?: string): string {
     const types = this.config.contentTypes;
-    return types[seededIndex(this.userId + ':' + types.join(','), types.length)];
+    if (types.length === 0) return 'insights';
+    const seeded = types[seededIndex(this.userId + ':' + types.join(','), types.length)];
+
+    // A self-evolution posting_optimization override may prioritize certain
+    // media formats (from a real detected industry change). Bias the configured
+    // content type toward the highest-priority format the artist actually
+    // produces; if none of the configured types map to a prioritized format,
+    // keep the deterministic seeded pick. Sits ABOVE the seeded default and is
+    // fully reversible (deactivating the enhancement restores the seeded pick).
+    try {
+      const posting = platform ? evolutionRegistry.getPostingOptimization(platform) : null;
+      const priority = posting?.contentFormatPriority;
+      if (priority && priority.length > 0) {
+        let best: string | undefined;
+        let bestRank = Infinity;
+        for (const t of types) {
+          const fmt = CONTENT_TYPE_FORMAT_AFFINITY[t.toLowerCase()];
+          if (!fmt) continue;
+          const rank = priority.indexOf(fmt);
+          if (rank >= 0 && rank < bestRank) {
+            bestRank = rank;
+            best = t;
+          }
+        }
+        if (best) {
+          logger.info(
+            `[Autopilot] Using self-evolution content-format priority for ${platform}: ` +
+              `picked "${best}" (formats=${priority.join(',')})`,
+          );
+          return best;
+        }
+      }
+    } catch (err) {
+      logger.warn(
+        { err },
+        `[Autopilot] Failed to apply evolution content-format priority for ${platform}`,
+      );
+    }
+
+    return seeded;
   }
 
   // Job Processing
@@ -587,19 +645,43 @@ export class AutopilotEngine extends EventEmitter {
         typeof contentOpt?.variantCount === 'number' ? contentOpt.variantCount : 3;
       const includeEmojis =
         typeof contentOpt?.visualPriority === 'boolean' ? contentOpt.visualPriority : true;
+      // The remaining content_optimization knobs reshape the hashtags, caption
+      // length, and call-to-action of the generated post. Pass them through only
+      // when present; absent an override they stay undefined and the generator
+      // uses its prior behavior.
+      const hashtagStrategy = contentOpt?.hashtagStrategy as
+        | 'trending' | 'niche' | 'branded' | 'balanced' | undefined;
+      const captionLength = contentOpt?.captionLength as
+        | 'short' | 'optimal' | 'long' | undefined;
+      const callToActionStrength = contentOpt?.callToActionStrength as
+        | 'low' | 'medium' | 'high' | undefined;
+
+      // A self-evolution posting_optimization override may call for prioritizing
+      // engagement (from a real detected industry change). When engagementTargeting
+      // is 'high', steer the generator's objective toward engagement-driving
+      // content regardless of the configured business goals; 'standard' (or no
+      // override) keeps the goal-derived objective. Fully reversible.
+      const posting = evolutionRegistry.getPostingOptimization(params.platform.toLowerCase());
+      let objective = this.mapGoalsToObjective(params.businessGoals);
+      if (posting?.engagementTargeting === 'high') {
+        objective = 'engagement';
+      }
 
       // Use Advanced Social AI for GPT-5.2 level content generation
       const advancedResult = await advancedSocialAIService.generateAdvancedContent({
         userId: this.userId,
         topic: params.topic,
         platforms: [params.platform.toLowerCase()],
-        objective: this.mapGoalsToObjective(params.businessGoals),
+        objective,
         tone: this.mapBrandVoiceToTone(params.brandVoice),
         targetAudience: params.targetAudience?.toLowerCase().replace(/\s+/g, '_'),
         contentType: this.mapContentType(params.contentType),
         includeHashtags: true,
         includeEmojis,
         variantCount,
+        hashtagStrategy,
+        captionLength,
+        callToActionStrength,
       });
 
       logger.info(`[Autopilot] Generated content with Advanced AI: score=${advancedResult.scoring.overall.toFixed(1)}, viral=${advancedResult.viralPotential.score.toFixed(1)}`);

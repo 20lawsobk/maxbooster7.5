@@ -49,13 +49,23 @@ export const CONSUMED_CATEGORIES: ReadonlySet<EnhancementCategory> = new Set<Enh
  * consumed category is not enough; the payload must carry a knob a reader uses.
  *
  *  - posting_optimization → `optimalHours` (read by getOptimalHoursOverride,
- *    consumed by autopilot posting-window selection).
- *  - content_optimization → `variantCount` / `visualPriority` (read by
- *    getContentOptimization, consumed by autopilot content generation).
+ *    consumed by autopilot posting-window selection), `contentFormatPriority`
+ *    and `engagementTargeting` (read by getPostingOptimization, consumed by
+ *    autopilot content-type selection and the generation objective).
+ *  - content_optimization → `variantCount` / `visualPriority` /
+ *    `hashtagStrategy` / `captionLength` / `callToActionStrength` (read by
+ *    getContentOptimization, consumed by autopilot content generation and
+ *    passed through to advancedSocialAIService.generateAdvancedContent).
  */
 const EFFECTIVE_FIELDS: Partial<Record<EnhancementCategory, readonly string[]>> = {
-  posting_optimization: ['optimalHours'],
-  content_optimization: ['variantCount', 'visualPriority'],
+  posting_optimization: ['optimalHours', 'contentFormatPriority', 'engagementTargeting'],
+  content_optimization: [
+    'variantCount',
+    'visualPriority',
+    'hashtagStrategy',
+    'captionLength',
+    'callToActionStrength',
+  ],
 };
 
 export interface EvolutionEnhancement {
@@ -413,6 +423,83 @@ class EvolutionRegistry {
     }
     delete merged.platform;
     return Object.keys(merged).length > 0 ? merged : null;
+  }
+
+  /**
+   * Merged active posting-optimization knobs (excluding optimalHours, which has
+   * its own getter) for a platform (or global), or null. Read by autopilot
+   * content-type selection (contentFormatPriority) and the generation objective
+   * (engagementTargeting). Global entries apply first, then platform-specific
+   * entries override them; most-recent wins within each scope.
+   */
+  getPostingOptimization(platform?: string): {
+    contentFormatPriority?: string[];
+    engagementTargeting?: 'standard' | 'high';
+  } | null {
+    this.maybeRefresh();
+    const key = platform?.toLowerCase();
+    const entries = this.activeOfCategory('posting_optimization').sort((a, b) =>
+      a.appliedAt.localeCompare(b.appliedAt),
+    );
+    if (entries.length === 0) return null;
+    const merged: { contentFormatPriority?: string[]; engagementTargeting?: 'standard' | 'high' } = {};
+    const take = (ep: Record<string, unknown>): void => {
+      if (Array.isArray(ep.contentFormatPriority) && ep.contentFormatPriority.length > 0) {
+        merged.contentFormatPriority = ep.contentFormatPriority as string[];
+      }
+      if (ep.engagementTargeting === 'standard' || ep.engagementTargeting === 'high') {
+        merged.engagementTargeting = ep.engagementTargeting;
+      }
+    };
+    // Apply global first, then platform-specific so the platform override wins.
+    for (const e of entries) {
+      const ep = e.payload as Record<string, unknown>;
+      if (!ep.platform) take(ep);
+    }
+    if (key) {
+      for (const e of entries) {
+        const ep = e.payload as Record<string, unknown>;
+        if (ep.platform === key) take(ep);
+      }
+    }
+    return Object.keys(merged).length > 0 ? merged : null;
+  }
+
+  /**
+   * The currently-active posting-format / engagement knobs, grouped per
+   * platform (or `global` for entries with no platform). Surfaced to the admin
+   * Autonomy page so admins can see WHICH format/engagement guidance is live
+   * right now. Only entries carrying a format-priority or engagement-targeting
+   * knob are returned; most-recent active entry wins per knob within a scope.
+   * Reflects rollbacks immediately because it reads only active entries.
+   */
+  getActivePostingFormatKnobs(): Array<{
+    platform: string;
+    contentFormatPriority?: string[];
+    engagementTargeting?: 'standard' | 'high';
+  }> {
+    this.maybeRefresh();
+    const entries = this.activeOfCategory('posting_optimization').sort((a, b) =>
+      a.appliedAt.localeCompare(b.appliedAt),
+    );
+    const byPlatform = new Map<
+      string,
+      { contentFormatPriority?: string[]; engagementTargeting?: 'standard' | 'high' }
+    >();
+    for (const e of entries) {
+      const ep = e.payload as Record<string, unknown>;
+      const hasFormat =
+        Array.isArray(ep.contentFormatPriority) && ep.contentFormatPriority.length > 0;
+      const hasEngagement =
+        ep.engagementTargeting === 'standard' || ep.engagementTargeting === 'high';
+      if (!hasFormat && !hasEngagement) continue;
+      const key = typeof ep.platform === 'string' && ep.platform ? ep.platform : 'global';
+      const cur = byPlatform.get(key) || {};
+      if (hasFormat) cur.contentFormatPriority = ep.contentFormatPriority as string[];
+      if (hasEngagement) cur.engagementTargeting = ep.engagementTargeting as 'standard' | 'high';
+      byPlatform.set(key, cur);
+    }
+    return Array.from(byPlatform.entries()).map(([platform, knobs]) => ({ platform, ...knobs }));
   }
 
   // ── Status / introspection ──────────────────────────────────────────────

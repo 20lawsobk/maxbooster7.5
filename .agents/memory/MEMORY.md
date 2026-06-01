@@ -15,3 +15,4 @@
 - [Autopilot UCB1 arm seeding](autopilot-ucb1-arms.md) — bandit must seed arms from a static default set unioned with history + force-explore untried arms, or it locks to one arm and never converges
 - [Autopilot publish-context recovery](autopilot-publish-context.md) — context captured after queue shift() must be stored durably and NOT deleted on consume (analysis jobs retry); bound it by cap-eviction at publish instead
 - [Autonomous "completed"/"applied" honesty](autonomous-completed-honesty.md) — success/applied status must gate on a real side-effect a live consumer reads (effective field), never on category membership or reaching end-of-function; activateCampaign rejects pre-`active` campaigns so create as `draft`
+- [typecheck OOM vs heap bump](typecheck-oom.md) — default heap OOMs ~4GB; `--max-old-space-size=6144` avoids the crash but full tsc is slow + memory-heavy, so run `typecheck` standalone (not alongside the app) or it starves /api/ready
