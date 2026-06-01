@@ -519,3 +519,90 @@ describe('Self-Evolution → autopilot content generation (integration-style)', 
     expect(callArg.includeEmojis).toBe(true);
   });
 });
+
+describe('evolutionRegistry.getActivePostingFormatKnobs() — admin visibility', () => {
+  beforeEach(() => {
+    resetRegistry();
+    vi.clearAllMocks();
+  });
+
+  it('returns the active format/engagement knobs grouped per platform and reflects rollback', async () => {
+    // Empty registry → nothing to surface.
+    expect(evolutionRegistry.getActivePostingFormatKnobs()).toEqual([]);
+
+    await evolutionRegistry.apply({
+      upgradeId: 'up-knob-1',
+      changeId: 'chg-knob-1',
+      category: 'posting_optimization',
+      title: 'TikTok video-first',
+      source: 'rss',
+      payload: { platform: 'tiktok', contentFormatPriority: ['video', 'reel'] },
+    });
+    await evolutionRegistry.apply({
+      upgradeId: 'up-knob-2',
+      changeId: 'chg-knob-2',
+      category: 'posting_optimization',
+      title: 'Instagram engagement-first',
+      source: 'tavily',
+      payload: { platform: 'instagram', engagementTargeting: 'high' },
+    });
+    // A global entry with no platform.
+    await evolutionRegistry.apply({
+      upgradeId: 'up-knob-3',
+      changeId: 'chg-knob-3',
+      category: 'posting_optimization',
+      title: 'Global carousel priority',
+      source: 'rss',
+      payload: { contentFormatPriority: ['carousel'] },
+    });
+    // An hours-only entry carries NO format/engagement knob → must be excluded.
+    await evolutionRegistry.apply({
+      upgradeId: 'up-knob-4',
+      changeId: 'chg-knob-4',
+      category: 'posting_optimization',
+      title: 'Hours only',
+      source: 'rss',
+      payload: { platform: 'youtube', optimalHours: [9, 12, 18] },
+    });
+
+    const knobs = evolutionRegistry.getActivePostingFormatKnobs();
+    const byPlatform = Object.fromEntries(knobs.map((k) => [k.platform, k]));
+
+    expect(byPlatform.tiktok).toMatchObject({ contentFormatPriority: ['video', 'reel'] });
+    expect(byPlatform.instagram).toMatchObject({ engagementTargeting: 'high' });
+    expect(byPlatform.global).toMatchObject({ contentFormatPriority: ['carousel'] });
+    // The hours-only platform never carries a format/engagement knob.
+    expect(byPlatform.youtube).toBeUndefined();
+
+    // Rollback empties the live view immediately.
+    await evolutionRegistry.deactivateAll();
+    expect(evolutionRegistry.getActivePostingFormatKnobs()).toEqual([]);
+  });
+
+  it('merges format + engagement knobs into one entry per platform, most-recent wins', async () => {
+    await evolutionRegistry.apply({
+      upgradeId: 'up-merge-1',
+      changeId: 'chg-merge-1',
+      category: 'posting_optimization',
+      title: 'TikTok format',
+      source: 'rss',
+      payload: { platform: 'tiktok', contentFormatPriority: ['image'] },
+    });
+    await evolutionRegistry.apply({
+      upgradeId: 'up-merge-2',
+      changeId: 'chg-merge-2',
+      category: 'posting_optimization',
+      title: 'TikTok engagement',
+      source: 'rss',
+      payload: { platform: 'tiktok', engagementTargeting: 'high' },
+    });
+
+    const knobs = evolutionRegistry.getActivePostingFormatKnobs();
+    expect(knobs).toHaveLength(1);
+    expect(knobs[0]).toMatchObject({
+      platform: 'tiktok',
+      contentFormatPriority: ['image'],
+      engagementTargeting: 'high',
+    });
+  });
+});

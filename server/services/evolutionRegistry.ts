@@ -465,6 +465,43 @@ class EvolutionRegistry {
     return Object.keys(merged).length > 0 ? merged : null;
   }
 
+  /**
+   * The currently-active posting-format / engagement knobs, grouped per
+   * platform (or `global` for entries with no platform). Surfaced to the admin
+   * Autonomy page so admins can see WHICH format/engagement guidance is live
+   * right now. Only entries carrying a format-priority or engagement-targeting
+   * knob are returned; most-recent active entry wins per knob within a scope.
+   * Reflects rollbacks immediately because it reads only active entries.
+   */
+  getActivePostingFormatKnobs(): Array<{
+    platform: string;
+    contentFormatPriority?: string[];
+    engagementTargeting?: 'standard' | 'high';
+  }> {
+    this.maybeRefresh();
+    const entries = this.activeOfCategory('posting_optimization').sort((a, b) =>
+      a.appliedAt.localeCompare(b.appliedAt),
+    );
+    const byPlatform = new Map<
+      string,
+      { contentFormatPriority?: string[]; engagementTargeting?: 'standard' | 'high' }
+    >();
+    for (const e of entries) {
+      const ep = e.payload as Record<string, unknown>;
+      const hasFormat =
+        Array.isArray(ep.contentFormatPriority) && ep.contentFormatPriority.length > 0;
+      const hasEngagement =
+        ep.engagementTargeting === 'standard' || ep.engagementTargeting === 'high';
+      if (!hasFormat && !hasEngagement) continue;
+      const key = typeof ep.platform === 'string' && ep.platform ? ep.platform : 'global';
+      const cur = byPlatform.get(key) || {};
+      if (hasFormat) cur.contentFormatPriority = ep.contentFormatPriority as string[];
+      if (hasEngagement) cur.engagementTargeting = ep.engagementTargeting as 'standard' | 'high';
+      byPlatform.set(key, cur);
+    }
+    return Array.from(byPlatform.entries()).map(([platform, knobs]) => ({ platform, ...knobs }));
+  }
+
   // ── Status / introspection ──────────────────────────────────────────────
 
   getActiveEnhancements(limit = 50): EvolutionEnhancement[] {

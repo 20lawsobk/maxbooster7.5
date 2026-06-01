@@ -388,6 +388,42 @@ export default function AdminAutonomy() {
                 </div>
               )}
 
+              {/* Live posting-format / engagement guidance currently shaping posts */}
+              {(() => {
+                const knobs: Record<string, unknown>[] = status?.activePostingKnobs ?? [];
+                if (knobs.length === 0) return null;
+                const fmtPlatform = (p: string) => (p === 'global' ? 'All platforms' : p);
+                return (
+                  <div className="p-3 rounded-lg border border-green-200 bg-green-50/60 dark:bg-green-950/30 space-y-2">
+                    <div className="flex items-center gap-1.5 text-xs font-medium text-green-800 dark:text-green-300">
+                      <TrendingUp className="w-3.5 h-3.5" />
+                      Live posting guidance (applied now)
+                    </div>
+                    <div className="space-y-1.5">
+                      {knobs.map((k: Record<string, unknown>, i: number) => {
+                        const formats: string[] = k.contentFormatPriority ?? [];
+                        const engagement: string | undefined = k.engagementTargeting;
+                        return (
+                          <div key={i} className="flex items-center gap-2 flex-wrap text-xs">
+                            <span className="font-medium capitalize min-w-[88px]">{fmtPlatform(String(k.platform))}</span>
+                            {formats.length > 0 && (
+                              <span className="px-2 py-0.5 rounded bg-blue-100 text-blue-700 border border-blue-200">
+                                prioritizing {formats.join(', ')}
+                              </span>
+                            )}
+                            {engagement && (
+                              <span className="px-2 py-0.5 rounded bg-purple-100 text-purple-700 border border-purple-200">
+                                {engagement === 'high' ? 'engagement-first' : 'standard targeting'}
+                              </span>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })()}
+
               <div className="flex gap-2 flex-wrap">
                 <Button
                   onClick={() => startEngine.mutate()}

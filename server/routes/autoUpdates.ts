@@ -2,6 +2,7 @@ import { Router, Request, Response, NextFunction } from 'express';
 import { requireAuth, requireAdmin } from '../middleware/auth.js';
 import { logger } from '../logger.js';
 import { selfEvolution } from '../self-evolution-engine.js';
+import { evolutionRegistry } from '../services/evolutionRegistry.js';
 import { silentDeployment } from '../services/silentDeploymentService.js';
 import { industryMonitor } from '../services/industryMonitorService.js';
 import {
@@ -82,6 +83,7 @@ router.get('/status', requireAuth, async (_req, res) => {
       safety: safetyStatus,
       recentChanges,
       recentUpgrades,
+      activePostingKnobs: evolutionRegistry.getActivePostingFormatKnobs(),
     });
   } catch (error) {
     logger.warn({ err: error }, 'Failed to get auto-updates status:');
