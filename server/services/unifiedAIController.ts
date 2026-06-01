@@ -32,6 +32,24 @@ import { RecommendationEngine, type RecommendationResult, type SimilarityResult,
 import { AdOptimizationEngine, type Campaign, type CampaignScore, type BudgetOptimizationResult, type CreativePrediction, type ROIForecast } from '../../shared/ml/models/AdOptimizationEngine.js';
 import { SocialAutopilotEngine, type Platform, type ContentType, type BestTimeResult, type ContentTypeRecommendation, type ViralPotentialScore, type EngagementPrediction, type ScheduleOptimization, type HistoricalPost, type AudienceInsights } from '../../shared/ml/models/SocialAutopilotEngine.js';
 import { AdvancedTimeSeriesModel, type MetricType, type PredictionHorizon, type ForecastResult } from '../../shared/ml/models/AdvancedTimeSeriesModel.js';
+import { evolutionRegistry } from './evolutionRegistry.js';
+
+// ============================================================================
+// SELF-EVOLUTION POSTING-OPTIMIZATION → MANUAL GENERATION
+// Maps a prioritized media format (from the posting_optimization knob's
+// `contentFormatPriority`) onto this controller's contentType enum so the
+// manual "generate a post" path biases the same way the autopilot engine and
+// advancedSocialAIService do. Storytelling has no equivalent here, so carousel
+// maps to the closest interaction-driving type ('engagement').
+// ============================================================================
+const CONTENT_FORMAT_TO_TYPE: Record<string, NonNullable<ContentGenerationOptions['contentType']>> = {
+  video: 'behind-the-scenes',
+  reel: 'behind-the-scenes',
+  story: 'behind-the-scenes',
+  carousel: 'engagement',
+  image: 'announcement',
+  text: 'engagement',
+};
 
 // ============================================================================
 // TYPE DEFINITIONS
@@ -256,6 +274,62 @@ export class UnifiedAIController {
   // CONTENT GENERATION
   // ============================================================================
 
+  /**
+   * Surfaces the Self-Evolution posting_optimization guidance into the manual
+   * "generate a post" path so the artist-clicked button biases the same way the
+   * autopilot engine and advancedSocialAIService do. Reads
+   * evolutionRegistry.getPostingOptimization(platform) and:
+   *
+   *  - engagementTargeting==='high' steers the objective toward 'engagement'
+   *    (mirrors the autopilot/advanced paths).
+   *  - contentFormatPriority biases contentType toward the prioritized media
+   *    format, but ONLY when the caller did not pin a contentType — an explicit
+   *    caller choice always wins.
+   *
+   * Returns the EFFECTIVE contentType (caller's pin or the bias) and an optional
+   * objective. Fully reversible: when no active knob exists getPostingOptimization
+   * returns null and the caller's values pass through unchanged.
+   */
+  private applyPostingOptimization(
+    platform: string | undefined,
+    callerContentType: ContentGenerationOptions['contentType'],
+  ): { contentType?: ContentGenerationOptions['contentType']; objective?: 'engagement' } {
+    const result: { contentType?: ContentGenerationOptions['contentType']; objective?: 'engagement' } = {};
+    if (callerContentType) result.contentType = callerContentType;
+    try {
+      const key = platform?.toLowerCase();
+      const posting = key ? evolutionRegistry.getPostingOptimization(key) : null;
+      if (!posting) return result;
+
+      if (posting.engagementTargeting === 'high') {
+        result.objective = 'engagement';
+      }
+
+      if (!callerContentType && Array.isArray(posting.contentFormatPriority)) {
+        for (const fmt of posting.contentFormatPriority) {
+          const mapped = typeof fmt === 'string' ? CONTENT_FORMAT_TO_TYPE[fmt.toLowerCase()] : undefined;
+          if (mapped) {
+            result.contentType = mapped;
+            break;
+          }
+        }
+      }
+
+      const applied: string[] = [];
+      if (result.objective) applied.push('objective');
+      if (!callerContentType && result.contentType) applied.push('contentType');
+      if (applied.length > 0) {
+        logger.info(
+          `[UnifiedAI] Applied self-evolution posting_optimization for ${key}: ${applied.join(', ')}`,
+        );
+      }
+      return result;
+    } catch (err) {
+      logger.warn({ err }, '[UnifiedAI] Failed to apply evolution posting_optimization');
+      return result;
+    }
+  }
+
   public async generateContent(options: ContentGenerationOptions): Promise<UnifiedAIResult<CaptionResult>> {
     const startTime = Date.now();
     await this.ensureInitialized();
@@ -268,6 +342,14 @@ export class UnifiedAIController {
       const mappedPlatform = options.platform && platformAliases[options.platform]
         ? platformAliases[options.platform]
         : (options.platform || 'instagram');
+
+      // Self-Evolution posting_optimization: bias contentType / objective from
+      // the live registry (keyed by the artist-facing platform, not the alias)
+      // so the manual "generate a post" button honors the same guidance the
+      // autopilot and scheduled paths already do. Caller-pinned values win.
+      const posting = this.applyPostingOptimization(options.platform, options.contentType);
+      const effectiveContentType = posting.contentType;
+      const effectiveObjective = posting.objective;
 
       const ctx = options.userContext;
 
@@ -363,6 +445,12 @@ export class UnifiedAIController {
       if (ctx?.contentThemes?.length)  mcPayload.content_themes        = ctx.contentThemes;
       if (ctx?.avoidTopics?.length)    mcPayload.avoid_topics          = ctx.avoidTopics;
       if (ctx?.recentPostSnippets?.length) mcPayload.recent_post_snippets = ctx.recentPostSnippets;
+      // Effective content_type / objective — caller-pinned contentType (or the
+      // Self-Evolution contentFormatPriority bias when unpinned) and the
+      // engagementTargeting='high' objective are forwarded so MaxCore actually
+      // shapes the post around them. Without this the knob would silently no-op.
+      if (effectiveContentType)        mcPayload.content_type          = effectiveContentType;
+      if (effectiveObjective)          mcPayload.objective             = effectiveObjective;
       // Release / project metadata
       if (options.album)               mcPayload.album                 = options.album;
       if (options.releaseDate)         mcPayload.release_date          = options.releaseDate;
