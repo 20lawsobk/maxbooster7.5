@@ -14,3 +14,4 @@
 - [SMS code ownership](sms-verify-vs-local-code.md) — Twilio Verify owns its code; confirm via verificationChecks not a local code; gate dev `devCode` to non-prod
 - [Autopilot UCB1 arm seeding](autopilot-ucb1-arms.md) — bandit must seed arms from a static default set unioned with history + force-explore untried arms, or it locks to one arm and never converges
 - [Autopilot publish-context recovery](autopilot-publish-context.md) — context captured after queue shift() must be stored durably and NOT deleted on consume (analysis jobs retry); bound it by cap-eviction at publish instead
+- [Autonomous "completed" honesty](autonomous-completed-honesty.md) — an autonomous step's success status must gate on a real downstream side-effect, never on reaching end-of-function; activateCampaign rejects pre-`active` campaigns so create as `draft`

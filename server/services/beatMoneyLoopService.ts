@@ -39,7 +39,7 @@ import {
   type BeatMoneyLoopState,
   type BeatMoneyLoopCycle,
 } from '@shared/schema';
-import { and, desc, eq, gte, sql } from 'drizzle-orm';
+import { and, desc, eq, gte, inArray, sql } from 'drizzle-orm';
 import { logger } from '../logger.js';
 import { musicIndustryContextFilter, type MusicIndustryContext } from './musicIndustryContextFilter.js';
 import {
@@ -555,9 +555,13 @@ class BeatMoneyLoopService {
    * Called opportunistically from the scheduler heartbeat so dashboards stay fresh.
    */
   async analyseRecentCycles(): Promise<{ updated: number }> {
+    // Both 'completed' (beat listed + ads posted) and 'listed' (beat listed,
+    // ads not posted) have a LIVE beat that accrues plays/downloads/revenue,
+    // so backfill metrics for both — filtering to 'completed' only would
+    // undercount revenue on every cycle where ads weren't posted.
     const recent = await db.select().from(beatMoneyLoopCycles)
       .where(and(
-        eq(beatMoneyLoopCycles.status, 'completed'),
+        inArray(beatMoneyLoopCycles.status, ['completed', 'listed']),
         gte(beatMoneyLoopCycles.startedAt, new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)),
       ))
       .limit(100);
