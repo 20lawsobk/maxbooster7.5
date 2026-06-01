@@ -1,6 +1,6 @@
 ---
-name: Autonomous "completed" honesty
-description: Why an autonomous loop step must gate its success status on a real side-effect, and the activateCampaign create-as-draft gotcha
+name: Autonomous "completed"/"applied" honesty
+description: Why an autonomous step must gate its success/applied status on a real side-effect a live consumer reads, the effective-field rule, and the activateCampaign create-as-draft gotcha
 ---
 
 # Autonomous "completed" must mean a real side-effect happened
@@ -40,3 +40,24 @@ Real column names (easy to get wrong): `adCampaigns.platform` is **singular** (e
 fan-out platforms live in `metadata.fanOutPlatforms`); `adCampaigns.id` is a **varchar
 uuid** (string, not number). `adCreatives` stores copy in `description`/`headline` and
 media in `mediaUrl` — there are no `normalizedContent`/`rawContent`/`assetUrls` columns.
+
+## "applied" must mean a live consumer actually reads the output (effective-field rule)
+
+Same trap, one level deeper. The Self-Evolution Engine produced bounded "enhancement"
+payloads into an applied-registry and reported them `applied=true` simply because the
+payload's *category* was in the consumed set. But an enhancement only changes behavior
+if it carries a payload **field a live consumer actually reads**. Example: a
+`posting_optimization` payload with `contentFormatPriority`/`engagementTargeting` was
+marked applied, yet the only field any consumer read was `optimalHours` — so it changed
+nothing while reporting success.
+
+**Rule:** gate `applied` on `consumed && payloadHasEffectiveField`, where
+*effective field* = a field with a real runtime reader today. Maintain an explicit
+`EFFECTIVE_FIELDS` map per category (the fields a consumer reads). Category membership
+is necessary but NOT sufficient. When consumed-but-not-effective, store the entry as
+honest advisory with a `notAppliedReason`, never as applied.
+
+**Also:** when the engine generates the payload, make it emit an effective field
+(e.g. posting → `optimalHours`) so the action is genuinely real, not just honestly-advisory.
+Heuristic values are fine as long as they're read and sit below learned data / above
+static defaults and are reversible — heuristic ≠ fake; unread ≠ applied.

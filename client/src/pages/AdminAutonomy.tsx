@@ -365,8 +365,11 @@ export default function AdminAutonomy() {
                   <div className="text-xs text-muted-foreground mt-1">Changes Detected</div>
                 </div>
                 <div className="text-center p-3 bg-green-50 dark:bg-green-950 rounded-lg">
-                  <div className="text-2xl font-bold text-green-700">{status?.upgradesDeployed ?? 0}</div>
-                  <div className="text-xs text-muted-foreground mt-1">Upgrades Deployed</div>
+                  <div className="text-2xl font-bold text-green-700">{status?.upgradesApplied ?? 0}</div>
+                  <div className="text-xs text-muted-foreground mt-1">Applied (live)</div>
+                  <div className="text-[10px] text-muted-foreground mt-0.5">
+                    {status?.upgradesGenerated ?? 0} generated · {status?.upgradesRecordedNotApplied ?? 0} advisory
+                  </div>
                 </div>
                 <div className="text-center p-3 bg-purple-50 dark:bg-purple-950 rounded-lg">
                   <div className="text-sm font-bold text-purple-700">
@@ -475,7 +478,7 @@ export default function AdminAutonomy() {
               <CardContent>
                 {recentUpgrades.length === 0 ? (
                   <p className="text-sm text-muted-foreground py-6 text-center">
-                    No upgrades deployed yet.
+                    No upgrades generated yet.
                   </p>
                 ) : (
                   <ScrollArea className="h-64">
@@ -484,13 +487,26 @@ export default function AdminAutonomy() {
                         <div key={upgrade.id} className="p-3 border rounded-lg text-sm space-y-1">
                           <div className="flex items-center justify-between">
                             <span className="font-medium capitalize">{upgrade.type?.replace(/_/g, ' ')}</span>
-                            <span className={`text-xs px-2 py-0.5 rounded ${STATUS_COLORS[upgrade.status] ?? 'bg-gray-100 text-gray-600'}`}>
-                              {upgrade.status}
-                            </span>
+                            <div className="flex items-center gap-1">
+                              {upgrade.applied === true ? (
+                                <span className="text-xs px-2 py-0.5 rounded bg-green-100 text-green-700">applied (live)</span>
+                              ) : upgrade.status === 'deployed' ? (
+                                <span className="text-xs px-2 py-0.5 rounded bg-amber-100 text-amber-700">advisory</span>
+                              ) : (
+                                <span className={`text-xs px-2 py-0.5 rounded ${STATUS_COLORS[upgrade.status] ?? 'bg-gray-100 text-gray-600'}`}>
+                                  {upgrade.status}
+                                </span>
+                              )}
+                            </div>
                           </div>
-                          {upgrade.targetFiles?.length > 0 && (
-                            <p className="text-xs text-muted-foreground truncate">
-                              Files: {upgrade.targetFiles.join(', ')}
+                          {upgrade.enhancementCategory && (
+                            <p className="text-xs text-muted-foreground">
+                              Category: {String(upgrade.enhancementCategory).replace(/_/g, ' ')}
+                            </p>
+                          )}
+                          {upgrade.applied !== true && upgrade.notAppliedReason && (
+                            <p className="text-xs text-amber-600 truncate">
+                              Not applied: {String(upgrade.notAppliedReason)}
                             </p>
                           )}
                           {upgrade.createdAt && (

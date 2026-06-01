@@ -19,14 +19,12 @@
 
 import { EventEmitter } from 'events';
 import http from 'http';
-import * as fs from 'fs/promises';
-import * as path from 'path';
 import { logger } from './logger.js';
 import { storage } from './storage.js';
 import { customAI } from './custom-ai-engine.js';
-import * as esbuild from 'esbuild';
 import { industryMonitor } from './services/industryMonitorService.js';
 import { storageService } from './services/storageService.js';
+import { evolutionRegistry, type EnhancementCategory } from './services/evolutionRegistry.js';
 import { isProductionEnv } from './lib/envHelpers.js';
 
 interface IndustryChange {
@@ -58,6 +56,14 @@ interface CodeUpgrade {
     before: Record<string, number>;
     after: Record<string, number>;
   };
+  // ── Honest registry-application fields ──────────────────────────────────
+  // The bounded enhancement this upgrade produces. `applied` is true ONLY when
+  // the enhancement was written into a registry category that a live subsystem
+  // actually reads at runtime — never just because a function finished.
+  enhancementCategory?: EnhancementCategory;
+  enhancementPayload?: Record<string, unknown>;
+  applied?: boolean;
+  notAppliedReason?: string;
 }
 
 interface CompetitorFeature {
@@ -1520,417 +1526,250 @@ export class SelfEvolutionEngine extends EventEmitter {
   }
 
   private async generateUpgradeForChange(change: IndustryChange): Promise<CodeUpgrade | null> {
-    logger.info(`   🔧 Generating code for: ${change.title}`);
+    logger.info(`   🔧 Generating enhancement for: ${change.title}`);
+
+    const category = this.categorizeChange(change);
+    const payload = this.buildEnhancementPayload(category, change);
 
     const upgrade: CodeUpgrade = {
       id: `upgrade_${change.id}_${Date.now()}`,
       changeId: change.id,
       type: this.mapChangeToUpgradeType(change),
       targetFiles: await this.identifyTargetFiles(change),
-      generatedCode: new Map(),
+      generatedCode: new Map([
+        // Human-readable record of the bounded enhancement this upgrade
+        // produces — surfaced verbatim in the admin upgrade history.
+        [`registry:${category}`, JSON.stringify(payload, null, 2)],
+      ]),
       testCode: '',
       status: 'pending',
       createdAt: new Date(),
       performanceImpact: { before: {}, after: {} },
+      enhancementCategory: category,
+      enhancementPayload: payload,
+      applied: false,
     };
-
-    // Generate code based on change type
-    switch (change.source) {
-      case 'competitor':
-        await this.generateCompetitorResponseCode(change, upgrade);
-        break;
-      case 'streaming_platform':
-        await this.generatePlatformComplianceCode(change, upgrade);
-        break;
-      case 'social_media':
-        await this.generateSocialMediaAdaptationCode(change, upgrade);
-        break;
-      case 'security':
-        await this.generateSecurityPatchCode(change, upgrade);
-        break;
-      case 'regulation':
-        await this.generateComplianceCode(change, upgrade);
-        break;
-      case 'technology':
-        await this.generateTechnologyAdoptionCode(change, upgrade);
-        break;
-    }
-
-    // Generate tests for the new code
-    upgrade.testCode = await this.generateTestsForUpgrade(upgrade);
 
     return upgrade;
   }
 
-  private async generateCompetitorResponseCode(change: IndustryChange, upgrade: CodeUpgrade): Promise<void> {
-    // Generate code to implement feature that competitor has
-    const featureName = change.title.split(': ')[1] || change.title;
-    
-    // This would generate actual TypeScript code based on the feature
-    // For now, we create enhancement configurations that the AI systems can use
-    const enhancementCode = `
-// Auto-generated enhancement for: ${featureName}
-// Generated at: ${new Date().toISOString()}
-// Reason: ${change.description}
-
-export const ${this.camelCase(featureName)}Enhancement = {
-  featureName: '${featureName}',
-  enabled: true,
-  version: '1.0.0-auto',
-  generatedAt: '${new Date().toISOString()}',
-  competitiveResponse: true,
-  
-  // Enhancement configuration
-  config: {
-    priority: ${change.competitiveImpact},
-    modules: ${JSON.stringify(change.affectedModules)},
-    autoOptimize: true,
-  },
-  
-  // AI-generated optimization parameters
-  parameters: ${JSON.stringify(this.generateOptimizationParameters(change), null, 2)},
-};
-`;
-
-    upgrade.generatedCode.set(
-      `server/enhancements/${this.kebabCase(featureName)}-enhancement.ts`,
-      enhancementCode
+  /**
+   * Map a detected industry change to the most appropriate bounded registry
+   * knob. Only `posting_optimization` and `content_optimization` are actually
+   * consumed by a live subsystem today; other categories are recorded but the
+   * engine will NOT report them as applied behavior changes.
+   */
+  private categorizeChange(change: IndustryChange): EnhancementCategory {
+    const mods = change.affectedModules || [];
+    const social = change.source === 'social_media' || mods.includes('social');
+    const timingSignal = /\b(timing|schedul|post time|best time|when to post|peak hour)/i.test(
+      `${change.title} ${change.description}`,
     );
+
+    if (change.source === 'social_media') {
+      return timingSignal ? 'posting_optimization' : 'content_optimization';
+    }
+    if (change.source === 'streaming_platform') return 'platform_compliance';
+    if (change.source === 'regulation') return 'platform_compliance';
+    if (change.source === 'security') return 'feature_flag';
+    if (change.source === 'technology') return 'feature_flag';
+    // competitor (and anything else)
+    if (social) return timingSignal ? 'posting_optimization' : 'content_optimization';
+    if (mods.includes('distribution')) return 'distribution_config';
+    return 'content_optimization';
   }
 
-  private async generatePlatformComplianceCode(change: IndustryChange, upgrade: CodeUpgrade): Promise<void> {
-    const platform = change.title.split(':')[0].trim();
-    
-    const complianceCode = `
-// Auto-generated platform compliance update
-// Platform: ${platform}
-// Generated at: ${new Date().toISOString()}
+  /**
+   * Build a bounded, sanitizable payload for a registry category from a real
+   * detected change. These are heuristic STRATEGY knobs (not fabricated
+   * analytics) — they sit below real per-artist learned data at runtime.
+   */
+  private buildEnhancementPayload(
+    category: EnhancementCategory,
+    change: IndustryChange,
+  ): Record<string, unknown> {
+    const platform = this.inferPlatformFromChange(change);
+    const high = change.competitiveImpact >= 80 || change.urgency === 'critical';
 
-export const ${this.camelCase(platform)}ComplianceUpdate = {
-  platform: '${platform}',
-  updatedAt: '${new Date().toISOString()}',
-  changeType: '${change.category}',
-  
-  // Updated compliance requirements
-  requirements: {
-    description: '${change.description}',
-    urgency: '${change.urgency}',
-    autoApply: true,
-  },
-  
-  // Distribution module updates
-  distributionConfig: ${JSON.stringify(this.generateDistributionConfig(change), null, 2)},
-};
-`;
-
-    upgrade.generatedCode.set(
-      `server/compliance/platforms/${this.kebabCase(platform)}-update.ts`,
-      complianceCode
-    );
+    switch (category) {
+      case 'posting_optimization': {
+        // The ONLY posting knob a live consumer reads is `optimalHours`
+        // (getOptimalHoursOverride → autopilot posting-window selection). Emit a
+        // bounded heuristic engagement window so this enhancement produces a
+        // REAL behavior change. It is a heuristic that sits BELOW per-artist
+        // learned timing and ABOVE static defaults — fully reversible.
+        const payload: Record<string, unknown> = {
+          optimalHours: high ? [11, 14, 17, 19, 21] : [12, 18, 20],
+          engagementTargeting: high ? 'high' : 'standard',
+        };
+        if (platform) payload.platform = platform;
+        return payload;
+      }
+      case 'content_optimization': {
+        const payload: Record<string, unknown> = {
+          hashtagStrategy: high ? 'trending' : 'balanced',
+          captionLength: 'optimal',
+          callToActionStrength: high ? 'high' : 'medium',
+          visualPriority: true,
+          variantCount: high ? 5 : 3,
+        };
+        if (platform) payload.platform = platform;
+        return payload;
+      }
+      case 'distribution_config':
+        return {
+          autoFormat: true,
+          qualityCheck: true,
+          metadataValidation: true,
+          complianceLevel: high ? 'strict' : 'standard',
+        };
+      case 'platform_compliance':
+        return {
+          platform: platform || 'all',
+          requirement: change.description.slice(0, 500),
+          urgency: change.urgency,
+          autoApply: false,
+        };
+      case 'feature_flag':
+        return {
+          name: this.camelCase(change.title).slice(0, 80) || `flag_${change.id}`,
+          enabled: false,
+          rolloutPercentage: 0,
+        };
+      default:
+        return {};
+    }
   }
 
-  private async generateSocialMediaAdaptationCode(change: IndustryChange, upgrade: CodeUpgrade): Promise<void> {
-    const platform = change.title.split(':')[0].trim();
-    
-    const adaptationCode = `
-// Auto-generated social media adaptation
-// Platform: ${platform}
-// Generated at: ${new Date().toISOString()}
-
-export const ${this.camelCase(platform)}Adaptation = {
-  platform: '${platform}',
-  adaptationType: '${change.category}',
-  generatedAt: '${new Date().toISOString()}',
-  
-  // Autopilot adjustments
-  autopilotConfig: {
-    engagementStrategy: 'adaptive',
-    algorithmAwareness: true,
-    postingOptimization: ${JSON.stringify(this.generatePostingOptimization(change), null, 2)},
-  },
-  
-  // Content optimization updates
-  contentOptimization: ${JSON.stringify(this.generateContentOptimization(change), null, 2)},
-};
-`;
-
-    upgrade.generatedCode.set(
-      `server/adaptations/social/${this.kebabCase(platform)}-adaptation.ts`,
-      adaptationCode
-    );
+  private inferPlatformFromChange(change: IndustryChange): string | undefined {
+    const text = `${change.title} ${change.description}`.toLowerCase();
+    const platforms = ['tiktok', 'instagram', 'twitter', 'facebook', 'linkedin', 'youtube', 'threads', 'spotify', 'apple music', 'tidal'];
+    for (const p of platforms) {
+      if (text.includes(p)) return p;
+    }
+    return undefined;
   }
 
-  private async generateSecurityPatchCode(change: IndustryChange, upgrade: CodeUpgrade): Promise<void> {
-    const patchCode = `
-// Auto-generated security patch
-// Generated at: ${new Date().toISOString()}
-// Advisory: ${change.title}
-
-export const securityPatch_${Date.now()} = {
-  patchId: '${upgrade.id}',
-  advisory: '${change.title}',
-  appliedAt: '${new Date().toISOString()}',
-  urgency: '${change.urgency}',
-  
-  // Security enhancements
-  enhancements: ${JSON.stringify(this.generateSecurityEnhancements(change), null, 2)},
-  
-  // Validation checks
-  validationPassed: true,
-  rollbackAvailable: true,
-};
-`;
-
-    upgrade.generatedCode.set(
-      `server/security/patches/patch-${Date.now()}.ts`,
-      patchCode
-    );
-  }
-
-  private async generateComplianceCode(change: IndustryChange, upgrade: CodeUpgrade): Promise<void> {
-    const regulationName = change.title.split(' ')[0];
-    
-    const complianceCode = `
-// Auto-generated regulatory compliance update
-// Regulation: ${regulationName}
-// Generated at: ${new Date().toISOString()}
-
-export const ${this.camelCase(regulationName)}ComplianceUpdate = {
-  regulation: '${regulationName}',
-  updatedAt: '${new Date().toISOString()}',
-  
-  // Compliance requirements
-  requirements: ${JSON.stringify(this.generateRegulatoryRequirements(change), null, 2)},
-  
-  // Data handling updates
-  dataHandling: {
-    consentRequired: true,
-    retentionPolicyUpdated: true,
-    auditLoggingEnhanced: true,
-  },
-};
-`;
-
-    upgrade.generatedCode.set(
-      `server/compliance/regulations/${this.kebabCase(regulationName)}-update.ts`,
-      complianceCode
-    );
-  }
-
-  private async generateTechnologyAdoptionCode(change: IndustryChange, upgrade: CodeUpgrade): Promise<void> {
-    const techName = change.title.replace('Emerging Tech: ', '');
-    
-    const adoptionCode = `
-// Auto-generated technology adoption plan
-// Technology: ${techName}
-// Generated at: ${new Date().toISOString()}
-
-export const ${this.camelCase(techName)}Adoption = {
-  technology: '${techName}',
-  adoptionPhase: 'evaluation',
-  generatedAt: '${new Date().toISOString()}',
-  
-  // Implementation roadmap
-  roadmap: {
-    phase1: 'Research and prototyping',
-    phase2: 'Limited beta rollout',
-    phase3: 'Full production deployment',
-    estimatedCompletion: '${new Date(Date.now() + change.estimatedImplementationHours * 60 * 60 * 1000).toISOString()}',
-  },
-  
-  // Feature flags
-  featureFlags: {
-    enabled: false,
-    betaUsers: [],
-    rolloutPercentage: 0,
-  },
-  
-  // Performance targets
-  targets: ${JSON.stringify(this.generateTechnologyTargets(change), null, 2)},
-};
-`;
-
-    upgrade.generatedCode.set(
-      `server/technology/${this.kebabCase(techName)}-adoption.ts`,
-      adoptionCode
-    );
-  }
 
   // ============================================
   // PHASE 4: TESTING
   // ============================================
 
+  /**
+   * Validate each upgrade's bounded enhancement payload against the registry's
+   * sanitizer (the safety gate). An upgrade only proceeds to apply if its
+   * payload survives sanitization with usable, in-bounds content. This replaces
+   * the old dead-code compile-gate — there is no longer any generated code to
+   * compile; the gate now validates the structured knob payload instead.
+   */
   private async testUpgrades(upgrades: CodeUpgrade[]): Promise<CodeUpgrade[]> {
     const validated: CodeUpgrade[] = [];
 
     for (const upgrade of upgrades) {
       upgrade.status = 'testing';
-      
-      const testResult = await this.runUpgradeTests(upgrade);
-      
-      if (testResult.passed) {
-        validated.push(upgrade);
-        logger.info(`   ✅ Tests passed for: ${upgrade.id}`);
-      } else {
+
+      if (!upgrade.enhancementCategory || !upgrade.enhancementPayload) {
         upgrade.status = 'failed';
-        logger.warn(`   ❌ Tests failed for: ${upgrade.id} - ${testResult.reason}`);
+        upgrade.notAppliedReason = 'no enhancement payload generated';
+        logger.warn(`   ❌ Validation failed for: ${upgrade.id} - no enhancement payload`);
+        continue;
       }
+
+      const clean = evolutionRegistry.sanitize(upgrade.enhancementCategory, upgrade.enhancementPayload);
+      if (!clean.ok) {
+        upgrade.status = 'failed';
+        upgrade.notAppliedReason = clean.reason;
+        logger.warn(`   ❌ Validation failed for: ${upgrade.id} - ${clean.reason}`);
+        continue;
+      }
+
+      // Persist the sanitized payload so what we apply == what we validated.
+      upgrade.enhancementPayload = clean.payload;
+      validated.push(upgrade);
+      logger.info(`   ✅ Validated enhancement for: ${upgrade.id} (${upgrade.enhancementCategory})`);
     }
 
     return validated;
-  }
-
-  private async runUpgradeTests(upgrade: CodeUpgrade): Promise<{ passed: boolean; reason?: string }> {
-    for (const [filePath, code] of upgrade.generatedCode) {
-      if (!code || code.trim().length === 0) {
-        return { passed: false, reason: `Empty generated code for ${filePath}` };
-      }
-
-      if (code.length > 500_000) {
-        return { passed: false, reason: `Generated code exceeds 500KB safety limit for ${filePath}` };
-      }
-
-      const openBraces = (code.match(/\{/g) || []).length;
-      const closeBraces = (code.match(/\}/g) || []).length;
-      if (Math.abs(openBraces - closeBraces) > 5) {
-        return { passed: false, reason: `Unbalanced braces in generated code for ${filePath} ({:${openBraces} }:${closeBraces})` };
-      }
-
-      if (!code.includes('export')) {
-        return { passed: false, reason: `Generated code has no exports in ${filePath}` };
-      }
-
-      const dangerPatterns = ['process.exit(', 'require("child_process")', "require('child_process')", 'eval(', '__proto__'];
-      for (const pattern of dangerPatterns) {
-        if (code.includes(pattern)) {
-          return { passed: false, reason: `Dangerous pattern "${pattern}" detected in generated code for ${filePath}` };
-        }
-      }
-
-      if (filePath.includes('..') || path.isAbsolute(filePath)) {
-        return { passed: false, reason: `File path "${filePath}" contains traversal sequences or is absolute` };
-      }
-      const allowedRoots = [
-        path.resolve(process.cwd(), 'server', 'enhancements'),
-        path.resolve(process.cwd(), 'server', 'compliance'),
-        path.resolve(process.cwd(), 'server', 'technology'),
-        path.resolve(process.cwd(), 'server', 'adaptations'),
-        path.resolve(process.cwd(), 'server', 'security', 'patches'),
-      ];
-      const resolvedPath = path.resolve(process.cwd(), filePath);
-      const isInAllowedDir = allowedRoots.some(root => resolvedPath.startsWith(root + path.sep) || resolvedPath === root);
-      if (!isInAllowedDir) {
-        return { passed: false, reason: `Resolved path "${resolvedPath}" is outside allowed deployment directories` };
-      }
-
-      const compileResult = await this.compileGate(code, filePath);
-      if (!compileResult.ok) {
-        return { passed: false, reason: `TypeScript compile error in ${filePath}: ${compileResult.error}` };
-      }
-    }
-
-    return { passed: true };
-  }
-
-  private async compileGate(code: string, filePath: string): Promise<{ ok: boolean; error?: string }> {
-    if (!filePath.endsWith('.ts')) return { ok: true };
-    try {
-      await esbuild.transform(code, {
-        loader: 'ts',
-        target: 'node18',
-        format: 'cjs',
-        logLevel: 'silent',
-      });
-      return { ok: true };
-    } catch (err) {
-      const msg = err?.message ?? String(err);
-      logger.warn(`[SelfEvolution] Compile gate FAILED for ${filePath}: ${msg}`);
-      return { ok: false, error: msg };
-    }
-  }
-
-  private async generateTestsForUpgrade(upgrade: CodeUpgrade): Promise<string> {
-    return `
-// Auto-generated tests for upgrade: ${upgrade.id}
-import { describe, it, expect } from 'vitest';
-
-describe('${upgrade.id}', () => {
-  it('should apply upgrade without errors', () => {
-    expect(true).toBe(true);
-  });
-
-  it('should maintain backward compatibility', () => {
-    expect(true).toBe(true);
-  });
-
-  it('should meet performance requirements', () => {
-    expect(true).toBe(true);
-  });
-});
-`;
   }
 
   // ============================================
   // PHASE 5: DEPLOYMENT
   // ============================================
 
+  /**
+   * Apply each validated upgrade's enhancement to the live registry. An upgrade
+   * is marked `deployed` (status) but `applied=true` ONLY when its category is
+   * genuinely consumed by a live subsystem and the registry stored it active.
+   * Enhancements in not-yet-wired categories are recorded as active registry
+   * entries but honestly flagged `applied=false` — never reported as a real
+   * behavior change. Returns the count of genuinely-applied upgrades.
+   */
   private async deployUpgrades(upgrades: CodeUpgrade[]): Promise<number> {
-    let deployedCount = 0;
+    let appliedCount = 0;
 
     for (const upgrade of upgrades) {
       try {
         upgrade.status = 'deploying';
 
-        for (const [filePath, code] of upgrade.generatedCode) {
-          const fullPath = path.join(process.cwd(), filePath);
-          const dir = path.dirname(fullPath);
+        if (!upgrade.enhancementCategory || !upgrade.enhancementPayload) {
+          upgrade.status = 'failed';
+          upgrade.notAppliedReason = 'no enhancement payload to apply';
+          continue;
+        }
 
-          await fs.mkdir(dir, { recursive: true });
+        const change = this.industryChanges.find(c => c.id === upgrade.changeId);
+        const result = await evolutionRegistry.apply({
+          upgradeId: upgrade.id,
+          changeId: upgrade.changeId,
+          category: upgrade.enhancementCategory,
+          title: change?.title || upgrade.changeId,
+          source: change?.source || 'unknown',
+          payload: upgrade.enhancementPayload,
+        });
 
-          const existsAlready = await fs.access(fullPath).then(() => true).catch(() => false);
-          if (existsAlready) {
-            const existingContent = await fs.readFile(fullPath, 'utf-8').catch(() => '');
-            if (existingContent === code) {
-              logger.info(`   ⏭️ Skipped (unchanged): ${filePath}`);
-              continue;
-            }
-            const backupPath = `${fullPath}.bak`;
-            await fs.copyFile(fullPath, backupPath).catch(() => {});
-          }
+        if (!result.consumed) {
+          // Stored in the registry, but no live subsystem reads this category
+          // yet — be honest: this is NOT an applied behavior change.
+          upgrade.status = 'deployed';
+          upgrade.deployedAt = new Date();
+          upgrade.applied = false;
+          upgrade.notAppliedReason = `category "${upgrade.enhancementCategory}" has no wired runtime consumer yet`;
+          logger.info(`   📋 Recorded (advisory, not applied): ${upgrade.id} (${upgrade.enhancementCategory})`);
+          await this.recordDeployment(upgrade);
+          continue;
+        }
 
-          const compileResult = await this.compileGate(code, filePath);
-          if (!compileResult.ok) {
-            upgrade.status = 'failed';
-            logger.warn(`   ❌ Compile gate blocked deployment of ${filePath}: ${compileResult.error}`);
-            break;
-          }
-
-          const tempPath = `${fullPath}.tmp`;
-          await fs.writeFile(tempPath, code, 'utf-8');
-          await fs.rename(tempPath, fullPath);
-
-          logger.info(`   📝 Wrote: ${filePath}`);
+        if (!result.applied) {
+          upgrade.status = 'failed';
+          upgrade.notAppliedReason = result.reason || 'registry rejected payload';
+          logger.warn(`   ❌ Apply rejected for ${upgrade.id}: ${upgrade.notAppliedReason}`);
+          continue;
         }
 
         upgrade.status = 'deployed';
         upgrade.deployedAt = new Date();
-        deployedCount++;
+        upgrade.applied = true;
+        appliedCount++;
+        logger.info(`   ✅ Applied (live): ${upgrade.id} → registry[${upgrade.enhancementCategory}]`);
 
         await this.recordDeployment(upgrade);
 
-        this.emit('filesDeployed', {
+        // NOTE: we intentionally do NOT emit 'filesDeployed' anymore — the
+        // registry takes effect in-process immediately (and persists for other
+        // workers), so a disruptive full-process restart is no longer needed.
+        this.emit('enhancementsApplied', {
           upgradeId: upgrade.id,
-          upgradeType: upgrade.type,
-          filesModified: upgrade.targetFiles.length,
+          category: upgrade.enhancementCategory,
         });
 
       } catch (error) {
         upgrade.status = 'failed';
-        logger.warn({ err: error }, `   ❌ Failed to deploy ${upgrade.id}:`);
+        upgrade.notAppliedReason = (error as Error).message;
+        logger.warn({ err: error }, `   ❌ Failed to apply ${upgrade.id}:`);
       }
     }
 
-    return deployedCount;
+    return appliedCount;
   }
 
   async triggerRollback(): Promise<void> {
@@ -1941,11 +1780,17 @@ describe('${upgrade.id}', () => {
     try {
       await storage.createOptimizationTask({
         taskType: 'self_evolution',
-        status: 'completed',
-        description: `Auto-deployed: ${upgrade.type} - ${upgrade.changeId}`,
+        // Honest status: 'completed' only when a real behavior change was
+        // applied; otherwise 'recorded' (stored but not behavior-changing).
+        status: upgrade.applied ? 'completed' : 'recorded',
+        description: upgrade.applied
+          ? `Applied: ${upgrade.enhancementCategory} - ${upgrade.changeId}`
+          : `Recorded (not applied): ${upgrade.enhancementCategory} - ${upgrade.changeId} (${upgrade.notAppliedReason})`,
         metrics: {
           upgradeId: upgrade.id,
-          filesModified: upgrade.targetFiles.length,
+          category: upgrade.enhancementCategory,
+          applied: upgrade.applied === true,
+          notAppliedReason: upgrade.notAppliedReason,
           deployedAt: upgrade.deployedAt?.toISOString(),
         },
         executedAt: new Date(),
@@ -1998,37 +1843,24 @@ describe('${upgrade.id}', () => {
   }
 
   private async performRollback(): Promise<void> {
-    logger.info('🔙 Performing automatic rollback — restoring .bak files...');
-    const rollbackDirs = [
-      path.join(process.cwd(), 'server', 'enhancements'),
-      path.join(process.cwd(), 'server', 'compliance'),
-      path.join(process.cwd(), 'server', 'technology'),
-    ];
+    logger.info('🔙 Performing automatic rollback — deactivating all active registry enhancements...');
 
-    let restoredCount = 0;
-    for (const dir of rollbackDirs) {
-      const files = await fs.readdir(dir).catch(() => [] as string[]);
-      for (const file of files) {
-        if (!file.endsWith('.bak')) continue;
-        const bakPath = path.join(dir, file);
-        const originalPath = bakPath.slice(0, -4);
-        try {
-          await fs.copyFile(bakPath, originalPath);
-          await fs.unlink(bakPath);
-          restoredCount++;
-          logger.info(`   ↩️ Restored: ${originalPath}`);
-        } catch (e) {
-          logger.warn({ err: e }, `   ❌ Failed to restore ${originalPath}:`);
-        }
-      }
+    // The REAL revert: deactivate every active registry enhancement so live
+    // subsystems fall back to real learned data / static defaults immediately.
+    let revertedCount = 0;
+    try {
+      revertedCount = await evolutionRegistry.deactivateAll();
+    } catch (e) {
+      logger.warn({ err: e }, '   ❌ Failed to deactivate registry enhancements:');
     }
 
-    if (restoredCount > 0) {
-      logger.info(`🔙 Rollback complete — restored ${restoredCount} files`);
-      this.emit('rollbackCompleted', { restoredCount });
+    if (revertedCount > 0) {
+      logger.info(`🔙 Rollback complete — deactivated ${revertedCount} enhancement(s)`);
     } else {
-      logger.info('🔙 Rollback: no .bak files found — nothing to restore');
+      logger.info('🔙 Rollback: no active enhancements — nothing to revert');
     }
+
+    this.emit('rollbackCompleted', { revertedCount });
   }
 
   // ============================================
@@ -2038,14 +1870,17 @@ describe('${upgrade.id}', () => {
   private async learnFromCycle(cycleId: string): Promise<void> {
     logger.info(`   🧠 Learning from cycle ${cycleId}...`);
 
-    const deployedCount = this.upgradeQueue.filter(u => u.status === 'deployed').length;
+    // Honest accounting: success = upgrades whose enhancement was genuinely
+    // APPLIED to a live-consumed registry category, not merely "deployed".
+    const appliedCount = this.upgradeQueue.filter(u => u.applied === true).length;
     const failedCount = this.upgradeQueue.filter(u => u.status === 'failed').length;
-    const total = deployedCount + failedCount;
-    const successRate = total > 0 ? deployedCount / total : 1.0;
+    const total = appliedCount + failedCount;
+    const successRate = total > 0 ? appliedCount / total : 1.0;
+    const deployedCount = appliedCount;
 
-    // Count how many of this cycle's deployed upgrades addressed competitive gaps
+    // Count how many of this cycle's applied upgrades addressed competitive gaps
     const competitorGapsClosedThisCycle = this.upgradeQueue
-      .filter(u => u.status === 'deployed')
+      .filter(u => u.applied === true)
       .filter(u => {
         const change = this.industryChanges.find(c => c.id === u.changeId);
         return change?.source === 'competitor';
@@ -2128,70 +1963,6 @@ describe('${upgrade.id}', () => {
     }
   }
 
-  private generateOptimizationParameters(change: IndustryChange): Record<string, any> {
-    return {
-      optimizationLevel: change.competitiveImpact / 100,
-      adaptiveThreshold: 0.7,
-      learningRate: 0.01,
-      maxIterations: 1000,
-    };
-  }
-
-  private generateDistributionConfig(change: IndustryChange): Record<string, any> {
-    return {
-      autoFormat: true,
-      qualityCheck: true,
-      metadataValidation: true,
-      complianceLevel: 'strict',
-    };
-  }
-
-  private generatePostingOptimization(change: IndustryChange): Record<string, any> {
-    return {
-      timingAdjustment: true,
-      contentFormatPriority: ['video', 'carousel', 'image', 'text'],
-      engagementTargeting: 'high',
-      algorithmAdaptation: true,
-    };
-  }
-
-  private generateContentOptimization(change: IndustryChange): Record<string, any> {
-    return {
-      hashtagStrategy: 'trending',
-      captionLength: 'optimal',
-      visualPriority: true,
-      callToActionStrength: 'high',
-    };
-  }
-
-  private generateSecurityEnhancements(change: IndustryChange): Record<string, any> {
-    return {
-      encryptionUpgrade: true,
-      auditLogging: 'enhanced',
-      accessControl: 'strict',
-      vulnerabilityScan: 'continuous',
-    };
-  }
-
-  private generateRegulatoryRequirements(change: IndustryChange): Record<string, any> {
-    return {
-      dataMinimization: true,
-      consentManagement: 'explicit',
-      rightToDelete: true,
-      dataPortability: true,
-      breachNotification: '72h',
-    };
-  }
-
-  private generateTechnologyTargets(change: IndustryChange): Record<string, any> {
-    return {
-      performanceGain: '20-50%',
-      userExperienceImprovement: 'significant',
-      competitiveAdvantage: 'first-mover',
-      implementationRisk: 'medium',
-    };
-  }
-
   private hashString(str: string): number {
     let hash = 0;
     for (let i = 0; i < str.length; i++) {
@@ -2209,13 +1980,6 @@ describe('${upgrade.id}', () => {
       .replace(/[^a-zA-Z0-9]/g, '');
   }
 
-  private kebabCase(str: string): string {
-    return str
-      .replace(/([a-z])([A-Z])/g, '$1-$2')
-      .replace(/[^a-zA-Z0-9]+/g, '-')
-      .toLowerCase();
-  }
-
   // ============================================
   // PUBLIC API
   // ============================================
@@ -2224,7 +1988,11 @@ describe('${upgrade.id}', () => {
     isRunning: boolean;
     isCycleRunning: boolean;
     changesDetected: number;
+    upgradesGenerated: number;
+    upgradesApplied: number;
+    upgradesRecordedNotApplied: number;
     upgradesDeployed: number;
+    appliedEnhancements: number;
     lastCycle: Date | null;
     lastCycleAt: Date | null;
     lastCycleError: string | null;
@@ -2255,7 +2023,13 @@ describe('${upgrade.id}', () => {
       isRunning: this.isRunning,
       isCycleRunning: this.isCycleRunning,
       changesDetected: this.industryChanges.length,
-      upgradesDeployed: this.upgradeQueue.filter(u => u.status === 'deployed').length,
+      upgradesGenerated: this.upgradeQueue.length,
+      upgradesApplied: this.upgradeQueue.filter(u => u.applied === true).length,
+      upgradesRecordedNotApplied: this.upgradeQueue.filter(u => u.status === 'deployed' && u.applied !== true).length,
+      // upgradesDeployed reports genuinely-APPLIED upgrades (honest): a "deployed"
+      // status alone no longer counts unless it changed live behavior.
+      upgradesDeployed: this.upgradeQueue.filter(u => u.applied === true).length,
+      appliedEnhancements: evolutionRegistry.getStats().consumedActive,
       lastCycle: this.industryChanges.length > 0
         ? this.industryChanges[this.industryChanges.length - 1].detectedAt
         : null,
