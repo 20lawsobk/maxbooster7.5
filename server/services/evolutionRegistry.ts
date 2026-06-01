@@ -50,12 +50,20 @@ export const CONSUMED_CATEGORIES: ReadonlySet<EnhancementCategory> = new Set<Enh
  *
  *  - posting_optimization → `optimalHours` (read by getOptimalHoursOverride,
  *    consumed by autopilot posting-window selection).
- *  - content_optimization → `variantCount` / `visualPriority` (read by
- *    getContentOptimization, consumed by autopilot content generation).
+ *  - content_optimization → `variantCount` / `visualPriority` /
+ *    `hashtagStrategy` / `captionLength` / `callToActionStrength` (read by
+ *    getContentOptimization, consumed by autopilot content generation and
+ *    passed through to advancedSocialAIService.generateAdvancedContent).
  */
 const EFFECTIVE_FIELDS: Partial<Record<EnhancementCategory, readonly string[]>> = {
   posting_optimization: ['optimalHours'],
-  content_optimization: ['variantCount', 'visualPriority'],
+  content_optimization: [
+    'variantCount',
+    'visualPriority',
+    'hashtagStrategy',
+    'captionLength',
+    'callToActionStrength',
+  ],
 };
 
 export interface EvolutionEnhancement {

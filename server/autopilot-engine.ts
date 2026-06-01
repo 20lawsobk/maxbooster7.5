@@ -587,6 +587,16 @@ export class AutopilotEngine extends EventEmitter {
         typeof contentOpt?.variantCount === 'number' ? contentOpt.variantCount : 3;
       const includeEmojis =
         typeof contentOpt?.visualPriority === 'boolean' ? contentOpt.visualPriority : true;
+      // The remaining content_optimization knobs reshape the hashtags, caption
+      // length, and call-to-action of the generated post. Pass them through only
+      // when present; absent an override they stay undefined and the generator
+      // uses its prior behavior.
+      const hashtagStrategy = contentOpt?.hashtagStrategy as
+        | 'trending' | 'niche' | 'branded' | 'balanced' | undefined;
+      const captionLength = contentOpt?.captionLength as
+        | 'short' | 'optimal' | 'long' | undefined;
+      const callToActionStrength = contentOpt?.callToActionStrength as
+        | 'low' | 'medium' | 'high' | undefined;
 
       // Use Advanced Social AI for GPT-5.2 level content generation
       const advancedResult = await advancedSocialAIService.generateAdvancedContent({
@@ -600,6 +610,9 @@ export class AutopilotEngine extends EventEmitter {
         includeHashtags: true,
         includeEmojis,
         variantCount,
+        hashtagStrategy,
+        captionLength,
+        callToActionStrength,
       });
 
       logger.info(`[Autopilot] Generated content with Advanced AI: score=${advancedResult.scoring.overall.toFixed(1)}, viral=${advancedResult.viralPotential.score.toFixed(1)}`);

@@ -319,6 +319,12 @@ export interface AdvancedContentRequest {
   includeHashtags?: boolean;
   includeEmojis?: boolean;
   variantCount?: number;
+  // Self-Evolution content_optimization knobs, surfaced from a real detected
+  // industry change via evolutionRegistry.getContentOptimization(). When set
+  // they reshape the hashtags / caption length / call-to-action of the output.
+  hashtagStrategy?: 'trending' | 'niche' | 'branded' | 'balanced';
+  captionLength?: 'short' | 'optimal' | 'long';
+  callToActionStrength?: 'low' | 'medium' | 'high';
   trendContext?: string[];
   competitorContext?: string[];
   storefrontUrl?: string;
@@ -1108,6 +1114,12 @@ class AdvancedSocialAIService {
       storefront_url:    request.storefrontUrl,
       beat_context:      request.beatContext,
       promotion_context: request.promotionContext,
+      // Self-Evolution content_optimization knobs forwarded so MaxCore can bias
+      // generation; we ALSO post-process below so the knob is guaranteed to take
+      // effect even if MaxCore ignores these hints.
+      hashtag_strategy:  request.hashtagStrategy,
+      caption_length:    request.captionLength,
+      cta_strength:      request.callToActionStrength,
     });
 
     if (!mc?.hook && !mc?.caption) {
@@ -1120,7 +1132,9 @@ class AdvancedSocialAIService {
 
     const hook        = mc.hook || '';
     const bodyText    = mc.body || '';
-    const baseCta     = mc.cta  || '';
+    // Apply the call-to-action strength knob BEFORE appending the storefront URL
+    // so the strengthened/softened CTA still carries the link.
+    const baseCta     = this.applyCtaStrength(mc.cta || '', request.callToActionStrength);
 
     // Append storefront URL to the CTA so every autopilot post links back to the
     // storefront — critical for driving traffic during the temp slug-URL period.
@@ -1128,9 +1142,11 @@ class AdvancedSocialAIService {
       ? `${baseCta}\n🔗 ${request.storefrontUrl}`.trim()
       : baseCta;
 
-    const hashtags: string[] = Array.isArray(mc.hashtags) ? mc.hashtags : [];
+    const rawHashtags: string[] = Array.isArray(mc.hashtags) ? mc.hashtags : [];
+    const hashtags    = this.applyHashtagStrategy(rawHashtags, request.hashtagStrategy, primaryPlatform);
     const emojis      = this.selectEmojis(request, primaryPlatform, tone);
-    const fullContent = mc.caption || [hook, bodyText, cta].filter(Boolean).join('\n\n');
+    const rawContent  = mc.caption || [hook, bodyText, cta].filter(Boolean).join('\n\n');
+    const fullContent = this.applyCaptionLength(rawContent, request.captionLength);
 
     const platformVersions = this.generatePlatformVersions(request, hook, bodyText, cta, hashtags);
     const variants         = this.generateVariants(request, hook, bodyText, cta, hashtags, tone);
@@ -1614,6 +1630,85 @@ class AdvancedSocialAIService {
     }
 
     return cta;
+  }
+
+  /**
+   * Reshape the hashtag set per the Self-Evolution `hashtagStrategy` knob.
+   *  - niche   → fewer, more targeted tags (down to the platform minimum).
+   *  - trending→ maximize reach: keep the full platform-allowed count.
+   *  - branded → lead with branded/artist tags (those containing the topic/
+   *    artist token), then fill with the rest, capped at the platform max.
+   *  - balanced→ leave the MaxCore-provided set untouched.
+   * Falls back to the original set when no strategy is set or there are no tags.
+   */
+  private applyHashtagStrategy(
+    hashtags: string[],
+    strategy: AdvancedContentRequest['hashtagStrategy'],
+    platform: PlatformProfile,
+  ): string[] {
+    if (!strategy || !Array.isArray(hashtags) || hashtags.length === 0) return hashtags;
+    const { min, max } = platform.hashtagRange;
+    switch (strategy) {
+      case 'niche':
+        return hashtags.slice(0, Math.max(min, Math.min(3, hashtags.length)));
+      case 'trending':
+        return hashtags.slice(0, Math.max(max, min));
+      case 'branded': {
+        const branded = hashtags.filter((h) => /brand|official|artist|music/i.test(h));
+        const rest = hashtags.filter((h) => !branded.includes(h));
+        return [...branded, ...rest].slice(0, max);
+      }
+      case 'balanced':
+      default:
+        return hashtags;
+    }
+  }
+
+  /**
+   * Trim or preserve the caption per the Self-Evolution `captionLength` knob.
+   *  - short  → cap at ~280 chars (single-glance caption).
+   *  - optimal→ cap at ~600 chars (the default sweet spot).
+   *  - long   → leave the full caption untouched.
+   * Truncation is on a word boundary with an ellipsis; only ever shortens.
+   */
+  private applyCaptionLength(
+    text: string,
+    captionLength: AdvancedContentRequest['captionLength'],
+  ): string {
+    if (!text || !captionLength) return text;
+    const caps: Record<NonNullable<AdvancedContentRequest['captionLength']>, number> = {
+      short: 280,
+      optimal: 600,
+      long: Number.POSITIVE_INFINITY,
+    };
+    const cap = caps[captionLength];
+    if (!Number.isFinite(cap) || text.length <= cap) return text;
+    const sliced = text.slice(0, cap - 1);
+    const lastSpace = sliced.lastIndexOf(' ');
+    return (lastSpace > cap * 0.6 ? sliced.slice(0, lastSpace) : sliced).trimEnd() + '…';
+  }
+
+  /**
+   * Adjust the call-to-action emphasis per the Self-Evolution
+   * `callToActionStrength` knob.
+   *  - high → add urgency framing + an exclamation if missing.
+   *  - low  → soften: strip trailing exclamations/emphatic punctuation.
+   *  - medium→ leave the CTA as-is.
+   * Returns the CTA unchanged when no strength is set or the CTA is empty.
+   */
+  private applyCtaStrength(
+    cta: string,
+    strength: AdvancedContentRequest['callToActionStrength'],
+  ): string {
+    if (!cta || !strength || strength === 'medium') return cta;
+    if (strength === 'high') {
+      const emphasized = /[!?]$/.test(cta.trim()) ? cta.trim() : `${cta.trim()}!`;
+      return /\b(now|today|don't miss|limited)\b/i.test(emphasized)
+        ? emphasized
+        : `${emphasized} Don't miss out!`;
+    }
+    // low
+    return cta.replace(/[!]+/g, '.').replace(/\.\s*\.+/g, '.').trim();
   }
 
   private selectEmojis(

@@ -324,26 +324,77 @@ describe('Self-Evolution → autopilot content generation (integration-style)', 
     expect(revertedArg.includeEmojis).toBe(true);
   });
 
-  it('an advisory (non-effective) content_optimization payload does NOT change the generator inputs', async () => {
+  it('baseline: hashtagStrategy / captionLength / callToActionStrength are undefined when no override exists', async () => {
     const { AutopilotEngine } = await import('../../server/autopilot-engine.js');
     const engine = new AutopilotEngine('content-user-3') as unknown as ContentEngine;
 
-    // hashtagStrategy / captionLength are sanitized & stored but are NOT
-    // effective fields (no live consumer reads them) — so apply() reports
-    // advisory and the generator inputs must stay at their defaults.
+    await engine.generateContentForAutopilot(GEN_PARAMS);
+    const callArg = mockGenerateAdvancedContent.mock.calls[0][0];
+    expect(callArg.hashtagStrategy).toBeUndefined();
+    expect(callArg.captionLength).toBeUndefined();
+    expect(callArg.callToActionStrength).toBeUndefined();
+  });
+
+  it('a generated content_optimization override (hashtagStrategy + captionLength + callToActionStrength) reaches the real generator inputs, and reverts on rollback', async () => {
+    const { AutopilotEngine } = await import('../../server/autopilot-engine.js');
+    const engine = new AutopilotEngine('content-user-4') as unknown as ContentEngine;
+
+    // These three knobs are now EFFECTIVE fields — a live consumer
+    // (generateContentForAutopilot → generateAdvancedContent) reads them — so
+    // apply() must report applied=true and they must flow to the generator.
     const applyResult = await evolutionRegistry.apply({
       upgradeId: 'up-content-2',
       changeId: 'chg-content-2',
       category: 'content_optimization',
-      title: 'Hashtag strategy advisory',
+      title: 'Niche hashtags + short captions + strong CTA',
       source: 'exa',
-      payload: { platform: 'instagram', hashtagStrategy: 'trending', captionLength: 'short' },
+      payload: {
+        platform: 'instagram',
+        hashtagStrategy: 'niche',
+        captionLength: 'short',
+        callToActionStrength: 'high',
+      },
     });
-    expect(applyResult.applied).toBe(false);
-    expect(applyResult.reason).toBeTruthy();
+    expect(applyResult.applied).toBe(true);
+    expect(applyResult.reason).toBeUndefined();
+
+    await engine.generateContentForAutopilot(GEN_PARAMS);
+    const overriddenArg = mockGenerateAdvancedContent.mock.calls[0][0];
+    expect(overriddenArg.hashtagStrategy).toBe('niche');
+    expect(overriddenArg.captionLength).toBe('short');
+    expect(overriddenArg.callToActionStrength).toBe('high');
+
+    // Deactivating the enhancement reverts the generator to its prior behavior
+    // (the three knobs become undefined again).
+    await evolutionRegistry.deactivateAll();
+    mockGenerateAdvancedContent.mockClear();
+    await engine.generateContentForAutopilot(GEN_PARAMS);
+    const revertedArg = mockGenerateAdvancedContent.mock.calls[0][0];
+    expect(revertedArg.hashtagStrategy).toBeUndefined();
+    expect(revertedArg.captionLength).toBeUndefined();
+    expect(revertedArg.callToActionStrength).toBeUndefined();
+  });
+
+  it('each newly-wired knob is independently honored (hashtagStrategy only)', async () => {
+    const { AutopilotEngine } = await import('../../server/autopilot-engine.js');
+    const engine = new AutopilotEngine('content-user-5') as unknown as ContentEngine;
+
+    const applyResult = await evolutionRegistry.apply({
+      upgradeId: 'up-content-3',
+      changeId: 'chg-content-3',
+      category: 'content_optimization',
+      title: 'Trending hashtag strategy',
+      source: 'tavily',
+      payload: { platform: 'instagram', hashtagStrategy: 'trending' },
+    });
+    expect(applyResult.applied).toBe(true);
 
     await engine.generateContentForAutopilot(GEN_PARAMS);
     const callArg = mockGenerateAdvancedContent.mock.calls[0][0];
+    expect(callArg.hashtagStrategy).toBe('trending');
+    expect(callArg.captionLength).toBeUndefined();
+    expect(callArg.callToActionStrength).toBeUndefined();
+    // The previously-wired knobs still fall back to their defaults.
     expect(callArg.variantCount).toBe(3);
     expect(callArg.includeEmojis).toBe(true);
   });
