@@ -1,0 +1,50 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "zfhfPirZsCK4sboc2AIRO"
+uri = "file://daw-plugin-comparison.md"
+type = "text"
+title = "Max Booster DAW Plugins — Professional Comparison"
+
+[[outputs]]
+id = "CcpE9fHfNNsKReLY2pADX"
+uri = "file://patents/pdf/01_training_time_compression_system.pdf"
+type = "pdf"
+title = "Patent BLM-001 — Training Time Compression System"
+
+[[outputs]]
+id = "tQj6KDw_9BkPXpGr0YDiw"
+uri = "file://patents/pdf/02_music_scenario_engine.pdf"
+type = "pdf"
+title = "Patent BLM-002 — Music Industry Scenario Engine"
+
+[[outputs]]
+id = "2zc9liFPTu9hgOyfaPSUz"
+uri = "file://patents/pdf/03_ucb1_bandit_caffeine_mode.pdf"
+type = "pdf"
+title = "Patent BLM-003 — UCB1 Bandit & Caffeine Mode"
+
+[[outputs]]
+id = "4SjVCZIz6x3x8-yM9M-FV"
+uri = "file://patents/pdf/04_veo_calibrated_quality_gate.pdf"
+type = "pdf"
+title = "Patent BLM-004 — Veo-Calibrated Quality Gate"
+
+[[outputs]]
+id = "_3F6hM4yyqTbrXHOr2u0E"
+uri = "file://patents/pdf/05_four_tier_memory_system.pdf"
+type = "pdf"
+title = "Patent BLM-005 — Four-Tier Memory Replay System"
+
+[[outputs]]
+id = "e2s3HN6DZT2FckLiSiOFn"
+uri = "file://patents/pdf/06_hyperlearning_engine.pdf"
+type = "pdf"
+title = "Patent BLM-006 — HyperLearning Engine (72×)"
+
+[[outputs]]
+id = "VLLh5EMV-WgVaeWPO2YxI"
+uri = "file://patents/pdf/07_maxcore_score_calibrator.pdf"
+type = "pdf"
+title = "Patent BLM-007 — MaxCore Score Calibrator"

@@ -1,0 +1,855 @@
+import {
+  ag as d,
+  r as p,
+  f as e,
+  cx as h,
+  cy as f,
+  cz as i,
+  aK as N,
+  aR as x,
+  aO as b,
+  b7 as g,
+  dp as k,
+  dc as w,
+  bv as v,
+  c4 as l,
+  bc as j,
+  dq as D,
+} from "./vendor-react-31oK5L0i.js";
+import { j as a, C as o, h as t, I as y } from "./studio-DOUfHW5v.js";
+import "./vendor-utils-C_Rs6IXs.js";
+import "./vendor-ui-Ds7F22HT.js";
+import "./vendor-state-Bxk_Qy8r.js";
+import "./vendor-animation-CFQslDag.js";
+const E = [
+    {
+      name: "Dashboard",
+      href: "/dashboard",
+      icon: i,
+      description: "Your main workspace",
+    },
+    {
+      name: "Studio",
+      href: "/studio",
+      icon: b,
+      description: "Create and edit music",
+    },
+    {
+      name: "Analytics",
+      href: "/analytics",
+      icon: g,
+      description: "Track your performance",
+    },
+    {
+      name: "Marketplace",
+      href: "/marketplace",
+      icon: k,
+      description: "Browse beats and sounds",
+    },
+    {
+      name: "Collaborations",
+      href: "/collaborations",
+      icon: w,
+      description: "Work with others",
+    },
+    {
+      name: "Settings",
+      href: "/settings",
+      icon: v,
+      description: "Manage your account",
+    },
+  ],
+  V = [
+    { name: "Help Center", href: "/help", icon: l },
+    { name: "Contact Support", href: "/help#contact", icon: j },
+    { name: "Documentation", href: "/documentation", icon: D },
+  ];
+function B() {
+  const [, s] = d(),
+    [n, m] = p.useState(""),
+    c = (r) => {
+      (r.preventDefault(),
+        n.trim() && s(`/marketplace?search=${encodeURIComponent(n)}`));
+    },
+    u = () => {
+      window.history.length > 1 ? window.history.back() : s("/dashboard");
+    };
+  return e.jsxDEV(
+    "div",
+    {
+      className:
+        "min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-gray-50 via-purple-50/30 to-gray-100 dark:from-gray-900 dark:via-purple-900/10 dark:to-gray-800 p-4",
+      children: e.jsxDEV(
+        "div",
+        {
+          className: "max-w-2xl w-full",
+          children: [
+            e.jsxDEV(
+              "div",
+              {
+                className: "text-center mb-8",
+                children: [
+                  e.jsxDEV(
+                    "div",
+                    {
+                      className:
+                        "inline-flex items-center justify-center w-28 h-28 rounded-full bg-gradient-to-br from-purple-100 to-pink-100 dark:from-purple-900/40 dark:to-pink-900/40 mb-6 animate-pulse",
+                      children: e.jsxDEV(
+                        h,
+                        {
+                          className:
+                            "h-14 w-14 text-purple-600 dark:text-purple-400",
+                        },
+                        void 0,
+                        !1,
+                        {
+                          fileName:
+                            "/home/runner/workspace/client/src/pages/not-found.tsx",
+                          lineNumber: 61,
+                          columnNumber: 13,
+                        },
+                        this,
+                      ),
+                    },
+                    void 0,
+                    !1,
+                    {
+                      fileName:
+                        "/home/runner/workspace/client/src/pages/not-found.tsx",
+                      lineNumber: 60,
+                      columnNumber: 11,
+                    },
+                    this,
+                  ),
+                  e.jsxDEV(
+                    "h1",
+                    {
+                      className:
+                        "text-7xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-3",
+                      children: "404",
+                    },
+                    void 0,
+                    !1,
+                    {
+                      fileName:
+                        "/home/runner/workspace/client/src/pages/not-found.tsx",
+                      lineNumber: 64,
+                      columnNumber: 11,
+                    },
+                    this,
+                  ),
+                  e.jsxDEV(
+                    "h2",
+                    {
+                      className:
+                        "text-2xl font-semibold text-gray-800 dark:text-gray-200 mb-3",
+                      children: "Page Not Found",
+                    },
+                    void 0,
+                    !1,
+                    {
+                      fileName:
+                        "/home/runner/workspace/client/src/pages/not-found.tsx",
+                      lineNumber: 68,
+                      columnNumber: 11,
+                    },
+                    this,
+                  ),
+                  e.jsxDEV(
+                    "p",
+                    {
+                      className:
+                        "text-gray-600 dark:text-gray-400 max-w-md mx-auto mb-6",
+                      children:
+                        "Looks like this page took a vacation! The page you're looking for doesn't exist or has been moved.",
+                    },
+                    void 0,
+                    !1,
+                    {
+                      fileName:
+                        "/home/runner/workspace/client/src/pages/not-found.tsx",
+                      lineNumber: 72,
+                      columnNumber: 11,
+                    },
+                    this,
+                  ),
+                  e.jsxDEV(
+                    "div",
+                    {
+                      className:
+                        "flex flex-col sm:flex-row gap-3 justify-center mb-8",
+                      children: [
+                        e.jsxDEV(
+                          a,
+                          {
+                            onClick: u,
+                            variant: "outline",
+                            size: "lg",
+                            className: "gap-2",
+                            children: [
+                              e.jsxDEV(
+                                f,
+                                { className: "h-4 w-4" },
+                                void 0,
+                                !1,
+                                {
+                                  fileName:
+                                    "/home/runner/workspace/client/src/pages/not-found.tsx",
+                                  lineNumber: 83,
+                                  columnNumber: 15,
+                                },
+                                this,
+                              ),
+                              "Go Back",
+                            ],
+                          },
+                          void 0,
+                          !0,
+                          {
+                            fileName:
+                              "/home/runner/workspace/client/src/pages/not-found.tsx",
+                            lineNumber: 77,
+                            columnNumber: 13,
+                          },
+                          this,
+                        ),
+                        e.jsxDEV(
+                          a,
+                          {
+                            onClick: () => s("/dashboard"),
+                            size: "lg",
+                            className:
+                              "gap-2 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700",
+                            children: [
+                              e.jsxDEV(
+                                i,
+                                { className: "h-4 w-4" },
+                                void 0,
+                                !1,
+                                {
+                                  fileName:
+                                    "/home/runner/workspace/client/src/pages/not-found.tsx",
+                                  lineNumber: 91,
+                                  columnNumber: 15,
+                                },
+                                this,
+                              ),
+                              "Go to Dashboard",
+                            ],
+                          },
+                          void 0,
+                          !0,
+                          {
+                            fileName:
+                              "/home/runner/workspace/client/src/pages/not-found.tsx",
+                            lineNumber: 86,
+                            columnNumber: 13,
+                          },
+                          this,
+                        ),
+                      ],
+                    },
+                    void 0,
+                    !0,
+                    {
+                      fileName:
+                        "/home/runner/workspace/client/src/pages/not-found.tsx",
+                      lineNumber: 76,
+                      columnNumber: 11,
+                    },
+                    this,
+                  ),
+                ],
+              },
+              void 0,
+              !0,
+              {
+                fileName:
+                  "/home/runner/workspace/client/src/pages/not-found.tsx",
+                lineNumber: 59,
+                columnNumber: 9,
+              },
+              this,
+            ),
+            e.jsxDEV(
+              o,
+              {
+                className: "mb-6 overflow-hidden border-0 shadow-lg",
+                children: e.jsxDEV(
+                  t,
+                  {
+                    className: "p-6",
+                    children: e.jsxDEV(
+                      "form",
+                      {
+                        onSubmit: c,
+                        className: "flex gap-2",
+                        children: [
+                          e.jsxDEV(
+                            "div",
+                            {
+                              className: "relative flex-1",
+                              children: [
+                                e.jsxDEV(
+                                  N,
+                                  {
+                                    className:
+                                      "absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400",
+                                  },
+                                  void 0,
+                                  !1,
+                                  {
+                                    fileName:
+                                      "/home/runner/workspace/client/src/pages/not-found.tsx",
+                                    lineNumber: 101,
+                                    columnNumber: 17,
+                                  },
+                                  this,
+                                ),
+                                e.jsxDEV(
+                                  y,
+                                  {
+                                    type: "text",
+                                    placeholder:
+                                      "Search for beats, samples, or artists...",
+                                    value: n,
+                                    onChange: (r) => m(r.target.value),
+                                    className: "pl-10",
+                                  },
+                                  void 0,
+                                  !1,
+                                  {
+                                    fileName:
+                                      "/home/runner/workspace/client/src/pages/not-found.tsx",
+                                    lineNumber: 102,
+                                    columnNumber: 17,
+                                  },
+                                  this,
+                                ),
+                              ],
+                            },
+                            void 0,
+                            !0,
+                            {
+                              fileName:
+                                "/home/runner/workspace/client/src/pages/not-found.tsx",
+                              lineNumber: 100,
+                              columnNumber: 15,
+                            },
+                            this,
+                          ),
+                          e.jsxDEV(
+                            a,
+                            {
+                              type: "submit",
+                              variant: "secondary",
+                              children: "Search",
+                            },
+                            void 0,
+                            !1,
+                            {
+                              fileName:
+                                "/home/runner/workspace/client/src/pages/not-found.tsx",
+                              lineNumber: 110,
+                              columnNumber: 15,
+                            },
+                            this,
+                          ),
+                        ],
+                      },
+                      void 0,
+                      !0,
+                      {
+                        fileName:
+                          "/home/runner/workspace/client/src/pages/not-found.tsx",
+                        lineNumber: 99,
+                        columnNumber: 13,
+                      },
+                      this,
+                    ),
+                  },
+                  void 0,
+                  !1,
+                  {
+                    fileName:
+                      "/home/runner/workspace/client/src/pages/not-found.tsx",
+                    lineNumber: 98,
+                    columnNumber: 11,
+                  },
+                  this,
+                ),
+              },
+              void 0,
+              !1,
+              {
+                fileName:
+                  "/home/runner/workspace/client/src/pages/not-found.tsx",
+                lineNumber: 97,
+                columnNumber: 9,
+              },
+              this,
+            ),
+            e.jsxDEV(
+              "div",
+              {
+                className: "grid md:grid-cols-2 gap-6",
+                children: [
+                  e.jsxDEV(
+                    o,
+                    {
+                      className: "border-0 shadow-lg",
+                      children: e.jsxDEV(
+                        t,
+                        {
+                          className: "p-6",
+                          children: [
+                            e.jsxDEV(
+                              "h3",
+                              {
+                                className:
+                                  "font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2",
+                                children: [
+                                  e.jsxDEV(
+                                    x,
+                                    { className: "h-5 w-5 text-purple-500" },
+                                    void 0,
+                                    !1,
+                                    {
+                                      fileName:
+                                        "/home/runner/workspace/client/src/pages/not-found.tsx",
+                                      lineNumber: 121,
+                                      columnNumber: 17,
+                                    },
+                                    this,
+                                  ),
+                                  "Popular Pages",
+                                ],
+                              },
+                              void 0,
+                              !0,
+                              {
+                                fileName:
+                                  "/home/runner/workspace/client/src/pages/not-found.tsx",
+                                lineNumber: 120,
+                                columnNumber: 15,
+                              },
+                              this,
+                            ),
+                            e.jsxDEV(
+                              "div",
+                              {
+                                className: "space-y-2",
+                                children: E.map((r) =>
+                                  e.jsxDEV(
+                                    "a",
+                                    {
+                                      href: r.href,
+                                      className:
+                                        "flex items-center gap-3 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors group",
+                                      children: [
+                                        e.jsxDEV(
+                                          "div",
+                                          {
+                                            className:
+                                              "w-8 h-8 rounded-lg bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center group-hover:bg-purple-200 dark:group-hover:bg-purple-900/50 transition-colors",
+                                            children: e.jsxDEV(
+                                              r.icon,
+                                              {
+                                                className:
+                                                  "h-4 w-4 text-purple-600 dark:text-purple-400",
+                                              },
+                                              void 0,
+                                              !1,
+                                              {
+                                                fileName:
+                                                  "/home/runner/workspace/client/src/pages/not-found.tsx",
+                                                lineNumber: 132,
+                                                columnNumber: 23,
+                                              },
+                                              this,
+                                            ),
+                                          },
+                                          void 0,
+                                          !1,
+                                          {
+                                            fileName:
+                                              "/home/runner/workspace/client/src/pages/not-found.tsx",
+                                            lineNumber: 131,
+                                            columnNumber: 21,
+                                          },
+                                          this,
+                                        ),
+                                        e.jsxDEV(
+                                          "div",
+                                          {
+                                            className: "flex-1 min-w-0",
+                                            children: [
+                                              e.jsxDEV(
+                                                "p",
+                                                {
+                                                  className:
+                                                    "text-sm font-medium text-gray-900 dark:text-white",
+                                                  children: r.name,
+                                                },
+                                                void 0,
+                                                !1,
+                                                {
+                                                  fileName:
+                                                    "/home/runner/workspace/client/src/pages/not-found.tsx",
+                                                  lineNumber: 135,
+                                                  columnNumber: 23,
+                                                },
+                                                this,
+                                              ),
+                                              e.jsxDEV(
+                                                "p",
+                                                {
+                                                  className:
+                                                    "text-xs text-gray-500 dark:text-gray-400 truncate",
+                                                  children: r.description,
+                                                },
+                                                void 0,
+                                                !1,
+                                                {
+                                                  fileName:
+                                                    "/home/runner/workspace/client/src/pages/not-found.tsx",
+                                                  lineNumber: 138,
+                                                  columnNumber: 23,
+                                                },
+                                                this,
+                                              ),
+                                            ],
+                                          },
+                                          void 0,
+                                          !0,
+                                          {
+                                            fileName:
+                                              "/home/runner/workspace/client/src/pages/not-found.tsx",
+                                            lineNumber: 134,
+                                            columnNumber: 21,
+                                          },
+                                          this,
+                                        ),
+                                      ],
+                                    },
+                                    r.href,
+                                    !0,
+                                    {
+                                      fileName:
+                                        "/home/runner/workspace/client/src/pages/not-found.tsx",
+                                      lineNumber: 126,
+                                      columnNumber: 19,
+                                    },
+                                    this,
+                                  ),
+                                ),
+                              },
+                              void 0,
+                              !1,
+                              {
+                                fileName:
+                                  "/home/runner/workspace/client/src/pages/not-found.tsx",
+                                lineNumber: 124,
+                                columnNumber: 15,
+                              },
+                              this,
+                            ),
+                          ],
+                        },
+                        void 0,
+                        !0,
+                        {
+                          fileName:
+                            "/home/runner/workspace/client/src/pages/not-found.tsx",
+                          lineNumber: 119,
+                          columnNumber: 13,
+                        },
+                        this,
+                      ),
+                    },
+                    void 0,
+                    !1,
+                    {
+                      fileName:
+                        "/home/runner/workspace/client/src/pages/not-found.tsx",
+                      lineNumber: 118,
+                      columnNumber: 11,
+                    },
+                    this,
+                  ),
+                  e.jsxDEV(
+                    o,
+                    {
+                      className: "border-0 shadow-lg",
+                      children: e.jsxDEV(
+                        t,
+                        {
+                          className: "p-6",
+                          children: [
+                            e.jsxDEV(
+                              "h3",
+                              {
+                                className:
+                                  "font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2",
+                                children: [
+                                  e.jsxDEV(
+                                    l,
+                                    { className: "h-5 w-5 text-blue-500" },
+                                    void 0,
+                                    !1,
+                                    {
+                                      fileName:
+                                        "/home/runner/workspace/client/src/pages/not-found.tsx",
+                                      lineNumber: 151,
+                                      columnNumber: 17,
+                                    },
+                                    this,
+                                  ),
+                                  "Need Help?",
+                                ],
+                              },
+                              void 0,
+                              !0,
+                              {
+                                fileName:
+                                  "/home/runner/workspace/client/src/pages/not-found.tsx",
+                                lineNumber: 150,
+                                columnNumber: 15,
+                              },
+                              this,
+                            ),
+                            e.jsxDEV(
+                              "p",
+                              {
+                                className:
+                                  "text-sm text-gray-600 dark:text-gray-400 mb-4",
+                                children:
+                                  "If you believe this is an error or need assistance, our support team is here to help.",
+                              },
+                              void 0,
+                              !1,
+                              {
+                                fileName:
+                                  "/home/runner/workspace/client/src/pages/not-found.tsx",
+                                lineNumber: 155,
+                                columnNumber: 15,
+                              },
+                              this,
+                            ),
+                            e.jsxDEV(
+                              "div",
+                              {
+                                className: "space-y-2 mb-4",
+                                children: V.map((r) =>
+                                  e.jsxDEV(
+                                    "a",
+                                    {
+                                      href: r.href,
+                                      className:
+                                        "flex items-center gap-2 text-sm text-primary hover:underline",
+                                      children: [
+                                        e.jsxDEV(
+                                          r.icon,
+                                          { className: "h-4 w-4" },
+                                          void 0,
+                                          !1,
+                                          {
+                                            fileName:
+                                              "/home/runner/workspace/client/src/pages/not-found.tsx",
+                                            lineNumber: 166,
+                                            columnNumber: 21,
+                                          },
+                                          this,
+                                        ),
+                                        r.name,
+                                      ],
+                                    },
+                                    r.href,
+                                    !0,
+                                    {
+                                      fileName:
+                                        "/home/runner/workspace/client/src/pages/not-found.tsx",
+                                      lineNumber: 161,
+                                      columnNumber: 19,
+                                    },
+                                    this,
+                                  ),
+                                ),
+                              },
+                              void 0,
+                              !1,
+                              {
+                                fileName:
+                                  "/home/runner/workspace/client/src/pages/not-found.tsx",
+                                lineNumber: 159,
+                                columnNumber: 15,
+                              },
+                              this,
+                            ),
+                            e.jsxDEV(
+                              "div",
+                              {
+                                className:
+                                  "pt-4 border-t border-gray-200 dark:border-gray-700",
+                                children: [
+                                  e.jsxDEV(
+                                    "p",
+                                    {
+                                      className:
+                                        "text-xs text-gray-500 dark:text-gray-400",
+                                      children:
+                                        "Error Code: 404 • Page Not Found",
+                                    },
+                                    void 0,
+                                    !1,
+                                    {
+                                      fileName:
+                                        "/home/runner/workspace/client/src/pages/not-found.tsx",
+                                      lineNumber: 173,
+                                      columnNumber: 17,
+                                    },
+                                    this,
+                                  ),
+                                  e.jsxDEV(
+                                    "p",
+                                    {
+                                      className:
+                                        "text-xs text-gray-500 dark:text-gray-400",
+                                      children: [
+                                        "URL: ",
+                                        typeof window < "u"
+                                          ? window.location.pathname
+                                          : "",
+                                      ],
+                                    },
+                                    void 0,
+                                    !0,
+                                    {
+                                      fileName:
+                                        "/home/runner/workspace/client/src/pages/not-found.tsx",
+                                      lineNumber: 176,
+                                      columnNumber: 17,
+                                    },
+                                    this,
+                                  ),
+                                ],
+                              },
+                              void 0,
+                              !0,
+                              {
+                                fileName:
+                                  "/home/runner/workspace/client/src/pages/not-found.tsx",
+                                lineNumber: 172,
+                                columnNumber: 15,
+                              },
+                              this,
+                            ),
+                          ],
+                        },
+                        void 0,
+                        !0,
+                        {
+                          fileName:
+                            "/home/runner/workspace/client/src/pages/not-found.tsx",
+                          lineNumber: 149,
+                          columnNumber: 13,
+                        },
+                        this,
+                      ),
+                    },
+                    void 0,
+                    !1,
+                    {
+                      fileName:
+                        "/home/runner/workspace/client/src/pages/not-found.tsx",
+                      lineNumber: 148,
+                      columnNumber: 11,
+                    },
+                    this,
+                  ),
+                ],
+              },
+              void 0,
+              !0,
+              {
+                fileName:
+                  "/home/runner/workspace/client/src/pages/not-found.tsx",
+                lineNumber: 117,
+                columnNumber: 9,
+              },
+              this,
+            ),
+            e.jsxDEV(
+              "div",
+              {
+                className: "text-center mt-8",
+                children: e.jsxDEV(
+                  "p",
+                  {
+                    className: "text-sm text-gray-500 dark:text-gray-400",
+                    children: [
+                      "Still stuck?",
+                      " ",
+                      e.jsxDEV(
+                        "a",
+                        {
+                          href: "mailto:support@maxbooster.com",
+                          className: "text-primary hover:underline",
+                          children: "Contact our support team",
+                        },
+                        void 0,
+                        !1,
+                        {
+                          fileName:
+                            "/home/runner/workspace/client/src/pages/not-found.tsx",
+                          lineNumber: 187,
+                          columnNumber: 13,
+                        },
+                        this,
+                      ),
+                    ],
+                  },
+                  void 0,
+                  !0,
+                  {
+                    fileName:
+                      "/home/runner/workspace/client/src/pages/not-found.tsx",
+                    lineNumber: 185,
+                    columnNumber: 11,
+                  },
+                  this,
+                ),
+              },
+              void 0,
+              !1,
+              {
+                fileName:
+                  "/home/runner/workspace/client/src/pages/not-found.tsx",
+                lineNumber: 184,
+                columnNumber: 9,
+              },
+              this,
+            ),
+          ],
+        },
+        void 0,
+        !0,
+        {
+          fileName: "/home/runner/workspace/client/src/pages/not-found.tsx",
+          lineNumber: 58,
+          columnNumber: 7,
+        },
+        this,
+      ),
+    },
+    void 0,
+    !1,
+    {
+      fileName: "/home/runner/workspace/client/src/pages/not-found.tsx",
+      lineNumber: 57,
+      columnNumber: 5,
+    },
+    this,
+  );
+}
+export { B as default };

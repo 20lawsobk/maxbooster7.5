@@ -1,0 +1,362 @@
+import type { Request, Response, NextFunction, RequestHandler } from "express";
+import v8 from "v8";
+import { randomBytes } from "crypto";
+import { logger } from "../logger.js";
+
+interface QueuedRequest {
+  id: string;
+  req: Request;
+  res: Response;
+  next: NextFunction;
+  timestamp: number;
+  priority: number;
+  timeout: NodeJS.Timeout;
+}
+
+interface QueueConfig {
+  maxQueueSize: number;
+  maxConcurrent: number;
+  requestTimeout: number;
+  priorityLevels: number;
+}
+
+class RequestQueue {
+  private queues: Map<number, QueuedRequest[]> = new Map();
+  private processing = 0;
+  private config: QueueConfig;
+  private stats = {
+    queued: 0,
+    processed: 0,
+    rejected: 0,
+    timedOut: 0,
+  };
+
+  constructor(config: Partial<QueueConfig> = {}) {
+    this.config = {
+      maxQueueSize: 100000,
+      maxConcurrent: 5000,
+      requestTimeout: 45000,
+      priorityLevels: 3,
+      ...config,
+    };
+
+    for (let i = 0; i < this.config.priorityLevels; i++) {
+      this.queues.set(i, []);
+    }
+  }
+
+  private generateId(): string {
+    return `${Date.now()}-${randomBytes(4).toString("hex")}`;
+  }
+
+  private getTotalQueueSize(): number {
+    let total = 0;
+    for (const queue of this.queues.values()) {
+      total += queue.length;
+    }
+    return total;
+  }
+
+  enqueue(req: Request, res: Response, next: NextFunction): boolean {
+    if (this.getTotalQueueSize() >= this.config.maxQueueSize) {
+      this.stats.rejected++;
+      return false;
+    }
+
+    const priority = this.determinePriority(req);
+    const id = this.generateId();
+
+    const timeout = setTimeout(() => {
+      this.handleTimeout(id, priority);
+    }, this.config.requestTimeout);
+
+    const queuedRequest: QueuedRequest = {
+      id,
+      req,
+      res,
+      next,
+      timestamp: Date.now(),
+      priority,
+      timeout,
+    };
+
+    this.queues.get(priority)!.push(queuedRequest);
+    this.stats.queued++;
+
+    this.processQueue();
+
+    return true;
+  }
+
+  private determinePriority(req: Request): number {
+    const user = (req as Record<string, unknown>).user;
+
+    if (user?.role === "admin") return 0;
+    if (user?.subscriptionTier === "lifetime") return 0;
+    if (user?.subscriptionTier === "yearly") return 1;
+
+    if (req.path.includes("/health") || req.path.includes("/status")) return 0;
+
+    return 2;
+  }
+
+  private processQueue(): void {
+    if (this.processing >= this.config.maxConcurrent) {
+      return;
+    }
+
+    for (let priority = 0; priority < this.config.priorityLevels; priority++) {
+      const queue = this.queues.get(priority)!;
+
+      while (queue.length > 0 && this.processing < this.config.maxConcurrent) {
+        const request = queue.shift()!;
+        this.processRequest(request);
+      }
+    }
+  }
+
+  // Routes that produce long-running or streamed responses — exempt from the
+  // active-processing hard timeout.
+  private static readonly STREAMING_PATH_PATTERNS = [
+    "/api/ai/",
+    "/api/stream",
+    "/api/studio/export",
+    "/api/export",
+    "/api/download",
+    "/api/upload",
+    "/api/multipart",
+    "/api/sse",
+    "/api/events",
+  ];
+
+  private isStreamingRoute(path: string): boolean {
+    return RequestQueue.STREAMING_PATH_PATTERNS.some(
+      (p) => path.startsWith(p) || path.includes(p),
+    );
+  }
+
+  private processRequest(queuedRequest: QueuedRequest): void {
+    this.processing++;
+    clearTimeout(queuedRequest.timeout);
+
+    // Guard: decrement exactly once, whether the response ends normally or the
+    // client disconnects abruptly.  Without the 'close' handler, an aborted
+    // connection never fires res.end(), causing `processing` to leak upward
+    // until it reaches maxConcurrent and ALL future requests are silently dropped.
+    let released = false;
+    const release = () => {
+      if (released) return;
+      released = true;
+      this.processing--;
+      this.stats.processed++;
+      setImmediate(() => this.processQueue());
+    };
+
+    const originalEnd = queuedRequest.res.end.bind(queuedRequest.res);
+    queuedRequest.res.end = (...args: unknown[]) => {
+      release();
+      return originalEnd(...args);
+    };
+
+    // Client disconnect path: socket 'close' fires when the TCP connection drops
+    // before the response is sent (e.g. browser tab closed, network timeout).
+    queuedRequest.req.on("close", () => {
+      if (!released) {
+        this.stats.timedOut++;
+        release();
+      }
+    });
+
+    // Hard active-processing timeout: kills the request if the handler has not
+    // sent a response within 60 s.  This catches stuck handlers (e.g. an external
+    // API call with no timeout) that would otherwise hold a concurrency slot open
+    // indefinitely.  Streaming/AI routes are exempt because they can legitimately
+    // run longer and the client reads data incrementally.
+    if (!this.isStreamingRoute(queuedRequest.req.path)) {
+      const activeTimeout = setTimeout(() => {
+        if (!queuedRequest.res.headersSent) {
+          this.stats.timedOut++;
+          logger.warn(
+            `[RequestQueue] Active handler timeout on ${queuedRequest.req.method} ${queuedRequest.req.path}`,
+          );
+          queuedRequest.res.status(503).json({
+            error: "Gateway Timeout",
+            message:
+              "The server took too long to process your request. Please try again.",
+            retryAfter: 5,
+          });
+        }
+        // Always release to avoid starving the queue even if headers were already sent.
+        release();
+      }, 60_000);
+
+      queuedRequest.res.on("finish", () => clearTimeout(activeTimeout));
+      queuedRequest.res.on("close", () => clearTimeout(activeTimeout));
+    }
+
+    const waitTime = Date.now() - queuedRequest.timestamp;
+    queuedRequest.res.setHeader("X-Queue-Wait-Ms", waitTime);
+
+    queuedRequest.next();
+  }
+
+  private handleTimeout(id: string, priority: number): void {
+    const queue = this.queues.get(priority)!;
+    const index = queue.findIndex((r) => r.id === id);
+
+    if (index !== -1) {
+      const request = queue.splice(index, 1)[0];
+      this.stats.timedOut++;
+
+      if (!request.res.headersSent) {
+        request.res.status(503).json({
+          error: "Service temporarily unavailable",
+          message: "Request timed out in queue. Please try again.",
+          retryAfter: 5,
+        });
+      }
+    }
+  }
+
+  getStats() {
+    const queueSizes: Record<string, number> = {};
+    for (const [priority, queue] of this.queues.entries()) {
+      queueSizes[`priority_${priority}`] = queue.length;
+    }
+
+    return {
+      ...this.stats,
+      currentlyProcessing: this.processing,
+      queueSizes,
+      totalQueued: this.getTotalQueueSize(),
+    };
+  }
+
+  clear(): void {
+    for (const queue of this.queues.values()) {
+      for (const request of queue) {
+        clearTimeout(request.timeout);
+        if (!request.res.headersSent) {
+          request.res.status(503).json({
+            error: "Queue cleared",
+            message: "The request queue was cleared.",
+          });
+        }
+      }
+      queue.length = 0;
+    }
+  }
+}
+
+const globalRequestQueue = new RequestQueue({
+  maxQueueSize: 50000,
+  maxConcurrent: 1000,
+  requestTimeout: 30000,
+  priorityLevels: 3,
+});
+
+export const createQueueMiddleware = (
+  queueInstance?: RequestQueue,
+): RequestHandler => {
+  const queue = queueInstance || globalRequestQueue;
+
+  return (req: Request, res: Response, next: NextFunction): void => {
+    const shouldSkipQueue =
+      req.path.startsWith("/api/health") ||
+      req.path === "/api/version" ||
+      req.path.startsWith("/api/monitoring") ||
+      req.method === "OPTIONS";
+
+    if (shouldSkipQueue) {
+      next();
+      return;
+    }
+
+    const enqueued = queue.enqueue(req, res, next);
+
+    if (!enqueued) {
+      res.status(503).json({
+        error: "Service overloaded",
+        message: "Too many requests. Please try again in a few seconds.",
+        retryAfter: 5,
+      });
+    }
+  };
+};
+
+export const requestQueueMiddleware = createQueueMiddleware();
+
+export const getQueueStats = () => globalRequestQueue.getStats();
+
+export const clearRequestQueue = () => globalRequestQueue.clear();
+
+export class LoadShedder {
+  private shedding = false;
+  private threshold = 0.9;
+  private recoveryThreshold = 0.7;
+
+  constructor(private queue: RequestQueue = globalRequestQueue) {
+    setInterval(() => this.evaluate(), 5000);
+  }
+
+  private evaluate(): void {
+    const stats = this.queue.getStats();
+    const concurrencyUtil = stats.currentlyProcessing / 1000;
+
+    // Memory pressure check: use heap_size_limit (the configured --max-old-space-size)
+    // so the percentage is accurate against the true cap, not just the JIT-grown heap.
+    const heapStats = v8.getHeapStatistics();
+    const heapUtil =
+      heapStats.heap_size_limit > 0
+        ? heapStats.used_heap_size / heapStats.heap_size_limit
+        : process.memoryUsage().heapUsed / process.memoryUsage().heapTotal;
+
+    // Activate shedding when either concurrency OR memory breaches the threshold.
+    const utilization = Math.max(concurrencyUtil, heapUtil);
+
+    if (!this.shedding && utilization > this.threshold) {
+      this.shedding = true;
+      const reason =
+        concurrencyUtil >= heapUtil ? "concurrency" : "memory pressure";
+      logger.warn(
+        `Load shedding ACTIVATED (${reason}) — util at ${(utilization * 100).toFixed(1)}%`,
+      );
+    } else if (this.shedding && utilization < this.recoveryThreshold) {
+      this.shedding = false;
+      logger.info(
+        `Load shedding DEACTIVATED — util at ${(utilization * 100).toFixed(1)}%`,
+      );
+    }
+  }
+
+  shouldShed(req: Request): boolean {
+    if (!this.shedding) return false;
+
+    const user = (req as Record<string, unknown>).user;
+    if (user?.role === "admin") return false;
+    if (user?.subscriptionTier === "lifetime") return false;
+    if (req.path.includes("/health") || req.path.includes("/critical"))
+      return false;
+
+    return Math.random() > 0.5;
+  }
+
+  middleware(): RequestHandler {
+    return (req: Request, res: Response, next: NextFunction): void => {
+      if (this.shouldShed(req)) {
+        res.status(503).json({
+          error: "Service overloaded",
+          message: "Server is under heavy load. Please try again shortly.",
+          retryAfter: 10,
+        });
+        return;
+      }
+      next();
+    };
+  }
+}
+
+export const loadShedder = new LoadShedder();
+export const loadSheddingMiddleware = loadShedder.middleware();
+
+export { RequestQueue, globalRequestQueue };

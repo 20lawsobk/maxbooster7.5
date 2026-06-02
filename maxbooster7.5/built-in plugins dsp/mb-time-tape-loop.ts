@@ -1,0 +1,63 @@
+import type { PluginDefinition } from "../server/services/pluginHostService";
+
+const MbTimeTapeLoopPlugin: PluginDefinition = {
+  id: "mb-time-tape-loop",
+  slug: "mb-time-tape-loop",
+  name: "MB Tape Loop",
+  category: "effect",
+  type: "delay" as any,
+  version: "1.0.0",
+  description: "Degrading tape loop with wow, flutter, and aging simulation",
+  author: "Max Booster",
+  grade: "A",
+  parameters: [
+    {
+      id: "length",
+      name: "Loop Length",
+      type: "float",
+      defaultValue: 2,
+      minValue: 0.5,
+      maxValue: 10,
+      automatable: true,
+    },
+    {
+      id: "age",
+      name: "Tape Age",
+      type: "float",
+      defaultValue: 0.3,
+      minValue: 0,
+      maxValue: 1,
+      automatable: true,
+    },
+    {
+      id: "wow",
+      name: "Wow",
+      type: "float",
+      defaultValue: 0.2,
+      minValue: 0,
+      maxValue: 1,
+      automatable: true,
+    },
+    {
+      id: "flutter",
+      name: "Flutter",
+      type: "float",
+      defaultValue: 0.15,
+      minValue: 0,
+      maxValue: 1,
+      automatable: true,
+    },
+    {
+      id: "mix",
+      name: "Mix",
+      type: "float",
+      defaultValue: 0.5,
+      minValue: 0,
+      maxValue: 1,
+      automatable: true,
+    },
+  ],
+  defaultPreset: { length: 2, age: 0.3, wow: 0.2, flutter: 0.15, mix: 0.5 },
+};
+
+export default MbTimeTapeLoopPlugin;

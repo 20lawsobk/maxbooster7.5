@@ -1,0 +1,24 @@
+[project]
+name = "repl-nix-workspace"
+version = "0.1.0"
+description = "Add your description here"
+requires-python = ">=3.12"
+# Dependencies intentionally empty — all Python packages needed by the port
+# 8008 diffusion server (numpy, fastapi, uvicorn, pydantic, pillow, scipy)
+# are installed by build.sh into python_runtime/ using the portable CPython
+# binary downloaded from python-build-standalone.
+# Keeping this list empty ensures `uv sync` is a true no-op and never tries
+# to write to the read-only Nix store during the deployment build phase.
+dependencies = [
+    "fastapi>=0.100.0",
+    "numpy>=1.24.0",
+    "pillow>=10.0.0",
+    "pydantic>=2.0.0",
+    "scipy>=1.11.0",
+    "uvicorn[standard]>=0.23.0",
+]
+
+[tool.uv]
+# Do not treat this project as an installable package.
+# Makes `uv sync` a true no-op (nothing to install, nothing to build).
+package = false

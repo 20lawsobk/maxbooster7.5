@@ -1,0 +1,60 @@
+import type { PluginDefinition } from "../server/services/pluginHostService";
+
+const MbGuitarNylonPlugin: PluginDefinition = {
+  id: "mb-guitar-nylon",
+  slug: "mb-guitar-nylon",
+  name: "MB Nylon Guitar",
+  category: "instrument",
+  type: "guitar" as any,
+  version: "1.0.0",
+  description: "Classical nylon string guitar with warm fingerstyle tone",
+  author: "Max Booster",
+  grade: "A",
+  oscillators: [
+    { type: "sine", detune: 0, gain: 0.5 },
+    { type: "triangle", detune: 0, gain: 0.35 },
+    { type: "sine", detune: 1200, gain: 0.15 },
+  ],
+  envelope: { attack: 0.002, decay: 0.6, sustain: 0.25, release: 0.5 },
+  parameters: [
+    {
+      id: "body",
+      name: "Body",
+      type: "float",
+      defaultValue: 0.7,
+      minValue: 0,
+      maxValue: 1,
+      automatable: true,
+    },
+    {
+      id: "warmth",
+      name: "Warmth",
+      type: "float",
+      defaultValue: 0.7,
+      minValue: 0,
+      maxValue: 1,
+      automatable: true,
+    },
+    {
+      id: "nail",
+      name: "Nail",
+      type: "float",
+      defaultValue: 0.3,
+      minValue: 0,
+      maxValue: 1,
+      automatable: true,
+    },
+    {
+      id: "volume",
+      name: "Volume",
+      type: "float",
+      defaultValue: 0.8,
+      minValue: 0,
+      maxValue: 1,
+      automatable: true,
+    },
+  ],
+  defaultPreset: { body: 0.7, warmth: 0.7, nail: 0.3, volume: 0.8 },
+};
+
+export default MbGuitarNylonPlugin;

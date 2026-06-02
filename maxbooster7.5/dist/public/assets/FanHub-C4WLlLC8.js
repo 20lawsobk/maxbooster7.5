@@ -1,0 +1,5966 @@
+import {
+  ah as qe,
+  r as u,
+  aH as ie,
+  aI as T,
+  f as e,
+  dc as le,
+  b9 as Be,
+  aM as M,
+  fR as Oe,
+  aK as Ke,
+  bg as fe,
+  dW as ge,
+  cB as te,
+  aO as Le,
+  cT as $e,
+  al as Ue,
+  bT as ve,
+  e5 as me,
+  ai as we,
+  aX as Qe,
+  bu as Ye,
+} from "./vendor-react-31oK5L0i.js";
+import { A as ze } from "./AppLayout-D2pri0rw.js";
+import {
+  u as Je,
+  C as h,
+  d as Q,
+  f as Y,
+  h as A,
+  I as p,
+  j as a,
+  o as z,
+  ae as Fe,
+  p as J,
+  r as W,
+  v as G,
+  w as X,
+  L as t,
+  y as ue,
+  G as je,
+  ac as ce,
+  a4 as We,
+  a5 as Ge,
+  a6 as _,
+  a9 as Z,
+  B as I,
+  a0 as Xe,
+  a1 as _e,
+  a2 as Ze,
+  a3 as oe,
+  H as es,
+  K as ss,
+  M as rs,
+  N as ns,
+  O as as,
+  Q as is,
+  R as ls,
+  U as ts,
+  a as D,
+} from "./studio-DOUfHW5v.js";
+import {
+  T as De,
+  a as Ve,
+  b as w,
+  c as d,
+  d as ke,
+  e as m,
+} from "./table-BLAeU9Q6.js";
+import {
+  S as ms,
+  b as us,
+  c as cs,
+  d as os,
+  e as bs,
+} from "./sheet-DTRVkwak.js";
+import { af as V } from "./vendor-utils-C_Rs6IXs.js";
+import "./vendor-ui-Ds7F22HT.js";
+import "./vendor-state-Bxk_Qy8r.js";
+import "./TopBar-jcH3P98k.js";
+import "./index-D5xLbTBZ.js";
+import "./vendor-animation-CFQslDag.js";
+function Hs() {
+  const { toast: c } = Je(),
+    o = qe(),
+    [P, be] = u.useState(""),
+    [n, v] = u.useState(null),
+    [Ee, R] = u.useState(!1),
+    [He, q] = u.useState(!1),
+    [ds, ye] = u.useState("all"),
+    [B, O] = u.useState(null),
+    [F, k] = u.useState(null),
+    [de, K] = u.useState(""),
+    [N, ee] = u.useState(null),
+    [Ne, he] = u.useState(!1),
+    [L, $] = u.useState(null),
+    [E, H] = u.useState({ name: "", phone: "", notes: "", isVip: !1 }),
+    { data: Ce, isLoading: Se } = ie({
+      queryKey: ["/api/fan-hub/subscribers", { search: P }],
+    }),
+    { data: x, isLoading: Ns } = ie({ queryKey: ["/api/fan-hub/stats"] }),
+    { data: pe, isLoading: hs } = ie({ queryKey: ["/api/fan-hub/messages"] }),
+    se = T({
+      mutationFn: async (s) =>
+        (await D("POST", "/api/fan-hub/subscribers", s)).json(),
+      onSuccess: () => {
+        (o.invalidateQueries({ queryKey: ["/api/fan-hub/subscribers"] }),
+          o.invalidateQueries({ queryKey: ["/api/fan-hub/stats"] }),
+          R(!1),
+          c({
+            title: "Success",
+            description: "Fan subscriber added successfully.",
+          }));
+      },
+    }),
+    Te = T({
+      mutationFn: async (s) => {
+        await D("DELETE", `/api/fan-hub/subscribers/${s}`);
+      },
+      onSuccess: () => {
+        (o.invalidateQueries({ queryKey: ["/api/fan-hub/subscribers"] }),
+          o.invalidateQueries({ queryKey: ["/api/fan-hub/stats"] }),
+          v(null),
+          c({ title: "Success", description: "Fan subscriber removed." }));
+      },
+    }),
+    re = T({
+      mutationFn: async (s) =>
+        (await D("POST", "/api/fan-hub/message", s)).json(),
+      onSuccess: () => {
+        (o.invalidateQueries({ queryKey: ["/api/fan-hub/messages"] }),
+          q(!1),
+          c({
+            title: "Success",
+            description: "Bulk message sent to your fans!",
+          }));
+      },
+    }),
+    ne = T({
+      mutationFn: async ({ id: s, tags: r }) =>
+        (
+          await D("PUT", `/api/fan-hub/subscribers/${s}/tag`, { tags: r })
+        ).json(),
+      onSuccess: () => {
+        (o.invalidateQueries({ queryKey: ["/api/fan-hub/subscribers"] }),
+          k(null),
+          K(""),
+          c({ title: "Tags updated" }));
+      },
+    }),
+    y = T({
+      mutationFn: async ({ id: s, data: r }) =>
+        (await D("PUT", `/api/fan-hub/subscribers/${s}`, r)).json(),
+      onSuccess: (s) => {
+        (o.invalidateQueries({ queryKey: ["/api/fan-hub/subscribers"] }),
+          o.invalidateQueries({ queryKey: ["/api/fan-hub/stats"] }),
+          $(null),
+          n && v({ ...n, ...s }),
+          c({ title: "Fan profile updated" }));
+      },
+    }),
+    Me = () => {
+      const s = [
+          "Name",
+          "Email",
+          "Phone",
+          "VIP",
+          "Source",
+          "Joined",
+          "Total Spent",
+          "Tags",
+          "Notes",
+        ],
+        r = f.map((l) =>
+          [
+            l.name || "",
+            l.email,
+            l.phone || "",
+            l.isVip ? "Yes" : "No",
+            l.source || "",
+            V(new Date(l.joinedAt), "yyyy-MM-dd"),
+            l.totalSpent.toFixed(2),
+            (l.tags || []).join("|"),
+            (l.notes || "").replace(/"/g, '""'),
+          ]
+            .map((U) => `"${U}"`)
+            .join(","),
+        ),
+        b = [s.join(","), ...r].join(`
+`),
+        j = new Blob([b], { type: "text/csv;charset=utf-8;" }),
+        C = URL.createObjectURL(j),
+        g = document.createElement("a");
+      ((g.href = C),
+        (g.download = `fans-${V(new Date(), "yyyy-MM-dd")}.csv`),
+        document.body.appendChild(g),
+        g.click(),
+        document.body.removeChild(g),
+        URL.revokeObjectURL(C),
+        c({
+          title: "Export complete",
+          description: `${f.length} fans exported to CSV.`,
+        }));
+    },
+    Ae = async () => {
+      if (N) {
+        he(!0);
+        try {
+          const r = (await N.text())
+            .split(
+              `
+`,
+            )
+            .map((i) => i.trim())
+            .filter(Boolean);
+          if (r.length < 2) {
+            c({
+              title: "Empty file",
+              description:
+                "CSV must have at least a header row and one data row.",
+              variant: "destructive",
+            });
+            return;
+          }
+          const b = r[0]
+              .split(",")
+              .map((i) => i.replace(/"/g, "").trim().toLowerCase()),
+            j = b.findIndex((i) => i === "email"),
+            C = b.findIndex((i) => i === "name"),
+            g = b.findIndex((i) => i === "phone"),
+            l = b.findIndex((i) => i === "tags");
+          if (j === -1) {
+            c({
+              title: "Missing email column",
+              description: 'Your CSV must have an "email" column.',
+              variant: "destructive",
+            });
+            return;
+          }
+          const U = r
+              .slice(1)
+              .map((i) => {
+                const S = i
+                  .split(",")
+                  .map((ae) => ae.replace(/^"|"$/g, "").trim());
+                return {
+                  email: S[j] || "",
+                  name: C >= 0 ? S[C] : void 0,
+                  phone: g >= 0 ? S[g] : void 0,
+                  tags:
+                    l >= 0 && S[l]
+                      ? S[l]
+                          .split("|")
+                          .map((ae) => ae.trim())
+                          .filter(Boolean)
+                      : void 0,
+                };
+              })
+              .filter((i) => i.email && i.email.includes("@")),
+            Re = await (
+              await D("POST", "/api/fan-hub/subscribers/import", {
+                subscribers: U,
+              })
+            ).json();
+          (o.invalidateQueries({ queryKey: ["/api/fan-hub/subscribers"] }),
+            o.invalidateQueries({ queryKey: ["/api/fan-hub/stats"] }),
+            ee(null),
+            c({
+              title: "Import complete!",
+              description: `${Re.imported || U.length} fans imported successfully.`,
+            }));
+        } catch {
+          c({
+            title: "Import failed",
+            description: "Could not parse CSV. Please check the file format.",
+            variant: "destructive",
+          });
+        } finally {
+          he(!1);
+        }
+      }
+    },
+    f = Ce?.subscribers || [],
+    xe = f.filter((s) => s.isVip),
+    Ie = (s) => {
+      s.preventDefault();
+      const r = new FormData(s.currentTarget),
+        b = {
+          name: r.get("name"),
+          email: r.get("email"),
+          phone: r.get("phone"),
+          isVip: r.get("isVip") === "on",
+          notes: r.get("notes"),
+          tags: r
+            .get("tags")
+            .split(",")
+            .map((j) => j.trim())
+            .filter(Boolean),
+        };
+      se.mutate(b);
+    },
+    Pe = (s) => {
+      s.preventDefault();
+      const r = new FormData(s.currentTarget);
+      re.mutate({ subject: r.get("subject"), body: r.get("body") });
+    };
+  return e.jsxDEV(
+    ze,
+    {
+      title: "Fan Hub",
+      children: e.jsxDEV(
+        "div",
+        {
+          className: "space-y-6",
+          children: [
+            e.jsxDEV(
+              "div",
+              {
+                className: "grid grid-cols-1 md:grid-cols-4 gap-4",
+                children: [
+                  e.jsxDEV(
+                    h,
+                    {
+                      children: [
+                        e.jsxDEV(
+                          Q,
+                          {
+                            className:
+                              "flex flex-row items-center justify-between pb-2",
+                            children: [
+                              e.jsxDEV(
+                                Y,
+                                {
+                                  className:
+                                    "text-sm font-medium text-muted-foreground",
+                                  children: "Total Fans",
+                                },
+                                void 0,
+                                !1,
+                                {
+                                  fileName:
+                                    "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                  lineNumber: 301,
+                                  columnNumber: 15,
+                                },
+                                this,
+                              ),
+                              e.jsxDEV(
+                                le,
+                                { className: "h-4 w-4 text-primary" },
+                                void 0,
+                                !1,
+                                {
+                                  fileName:
+                                    "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                  lineNumber: 302,
+                                  columnNumber: 15,
+                                },
+                                this,
+                              ),
+                            ],
+                          },
+                          void 0,
+                          !0,
+                          {
+                            fileName:
+                              "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                            lineNumber: 300,
+                            columnNumber: 13,
+                          },
+                          this,
+                        ),
+                        e.jsxDEV(
+                          A,
+                          {
+                            children: [
+                              e.jsxDEV(
+                                "div",
+                                {
+                                  className: "text-2xl font-bold",
+                                  children: x?.totalFans || 0,
+                                },
+                                void 0,
+                                !1,
+                                {
+                                  fileName:
+                                    "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                  lineNumber: 305,
+                                  columnNumber: 15,
+                                },
+                                this,
+                              ),
+                              e.jsxDEV(
+                                "p",
+                                {
+                                  className: "text-xs text-muted-foreground",
+                                  children: [
+                                    e.jsxDEV(
+                                      "span",
+                                      {
+                                        className:
+                                          "text-emerald-500 flex items-center gap-1 font-medium",
+                                        children: [
+                                          e.jsxDEV(
+                                            Be,
+                                            { className: "h-3 w-3" },
+                                            void 0,
+                                            !1,
+                                            {
+                                              fileName:
+                                                "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                              lineNumber: 308,
+                                              columnNumber: 19,
+                                            },
+                                            this,
+                                          ),
+                                          x?.growthRate || 0,
+                                          "%",
+                                        ],
+                                      },
+                                      void 0,
+                                      !0,
+                                      {
+                                        fileName:
+                                          "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                        lineNumber: 307,
+                                        columnNumber: 17,
+                                      },
+                                      this,
+                                    ),
+                                    " ",
+                                    "from last month",
+                                  ],
+                                },
+                                void 0,
+                                !0,
+                                {
+                                  fileName:
+                                    "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                  lineNumber: 306,
+                                  columnNumber: 15,
+                                },
+                                this,
+                              ),
+                            ],
+                          },
+                          void 0,
+                          !0,
+                          {
+                            fileName:
+                              "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                            lineNumber: 304,
+                            columnNumber: 13,
+                          },
+                          this,
+                        ),
+                      ],
+                    },
+                    void 0,
+                    !0,
+                    {
+                      fileName:
+                        "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                      lineNumber: 299,
+                      columnNumber: 11,
+                    },
+                    this,
+                  ),
+                  e.jsxDEV(
+                    h,
+                    {
+                      children: [
+                        e.jsxDEV(
+                          Q,
+                          {
+                            className:
+                              "flex flex-row items-center justify-between pb-2",
+                            children: [
+                              e.jsxDEV(
+                                Y,
+                                {
+                                  className:
+                                    "text-sm font-medium text-muted-foreground",
+                                  children: "VIP Fans",
+                                },
+                                void 0,
+                                !1,
+                                {
+                                  fileName:
+                                    "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                  lineNumber: 317,
+                                  columnNumber: 15,
+                                },
+                                this,
+                              ),
+                              e.jsxDEV(
+                                M,
+                                {
+                                  className:
+                                    "h-4 w-4 text-amber-500 fill-amber-500",
+                                },
+                                void 0,
+                                !1,
+                                {
+                                  fileName:
+                                    "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                  lineNumber: 318,
+                                  columnNumber: 15,
+                                },
+                                this,
+                              ),
+                            ],
+                          },
+                          void 0,
+                          !0,
+                          {
+                            fileName:
+                              "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                            lineNumber: 316,
+                            columnNumber: 13,
+                          },
+                          this,
+                        ),
+                        e.jsxDEV(
+                          A,
+                          {
+                            children: [
+                              e.jsxDEV(
+                                "div",
+                                {
+                                  className: "text-2xl font-bold",
+                                  children: x?.vipCount || 0,
+                                },
+                                void 0,
+                                !1,
+                                {
+                                  fileName:
+                                    "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                  lineNumber: 321,
+                                  columnNumber: 15,
+                                },
+                                this,
+                              ),
+                              e.jsxDEV(
+                                "p",
+                                {
+                                  className: "text-xs text-muted-foreground",
+                                  children: [
+                                    x?.totalFans
+                                      ? Math.round(
+                                          (x.vipCount / x.totalFans) * 100,
+                                        )
+                                      : 0,
+                                    "% of your fan base",
+                                  ],
+                                },
+                                void 0,
+                                !0,
+                                {
+                                  fileName:
+                                    "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                  lineNumber: 322,
+                                  columnNumber: 15,
+                                },
+                                this,
+                              ),
+                            ],
+                          },
+                          void 0,
+                          !0,
+                          {
+                            fileName:
+                              "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                            lineNumber: 320,
+                            columnNumber: 13,
+                          },
+                          this,
+                        ),
+                      ],
+                    },
+                    void 0,
+                    !0,
+                    {
+                      fileName:
+                        "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                      lineNumber: 315,
+                      columnNumber: 11,
+                    },
+                    this,
+                  ),
+                  e.jsxDEV(
+                    h,
+                    {
+                      children: [
+                        e.jsxDEV(
+                          Q,
+                          {
+                            className:
+                              "flex flex-row items-center justify-between pb-2",
+                            children: [
+                              e.jsxDEV(
+                                Y,
+                                {
+                                  className:
+                                    "text-sm font-medium text-muted-foreground",
+                                  children: "Avg. Spend",
+                                },
+                                void 0,
+                                !1,
+                                {
+                                  fileName:
+                                    "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                  lineNumber: 329,
+                                  columnNumber: 15,
+                                },
+                                this,
+                              ),
+                              e.jsxDEV(
+                                "div",
+                                {
+                                  className: "text-emerald-500 font-bold",
+                                  children: "$",
+                                },
+                                void 0,
+                                !1,
+                                {
+                                  fileName:
+                                    "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                  lineNumber: 330,
+                                  columnNumber: 15,
+                                },
+                                this,
+                              ),
+                            ],
+                          },
+                          void 0,
+                          !0,
+                          {
+                            fileName:
+                              "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                            lineNumber: 328,
+                            columnNumber: 13,
+                          },
+                          this,
+                        ),
+                        e.jsxDEV(
+                          A,
+                          {
+                            children: [
+                              e.jsxDEV(
+                                "div",
+                                {
+                                  className: "text-2xl font-bold",
+                                  children: [
+                                    "$",
+                                    x?.avgSpend?.toLocaleString(void 0, {
+                                      minimumFractionDigits: 2,
+                                      maximumFractionDigits: 2,
+                                    }) || "0.00",
+                                  ],
+                                },
+                                void 0,
+                                !0,
+                                {
+                                  fileName:
+                                    "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                  lineNumber: 333,
+                                  columnNumber: 15,
+                                },
+                                this,
+                              ),
+                              e.jsxDEV(
+                                "p",
+                                {
+                                  className: "text-xs text-muted-foreground",
+                                  children: "Across all subscribers",
+                                },
+                                void 0,
+                                !1,
+                                {
+                                  fileName:
+                                    "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                  lineNumber: 336,
+                                  columnNumber: 15,
+                                },
+                                this,
+                              ),
+                            ],
+                          },
+                          void 0,
+                          !0,
+                          {
+                            fileName:
+                              "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                            lineNumber: 332,
+                            columnNumber: 13,
+                          },
+                          this,
+                        ),
+                      ],
+                    },
+                    void 0,
+                    !0,
+                    {
+                      fileName:
+                        "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                      lineNumber: 327,
+                      columnNumber: 11,
+                    },
+                    this,
+                  ),
+                  e.jsxDEV(
+                    h,
+                    {
+                      children: [
+                        e.jsxDEV(
+                          Q,
+                          {
+                            className:
+                              "flex flex-row items-center justify-between pb-2",
+                            children: [
+                              e.jsxDEV(
+                                Y,
+                                {
+                                  className:
+                                    "text-sm font-medium text-muted-foreground",
+                                  children: "Email Open Rate",
+                                },
+                                void 0,
+                                !1,
+                                {
+                                  fileName:
+                                    "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                  lineNumber: 341,
+                                  columnNumber: 15,
+                                },
+                                this,
+                              ),
+                              e.jsxDEV(
+                                Oe,
+                                { className: "h-4 w-4 text-blue-500" },
+                                void 0,
+                                !1,
+                                {
+                                  fileName:
+                                    "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                  lineNumber: 342,
+                                  columnNumber: 15,
+                                },
+                                this,
+                              ),
+                            ],
+                          },
+                          void 0,
+                          !0,
+                          {
+                            fileName:
+                              "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                            lineNumber: 340,
+                            columnNumber: 13,
+                          },
+                          this,
+                        ),
+                        e.jsxDEV(
+                          A,
+                          {
+                            children: [
+                              e.jsxDEV(
+                                "div",
+                                {
+                                  className: "text-2xl font-bold",
+                                  children: [x?.emailOpenRate || 0, "%"],
+                                },
+                                void 0,
+                                !0,
+                                {
+                                  fileName:
+                                    "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                  lineNumber: 345,
+                                  columnNumber: 15,
+                                },
+                                this,
+                              ),
+                              e.jsxDEV(
+                                "p",
+                                {
+                                  className: "text-xs text-muted-foreground",
+                                  children: "Industry avg: 21.3%",
+                                },
+                                void 0,
+                                !1,
+                                {
+                                  fileName:
+                                    "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                  lineNumber: 346,
+                                  columnNumber: 15,
+                                },
+                                this,
+                              ),
+                            ],
+                          },
+                          void 0,
+                          !0,
+                          {
+                            fileName:
+                              "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                            lineNumber: 344,
+                            columnNumber: 13,
+                          },
+                          this,
+                        ),
+                      ],
+                    },
+                    void 0,
+                    !0,
+                    {
+                      fileName:
+                        "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                      lineNumber: 339,
+                      columnNumber: 11,
+                    },
+                    this,
+                  ),
+                ],
+              },
+              void 0,
+              !0,
+              {
+                fileName: "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                lineNumber: 298,
+                columnNumber: 9,
+              },
+              this,
+            ),
+            e.jsxDEV(
+              "div",
+              {
+                className:
+                  "flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-card p-4 rounded-lg border shadow-sm",
+                children: [
+                  e.jsxDEV(
+                    "div",
+                    {
+                      className: "relative w-full max-w-sm",
+                      children: [
+                        e.jsxDEV(
+                          Ke,
+                          {
+                            className:
+                              "absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground",
+                          },
+                          void 0,
+                          !1,
+                          {
+                            fileName:
+                              "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                            lineNumber: 354,
+                            columnNumber: 13,
+                          },
+                          this,
+                        ),
+                        e.jsxDEV(
+                          p,
+                          {
+                            placeholder: "Search by name or email...",
+                            className: "pl-9",
+                            value: P,
+                            onChange: (s) => be(s.target.value),
+                          },
+                          void 0,
+                          !1,
+                          {
+                            fileName:
+                              "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                            lineNumber: 355,
+                            columnNumber: 13,
+                          },
+                          this,
+                        ),
+                      ],
+                    },
+                    void 0,
+                    !0,
+                    {
+                      fileName:
+                        "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                      lineNumber: 353,
+                      columnNumber: 11,
+                    },
+                    this,
+                  ),
+                  e.jsxDEV(
+                    "div",
+                    {
+                      className: "flex items-center gap-2 w-full sm:w-auto",
+                      children: [
+                        e.jsxDEV(
+                          a,
+                          {
+                            variant: "outline",
+                            className: "flex-1 sm:flex-none",
+                            onClick: Me,
+                            disabled: f.length === 0,
+                            children: [
+                              e.jsxDEV(
+                                fe,
+                                { className: "h-4 w-4 mr-2" },
+                                void 0,
+                                !1,
+                                {
+                                  fileName:
+                                    "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                  lineNumber: 364,
+                                  columnNumber: 15,
+                                },
+                                this,
+                              ),
+                              "Export CSV",
+                            ],
+                          },
+                          void 0,
+                          !0,
+                          {
+                            fileName:
+                              "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                            lineNumber: 363,
+                            columnNumber: 13,
+                          },
+                          this,
+                        ),
+                        e.jsxDEV(
+                          z,
+                          {
+                            open: Ee,
+                            onOpenChange: R,
+                            children: [
+                              e.jsxDEV(
+                                Fe,
+                                {
+                                  asChild: !0,
+                                  children: e.jsxDEV(
+                                    a,
+                                    {
+                                      className: "flex-1 sm:flex-none",
+                                      children: [
+                                        e.jsxDEV(
+                                          ge,
+                                          { className: "h-4 w-4 mr-2" },
+                                          void 0,
+                                          !1,
+                                          {
+                                            fileName:
+                                              "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                            lineNumber: 370,
+                                            columnNumber: 19,
+                                          },
+                                          this,
+                                        ),
+                                        "Add Fan",
+                                      ],
+                                    },
+                                    void 0,
+                                    !0,
+                                    {
+                                      fileName:
+                                        "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                      lineNumber: 369,
+                                      columnNumber: 17,
+                                    },
+                                    this,
+                                  ),
+                                },
+                                void 0,
+                                !1,
+                                {
+                                  fileName:
+                                    "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                  lineNumber: 368,
+                                  columnNumber: 15,
+                                },
+                                this,
+                              ),
+                              e.jsxDEV(
+                                J,
+                                {
+                                  children: [
+                                    e.jsxDEV(
+                                      W,
+                                      {
+                                        children: [
+                                          e.jsxDEV(
+                                            G,
+                                            { children: "Add New Fan" },
+                                            void 0,
+                                            !1,
+                                            {
+                                              fileName:
+                                                "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                              lineNumber: 376,
+                                              columnNumber: 19,
+                                            },
+                                            this,
+                                          ),
+                                          e.jsxDEV(
+                                            X,
+                                            {
+                                              children:
+                                                "Manually add a fan to your subscriber database.",
+                                            },
+                                            void 0,
+                                            !1,
+                                            {
+                                              fileName:
+                                                "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                              lineNumber: 377,
+                                              columnNumber: 19,
+                                            },
+                                            this,
+                                          ),
+                                        ],
+                                      },
+                                      void 0,
+                                      !0,
+                                      {
+                                        fileName:
+                                          "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                        lineNumber: 375,
+                                        columnNumber: 17,
+                                      },
+                                      this,
+                                    ),
+                                    e.jsxDEV(
+                                      "form",
+                                      {
+                                        onSubmit: Ie,
+                                        className: "space-y-4",
+                                        children: [
+                                          e.jsxDEV(
+                                            "div",
+                                            {
+                                              className:
+                                                "grid grid-cols-2 gap-4",
+                                              children: [
+                                                e.jsxDEV(
+                                                  "div",
+                                                  {
+                                                    className: "space-y-2",
+                                                    children: [
+                                                      e.jsxDEV(
+                                                        t,
+                                                        {
+                                                          htmlFor: "name",
+                                                          children: "Full Name",
+                                                        },
+                                                        void 0,
+                                                        !1,
+                                                        {
+                                                          fileName:
+                                                            "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                                          lineNumber: 384,
+                                                          columnNumber: 23,
+                                                        },
+                                                        this,
+                                                      ),
+                                                      e.jsxDEV(
+                                                        p,
+                                                        {
+                                                          id: "name",
+                                                          name: "name",
+                                                          placeholder:
+                                                            "John Doe",
+                                                        },
+                                                        void 0,
+                                                        !1,
+                                                        {
+                                                          fileName:
+                                                            "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                                          lineNumber: 385,
+                                                          columnNumber: 23,
+                                                        },
+                                                        this,
+                                                      ),
+                                                    ],
+                                                  },
+                                                  void 0,
+                                                  !0,
+                                                  {
+                                                    fileName:
+                                                      "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                                    lineNumber: 383,
+                                                    columnNumber: 21,
+                                                  },
+                                                  this,
+                                                ),
+                                                e.jsxDEV(
+                                                  "div",
+                                                  {
+                                                    className: "space-y-2",
+                                                    children: [
+                                                      e.jsxDEV(
+                                                        t,
+                                                        {
+                                                          htmlFor: "email",
+                                                          children:
+                                                            "Email Address",
+                                                        },
+                                                        void 0,
+                                                        !1,
+                                                        {
+                                                          fileName:
+                                                            "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                                          lineNumber: 388,
+                                                          columnNumber: 23,
+                                                        },
+                                                        this,
+                                                      ),
+                                                      e.jsxDEV(
+                                                        p,
+                                                        {
+                                                          id: "email",
+                                                          name: "email",
+                                                          type: "email",
+                                                          placeholder:
+                                                            "john@example.com",
+                                                          required: !0,
+                                                        },
+                                                        void 0,
+                                                        !1,
+                                                        {
+                                                          fileName:
+                                                            "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                                          lineNumber: 389,
+                                                          columnNumber: 23,
+                                                        },
+                                                        this,
+                                                      ),
+                                                    ],
+                                                  },
+                                                  void 0,
+                                                  !0,
+                                                  {
+                                                    fileName:
+                                                      "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                                    lineNumber: 387,
+                                                    columnNumber: 21,
+                                                  },
+                                                  this,
+                                                ),
+                                              ],
+                                            },
+                                            void 0,
+                                            !0,
+                                            {
+                                              fileName:
+                                                "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                              lineNumber: 382,
+                                              columnNumber: 19,
+                                            },
+                                            this,
+                                          ),
+                                          e.jsxDEV(
+                                            "div",
+                                            {
+                                              className: "space-y-2",
+                                              children: [
+                                                e.jsxDEV(
+                                                  t,
+                                                  {
+                                                    htmlFor: "phone",
+                                                    children:
+                                                      "Phone Number (Optional)",
+                                                  },
+                                                  void 0,
+                                                  !1,
+                                                  {
+                                                    fileName:
+                                                      "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                                    lineNumber: 393,
+                                                    columnNumber: 21,
+                                                  },
+                                                  this,
+                                                ),
+                                                e.jsxDEV(
+                                                  p,
+                                                  {
+                                                    id: "phone",
+                                                    name: "phone",
+                                                    placeholder:
+                                                      "+1 (555) 000-0000",
+                                                  },
+                                                  void 0,
+                                                  !1,
+                                                  {
+                                                    fileName:
+                                                      "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                                    lineNumber: 394,
+                                                    columnNumber: 21,
+                                                  },
+                                                  this,
+                                                ),
+                                              ],
+                                            },
+                                            void 0,
+                                            !0,
+                                            {
+                                              fileName:
+                                                "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                              lineNumber: 392,
+                                              columnNumber: 19,
+                                            },
+                                            this,
+                                          ),
+                                          e.jsxDEV(
+                                            "div",
+                                            {
+                                              className: "space-y-2",
+                                              children: [
+                                                e.jsxDEV(
+                                                  t,
+                                                  {
+                                                    htmlFor: "tags",
+                                                    children:
+                                                      "Tags (comma separated)",
+                                                  },
+                                                  void 0,
+                                                  !1,
+                                                  {
+                                                    fileName:
+                                                      "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                                    lineNumber: 397,
+                                                    columnNumber: 21,
+                                                  },
+                                                  this,
+                                                ),
+                                                e.jsxDEV(
+                                                  p,
+                                                  {
+                                                    id: "tags",
+                                                    name: "tags",
+                                                    placeholder:
+                                                      "tour, merch-buyer, early-adopter",
+                                                  },
+                                                  void 0,
+                                                  !1,
+                                                  {
+                                                    fileName:
+                                                      "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                                    lineNumber: 398,
+                                                    columnNumber: 21,
+                                                  },
+                                                  this,
+                                                ),
+                                              ],
+                                            },
+                                            void 0,
+                                            !0,
+                                            {
+                                              fileName:
+                                                "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                              lineNumber: 396,
+                                              columnNumber: 19,
+                                            },
+                                            this,
+                                          ),
+                                          e.jsxDEV(
+                                            "div",
+                                            {
+                                              className: "space-y-2",
+                                              children: [
+                                                e.jsxDEV(
+                                                  t,
+                                                  {
+                                                    htmlFor: "notes",
+                                                    children: "Notes",
+                                                  },
+                                                  void 0,
+                                                  !1,
+                                                  {
+                                                    fileName:
+                                                      "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                                    lineNumber: 401,
+                                                    columnNumber: 21,
+                                                  },
+                                                  this,
+                                                ),
+                                                e.jsxDEV(
+                                                  ue,
+                                                  {
+                                                    id: "notes",
+                                                    name: "notes",
+                                                    placeholder:
+                                                      "Any additional info about this fan...",
+                                                  },
+                                                  void 0,
+                                                  !1,
+                                                  {
+                                                    fileName:
+                                                      "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                                    lineNumber: 402,
+                                                    columnNumber: 21,
+                                                  },
+                                                  this,
+                                                ),
+                                              ],
+                                            },
+                                            void 0,
+                                            !0,
+                                            {
+                                              fileName:
+                                                "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                              lineNumber: 400,
+                                              columnNumber: 19,
+                                            },
+                                            this,
+                                          ),
+                                          e.jsxDEV(
+                                            "div",
+                                            {
+                                              className:
+                                                "flex items-center space-x-2",
+                                              children: [
+                                                e.jsxDEV(
+                                                  je,
+                                                  {
+                                                    id: "isVip",
+                                                    name: "isVip",
+                                                  },
+                                                  void 0,
+                                                  !1,
+                                                  {
+                                                    fileName:
+                                                      "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                                    lineNumber: 405,
+                                                    columnNumber: 21,
+                                                  },
+                                                  this,
+                                                ),
+                                                e.jsxDEV(
+                                                  t,
+                                                  {
+                                                    htmlFor: "isVip",
+                                                    children: "Mark as VIP",
+                                                  },
+                                                  void 0,
+                                                  !1,
+                                                  {
+                                                    fileName:
+                                                      "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                                    lineNumber: 406,
+                                                    columnNumber: 21,
+                                                  },
+                                                  this,
+                                                ),
+                                              ],
+                                            },
+                                            void 0,
+                                            !0,
+                                            {
+                                              fileName:
+                                                "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                              lineNumber: 404,
+                                              columnNumber: 19,
+                                            },
+                                            this,
+                                          ),
+                                          e.jsxDEV(
+                                            ce,
+                                            {
+                                              children: [
+                                                e.jsxDEV(
+                                                  a,
+                                                  {
+                                                    type: "button",
+                                                    variant: "outline",
+                                                    onClick: () => R(!1),
+                                                    children: "Cancel",
+                                                  },
+                                                  void 0,
+                                                  !1,
+                                                  {
+                                                    fileName:
+                                                      "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                                    lineNumber: 409,
+                                                    columnNumber: 21,
+                                                  },
+                                                  this,
+                                                ),
+                                                e.jsxDEV(
+                                                  a,
+                                                  {
+                                                    type: "submit",
+                                                    disabled: se.isPending,
+                                                    children: se.isPending
+                                                      ? "Adding..."
+                                                      : "Add Fan",
+                                                  },
+                                                  void 0,
+                                                  !1,
+                                                  {
+                                                    fileName:
+                                                      "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                                    lineNumber: 410,
+                                                    columnNumber: 21,
+                                                  },
+                                                  this,
+                                                ),
+                                              ],
+                                            },
+                                            void 0,
+                                            !0,
+                                            {
+                                              fileName:
+                                                "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                              lineNumber: 408,
+                                              columnNumber: 19,
+                                            },
+                                            this,
+                                          ),
+                                        ],
+                                      },
+                                      void 0,
+                                      !0,
+                                      {
+                                        fileName:
+                                          "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                        lineNumber: 381,
+                                        columnNumber: 17,
+                                      },
+                                      this,
+                                    ),
+                                  ],
+                                },
+                                void 0,
+                                !0,
+                                {
+                                  fileName:
+                                    "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                  lineNumber: 374,
+                                  columnNumber: 15,
+                                },
+                                this,
+                              ),
+                            ],
+                          },
+                          void 0,
+                          !0,
+                          {
+                            fileName:
+                              "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                            lineNumber: 367,
+                            columnNumber: 13,
+                          },
+                          this,
+                        ),
+                        e.jsxDEV(
+                          z,
+                          {
+                            open: He,
+                            onOpenChange: q,
+                            children: [
+                              e.jsxDEV(
+                                Fe,
+                                {
+                                  asChild: !0,
+                                  children: e.jsxDEV(
+                                    a,
+                                    {
+                                      variant: "secondary",
+                                      className: "flex-1 sm:flex-none",
+                                      children: [
+                                        e.jsxDEV(
+                                          te,
+                                          { className: "h-4 w-4 mr-2" },
+                                          void 0,
+                                          !1,
+                                          {
+                                            fileName:
+                                              "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                            lineNumber: 420,
+                                            columnNumber: 19,
+                                          },
+                                          this,
+                                        ),
+                                        "Broadcast",
+                                      ],
+                                    },
+                                    void 0,
+                                    !0,
+                                    {
+                                      fileName:
+                                        "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                      lineNumber: 419,
+                                      columnNumber: 17,
+                                    },
+                                    this,
+                                  ),
+                                },
+                                void 0,
+                                !1,
+                                {
+                                  fileName:
+                                    "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                  lineNumber: 418,
+                                  columnNumber: 15,
+                                },
+                                this,
+                              ),
+                              e.jsxDEV(
+                                J,
+                                {
+                                  className: "max-w-2xl",
+                                  children: [
+                                    e.jsxDEV(
+                                      W,
+                                      {
+                                        children: [
+                                          e.jsxDEV(
+                                            G,
+                                            {
+                                              children: "Send Broadcast Email",
+                                            },
+                                            void 0,
+                                            !1,
+                                            {
+                                              fileName:
+                                                "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                              lineNumber: 426,
+                                              columnNumber: 19,
+                                            },
+                                            this,
+                                          ),
+                                          e.jsxDEV(
+                                            X,
+                                            {
+                                              children: [
+                                                "Send a bulk message to all your ",
+                                                f.length,
+                                                " fans.",
+                                              ],
+                                            },
+                                            void 0,
+                                            !0,
+                                            {
+                                              fileName:
+                                                "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                              lineNumber: 427,
+                                              columnNumber: 19,
+                                            },
+                                            this,
+                                          ),
+                                        ],
+                                      },
+                                      void 0,
+                                      !0,
+                                      {
+                                        fileName:
+                                          "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                        lineNumber: 425,
+                                        columnNumber: 17,
+                                      },
+                                      this,
+                                    ),
+                                    e.jsxDEV(
+                                      "form",
+                                      {
+                                        onSubmit: Pe,
+                                        className: "space-y-4",
+                                        children: [
+                                          e.jsxDEV(
+                                            "div",
+                                            {
+                                              className: "space-y-2",
+                                              children: [
+                                                e.jsxDEV(
+                                                  t,
+                                                  {
+                                                    htmlFor: "subject",
+                                                    children: "Subject",
+                                                  },
+                                                  void 0,
+                                                  !1,
+                                                  {
+                                                    fileName:
+                                                      "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                                    lineNumber: 433,
+                                                    columnNumber: 21,
+                                                  },
+                                                  this,
+                                                ),
+                                                e.jsxDEV(
+                                                  p,
+                                                  {
+                                                    id: "subject",
+                                                    name: "subject",
+                                                    placeholder:
+                                                      "New release out now!",
+                                                    required: !0,
+                                                  },
+                                                  void 0,
+                                                  !1,
+                                                  {
+                                                    fileName:
+                                                      "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                                    lineNumber: 434,
+                                                    columnNumber: 21,
+                                                  },
+                                                  this,
+                                                ),
+                                              ],
+                                            },
+                                            void 0,
+                                            !0,
+                                            {
+                                              fileName:
+                                                "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                              lineNumber: 432,
+                                              columnNumber: 19,
+                                            },
+                                            this,
+                                          ),
+                                          e.jsxDEV(
+                                            "div",
+                                            {
+                                              className: "space-y-2",
+                                              children: [
+                                                e.jsxDEV(
+                                                  t,
+                                                  {
+                                                    htmlFor: "body",
+                                                    children: "Message Body",
+                                                  },
+                                                  void 0,
+                                                  !1,
+                                                  {
+                                                    fileName:
+                                                      "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                                    lineNumber: 437,
+                                                    columnNumber: 21,
+                                                  },
+                                                  this,
+                                                ),
+                                                e.jsxDEV(
+                                                  ue,
+                                                  {
+                                                    id: "body",
+                                                    name: "body",
+                                                    rows: 10,
+                                                    placeholder:
+                                                      "Write your message here...",
+                                                    required: !0,
+                                                  },
+                                                  void 0,
+                                                  !1,
+                                                  {
+                                                    fileName:
+                                                      "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                                    lineNumber: 438,
+                                                    columnNumber: 21,
+                                                  },
+                                                  this,
+                                                ),
+                                              ],
+                                            },
+                                            void 0,
+                                            !0,
+                                            {
+                                              fileName:
+                                                "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                              lineNumber: 436,
+                                              columnNumber: 19,
+                                            },
+                                            this,
+                                          ),
+                                          e.jsxDEV(
+                                            "div",
+                                            {
+                                              className:
+                                                "flex justify-between items-center bg-muted p-3 rounded-md",
+                                              children: [
+                                                e.jsxDEV(
+                                                  "span",
+                                                  {
+                                                    className:
+                                                      "text-sm text-muted-foreground italic",
+                                                    children: [
+                                                      "Recipient count: ",
+                                                      f.length,
+                                                      " fans",
+                                                    ],
+                                                  },
+                                                  void 0,
+                                                  !0,
+                                                  {
+                                                    fileName:
+                                                      "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                                    lineNumber: 441,
+                                                    columnNumber: 21,
+                                                  },
+                                                  this,
+                                                ),
+                                                e.jsxDEV(
+                                                  "div",
+                                                  {
+                                                    className: "flex gap-2",
+                                                    children: [
+                                                      e.jsxDEV(
+                                                        a,
+                                                        {
+                                                          type: "button",
+                                                          variant: "outline",
+                                                          onClick: () => q(!1),
+                                                          children: "Cancel",
+                                                        },
+                                                        void 0,
+                                                        !1,
+                                                        {
+                                                          fileName:
+                                                            "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                                          lineNumber: 445,
+                                                          columnNumber: 23,
+                                                        },
+                                                        this,
+                                                      ),
+                                                      e.jsxDEV(
+                                                        a,
+                                                        {
+                                                          type: "submit",
+                                                          disabled:
+                                                            re.isPending,
+                                                          children: re.isPending
+                                                            ? "Sending..."
+                                                            : "Send Message",
+                                                        },
+                                                        void 0,
+                                                        !1,
+                                                        {
+                                                          fileName:
+                                                            "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                                          lineNumber: 446,
+                                                          columnNumber: 23,
+                                                        },
+                                                        this,
+                                                      ),
+                                                    ],
+                                                  },
+                                                  void 0,
+                                                  !0,
+                                                  {
+                                                    fileName:
+                                                      "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                                    lineNumber: 444,
+                                                    columnNumber: 21,
+                                                  },
+                                                  this,
+                                                ),
+                                              ],
+                                            },
+                                            void 0,
+                                            !0,
+                                            {
+                                              fileName:
+                                                "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                              lineNumber: 440,
+                                              columnNumber: 19,
+                                            },
+                                            this,
+                                          ),
+                                        ],
+                                      },
+                                      void 0,
+                                      !0,
+                                      {
+                                        fileName:
+                                          "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                        lineNumber: 431,
+                                        columnNumber: 17,
+                                      },
+                                      this,
+                                    ),
+                                  ],
+                                },
+                                void 0,
+                                !0,
+                                {
+                                  fileName:
+                                    "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                  lineNumber: 424,
+                                  columnNumber: 15,
+                                },
+                                this,
+                              ),
+                            ],
+                          },
+                          void 0,
+                          !0,
+                          {
+                            fileName:
+                              "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                            lineNumber: 417,
+                            columnNumber: 13,
+                          },
+                          this,
+                        ),
+                      ],
+                    },
+                    void 0,
+                    !0,
+                    {
+                      fileName:
+                        "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                      lineNumber: 362,
+                      columnNumber: 11,
+                    },
+                    this,
+                  ),
+                ],
+              },
+              void 0,
+              !0,
+              {
+                fileName: "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                lineNumber: 352,
+                columnNumber: 9,
+              },
+              this,
+            ),
+            e.jsxDEV(
+              We,
+              {
+                defaultValue: "all",
+                onValueChange: ye,
+                className: "w-full",
+                children: [
+                  e.jsxDEV(
+                    Ge,
+                    {
+                      className: "grid w-full grid-cols-4 max-w-md",
+                      children: [
+                        e.jsxDEV(
+                          _,
+                          { value: "all", children: "All Fans" },
+                          void 0,
+                          !1,
+                          {
+                            fileName:
+                              "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                            lineNumber: 460,
+                            columnNumber: 13,
+                          },
+                          this,
+                        ),
+                        e.jsxDEV(
+                          _,
+                          { value: "vip", children: "VIPs" },
+                          void 0,
+                          !1,
+                          {
+                            fileName:
+                              "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                            lineNumber: 461,
+                            columnNumber: 13,
+                          },
+                          this,
+                        ),
+                        e.jsxDEV(
+                          _,
+                          { value: "messages", children: "History" },
+                          void 0,
+                          !1,
+                          {
+                            fileName:
+                              "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                            lineNumber: 462,
+                            columnNumber: 13,
+                          },
+                          this,
+                        ),
+                        e.jsxDEV(
+                          _,
+                          { value: "import", children: "Import" },
+                          void 0,
+                          !1,
+                          {
+                            fileName:
+                              "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                            lineNumber: 463,
+                            columnNumber: 13,
+                          },
+                          this,
+                        ),
+                      ],
+                    },
+                    void 0,
+                    !0,
+                    {
+                      fileName:
+                        "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                      lineNumber: 459,
+                      columnNumber: 11,
+                    },
+                    this,
+                  ),
+                  e.jsxDEV(
+                    Z,
+                    {
+                      value: "all",
+                      className: "pt-4",
+                      children: e.jsxDEV(
+                        h,
+                        {
+                          children: e.jsxDEV(
+                            De,
+                            {
+                              children: [
+                                e.jsxDEV(
+                                  Ve,
+                                  {
+                                    children: e.jsxDEV(
+                                      w,
+                                      {
+                                        children: [
+                                          e.jsxDEV(
+                                            d,
+                                            { children: "Fan" },
+                                            void 0,
+                                            !1,
+                                            {
+                                              fileName:
+                                                "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                              lineNumber: 471,
+                                              columnNumber: 21,
+                                            },
+                                            this,
+                                          ),
+                                          e.jsxDEV(
+                                            d,
+                                            { children: "Status" },
+                                            void 0,
+                                            !1,
+                                            {
+                                              fileName:
+                                                "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                              lineNumber: 472,
+                                              columnNumber: 21,
+                                            },
+                                            this,
+                                          ),
+                                          e.jsxDEV(
+                                            d,
+                                            { children: "Joined" },
+                                            void 0,
+                                            !1,
+                                            {
+                                              fileName:
+                                                "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                              lineNumber: 473,
+                                              columnNumber: 21,
+                                            },
+                                            this,
+                                          ),
+                                          e.jsxDEV(
+                                            d,
+                                            { children: "Total Spent" },
+                                            void 0,
+                                            !1,
+                                            {
+                                              fileName:
+                                                "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                              lineNumber: 474,
+                                              columnNumber: 21,
+                                            },
+                                            this,
+                                          ),
+                                          e.jsxDEV(
+                                            d,
+                                            {
+                                              className: "text-right",
+                                              children: "Actions",
+                                            },
+                                            void 0,
+                                            !1,
+                                            {
+                                              fileName:
+                                                "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                              lineNumber: 475,
+                                              columnNumber: 21,
+                                            },
+                                            this,
+                                          ),
+                                        ],
+                                      },
+                                      void 0,
+                                      !0,
+                                      {
+                                        fileName:
+                                          "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                        lineNumber: 470,
+                                        columnNumber: 19,
+                                      },
+                                      this,
+                                    ),
+                                  },
+                                  void 0,
+                                  !1,
+                                  {
+                                    fileName:
+                                      "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                    lineNumber: 469,
+                                    columnNumber: 17,
+                                  },
+                                  this,
+                                ),
+                                e.jsxDEV(
+                                  ke,
+                                  {
+                                    children: Se
+                                      ? Array(5)
+                                          .fill(0)
+                                          .map((s, r) =>
+                                            e.jsxDEV(
+                                              w,
+                                              {
+                                                children: e.jsxDEV(
+                                                  m,
+                                                  {
+                                                    colSpan: 5,
+                                                    className:
+                                                      "h-12 animate-pulse bg-muted/50",
+                                                  },
+                                                  void 0,
+                                                  !1,
+                                                  {
+                                                    fileName:
+                                                      "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                                    lineNumber: 482,
+                                                    columnNumber: 25,
+                                                  },
+                                                  this,
+                                                ),
+                                              },
+                                              r,
+                                              !1,
+                                              {
+                                                fileName:
+                                                  "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                                lineNumber: 481,
+                                                columnNumber: 23,
+                                              },
+                                              this,
+                                            ),
+                                          )
+                                      : f.length === 0
+                                        ? e.jsxDEV(
+                                            w,
+                                            {
+                                              children: e.jsxDEV(
+                                                m,
+                                                {
+                                                  colSpan: 5,
+                                                  children: P
+                                                    ? e.jsxDEV(
+                                                        "div",
+                                                        {
+                                                          className:
+                                                            "flex flex-col items-center justify-center h-40 text-muted-foreground",
+                                                          children: [
+                                                            e.jsxDEV(
+                                                              le,
+                                                              {
+                                                                className:
+                                                                  "h-10 w-10 mb-3 opacity-20",
+                                                              },
+                                                              void 0,
+                                                              !1,
+                                                              {
+                                                                fileName:
+                                                                  "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                                                lineNumber: 490,
+                                                                columnNumber: 29,
+                                                              },
+                                                              this,
+                                                            ),
+                                                            e.jsxDEV(
+                                                              "p",
+                                                              {
+                                                                className:
+                                                                  "mb-2",
+                                                                children: [
+                                                                  'No fans match "',
+                                                                  P,
+                                                                  '"',
+                                                                ],
+                                                              },
+                                                              void 0,
+                                                              !0,
+                                                              {
+                                                                fileName:
+                                                                  "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                                                lineNumber: 491,
+                                                                columnNumber: 29,
+                                                              },
+                                                              this,
+                                                            ),
+                                                            e.jsxDEV(
+                                                              a,
+                                                              {
+                                                                variant: "link",
+                                                                onClick: () =>
+                                                                  be(""),
+                                                                children:
+                                                                  "Clear search",
+                                                              },
+                                                              void 0,
+                                                              !1,
+                                                              {
+                                                                fileName:
+                                                                  "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                                                lineNumber: 492,
+                                                                columnNumber: 29,
+                                                              },
+                                                              this,
+                                                            ),
+                                                          ],
+                                                        },
+                                                        void 0,
+                                                        !0,
+                                                        {
+                                                          fileName:
+                                                            "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                                          lineNumber: 489,
+                                                          columnNumber: 27,
+                                                        },
+                                                        this,
+                                                      )
+                                                    : e.jsxDEV(
+                                                        "div",
+                                                        {
+                                                          className:
+                                                            "py-12 px-6",
+                                                          children: [
+                                                            e.jsxDEV(
+                                                              "div",
+                                                              {
+                                                                className:
+                                                                  "max-w-xl mx-auto text-center mb-8",
+                                                                children: [
+                                                                  e.jsxDEV(
+                                                                    "div",
+                                                                    {
+                                                                      className:
+                                                                        "h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4",
+                                                                      children:
+                                                                        e.jsxDEV(
+                                                                          le,
+                                                                          {
+                                                                            className:
+                                                                              "h-8 w-8 text-primary opacity-60",
+                                                                          },
+                                                                          void 0,
+                                                                          !1,
+                                                                          {
+                                                                            fileName:
+                                                                              "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                                                            lineNumber: 498,
+                                                                            columnNumber: 33,
+                                                                          },
+                                                                          this,
+                                                                        ),
+                                                                    },
+                                                                    void 0,
+                                                                    !1,
+                                                                    {
+                                                                      fileName:
+                                                                        "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                                                      lineNumber: 497,
+                                                                      columnNumber: 31,
+                                                                    },
+                                                                    this,
+                                                                  ),
+                                                                  e.jsxDEV(
+                                                                    "h3",
+                                                                    {
+                                                                      className:
+                                                                        "text-lg font-semibold mb-2",
+                                                                      children:
+                                                                        "Build Your Fan Base",
+                                                                    },
+                                                                    void 0,
+                                                                    !1,
+                                                                    {
+                                                                      fileName:
+                                                                        "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                                                      lineNumber: 500,
+                                                                      columnNumber: 31,
+                                                                    },
+                                                                    this,
+                                                                  ),
+                                                                  e.jsxDEV(
+                                                                    "p",
+                                                                    {
+                                                                      className:
+                                                                        "text-muted-foreground text-sm",
+                                                                      children:
+                                                                        "You don't have any fans yet. Here are some ways to grow your community:",
+                                                                    },
+                                                                    void 0,
+                                                                    !1,
+                                                                    {
+                                                                      fileName:
+                                                                        "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                                                      lineNumber: 501,
+                                                                      columnNumber: 31,
+                                                                    },
+                                                                    this,
+                                                                  ),
+                                                                ],
+                                                              },
+                                                              void 0,
+                                                              !0,
+                                                              {
+                                                                fileName:
+                                                                  "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                                                lineNumber: 496,
+                                                                columnNumber: 29,
+                                                              },
+                                                              this,
+                                                            ),
+                                                            e.jsxDEV(
+                                                              "div",
+                                                              {
+                                                                className:
+                                                                  "grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-2xl mx-auto",
+                                                                children: [
+                                                                  e.jsxDEV(
+                                                                    "div",
+                                                                    {
+                                                                      className:
+                                                                        "rounded-lg border bg-card p-4 text-center",
+                                                                      children:
+                                                                        [
+                                                                          e.jsxDEV(
+                                                                            "div",
+                                                                            {
+                                                                              className:
+                                                                                "h-10 w-10 rounded-full bg-blue-500/10 flex items-center justify-center mx-auto mb-3",
+                                                                              children:
+                                                                                e.jsxDEV(
+                                                                                  Le,
+                                                                                  {
+                                                                                    className:
+                                                                                      "h-5 w-5 text-blue-500",
+                                                                                  },
+                                                                                  void 0,
+                                                                                  !1,
+                                                                                  {
+                                                                                    fileName:
+                                                                                      "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                                                                    lineNumber: 506,
+                                                                                    columnNumber: 35,
+                                                                                  },
+                                                                                  this,
+                                                                                ),
+                                                                            },
+                                                                            void 0,
+                                                                            !1,
+                                                                            {
+                                                                              fileName:
+                                                                                "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                                                              lineNumber: 505,
+                                                                              columnNumber: 33,
+                                                                            },
+                                                                            this,
+                                                                          ),
+                                                                          e.jsxDEV(
+                                                                            "p",
+                                                                            {
+                                                                              className:
+                                                                                "font-medium text-sm mb-1",
+                                                                              children:
+                                                                                "Release Music",
+                                                                            },
+                                                                            void 0,
+                                                                            !1,
+                                                                            {
+                                                                              fileName:
+                                                                                "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                                                              lineNumber: 508,
+                                                                              columnNumber: 33,
+                                                                            },
+                                                                            this,
+                                                                          ),
+                                                                          e.jsxDEV(
+                                                                            "p",
+                                                                            {
+                                                                              className:
+                                                                                "text-xs text-muted-foreground",
+                                                                              children:
+                                                                                "Distribute on all platforms to reach new listeners and convert them into fans.",
+                                                                            },
+                                                                            void 0,
+                                                                            !1,
+                                                                            {
+                                                                              fileName:
+                                                                                "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                                                              lineNumber: 509,
+                                                                              columnNumber: 33,
+                                                                            },
+                                                                            this,
+                                                                          ),
+                                                                        ],
+                                                                    },
+                                                                    void 0,
+                                                                    !0,
+                                                                    {
+                                                                      fileName:
+                                                                        "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                                                      lineNumber: 504,
+                                                                      columnNumber: 31,
+                                                                    },
+                                                                    this,
+                                                                  ),
+                                                                  e.jsxDEV(
+                                                                    "div",
+                                                                    {
+                                                                      className:
+                                                                        "rounded-lg border bg-card p-4 text-center",
+                                                                      children:
+                                                                        [
+                                                                          e.jsxDEV(
+                                                                            "div",
+                                                                            {
+                                                                              className:
+                                                                                "h-10 w-10 rounded-full bg-purple-500/10 flex items-center justify-center mx-auto mb-3",
+                                                                              children:
+                                                                                e.jsxDEV(
+                                                                                  $e,
+                                                                                  {
+                                                                                    className:
+                                                                                      "h-5 w-5 text-purple-500",
+                                                                                  },
+                                                                                  void 0,
+                                                                                  !1,
+                                                                                  {
+                                                                                    fileName:
+                                                                                      "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                                                                    lineNumber: 513,
+                                                                                    columnNumber: 35,
+                                                                                  },
+                                                                                  this,
+                                                                                ),
+                                                                            },
+                                                                            void 0,
+                                                                            !1,
+                                                                            {
+                                                                              fileName:
+                                                                                "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                                                              lineNumber: 512,
+                                                                              columnNumber: 33,
+                                                                            },
+                                                                            this,
+                                                                          ),
+                                                                          e.jsxDEV(
+                                                                            "p",
+                                                                            {
+                                                                              className:
+                                                                                "font-medium text-sm mb-1",
+                                                                              children:
+                                                                                "Share Your EPK",
+                                                                            },
+                                                                            void 0,
+                                                                            !1,
+                                                                            {
+                                                                              fileName:
+                                                                                "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                                                              lineNumber: 515,
+                                                                              columnNumber: 33,
+                                                                            },
+                                                                            this,
+                                                                          ),
+                                                                          e.jsxDEV(
+                                                                            "p",
+                                                                            {
+                                                                              className:
+                                                                                "text-xs text-muted-foreground",
+                                                                              children:
+                                                                                "Send your press kit link to blogs, playlists, and venues to build awareness.",
+                                                                            },
+                                                                            void 0,
+                                                                            !1,
+                                                                            {
+                                                                              fileName:
+                                                                                "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                                                              lineNumber: 516,
+                                                                              columnNumber: 33,
+                                                                            },
+                                                                            this,
+                                                                          ),
+                                                                        ],
+                                                                    },
+                                                                    void 0,
+                                                                    !0,
+                                                                    {
+                                                                      fileName:
+                                                                        "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                                                      lineNumber: 511,
+                                                                      columnNumber: 31,
+                                                                    },
+                                                                    this,
+                                                                  ),
+                                                                  e.jsxDEV(
+                                                                    "div",
+                                                                    {
+                                                                      className:
+                                                                        "rounded-lg border bg-card p-4 text-center",
+                                                                      children:
+                                                                        [
+                                                                          e.jsxDEV(
+                                                                            "div",
+                                                                            {
+                                                                              className:
+                                                                                "h-10 w-10 rounded-full bg-green-500/10 flex items-center justify-center mx-auto mb-3",
+                                                                              children:
+                                                                                e.jsxDEV(
+                                                                                  Ue,
+                                                                                  {
+                                                                                    className:
+                                                                                      "h-5 w-5 text-green-500",
+                                                                                  },
+                                                                                  void 0,
+                                                                                  !1,
+                                                                                  {
+                                                                                    fileName:
+                                                                                      "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                                                                    lineNumber: 520,
+                                                                                    columnNumber: 35,
+                                                                                  },
+                                                                                  this,
+                                                                                ),
+                                                                            },
+                                                                            void 0,
+                                                                            !1,
+                                                                            {
+                                                                              fileName:
+                                                                                "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                                                              lineNumber: 519,
+                                                                              columnNumber: 33,
+                                                                            },
+                                                                            this,
+                                                                          ),
+                                                                          e.jsxDEV(
+                                                                            "p",
+                                                                            {
+                                                                              className:
+                                                                                "font-medium text-sm mb-1",
+                                                                              children:
+                                                                                "Import Existing Fans",
+                                                                            },
+                                                                            void 0,
+                                                                            !1,
+                                                                            {
+                                                                              fileName:
+                                                                                "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                                                              lineNumber: 522,
+                                                                              columnNumber: 33,
+                                                                            },
+                                                                            this,
+                                                                          ),
+                                                                          e.jsxDEV(
+                                                                            "p",
+                                                                            {
+                                                                              className:
+                                                                                "text-xs text-muted-foreground",
+                                                                              children:
+                                                                                "Already have fans elsewhere? Import them via CSV from the Import tab above.",
+                                                                            },
+                                                                            void 0,
+                                                                            !1,
+                                                                            {
+                                                                              fileName:
+                                                                                "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                                                              lineNumber: 523,
+                                                                              columnNumber: 33,
+                                                                            },
+                                                                            this,
+                                                                          ),
+                                                                        ],
+                                                                    },
+                                                                    void 0,
+                                                                    !0,
+                                                                    {
+                                                                      fileName:
+                                                                        "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                                                      lineNumber: 518,
+                                                                      columnNumber: 31,
+                                                                    },
+                                                                    this,
+                                                                  ),
+                                                                ],
+                                                              },
+                                                              void 0,
+                                                              !0,
+                                                              {
+                                                                fileName:
+                                                                  "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                                                lineNumber: 503,
+                                                                columnNumber: 29,
+                                                              },
+                                                              this,
+                                                            ),
+                                                            e.jsxDEV(
+                                                              "div",
+                                                              {
+                                                                className:
+                                                                  "flex justify-center mt-6 gap-3",
+                                                                children:
+                                                                  e.jsxDEV(
+                                                                    a,
+                                                                    {
+                                                                      onClick:
+                                                                        () =>
+                                                                          R(!0),
+                                                                      children:
+                                                                        [
+                                                                          e.jsxDEV(
+                                                                            ge,
+                                                                            {
+                                                                              className:
+                                                                                "h-4 w-4 mr-2",
+                                                                            },
+                                                                            void 0,
+                                                                            !1,
+                                                                            {
+                                                                              fileName:
+                                                                                "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                                                              lineNumber: 528,
+                                                                              columnNumber: 33,
+                                                                            },
+                                                                            this,
+                                                                          ),
+                                                                          "Add Your First Fan",
+                                                                        ],
+                                                                    },
+                                                                    void 0,
+                                                                    !0,
+                                                                    {
+                                                                      fileName:
+                                                                        "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                                                      lineNumber: 527,
+                                                                      columnNumber: 31,
+                                                                    },
+                                                                    this,
+                                                                  ),
+                                                              },
+                                                              void 0,
+                                                              !1,
+                                                              {
+                                                                fileName:
+                                                                  "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                                                lineNumber: 526,
+                                                                columnNumber: 29,
+                                                              },
+                                                              this,
+                                                            ),
+                                                          ],
+                                                        },
+                                                        void 0,
+                                                        !0,
+                                                        {
+                                                          fileName:
+                                                            "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                                          lineNumber: 495,
+                                                          columnNumber: 27,
+                                                        },
+                                                        this,
+                                                      ),
+                                                },
+                                                void 0,
+                                                !1,
+                                                {
+                                                  fileName:
+                                                    "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                                  lineNumber: 487,
+                                                  columnNumber: 23,
+                                                },
+                                                this,
+                                              ),
+                                            },
+                                            void 0,
+                                            !1,
+                                            {
+                                              fileName:
+                                                "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                              lineNumber: 486,
+                                              columnNumber: 21,
+                                            },
+                                            this,
+                                          )
+                                        : f.map((s) =>
+                                            e.jsxDEV(
+                                              w,
+                                              {
+                                                className:
+                                                  "cursor-pointer hover:bg-muted/50",
+                                                onClick: () => v(s),
+                                                children: [
+                                                  e.jsxDEV(
+                                                    m,
+                                                    {
+                                                      children: e.jsxDEV(
+                                                        "div",
+                                                        {
+                                                          className:
+                                                            "flex items-center gap-3",
+                                                          children: [
+                                                            e.jsxDEV(
+                                                              "div",
+                                                              {
+                                                                className:
+                                                                  "h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-xs",
+                                                                children:
+                                                                  s.name?.charAt(
+                                                                    0,
+                                                                  ) ||
+                                                                  s.email
+                                                                    .charAt(0)
+                                                                    .toUpperCase(),
+                                                              },
+                                                              void 0,
+                                                              !1,
+                                                              {
+                                                                fileName:
+                                                                  "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                                                lineNumber: 541,
+                                                                columnNumber: 29,
+                                                              },
+                                                              this,
+                                                            ),
+                                                            e.jsxDEV(
+                                                              "div",
+                                                              {
+                                                                children: [
+                                                                  e.jsxDEV(
+                                                                    "div",
+                                                                    {
+                                                                      className:
+                                                                        "font-medium flex items-center gap-2",
+                                                                      children:
+                                                                        [
+                                                                          s.name ||
+                                                                            "Anonymous",
+                                                                          s.isVip &&
+                                                                            e.jsxDEV(
+                                                                              M,
+                                                                              {
+                                                                                className:
+                                                                                  "h-3 w-3 text-amber-500 fill-amber-500",
+                                                                              },
+                                                                              void 0,
+                                                                              !1,
+                                                                              {
+                                                                                fileName:
+                                                                                  "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                                                                lineNumber: 547,
+                                                                                columnNumber: 47,
+                                                                              },
+                                                                              this,
+                                                                            ),
+                                                                        ],
+                                                                    },
+                                                                    void 0,
+                                                                    !0,
+                                                                    {
+                                                                      fileName:
+                                                                        "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                                                      lineNumber: 545,
+                                                                      columnNumber: 31,
+                                                                    },
+                                                                    this,
+                                                                  ),
+                                                                  e.jsxDEV(
+                                                                    "div",
+                                                                    {
+                                                                      className:
+                                                                        "text-xs text-muted-foreground",
+                                                                      children:
+                                                                        s.email,
+                                                                    },
+                                                                    void 0,
+                                                                    !1,
+                                                                    {
+                                                                      fileName:
+                                                                        "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                                                      lineNumber: 549,
+                                                                      columnNumber: 31,
+                                                                    },
+                                                                    this,
+                                                                  ),
+                                                                ],
+                                                              },
+                                                              void 0,
+                                                              !0,
+                                                              {
+                                                                fileName:
+                                                                  "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                                                lineNumber: 544,
+                                                                columnNumber: 29,
+                                                              },
+                                                              this,
+                                                            ),
+                                                          ],
+                                                        },
+                                                        void 0,
+                                                        !0,
+                                                        {
+                                                          fileName:
+                                                            "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                                          lineNumber: 540,
+                                                          columnNumber: 27,
+                                                        },
+                                                        this,
+                                                      ),
+                                                    },
+                                                    void 0,
+                                                    !1,
+                                                    {
+                                                      fileName:
+                                                        "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                                      lineNumber: 539,
+                                                      columnNumber: 25,
+                                                    },
+                                                    this,
+                                                  ),
+                                                  e.jsxDEV(
+                                                    m,
+                                                    {
+                                                      children: e.jsxDEV(
+                                                        I,
+                                                        {
+                                                          variant: "outline",
+                                                          className:
+                                                            "capitalize",
+                                                          children: s.source,
+                                                        },
+                                                        void 0,
+                                                        !1,
+                                                        {
+                                                          fileName:
+                                                            "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                                          lineNumber: 554,
+                                                          columnNumber: 27,
+                                                        },
+                                                        this,
+                                                      ),
+                                                    },
+                                                    void 0,
+                                                    !1,
+                                                    {
+                                                      fileName:
+                                                        "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                                      lineNumber: 553,
+                                                      columnNumber: 25,
+                                                    },
+                                                    this,
+                                                  ),
+                                                  e.jsxDEV(
+                                                    m,
+                                                    {
+                                                      className: "text-sm",
+                                                      children: V(
+                                                        new Date(s.joinedAt),
+                                                        "MMM d, yyyy",
+                                                      ),
+                                                    },
+                                                    void 0,
+                                                    !1,
+                                                    {
+                                                      fileName:
+                                                        "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                                      lineNumber: 556,
+                                                      columnNumber: 25,
+                                                    },
+                                                    this,
+                                                  ),
+                                                  e.jsxDEV(
+                                                    m,
+                                                    {
+                                                      className: "font-medium",
+                                                      children: [
+                                                        "$",
+                                                        s.totalSpent.toLocaleString(
+                                                          void 0,
+                                                          {
+                                                            minimumFractionDigits: 2,
+                                                          },
+                                                        ),
+                                                      ],
+                                                    },
+                                                    void 0,
+                                                    !0,
+                                                    {
+                                                      fileName:
+                                                        "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                                      lineNumber: 559,
+                                                      columnNumber: 25,
+                                                    },
+                                                    this,
+                                                  ),
+                                                  e.jsxDEV(
+                                                    m,
+                                                    {
+                                                      className: "text-right",
+                                                      onClick: (r) =>
+                                                        r.stopPropagation(),
+                                                      children: e.jsxDEV(
+                                                        Xe,
+                                                        {
+                                                          children: [
+                                                            e.jsxDEV(
+                                                              _e,
+                                                              {
+                                                                asChild: !0,
+                                                                children:
+                                                                  e.jsxDEV(
+                                                                    a,
+                                                                    {
+                                                                      variant:
+                                                                        "ghost",
+                                                                      size: "icon",
+                                                                      children:
+                                                                        e.jsxDEV(
+                                                                          ve,
+                                                                          {
+                                                                            className:
+                                                                              "h-4 w-4",
+                                                                          },
+                                                                          void 0,
+                                                                          !1,
+                                                                          {
+                                                                            fileName:
+                                                                              "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                                                            lineNumber: 566,
+                                                                            columnNumber: 33,
+                                                                          },
+                                                                          this,
+                                                                        ),
+                                                                    },
+                                                                    void 0,
+                                                                    !1,
+                                                                    {
+                                                                      fileName:
+                                                                        "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                                                      lineNumber: 565,
+                                                                      columnNumber: 31,
+                                                                    },
+                                                                    this,
+                                                                  ),
+                                                              },
+                                                              void 0,
+                                                              !1,
+                                                              {
+                                                                fileName:
+                                                                  "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                                                lineNumber: 564,
+                                                                columnNumber: 29,
+                                                              },
+                                                              this,
+                                                            ),
+                                                            e.jsxDEV(
+                                                              Ze,
+                                                              {
+                                                                align: "end",
+                                                                children: [
+                                                                  e.jsxDEV(
+                                                                    oe,
+                                                                    {
+                                                                      onClick:
+                                                                        () =>
+                                                                          v(s),
+                                                                      children:
+                                                                        "View Profile",
+                                                                    },
+                                                                    void 0,
+                                                                    !1,
+                                                                    {
+                                                                      fileName:
+                                                                        "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                                                      lineNumber: 570,
+                                                                      columnNumber: 31,
+                                                                    },
+                                                                    this,
+                                                                  ),
+                                                                  e.jsxDEV(
+                                                                    oe,
+                                                                    {
+                                                                      onClick:
+                                                                        () => {
+                                                                          (k(s),
+                                                                            K(
+                                                                              (
+                                                                                s.tags ||
+                                                                                []
+                                                                              ).join(
+                                                                                ", ",
+                                                                              ),
+                                                                            ));
+                                                                        },
+                                                                      children:
+                                                                        [
+                                                                          e.jsxDEV(
+                                                                            me,
+                                                                            {
+                                                                              className:
+                                                                                "h-4 w-4 mr-2",
+                                                                            },
+                                                                            void 0,
+                                                                            !1,
+                                                                            {
+                                                                              fileName:
+                                                                                "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                                                              lineNumber: 572,
+                                                                              columnNumber: 33,
+                                                                            },
+                                                                            this,
+                                                                          ),
+                                                                          "Edit Tags",
+                                                                        ],
+                                                                    },
+                                                                    void 0,
+                                                                    !0,
+                                                                    {
+                                                                      fileName:
+                                                                        "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                                                      lineNumber: 571,
+                                                                      columnNumber: 31,
+                                                                    },
+                                                                    this,
+                                                                  ),
+                                                                  e.jsxDEV(
+                                                                    oe,
+                                                                    {
+                                                                      className:
+                                                                        "text-destructive",
+                                                                      onClick:
+                                                                        () =>
+                                                                          O(
+                                                                            s.id,
+                                                                          ),
+                                                                      children:
+                                                                        "Remove Fan",
+                                                                    },
+                                                                    void 0,
+                                                                    !1,
+                                                                    {
+                                                                      fileName:
+                                                                        "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                                                      lineNumber: 575,
+                                                                      columnNumber: 31,
+                                                                    },
+                                                                    this,
+                                                                  ),
+                                                                ],
+                                                              },
+                                                              void 0,
+                                                              !0,
+                                                              {
+                                                                fileName:
+                                                                  "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                                                lineNumber: 569,
+                                                                columnNumber: 29,
+                                                              },
+                                                              this,
+                                                            ),
+                                                          ],
+                                                        },
+                                                        void 0,
+                                                        !0,
+                                                        {
+                                                          fileName:
+                                                            "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                                          lineNumber: 563,
+                                                          columnNumber: 27,
+                                                        },
+                                                        this,
+                                                      ),
+                                                    },
+                                                    void 0,
+                                                    !1,
+                                                    {
+                                                      fileName:
+                                                        "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                                      lineNumber: 562,
+                                                      columnNumber: 25,
+                                                    },
+                                                    this,
+                                                  ),
+                                                ],
+                                              },
+                                              s.id,
+                                              !0,
+                                              {
+                                                fileName:
+                                                  "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                                lineNumber: 538,
+                                                columnNumber: 23,
+                                              },
+                                              this,
+                                            ),
+                                          ),
+                                  },
+                                  void 0,
+                                  !1,
+                                  {
+                                    fileName:
+                                      "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                    lineNumber: 478,
+                                    columnNumber: 17,
+                                  },
+                                  this,
+                                ),
+                              ],
+                            },
+                            void 0,
+                            !0,
+                            {
+                              fileName:
+                                "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                              lineNumber: 468,
+                              columnNumber: 15,
+                            },
+                            this,
+                          ),
+                        },
+                        void 0,
+                        !1,
+                        {
+                          fileName:
+                            "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                          lineNumber: 467,
+                          columnNumber: 13,
+                        },
+                        this,
+                      ),
+                    },
+                    void 0,
+                    !1,
+                    {
+                      fileName:
+                        "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                      lineNumber: 466,
+                      columnNumber: 11,
+                    },
+                    this,
+                  ),
+                  e.jsxDEV(
+                    Z,
+                    {
+                      value: "vip",
+                      className: "pt-4",
+                      children: e.jsxDEV(
+                        h,
+                        {
+                          children: e.jsxDEV(
+                            De,
+                            {
+                              children: [
+                                e.jsxDEV(
+                                  Ve,
+                                  {
+                                    children: e.jsxDEV(
+                                      w,
+                                      {
+                                        children: [
+                                          e.jsxDEV(
+                                            d,
+                                            { children: "Fan" },
+                                            void 0,
+                                            !1,
+                                            {
+                                              fileName:
+                                                "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                              lineNumber: 592,
+                                              columnNumber: 21,
+                                            },
+                                            this,
+                                          ),
+                                          e.jsxDEV(
+                                            d,
+                                            { children: "Status" },
+                                            void 0,
+                                            !1,
+                                            {
+                                              fileName:
+                                                "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                              lineNumber: 593,
+                                              columnNumber: 21,
+                                            },
+                                            this,
+                                          ),
+                                          e.jsxDEV(
+                                            d,
+                                            { children: "Joined" },
+                                            void 0,
+                                            !1,
+                                            {
+                                              fileName:
+                                                "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                              lineNumber: 594,
+                                              columnNumber: 21,
+                                            },
+                                            this,
+                                          ),
+                                          e.jsxDEV(
+                                            d,
+                                            { children: "Total Spent" },
+                                            void 0,
+                                            !1,
+                                            {
+                                              fileName:
+                                                "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                              lineNumber: 595,
+                                              columnNumber: 21,
+                                            },
+                                            this,
+                                          ),
+                                          e.jsxDEV(
+                                            d,
+                                            {
+                                              className: "text-right",
+                                              children: "Actions",
+                                            },
+                                            void 0,
+                                            !1,
+                                            {
+                                              fileName:
+                                                "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                              lineNumber: 596,
+                                              columnNumber: 21,
+                                            },
+                                            this,
+                                          ),
+                                        ],
+                                      },
+                                      void 0,
+                                      !0,
+                                      {
+                                        fileName:
+                                          "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                        lineNumber: 591,
+                                        columnNumber: 19,
+                                      },
+                                      this,
+                                    ),
+                                  },
+                                  void 0,
+                                  !1,
+                                  {
+                                    fileName:
+                                      "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                    lineNumber: 590,
+                                    columnNumber: 17,
+                                  },
+                                  this,
+                                ),
+                                e.jsxDEV(
+                                  ke,
+                                  {
+                                    children:
+                                      xe.length === 0
+                                        ? e.jsxDEV(
+                                            w,
+                                            {
+                                              children: e.jsxDEV(
+                                                m,
+                                                {
+                                                  colSpan: 5,
+                                                  className: "h-64 text-center",
+                                                  children: e.jsxDEV(
+                                                    "div",
+                                                    {
+                                                      className:
+                                                        "flex flex-col items-center justify-center text-muted-foreground",
+                                                      children: [
+                                                        e.jsxDEV(
+                                                          M,
+                                                          {
+                                                            className:
+                                                              "h-12 w-12 mb-4 opacity-20",
+                                                          },
+                                                          void 0,
+                                                          !1,
+                                                          {
+                                                            fileName:
+                                                              "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                                            lineNumber: 604,
+                                                            columnNumber: 27,
+                                                          },
+                                                          this,
+                                                        ),
+                                                        e.jsxDEV(
+                                                          "p",
+                                                          {
+                                                            children:
+                                                              "You haven't marked any fans as VIP yet.",
+                                                          },
+                                                          void 0,
+                                                          !1,
+                                                          {
+                                                            fileName:
+                                                              "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                                            lineNumber: 605,
+                                                            columnNumber: 27,
+                                                          },
+                                                          this,
+                                                        ),
+                                                      ],
+                                                    },
+                                                    void 0,
+                                                    !0,
+                                                    {
+                                                      fileName:
+                                                        "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                                      lineNumber: 603,
+                                                      columnNumber: 25,
+                                                    },
+                                                    this,
+                                                  ),
+                                                },
+                                                void 0,
+                                                !1,
+                                                {
+                                                  fileName:
+                                                    "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                                  lineNumber: 602,
+                                                  columnNumber: 23,
+                                                },
+                                                this,
+                                              ),
+                                            },
+                                            void 0,
+                                            !1,
+                                            {
+                                              fileName:
+                                                "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                              lineNumber: 601,
+                                              columnNumber: 21,
+                                            },
+                                            this,
+                                          )
+                                        : xe.map((s) =>
+                                            e.jsxDEV(
+                                              w,
+                                              {
+                                                className:
+                                                  "cursor-pointer hover:bg-muted/50",
+                                                onClick: () => v(s),
+                                                children: [
+                                                  e.jsxDEV(
+                                                    m,
+                                                    {
+                                                      children: e.jsxDEV(
+                                                        "div",
+                                                        {
+                                                          className:
+                                                            "flex items-center gap-3",
+                                                          children: [
+                                                            e.jsxDEV(
+                                                              "div",
+                                                              {
+                                                                className:
+                                                                  "h-8 w-8 rounded-full bg-amber-500/10 flex items-center justify-center text-amber-600 font-bold text-xs",
+                                                                children:
+                                                                  s.name?.charAt(
+                                                                    0,
+                                                                  ) ||
+                                                                  s.email
+                                                                    .charAt(0)
+                                                                    .toUpperCase(),
+                                                              },
+                                                              void 0,
+                                                              !1,
+                                                              {
+                                                                fileName:
+                                                                  "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                                                lineNumber: 614,
+                                                                columnNumber: 29,
+                                                              },
+                                                              this,
+                                                            ),
+                                                            e.jsxDEV(
+                                                              "div",
+                                                              {
+                                                                children: [
+                                                                  e.jsxDEV(
+                                                                    "div",
+                                                                    {
+                                                                      className:
+                                                                        "font-medium flex items-center gap-2",
+                                                                      children:
+                                                                        [
+                                                                          s.name ||
+                                                                            "Anonymous",
+                                                                          e.jsxDEV(
+                                                                            M,
+                                                                            {
+                                                                              className:
+                                                                                "h-3 w-3 text-amber-500 fill-amber-500",
+                                                                            },
+                                                                            void 0,
+                                                                            !1,
+                                                                            {
+                                                                              fileName:
+                                                                                "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                                                              lineNumber: 620,
+                                                                              columnNumber: 33,
+                                                                            },
+                                                                            this,
+                                                                          ),
+                                                                        ],
+                                                                    },
+                                                                    void 0,
+                                                                    !0,
+                                                                    {
+                                                                      fileName:
+                                                                        "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                                                      lineNumber: 618,
+                                                                      columnNumber: 31,
+                                                                    },
+                                                                    this,
+                                                                  ),
+                                                                  e.jsxDEV(
+                                                                    "div",
+                                                                    {
+                                                                      className:
+                                                                        "text-xs text-muted-foreground",
+                                                                      children:
+                                                                        s.email,
+                                                                    },
+                                                                    void 0,
+                                                                    !1,
+                                                                    {
+                                                                      fileName:
+                                                                        "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                                                      lineNumber: 622,
+                                                                      columnNumber: 31,
+                                                                    },
+                                                                    this,
+                                                                  ),
+                                                                ],
+                                                              },
+                                                              void 0,
+                                                              !0,
+                                                              {
+                                                                fileName:
+                                                                  "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                                                lineNumber: 617,
+                                                                columnNumber: 29,
+                                                              },
+                                                              this,
+                                                            ),
+                                                          ],
+                                                        },
+                                                        void 0,
+                                                        !0,
+                                                        {
+                                                          fileName:
+                                                            "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                                          lineNumber: 613,
+                                                          columnNumber: 27,
+                                                        },
+                                                        this,
+                                                      ),
+                                                    },
+                                                    void 0,
+                                                    !1,
+                                                    {
+                                                      fileName:
+                                                        "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                                      lineNumber: 612,
+                                                      columnNumber: 25,
+                                                    },
+                                                    this,
+                                                  ),
+                                                  e.jsxDEV(
+                                                    m,
+                                                    {
+                                                      children: e.jsxDEV(
+                                                        I,
+                                                        {
+                                                          variant: "outline",
+                                                          className:
+                                                            "capitalize border-amber-500/50 text-amber-600",
+                                                          children: "VIP",
+                                                        },
+                                                        void 0,
+                                                        !1,
+                                                        {
+                                                          fileName:
+                                                            "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                                          lineNumber: 627,
+                                                          columnNumber: 27,
+                                                        },
+                                                        this,
+                                                      ),
+                                                    },
+                                                    void 0,
+                                                    !1,
+                                                    {
+                                                      fileName:
+                                                        "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                                      lineNumber: 626,
+                                                      columnNumber: 25,
+                                                    },
+                                                    this,
+                                                  ),
+                                                  e.jsxDEV(
+                                                    m,
+                                                    {
+                                                      className: "text-sm",
+                                                      children: V(
+                                                        new Date(s.joinedAt),
+                                                        "MMM d, yyyy",
+                                                      ),
+                                                    },
+                                                    void 0,
+                                                    !1,
+                                                    {
+                                                      fileName:
+                                                        "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                                      lineNumber: 629,
+                                                      columnNumber: 25,
+                                                    },
+                                                    this,
+                                                  ),
+                                                  e.jsxDEV(
+                                                    m,
+                                                    {
+                                                      className: "font-medium",
+                                                      children: [
+                                                        "$",
+                                                        s.totalSpent.toLocaleString(
+                                                          void 0,
+                                                          {
+                                                            minimumFractionDigits: 2,
+                                                          },
+                                                        ),
+                                                      ],
+                                                    },
+                                                    void 0,
+                                                    !0,
+                                                    {
+                                                      fileName:
+                                                        "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                                      lineNumber: 632,
+                                                      columnNumber: 25,
+                                                    },
+                                                    this,
+                                                  ),
+                                                  e.jsxDEV(
+                                                    m,
+                                                    {
+                                                      className: "text-right",
+                                                      onClick: (r) =>
+                                                        r.stopPropagation(),
+                                                      children: e.jsxDEV(
+                                                        a,
+                                                        {
+                                                          variant: "ghost",
+                                                          size: "icon",
+                                                          children: e.jsxDEV(
+                                                            ve,
+                                                            {
+                                                              className:
+                                                                "h-4 w-4",
+                                                            },
+                                                            void 0,
+                                                            !1,
+                                                            {
+                                                              fileName:
+                                                                "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                                              lineNumber: 637,
+                                                              columnNumber: 29,
+                                                            },
+                                                            this,
+                                                          ),
+                                                        },
+                                                        void 0,
+                                                        !1,
+                                                        {
+                                                          fileName:
+                                                            "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                                          lineNumber: 636,
+                                                          columnNumber: 27,
+                                                        },
+                                                        this,
+                                                      ),
+                                                    },
+                                                    void 0,
+                                                    !1,
+                                                    {
+                                                      fileName:
+                                                        "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                                      lineNumber: 635,
+                                                      columnNumber: 25,
+                                                    },
+                                                    this,
+                                                  ),
+                                                ],
+                                              },
+                                              s.id,
+                                              !0,
+                                              {
+                                                fileName:
+                                                  "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                                lineNumber: 611,
+                                                columnNumber: 23,
+                                              },
+                                              this,
+                                            ),
+                                          ),
+                                  },
+                                  void 0,
+                                  !1,
+                                  {
+                                    fileName:
+                                      "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                    lineNumber: 599,
+                                    columnNumber: 17,
+                                  },
+                                  this,
+                                ),
+                              ],
+                            },
+                            void 0,
+                            !0,
+                            {
+                              fileName:
+                                "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                              lineNumber: 589,
+                              columnNumber: 15,
+                            },
+                            this,
+                          ),
+                        },
+                        void 0,
+                        !1,
+                        {
+                          fileName:
+                            "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                          lineNumber: 588,
+                          columnNumber: 13,
+                        },
+                        this,
+                      ),
+                    },
+                    void 0,
+                    !1,
+                    {
+                      fileName:
+                        "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                      lineNumber: 587,
+                      columnNumber: 11,
+                    },
+                    this,
+                  ),
+                  e.jsxDEV(
+                    Z,
+                    {
+                      value: "messages",
+                      className: "pt-4",
+                      children: e.jsxDEV(
+                        "div",
+                        {
+                          className: "grid gap-4",
+                          children:
+                            pe?.length === 0
+                              ? e.jsxDEV(
+                                  h,
+                                  {
+                                    className: "p-12 text-center",
+                                    children: e.jsxDEV(
+                                      "div",
+                                      {
+                                        className:
+                                          "flex flex-col items-center justify-center text-muted-foreground",
+                                        children: [
+                                          e.jsxDEV(
+                                            te,
+                                            {
+                                              className:
+                                                "h-12 w-12 mb-4 opacity-20",
+                                            },
+                                            void 0,
+                                            !1,
+                                            {
+                                              fileName:
+                                                "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                              lineNumber: 653,
+                                              columnNumber: 21,
+                                            },
+                                            this,
+                                          ),
+                                          e.jsxDEV(
+                                            "h3",
+                                            {
+                                              className:
+                                                "text-lg font-medium text-foreground",
+                                              children: "No message history",
+                                            },
+                                            void 0,
+                                            !1,
+                                            {
+                                              fileName:
+                                                "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                              lineNumber: 654,
+                                              columnNumber: 21,
+                                            },
+                                            this,
+                                          ),
+                                          e.jsxDEV(
+                                            "p",
+                                            {
+                                              className:
+                                                "max-w-sm mx-auto mt-1 mb-6",
+                                              children:
+                                                "Start engaging with your fans by sending your first broadcast message.",
+                                            },
+                                            void 0,
+                                            !1,
+                                            {
+                                              fileName:
+                                                "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                              lineNumber: 655,
+                                              columnNumber: 21,
+                                            },
+                                            this,
+                                          ),
+                                          e.jsxDEV(
+                                            a,
+                                            {
+                                              onClick: () => q(!0),
+                                              children: [
+                                                e.jsxDEV(
+                                                  te,
+                                                  { className: "h-4 w-4 mr-2" },
+                                                  void 0,
+                                                  !1,
+                                                  {
+                                                    fileName:
+                                                      "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                                    lineNumber: 659,
+                                                    columnNumber: 23,
+                                                  },
+                                                  this,
+                                                ),
+                                                "Send First Message",
+                                              ],
+                                            },
+                                            void 0,
+                                            !0,
+                                            {
+                                              fileName:
+                                                "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                              lineNumber: 658,
+                                              columnNumber: 21,
+                                            },
+                                            this,
+                                          ),
+                                        ],
+                                      },
+                                      void 0,
+                                      !0,
+                                      {
+                                        fileName:
+                                          "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                        lineNumber: 652,
+                                        columnNumber: 19,
+                                      },
+                                      this,
+                                    ),
+                                  },
+                                  void 0,
+                                  !1,
+                                  {
+                                    fileName:
+                                      "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                    lineNumber: 651,
+                                    columnNumber: 17,
+                                  },
+                                  this,
+                                )
+                              : pe?.map((s) =>
+                                  e.jsxDEV(
+                                    h,
+                                    {
+                                      className: "overflow-hidden",
+                                      children: [
+                                        e.jsxDEV(
+                                          "div",
+                                          {
+                                            className:
+                                              "bg-muted/30 p-4 border-b flex justify-between items-center",
+                                            children: [
+                                              e.jsxDEV(
+                                                "div",
+                                                {
+                                                  children: [
+                                                    e.jsxDEV(
+                                                      "h4",
+                                                      {
+                                                        className:
+                                                          "font-semibold text-lg",
+                                                        children: s.subject,
+                                                      },
+                                                      void 0,
+                                                      !1,
+                                                      {
+                                                        fileName:
+                                                          "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                                        lineNumber: 669,
+                                                        columnNumber: 25,
+                                                      },
+                                                      this,
+                                                    ),
+                                                    e.jsxDEV(
+                                                      "p",
+                                                      {
+                                                        className:
+                                                          "text-xs text-muted-foreground",
+                                                        children: [
+                                                          "Sent on ",
+                                                          V(
+                                                            new Date(s.sentAt),
+                                                            "MMMM d, yyyy @ h:mm a",
+                                                          ),
+                                                        ],
+                                                      },
+                                                      void 0,
+                                                      !0,
+                                                      {
+                                                        fileName:
+                                                          "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                                        lineNumber: 670,
+                                                        columnNumber: 25,
+                                                      },
+                                                      this,
+                                                    ),
+                                                  ],
+                                                },
+                                                void 0,
+                                                !0,
+                                                {
+                                                  fileName:
+                                                    "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                                  lineNumber: 668,
+                                                  columnNumber: 23,
+                                                },
+                                                this,
+                                              ),
+                                              e.jsxDEV(
+                                                I,
+                                                {
+                                                  variant: "secondary",
+                                                  children: "Sent",
+                                                },
+                                                void 0,
+                                                !1,
+                                                {
+                                                  fileName:
+                                                    "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                                  lineNumber: 674,
+                                                  columnNumber: 23,
+                                                },
+                                                this,
+                                              ),
+                                            ],
+                                          },
+                                          void 0,
+                                          !0,
+                                          {
+                                            fileName:
+                                              "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                            lineNumber: 667,
+                                            columnNumber: 21,
+                                          },
+                                          this,
+                                        ),
+                                        e.jsxDEV(
+                                          A,
+                                          {
+                                            className: "p-6",
+                                            children: [
+                                              e.jsxDEV(
+                                                "div",
+                                                {
+                                                  className:
+                                                    "grid grid-cols-3 gap-4 sm:gap-8 mb-6",
+                                                  children: [
+                                                    e.jsxDEV(
+                                                      "div",
+                                                      {
+                                                        children: [
+                                                          e.jsxDEV(
+                                                            "p",
+                                                            {
+                                                              className:
+                                                                "text-sm text-muted-foreground mb-1",
+                                                              children:
+                                                                "Recipients",
+                                                            },
+                                                            void 0,
+                                                            !1,
+                                                            {
+                                                              fileName:
+                                                                "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                                              lineNumber: 679,
+                                                              columnNumber: 27,
+                                                            },
+                                                            this,
+                                                          ),
+                                                          e.jsxDEV(
+                                                            "p",
+                                                            {
+                                                              className:
+                                                                "text-2xl font-bold",
+                                                              children:
+                                                                s.recipientCount,
+                                                            },
+                                                            void 0,
+                                                            !1,
+                                                            {
+                                                              fileName:
+                                                                "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                                              lineNumber: 680,
+                                                              columnNumber: 27,
+                                                            },
+                                                            this,
+                                                          ),
+                                                        ],
+                                                      },
+                                                      void 0,
+                                                      !0,
+                                                      {
+                                                        fileName:
+                                                          "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                                        lineNumber: 678,
+                                                        columnNumber: 25,
+                                                      },
+                                                      this,
+                                                    ),
+                                                    e.jsxDEV(
+                                                      "div",
+                                                      {
+                                                        children: [
+                                                          e.jsxDEV(
+                                                            "p",
+                                                            {
+                                                              className:
+                                                                "text-sm text-muted-foreground mb-1",
+                                                              children:
+                                                                "Open Rate",
+                                                            },
+                                                            void 0,
+                                                            !1,
+                                                            {
+                                                              fileName:
+                                                                "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                                              lineNumber: 683,
+                                                              columnNumber: 27,
+                                                            },
+                                                            this,
+                                                          ),
+                                                          e.jsxDEV(
+                                                            "p",
+                                                            {
+                                                              className:
+                                                                "text-2xl font-bold",
+                                                              children: [
+                                                                s.recipientCount >
+                                                                0
+                                                                  ? Math.round(
+                                                                      (s.openCount /
+                                                                        s.recipientCount) *
+                                                                        100,
+                                                                    )
+                                                                  : 0,
+                                                                "%",
+                                                              ],
+                                                            },
+                                                            void 0,
+                                                            !0,
+                                                            {
+                                                              fileName:
+                                                                "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                                              lineNumber: 684,
+                                                              columnNumber: 27,
+                                                            },
+                                                            this,
+                                                          ),
+                                                        ],
+                                                      },
+                                                      void 0,
+                                                      !0,
+                                                      {
+                                                        fileName:
+                                                          "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                                        lineNumber: 682,
+                                                        columnNumber: 25,
+                                                      },
+                                                      this,
+                                                    ),
+                                                    e.jsxDEV(
+                                                      "div",
+                                                      {
+                                                        children: [
+                                                          e.jsxDEV(
+                                                            "p",
+                                                            {
+                                                              className:
+                                                                "text-sm text-muted-foreground mb-1",
+                                                              children:
+                                                                "Click Rate",
+                                                            },
+                                                            void 0,
+                                                            !1,
+                                                            {
+                                                              fileName:
+                                                                "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                                              lineNumber: 689,
+                                                              columnNumber: 27,
+                                                            },
+                                                            this,
+                                                          ),
+                                                          e.jsxDEV(
+                                                            "p",
+                                                            {
+                                                              className:
+                                                                "text-2xl font-bold",
+                                                              children: [
+                                                                s.openCount > 0
+                                                                  ? Math.round(
+                                                                      (s.clickCount /
+                                                                        s.openCount) *
+                                                                        100,
+                                                                    )
+                                                                  : 0,
+                                                                "%",
+                                                              ],
+                                                            },
+                                                            void 0,
+                                                            !0,
+                                                            {
+                                                              fileName:
+                                                                "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                                              lineNumber: 690,
+                                                              columnNumber: 27,
+                                                            },
+                                                            this,
+                                                          ),
+                                                        ],
+                                                      },
+                                                      void 0,
+                                                      !0,
+                                                      {
+                                                        fileName:
+                                                          "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                                        lineNumber: 688,
+                                                        columnNumber: 25,
+                                                      },
+                                                      this,
+                                                    ),
+                                                  ],
+                                                },
+                                                void 0,
+                                                !0,
+                                                {
+                                                  fileName:
+                                                    "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                                  lineNumber: 677,
+                                                  columnNumber: 23,
+                                                },
+                                                this,
+                                              ),
+                                              e.jsxDEV(
+                                                "div",
+                                                {
+                                                  className:
+                                                    "bg-muted/20 p-4 rounded-md text-sm whitespace-pre-wrap border italic text-muted-foreground",
+                                                  children:
+                                                    s.body.length > 200
+                                                      ? s.body.substring(
+                                                          0,
+                                                          200,
+                                                        ) + "..."
+                                                      : s.body,
+                                                },
+                                                void 0,
+                                                !1,
+                                                {
+                                                  fileName:
+                                                    "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                                  lineNumber: 695,
+                                                  columnNumber: 23,
+                                                },
+                                                this,
+                                              ),
+                                            ],
+                                          },
+                                          void 0,
+                                          !0,
+                                          {
+                                            fileName:
+                                              "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                            lineNumber: 676,
+                                            columnNumber: 21,
+                                          },
+                                          this,
+                                        ),
+                                      ],
+                                    },
+                                    s.id,
+                                    !0,
+                                    {
+                                      fileName:
+                                        "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                      lineNumber: 666,
+                                      columnNumber: 19,
+                                    },
+                                    this,
+                                  ),
+                                ),
+                        },
+                        void 0,
+                        !1,
+                        {
+                          fileName:
+                            "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                          lineNumber: 649,
+                          columnNumber: 13,
+                        },
+                        this,
+                      ),
+                    },
+                    void 0,
+                    !1,
+                    {
+                      fileName:
+                        "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                      lineNumber: 648,
+                      columnNumber: 11,
+                    },
+                    this,
+                  ),
+                  e.jsxDEV(
+                    Z,
+                    {
+                      value: "import",
+                      className: "pt-4",
+                      children: e.jsxDEV(
+                        h,
+                        {
+                          className: "p-10 max-w-2xl mx-auto",
+                          children: e.jsxDEV(
+                            "div",
+                            {
+                              className:
+                                "flex flex-col items-center text-center",
+                              children: [
+                                e.jsxDEV(
+                                  "div",
+                                  {
+                                    className:
+                                      "h-16 w-16 bg-primary/10 rounded-full flex items-center justify-center mb-6",
+                                    children: e.jsxDEV(
+                                      we,
+                                      { className: "h-8 w-8 text-primary" },
+                                      void 0,
+                                      !1,
+                                      {
+                                        fileName:
+                                          "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                        lineNumber: 709,
+                                        columnNumber: 19,
+                                      },
+                                      this,
+                                    ),
+                                  },
+                                  void 0,
+                                  !1,
+                                  {
+                                    fileName:
+                                      "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                    lineNumber: 708,
+                                    columnNumber: 17,
+                                  },
+                                  this,
+                                ),
+                                e.jsxDEV(
+                                  "h3",
+                                  {
+                                    className: "text-xl font-bold mb-2",
+                                    children: "Import Your Fan Base",
+                                  },
+                                  void 0,
+                                  !1,
+                                  {
+                                    fileName:
+                                      "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                    lineNumber: 711,
+                                    columnNumber: 17,
+                                  },
+                                  this,
+                                ),
+                                e.jsxDEV(
+                                  "p",
+                                  {
+                                    className: "text-muted-foreground mb-8",
+                                    children:
+                                      "Already have a list of fans from Mailchimp, Bandcamp, or your website? Upload a CSV file to import them all at once.",
+                                  },
+                                  void 0,
+                                  !1,
+                                  {
+                                    fileName:
+                                      "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                    lineNumber: 712,
+                                    columnNumber: 17,
+                                  },
+                                  this,
+                                ),
+                                e.jsxDEV(
+                                  "div",
+                                  {
+                                    className: "w-full max-w-sm space-y-4",
+                                    children: [
+                                      e.jsxDEV(
+                                        "div",
+                                        {
+                                          className: `relative border-2 border-dashed rounded-xl p-8 transition-colors ${N ? "border-primary/50 bg-primary/5" : "border-muted-foreground/20 hover:border-primary/30"}`,
+                                          children: [
+                                            e.jsxDEV(
+                                              "input",
+                                              {
+                                                type: "file",
+                                                accept: ".csv",
+                                                className:
+                                                  "absolute inset-0 w-full h-full opacity-0 cursor-pointer",
+                                                onChange: (s) =>
+                                                  ee(
+                                                    s.target.files?.[0] || null,
+                                                  ),
+                                              },
+                                              void 0,
+                                              !1,
+                                              {
+                                                fileName:
+                                                  "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                                lineNumber: 718,
+                                                columnNumber: 21,
+                                              },
+                                              this,
+                                            ),
+                                            N
+                                              ? e.jsxDEV(
+                                                  "div",
+                                                  {
+                                                    className: "text-center",
+                                                    children: [
+                                                      e.jsxDEV(
+                                                        "p",
+                                                        {
+                                                          className:
+                                                            "font-medium text-primary",
+                                                          children: N.name,
+                                                        },
+                                                        void 0,
+                                                        !1,
+                                                        {
+                                                          fileName:
+                                                            "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                                          lineNumber: 726,
+                                                          columnNumber: 25,
+                                                        },
+                                                        this,
+                                                      ),
+                                                      e.jsxDEV(
+                                                        "p",
+                                                        {
+                                                          className:
+                                                            "text-xs text-muted-foreground mt-1",
+                                                          children: [
+                                                            (
+                                                              N.size / 1024
+                                                            ).toFixed(1),
+                                                            " KB",
+                                                          ],
+                                                        },
+                                                        void 0,
+                                                        !0,
+                                                        {
+                                                          fileName:
+                                                            "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                                          lineNumber: 727,
+                                                          columnNumber: 25,
+                                                        },
+                                                        this,
+                                                      ),
+                                                    ],
+                                                  },
+                                                  void 0,
+                                                  !0,
+                                                  {
+                                                    fileName:
+                                                      "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                                    lineNumber: 725,
+                                                    columnNumber: 23,
+                                                  },
+                                                  this,
+                                                )
+                                              : e.jsxDEV(
+                                                  "div",
+                                                  {
+                                                    className: "text-center",
+                                                    children: [
+                                                      e.jsxDEV(
+                                                        fe,
+                                                        {
+                                                          className:
+                                                            "h-8 w-8 mx-auto mb-2 text-muted-foreground/50",
+                                                        },
+                                                        void 0,
+                                                        !1,
+                                                        {
+                                                          fileName:
+                                                            "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                                          lineNumber: 731,
+                                                          columnNumber: 25,
+                                                        },
+                                                        this,
+                                                      ),
+                                                      e.jsxDEV(
+                                                        "p",
+                                                        {
+                                                          className:
+                                                            "text-sm font-medium",
+                                                          children:
+                                                            "Click or drag to select CSV",
+                                                        },
+                                                        void 0,
+                                                        !1,
+                                                        {
+                                                          fileName:
+                                                            "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                                          lineNumber: 732,
+                                                          columnNumber: 25,
+                                                        },
+                                                        this,
+                                                      ),
+                                                      e.jsxDEV(
+                                                        "p",
+                                                        {
+                                                          className:
+                                                            "text-xs text-muted-foreground mt-1",
+                                                          children:
+                                                            "Max 1,000 fans per import",
+                                                        },
+                                                        void 0,
+                                                        !1,
+                                                        {
+                                                          fileName:
+                                                            "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                                          lineNumber: 733,
+                                                          columnNumber: 25,
+                                                        },
+                                                        this,
+                                                      ),
+                                                    ],
+                                                  },
+                                                  void 0,
+                                                  !0,
+                                                  {
+                                                    fileName:
+                                                      "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                                    lineNumber: 730,
+                                                    columnNumber: 23,
+                                                  },
+                                                  this,
+                                                ),
+                                          ],
+                                        },
+                                        void 0,
+                                        !0,
+                                        {
+                                          fileName:
+                                            "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                          lineNumber: 717,
+                                          columnNumber: 19,
+                                        },
+                                        this,
+                                      ),
+                                      e.jsxDEV(
+                                        a,
+                                        {
+                                          className: "w-full",
+                                          onClick: Ae,
+                                          disabled: !N || Ne,
+                                          children: Ne
+                                            ? "Importing..."
+                                            : `Import${N ? " Fans" : " CSV"}`,
+                                        },
+                                        void 0,
+                                        !1,
+                                        {
+                                          fileName:
+                                            "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                          lineNumber: 737,
+                                          columnNumber: 19,
+                                        },
+                                        this,
+                                      ),
+                                      N &&
+                                        e.jsxDEV(
+                                          a,
+                                          {
+                                            variant: "ghost",
+                                            size: "sm",
+                                            className: "w-full",
+                                            onClick: () => ee(null),
+                                            children: "Clear selection",
+                                          },
+                                          void 0,
+                                          !1,
+                                          {
+                                            fileName:
+                                              "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                            lineNumber: 745,
+                                            columnNumber: 21,
+                                          },
+                                          this,
+                                        ),
+                                    ],
+                                  },
+                                  void 0,
+                                  !0,
+                                  {
+                                    fileName:
+                                      "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                    lineNumber: 716,
+                                    columnNumber: 17,
+                                  },
+                                  this,
+                                ),
+                                e.jsxDEV(
+                                  "div",
+                                  {
+                                    className:
+                                      "mt-10 pt-8 border-t w-full text-left",
+                                    children: [
+                                      e.jsxDEV(
+                                        "h4",
+                                        {
+                                          className:
+                                            "font-semibold mb-4 flex items-center gap-2",
+                                          children: [
+                                            e.jsxDEV(
+                                              Qe,
+                                              { className: "h-4 w-4" },
+                                              void 0,
+                                              !1,
+                                              {
+                                                fileName:
+                                                  "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                                lineNumber: 752,
+                                                columnNumber: 21,
+                                              },
+                                              this,
+                                            ),
+                                            "CSV Format Requirements",
+                                          ],
+                                        },
+                                        void 0,
+                                        !0,
+                                        {
+                                          fileName:
+                                            "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                          lineNumber: 751,
+                                          columnNumber: 19,
+                                        },
+                                        this,
+                                      ),
+                                      e.jsxDEV(
+                                        "ul",
+                                        {
+                                          className:
+                                            "text-sm text-muted-foreground space-y-2 list-disc list-inside",
+                                          children: [
+                                            e.jsxDEV(
+                                              "li",
+                                              {
+                                                children: [
+                                                  "Must include an ",
+                                                  e.jsxDEV(
+                                                    "code",
+                                                    {
+                                                      className:
+                                                        "bg-muted px-1 rounded",
+                                                      children: "email",
+                                                    },
+                                                    void 0,
+                                                    !1,
+                                                    {
+                                                      fileName:
+                                                        "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                                      lineNumber: 756,
+                                                      columnNumber: 41,
+                                                    },
+                                                    this,
+                                                  ),
+                                                  " column (required)",
+                                                ],
+                                              },
+                                              void 0,
+                                              !0,
+                                              {
+                                                fileName:
+                                                  "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                                lineNumber: 756,
+                                                columnNumber: 21,
+                                              },
+                                              this,
+                                            ),
+                                            e.jsxDEV(
+                                              "li",
+                                              {
+                                                children: [
+                                                  "Optional: ",
+                                                  e.jsxDEV(
+                                                    "code",
+                                                    {
+                                                      className:
+                                                        "bg-muted px-1 rounded",
+                                                      children: "name",
+                                                    },
+                                                    void 0,
+                                                    !1,
+                                                    {
+                                                      fileName:
+                                                        "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                                      lineNumber: 757,
+                                                      columnNumber: 35,
+                                                    },
+                                                    this,
+                                                  ),
+                                                  ", ",
+                                                  e.jsxDEV(
+                                                    "code",
+                                                    {
+                                                      className:
+                                                        "bg-muted px-1 rounded",
+                                                      children: "phone",
+                                                    },
+                                                    void 0,
+                                                    !1,
+                                                    {
+                                                      fileName:
+                                                        "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                                      lineNumber: 757,
+                                                      columnNumber: 88,
+                                                    },
+                                                    this,
+                                                  ),
+                                                  ", ",
+                                                  e.jsxDEV(
+                                                    "code",
+                                                    {
+                                                      className:
+                                                        "bg-muted px-1 rounded",
+                                                      children: "tags",
+                                                    },
+                                                    void 0,
+                                                    !1,
+                                                    {
+                                                      fileName:
+                                                        "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                                      lineNumber: 757,
+                                                      columnNumber: 142,
+                                                    },
+                                                    this,
+                                                  ),
+                                                ],
+                                              },
+                                              void 0,
+                                              !0,
+                                              {
+                                                fileName:
+                                                  "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                                lineNumber: 757,
+                                                columnNumber: 21,
+                                              },
+                                              this,
+                                            ),
+                                            e.jsxDEV(
+                                              "li",
+                                              {
+                                                children: [
+                                                  "Multiple tags: pipe-separated inside the tags column (e.g. ",
+                                                  e.jsxDEV(
+                                                    "code",
+                                                    {
+                                                      className:
+                                                        "bg-muted px-1 rounded",
+                                                      children:
+                                                        "tour|vip|merch",
+                                                    },
+                                                    void 0,
+                                                    !1,
+                                                    {
+                                                      fileName:
+                                                        "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                                      lineNumber: 758,
+                                                      columnNumber: 84,
+                                                    },
+                                                    this,
+                                                  ),
+                                                  ")",
+                                                ],
+                                              },
+                                              void 0,
+                                              !0,
+                                              {
+                                                fileName:
+                                                  "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                                lineNumber: 758,
+                                                columnNumber: 21,
+                                              },
+                                              this,
+                                            ),
+                                            e.jsxDEV(
+                                              "li",
+                                              {
+                                                children:
+                                                  "First row must be the header row",
+                                              },
+                                              void 0,
+                                              !1,
+                                              {
+                                                fileName:
+                                                  "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                                lineNumber: 759,
+                                                columnNumber: 21,
+                                              },
+                                              this,
+                                            ),
+                                          ],
+                                        },
+                                        void 0,
+                                        !0,
+                                        {
+                                          fileName:
+                                            "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                          lineNumber: 755,
+                                          columnNumber: 19,
+                                        },
+                                        this,
+                                      ),
+                                    ],
+                                  },
+                                  void 0,
+                                  !0,
+                                  {
+                                    fileName:
+                                      "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                    lineNumber: 750,
+                                    columnNumber: 17,
+                                  },
+                                  this,
+                                ),
+                              ],
+                            },
+                            void 0,
+                            !0,
+                            {
+                              fileName:
+                                "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                              lineNumber: 707,
+                              columnNumber: 15,
+                            },
+                            this,
+                          ),
+                        },
+                        void 0,
+                        !1,
+                        {
+                          fileName:
+                            "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                          lineNumber: 706,
+                          columnNumber: 13,
+                        },
+                        this,
+                      ),
+                    },
+                    void 0,
+                    !1,
+                    {
+                      fileName:
+                        "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                      lineNumber: 705,
+                      columnNumber: 11,
+                    },
+                    this,
+                  ),
+                ],
+              },
+              void 0,
+              !0,
+              {
+                fileName: "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                lineNumber: 458,
+                columnNumber: 9,
+              },
+              this,
+            ),
+            e.jsxDEV(
+              ms,
+              {
+                open: !!n,
+                onOpenChange: (s) => !s && v(null),
+                children: e.jsxDEV(
+                  us,
+                  {
+                    className: "sm:max-w-md overflow-y-auto",
+                    children:
+                      n &&
+                      e.jsxDEV(
+                        e.Fragment,
+                        {
+                          children: [
+                            e.jsxDEV(
+                              cs,
+                              {
+                                className: "pb-6 border-b",
+                                children: [
+                                  e.jsxDEV(
+                                    "div",
+                                    {
+                                      className:
+                                        "flex justify-between items-start",
+                                      children: [
+                                        e.jsxDEV(
+                                          "div",
+                                          {
+                                            className:
+                                              "h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-2xl mb-4",
+                                            children:
+                                              n.name?.charAt(0) ||
+                                              n.email.charAt(0).toUpperCase(),
+                                          },
+                                          void 0,
+                                          !1,
+                                          {
+                                            fileName:
+                                              "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                            lineNumber: 774,
+                                            columnNumber: 21,
+                                          },
+                                          this,
+                                        ),
+                                        e.jsxDEV(
+                                          I,
+                                          {
+                                            variant: n.isVip
+                                              ? "default"
+                                              : "outline",
+                                            className: n.isVip
+                                              ? "bg-amber-500 hover:bg-amber-600"
+                                              : "",
+                                            children: n.isVip
+                                              ? "VIP Fan"
+                                              : "Standard",
+                                          },
+                                          void 0,
+                                          !1,
+                                          {
+                                            fileName:
+                                              "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                            lineNumber: 777,
+                                            columnNumber: 21,
+                                          },
+                                          this,
+                                        ),
+                                      ],
+                                    },
+                                    void 0,
+                                    !0,
+                                    {
+                                      fileName:
+                                        "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                      lineNumber: 773,
+                                      columnNumber: 19,
+                                    },
+                                    this,
+                                  ),
+                                  e.jsxDEV(
+                                    os,
+                                    {
+                                      className: "text-2xl",
+                                      children: n.name || "Anonymous Fan",
+                                    },
+                                    void 0,
+                                    !1,
+                                    {
+                                      fileName:
+                                        "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                      lineNumber: 781,
+                                      columnNumber: 19,
+                                    },
+                                    this,
+                                  ),
+                                  e.jsxDEV(
+                                    bs,
+                                    { children: n.email },
+                                    void 0,
+                                    !1,
+                                    {
+                                      fileName:
+                                        "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                      lineNumber: 782,
+                                      columnNumber: 19,
+                                    },
+                                    this,
+                                  ),
+                                ],
+                              },
+                              void 0,
+                              !0,
+                              {
+                                fileName:
+                                  "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                lineNumber: 772,
+                                columnNumber: 17,
+                              },
+                              this,
+                            ),
+                            e.jsxDEV(
+                              "div",
+                              {
+                                className: "py-6 space-y-8",
+                                children: [
+                                  e.jsxDEV(
+                                    "div",
+                                    {
+                                      className: "grid grid-cols-2 gap-4",
+                                      children: [
+                                        e.jsxDEV(
+                                          "div",
+                                          {
+                                            className:
+                                              "p-4 bg-muted/50 rounded-lg",
+                                            children: [
+                                              e.jsxDEV(
+                                                "p",
+                                                {
+                                                  className:
+                                                    "text-xs text-muted-foreground uppercase font-semibold mb-1",
+                                                  children: "Joined",
+                                                },
+                                                void 0,
+                                                !1,
+                                                {
+                                                  fileName:
+                                                    "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                                  lineNumber: 788,
+                                                  columnNumber: 23,
+                                                },
+                                                this,
+                                              ),
+                                              e.jsxDEV(
+                                                "p",
+                                                {
+                                                  className: "font-medium",
+                                                  children: V(
+                                                    new Date(n.joinedAt),
+                                                    "MMM d, yyyy",
+                                                  ),
+                                                },
+                                                void 0,
+                                                !1,
+                                                {
+                                                  fileName:
+                                                    "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                                  lineNumber: 789,
+                                                  columnNumber: 23,
+                                                },
+                                                this,
+                                              ),
+                                            ],
+                                          },
+                                          void 0,
+                                          !0,
+                                          {
+                                            fileName:
+                                              "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                            lineNumber: 787,
+                                            columnNumber: 21,
+                                          },
+                                          this,
+                                        ),
+                                        e.jsxDEV(
+                                          "div",
+                                          {
+                                            className:
+                                              "p-4 bg-muted/50 rounded-lg",
+                                            children: [
+                                              e.jsxDEV(
+                                                "p",
+                                                {
+                                                  className:
+                                                    "text-xs text-muted-foreground uppercase font-semibold mb-1",
+                                                  children: "Total Spent",
+                                                },
+                                                void 0,
+                                                !1,
+                                                {
+                                                  fileName:
+                                                    "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                                  lineNumber: 792,
+                                                  columnNumber: 23,
+                                                },
+                                                this,
+                                              ),
+                                              e.jsxDEV(
+                                                "p",
+                                                {
+                                                  className: "font-medium",
+                                                  children: [
+                                                    "$",
+                                                    n.totalSpent.toLocaleString(),
+                                                  ],
+                                                },
+                                                void 0,
+                                                !0,
+                                                {
+                                                  fileName:
+                                                    "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                                  lineNumber: 793,
+                                                  columnNumber: 23,
+                                                },
+                                                this,
+                                              ),
+                                            ],
+                                          },
+                                          void 0,
+                                          !0,
+                                          {
+                                            fileName:
+                                              "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                            lineNumber: 791,
+                                            columnNumber: 21,
+                                          },
+                                          this,
+                                        ),
+                                      ],
+                                    },
+                                    void 0,
+                                    !0,
+                                    {
+                                      fileName:
+                                        "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                      lineNumber: 786,
+                                      columnNumber: 19,
+                                    },
+                                    this,
+                                  ),
+                                  e.jsxDEV(
+                                    "div",
+                                    {
+                                      className: "space-y-3",
+                                      children: [
+                                        e.jsxDEV(
+                                          "h4",
+                                          {
+                                            className:
+                                              "font-semibold flex items-center gap-2",
+                                            children: [
+                                              e.jsxDEV(
+                                                me,
+                                                { className: "h-4 w-4" },
+                                                void 0,
+                                                !1,
+                                                {
+                                                  fileName:
+                                                    "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                                  lineNumber: 799,
+                                                  columnNumber: 23,
+                                                },
+                                                this,
+                                              ),
+                                              "Tags",
+                                            ],
+                                          },
+                                          void 0,
+                                          !0,
+                                          {
+                                            fileName:
+                                              "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                            lineNumber: 798,
+                                            columnNumber: 21,
+                                          },
+                                          this,
+                                        ),
+                                        e.jsxDEV(
+                                          "div",
+                                          {
+                                            className: "flex flex-wrap gap-2",
+                                            children: [
+                                              n.tags && n.tags.length > 0
+                                                ? n.tags.map((s) =>
+                                                    e.jsxDEV(
+                                                      I,
+                                                      {
+                                                        variant: "secondary",
+                                                        children: s,
+                                                      },
+                                                      s,
+                                                      !1,
+                                                      {
+                                                        fileName:
+                                                          "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                                        lineNumber: 805,
+                                                        columnNumber: 27,
+                                                      },
+                                                      this,
+                                                    ),
+                                                  )
+                                                : e.jsxDEV(
+                                                    "p",
+                                                    {
+                                                      className:
+                                                        "text-sm text-muted-foreground",
+                                                      children:
+                                                        "No tags assigned.",
+                                                    },
+                                                    void 0,
+                                                    !1,
+                                                    {
+                                                      fileName:
+                                                        "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                                      lineNumber: 808,
+                                                      columnNumber: 25,
+                                                    },
+                                                    this,
+                                                  ),
+                                              e.jsxDEV(
+                                                a,
+                                                {
+                                                  variant: "outline",
+                                                  size: "icon",
+                                                  className:
+                                                    "h-6 w-6 rounded-full",
+                                                  onClick: () => {
+                                                    (k(n),
+                                                      K(
+                                                        (n?.tags || []).join(
+                                                          ", ",
+                                                        ),
+                                                      ));
+                                                  },
+                                                  children: e.jsxDEV(
+                                                    we,
+                                                    { className: "h-3 w-3" },
+                                                    void 0,
+                                                    !1,
+                                                    {
+                                                      fileName:
+                                                        "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                                      lineNumber: 816,
+                                                      columnNumber: 25,
+                                                    },
+                                                    this,
+                                                  ),
+                                                },
+                                                void 0,
+                                                !1,
+                                                {
+                                                  fileName:
+                                                    "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                                  lineNumber: 810,
+                                                  columnNumber: 23,
+                                                },
+                                                this,
+                                              ),
+                                            ],
+                                          },
+                                          void 0,
+                                          !0,
+                                          {
+                                            fileName:
+                                              "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                            lineNumber: 802,
+                                            columnNumber: 21,
+                                          },
+                                          this,
+                                        ),
+                                      ],
+                                    },
+                                    void 0,
+                                    !0,
+                                    {
+                                      fileName:
+                                        "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                      lineNumber: 797,
+                                      columnNumber: 19,
+                                    },
+                                    this,
+                                  ),
+                                  e.jsxDEV(
+                                    "div",
+                                    {
+                                      className: "space-y-3",
+                                      children: [
+                                        e.jsxDEV(
+                                          "h4",
+                                          {
+                                            className: "font-semibold",
+                                            children: "Fan Notes",
+                                          },
+                                          void 0,
+                                          !1,
+                                          {
+                                            fileName:
+                                              "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                            lineNumber: 822,
+                                            columnNumber: 21,
+                                          },
+                                          this,
+                                        ),
+                                        e.jsxDEV(
+                                          "div",
+                                          {
+                                            className:
+                                              "p-4 bg-muted/30 rounded-lg text-sm border italic text-muted-foreground",
+                                            children:
+                                              n.notes ||
+                                              "No notes available for this fan.",
+                                          },
+                                          void 0,
+                                          !1,
+                                          {
+                                            fileName:
+                                              "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                            lineNumber: 823,
+                                            columnNumber: 21,
+                                          },
+                                          this,
+                                        ),
+                                      ],
+                                    },
+                                    void 0,
+                                    !0,
+                                    {
+                                      fileName:
+                                        "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                      lineNumber: 821,
+                                      columnNumber: 19,
+                                    },
+                                    this,
+                                  ),
+                                  e.jsxDEV(
+                                    "div",
+                                    {
+                                      className: "pt-8 border-t space-y-3",
+                                      children: [
+                                        e.jsxDEV(
+                                          a,
+                                          {
+                                            variant: "outline",
+                                            className: "w-full",
+                                            onClick: () => {
+                                              ($(n),
+                                                H({
+                                                  name: n.name || "",
+                                                  phone: n.phone || "",
+                                                  notes: n.notes || "",
+                                                  isVip: n.isVip,
+                                                }));
+                                            },
+                                            children: "Edit Profile",
+                                          },
+                                          void 0,
+                                          !1,
+                                          {
+                                            fileName:
+                                              "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                            lineNumber: 829,
+                                            columnNumber: 21,
+                                          },
+                                          this,
+                                        ),
+                                        e.jsxDEV(
+                                          a,
+                                          {
+                                            variant: n.isVip
+                                              ? "secondary"
+                                              : "outline",
+                                            className: `w-full ${n.isVip ? "border-amber-500/50 text-amber-600" : ""}`,
+                                            onClick: () =>
+                                              y.mutate({
+                                                id: n.id,
+                                                data: { isVip: !n.isVip },
+                                              }),
+                                            disabled: y.isPending,
+                                            children: [
+                                              e.jsxDEV(
+                                                M,
+                                                {
+                                                  className: `h-4 w-4 mr-2 ${n.isVip ? "fill-amber-500 text-amber-500" : ""}`,
+                                                },
+                                                void 0,
+                                                !1,
+                                                {
+                                                  fileName:
+                                                    "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                                  lineNumber: 845,
+                                                  columnNumber: 23,
+                                                },
+                                                this,
+                                              ),
+                                              n.isVip
+                                                ? "Remove VIP Status"
+                                                : "Mark as VIP",
+                                            ],
+                                          },
+                                          void 0,
+                                          !0,
+                                          {
+                                            fileName:
+                                              "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                            lineNumber: 839,
+                                            columnNumber: 21,
+                                          },
+                                          this,
+                                        ),
+                                        e.jsxDEV(
+                                          a,
+                                          {
+                                            variant: "destructive",
+                                            className: "w-full",
+                                            onClick: () => O(n.id),
+                                            children: [
+                                              e.jsxDEV(
+                                                Ye,
+                                                { className: "h-4 w-4 mr-2" },
+                                                void 0,
+                                                !1,
+                                                {
+                                                  fileName:
+                                                    "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                                  lineNumber: 853,
+                                                  columnNumber: 23,
+                                                },
+                                                this,
+                                              ),
+                                              "Delete Fan",
+                                            ],
+                                          },
+                                          void 0,
+                                          !0,
+                                          {
+                                            fileName:
+                                              "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                            lineNumber: 848,
+                                            columnNumber: 21,
+                                          },
+                                          this,
+                                        ),
+                                      ],
+                                    },
+                                    void 0,
+                                    !0,
+                                    {
+                                      fileName:
+                                        "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                      lineNumber: 828,
+                                      columnNumber: 19,
+                                    },
+                                    this,
+                                  ),
+                                ],
+                              },
+                              void 0,
+                              !0,
+                              {
+                                fileName:
+                                  "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                lineNumber: 785,
+                                columnNumber: 17,
+                              },
+                              this,
+                            ),
+                          ],
+                        },
+                        void 0,
+                        !0,
+                        {
+                          fileName:
+                            "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                          lineNumber: 771,
+                          columnNumber: 15,
+                        },
+                        this,
+                      ),
+                  },
+                  void 0,
+                  !1,
+                  {
+                    fileName:
+                      "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                    lineNumber: 769,
+                    columnNumber: 11,
+                  },
+                  this,
+                ),
+              },
+              void 0,
+              !1,
+              {
+                fileName: "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                lineNumber: 768,
+                columnNumber: 9,
+              },
+              this,
+            ),
+            e.jsxDEV(
+              z,
+              {
+                open: !!L,
+                onOpenChange: (s) => !s && $(null),
+                children: e.jsxDEV(
+                  J,
+                  {
+                    className: "max-w-sm",
+                    children: [
+                      e.jsxDEV(
+                        W,
+                        {
+                          children: [
+                            e.jsxDEV(
+                              G,
+                              { children: "Edit Fan Profile" },
+                              void 0,
+                              !1,
+                              {
+                                fileName:
+                                  "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                lineNumber: 867,
+                                columnNumber: 15,
+                              },
+                              this,
+                            ),
+                            e.jsxDEV(
+                              X,
+                              { children: L?.email },
+                              void 0,
+                              !1,
+                              {
+                                fileName:
+                                  "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                lineNumber: 868,
+                                columnNumber: 15,
+                              },
+                              this,
+                            ),
+                          ],
+                        },
+                        void 0,
+                        !0,
+                        {
+                          fileName:
+                            "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                          lineNumber: 866,
+                          columnNumber: 13,
+                        },
+                        this,
+                      ),
+                      e.jsxDEV(
+                        "div",
+                        {
+                          className: "space-y-3 py-2",
+                          children: [
+                            e.jsxDEV(
+                              "div",
+                              {
+                                className: "space-y-1",
+                                children: [
+                                  e.jsxDEV(
+                                    t,
+                                    {
+                                      htmlFor: "edit-name",
+                                      children: "Full Name",
+                                    },
+                                    void 0,
+                                    !1,
+                                    {
+                                      fileName:
+                                        "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                      lineNumber: 872,
+                                      columnNumber: 17,
+                                    },
+                                    this,
+                                  ),
+                                  e.jsxDEV(
+                                    p,
+                                    {
+                                      id: "edit-name",
+                                      value: E.name,
+                                      onChange: (s) =>
+                                        H((r) => ({
+                                          ...r,
+                                          name: s.target.value,
+                                        })),
+                                      placeholder: "John Doe",
+                                    },
+                                    void 0,
+                                    !1,
+                                    {
+                                      fileName:
+                                        "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                      lineNumber: 873,
+                                      columnNumber: 17,
+                                    },
+                                    this,
+                                  ),
+                                ],
+                              },
+                              void 0,
+                              !0,
+                              {
+                                fileName:
+                                  "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                lineNumber: 871,
+                                columnNumber: 15,
+                              },
+                              this,
+                            ),
+                            e.jsxDEV(
+                              "div",
+                              {
+                                className: "space-y-1",
+                                children: [
+                                  e.jsxDEV(
+                                    t,
+                                    {
+                                      htmlFor: "edit-phone",
+                                      children: "Phone",
+                                    },
+                                    void 0,
+                                    !1,
+                                    {
+                                      fileName:
+                                        "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                      lineNumber: 876,
+                                      columnNumber: 17,
+                                    },
+                                    this,
+                                  ),
+                                  e.jsxDEV(
+                                    p,
+                                    {
+                                      id: "edit-phone",
+                                      value: E.phone,
+                                      onChange: (s) =>
+                                        H((r) => ({
+                                          ...r,
+                                          phone: s.target.value,
+                                        })),
+                                      placeholder: "+1 (555) 000-0000",
+                                    },
+                                    void 0,
+                                    !1,
+                                    {
+                                      fileName:
+                                        "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                      lineNumber: 877,
+                                      columnNumber: 17,
+                                    },
+                                    this,
+                                  ),
+                                ],
+                              },
+                              void 0,
+                              !0,
+                              {
+                                fileName:
+                                  "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                lineNumber: 875,
+                                columnNumber: 15,
+                              },
+                              this,
+                            ),
+                            e.jsxDEV(
+                              "div",
+                              {
+                                className: "space-y-1",
+                                children: [
+                                  e.jsxDEV(
+                                    t,
+                                    {
+                                      htmlFor: "edit-notes",
+                                      children: "Notes",
+                                    },
+                                    void 0,
+                                    !1,
+                                    {
+                                      fileName:
+                                        "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                      lineNumber: 880,
+                                      columnNumber: 17,
+                                    },
+                                    this,
+                                  ),
+                                  e.jsxDEV(
+                                    ue,
+                                    {
+                                      id: "edit-notes",
+                                      rows: 3,
+                                      value: E.notes,
+                                      onChange: (s) =>
+                                        H((r) => ({
+                                          ...r,
+                                          notes: s.target.value,
+                                        })),
+                                      placeholder: "Notes about this fan...",
+                                    },
+                                    void 0,
+                                    !1,
+                                    {
+                                      fileName:
+                                        "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                      lineNumber: 881,
+                                      columnNumber: 17,
+                                    },
+                                    this,
+                                  ),
+                                ],
+                              },
+                              void 0,
+                              !0,
+                              {
+                                fileName:
+                                  "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                lineNumber: 879,
+                                columnNumber: 15,
+                              },
+                              this,
+                            ),
+                            e.jsxDEV(
+                              "div",
+                              {
+                                className: "flex items-center gap-2 pt-1",
+                                children: [
+                                  e.jsxDEV(
+                                    je,
+                                    {
+                                      id: "edit-vip",
+                                      checked: E.isVip,
+                                      onCheckedChange: (s) =>
+                                        H((r) => ({ ...r, isVip: !!s })),
+                                    },
+                                    void 0,
+                                    !1,
+                                    {
+                                      fileName:
+                                        "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                      lineNumber: 884,
+                                      columnNumber: 17,
+                                    },
+                                    this,
+                                  ),
+                                  e.jsxDEV(
+                                    t,
+                                    {
+                                      htmlFor: "edit-vip",
+                                      children: "VIP Fan",
+                                    },
+                                    void 0,
+                                    !1,
+                                    {
+                                      fileName:
+                                        "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                      lineNumber: 885,
+                                      columnNumber: 17,
+                                    },
+                                    this,
+                                  ),
+                                ],
+                              },
+                              void 0,
+                              !0,
+                              {
+                                fileName:
+                                  "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                lineNumber: 883,
+                                columnNumber: 15,
+                              },
+                              this,
+                            ),
+                          ],
+                        },
+                        void 0,
+                        !0,
+                        {
+                          fileName:
+                            "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                          lineNumber: 870,
+                          columnNumber: 13,
+                        },
+                        this,
+                      ),
+                      e.jsxDEV(
+                        ce,
+                        {
+                          children: [
+                            e.jsxDEV(
+                              a,
+                              {
+                                variant: "outline",
+                                onClick: () => $(null),
+                                children: "Cancel",
+                              },
+                              void 0,
+                              !1,
+                              {
+                                fileName:
+                                  "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                lineNumber: 889,
+                                columnNumber: 15,
+                              },
+                              this,
+                            ),
+                            e.jsxDEV(
+                              a,
+                              {
+                                onClick: () => {
+                                  L && y.mutate({ id: L.id, data: E });
+                                },
+                                disabled: y.isPending,
+                                children: y.isPending
+                                  ? "Saving..."
+                                  : "Save Changes",
+                              },
+                              void 0,
+                              !1,
+                              {
+                                fileName:
+                                  "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                lineNumber: 890,
+                                columnNumber: 15,
+                              },
+                              this,
+                            ),
+                          ],
+                        },
+                        void 0,
+                        !0,
+                        {
+                          fileName:
+                            "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                          lineNumber: 888,
+                          columnNumber: 13,
+                        },
+                        this,
+                      ),
+                    ],
+                  },
+                  void 0,
+                  !0,
+                  {
+                    fileName:
+                      "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                    lineNumber: 865,
+                    columnNumber: 11,
+                  },
+                  this,
+                ),
+              },
+              void 0,
+              !1,
+              {
+                fileName: "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                lineNumber: 864,
+                columnNumber: 9,
+              },
+              this,
+            ),
+            e.jsxDEV(
+              z,
+              {
+                open: !!F,
+                onOpenChange: (s) => !s && k(null),
+                children: e.jsxDEV(
+                  J,
+                  {
+                    className: "max-w-sm",
+                    children: [
+                      e.jsxDEV(
+                        W,
+                        {
+                          children: [
+                            e.jsxDEV(
+                              G,
+                              { children: "Edit Tags" },
+                              void 0,
+                              !1,
+                              {
+                                fileName:
+                                  "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                lineNumber: 907,
+                                columnNumber: 15,
+                              },
+                              this,
+                            ),
+                            e.jsxDEV(
+                              X,
+                              {
+                                children: [
+                                  "Add or remove tags for ",
+                                  F?.name || F?.email,
+                                ],
+                              },
+                              void 0,
+                              !0,
+                              {
+                                fileName:
+                                  "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                lineNumber: 908,
+                                columnNumber: 15,
+                              },
+                              this,
+                            ),
+                          ],
+                        },
+                        void 0,
+                        !0,
+                        {
+                          fileName:
+                            "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                          lineNumber: 906,
+                          columnNumber: 13,
+                        },
+                        this,
+                      ),
+                      e.jsxDEV(
+                        "div",
+                        {
+                          className: "space-y-3 py-2",
+                          children: [
+                            e.jsxDEV(
+                              t,
+                              {
+                                htmlFor: "tags-input",
+                                children: "Tags (comma-separated)",
+                              },
+                              void 0,
+                              !1,
+                              {
+                                fileName:
+                                  "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                lineNumber: 913,
+                                columnNumber: 15,
+                              },
+                              this,
+                            ),
+                            e.jsxDEV(
+                              p,
+                              {
+                                id: "tags-input",
+                                placeholder:
+                                  "tour, vip, merch-buyer, newsletter",
+                                value: de,
+                                onChange: (s) => K(s.target.value),
+                              },
+                              void 0,
+                              !1,
+                              {
+                                fileName:
+                                  "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                lineNumber: 914,
+                                columnNumber: 15,
+                              },
+                              this,
+                            ),
+                            e.jsxDEV(
+                              "p",
+                              {
+                                className: "text-xs text-muted-foreground",
+                                children: [
+                                  "Current: ",
+                                  F?.tags?.join(", ") || "none",
+                                ],
+                              },
+                              void 0,
+                              !0,
+                              {
+                                fileName:
+                                  "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                lineNumber: 920,
+                                columnNumber: 15,
+                              },
+                              this,
+                            ),
+                          ],
+                        },
+                        void 0,
+                        !0,
+                        {
+                          fileName:
+                            "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                          lineNumber: 912,
+                          columnNumber: 13,
+                        },
+                        this,
+                      ),
+                      e.jsxDEV(
+                        ce,
+                        {
+                          children: [
+                            e.jsxDEV(
+                              a,
+                              {
+                                variant: "outline",
+                                onClick: () => k(null),
+                                children: "Cancel",
+                              },
+                              void 0,
+                              !1,
+                              {
+                                fileName:
+                                  "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                lineNumber: 923,
+                                columnNumber: 15,
+                              },
+                              this,
+                            ),
+                            e.jsxDEV(
+                              a,
+                              {
+                                onClick: () => {
+                                  if (!F) return;
+                                  const s = de
+                                    .split(",")
+                                    .map((r) => r.trim())
+                                    .filter(Boolean);
+                                  ne.mutate({ id: F.id, tags: s });
+                                },
+                                disabled: ne.isPending,
+                                children: [
+                                  e.jsxDEV(
+                                    me,
+                                    { className: "h-4 w-4 mr-2" },
+                                    void 0,
+                                    !1,
+                                    {
+                                      fileName:
+                                        "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                      lineNumber: 932,
+                                      columnNumber: 17,
+                                    },
+                                    this,
+                                  ),
+                                  ne.isPending ? "Saving..." : "Save Tags",
+                                ],
+                              },
+                              void 0,
+                              !0,
+                              {
+                                fileName:
+                                  "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                lineNumber: 924,
+                                columnNumber: 15,
+                              },
+                              this,
+                            ),
+                          ],
+                        },
+                        void 0,
+                        !0,
+                        {
+                          fileName:
+                            "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                          lineNumber: 922,
+                          columnNumber: 13,
+                        },
+                        this,
+                      ),
+                    ],
+                  },
+                  void 0,
+                  !0,
+                  {
+                    fileName:
+                      "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                    lineNumber: 905,
+                    columnNumber: 11,
+                  },
+                  this,
+                ),
+              },
+              void 0,
+              !1,
+              {
+                fileName: "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                lineNumber: 904,
+                columnNumber: 9,
+              },
+              this,
+            ),
+            e.jsxDEV(
+              es,
+              {
+                open: !!B,
+                onOpenChange: (s) => !s && O(null),
+                children: e.jsxDEV(
+                  ss,
+                  {
+                    children: [
+                      e.jsxDEV(
+                        rs,
+                        {
+                          children: [
+                            e.jsxDEV(
+                              ns,
+                              { children: "Remove Fan" },
+                              void 0,
+                              !1,
+                              {
+                                fileName:
+                                  "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                lineNumber: 942,
+                                columnNumber: 15,
+                              },
+                              this,
+                            ),
+                            e.jsxDEV(
+                              as,
+                              {
+                                children:
+                                  "Are you sure you want to remove this fan from your list? This action cannot be undone.",
+                              },
+                              void 0,
+                              !1,
+                              {
+                                fileName:
+                                  "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                lineNumber: 943,
+                                columnNumber: 15,
+                              },
+                              this,
+                            ),
+                          ],
+                        },
+                        void 0,
+                        !0,
+                        {
+                          fileName:
+                            "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                          lineNumber: 941,
+                          columnNumber: 13,
+                        },
+                        this,
+                      ),
+                      e.jsxDEV(
+                        is,
+                        {
+                          children: [
+                            e.jsxDEV(
+                              ls,
+                              { children: "Cancel" },
+                              void 0,
+                              !1,
+                              {
+                                fileName:
+                                  "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                lineNumber: 948,
+                                columnNumber: 15,
+                              },
+                              this,
+                            ),
+                            e.jsxDEV(
+                              ts,
+                              {
+                                className:
+                                  "bg-destructive text-destructive-foreground hover:bg-destructive/90",
+                                onClick: () => {
+                                  B &&
+                                    (Te.mutate(B),
+                                    O(null),
+                                    n?.id === B && v(null));
+                                },
+                                children: "Remove Fan",
+                              },
+                              void 0,
+                              !1,
+                              {
+                                fileName:
+                                  "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                                lineNumber: 949,
+                                columnNumber: 15,
+                              },
+                              this,
+                            ),
+                          ],
+                        },
+                        void 0,
+                        !0,
+                        {
+                          fileName:
+                            "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                          lineNumber: 947,
+                          columnNumber: 13,
+                        },
+                        this,
+                      ),
+                    ],
+                  },
+                  void 0,
+                  !0,
+                  {
+                    fileName:
+                      "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                    lineNumber: 940,
+                    columnNumber: 11,
+                  },
+                  this,
+                ),
+              },
+              void 0,
+              !1,
+              {
+                fileName: "/home/runner/workspace/client/src/pages/FanHub.tsx",
+                lineNumber: 939,
+                columnNumber: 9,
+              },
+              this,
+            ),
+          ],
+        },
+        void 0,
+        !0,
+        {
+          fileName: "/home/runner/workspace/client/src/pages/FanHub.tsx",
+          lineNumber: 296,
+          columnNumber: 7,
+        },
+        this,
+      ),
+    },
+    void 0,
+    !1,
+    {
+      fileName: "/home/runner/workspace/client/src/pages/FanHub.tsx",
+      lineNumber: 295,
+      columnNumber: 5,
+    },
+    this,
+  );
+}
+export { Hs as default };

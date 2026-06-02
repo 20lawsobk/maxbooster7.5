@@ -1,0 +1,10 @@
+[Unit]
+Description=DNS Anycast Health Check
+After=network.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/dns-healthcheck.sh
+
+[Install]
+WantedBy=multi-user.target
