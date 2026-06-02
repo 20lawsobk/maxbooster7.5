@@ -1,0 +1,206 @@
+import { r as s, f as e } from "./vendor-react-31oK5L0i.js";
+import { C as l, j as r } from "./studio-DOUfHW5v.js";
+import "./vendor-utils-C_Rs6IXs.js";
+import "./vendor-ui-Ds7F22HT.js";
+import "./vendor-state-Bxk_Qy8r.js";
+import "./vendor-animation-CFQslDag.js";
+const o = "max_booster_cookie_consent";
+function h() {
+  const [t, n] = s.useState(!1);
+  s.useEffect(() => {
+    localStorage.getItem(o) || n(!0);
+  }, []);
+  const i = () => {
+      (localStorage.setItem(o, "accepted"), n(!1));
+    },
+    a = () => {
+      (localStorage.setItem(o, "rejected"), n(!1));
+    };
+  return t
+    ? e.jsxDEV(
+        "div",
+        {
+          className: "fixed bottom-0 left-0 right-0 z-[60] p-3 sm:p-4",
+          style: {
+            paddingBottom: "max(0.75rem, env(safe-area-inset-bottom, 0px))",
+          },
+          role: "dialog",
+          "aria-labelledby": "cookie-banner-title",
+          "aria-describedby": "cookie-banner-description",
+          children: e.jsxDEV(
+            l,
+            {
+              className:
+                "max-w-3xl mx-auto bg-zinc-900/95 border-zinc-800 backdrop-blur-md shadow-2xl",
+              children: e.jsxDEV(
+                "div",
+                {
+                  className: "p-4 sm:p-5",
+                  children: e.jsxDEV(
+                    "div",
+                    {
+                      className: "flex flex-col gap-3",
+                      children: [
+                        e.jsxDEV(
+                          "h2",
+                          {
+                            id: "cookie-banner-title",
+                            className: "text-base font-semibold text-white",
+                            children: "Cookie & Privacy Notice",
+                          },
+                          void 0,
+                          !1,
+                          {
+                            fileName:
+                              "/home/runner/workspace/client/src/components/CookieConsentBanner.tsx",
+                            lineNumber: 40,
+                            columnNumber: 13,
+                          },
+                          this,
+                        ),
+                        e.jsxDEV(
+                          "p",
+                          {
+                            id: "cookie-banner-description",
+                            className: "text-sm text-zinc-300 leading-relaxed",
+                            children: [
+                              "We use essential cookies for authentication and session management.",
+                              " ",
+                              e.jsxDEV(
+                                "a",
+                                {
+                                  href: "/privacy",
+                                  className:
+                                    "text-blue-400 hover:text-blue-300 underline",
+                                  target: "_blank",
+                                  rel: "noopener noreferrer",
+                                  children: "Learn more",
+                                },
+                                void 0,
+                                !1,
+                                {
+                                  fileName:
+                                    "/home/runner/workspace/client/src/components/CookieConsentBanner.tsx",
+                                  lineNumber: 51,
+                                  columnNumber: 15,
+                                },
+                                this,
+                              ),
+                            ],
+                          },
+                          void 0,
+                          !0,
+                          {
+                            fileName:
+                              "/home/runner/workspace/client/src/components/CookieConsentBanner.tsx",
+                            lineNumber: 46,
+                            columnNumber: 13,
+                          },
+                          this,
+                        ),
+                        e.jsxDEV(
+                          "div",
+                          {
+                            className: "flex flex-wrap gap-2",
+                            children: [
+                              e.jsxDEV(
+                                r,
+                                {
+                                  onClick: i,
+                                  size: "sm",
+                                  className:
+                                    "bg-blue-600 hover:bg-blue-700 text-white",
+                                  "aria-label": "Accept cookies",
+                                  children: "Accept All",
+                                },
+                                void 0,
+                                !1,
+                                {
+                                  fileName:
+                                    "/home/runner/workspace/client/src/components/CookieConsentBanner.tsx",
+                                  lineNumber: 61,
+                                  columnNumber: 15,
+                                },
+                                this,
+                              ),
+                              e.jsxDEV(
+                                r,
+                                {
+                                  onClick: a,
+                                  variant: "outline",
+                                  size: "sm",
+                                  className:
+                                    "border-zinc-700 text-white hover:bg-zinc-800",
+                                  "aria-label": "Accept essential cookies only",
+                                  children: "Essential Only",
+                                },
+                                void 0,
+                                !1,
+                                {
+                                  fileName:
+                                    "/home/runner/workspace/client/src/components/CookieConsentBanner.tsx",
+                                  lineNumber: 69,
+                                  columnNumber: 15,
+                                },
+                                this,
+                              ),
+                            ],
+                          },
+                          void 0,
+                          !0,
+                          {
+                            fileName:
+                              "/home/runner/workspace/client/src/components/CookieConsentBanner.tsx",
+                            lineNumber: 60,
+                            columnNumber: 13,
+                          },
+                          this,
+                        ),
+                      ],
+                    },
+                    void 0,
+                    !0,
+                    {
+                      fileName:
+                        "/home/runner/workspace/client/src/components/CookieConsentBanner.tsx",
+                      lineNumber: 39,
+                      columnNumber: 11,
+                    },
+                    this,
+                  ),
+                },
+                void 0,
+                !1,
+                {
+                  fileName:
+                    "/home/runner/workspace/client/src/components/CookieConsentBanner.tsx",
+                  lineNumber: 38,
+                  columnNumber: 9,
+                },
+                this,
+              ),
+            },
+            void 0,
+            !1,
+            {
+              fileName:
+                "/home/runner/workspace/client/src/components/CookieConsentBanner.tsx",
+              lineNumber: 37,
+              columnNumber: 7,
+            },
+            this,
+          ),
+        },
+        void 0,
+        !1,
+        {
+          fileName:
+            "/home/runner/workspace/client/src/components/CookieConsentBanner.tsx",
+          lineNumber: 30,
+          columnNumber: 5,
+        },
+        this,
+      )
+    : null;
+}
+export { h as CookieConsentBanner };

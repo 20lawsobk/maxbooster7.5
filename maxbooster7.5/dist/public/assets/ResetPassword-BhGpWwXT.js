@@ -1,0 +1,1561 @@
+import {
+  ag as H,
+  r as t,
+  f as e,
+  cV as l,
+  bw as L,
+  cy as A,
+  b$ as k,
+  bI as J,
+  bL as q,
+  bK as T,
+  ac as K,
+  ao as z,
+} from "./vendor-react-31oK5L0i.js";
+import {
+  u as M,
+  C as P,
+  d as E,
+  f as R,
+  h as j,
+  j as c,
+  L as O,
+  I as $,
+} from "./studio-DOUfHW5v.js";
+import { A as W, f as X } from "./index-D5xLbTBZ.js";
+import { L as D } from "./Logo-DS4JhmIC.js";
+import "./vendor-utils-C_Rs6IXs.js";
+import "./vendor-ui-Ds7F22HT.js";
+import "./vendor-state-Bxk_Qy8r.js";
+import "./vendor-animation-CFQslDag.js";
+const Q = (r) => {
+  const n = [
+      { met: r.length >= 8, text: "At least 8 characters" },
+      { met: /[A-Z]/.test(r), text: "One uppercase letter" },
+      { met: /[a-z]/.test(r), text: "One lowercase letter" },
+      { met: /[0-9]/.test(r), text: "One number" },
+      { met: /[^A-Za-z0-9]/.test(r), text: "One special character" },
+    ],
+    a = n.filter((h) => h.met).length;
+  return a <= 1
+    ? { score: a, label: "Weak", color: "bg-red-500", requirements: n }
+    : a <= 2
+      ? { score: a, label: "Fair", color: "bg-orange-500", requirements: n }
+      : a <= 3
+        ? { score: a, label: "Good", color: "bg-yellow-500", requirements: n }
+        : a <= 4
+          ? {
+              score: a,
+              label: "Strong",
+              color: "bg-green-500",
+              requirements: n,
+            }
+          : {
+              score: a,
+              label: "Very Strong",
+              color: "bg-green-600",
+              requirements: n,
+            };
+};
+function le() {
+  H();
+  const [r, n] = t.useState(""),
+    [a, h] = t.useState(""),
+    [w, B] = t.useState(!1),
+    [p, F] = t.useState(!1),
+    [N, f] = t.useState(!1),
+    [I, Y] = t.useState(!1),
+    [V, u] = t.useState(""),
+    [o, d] = t.useState({}),
+    [y, G] = t.useState(null),
+    { toast: U } = M(),
+    x = new URLSearchParams(window.location.search).get("token");
+  t.useEffect(() => {
+    x ||
+      G("No reset token provided. Please request a new password reset link.");
+  }, [x]);
+  const m = t.useMemo(() => Q(r), [r]),
+    b = (s) => {
+      if (!s) return "Password is required";
+      if (s.length < 8) return "Password must be at least 8 characters";
+    },
+    C = (s) => {
+      if (!s) return "Please confirm your password";
+      if (s !== r) return "Passwords do not match";
+    },
+    Z = async (s) => {
+      (s.preventDefault(), u(""));
+      const i = b(r),
+        S = C(a);
+      if (i || S) {
+        d({ password: i, confirmPassword: S });
+        return;
+      }
+      f(!0);
+      try {
+        const g = await fetch("/api/auth/reset-password", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ token: x, password: r }),
+          }),
+          v = await g.json();
+        if (!g.ok) {
+          (v.message?.toLowerCase().includes("expired")
+            ? u(
+                "This password reset link has expired. Please request a new one.",
+              )
+            : v.message?.toLowerCase().includes("invalid")
+              ? u(
+                  "This password reset link is invalid. Please request a new one.",
+                )
+              : u(v.message || "Failed to reset password. Please try again."),
+            f(!1));
+          return;
+        }
+        (Y(!0),
+          U({
+            title: "Password Reset Successfully",
+            description: "You can now log in with your new password.",
+          }));
+      } catch {
+        u(
+          "Unable to connect to the server. Please check your internet connection and try again.",
+        );
+      } finally {
+        f(!1);
+      }
+    };
+  return y
+    ? e.jsxDEV(
+        "div",
+        {
+          className:
+            "min-h-screen bg-gradient-to-br from-blue-50 via-white to-cyan-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800 flex flex-col",
+          children: [
+            e.jsxDEV(
+              "div",
+              {
+                className: "p-4 sm:p-6",
+                children: e.jsxDEV(
+                  l,
+                  {
+                    href: "/",
+                    children: e.jsxDEV(
+                      "div",
+                      {
+                        className: "cursor-pointer",
+                        children: e.jsxDEV(
+                          D,
+                          { size: "md" },
+                          void 0,
+                          !1,
+                          {
+                            fileName:
+                              "/home/runner/workspace/client/src/pages/ResetPassword.tsx",
+                            lineNumber: 126,
+                            columnNumber: 15,
+                          },
+                          this,
+                        ),
+                      },
+                      void 0,
+                      !1,
+                      {
+                        fileName:
+                          "/home/runner/workspace/client/src/pages/ResetPassword.tsx",
+                        lineNumber: 125,
+                        columnNumber: 13,
+                      },
+                      this,
+                    ),
+                  },
+                  void 0,
+                  !1,
+                  {
+                    fileName:
+                      "/home/runner/workspace/client/src/pages/ResetPassword.tsx",
+                    lineNumber: 124,
+                    columnNumber: 11,
+                  },
+                  this,
+                ),
+              },
+              void 0,
+              !1,
+              {
+                fileName:
+                  "/home/runner/workspace/client/src/pages/ResetPassword.tsx",
+                lineNumber: 123,
+                columnNumber: 9,
+              },
+              this,
+            ),
+            e.jsxDEV(
+              "div",
+              {
+                className:
+                  "flex-1 flex items-center justify-center px-4 sm:px-6 lg:px-8 py-12",
+                children: e.jsxDEV(
+                  P,
+                  {
+                    className:
+                      "w-full max-w-md dark:bg-gray-900 dark:border-gray-700",
+                    children: [
+                      e.jsxDEV(
+                        E,
+                        {
+                          className: "text-center",
+                          children: [
+                            e.jsxDEV(
+                              "div",
+                              {
+                                className:
+                                  "mx-auto w-12 h-12 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mb-4",
+                                children: e.jsxDEV(
+                                  L,
+                                  { className: "h-6 w-6 text-red-600" },
+                                  void 0,
+                                  !1,
+                                  {
+                                    fileName:
+                                      "/home/runner/workspace/client/src/pages/ResetPassword.tsx",
+                                    lineNumber: 134,
+                                    columnNumber: 17,
+                                  },
+                                  this,
+                                ),
+                              },
+                              void 0,
+                              !1,
+                              {
+                                fileName:
+                                  "/home/runner/workspace/client/src/pages/ResetPassword.tsx",
+                                lineNumber: 133,
+                                columnNumber: 15,
+                              },
+                              this,
+                            ),
+                            e.jsxDEV(
+                              R,
+                              {
+                                className: "text-2xl dark:text-white",
+                                children: "Invalid Reset Link",
+                              },
+                              void 0,
+                              !1,
+                              {
+                                fileName:
+                                  "/home/runner/workspace/client/src/pages/ResetPassword.tsx",
+                                lineNumber: 136,
+                                columnNumber: 15,
+                              },
+                              this,
+                            ),
+                            e.jsxDEV(
+                              "p",
+                              {
+                                className:
+                                  "text-gray-600 dark:text-gray-400 mt-2",
+                                children: y,
+                              },
+                              void 0,
+                              !1,
+                              {
+                                fileName:
+                                  "/home/runner/workspace/client/src/pages/ResetPassword.tsx",
+                                lineNumber: 137,
+                                columnNumber: 15,
+                              },
+                              this,
+                            ),
+                          ],
+                        },
+                        void 0,
+                        !0,
+                        {
+                          fileName:
+                            "/home/runner/workspace/client/src/pages/ResetPassword.tsx",
+                          lineNumber: 132,
+                          columnNumber: 13,
+                        },
+                        this,
+                      ),
+                      e.jsxDEV(
+                        j,
+                        {
+                          className: "space-y-4",
+                          children: [
+                            e.jsxDEV(
+                              l,
+                              {
+                                href: "/forgot-password",
+                                children: e.jsxDEV(
+                                  c,
+                                  {
+                                    className: "w-full",
+                                    "data-testid": "button-request-new-link",
+                                    children: "Request New Reset Link",
+                                  },
+                                  void 0,
+                                  !1,
+                                  {
+                                    fileName:
+                                      "/home/runner/workspace/client/src/pages/ResetPassword.tsx",
+                                    lineNumber: 141,
+                                    columnNumber: 17,
+                                  },
+                                  this,
+                                ),
+                              },
+                              void 0,
+                              !1,
+                              {
+                                fileName:
+                                  "/home/runner/workspace/client/src/pages/ResetPassword.tsx",
+                                lineNumber: 140,
+                                columnNumber: 15,
+                              },
+                              this,
+                            ),
+                            e.jsxDEV(
+                              l,
+                              {
+                                href: "/login",
+                                children: e.jsxDEV(
+                                  c,
+                                  {
+                                    variant: "outline",
+                                    className: "w-full",
+                                    "data-testid": "button-back-to-login",
+                                    children: [
+                                      e.jsxDEV(
+                                        A,
+                                        { className: "h-4 w-4 mr-2" },
+                                        void 0,
+                                        !1,
+                                        {
+                                          fileName:
+                                            "/home/runner/workspace/client/src/pages/ResetPassword.tsx",
+                                          lineNumber: 147,
+                                          columnNumber: 19,
+                                        },
+                                        this,
+                                      ),
+                                      "Back to Login",
+                                    ],
+                                  },
+                                  void 0,
+                                  !0,
+                                  {
+                                    fileName:
+                                      "/home/runner/workspace/client/src/pages/ResetPassword.tsx",
+                                    lineNumber: 146,
+                                    columnNumber: 17,
+                                  },
+                                  this,
+                                ),
+                              },
+                              void 0,
+                              !1,
+                              {
+                                fileName:
+                                  "/home/runner/workspace/client/src/pages/ResetPassword.tsx",
+                                lineNumber: 145,
+                                columnNumber: 15,
+                              },
+                              this,
+                            ),
+                          ],
+                        },
+                        void 0,
+                        !0,
+                        {
+                          fileName:
+                            "/home/runner/workspace/client/src/pages/ResetPassword.tsx",
+                          lineNumber: 139,
+                          columnNumber: 13,
+                        },
+                        this,
+                      ),
+                    ],
+                  },
+                  void 0,
+                  !0,
+                  {
+                    fileName:
+                      "/home/runner/workspace/client/src/pages/ResetPassword.tsx",
+                    lineNumber: 131,
+                    columnNumber: 11,
+                  },
+                  this,
+                ),
+              },
+              void 0,
+              !1,
+              {
+                fileName:
+                  "/home/runner/workspace/client/src/pages/ResetPassword.tsx",
+                lineNumber: 130,
+                columnNumber: 9,
+              },
+              this,
+            ),
+          ],
+        },
+        void 0,
+        !0,
+        {
+          fileName: "/home/runner/workspace/client/src/pages/ResetPassword.tsx",
+          lineNumber: 122,
+          columnNumber: 7,
+        },
+        this,
+      )
+    : I
+      ? e.jsxDEV(
+          "div",
+          {
+            className:
+              "min-h-screen bg-gradient-to-br from-blue-50 via-white to-cyan-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800 flex flex-col",
+            children: [
+              e.jsxDEV(
+                "div",
+                {
+                  className: "p-4 sm:p-6",
+                  children: e.jsxDEV(
+                    l,
+                    {
+                      href: "/",
+                      children: e.jsxDEV(
+                        "div",
+                        {
+                          className: "cursor-pointer",
+                          children: e.jsxDEV(
+                            D,
+                            { size: "md" },
+                            void 0,
+                            !1,
+                            {
+                              fileName:
+                                "/home/runner/workspace/client/src/pages/ResetPassword.tsx",
+                              lineNumber: 164,
+                              columnNumber: 15,
+                            },
+                            this,
+                          ),
+                        },
+                        void 0,
+                        !1,
+                        {
+                          fileName:
+                            "/home/runner/workspace/client/src/pages/ResetPassword.tsx",
+                          lineNumber: 163,
+                          columnNumber: 13,
+                        },
+                        this,
+                      ),
+                    },
+                    void 0,
+                    !1,
+                    {
+                      fileName:
+                        "/home/runner/workspace/client/src/pages/ResetPassword.tsx",
+                      lineNumber: 162,
+                      columnNumber: 11,
+                    },
+                    this,
+                  ),
+                },
+                void 0,
+                !1,
+                {
+                  fileName:
+                    "/home/runner/workspace/client/src/pages/ResetPassword.tsx",
+                  lineNumber: 161,
+                  columnNumber: 9,
+                },
+                this,
+              ),
+              e.jsxDEV(
+                "div",
+                {
+                  className:
+                    "flex-1 flex items-center justify-center px-4 sm:px-6 lg:px-8 py-12",
+                  children: e.jsxDEV(
+                    P,
+                    {
+                      className:
+                        "w-full max-w-md dark:bg-gray-900 dark:border-gray-700",
+                      children: [
+                        e.jsxDEV(
+                          E,
+                          {
+                            className: "text-center",
+                            children: [
+                              e.jsxDEV(
+                                "div",
+                                {
+                                  className:
+                                    "mx-auto w-12 h-12 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mb-4",
+                                  children: e.jsxDEV(
+                                    k,
+                                    { className: "h-6 w-6 text-green-600" },
+                                    void 0,
+                                    !1,
+                                    {
+                                      fileName:
+                                        "/home/runner/workspace/client/src/pages/ResetPassword.tsx",
+                                      lineNumber: 172,
+                                      columnNumber: 17,
+                                    },
+                                    this,
+                                  ),
+                                },
+                                void 0,
+                                !1,
+                                {
+                                  fileName:
+                                    "/home/runner/workspace/client/src/pages/ResetPassword.tsx",
+                                  lineNumber: 171,
+                                  columnNumber: 15,
+                                },
+                                this,
+                              ),
+                              e.jsxDEV(
+                                R,
+                                {
+                                  className: "text-2xl dark:text-white",
+                                  children: "Password Reset Complete",
+                                },
+                                void 0,
+                                !1,
+                                {
+                                  fileName:
+                                    "/home/runner/workspace/client/src/pages/ResetPassword.tsx",
+                                  lineNumber: 174,
+                                  columnNumber: 15,
+                                },
+                                this,
+                              ),
+                              e.jsxDEV(
+                                "p",
+                                {
+                                  className:
+                                    "text-gray-600 dark:text-gray-400 mt-2",
+                                  children:
+                                    "Your password has been successfully reset. You can now log in with your new password.",
+                                },
+                                void 0,
+                                !1,
+                                {
+                                  fileName:
+                                    "/home/runner/workspace/client/src/pages/ResetPassword.tsx",
+                                  lineNumber: 175,
+                                  columnNumber: 15,
+                                },
+                                this,
+                              ),
+                            ],
+                          },
+                          void 0,
+                          !0,
+                          {
+                            fileName:
+                              "/home/runner/workspace/client/src/pages/ResetPassword.tsx",
+                            lineNumber: 170,
+                            columnNumber: 13,
+                          },
+                          this,
+                        ),
+                        e.jsxDEV(
+                          j,
+                          {
+                            children: e.jsxDEV(
+                              l,
+                              {
+                                href: "/login",
+                                children: e.jsxDEV(
+                                  c,
+                                  {
+                                    className: "w-full",
+                                    "data-testid": "button-go-to-login",
+                                    children: "Go to Login",
+                                  },
+                                  void 0,
+                                  !1,
+                                  {
+                                    fileName:
+                                      "/home/runner/workspace/client/src/pages/ResetPassword.tsx",
+                                    lineNumber: 181,
+                                    columnNumber: 17,
+                                  },
+                                  this,
+                                ),
+                              },
+                              void 0,
+                              !1,
+                              {
+                                fileName:
+                                  "/home/runner/workspace/client/src/pages/ResetPassword.tsx",
+                                lineNumber: 180,
+                                columnNumber: 15,
+                              },
+                              this,
+                            ),
+                          },
+                          void 0,
+                          !1,
+                          {
+                            fileName:
+                              "/home/runner/workspace/client/src/pages/ResetPassword.tsx",
+                            lineNumber: 179,
+                            columnNumber: 13,
+                          },
+                          this,
+                        ),
+                      ],
+                    },
+                    void 0,
+                    !0,
+                    {
+                      fileName:
+                        "/home/runner/workspace/client/src/pages/ResetPassword.tsx",
+                      lineNumber: 169,
+                      columnNumber: 11,
+                    },
+                    this,
+                  ),
+                },
+                void 0,
+                !1,
+                {
+                  fileName:
+                    "/home/runner/workspace/client/src/pages/ResetPassword.tsx",
+                  lineNumber: 168,
+                  columnNumber: 9,
+                },
+                this,
+              ),
+            ],
+          },
+          void 0,
+          !0,
+          {
+            fileName:
+              "/home/runner/workspace/client/src/pages/ResetPassword.tsx",
+            lineNumber: 160,
+            columnNumber: 7,
+          },
+          this,
+        )
+      : e.jsxDEV(
+          "div",
+          {
+            className:
+              "min-h-screen bg-gradient-to-br from-blue-50 via-white to-cyan-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800 flex flex-col",
+            children: [
+              e.jsxDEV(
+                "div",
+                {
+                  className: "p-4 sm:p-6",
+                  children: e.jsxDEV(
+                    l,
+                    {
+                      href: "/",
+                      children: e.jsxDEV(
+                        "div",
+                        {
+                          className: "cursor-pointer",
+                          children: e.jsxDEV(
+                            D,
+                            { size: "md" },
+                            void 0,
+                            !1,
+                            {
+                              fileName:
+                                "/home/runner/workspace/client/src/pages/ResetPassword.tsx",
+                              lineNumber: 197,
+                              columnNumber: 13,
+                            },
+                            this,
+                          ),
+                        },
+                        void 0,
+                        !1,
+                        {
+                          fileName:
+                            "/home/runner/workspace/client/src/pages/ResetPassword.tsx",
+                          lineNumber: 196,
+                          columnNumber: 11,
+                        },
+                        this,
+                      ),
+                    },
+                    void 0,
+                    !1,
+                    {
+                      fileName:
+                        "/home/runner/workspace/client/src/pages/ResetPassword.tsx",
+                      lineNumber: 195,
+                      columnNumber: 9,
+                    },
+                    this,
+                  ),
+                },
+                void 0,
+                !1,
+                {
+                  fileName:
+                    "/home/runner/workspace/client/src/pages/ResetPassword.tsx",
+                  lineNumber: 194,
+                  columnNumber: 7,
+                },
+                this,
+              ),
+              e.jsxDEV(
+                "div",
+                {
+                  className:
+                    "flex-1 flex items-center justify-center px-4 sm:px-6 lg:px-8 py-12",
+                  children: e.jsxDEV(
+                    P,
+                    {
+                      className:
+                        "w-full max-w-md dark:bg-gray-900 dark:border-gray-700",
+                      children: [
+                        e.jsxDEV(
+                          E,
+                          {
+                            className: "text-center",
+                            children: [
+                              e.jsxDEV(
+                                "div",
+                                {
+                                  className:
+                                    "mx-auto w-12 h-12 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center mb-4",
+                                  children: e.jsxDEV(
+                                    J,
+                                    { className: "h-6 w-6 text-blue-600" },
+                                    void 0,
+                                    !1,
+                                    {
+                                      fileName:
+                                        "/home/runner/workspace/client/src/pages/ResetPassword.tsx",
+                                      lineNumber: 206,
+                                      columnNumber: 15,
+                                    },
+                                    this,
+                                  ),
+                                },
+                                void 0,
+                                !1,
+                                {
+                                  fileName:
+                                    "/home/runner/workspace/client/src/pages/ResetPassword.tsx",
+                                  lineNumber: 205,
+                                  columnNumber: 13,
+                                },
+                                this,
+                              ),
+                              e.jsxDEV(
+                                R,
+                                {
+                                  className: "text-2xl dark:text-white",
+                                  children: "Reset Your Password",
+                                },
+                                void 0,
+                                !1,
+                                {
+                                  fileName:
+                                    "/home/runner/workspace/client/src/pages/ResetPassword.tsx",
+                                  lineNumber: 208,
+                                  columnNumber: 13,
+                                },
+                                this,
+                              ),
+                              e.jsxDEV(
+                                "p",
+                                {
+                                  className:
+                                    "text-gray-600 dark:text-gray-400 mt-2",
+                                  children: "Enter your new password below",
+                                },
+                                void 0,
+                                !1,
+                                {
+                                  fileName:
+                                    "/home/runner/workspace/client/src/pages/ResetPassword.tsx",
+                                  lineNumber: 209,
+                                  columnNumber: 13,
+                                },
+                                this,
+                              ),
+                            ],
+                          },
+                          void 0,
+                          !0,
+                          {
+                            fileName:
+                              "/home/runner/workspace/client/src/pages/ResetPassword.tsx",
+                            lineNumber: 204,
+                            columnNumber: 11,
+                          },
+                          this,
+                        ),
+                        e.jsxDEV(
+                          j,
+                          {
+                            children: [
+                              V &&
+                                e.jsxDEV(
+                                  W,
+                                  {
+                                    variant: "destructive",
+                                    className: "mb-4",
+                                    children: [
+                                      e.jsxDEV(
+                                        L,
+                                        { className: "h-4 w-4" },
+                                        void 0,
+                                        !1,
+                                        {
+                                          fileName:
+                                            "/home/runner/workspace/client/src/pages/ResetPassword.tsx",
+                                          lineNumber: 216,
+                                          columnNumber: 17,
+                                        },
+                                        this,
+                                      ),
+                                      e.jsxDEV(
+                                        X,
+                                        { children: V },
+                                        void 0,
+                                        !1,
+                                        {
+                                          fileName:
+                                            "/home/runner/workspace/client/src/pages/ResetPassword.tsx",
+                                          lineNumber: 217,
+                                          columnNumber: 17,
+                                        },
+                                        this,
+                                      ),
+                                    ],
+                                  },
+                                  void 0,
+                                  !0,
+                                  {
+                                    fileName:
+                                      "/home/runner/workspace/client/src/pages/ResetPassword.tsx",
+                                    lineNumber: 215,
+                                    columnNumber: 15,
+                                  },
+                                  this,
+                                ),
+                              e.jsxDEV(
+                                "form",
+                                {
+                                  onSubmit: Z,
+                                  className: "space-y-4",
+                                  children: [
+                                    e.jsxDEV(
+                                      "div",
+                                      {
+                                        className: "space-y-1",
+                                        children: [
+                                          e.jsxDEV(
+                                            O,
+                                            {
+                                              htmlFor: "password",
+                                              children: "New Password",
+                                            },
+                                            void 0,
+                                            !1,
+                                            {
+                                              fileName:
+                                                "/home/runner/workspace/client/src/pages/ResetPassword.tsx",
+                                              lineNumber: 223,
+                                              columnNumber: 17,
+                                            },
+                                            this,
+                                          ),
+                                          e.jsxDEV(
+                                            "div",
+                                            {
+                                              className: "relative",
+                                              children: [
+                                                e.jsxDEV(
+                                                  $,
+                                                  {
+                                                    id: "password",
+                                                    type: w
+                                                      ? "text"
+                                                      : "password",
+                                                    placeholder:
+                                                      "Enter your new password",
+                                                    value: r,
+                                                    onChange: (s) => {
+                                                      (n(s.target.value),
+                                                        o.password &&
+                                                          d((i) => ({
+                                                            ...i,
+                                                            password: b(
+                                                              s.target.value,
+                                                            ),
+                                                          })));
+                                                    },
+                                                    onBlur: () =>
+                                                      d((s) => ({
+                                                        ...s,
+                                                        password: b(r),
+                                                      })),
+                                                    required: !0,
+                                                    disabled: N,
+                                                    autoComplete:
+                                                      "new-password",
+                                                    className: `pr-10 ${o.password ? "border-destructive" : ""}`,
+                                                    "data-testid":
+                                                      "input-new-password",
+                                                  },
+                                                  void 0,
+                                                  !1,
+                                                  {
+                                                    fileName:
+                                                      "/home/runner/workspace/client/src/pages/ResetPassword.tsx",
+                                                    lineNumber: 225,
+                                                    columnNumber: 19,
+                                                  },
+                                                  this,
+                                                ),
+                                                e.jsxDEV(
+                                                  c,
+                                                  {
+                                                    type: "button",
+                                                    variant: "ghost",
+                                                    size: "sm",
+                                                    className:
+                                                      "absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent",
+                                                    onClick: () => B(!w),
+                                                    children: w
+                                                      ? e.jsxDEV(
+                                                          q,
+                                                          {
+                                                            className:
+                                                              "h-4 w-4",
+                                                          },
+                                                          void 0,
+                                                          !1,
+                                                          {
+                                                            fileName:
+                                                              "/home/runner/workspace/client/src/pages/ResetPassword.tsx",
+                                                            lineNumber: 250,
+                                                            columnNumber: 37,
+                                                          },
+                                                          this,
+                                                        )
+                                                      : e.jsxDEV(
+                                                          T,
+                                                          {
+                                                            className:
+                                                              "h-4 w-4",
+                                                          },
+                                                          void 0,
+                                                          !1,
+                                                          {
+                                                            fileName:
+                                                              "/home/runner/workspace/client/src/pages/ResetPassword.tsx",
+                                                            lineNumber: 250,
+                                                            columnNumber: 70,
+                                                          },
+                                                          this,
+                                                        ),
+                                                  },
+                                                  void 0,
+                                                  !1,
+                                                  {
+                                                    fileName:
+                                                      "/home/runner/workspace/client/src/pages/ResetPassword.tsx",
+                                                    lineNumber: 243,
+                                                    columnNumber: 19,
+                                                  },
+                                                  this,
+                                                ),
+                                              ],
+                                            },
+                                            void 0,
+                                            !0,
+                                            {
+                                              fileName:
+                                                "/home/runner/workspace/client/src/pages/ResetPassword.tsx",
+                                              lineNumber: 224,
+                                              columnNumber: 17,
+                                            },
+                                            this,
+                                          ),
+                                          r &&
+                                            e.jsxDEV(
+                                              "div",
+                                              {
+                                                className: "space-y-2 mt-2",
+                                                children: [
+                                                  e.jsxDEV(
+                                                    "div",
+                                                    {
+                                                      className:
+                                                        "flex items-center gap-2",
+                                                      children: [
+                                                        e.jsxDEV(
+                                                          "div",
+                                                          {
+                                                            className:
+                                                              "flex-1 h-1.5 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden",
+                                                            children: e.jsxDEV(
+                                                              "div",
+                                                              {
+                                                                className: `h-full transition-all duration-300 ${m.color}`,
+                                                                style: {
+                                                                  width: `${(m.score / 5) * 100}%`,
+                                                                },
+                                                              },
+                                                              void 0,
+                                                              !1,
+                                                              {
+                                                                fileName:
+                                                                  "/home/runner/workspace/client/src/pages/ResetPassword.tsx",
+                                                                lineNumber: 257,
+                                                                columnNumber: 25,
+                                                              },
+                                                              this,
+                                                            ),
+                                                          },
+                                                          void 0,
+                                                          !1,
+                                                          {
+                                                            fileName:
+                                                              "/home/runner/workspace/client/src/pages/ResetPassword.tsx",
+                                                            lineNumber: 256,
+                                                            columnNumber: 23,
+                                                          },
+                                                          this,
+                                                        ),
+                                                        e.jsxDEV(
+                                                          "span",
+                                                          {
+                                                            className: `text-xs font-medium ${m.score <= 2 ? "text-red-600" : m.score <= 3 ? "text-yellow-600" : "text-green-600"}`,
+                                                            children: m.label,
+                                                          },
+                                                          void 0,
+                                                          !1,
+                                                          {
+                                                            fileName:
+                                                              "/home/runner/workspace/client/src/pages/ResetPassword.tsx",
+                                                            lineNumber: 262,
+                                                            columnNumber: 23,
+                                                          },
+                                                          this,
+                                                        ),
+                                                      ],
+                                                    },
+                                                    void 0,
+                                                    !0,
+                                                    {
+                                                      fileName:
+                                                        "/home/runner/workspace/client/src/pages/ResetPassword.tsx",
+                                                      lineNumber: 255,
+                                                      columnNumber: 21,
+                                                    },
+                                                    this,
+                                                  ),
+                                                  e.jsxDEV(
+                                                    "div",
+                                                    {
+                                                      className:
+                                                        "grid grid-cols-2 gap-1",
+                                                      children:
+                                                        m.requirements.map(
+                                                          (s, i) =>
+                                                            e.jsxDEV(
+                                                              "div",
+                                                              {
+                                                                className: `text-xs flex items-center gap-1 ${s.met ? "text-green-600" : "text-gray-500"}`,
+                                                                children: [
+                                                                  s.met
+                                                                    ? e.jsxDEV(
+                                                                        k,
+                                                                        {
+                                                                          className:
+                                                                            "h-3 w-3",
+                                                                        },
+                                                                        void 0,
+                                                                        !1,
+                                                                        {
+                                                                          fileName:
+                                                                            "/home/runner/workspace/client/src/pages/ResetPassword.tsx",
+                                                                          lineNumber: 272,
+                                                                          columnNumber: 38,
+                                                                        },
+                                                                        this,
+                                                                      )
+                                                                    : e.jsxDEV(
+                                                                        K,
+                                                                        {
+                                                                          className:
+                                                                            "h-3 w-3",
+                                                                        },
+                                                                        void 0,
+                                                                        !1,
+                                                                        {
+                                                                          fileName:
+                                                                            "/home/runner/workspace/client/src/pages/ResetPassword.tsx",
+                                                                          lineNumber: 272,
+                                                                          columnNumber: 76,
+                                                                        },
+                                                                        this,
+                                                                      ),
+                                                                  s.text,
+                                                                ],
+                                                              },
+                                                              i,
+                                                              !0,
+                                                              {
+                                                                fileName:
+                                                                  "/home/runner/workspace/client/src/pages/ResetPassword.tsx",
+                                                                lineNumber: 271,
+                                                                columnNumber: 25,
+                                                              },
+                                                              this,
+                                                            ),
+                                                        ),
+                                                    },
+                                                    void 0,
+                                                    !1,
+                                                    {
+                                                      fileName:
+                                                        "/home/runner/workspace/client/src/pages/ResetPassword.tsx",
+                                                      lineNumber: 269,
+                                                      columnNumber: 21,
+                                                    },
+                                                    this,
+                                                  ),
+                                                ],
+                                              },
+                                              void 0,
+                                              !0,
+                                              {
+                                                fileName:
+                                                  "/home/runner/workspace/client/src/pages/ResetPassword.tsx",
+                                                lineNumber: 254,
+                                                columnNumber: 19,
+                                              },
+                                              this,
+                                            ),
+                                          o.password &&
+                                            e.jsxDEV(
+                                              "p",
+                                              {
+                                                className:
+                                                  "text-sm text-destructive flex items-center gap-1",
+                                                children: [
+                                                  e.jsxDEV(
+                                                    z,
+                                                    { className: "h-3 w-3" },
+                                                    void 0,
+                                                    !1,
+                                                    {
+                                                      fileName:
+                                                        "/home/runner/workspace/client/src/pages/ResetPassword.tsx",
+                                                      lineNumber: 281,
+                                                      columnNumber: 21,
+                                                    },
+                                                    this,
+                                                  ),
+                                                  o.password,
+                                                ],
+                                              },
+                                              void 0,
+                                              !0,
+                                              {
+                                                fileName:
+                                                  "/home/runner/workspace/client/src/pages/ResetPassword.tsx",
+                                                lineNumber: 280,
+                                                columnNumber: 19,
+                                              },
+                                              this,
+                                            ),
+                                        ],
+                                      },
+                                      void 0,
+                                      !0,
+                                      {
+                                        fileName:
+                                          "/home/runner/workspace/client/src/pages/ResetPassword.tsx",
+                                        lineNumber: 222,
+                                        columnNumber: 15,
+                                      },
+                                      this,
+                                    ),
+                                    e.jsxDEV(
+                                      "div",
+                                      {
+                                        className: "space-y-1",
+                                        children: [
+                                          e.jsxDEV(
+                                            O,
+                                            {
+                                              htmlFor: "confirmPassword",
+                                              children: "Confirm New Password",
+                                            },
+                                            void 0,
+                                            !1,
+                                            {
+                                              fileName:
+                                                "/home/runner/workspace/client/src/pages/ResetPassword.tsx",
+                                              lineNumber: 288,
+                                              columnNumber: 17,
+                                            },
+                                            this,
+                                          ),
+                                          e.jsxDEV(
+                                            "div",
+                                            {
+                                              className: "relative",
+                                              children: [
+                                                e.jsxDEV(
+                                                  $,
+                                                  {
+                                                    id: "confirmPassword",
+                                                    type: p
+                                                      ? "text"
+                                                      : "password",
+                                                    placeholder:
+                                                      "Confirm your new password",
+                                                    value: a,
+                                                    onChange: (s) => {
+                                                      (h(s.target.value),
+                                                        o.confirmPassword &&
+                                                          d((i) => ({
+                                                            ...i,
+                                                            confirmPassword:
+                                                              s.target.value !==
+                                                              r
+                                                                ? "Passwords do not match"
+                                                                : void 0,
+                                                          })));
+                                                    },
+                                                    onBlur: () =>
+                                                      d((s) => ({
+                                                        ...s,
+                                                        confirmPassword: C(a),
+                                                      })),
+                                                    required: !0,
+                                                    disabled: N,
+                                                    autoComplete:
+                                                      "new-password",
+                                                    className: `pr-10 ${o.confirmPassword ? "border-destructive" : ""}`,
+                                                    "data-testid":
+                                                      "input-confirm-password",
+                                                  },
+                                                  void 0,
+                                                  !1,
+                                                  {
+                                                    fileName:
+                                                      "/home/runner/workspace/client/src/pages/ResetPassword.tsx",
+                                                    lineNumber: 290,
+                                                    columnNumber: 19,
+                                                  },
+                                                  this,
+                                                ),
+                                                e.jsxDEV(
+                                                  c,
+                                                  {
+                                                    type: "button",
+                                                    variant: "ghost",
+                                                    size: "sm",
+                                                    className:
+                                                      "absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent",
+                                                    onClick: () => F(!p),
+                                                    children: p
+                                                      ? e.jsxDEV(
+                                                          q,
+                                                          {
+                                                            className:
+                                                              "h-4 w-4",
+                                                          },
+                                                          void 0,
+                                                          !1,
+                                                          {
+                                                            fileName:
+                                                              "/home/runner/workspace/client/src/pages/ResetPassword.tsx",
+                                                            lineNumber: 315,
+                                                            columnNumber: 44,
+                                                          },
+                                                          this,
+                                                        )
+                                                      : e.jsxDEV(
+                                                          T,
+                                                          {
+                                                            className:
+                                                              "h-4 w-4",
+                                                          },
+                                                          void 0,
+                                                          !1,
+                                                          {
+                                                            fileName:
+                                                              "/home/runner/workspace/client/src/pages/ResetPassword.tsx",
+                                                            lineNumber: 315,
+                                                            columnNumber: 77,
+                                                          },
+                                                          this,
+                                                        ),
+                                                  },
+                                                  void 0,
+                                                  !1,
+                                                  {
+                                                    fileName:
+                                                      "/home/runner/workspace/client/src/pages/ResetPassword.tsx",
+                                                    lineNumber: 308,
+                                                    columnNumber: 19,
+                                                  },
+                                                  this,
+                                                ),
+                                              ],
+                                            },
+                                            void 0,
+                                            !0,
+                                            {
+                                              fileName:
+                                                "/home/runner/workspace/client/src/pages/ResetPassword.tsx",
+                                              lineNumber: 289,
+                                              columnNumber: 17,
+                                            },
+                                            this,
+                                          ),
+                                          a &&
+                                            r === a &&
+                                            e.jsxDEV(
+                                              "p",
+                                              {
+                                                className:
+                                                  "text-sm text-green-600 flex items-center gap-1",
+                                                children: [
+                                                  e.jsxDEV(
+                                                    k,
+                                                    { className: "h-3 w-3" },
+                                                    void 0,
+                                                    !1,
+                                                    {
+                                                      fileName:
+                                                        "/home/runner/workspace/client/src/pages/ResetPassword.tsx",
+                                                      lineNumber: 320,
+                                                      columnNumber: 21,
+                                                    },
+                                                    this,
+                                                  ),
+                                                  "Passwords match",
+                                                ],
+                                              },
+                                              void 0,
+                                              !0,
+                                              {
+                                                fileName:
+                                                  "/home/runner/workspace/client/src/pages/ResetPassword.tsx",
+                                                lineNumber: 319,
+                                                columnNumber: 19,
+                                              },
+                                              this,
+                                            ),
+                                          o.confirmPassword &&
+                                            e.jsxDEV(
+                                              "p",
+                                              {
+                                                className:
+                                                  "text-sm text-destructive flex items-center gap-1",
+                                                children: [
+                                                  e.jsxDEV(
+                                                    z,
+                                                    { className: "h-3 w-3" },
+                                                    void 0,
+                                                    !1,
+                                                    {
+                                                      fileName:
+                                                        "/home/runner/workspace/client/src/pages/ResetPassword.tsx",
+                                                      lineNumber: 326,
+                                                      columnNumber: 21,
+                                                    },
+                                                    this,
+                                                  ),
+                                                  o.confirmPassword,
+                                                ],
+                                              },
+                                              void 0,
+                                              !0,
+                                              {
+                                                fileName:
+                                                  "/home/runner/workspace/client/src/pages/ResetPassword.tsx",
+                                                lineNumber: 325,
+                                                columnNumber: 19,
+                                              },
+                                              this,
+                                            ),
+                                        ],
+                                      },
+                                      void 0,
+                                      !0,
+                                      {
+                                        fileName:
+                                          "/home/runner/workspace/client/src/pages/ResetPassword.tsx",
+                                        lineNumber: 287,
+                                        columnNumber: 15,
+                                      },
+                                      this,
+                                    ),
+                                    e.jsxDEV(
+                                      c,
+                                      {
+                                        type: "submit",
+                                        className: "w-full",
+                                        disabled:
+                                          N ||
+                                          !!o.password ||
+                                          !!o.confirmPassword,
+                                        "data-testid": "button-reset-password",
+                                        children: N
+                                          ? "Resetting Password..."
+                                          : "Reset Password",
+                                      },
+                                      void 0,
+                                      !1,
+                                      {
+                                        fileName:
+                                          "/home/runner/workspace/client/src/pages/ResetPassword.tsx",
+                                        lineNumber: 332,
+                                        columnNumber: 15,
+                                      },
+                                      this,
+                                    ),
+                                    e.jsxDEV(
+                                      "div",
+                                      {
+                                        className: "text-center",
+                                        children: e.jsxDEV(
+                                          l,
+                                          {
+                                            href: "/login",
+                                            children: e.jsxDEV(
+                                              c,
+                                              {
+                                                variant: "link",
+                                                className: "text-sm",
+                                                "data-testid":
+                                                  "link-back-to-login",
+                                                children: [
+                                                  e.jsxDEV(
+                                                    A,
+                                                    {
+                                                      className: "h-4 w-4 mr-1",
+                                                    },
+                                                    void 0,
+                                                    !1,
+                                                    {
+                                                      fileName:
+                                                        "/home/runner/workspace/client/src/pages/ResetPassword.tsx",
+                                                      lineNumber: 344,
+                                                      columnNumber: 21,
+                                                    },
+                                                    this,
+                                                  ),
+                                                  "Back to Login",
+                                                ],
+                                              },
+                                              void 0,
+                                              !0,
+                                              {
+                                                fileName:
+                                                  "/home/runner/workspace/client/src/pages/ResetPassword.tsx",
+                                                lineNumber: 343,
+                                                columnNumber: 19,
+                                              },
+                                              this,
+                                            ),
+                                          },
+                                          void 0,
+                                          !1,
+                                          {
+                                            fileName:
+                                              "/home/runner/workspace/client/src/pages/ResetPassword.tsx",
+                                            lineNumber: 342,
+                                            columnNumber: 17,
+                                          },
+                                          this,
+                                        ),
+                                      },
+                                      void 0,
+                                      !1,
+                                      {
+                                        fileName:
+                                          "/home/runner/workspace/client/src/pages/ResetPassword.tsx",
+                                        lineNumber: 341,
+                                        columnNumber: 15,
+                                      },
+                                      this,
+                                    ),
+                                  ],
+                                },
+                                void 0,
+                                !0,
+                                {
+                                  fileName:
+                                    "/home/runner/workspace/client/src/pages/ResetPassword.tsx",
+                                  lineNumber: 221,
+                                  columnNumber: 13,
+                                },
+                                this,
+                              ),
+                            ],
+                          },
+                          void 0,
+                          !0,
+                          {
+                            fileName:
+                              "/home/runner/workspace/client/src/pages/ResetPassword.tsx",
+                            lineNumber: 213,
+                            columnNumber: 11,
+                          },
+                          this,
+                        ),
+                      ],
+                    },
+                    void 0,
+                    !0,
+                    {
+                      fileName:
+                        "/home/runner/workspace/client/src/pages/ResetPassword.tsx",
+                      lineNumber: 203,
+                      columnNumber: 9,
+                    },
+                    this,
+                  ),
+                },
+                void 0,
+                !1,
+                {
+                  fileName:
+                    "/home/runner/workspace/client/src/pages/ResetPassword.tsx",
+                  lineNumber: 202,
+                  columnNumber: 7,
+                },
+                this,
+              ),
+            ],
+          },
+          void 0,
+          !0,
+          {
+            fileName:
+              "/home/runner/workspace/client/src/pages/ResetPassword.tsx",
+            lineNumber: 193,
+            columnNumber: 5,
+          },
+          this,
+        );
+}
+export { le as default };

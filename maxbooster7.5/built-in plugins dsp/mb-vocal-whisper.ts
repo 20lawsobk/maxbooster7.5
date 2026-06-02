@@ -1,0 +1,60 @@
+import type { PluginDefinition } from "../server/services/pluginHostService";
+
+const MbVocalWhisperPlugin: PluginDefinition = {
+  id: "mb-vocal-whisper",
+  slug: "mb-vocal-whisper",
+  name: "MB Whisper Pad",
+  category: "instrument",
+  type: "vocal" as any,
+  version: "1.0.0",
+  description: "Breathy whisper vocal pad for ambient textures",
+  author: "Max Booster",
+  grade: "A",
+  oscillators: [
+    { type: "noise", detune: 0, gain: 0.4 },
+    { type: "sine", detune: 0, gain: 0.35 },
+    { type: "triangle", detune: 5, gain: 0.25 },
+  ],
+  envelope: { attack: 0.3, decay: 0.5, sustain: 0.7, release: 1.0 },
+  parameters: [
+    {
+      id: "breath",
+      name: "Breath",
+      type: "float",
+      defaultValue: 0.7,
+      minValue: 0,
+      maxValue: 1,
+      automatable: true,
+    },
+    {
+      id: "formant",
+      name: "Formant",
+      type: "float",
+      defaultValue: 0.5,
+      minValue: 0,
+      maxValue: 1,
+      automatable: true,
+    },
+    {
+      id: "space",
+      name: "Space",
+      type: "float",
+      defaultValue: 0.6,
+      minValue: 0,
+      maxValue: 1,
+      automatable: true,
+    },
+    {
+      id: "volume",
+      name: "Volume",
+      type: "float",
+      defaultValue: 0.7,
+      minValue: 0,
+      maxValue: 1,
+      automatable: true,
+    },
+  ],
+  defaultPreset: { breath: 0.7, formant: 0.5, space: 0.6, volume: 0.7 },
+};
+
+export default MbVocalWhisperPlugin;

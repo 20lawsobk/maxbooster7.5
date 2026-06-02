@@ -1,0 +1,96 @@
+const a = [
+  {
+    id: "welcome-to-max-booster",
+    slug: "welcome-to-max-booster",
+    title: "Welcome to Max Booster: AI-Powered Music Career Management",
+    excerpt:
+      "Max Booster brings every tool you need to write, produce, distribute, and grow your music career into a single AI-driven workspace.",
+    category: "Product",
+    author: "B-Lawz Music",
+    authorRole: "Founder, Max Booster",
+    date: "April 17, 2026",
+    readTime: "4 min read",
+    coverGradient: "from-blue-600 to-cyan-500",
+    featured: !0,
+    sections: [
+      {
+        type: "paragraph",
+        content:
+          "Max Booster is the AI-native command center for independent artists, producers, and labels. Everything you need to plan, create, release, and grow lives in one place.",
+      },
+      { type: "heading", content: "What you can do today" },
+      {
+        type: "list",
+        content:
+          "Out of the box, Max Booster covers the full music career loop:",
+        items: [
+          "Generate, edit, and master tracks with built-in AI tools",
+          "Distribute releases to streaming platforms",
+          "Plan campaigns and grow your audience with analytics",
+          "Automate the busywork so you can stay creative",
+        ],
+      },
+      {
+        type: "tip",
+        content:
+          "Connect your streaming and social accounts in Settings to unlock personalized growth recommendations.",
+      },
+      {
+        type: "paragraph",
+        content:
+          "This blog is where we share product updates, deep dives, and playbooks. Stay tuned.",
+      },
+    ],
+  },
+  {
+    id: "getting-started-guide",
+    slug: "getting-started-guide",
+    title: "Getting Started: Your First 30 Minutes in Max Booster",
+    excerpt:
+      "A focused walkthrough of the most important steps to take in your first session — so you ship something real, fast.",
+    category: "Guides",
+    author: "B-Lawz Music",
+    authorRole: "Founder, Max Booster",
+    date: "April 17, 2026",
+    readTime: "6 min read",
+    coverGradient: "from-purple-600 to-pink-500",
+    sections: [
+      {
+        type: "paragraph",
+        content:
+          "The fastest way to get value from Max Booster is to ship one small thing in your first session. Here is the path we recommend.",
+      },
+      { type: "heading", content: "A 30-minute path to your first release" },
+      {
+        type: "numbered",
+        items: [
+          "Create your artist profile and connect your DSP and social accounts",
+          "Import or generate one track in the Studio",
+          "Run the AI mastering pass and review the loudness/dynamics report",
+          "Schedule a release and let the campaign planner draft your launch posts",
+        ],
+      },
+      {
+        type: "callout",
+        content:
+          "Anything you do here is reversible — drafts stay drafts until you explicitly publish.",
+      },
+      { type: "subheading", content: "Where to go next" },
+      {
+        type: "paragraph",
+        content:
+          "Once your first release is in the queue, explore the Analytics tab to see how your back catalog is performing and where to focus your next campaign.",
+      },
+    ],
+  },
+];
+function n(e) {
+  return a.find((t) => t.slug === e);
+}
+function s(e, t = 3) {
+  const o = n(e);
+  return o
+    ? a.filter((r) => r.slug !== e && r.category === o.category).slice(0, t)
+    : [];
+}
+export { s as a, a as b, n as g };

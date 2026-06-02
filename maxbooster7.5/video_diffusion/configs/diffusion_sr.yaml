@@ -1,0 +1,17 @@
+sr:
+  latent_ch: 16
+  base_ch: 128
+  ch_mult: [1, 2, 4]
+  time_dim: 256
+  n_res_per_block: 2
+
+sr_ckpt: ""
+
+diffusion:
+  num_steps: 1000
+  schedule: cosine
+
+infer:
+  steps: 20
+  guidance_scale: 4.0
+  eta: 0.0

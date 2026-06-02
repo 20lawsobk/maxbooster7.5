@@ -1,0 +1,1162 @@
+import {
+  r as d,
+  f as e,
+  cV as l,
+  a_ as c,
+  dk as u,
+  d1 as g,
+  bb as x,
+} from "./vendor-react-31oK5L0i.js";
+import { j as i, C as N, B as n, h as p } from "./studio-DOUfHW5v.js";
+import { L as b } from "./Logo-DS4JhmIC.js";
+import { b as t } from "./blogPosts-s7olykGq.js";
+import "./vendor-utils-C_Rs6IXs.js";
+import "./vendor-ui-Ds7F22HT.js";
+import "./vendor-state-Bxk_Qy8r.js";
+import "./vendor-animation-CFQslDag.js";
+const f = ["All", ...Array.from(new Set(t.map((a) => a.category)))];
+function y() {
+  const [a, h] = d.useState("All"),
+    s = t.find((r) => r.featured) ?? t[0],
+    m = t.filter((r) => !r.featured),
+    o = a === "All" ? m : m.filter((r) => r.category === a);
+  return e.jsxDEV(
+    "div",
+    {
+      className:
+        "min-h-screen bg-gradient-to-br from-blue-50 via-white to-cyan-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800",
+      children: [
+        e.jsxDEV(
+          "nav",
+          {
+            className:
+              "sticky top-0 z-50 backdrop-blur-lg bg-white/80 dark:bg-gray-900/80 border-b border-gray-200 dark:border-gray-700",
+            children: e.jsxDEV(
+              "div",
+              {
+                className: "max-w-7xl mx-auto px-4 sm:px-6 lg:px-8",
+                children: e.jsxDEV(
+                  "div",
+                  {
+                    className: "flex justify-between items-center h-16",
+                    children: [
+                      e.jsxDEV(
+                        l,
+                        {
+                          href: "/",
+                          children: e.jsxDEV(
+                            "div",
+                            {
+                              className: "cursor-pointer",
+                              children: e.jsxDEV(
+                                b,
+                                { size: "md" },
+                                void 0,
+                                !1,
+                                {
+                                  fileName:
+                                    "/home/runner/workspace/client/src/pages/Blog.tsx",
+                                  lineNumber: 30,
+                                  columnNumber: 17,
+                                },
+                                this,
+                              ),
+                            },
+                            void 0,
+                            !1,
+                            {
+                              fileName:
+                                "/home/runner/workspace/client/src/pages/Blog.tsx",
+                              lineNumber: 29,
+                              columnNumber: 15,
+                            },
+                            this,
+                          ),
+                        },
+                        void 0,
+                        !1,
+                        {
+                          fileName:
+                            "/home/runner/workspace/client/src/pages/Blog.tsx",
+                          lineNumber: 28,
+                          columnNumber: 13,
+                        },
+                        this,
+                      ),
+                      e.jsxDEV(
+                        "div",
+                        {
+                          className: "flex items-center space-x-4",
+                          children: [
+                            e.jsxDEV(
+                              l,
+                              {
+                                href: "/pricing",
+                                children: e.jsxDEV(
+                                  i,
+                                  { variant: "ghost", children: "Pricing" },
+                                  void 0,
+                                  !1,
+                                  {
+                                    fileName:
+                                      "/home/runner/workspace/client/src/pages/Blog.tsx",
+                                    lineNumber: 35,
+                                    columnNumber: 17,
+                                  },
+                                  this,
+                                ),
+                              },
+                              void 0,
+                              !1,
+                              {
+                                fileName:
+                                  "/home/runner/workspace/client/src/pages/Blog.tsx",
+                                lineNumber: 34,
+                                columnNumber: 15,
+                              },
+                              this,
+                            ),
+                            e.jsxDEV(
+                              l,
+                              {
+                                href: "/login",
+                                children: e.jsxDEV(
+                                  i,
+                                  { variant: "ghost", children: "Sign In" },
+                                  void 0,
+                                  !1,
+                                  {
+                                    fileName:
+                                      "/home/runner/workspace/client/src/pages/Blog.tsx",
+                                    lineNumber: 38,
+                                    columnNumber: 17,
+                                  },
+                                  this,
+                                ),
+                              },
+                              void 0,
+                              !1,
+                              {
+                                fileName:
+                                  "/home/runner/workspace/client/src/pages/Blog.tsx",
+                                lineNumber: 37,
+                                columnNumber: 15,
+                              },
+                              this,
+                            ),
+                            e.jsxDEV(
+                              l,
+                              {
+                                href: "/pricing",
+                                children: e.jsxDEV(
+                                  i,
+                                  { children: "Get Started" },
+                                  void 0,
+                                  !1,
+                                  {
+                                    fileName:
+                                      "/home/runner/workspace/client/src/pages/Blog.tsx",
+                                    lineNumber: 41,
+                                    columnNumber: 17,
+                                  },
+                                  this,
+                                ),
+                              },
+                              void 0,
+                              !1,
+                              {
+                                fileName:
+                                  "/home/runner/workspace/client/src/pages/Blog.tsx",
+                                lineNumber: 40,
+                                columnNumber: 15,
+                              },
+                              this,
+                            ),
+                          ],
+                        },
+                        void 0,
+                        !0,
+                        {
+                          fileName:
+                            "/home/runner/workspace/client/src/pages/Blog.tsx",
+                          lineNumber: 33,
+                          columnNumber: 13,
+                        },
+                        this,
+                      ),
+                    ],
+                  },
+                  void 0,
+                  !0,
+                  {
+                    fileName:
+                      "/home/runner/workspace/client/src/pages/Blog.tsx",
+                    lineNumber: 27,
+                    columnNumber: 11,
+                  },
+                  this,
+                ),
+              },
+              void 0,
+              !1,
+              {
+                fileName: "/home/runner/workspace/client/src/pages/Blog.tsx",
+                lineNumber: 26,
+                columnNumber: 9,
+              },
+              this,
+            ),
+          },
+          void 0,
+          !1,
+          {
+            fileName: "/home/runner/workspace/client/src/pages/Blog.tsx",
+            lineNumber: 25,
+            columnNumber: 7,
+          },
+          this,
+        ),
+        e.jsxDEV(
+          "section",
+          {
+            className: "relative px-4 pt-20 pb-16 sm:px-6 lg:px-8",
+            children: e.jsxDEV(
+              "div",
+              {
+                className: "max-w-7xl mx-auto text-center",
+                children: [
+                  e.jsxDEV(
+                    "h1",
+                    {
+                      className:
+                        "text-4xl sm:text-5xl font-bold text-gray-900 dark:text-white mb-6",
+                      children: [
+                        "Max Booster Blog",
+                        e.jsxDEV(
+                          "span",
+                          {
+                            className:
+                              "block bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent",
+                            children: "Insights for Artists",
+                          },
+                          void 0,
+                          !1,
+                          {
+                            fileName:
+                              "/home/runner/workspace/client/src/pages/Blog.tsx",
+                            lineNumber: 52,
+                            columnNumber: 13,
+                          },
+                          this,
+                        ),
+                      ],
+                    },
+                    void 0,
+                    !0,
+                    {
+                      fileName:
+                        "/home/runner/workspace/client/src/pages/Blog.tsx",
+                      lineNumber: 50,
+                      columnNumber: 11,
+                    },
+                    this,
+                  ),
+                  e.jsxDEV(
+                    "p",
+                    {
+                      className:
+                        "text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto",
+                      children:
+                        "Tips, tutorials, and industry insights to help you grow your music career",
+                    },
+                    void 0,
+                    !1,
+                    {
+                      fileName:
+                        "/home/runner/workspace/client/src/pages/Blog.tsx",
+                      lineNumber: 56,
+                      columnNumber: 11,
+                    },
+                    this,
+                  ),
+                ],
+              },
+              void 0,
+              !0,
+              {
+                fileName: "/home/runner/workspace/client/src/pages/Blog.tsx",
+                lineNumber: 49,
+                columnNumber: 9,
+              },
+              this,
+            ),
+          },
+          void 0,
+          !1,
+          {
+            fileName: "/home/runner/workspace/client/src/pages/Blog.tsx",
+            lineNumber: 48,
+            columnNumber: 7,
+          },
+          this,
+        ),
+        e.jsxDEV(
+          "section",
+          {
+            className: "py-8",
+            children: e.jsxDEV(
+              "div",
+              {
+                className: "max-w-7xl mx-auto px-4 sm:px-6 lg:px-8",
+                children: e.jsxDEV(
+                  l,
+                  {
+                    href: `/blog/${s.slug}`,
+                    children: e.jsxDEV(
+                      N,
+                      {
+                        className:
+                          "overflow-hidden hover:shadow-xl transition-shadow cursor-pointer dark:bg-gray-900 dark:border-gray-700",
+                        children: e.jsxDEV(
+                          "div",
+                          {
+                            className: "grid grid-cols-1 lg:grid-cols-2",
+                            children: [
+                              e.jsxDEV(
+                                "div",
+                                {
+                                  className: `bg-gradient-to-br ${s.coverGradient} p-12 flex items-center justify-center min-h-[220px]`,
+                                  children: e.jsxDEV(
+                                    "div",
+                                    {
+                                      className: "text-white text-center",
+                                      children: [
+                                        e.jsxDEV(
+                                          n,
+                                          {
+                                            className:
+                                              "bg-white/20 text-white border-white/30 mb-4",
+                                            children: "Featured Post",
+                                          },
+                                          void 0,
+                                          !1,
+                                          {
+                                            fileName:
+                                              "/home/runner/workspace/client/src/pages/Blog.tsx",
+                                            lineNumber: 71,
+                                            columnNumber: 21,
+                                          },
+                                          this,
+                                        ),
+                                        e.jsxDEV(
+                                          "h2",
+                                          {
+                                            className:
+                                              "text-2xl sm:text-3xl font-bold mb-4 leading-snug",
+                                            children: s.title,
+                                          },
+                                          void 0,
+                                          !1,
+                                          {
+                                            fileName:
+                                              "/home/runner/workspace/client/src/pages/Blog.tsx",
+                                            lineNumber: 72,
+                                            columnNumber: 21,
+                                          },
+                                          this,
+                                        ),
+                                        e.jsxDEV(
+                                          "div",
+                                          {
+                                            className:
+                                              "flex items-center justify-center gap-2 text-white/80 text-sm",
+                                            children: [
+                                              e.jsxDEV(
+                                                c,
+                                                { className: "h-4 w-4" },
+                                                void 0,
+                                                !1,
+                                                {
+                                                  fileName:
+                                                    "/home/runner/workspace/client/src/pages/Blog.tsx",
+                                                  lineNumber: 76,
+                                                  columnNumber: 23,
+                                                },
+                                                this,
+                                              ),
+                                              s.readTime,
+                                            ],
+                                          },
+                                          void 0,
+                                          !0,
+                                          {
+                                            fileName:
+                                              "/home/runner/workspace/client/src/pages/Blog.tsx",
+                                            lineNumber: 75,
+                                            columnNumber: 21,
+                                          },
+                                          this,
+                                        ),
+                                      ],
+                                    },
+                                    void 0,
+                                    !0,
+                                    {
+                                      fileName:
+                                        "/home/runner/workspace/client/src/pages/Blog.tsx",
+                                      lineNumber: 70,
+                                      columnNumber: 19,
+                                    },
+                                    this,
+                                  ),
+                                },
+                                void 0,
+                                !1,
+                                {
+                                  fileName:
+                                    "/home/runner/workspace/client/src/pages/Blog.tsx",
+                                  lineNumber: 67,
+                                  columnNumber: 17,
+                                },
+                                this,
+                              ),
+                              e.jsxDEV(
+                                "div",
+                                {
+                                  className: "p-8 flex flex-col justify-center",
+                                  children: [
+                                    e.jsxDEV(
+                                      n,
+                                      {
+                                        variant: "secondary",
+                                        className: "w-fit mb-3",
+                                        children: s.category,
+                                      },
+                                      void 0,
+                                      !1,
+                                      {
+                                        fileName:
+                                          "/home/runner/workspace/client/src/pages/Blog.tsx",
+                                        lineNumber: 82,
+                                        columnNumber: 19,
+                                      },
+                                      this,
+                                    ),
+                                    e.jsxDEV(
+                                      "div",
+                                      {
+                                        className:
+                                          "flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400 mb-4",
+                                        children: [
+                                          e.jsxDEV(
+                                            "span",
+                                            {
+                                              className:
+                                                "flex items-center gap-1",
+                                              children: [
+                                                e.jsxDEV(
+                                                  u,
+                                                  { className: "h-4 w-4" },
+                                                  void 0,
+                                                  !1,
+                                                  {
+                                                    fileName:
+                                                      "/home/runner/workspace/client/src/pages/Blog.tsx",
+                                                    lineNumber: 85,
+                                                    columnNumber: 23,
+                                                  },
+                                                  this,
+                                                ),
+                                                s.date,
+                                              ],
+                                            },
+                                            void 0,
+                                            !0,
+                                            {
+                                              fileName:
+                                                "/home/runner/workspace/client/src/pages/Blog.tsx",
+                                              lineNumber: 84,
+                                              columnNumber: 21,
+                                            },
+                                            this,
+                                          ),
+                                          e.jsxDEV(
+                                            "span",
+                                            {
+                                              className:
+                                                "flex items-center gap-1",
+                                              children: [
+                                                e.jsxDEV(
+                                                  g,
+                                                  { className: "h-4 w-4" },
+                                                  void 0,
+                                                  !1,
+                                                  {
+                                                    fileName:
+                                                      "/home/runner/workspace/client/src/pages/Blog.tsx",
+                                                    lineNumber: 89,
+                                                    columnNumber: 23,
+                                                  },
+                                                  this,
+                                                ),
+                                                s.author,
+                                              ],
+                                            },
+                                            void 0,
+                                            !0,
+                                            {
+                                              fileName:
+                                                "/home/runner/workspace/client/src/pages/Blog.tsx",
+                                              lineNumber: 88,
+                                              columnNumber: 21,
+                                            },
+                                            this,
+                                          ),
+                                        ],
+                                      },
+                                      void 0,
+                                      !0,
+                                      {
+                                        fileName:
+                                          "/home/runner/workspace/client/src/pages/Blog.tsx",
+                                        lineNumber: 83,
+                                        columnNumber: 19,
+                                      },
+                                      this,
+                                    ),
+                                    e.jsxDEV(
+                                      "p",
+                                      {
+                                        className:
+                                          "text-gray-700 dark:text-gray-300 leading-relaxed mb-6",
+                                        children: s.excerpt,
+                                      },
+                                      void 0,
+                                      !1,
+                                      {
+                                        fileName:
+                                          "/home/runner/workspace/client/src/pages/Blog.tsx",
+                                        lineNumber: 93,
+                                        columnNumber: 19,
+                                      },
+                                      this,
+                                    ),
+                                    e.jsxDEV(
+                                      i,
+                                      {
+                                        className: `w-fit bg-gradient-to-r ${s.coverGradient} text-white border-0`,
+                                        children: [
+                                          "Read Article",
+                                          e.jsxDEV(
+                                            x,
+                                            { className: "ml-2 h-4 w-4" },
+                                            void 0,
+                                            !1,
+                                            {
+                                              fileName:
+                                                "/home/runner/workspace/client/src/pages/Blog.tsx",
+                                              lineNumber: 98,
+                                              columnNumber: 21,
+                                            },
+                                            this,
+                                          ),
+                                        ],
+                                      },
+                                      void 0,
+                                      !0,
+                                      {
+                                        fileName:
+                                          "/home/runner/workspace/client/src/pages/Blog.tsx",
+                                        lineNumber: 96,
+                                        columnNumber: 19,
+                                      },
+                                      this,
+                                    ),
+                                  ],
+                                },
+                                void 0,
+                                !0,
+                                {
+                                  fileName:
+                                    "/home/runner/workspace/client/src/pages/Blog.tsx",
+                                  lineNumber: 81,
+                                  columnNumber: 17,
+                                },
+                                this,
+                              ),
+                            ],
+                          },
+                          void 0,
+                          !0,
+                          {
+                            fileName:
+                              "/home/runner/workspace/client/src/pages/Blog.tsx",
+                            lineNumber: 66,
+                            columnNumber: 15,
+                          },
+                          this,
+                        ),
+                      },
+                      void 0,
+                      !1,
+                      {
+                        fileName:
+                          "/home/runner/workspace/client/src/pages/Blog.tsx",
+                        lineNumber: 65,
+                        columnNumber: 13,
+                      },
+                      this,
+                    ),
+                  },
+                  void 0,
+                  !1,
+                  {
+                    fileName:
+                      "/home/runner/workspace/client/src/pages/Blog.tsx",
+                    lineNumber: 64,
+                    columnNumber: 11,
+                  },
+                  this,
+                ),
+              },
+              void 0,
+              !1,
+              {
+                fileName: "/home/runner/workspace/client/src/pages/Blog.tsx",
+                lineNumber: 63,
+                columnNumber: 9,
+              },
+              this,
+            ),
+          },
+          void 0,
+          !1,
+          {
+            fileName: "/home/runner/workspace/client/src/pages/Blog.tsx",
+            lineNumber: 62,
+            columnNumber: 7,
+          },
+          this,
+        ),
+        e.jsxDEV(
+          "section",
+          {
+            className: "py-16",
+            children: e.jsxDEV(
+              "div",
+              {
+                className: "max-w-7xl mx-auto px-4 sm:px-6 lg:px-8",
+                children: [
+                  e.jsxDEV(
+                    "div",
+                    {
+                      className:
+                        "flex flex-wrap justify-between items-center gap-4 mb-8",
+                      children: [
+                        e.jsxDEV(
+                          "h2",
+                          {
+                            className:
+                              "text-3xl font-bold text-gray-900 dark:text-white",
+                            children: "Latest Articles",
+                          },
+                          void 0,
+                          !1,
+                          {
+                            fileName:
+                              "/home/runner/workspace/client/src/pages/Blog.tsx",
+                            lineNumber: 110,
+                            columnNumber: 13,
+                          },
+                          this,
+                        ),
+                        e.jsxDEV(
+                          "div",
+                          {
+                            className: "flex flex-wrap gap-2",
+                            children: f.map((r) =>
+                              e.jsxDEV(
+                                i,
+                                {
+                                  variant: a === r ? "default" : "ghost",
+                                  size: "sm",
+                                  onClick: () => h(r),
+                                  children: r,
+                                },
+                                r,
+                                !1,
+                                {
+                                  fileName:
+                                    "/home/runner/workspace/client/src/pages/Blog.tsx",
+                                  lineNumber: 113,
+                                  columnNumber: 17,
+                                },
+                                this,
+                              ),
+                            ),
+                          },
+                          void 0,
+                          !1,
+                          {
+                            fileName:
+                              "/home/runner/workspace/client/src/pages/Blog.tsx",
+                            lineNumber: 111,
+                            columnNumber: 13,
+                          },
+                          this,
+                        ),
+                      ],
+                    },
+                    void 0,
+                    !0,
+                    {
+                      fileName:
+                        "/home/runner/workspace/client/src/pages/Blog.tsx",
+                      lineNumber: 109,
+                      columnNumber: 11,
+                    },
+                    this,
+                  ),
+                  o.length === 0
+                    ? e.jsxDEV(
+                        "p",
+                        {
+                          className:
+                            "text-gray-500 dark:text-gray-400 text-center py-12",
+                          children: "No articles in this category yet.",
+                        },
+                        void 0,
+                        !1,
+                        {
+                          fileName:
+                            "/home/runner/workspace/client/src/pages/Blog.tsx",
+                          lineNumber: 126,
+                          columnNumber: 13,
+                        },
+                        this,
+                      )
+                    : e.jsxDEV(
+                        "div",
+                        {
+                          className:
+                            "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6",
+                          children: o.map((r) =>
+                            e.jsxDEV(
+                              l,
+                              {
+                                href: `/blog/${r.slug}`,
+                                children: e.jsxDEV(
+                                  N,
+                                  {
+                                    className:
+                                      "flex flex-col hover:shadow-lg transition-shadow cursor-pointer dark:bg-gray-900 dark:border-gray-700 h-full",
+                                    children: [
+                                      e.jsxDEV(
+                                        "div",
+                                        {
+                                          className: `h-36 bg-gradient-to-br ${r.coverGradient} rounded-t-lg flex items-end p-4`,
+                                          children: e.jsxDEV(
+                                            n,
+                                            {
+                                              className:
+                                                "bg-white/20 text-white border-white/30 text-xs",
+                                              children: r.category,
+                                            },
+                                            void 0,
+                                            !1,
+                                            {
+                                              fileName:
+                                                "/home/runner/workspace/client/src/pages/Blog.tsx",
+                                              lineNumber: 135,
+                                              columnNumber: 23,
+                                            },
+                                            this,
+                                          ),
+                                        },
+                                        void 0,
+                                        !1,
+                                        {
+                                          fileName:
+                                            "/home/runner/workspace/client/src/pages/Blog.tsx",
+                                          lineNumber: 134,
+                                          columnNumber: 21,
+                                        },
+                                        this,
+                                      ),
+                                      e.jsxDEV(
+                                        p,
+                                        {
+                                          className: "p-6 flex flex-col flex-1",
+                                          children: [
+                                            e.jsxDEV(
+                                              "h3",
+                                              {
+                                                className:
+                                                  "text-lg font-semibold text-gray-900 dark:text-white mb-2 leading-snug",
+                                                children: r.title,
+                                              },
+                                              void 0,
+                                              !1,
+                                              {
+                                                fileName:
+                                                  "/home/runner/workspace/client/src/pages/Blog.tsx",
+                                                lineNumber: 140,
+                                                columnNumber: 23,
+                                              },
+                                              this,
+                                            ),
+                                            e.jsxDEV(
+                                              "p",
+                                              {
+                                                className:
+                                                  "text-gray-600 dark:text-gray-400 text-sm mb-4 flex-1 leading-relaxed",
+                                                children: r.excerpt,
+                                              },
+                                              void 0,
+                                              !1,
+                                              {
+                                                fileName:
+                                                  "/home/runner/workspace/client/src/pages/Blog.tsx",
+                                                lineNumber: 143,
+                                                columnNumber: 23,
+                                              },
+                                              this,
+                                            ),
+                                            e.jsxDEV(
+                                              "div",
+                                              {
+                                                className:
+                                                  "flex items-center justify-between text-sm text-gray-500 dark:text-gray-400 pt-4 border-t dark:border-gray-700",
+                                                children: [
+                                                  e.jsxDEV(
+                                                    "div",
+                                                    {
+                                                      className:
+                                                        "flex items-center gap-3",
+                                                      children: [
+                                                        e.jsxDEV(
+                                                          "span",
+                                                          {
+                                                            className:
+                                                              "flex items-center gap-1",
+                                                            children: [
+                                                              e.jsxDEV(
+                                                                u,
+                                                                {
+                                                                  className:
+                                                                    "h-3.5 w-3.5",
+                                                                },
+                                                                void 0,
+                                                                !1,
+                                                                {
+                                                                  fileName:
+                                                                    "/home/runner/workspace/client/src/pages/Blog.tsx",
+                                                                  lineNumber: 149,
+                                                                  columnNumber: 29,
+                                                                },
+                                                                this,
+                                                              ),
+                                                              r.date,
+                                                            ],
+                                                          },
+                                                          void 0,
+                                                          !0,
+                                                          {
+                                                            fileName:
+                                                              "/home/runner/workspace/client/src/pages/Blog.tsx",
+                                                            lineNumber: 148,
+                                                            columnNumber: 27,
+                                                          },
+                                                          this,
+                                                        ),
+                                                        e.jsxDEV(
+                                                          "span",
+                                                          {
+                                                            className:
+                                                              "flex items-center gap-1",
+                                                            children: [
+                                                              e.jsxDEV(
+                                                                c,
+                                                                {
+                                                                  className:
+                                                                    "h-3.5 w-3.5",
+                                                                },
+                                                                void 0,
+                                                                !1,
+                                                                {
+                                                                  fileName:
+                                                                    "/home/runner/workspace/client/src/pages/Blog.tsx",
+                                                                  lineNumber: 153,
+                                                                  columnNumber: 29,
+                                                                },
+                                                                this,
+                                                              ),
+                                                              r.readTime,
+                                                            ],
+                                                          },
+                                                          void 0,
+                                                          !0,
+                                                          {
+                                                            fileName:
+                                                              "/home/runner/workspace/client/src/pages/Blog.tsx",
+                                                            lineNumber: 152,
+                                                            columnNumber: 27,
+                                                          },
+                                                          this,
+                                                        ),
+                                                      ],
+                                                    },
+                                                    void 0,
+                                                    !0,
+                                                    {
+                                                      fileName:
+                                                        "/home/runner/workspace/client/src/pages/Blog.tsx",
+                                                      lineNumber: 147,
+                                                      columnNumber: 25,
+                                                    },
+                                                    this,
+                                                  ),
+                                                  e.jsxDEV(
+                                                    "span",
+                                                    {
+                                                      className:
+                                                        "text-blue-600 dark:text-blue-400 flex items-center gap-0.5 font-medium text-xs",
+                                                      children: [
+                                                        "Read ",
+                                                        e.jsxDEV(
+                                                          x,
+                                                          {
+                                                            className:
+                                                              "h-3 w-3",
+                                                          },
+                                                          void 0,
+                                                          !1,
+                                                          {
+                                                            fileName:
+                                                              "/home/runner/workspace/client/src/pages/Blog.tsx",
+                                                            lineNumber: 158,
+                                                            columnNumber: 32,
+                                                          },
+                                                          this,
+                                                        ),
+                                                      ],
+                                                    },
+                                                    void 0,
+                                                    !0,
+                                                    {
+                                                      fileName:
+                                                        "/home/runner/workspace/client/src/pages/Blog.tsx",
+                                                      lineNumber: 157,
+                                                      columnNumber: 25,
+                                                    },
+                                                    this,
+                                                  ),
+                                                ],
+                                              },
+                                              void 0,
+                                              !0,
+                                              {
+                                                fileName:
+                                                  "/home/runner/workspace/client/src/pages/Blog.tsx",
+                                                lineNumber: 146,
+                                                columnNumber: 23,
+                                              },
+                                              this,
+                                            ),
+                                          ],
+                                        },
+                                        void 0,
+                                        !0,
+                                        {
+                                          fileName:
+                                            "/home/runner/workspace/client/src/pages/Blog.tsx",
+                                          lineNumber: 139,
+                                          columnNumber: 21,
+                                        },
+                                        this,
+                                      ),
+                                    ],
+                                  },
+                                  void 0,
+                                  !0,
+                                  {
+                                    fileName:
+                                      "/home/runner/workspace/client/src/pages/Blog.tsx",
+                                    lineNumber: 133,
+                                    columnNumber: 19,
+                                  },
+                                  this,
+                                ),
+                              },
+                              r.id,
+                              !1,
+                              {
+                                fileName:
+                                  "/home/runner/workspace/client/src/pages/Blog.tsx",
+                                lineNumber: 132,
+                                columnNumber: 17,
+                              },
+                              this,
+                            ),
+                          ),
+                        },
+                        void 0,
+                        !1,
+                        {
+                          fileName:
+                            "/home/runner/workspace/client/src/pages/Blog.tsx",
+                          lineNumber: 130,
+                          columnNumber: 13,
+                        },
+                        this,
+                      ),
+                ],
+              },
+              void 0,
+              !0,
+              {
+                fileName: "/home/runner/workspace/client/src/pages/Blog.tsx",
+                lineNumber: 108,
+                columnNumber: 9,
+              },
+              this,
+            ),
+          },
+          void 0,
+          !1,
+          {
+            fileName: "/home/runner/workspace/client/src/pages/Blog.tsx",
+            lineNumber: 107,
+            columnNumber: 7,
+          },
+          this,
+        ),
+        e.jsxDEV(
+          "section",
+          {
+            className: "py-16 bg-gradient-to-r from-blue-600 to-cyan-600",
+            children: e.jsxDEV(
+              "div",
+              {
+                className: "max-w-4xl mx-auto text-center px-4 sm:px-6 lg:px-8",
+                children: [
+                  e.jsxDEV(
+                    "h2",
+                    {
+                      className: "text-3xl font-bold text-white mb-4",
+                      children: "Stay Updated",
+                    },
+                    void 0,
+                    !1,
+                    {
+                      fileName:
+                        "/home/runner/workspace/client/src/pages/Blog.tsx",
+                      lineNumber: 172,
+                      columnNumber: 11,
+                    },
+                    this,
+                  ),
+                  e.jsxDEV(
+                    "p",
+                    {
+                      className: "text-xl text-white/90 mb-8",
+                      children:
+                        "Get the latest tips, tutorials, and industry insights delivered to your inbox",
+                    },
+                    void 0,
+                    !1,
+                    {
+                      fileName:
+                        "/home/runner/workspace/client/src/pages/Blog.tsx",
+                      lineNumber: 173,
+                      columnNumber: 11,
+                    },
+                    this,
+                  ),
+                  e.jsxDEV(
+                    "div",
+                    {
+                      className:
+                        "flex flex-col sm:flex-row gap-4 justify-center max-w-md mx-auto",
+                      children: [
+                        e.jsxDEV(
+                          "input",
+                          {
+                            type: "email",
+                            placeholder: "Enter your email",
+                            className:
+                              "flex-1 px-4 py-2 rounded-lg text-gray-900",
+                          },
+                          void 0,
+                          !1,
+                          {
+                            fileName:
+                              "/home/runner/workspace/client/src/pages/Blog.tsx",
+                            lineNumber: 177,
+                            columnNumber: 13,
+                          },
+                          this,
+                        ),
+                        e.jsxDEV(
+                          i,
+                          {
+                            size: "lg",
+                            variant: "secondary",
+                            children: "Subscribe",
+                          },
+                          void 0,
+                          !1,
+                          {
+                            fileName:
+                              "/home/runner/workspace/client/src/pages/Blog.tsx",
+                            lineNumber: 182,
+                            columnNumber: 13,
+                          },
+                          this,
+                        ),
+                      ],
+                    },
+                    void 0,
+                    !0,
+                    {
+                      fileName:
+                        "/home/runner/workspace/client/src/pages/Blog.tsx",
+                      lineNumber: 176,
+                      columnNumber: 11,
+                    },
+                    this,
+                  ),
+                ],
+              },
+              void 0,
+              !0,
+              {
+                fileName: "/home/runner/workspace/client/src/pages/Blog.tsx",
+                lineNumber: 171,
+                columnNumber: 9,
+              },
+              this,
+            ),
+          },
+          void 0,
+          !1,
+          {
+            fileName: "/home/runner/workspace/client/src/pages/Blog.tsx",
+            lineNumber: 170,
+            columnNumber: 7,
+          },
+          this,
+        ),
+      ],
+    },
+    void 0,
+    !0,
+    {
+      fileName: "/home/runner/workspace/client/src/pages/Blog.tsx",
+      lineNumber: 24,
+      columnNumber: 5,
+    },
+    this,
+  );
+}
+export { y as default };

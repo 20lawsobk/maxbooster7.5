@@ -1,0 +1,60 @@
+import type { PluginDefinition } from "../server/services/pluginHostService";
+
+const MbBrassSaxSopranoPlugin: PluginDefinition = {
+  id: "mb-brass-sax-soprano",
+  slug: "mb-brass-sax-soprano",
+  name: "MB Soprano Sax",
+  category: "instrument",
+  type: "brass" as any,
+  version: "1.0.0",
+  description: "Bright soprano saxophone with piercing tone",
+  author: "Max Booster",
+  grade: "A",
+  oscillators: [
+    { type: "sawtooth", detune: 0, gain: 0.5 },
+    { type: "square", detune: 2, gain: 0.35 },
+    { type: "sine", detune: 1200, gain: 0.15 },
+  ],
+  envelope: { attack: 0.02, decay: 0.15, sustain: 0.9, release: 0.1 },
+  parameters: [
+    {
+      id: "breath",
+      name: "Breath",
+      type: "float",
+      defaultValue: 0.5,
+      minValue: 0,
+      maxValue: 1,
+      automatable: true,
+    },
+    {
+      id: "vibrato",
+      name: "Vibrato",
+      type: "float",
+      defaultValue: 0.45,
+      minValue: 0,
+      maxValue: 1,
+      automatable: true,
+    },
+    {
+      id: "brightness",
+      name: "Brightness",
+      type: "float",
+      defaultValue: 0.7,
+      minValue: 0,
+      maxValue: 1,
+      automatable: true,
+    },
+    {
+      id: "volume",
+      name: "Volume",
+      type: "float",
+      defaultValue: 0.8,
+      minValue: 0,
+      maxValue: 1,
+      automatable: true,
+    },
+  ],
+  defaultPreset: { breath: 0.5, vibrato: 0.45, brightness: 0.7, volume: 0.8 },
+};
+
+export default MbBrassSaxSopranoPlugin;
