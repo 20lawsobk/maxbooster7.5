@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect } from "react";
 
 const OAUTH_CALLBACK_PATTERN = /^\/auth\/([^/]+)\/callback$/;
 
@@ -11,9 +11,9 @@ export function OAuthCallbackHandler() {
     const platform = match[1];
     const search = window.location.search;
     const params = new URLSearchParams(search);
-    const code = params.get('code');
-    const state = params.get('state');
-    const error = params.get('error');
+    const code = params.get("code");
+    const state = params.get("state");
+    const error = params.get("error");
 
     if (!code && !error) return;
 

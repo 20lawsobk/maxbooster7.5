@@ -1,5 +1,5 @@
-import { useState, useCallback, useEffect, useRef } from 'react';
-import { ContextMenuItem } from '@/components/commands/ContextMenu';
+import { useState, useCallback, useEffect, useRef } from "react";
+import { ContextMenuItem } from "@/components/commands/ContextMenu";
 
 export interface ContextMenuState {
   isOpen: boolean;
@@ -26,37 +26,59 @@ export function useContextMenu(options: UseContextMenuOptions = {}) {
     items: [],
   });
 
-  const open = useCallback((x: number, y: number, customItems?: ContextMenuItem[], context?: string) => {
-    if (disabled) return;
+  const open = useCallback(
+    (
+      x: number,
+      y: number,
+      customItems?: ContextMenuItem[],
+      context?: string,
+    ) => {
+      if (disabled) return;
 
-    setState({
-      isOpen: true,
-      x,
-      y,
-      items: customItems || items,
-      context,
-    });
-    onOpen?.(x, y);
-  }, [items, disabled, onOpen]);
+      setState({
+        isOpen: true,
+        x,
+        y,
+        items: customItems || items,
+        context,
+      });
+      onOpen?.(x, y);
+    },
+    [items, disabled, onOpen],
+  );
 
   const close = useCallback(() => {
-    setState(prev => ({ ...prev, isOpen: false }));
+    setState((prev) => ({ ...prev, isOpen: false }));
     onClose?.();
   }, [onClose]);
 
-  const handleAction = useCallback((itemId: string) => {
-    onAction?.(itemId);
-  }, [onAction]);
+  const handleAction = useCallback(
+    (itemId: string) => {
+      onAction?.(itemId);
+    },
+    [onAction],
+  );
 
-  const handleContextMenu = useCallback((e: React.MouseEvent, customItems?: ContextMenuItem[], context?: string) => {
-    e.preventDefault();
-    e.stopPropagation();
-    open(e.clientX, e.clientY, customItems, context);
-  }, [open]);
+  const handleContextMenu = useCallback(
+    (
+      e: React.MouseEvent,
+      customItems?: ContextMenuItem[],
+      context?: string,
+    ) => {
+      e.preventDefault();
+      e.stopPropagation();
+      open(e.clientX, e.clientY, customItems, context);
+    },
+    [open],
+  );
 
-  const getContextMenuProps = useCallback((customItems?: ContextMenuItem[], context?: string) => ({
-    onContextMenu: (e: React.MouseEvent) => handleContextMenu(e, customItems, context),
-  }), [handleContextMenu]);
+  const getContextMenuProps = useCallback(
+    (customItems?: ContextMenuItem[], context?: string) => ({
+      onContextMenu: (e: React.MouseEvent) =>
+        handleContextMenu(e, customItems, context),
+    }),
+    [handleContextMenu],
+  );
 
   return {
     ...state,
@@ -69,7 +91,7 @@ export function useContextMenu(options: UseContextMenuOptions = {}) {
 }
 
 export function useContextMenuTarget<T extends HTMLElement = HTMLDivElement>(
-  options: UseContextMenuOptions = {}
+  options: UseContextMenuOptions = {},
 ) {
   const ref = useRef<T>(null);
   const menu = useContextMenu(options);
@@ -84,10 +106,10 @@ export function useContextMenuTarget<T extends HTMLElement = HTMLDivElement>(
       menu.open(e.clientX, e.clientY);
     };
 
-    element.addEventListener('contextmenu', handleContextMenu);
+    element.addEventListener("contextmenu", handleContextMenu);
 
     return () => {
-      element.removeEventListener('contextmenu', handleContextMenu);
+      element.removeEventListener("contextmenu", handleContextMenu);
     };
   }, [menu.open, options.disabled]);
 
@@ -105,29 +127,32 @@ export function useGlobalContextMenu() {
     items: [],
   });
 
-  const show = useCallback((x: number, y: number, items: ContextMenuItem[], context?: string) => {
-    setState({
-      isOpen: true,
-      x,
-      y,
-      items,
-      context,
-    });
-  }, []);
+  const show = useCallback(
+    (x: number, y: number, items: ContextMenuItem[], context?: string) => {
+      setState({
+        isOpen: true,
+        x,
+        y,
+        items,
+        context,
+      });
+    },
+    [],
+  );
 
   const hide = useCallback(() => {
-    setState(prev => ({ ...prev, isOpen: false }));
+    setState((prev) => ({ ...prev, isOpen: false }));
   }, []);
 
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && state.isOpen) {
+      if (e.key === "Escape" && state.isOpen) {
         hide();
       }
     };
 
-    window.addEventListener('keydown', handleEscape);
-    return () => window.removeEventListener('keydown', handleEscape);
+    window.addEventListener("keydown", handleEscape);
+    return () => window.removeEventListener("keydown", handleEscape);
   }, [state.isOpen, hide]);
 
   return {

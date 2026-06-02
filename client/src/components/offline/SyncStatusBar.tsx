@@ -1,9 +1,9 @@
-import { useEffect, useState } from 'react';
-import { RefreshCw, Check, AlertTriangle, X } from 'lucide-react';
-import { Progress } from '@/components/ui/progress';
-import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
-import { syncManager, SyncProgress, SyncStatus } from '@/lib/offline';
+import { useEffect, useState } from "react";
+import { RefreshCw, Check, AlertTriangle, X } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+import { syncManager, SyncProgress, SyncStatus } from "@/lib/offline";
 
 interface SyncStatusBarProps {
   className?: string;
@@ -11,26 +11,32 @@ interface SyncStatusBarProps {
   onDismiss?: () => void;
 }
 
-export function SyncStatusBar({ className, onRetry, onDismiss }: SyncStatusBarProps) {
+export function SyncStatusBar({
+  className,
+  onRetry,
+  onDismiss,
+}: SyncStatusBarProps) {
   const [status, setStatus] = useState<SyncStatus>(syncManager.getStatus());
-  const [progress, setProgress] = useState<SyncProgress>(syncManager.getProgress());
+  const [progress, setProgress] = useState<SyncProgress>(
+    syncManager.getProgress(),
+  );
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
-    const unsubStatus = syncManager.on('status-change', (event) => {
+    const unsubStatus = syncManager.on("status-change", (event) => {
       if (event.status) {
         setStatus(event.status);
-        setVisible(event.status === 'syncing' || event.status === 'error');
+        setVisible(event.status === "syncing" || event.status === "error");
       }
     });
 
-    const unsubProgress = syncManager.on('progress-update', (event) => {
+    const unsubProgress = syncManager.on("progress-update", (event) => {
       if (event.progress) {
         setProgress(event.progress);
       }
     });
 
-    const unsubComplete = syncManager.on('sync-complete', () => {
+    const unsubComplete = syncManager.on("sync-complete", () => {
       setTimeout(() => {
         setVisible(false);
       }, 2000);
@@ -45,38 +51,39 @@ export function SyncStatusBar({ className, onRetry, onDismiss }: SyncStatusBarPr
 
   if (!visible) return null;
 
-  const progressPercent = progress.total > 0
-    ? Math.round((progress.completed / progress.total) * 100)
-    : 0;
+  const progressPercent =
+    progress.total > 0
+      ? Math.round((progress.completed / progress.total) * 100)
+      : 0;
 
   const getStatusContent = () => {
     switch (status) {
-      case 'syncing':
+      case "syncing":
         return {
           icon: RefreshCw,
-          iconClass: 'animate-spin',
-          title: 'Syncing changes...',
+          iconClass: "animate-spin",
+          title: "Syncing changes...",
           description: `${progress.completed} of ${progress.total} completed`,
           showProgress: true,
-          variant: 'default' as const,
+          variant: "default" as const,
         };
-      case 'error':
+      case "error":
         return {
           icon: AlertTriangle,
-          iconClass: '',
-          title: 'Sync failed',
+          iconClass: "",
+          title: "Sync failed",
           description: `${progress.failed} items failed to sync`,
           showProgress: false,
-          variant: 'destructive' as const,
+          variant: "destructive" as const,
         };
       default:
         return {
           icon: Check,
-          iconClass: '',
-          title: 'All changes synced',
-          description: '',
+          iconClass: "",
+          title: "All changes synced",
+          description: "",
           showProgress: false,
-          variant: 'success' as const,
+          variant: "success" as const,
         };
     }
   };
@@ -87,19 +94,23 @@ export function SyncStatusBar({ className, onRetry, onDismiss }: SyncStatusBarPr
   return (
     <div
       className={cn(
-        'fixed bottom-4 left-1/2 -translate-x-1/2 z-50',
-        'bg-background border rounded-lg shadow-lg p-4 min-w-[320px] max-w-md',
-        content.variant === 'destructive' && 'border-destructive',
-        className
+        "fixed bottom-4 left-1/2 -translate-x-1/2 z-50",
+        "bg-background border rounded-lg shadow-lg p-4 min-w-[320px] max-w-md",
+        content.variant === "destructive" && "border-destructive",
+        className,
       )}
     >
       <div className="flex items-start gap-3">
-        <Icon className={cn('h-5 w-5 mt-0.5 text-primary', content.iconClass)} />
+        <Icon
+          className={cn("h-5 w-5 mt-0.5 text-primary", content.iconClass)}
+        />
 
         <div className="flex-1 min-w-0">
           <p className="font-medium text-sm">{content.title}</p>
           {content.description && (
-            <p className="text-xs text-muted-foreground mt-0.5">{content.description}</p>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              {content.description}
+            </p>
           )}
 
           {content.showProgress && (
@@ -111,7 +122,7 @@ export function SyncStatusBar({ className, onRetry, onDismiss }: SyncStatusBarPr
             </div>
           )}
 
-          {status === 'error' && onRetry && (
+          {status === "error" && onRetry && (
             <Button
               variant="outline"
               size="sm"

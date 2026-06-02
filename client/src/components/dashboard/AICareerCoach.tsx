@@ -1,18 +1,18 @@
-import React, { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
-import { Skeleton } from '@/components/ui/skeleton';
+import React, { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
-} from '@/components/ui/collapsible';
-import { useToast } from '@/hooks/use-toast';
-import { apiRequest } from '@/lib/queryClient';
-import { useLocation } from 'wouter';
+} from "@/components/ui/collapsible";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
+import { useLocation } from "wouter";
 import {
   Brain,
   Sparkles,
@@ -31,7 +31,7 @@ import {
   ListChecks,
   Timer,
   BarChart2,
-} from 'lucide-react';
+} from "lucide-react";
 
 interface RecommendationMetadata {
   patternId?: string;
@@ -88,15 +88,15 @@ interface GoalsResponse {
 }
 
 const priorityColors: Record<number, string> = {
-  1: 'bg-red-100 text-red-800 border-red-200',
-  2: 'bg-yellow-100 text-yellow-800 border-yellow-200',
-  3: 'bg-blue-100 text-blue-800 border-blue-200',
+  1: "bg-red-100 text-red-800 border-red-200",
+  2: "bg-yellow-100 text-yellow-800 border-yellow-200",
+  3: "bg-blue-100 text-blue-800 border-blue-200",
 };
 
 const priorityLabels: Record<number, string> = {
-  1: 'High Priority',
-  2: 'Recommended',
-  3: 'Nice to Have',
+  1: "High Priority",
+  2: "Recommended",
+  3: "Nice to Have",
 };
 
 const typeIcons: Record<string, React.ReactNode> = {
@@ -147,24 +147,39 @@ function RecCard({
               {(steps || impact || timeframe) && (
                 <button
                   className="mt-1.5 text-[10px] text-purple-600 hover:underline flex items-center gap-1"
-                  onClick={() => setExpanded(e => !e)}
+                  onClick={() => setExpanded((e) => !e)}
                 >
                   <ListChecks className="h-3 w-3" />
-                  {expanded ? 'Hide action steps' : 'Show action steps'}
+                  {expanded ? "Hide action steps" : "Show action steps"}
                 </button>
               )}
             </div>
           </div>
           <div className="flex items-center gap-1 shrink-0">
             {rec.actionUrl && (
-              <Button size="sm" variant="ghost" className="h-6 w-6 p-0" onClick={() => onNavigate(rec.actionUrl!)}>
+              <Button
+                size="sm"
+                variant="ghost"
+                className="h-6 w-6 p-0"
+                onClick={() => onNavigate(rec.actionUrl!)}
+              >
                 <ArrowRight className="h-3 w-3" />
               </Button>
             )}
-            <Button size="sm" variant="ghost" className="h-6 w-6 p-0 text-green-600" onClick={onComplete}>
+            <Button
+              size="sm"
+              variant="ghost"
+              className="h-6 w-6 p-0 text-green-600"
+              onClick={onComplete}
+            >
               <Check className="h-3 w-3" />
             </Button>
-            <Button size="sm" variant="ghost" className="h-6 w-6 p-0 text-gray-400" onClick={onDismiss}>
+            <Button
+              size="sm"
+              variant="ghost"
+              className="h-6 w-6 p-0 text-gray-400"
+              onClick={onDismiss}
+            >
               <X className="h-3 w-3" />
             </Button>
           </div>
@@ -179,8 +194,13 @@ function RecCard({
               </p>
               <ol className="space-y-1">
                 {steps.map((step, i) => (
-                  <li key={i} className="text-xs text-gray-700 dark:text-gray-300 flex items-start gap-1.5">
-                    <span className="text-purple-500 font-bold shrink-0">{i + 1}.</span>
+                  <li
+                    key={i}
+                    className="text-xs text-gray-700 dark:text-gray-300 flex items-start gap-1.5"
+                  >
+                    <span className="text-purple-500 font-bold shrink-0">
+                      {i + 1}.
+                    </span>
                     {step}
                   </li>
                 ))}
@@ -194,7 +214,9 @@ function RecCard({
                   <p className="text-[10px] font-semibold text-green-700 dark:text-green-400 uppercase tracking-wide flex items-center gap-1 mb-0.5">
                     <BarChart2 className="h-3 w-3" /> Expected Impact
                   </p>
-                  <p className="text-xs text-gray-600 dark:text-gray-400">{impact}</p>
+                  <p className="text-xs text-gray-600 dark:text-gray-400">
+                    {impact}
+                  </p>
                 </div>
               )}
               {timeframe && (
@@ -202,7 +224,9 @@ function RecCard({
                   <p className="text-[10px] font-semibold text-blue-700 dark:text-blue-400 uppercase tracking-wide flex items-center gap-1 mb-0.5">
                     <Timer className="h-3 w-3" /> Timeframe
                   </p>
-                  <p className="text-xs text-gray-600 dark:text-gray-400">{timeframe}</p>
+                  <p className="text-xs text-gray-600 dark:text-gray-400">
+                    {timeframe}
+                  </p>
                 </div>
               )}
             </div>
@@ -221,59 +245,66 @@ export function AICareerCoach() {
   const [showGoals, setShowGoals] = useState(false);
 
   const { data: authUser } = useQuery({
-    queryKey: ['/api/auth/me'],
+    queryKey: ["/api/auth/me"],
     staleTime: 5 * 60 * 1000,
     retry: false,
   });
 
-  const { data: recommendationsData, isLoading: recLoading } = useQuery<RecommendationsResponse>({
-    queryKey: ['/api/career-coach/recommendations'],
-    enabled: !!authUser,
-    staleTime: 5 * 60 * 1000,
-  });
+  const { data: recommendationsData, isLoading: recLoading } =
+    useQuery<RecommendationsResponse>({
+      queryKey: ["/api/career-coach/recommendations"],
+      enabled: !!authUser,
+      staleTime: 5 * 60 * 1000,
+    });
 
   const { data: goalsData, isLoading: goalsLoading } = useQuery<GoalsResponse>({
-    queryKey: ['/api/career-coach/goals'],
+    queryKey: ["/api/career-coach/goals"],
     enabled: !!authUser,
     staleTime: 5 * 60 * 1000,
   });
 
   const dismissMutation = useMutation({
     mutationFn: async (id: string) => {
-      await apiRequest('POST', `/api/career-coach/dismiss/${id}`);
+      await apiRequest("POST", `/api/career-coach/dismiss/${id}`);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/career-coach/recommendations'] });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/career-coach/recommendations"],
+      });
       toast({
-        title: 'Dismissed',
-        description: 'Recommendation dismissed',
+        title: "Dismissed",
+        description: "Recommendation dismissed",
       });
     },
   });
 
   const completeMutation = useMutation({
     mutationFn: async (id: string) => {
-      await apiRequest('POST', `/api/career-coach/complete/${id}`);
+      await apiRequest("POST", `/api/career-coach/complete/${id}`);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/career-coach/recommendations'] });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/career-coach/recommendations"],
+      });
       toast({
-        title: 'Completed!',
-        description: 'Great job taking action!',
+        title: "Completed!",
+        description: "Great job taking action!",
       });
     },
   });
 
   const createSmartGoalMutation = useMutation({
     mutationFn: async (type: string) => {
-      const res = await apiRequest('POST', '/api/career-coach/goals/smart', { type });
+      const res = await apiRequest("POST", "/api/career-coach/goals/smart", {
+        type,
+      });
       return res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/career-coach/goals'] });
+      queryClient.invalidateQueries({ queryKey: ["/api/career-coach/goals"] });
       toast({
-        title: 'Goal Created',
-        description: 'Your AI-generated goal has been set',
+        title: "Goal Created",
+        description: "Your AI-generated goal has been set",
       });
     },
   });
@@ -283,7 +314,7 @@ export function AICareerCoach() {
   const recommendations = recommendationsData?.data?.recommendations || [];
   const dailyTip = recommendationsData?.data?.dailyTip;
   const goals = goalsData?.data?.goals || [];
-  const activeGoals = goals.filter(g => g.status === 'active');
+  const activeGoals = goals.filter((g) => g.status === "active");
   const lastAnalyzed = recommendationsData?.data?.lastAnalyzed;
 
   if (recLoading) {
@@ -319,7 +350,10 @@ export function AICareerCoach() {
             <div>
               <CardTitle className="text-lg flex items-center gap-2">
                 AI Career Coach
-                <Badge variant="secondary" className="text-xs bg-purple-100 text-purple-800">
+                <Badge
+                  variant="secondary"
+                  className="text-xs bg-purple-100 text-purple-800"
+                >
                   Personalized
                 </Badge>
               </CardTitle>
@@ -337,7 +371,7 @@ export function AICareerCoach() {
             onClick={() => setShowGoals(!showGoals)}
             className="text-xs"
           >
-            {showGoals ? 'Tips' : 'Goals'}
+            {showGoals ? "Tips" : "Goals"}
             <Target className="h-3 w-3 ml-1" />
           </Button>
         </div>
@@ -399,10 +433,14 @@ export function AICareerCoach() {
             {recommendations.length > 1 && (
               <Collapsible open={isExpanded} onOpenChange={setIsExpanded}>
                 <CollapsibleTrigger asChild>
-                  <Button variant="ghost" className="w-full justify-between text-sm h-8">
+                  <Button
+                    variant="ghost"
+                    className="w-full justify-between text-sm h-8"
+                  >
                     <span className="flex items-center gap-2">
                       <span className="text-muted-foreground">
-                        {recommendations.length - 1} more recommendation{recommendations.length > 2 ? 's' : ''}
+                        {recommendations.length - 1} more recommendation
+                        {recommendations.length > 2 ? "s" : ""}
                       </span>
                     </span>
                     {isExpanded ? (
@@ -444,16 +482,25 @@ export function AICareerCoach() {
             ) : activeGoals.length > 0 ? (
               <div className="space-y-3">
                 {activeGoals.slice(0, 3).map((goal) => {
-                  const progress = goal.targetValue > 0 
-                    ? Math.min(((goal.currentValue || 0) / goal.targetValue) * 100, 100)
-                    : 0;
-                  
+                  const progress =
+                    goal.targetValue > 0
+                      ? Math.min(
+                          ((goal.currentValue || 0) / goal.targetValue) * 100,
+                          100,
+                        )
+                      : 0;
+
                   return (
-                    <div key={goal.id} className="p-3 rounded-lg bg-gray-50 dark:bg-gray-800/50 border">
+                    <div
+                      key={goal.id}
+                      className="p-3 rounded-lg bg-gray-50 dark:bg-gray-800/50 border"
+                    >
                       <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center gap-2">
                           <Target className="h-4 w-4 text-purple-600" />
-                          <span className="font-medium text-sm">{goal.title}</span>
+                          <span className="font-medium text-sm">
+                            {goal.title}
+                          </span>
                         </div>
                         <Badge variant="outline" className="text-xs">
                           {goal.goalType}
@@ -461,12 +508,16 @@ export function AICareerCoach() {
                       </div>
                       <Progress value={progress} className="h-2 mb-1" />
                       <div className="flex justify-between text-xs text-muted-foreground">
-                        <span>{goal.currentValue || 0} / {goal.targetValue} {goal.unit}</span>
+                        <span>
+                          {goal.currentValue || 0} / {goal.targetValue}{" "}
+                          {goal.unit}
+                        </span>
                         <span>{Math.round(progress)}%</span>
                       </div>
                       {goal.deadline && (
                         <p className="text-xs text-muted-foreground mt-1">
-                          Deadline: {new Date(goal.deadline).toLocaleDateString()}
+                          Deadline:{" "}
+                          {new Date(goal.deadline).toLocaleDateString()}
                         </p>
                       )}
                     </div>
@@ -476,9 +527,18 @@ export function AICareerCoach() {
             ) : (
               <div className="text-center py-4">
                 <Target className="h-8 w-8 mx-auto mb-2 text-gray-400" />
-                <p className="text-sm text-muted-foreground mb-3">No active goals yet</p>
+                <p className="text-sm text-muted-foreground mb-3">
+                  No active goals yet
+                </p>
                 <div className="flex flex-wrap gap-2 justify-center">
-                  {['streams', 'followers', 'releases', 'revenue', 'playlists', 'engagement'].map((type) => (
+                  {[
+                    "streams",
+                    "followers",
+                    "releases",
+                    "revenue",
+                    "playlists",
+                    "engagement",
+                  ].map((type) => (
                     <Button
                       key={type}
                       size="sm"

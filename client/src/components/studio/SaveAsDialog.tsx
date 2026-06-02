@@ -1,7 +1,7 @@
-import { useState, useCallback } from 'react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { useLocation } from 'wouter';
-import { getCsrfTokenFromCookie } from '@/lib/queryClient';
+import { useState, useCallback } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useLocation } from "wouter";
+import { getCsrfTokenFromCookie } from "@/lib/queryClient";
 import {
   Dialog,
   DialogContent,
@@ -9,13 +9,13 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter,
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { useToast } from '@/hooks/use-toast';
-import { Save, Loader2, Copy } from 'lucide-react';
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { useToast } from "@/hooks/use-toast";
+import { Save, Loader2, Copy } from "lucide-react";
 
 interface SaveAsDialogProps {
   open: boolean;
@@ -31,7 +31,7 @@ export function SaveAsDialog({
   onOpenChange,
   currentProjectId,
   currentTitle,
-  currentDescription = '',
+  currentDescription = "",
   onSaved,
 }: SaveAsDialogProps) {
   const [, setLocation] = useLocation();
@@ -44,31 +44,38 @@ export function SaveAsDialog({
   const saveAsMutation = useMutation({
     mutationFn: async () => {
       const csrfToken = getCsrfTokenFromCookie();
-      const response = await fetch('/api/studio/projects', {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json', ...(csrfToken ? { 'x-csrf-token': csrfToken } : {}) },
+      const response = await fetch("/api/studio/projects", {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+          ...(csrfToken ? { "x-csrf-token": csrfToken } : {}),
+        },
         body: JSON.stringify({
-          title: title.trim() || 'Untitled Project',
+          title: title.trim() || "Untitled Project",
           description,
           duplicateFrom: currentProjectId,
         }),
       });
 
       if (!response.ok) {
-        const error = await response.json().catch(() => ({ error: 'Failed to save project' }));
-        throw new Error(error.error || 'Failed to save project');
+        const error = await response
+          .json()
+          .catch(() => ({ error: "Failed to save project" }));
+        throw new Error(error.error || "Failed to save project");
       }
 
       return response.json();
     },
     onSuccess: (data: Record<string, unknown>) => {
-      queryClient.invalidateQueries({ queryKey: ['/api/projects'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/studio/projects'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/studio/start-hub/summary'] });
+      queryClient.invalidateQueries({ queryKey: ["/api/projects"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/studio/projects"] });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/studio/start-hub/summary"],
+      });
 
       toast({
-        title: 'Project Saved',
+        title: "Project Saved",
         description: `"${title}" has been created successfully.`,
       });
 
@@ -82,9 +89,10 @@ export function SaveAsDialog({
     },
     onError: (error: Error) => {
       toast({
-        title: 'Save Failed',
-        description: error.message || 'Failed to save project. Please try again.',
-        variant: 'destructive',
+        title: "Save Failed",
+        description:
+          error.message || "Failed to save project. Please try again.",
+        variant: "destructive",
       });
     },
   });
@@ -93,22 +101,25 @@ export function SaveAsDialog({
     e.preventDefault();
     if (!title.trim()) {
       toast({
-        title: 'Title Required',
-        description: 'Please enter a project title.',
-        variant: 'destructive',
+        title: "Title Required",
+        description: "Please enter a project title.",
+        variant: "destructive",
       });
       return;
     }
     saveAsMutation.mutate();
   };
 
-  const handleOpenChange = useCallback((newOpen: boolean) => {
-    if (newOpen) {
-      setTitle(`${currentTitle} (Copy)`);
-      setDescription(currentDescription);
-    }
-    onOpenChange(newOpen);
-  }, [currentTitle, currentDescription, onOpenChange]);
+  const handleOpenChange = useCallback(
+    (newOpen: boolean) => {
+      if (newOpen) {
+        setTitle(`${currentTitle} (Copy)`);
+        setDescription(currentDescription);
+      }
+      onOpenChange(newOpen);
+    },
+    [currentTitle, currentDescription, onOpenChange],
+  );
 
   const isSubmitting = saveAsMutation.isPending;
 
@@ -127,7 +138,9 @@ export function SaveAsDialog({
 
         <form onSubmit={handleSubmit} className="space-y-4 mt-4">
           <div className="space-y-2">
-            <Label htmlFor="title" className="text-gray-300">Project Title</Label>
+            <Label htmlFor="title" className="text-gray-300">
+              Project Title
+            </Label>
             <Input
               id="title"
               value={title}
@@ -139,7 +152,9 @@ export function SaveAsDialog({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="description" className="text-gray-300">Description (optional)</Label>
+            <Label htmlFor="description" className="text-gray-300">
+              Description (optional)
+            </Label>
             <Textarea
               id="description"
               value={description}

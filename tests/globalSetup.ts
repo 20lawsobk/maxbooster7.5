@@ -9,14 +9,14 @@
  * Strategy: poll /api/auth/me until the response is no longer { bootPhase: true }
  * (i.e., it is null or an object without bootPhase) — that signals routes are live.
  */
-const BASE = process.env.TEST_BASE_URL ?? 'http://localhost:5000';
-const MAX_WAIT_MS = 480_000;  // 8 minutes — route registration can take ~5 min
+const BASE = process.env.TEST_BASE_URL ?? "http://localhost:5000";
+const MAX_WAIT_MS = 480_000; // 8 minutes — route registration can take ~5 min
 const POLL_MS = 3_000;
 const FETCH_TIMEOUT_MS = 10_000;
 
 export async function setup() {
   const deadline = Date.now() + MAX_WAIT_MS;
-  let lastError = '';
+  let lastError = "";
   let bootPhaseCount = 0;
 
   while (Date.now() < deadline) {
@@ -28,20 +28,28 @@ export async function setup() {
 
       if (res.status === 200) {
         let body: unknown = undefined;
-        try { body = await res.json(); } catch { /* ignore parse error */ }
+        try {
+          body = await res.json();
+        } catch {
+          /* ignore parse error */
+        }
 
         // Boot stub response: { authenticated: false, bootPhase: true }
         // Real handler response (unauthenticated): null
         const isBootPhase =
           body !== null &&
-          typeof body === 'object' &&
+          typeof body === "object" &&
           (body as Record<string, unknown>).bootPhase === true;
 
         if (isBootPhase) {
           bootPhaseCount++;
           if (bootPhaseCount % 10 === 1) {
-            const elapsed = Math.round((Date.now() - (deadline - MAX_WAIT_MS)) / 1000);
-            console.log(`[globalSetup] Boot phase still active (${elapsed}s elapsed) — routes loading...`);
+            const elapsed = Math.round(
+              (Date.now() - (deadline - MAX_WAIT_MS)) / 1000,
+            );
+            console.log(
+              `[globalSetup] Boot phase still active (${elapsed}s elapsed) — routes loading...`,
+            );
           }
           lastError = `bootPhase:true (poll #${bootPhaseCount})`;
           await new Promise((r) => setTimeout(r, POLL_MS));
@@ -49,8 +57,12 @@ export async function setup() {
         }
 
         // Real handler is active (null for unauth, or user object for authed)
-        const elapsed = Math.round((Date.now() - (deadline - MAX_WAIT_MS)) / 1000);
-        console.log(`\n[globalSetup] Server ready at ${BASE} ✅  (${elapsed}s elapsed)`);
+        const elapsed = Math.round(
+          (Date.now() - (deadline - MAX_WAIT_MS)) / 1000,
+        );
+        console.log(
+          `\n[globalSetup] Server ready at ${BASE} ✅  (${elapsed}s elapsed)`,
+        );
         return;
       }
 
@@ -63,6 +75,6 @@ export async function setup() {
 
   throw new Error(
     `[globalSetup] Server at ${BASE} did not finish route registration within ` +
-    `${MAX_WAIT_MS / 1000}s — last status: ${lastError}`,
+      `${MAX_WAIT_MS / 1000}s — last status: ${lastError}`,
   );
 }

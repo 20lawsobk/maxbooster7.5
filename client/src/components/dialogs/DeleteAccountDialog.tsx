@@ -1,64 +1,74 @@
-import { useState } from 'react';
+import { useState } from "react";
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { useToast } from '@/hooks/use-toast';
-import { apiRequest } from '@/lib/queryClient';
-import { AlertTriangle, Trash2, Eye, EyeOff, AlertCircle } from 'lucide-react';
-import { useAuth } from '@/hooks/useAuth';
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
+import { AlertTriangle, Trash2, Eye, EyeOff, AlertCircle } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
 
 interface DeleteAccountDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
-export default function DeleteAccountDialog({ open, onOpenChange }: DeleteAccountDialogProps) {
+export default function DeleteAccountDialog({
+  open,
+  onOpenChange,
+}: DeleteAccountDialogProps) {
   const { toast } = useToast();
   const { logout } = useAuth();
   const [loading, setLoading] = useState(false);
-  const [confirmation, setConfirmation] = useState('');
-  const [password, setPassword] = useState('');
+  const [confirmation, setConfirmation] = useState("");
+  const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [fieldErrors, setFieldErrors] = useState<{ confirmation?: string; password?: string }>({});
+  const [fieldErrors, setFieldErrors] = useState<{
+    confirmation?: string;
+    password?: string;
+  }>({});
 
   const validateForm = (): boolean => {
     const errors: { confirmation?: string; password?: string } = {};
-    
+
     if (!confirmation) {
-      errors.confirmation = 'Please type DELETE to confirm';
-    } else if (confirmation !== 'DELETE') {
-      errors.confirmation = 'Please type DELETE exactly as shown';
+      errors.confirmation = "Please type DELETE to confirm";
+    } else if (confirmation !== "DELETE") {
+      errors.confirmation = "Please type DELETE exactly as shown";
     }
-    
+
     if (!password) {
-      errors.password = 'Password is required to delete your account';
+      errors.password = "Password is required to delete your account";
     }
-    
+
     setFieldErrors(errors);
     return Object.keys(errors).length === 0;
   };
 
   const getEnhancedErrorMessage = (error: unknown): string => {
     const errorObj = error as { message?: string; status?: number };
-    const message = errorObj?.message || '';
+    const message = errorObj?.message || "";
     const lowerMessage = message.toLowerCase();
-    
-    if (lowerMessage.includes('incorrect') || lowerMessage.includes('invalid') || lowerMessage.includes('wrong')) {
-      return 'The password you entered is incorrect. Please try again.';
+
+    if (
+      lowerMessage.includes("incorrect") ||
+      lowerMessage.includes("invalid") ||
+      lowerMessage.includes("wrong")
+    ) {
+      return "The password you entered is incorrect. Please try again.";
     }
-    if (lowerMessage.includes('google') || lowerMessage.includes('oauth')) {
-      return 'Your account is connected via Google. Please set a password in Settings first.';
+    if (lowerMessage.includes("google") || lowerMessage.includes("oauth")) {
+      return "Your account is connected via Google. Please set a password in Settings first.";
     }
-    
-    return message || 'Failed to delete account. Please try again.';
+
+    return message || "Failed to delete account. Please try again.";
   };
 
   const handleDelete = async (e: React.FormEvent) => {
@@ -70,11 +80,12 @@ export default function DeleteAccountDialog({ open, onOpenChange }: DeleteAccoun
 
     setLoading(true);
     try {
-      await apiRequest('DELETE', '/api/auth/account', { password });
+      await apiRequest("DELETE", "/api/auth/account", { password });
 
       toast({
-        title: 'Account Deleted',
-        description: 'Your account and all associated data have been permanently deleted.',
+        title: "Account Deleted",
+        description:
+          "Your account and all associated data have been permanently deleted.",
       });
 
       setTimeout(() => {
@@ -82,15 +93,18 @@ export default function DeleteAccountDialog({ open, onOpenChange }: DeleteAccoun
       }, 1500);
     } catch (error: unknown) {
       const errorMessage = getEnhancedErrorMessage(error);
-      
-      if (errorMessage.toLowerCase().includes('password') || errorMessage.toLowerCase().includes('incorrect')) {
-        setFieldErrors(prev => ({ ...prev, password: 'Incorrect password' }));
+
+      if (
+        errorMessage.toLowerCase().includes("password") ||
+        errorMessage.toLowerCase().includes("incorrect")
+      ) {
+        setFieldErrors((prev) => ({ ...prev, password: "Incorrect password" }));
       }
-      
+
       toast({
-        title: 'Account Deletion Failed',
+        title: "Account Deletion Failed",
         description: errorMessage,
-        variant: 'destructive',
+        variant: "destructive",
       });
     } finally {
       setLoading(false);
@@ -99,8 +113,8 @@ export default function DeleteAccountDialog({ open, onOpenChange }: DeleteAccoun
 
   const handleClose = () => {
     onOpenChange(false);
-    setConfirmation('');
-    setPassword('');
+    setConfirmation("");
+    setPassword("");
     setFieldErrors({});
     setShowPassword(false);
   };
@@ -116,8 +130,8 @@ export default function DeleteAccountDialog({ open, onOpenChange }: DeleteAccoun
             </div>
           </DialogTitle>
           <DialogDescription>
-            This action cannot be undone. This will permanently delete your account and all
-            associated data.
+            This action cannot be undone. This will permanently delete your
+            account and all associated data.
           </DialogDescription>
         </DialogHeader>
 
@@ -138,18 +152,23 @@ export default function DeleteAccountDialog({ open, onOpenChange }: DeleteAccoun
         <form onSubmit={handleDelete} className="space-y-4">
           <div className="space-y-1">
             <Label htmlFor="confirmation">
-              Type <strong className="text-destructive">DELETE</strong> to confirm
+              Type <strong className="text-destructive">DELETE</strong> to
+              confirm
             </Label>
             <Input
               id="confirmation"
               value={confirmation}
               onChange={(e) => {
                 setConfirmation(e.target.value);
-                if (fieldErrors.confirmation) setFieldErrors(prev => ({ ...prev, confirmation: undefined }));
+                if (fieldErrors.confirmation)
+                  setFieldErrors((prev) => ({
+                    ...prev,
+                    confirmation: undefined,
+                  }));
               }}
               placeholder="Type DELETE"
               required
-              className={fieldErrors.confirmation ? 'border-destructive' : ''}
+              className={fieldErrors.confirmation ? "border-destructive" : ""}
               data-testid="input-delete-confirmation"
             />
             {fieldErrors.confirmation && (
@@ -165,15 +184,19 @@ export default function DeleteAccountDialog({ open, onOpenChange }: DeleteAccoun
             <div className="relative">
               <Input
                 id="password"
-                type={showPassword ? 'text' : 'password'}
+                type={showPassword ? "text" : "password"}
                 value={password}
                 onChange={(e) => {
                   setPassword(e.target.value);
-                  if (fieldErrors.password) setFieldErrors(prev => ({ ...prev, password: undefined }));
+                  if (fieldErrors.password)
+                    setFieldErrors((prev) => ({
+                      ...prev,
+                      password: undefined,
+                    }));
                 }}
                 placeholder="Enter your password"
                 required
-                className={`pr-10 ${fieldErrors.password ? 'border-destructive' : ''}`}
+                className={`pr-10 ${fieldErrors.password ? "border-destructive" : ""}`}
                 data-testid="input-delete-password"
               />
               <Button
@@ -183,7 +206,11 @@ export default function DeleteAccountDialog({ open, onOpenChange }: DeleteAccoun
                 className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
                 onClick={() => setShowPassword(!showPassword)}
               >
-                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                {showPassword ? (
+                  <EyeOff className="w-4 h-4" />
+                ) : (
+                  <Eye className="w-4 h-4" />
+                )}
               </Button>
             </div>
             {fieldErrors.password && (
@@ -207,11 +234,11 @@ export default function DeleteAccountDialog({ open, onOpenChange }: DeleteAccoun
             <Button
               type="submit"
               variant="destructive"
-              disabled={loading || confirmation !== 'DELETE' || !password}
+              disabled={loading || confirmation !== "DELETE" || !password}
               data-testid="button-confirm-delete-account"
             >
               <Trash2 className="w-4 h-4 mr-2" />
-              {loading ? 'Deleting...' : 'Delete Account'}
+              {loading ? "Deleting..." : "Delete Account"}
             </Button>
           </div>
         </form>

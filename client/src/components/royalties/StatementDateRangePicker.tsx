@@ -1,20 +1,20 @@
-import { useState, useMemo } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+import { useState, useMemo } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
+} from "@/components/ui/select";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from '@/components/ui/popover';
-import { Calendar } from '@/components/ui/calendar';
+} from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
 import {
   Calendar as CalendarIcon,
   Download,
@@ -23,8 +23,17 @@ import {
   ChevronRight,
   RefreshCw,
   AlertCircle,
-} from 'lucide-react';
-import { format, subMonths, startOfMonth, endOfMonth, startOfQuarter, endOfQuarter, startOfYear, endOfYear } from 'date-fns';
+} from "lucide-react";
+import {
+  format,
+  subMonths,
+  startOfMonth,
+  endOfMonth,
+  startOfQuarter,
+  endOfQuarter,
+  startOfYear,
+  endOfYear,
+} from "date-fns";
 
 export interface StatementPeriod {
   id: string;
@@ -32,7 +41,7 @@ export interface StatementPeriod {
   startDate: Date;
   endDate: Date;
   earnings: number;
-  status: 'available' | 'processing' | 'no_data';
+  status: "available" | "processing" | "no_data";
 }
 
 interface StatementDateRangePickerProps {
@@ -45,7 +54,14 @@ interface StatementDateRangePickerProps {
   currency?: string;
 }
 
-type PresetPeriod = 'current_month' | 'last_month' | 'current_quarter' | 'last_quarter' | 'current_year' | 'last_year' | 'custom';
+type PresetPeriod =
+  | "current_month"
+  | "last_month"
+  | "current_quarter"
+  | "last_quarter"
+  | "current_year"
+  | "last_year"
+  | "custom";
 
 export function StatementDateRangePicker({
   statements,
@@ -54,9 +70,10 @@ export function StatementDateRangePicker({
   onDownload,
   onGenerate,
   isLoading = false,
-  currency = 'USD',
+  currency = "USD",
 }: StatementDateRangePickerProps) {
-  const [presetPeriod, setPresetPeriod] = useState<PresetPeriod>('current_month');
+  const [presetPeriod, setPresetPeriod] =
+    useState<PresetPeriod>("current_month");
   const [customStartDate, setCustomStartDate] = useState<Date | undefined>();
   const [customEndDate, setCustomEndDate] = useState<Date | undefined>();
   const [isStartCalendarOpen, setIsStartCalendarOpen] = useState(false);
@@ -66,32 +83,32 @@ export function StatementDateRangePicker({
     const now = new Date();
     return {
       current_month: {
-        label: 'Current Month',
+        label: "Current Month",
         startDate: startOfMonth(now),
         endDate: endOfMonth(now),
       },
       last_month: {
-        label: 'Last Month',
+        label: "Last Month",
         startDate: startOfMonth(subMonths(now, 1)),
         endDate: endOfMonth(subMonths(now, 1)),
       },
       current_quarter: {
-        label: 'Current Quarter',
+        label: "Current Quarter",
         startDate: startOfQuarter(now),
         endDate: endOfQuarter(now),
       },
       last_quarter: {
-        label: 'Last Quarter',
+        label: "Last Quarter",
         startDate: startOfQuarter(subMonths(now, 3)),
         endDate: endOfQuarter(subMonths(now, 3)),
       },
       current_year: {
-        label: 'Current Year',
+        label: "Current Year",
         startDate: startOfYear(now),
         endDate: endOfYear(now),
       },
       last_year: {
-        label: 'Last Year',
+        label: "Last Year",
         startDate: startOfYear(subMonths(now, 12)),
         endDate: endOfYear(subMonths(now, 12)),
       },
@@ -99,20 +116,21 @@ export function StatementDateRangePicker({
   }, []);
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
       currency,
     }).format(amount);
   };
 
   const handlePresetChange = (preset: PresetPeriod) => {
     setPresetPeriod(preset);
-    if (preset !== 'custom' && presets[preset as keyof typeof presets]) {
-      const { startDate, endDate, label } = presets[preset as keyof typeof presets];
+    if (preset !== "custom" && presets[preset as keyof typeof presets]) {
+      const { startDate, endDate, label } =
+        presets[preset as keyof typeof presets];
       const matchingStatement = statements.find(
         (s) =>
           s.startDate.getTime() === startDate.getTime() &&
-          s.endDate.getTime() === endDate.getTime()
+          s.endDate.getTime() === endDate.getTime(),
       );
 
       if (matchingStatement) {
@@ -131,20 +149,31 @@ export function StatementDateRangePicker({
 
   const getStatusBadge = (status: string) => {
     const badges: Record<string, { className: string; label: string }> = {
-      available: { className: 'bg-green-500/20 text-green-500', label: 'Available' },
-      processing: { className: 'bg-amber-500/20 text-amber-500', label: 'Processing' },
-      no_data: { className: 'bg-muted text-muted-foreground', label: 'No Data' },
+      available: {
+        className: "bg-green-500/20 text-green-500",
+        label: "Available",
+      },
+      processing: {
+        className: "bg-amber-500/20 text-amber-500",
+        label: "Processing",
+      },
+      no_data: {
+        className: "bg-muted text-muted-foreground",
+        label: "No Data",
+      },
     };
     const config = badges[status] || badges.no_data;
     return <Badge className={config.className}>{config.label}</Badge>;
   };
 
-  const navigatePeriod = (direction: 'prev' | 'next') => {
+  const navigatePeriod = (direction: "prev" | "next") => {
     if (!selectedPeriod) return;
-    
-    const currentIndex = statements.findIndex((s) => s.id === selectedPeriod.id);
-    const newIndex = direction === 'prev' ? currentIndex - 1 : currentIndex + 1;
-    
+
+    const currentIndex = statements.findIndex(
+      (s) => s.id === selectedPeriod.id,
+    );
+    const newIndex = direction === "prev" ? currentIndex - 1 : currentIndex + 1;
+
     if (newIndex >= 0 && newIndex < statements.length) {
       onPeriodSelect(statements[newIndex]);
     }
@@ -181,11 +210,14 @@ export function StatementDateRangePicker({
             </Select>
           </div>
 
-          {presetPeriod === 'custom' && (
+          {presetPeriod === "custom" && (
             <div className="flex gap-4" data-testid="custom-date-range">
               <div className="flex-1 space-y-2">
                 <label className="text-sm font-medium">Start Date</label>
-                <Popover open={isStartCalendarOpen} onOpenChange={setIsStartCalendarOpen}>
+                <Popover
+                  open={isStartCalendarOpen}
+                  onOpenChange={setIsStartCalendarOpen}
+                >
                   <PopoverTrigger asChild>
                     <Button
                       variant="outline"
@@ -193,7 +225,9 @@ export function StatementDateRangePicker({
                       data-testid="button-start-date"
                     >
                       <CalendarIcon className="mr-2 h-4 w-4" />
-                      {customStartDate ? format(customStartDate, 'MMM d, yyyy') : 'Pick a date'}
+                      {customStartDate
+                        ? format(customStartDate, "MMM d, yyyy")
+                        : "Pick a date"}
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0">
@@ -212,7 +246,10 @@ export function StatementDateRangePicker({
 
               <div className="flex-1 space-y-2">
                 <label className="text-sm font-medium">End Date</label>
-                <Popover open={isEndCalendarOpen} onOpenChange={setIsEndCalendarOpen}>
+                <Popover
+                  open={isEndCalendarOpen}
+                  onOpenChange={setIsEndCalendarOpen}
+                >
                   <PopoverTrigger asChild>
                     <Button
                       variant="outline"
@@ -220,7 +257,9 @@ export function StatementDateRangePicker({
                       data-testid="button-end-date"
                     >
                       <CalendarIcon className="mr-2 h-4 w-4" />
-                      {customEndDate ? format(customEndDate, 'MMM d, yyyy') : 'Pick a date'}
+                      {customEndDate
+                        ? format(customEndDate, "MMM d, yyyy")
+                        : "Pick a date"}
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0">
@@ -231,7 +270,9 @@ export function StatementDateRangePicker({
                         setCustomEndDate(date);
                         setIsEndCalendarOpen(false);
                       }}
-                      disabled={(date) => customStartDate ? date < customStartDate : false}
+                      disabled={(date) =>
+                        customStartDate ? date < customStartDate : false
+                      }
                       initialFocus
                     />
                   </PopoverContent>
@@ -247,7 +288,7 @@ export function StatementDateRangePicker({
                   {isLoading ? (
                     <RefreshCw className="w-4 h-4 animate-spin" />
                   ) : (
-                    'Generate'
+                    "Generate"
                   )}
                 </Button>
               </div>
@@ -256,20 +297,26 @@ export function StatementDateRangePicker({
         </div>
 
         {selectedPeriod && (
-          <div className="p-4 rounded-lg bg-muted/30" data-testid="selected-period-info">
+          <div
+            className="p-4 rounded-lg bg-muted/30"
+            data-testid="selected-period-info"
+          >
             <div className="flex items-center justify-between mb-4">
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={() => navigatePeriod('prev')}
-                disabled={statements.findIndex((s) => s.id === selectedPeriod.id) === 0}
+                onClick={() => navigatePeriod("prev")}
+                disabled={
+                  statements.findIndex((s) => s.id === selectedPeriod.id) === 0
+                }
               >
                 <ChevronLeft className="w-4 h-4" />
               </Button>
-              
+
               <div className="text-center">
                 <p className="text-sm text-muted-foreground">
-                  {format(selectedPeriod.startDate, 'MMM d, yyyy')} - {format(selectedPeriod.endDate, 'MMM d, yyyy')}
+                  {format(selectedPeriod.startDate, "MMM d, yyyy")} -{" "}
+                  {format(selectedPeriod.endDate, "MMM d, yyyy")}
                 </p>
                 <p className="text-2xl font-bold">{selectedPeriod.label}</p>
               </div>
@@ -277,8 +324,11 @@ export function StatementDateRangePicker({
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={() => navigatePeriod('next')}
-                disabled={statements.findIndex((s) => s.id === selectedPeriod.id) === statements.length - 1}
+                onClick={() => navigatePeriod("next")}
+                disabled={
+                  statements.findIndex((s) => s.id === selectedPeriod.id) ===
+                  statements.length - 1
+                }
               >
                 <ChevronRight className="w-4 h-4" />
               </Button>
@@ -287,14 +337,14 @@ export function StatementDateRangePicker({
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 {getStatusBadge(selectedPeriod.status)}
-                {selectedPeriod.status === 'available' && (
+                {selectedPeriod.status === "available" && (
                   <span className="text-lg font-semibold">
                     {formatCurrency(selectedPeriod.earnings)}
                   </span>
                 )}
               </div>
 
-              {selectedPeriod.status === 'available' && (
+              {selectedPeriod.status === "available" && (
                 <Button
                   variant="outline"
                   size="sm"
@@ -306,7 +356,7 @@ export function StatementDateRangePicker({
                 </Button>
               )}
 
-              {selectedPeriod.status === 'no_data' && (
+              {selectedPeriod.status === "no_data" && (
                 <div className="flex items-center gap-2 text-muted-foreground text-sm">
                   <AlertCircle className="w-4 h-4" />
                   No earnings in this period
@@ -318,7 +368,9 @@ export function StatementDateRangePicker({
 
         {statements.length > 0 && (
           <div className="space-y-2" data-testid="statement-list">
-            <h4 className="text-sm font-medium text-muted-foreground">Recent Statements</h4>
+            <h4 className="text-sm font-medium text-muted-foreground">
+              Recent Statements
+            </h4>
             <div className="space-y-2 max-h-48 overflow-y-auto">
               {statements.slice(0, 6).map((statement) => (
                 <div
@@ -326,8 +378,8 @@ export function StatementDateRangePicker({
                   onClick={() => onPeriodSelect(statement)}
                   className={`flex items-center justify-between p-3 rounded-lg cursor-pointer transition-colors ${
                     selectedPeriod?.id === statement.id
-                      ? 'bg-primary/10 border border-primary'
-                      : 'bg-muted/30 hover:bg-muted/50'
+                      ? "bg-primary/10 border border-primary"
+                      : "bg-muted/30 hover:bg-muted/50"
                   }`}
                   data-testid={`statement-item-${statement.id}`}
                 >
@@ -336,13 +388,16 @@ export function StatementDateRangePicker({
                     <div>
                       <p className="font-medium">{statement.label}</p>
                       <p className="text-xs text-muted-foreground">
-                        {format(statement.startDate, 'MMM d')} - {format(statement.endDate, 'MMM d, yyyy')}
+                        {format(statement.startDate, "MMM d")} -{" "}
+                        {format(statement.endDate, "MMM d, yyyy")}
                       </p>
                     </div>
                   </div>
                   <div className="text-right">
-                    {statement.status === 'available' && (
-                      <p className="font-semibold">{formatCurrency(statement.earnings)}</p>
+                    {statement.status === "available" && (
+                      <p className="font-semibold">
+                        {formatCurrency(statement.earnings)}
+                      </p>
                     )}
                     {getStatusBadge(statement.status)}
                   </div>

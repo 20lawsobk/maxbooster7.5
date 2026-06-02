@@ -1,6 +1,6 @@
-import { Router } from 'express';
-import { requireAuth } from '../middleware/auth.js';
-import { logger } from '../logger.js';
+import { Router } from "express";
+import { requireAuth } from "../middleware/auth.js";
+import { logger } from "../logger.js";
 
 const router = Router();
 
@@ -24,24 +24,29 @@ const autonomousStateLastAccessed: Map<string, number> = new Map();
 const AUTONOMOUS_STATE_MAX = 50_000;
 const AUTONOMOUS_STATE_TTL_MS = 24 * 60 * 60 * 1000;
 
-setInterval(() => {
-  const cutoff = Date.now() - AUTONOMOUS_STATE_TTL_MS;
-  for (const [uid, ts] of autonomousStateLastAccessed) {
-    if (ts < cutoff) {
-      autonomousStates.delete(uid);
-      autonomousStateLastAccessed.delete(uid);
+setInterval(
+  () => {
+    const cutoff = Date.now() - AUTONOMOUS_STATE_TTL_MS;
+    for (const [uid, ts] of autonomousStateLastAccessed) {
+      if (ts < cutoff) {
+        autonomousStates.delete(uid);
+        autonomousStateLastAccessed.delete(uid);
+      }
     }
-  }
-  // Hard size cap: if still over limit, evict oldest entries first.
-  if (autonomousStates.size > AUTONOMOUS_STATE_MAX) {
-    const sorted = [...autonomousStateLastAccessed.entries()].sort((a, b) => a[1] - b[1]);
-    for (const [uid] of sorted) {
-      autonomousStates.delete(uid);
-      autonomousStateLastAccessed.delete(uid);
-      if (autonomousStates.size <= AUTONOMOUS_STATE_MAX) break;
+    // Hard size cap: if still over limit, evict oldest entries first.
+    if (autonomousStates.size > AUTONOMOUS_STATE_MAX) {
+      const sorted = [...autonomousStateLastAccessed.entries()].sort(
+        (a, b) => a[1] - b[1],
+      );
+      for (const [uid] of sorted) {
+        autonomousStates.delete(uid);
+        autonomousStateLastAccessed.delete(uid);
+        if (autonomousStates.size <= AUTONOMOUS_STATE_MAX) break;
+      }
     }
-  }
-}, 60 * 60 * 1000).unref(); // hourly
+  },
+  60 * 60 * 1000,
+).unref(); // hourly
 
 function getState(userId: string): AutonomousSocialState {
   if (!autonomousStates.has(userId)) {
@@ -51,8 +56,8 @@ function getState(userId: string): AutonomousSocialState {
       lastPublishedAt: null,
       config: {
         enabled: false,
-        platforms: ['twitter', 'instagram', 'facebook'],
-        contentFrequency: 'daily',
+        platforms: ["twitter", "instagram", "facebook"],
+        contentFrequency: "daily",
         autoApprove: false,
       },
     });
@@ -61,57 +66,57 @@ function getState(userId: string): AutonomousSocialState {
   return autonomousStates.get(userId)!;
 }
 
-router.get('/status', requireAuth, async (req, res) => {
+router.get("/status", requireAuth, async (req, res) => {
   try {
     const userId = req.user!.id;
     const state = getState(userId);
-    
+
     res.json(state);
   } catch (error) {
-    logger.warn({ err: error }, 'Failed to get autonomous social status:');
-    res.status(500).json({ error: 'Failed to get autonomous social status' });
+    logger.warn({ err: error }, "Failed to get autonomous social status:");
+    res.status(500).json({ error: "Failed to get autonomous social status" });
   }
 });
 
-router.post('/start', requireAuth, async (req, res) => {
+router.post("/start", requireAuth, async (req, res) => {
   try {
     const userId = req.user!.id;
     const state = getState(userId);
-    
+
     state.isRunning = true;
     state.config.enabled = true;
-    
+
     logger.info(`✅ Autonomous social mode started for user ${userId}`);
-    
+
     res.json({
       success: true,
-      message: 'Autonomous social mode activated',
+      message: "Autonomous social mode activated",
       ...state,
     });
   } catch (error) {
-    logger.warn({ err: error }, 'Failed to start autonomous social:');
-    res.status(500).json({ error: 'Failed to start autonomous social mode' });
+    logger.warn({ err: error }, "Failed to start autonomous social:");
+    res.status(500).json({ error: "Failed to start autonomous social mode" });
   }
 });
 
-router.post('/stop', requireAuth, async (req, res) => {
+router.post("/stop", requireAuth, async (req, res) => {
   try {
     const userId = req.user!.id;
     const state = getState(userId);
-    
+
     state.isRunning = false;
     state.config.enabled = false;
-    
+
     logger.info(`⏸️ Autonomous social mode stopped for user ${userId}`);
-    
+
     res.json({
       success: true,
-      message: 'Autonomous social mode paused',
+      message: "Autonomous social mode paused",
       ...state,
     });
   } catch (error) {
-    logger.warn({ err: error }, 'Failed to stop autonomous social:');
-    res.status(500).json({ error: 'Failed to stop autonomous social mode' });
+    logger.warn({ err: error }, "Failed to stop autonomous social:");
+    res.status(500).json({ error: "Failed to stop autonomous social mode" });
   }
 });
 

@@ -4,9 +4,9 @@ on:
   workflow_dispatch:
     inputs:
       test_suite:
-        description: 'Test suite to run'
+        description: "Test suite to run"
         required: true
-        default: 'all'
+        default: "all"
         type: choice
         options:
           - all
@@ -14,7 +14,7 @@ on:
           - load
           - prelaunch
   schedule:
-    - cron: '0 6 * * *'
+    - cron: "0 6 * * *"
 
 # Manual + scheduled — collapse duplicate dispatches but let the nightly cron run.
 concurrency:
@@ -54,8 +54,8 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version-file: '.nvmrc'
-          cache: 'npm'
+          node-version-file: ".nvmrc"
+          cache: "npm"
 
       - name: Install dependencies
         run: npm ci --no-audit --no-fund --legacy-peer-deps
@@ -64,7 +64,7 @@ jobs:
         run: npx tsx script/build.ts
         env:
           NODE_ENV: production
-          SKIP_BOOSTERSTATE: '1'
+          SKIP_BOOSTERSTATE: "1"
 
       - name: Run npm audit
         run: npm audit --audit-level=moderate || true
@@ -116,8 +116,8 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version-file: '.nvmrc'
-          cache: 'npm'
+          node-version-file: ".nvmrc"
+          cache: "npm"
 
       - name: Install dependencies
         run: npm ci --no-audit --no-fund --legacy-peer-deps
@@ -126,7 +126,7 @@ jobs:
         run: npx tsx script/build.ts
         env:
           NODE_ENV: production
-          SKIP_BOOSTERSTATE: '1'
+          SKIP_BOOSTERSTATE: "1"
 
       - name: Start server in background
         run: |
@@ -140,7 +140,7 @@ jobs:
           SESSION_SECRET: test-secret-do-not-use-in-production-minimum-32-chars
           NODE_ENV: test
           PORT: 5000
-          DISABLE_CLUSTER: '1'
+          DISABLE_CLUSTER: "1"
 
       - name: Run load tests
         run: npm run test:load
@@ -195,8 +195,8 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version-file: '.nvmrc'
-          cache: 'npm'
+          node-version-file: ".nvmrc"
+          cache: "npm"
 
       - name: Install dependencies
         run: npm ci --no-audit --no-fund --legacy-peer-deps
@@ -205,7 +205,7 @@ jobs:
         run: npx tsx script/build.ts
         env:
           NODE_ENV: production
-          SKIP_BOOSTERSTATE: '1'
+          SKIP_BOOSTERSTATE: "1"
 
       - name: Run pre-launch checks
         run: npm run prelaunch

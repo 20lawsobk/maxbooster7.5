@@ -1,11 +1,17 @@
-import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import { Label } from '@/components/ui/label';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { Label } from "@/components/ui/label";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
   Table,
   TableBody,
@@ -13,7 +19,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
+} from "@/components/ui/table";
 import {
   Dialog,
   DialogContent,
@@ -21,7 +27,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog';
+} from "@/components/ui/dialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -31,17 +37,17 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
+} from "@/components/ui/alert-dialog";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { Progress } from '@/components/ui/progress';
-import { useToast } from '@/hooks/use-toast';
-import { apiRequest } from '@/lib/queryClient';
+} from "@/components/ui/select";
+import { Progress } from "@/components/ui/progress";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
 import {
   Key,
   Plus,
@@ -57,7 +63,7 @@ import {
   Shield,
   Activity,
   Calendar,
-} from 'lucide-react';
+} from "lucide-react";
 
 interface ApiKey {
   id: string;
@@ -72,7 +78,7 @@ interface ApiKey {
     period: string;
     used: number;
   };
-  status: 'active' | 'expired' | 'revoked';
+  status: "active" | "expired" | "revoked";
 }
 
 interface NewKeyResponse {
@@ -93,84 +99,89 @@ export function ApiKeyManagement() {
   const [regenerateDialogOpen, setRegenerateDialogOpen] = useState(false);
   const [selectedKey, setSelectedKey] = useState<ApiKey | null>(null);
   const [newKey, setNewKey] = useState<NewKeyResponse | null>(null);
-  const [newKeyName, setNewKeyName] = useState('');
-  const [newKeyScopes, setNewKeyScopes] = useState<string[]>(['read']);
+  const [newKeyName, setNewKeyName] = useState("");
+  const [newKeyScopes, setNewKeyScopes] = useState<string[]>(["read"]);
   const [showKey, setShowKey] = useState(false);
   const [copied, setCopied] = useState(false);
 
   const { data: apiKeys = [], isLoading } = useQuery<ApiKey[]>({
-    queryKey: ['/api/auth/api-keys'],
+    queryKey: ["/api/auth/api-keys"],
   });
 
   const createKeyMutation = useMutation({
     mutationFn: async (data: { name: string; scopes: string[] }) => {
-      const res = await apiRequest('POST', '/api/auth/api-keys', data);
+      const res = await apiRequest("POST", "/api/auth/api-keys", data);
       return res.json();
     },
     onSuccess: (data: NewKeyResponse) => {
-      queryClient.invalidateQueries({ queryKey: ['/api/auth/api-keys'] });
+      queryClient.invalidateQueries({ queryKey: ["/api/auth/api-keys"] });
       setNewKey(data);
       setCreateDialogOpen(false);
       setNewKeyDialogOpen(true);
-      setNewKeyName('');
-      setNewKeyScopes(['read']);
+      setNewKeyName("");
+      setNewKeyScopes(["read"]);
       toast({
-        title: 'API Key Created',
-        description: 'Your new API key has been generated. Make sure to copy it now.',
+        title: "API Key Created",
+        description:
+          "Your new API key has been generated. Make sure to copy it now.",
       });
     },
     onError: () => {
       toast({
-        title: 'Error',
-        description: 'Failed to create API key. Please try again.',
-        variant: 'destructive',
+        title: "Error",
+        description: "Failed to create API key. Please try again.",
+        variant: "destructive",
       });
     },
   });
 
   const revokeKeyMutation = useMutation({
     mutationFn: async (keyId: string) => {
-      await apiRequest('DELETE', `/api/auth/api-keys/${keyId}`);
+      await apiRequest("DELETE", `/api/auth/api-keys/${keyId}`);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/auth/api-keys'] });
+      queryClient.invalidateQueries({ queryKey: ["/api/auth/api-keys"] });
       setRevokeDialogOpen(false);
       setSelectedKey(null);
       toast({
-        title: 'API Key Revoked',
-        description: 'The API key has been permanently revoked.',
+        title: "API Key Revoked",
+        description: "The API key has been permanently revoked.",
       });
     },
     onError: () => {
       toast({
-        title: 'Error',
-        description: 'Failed to revoke API key. Please try again.',
-        variant: 'destructive',
+        title: "Error",
+        description: "Failed to revoke API key. Please try again.",
+        variant: "destructive",
       });
     },
   });
 
   const regenerateKeyMutation = useMutation({
     mutationFn: async (keyId: string) => {
-      const res = await apiRequest('POST', `/api/auth/api-keys/${keyId}/regenerate`);
+      const res = await apiRequest(
+        "POST",
+        `/api/auth/api-keys/${keyId}/regenerate`,
+      );
       return res.json();
     },
     onSuccess: (data: NewKeyResponse) => {
-      queryClient.invalidateQueries({ queryKey: ['/api/auth/api-keys'] });
+      queryClient.invalidateQueries({ queryKey: ["/api/auth/api-keys"] });
       setNewKey(data);
       setRegenerateDialogOpen(false);
       setNewKeyDialogOpen(true);
       setSelectedKey(null);
       toast({
-        title: 'API Key Regenerated',
-        description: 'Your API key has been regenerated. The old key is no longer valid.',
+        title: "API Key Regenerated",
+        description:
+          "Your API key has been regenerated. The old key is no longer valid.",
       });
     },
     onError: () => {
       toast({
-        title: 'Error',
-        description: 'Failed to regenerate API key. Please try again.',
-        variant: 'destructive',
+        title: "Error",
+        description: "Failed to regenerate API key. Please try again.",
+        variant: "destructive",
       });
     },
   });
@@ -182,14 +193,14 @@ export function ApiKeyManagement() {
         setCopied(true);
         setTimeout(() => setCopied(false), 2000);
         toast({
-          title: 'Copied',
-          description: 'API key copied to clipboard.',
+          title: "Copied",
+          description: "API key copied to clipboard.",
         });
       } catch {
         toast({
-          title: 'Copy Failed',
-          description: 'Could not copy to clipboard.',
-          variant: 'destructive',
+          title: "Copy Failed",
+          description: "Could not copy to clipboard.",
+          variant: "destructive",
         });
       }
     }
@@ -207,11 +218,15 @@ export function ApiKeyManagement() {
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case 'active':
-        return <Badge variant="default" className="bg-green-600">Active</Badge>;
-      case 'expired':
+      case "active":
+        return (
+          <Badge variant="default" className="bg-green-600">
+            Active
+          </Badge>
+        );
+      case "expired":
         return <Badge variant="secondary">Expired</Badge>;
-      case 'revoked':
+      case "revoked":
         return <Badge variant="destructive">Revoked</Badge>;
       default:
         return <Badge variant="outline">{status}</Badge>;
@@ -219,11 +234,11 @@ export function ApiKeyManagement() {
   };
 
   const formatDate = (dateString?: string) => {
-    if (!dateString) return 'Never';
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
+    if (!dateString) return "Never";
+    return new Date(dateString).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
     });
   };
 
@@ -236,7 +251,7 @@ export function ApiKeyManagement() {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {[1, 2, 3].map(i => (
+            {[1, 2, 3].map((i) => (
               <div key={i} className="h-16 bg-muted animate-pulse rounded-lg" />
             ))}
           </div>
@@ -271,7 +286,8 @@ export function ApiKeyManagement() {
               <Key className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
               <h3 className="text-lg font-medium mb-2">No API Keys</h3>
               <p className="text-muted-foreground mb-4">
-                Create an API key to access the Max Booster API programmatically.
+                Create an API key to access the Max Booster API
+                programmatically.
               </p>
               <Button onClick={() => setCreateDialogOpen(true)}>
                 <Plus className="h-4 w-4 mr-2" />
@@ -311,11 +327,18 @@ export function ApiKeyManagement() {
                       <TableCell>
                         <div className="space-y-1">
                           <div className="flex items-center justify-between text-xs">
-                            <span>{key.rateLimit.used}/{key.rateLimit.requests}</span>
-                            <span className="text-muted-foreground">/{key.rateLimit.period}</span>
+                            <span>
+                              {key.rateLimit.used}/{key.rateLimit.requests}
+                            </span>
+                            <span className="text-muted-foreground">
+                              /{key.rateLimit.period}
+                            </span>
                           </div>
-                          <Progress 
-                            value={(key.rateLimit.used / key.rateLimit.requests) * 100} 
+                          <Progress
+                            value={
+                              (key.rateLimit.used / key.rateLimit.requests) *
+                              100
+                            }
                             className="h-1.5"
                           />
                         </div>
@@ -332,7 +355,7 @@ export function ApiKeyManagement() {
                             variant="ghost"
                             size="sm"
                             onClick={() => openRegenerateDialog(key)}
-                            disabled={key.status !== 'active'}
+                            disabled={key.status !== "active"}
                             title="Regenerate key"
                           >
                             <RefreshCw className="h-4 w-4" />
@@ -341,7 +364,7 @@ export function ApiKeyManagement() {
                             variant="ghost"
                             size="sm"
                             onClick={() => openRevokeDialog(key)}
-                            disabled={key.status === 'revoked'}
+                            disabled={key.status === "revoked"}
                             className="text-destructive hover:text-destructive"
                             title="Revoke key"
                           >
@@ -422,8 +445,8 @@ export function ApiKeyManagement() {
             <div className="space-y-2">
               <Label>Permissions</Label>
               <Select
-                value={newKeyScopes.join(',')}
-                onValueChange={(value) => setNewKeyScopes(value.split(','))}
+                value={newKeyScopes.join(",")}
+                onValueChange={(value) => setNewKeyScopes(value.split(","))}
               >
                 <SelectTrigger>
                   <SelectValue />
@@ -437,11 +460,19 @@ export function ApiKeyManagement() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setCreateDialogOpen(false)}>
+            <Button
+              variant="outline"
+              onClick={() => setCreateDialogOpen(false)}
+            >
               Cancel
             </Button>
-            <Button 
-              onClick={() => createKeyMutation.mutate({ name: newKeyName, scopes: newKeyScopes })}
+            <Button
+              onClick={() =>
+                createKeyMutation.mutate({
+                  name: newKeyName,
+                  scopes: newKeyScopes,
+                })
+              }
               disabled={!newKeyName.trim() || createKeyMutation.isPending}
             >
               {createKeyMutation.isPending ? (
@@ -450,7 +481,7 @@ export function ApiKeyManagement() {
                   Creating...
                 </>
               ) : (
-                'Create Key'
+                "Create Key"
               )}
             </Button>
           </DialogFooter>
@@ -480,7 +511,9 @@ export function ApiKeyManagement() {
               <Label>Your API Key</Label>
               <div className="flex items-center gap-2">
                 <Input
-                  value={showKey ? newKey?.key : '••••••••••••••••••••••••••••••••'}
+                  value={
+                    showKey ? newKey?.key : "••••••••••••••••••••••••••••••••"
+                  }
                   readOnly
                   className="font-mono text-sm"
                 />
@@ -489,25 +522,35 @@ export function ApiKeyManagement() {
                   size="icon"
                   onClick={() => setShowKey(!showKey)}
                 >
-                  {showKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  {showKey ? (
+                    <EyeOff className="h-4 w-4" />
+                  ) : (
+                    <Eye className="h-4 w-4" />
+                  )}
                 </Button>
                 <Button
-                  variant={copied ? 'default' : 'outline'}
+                  variant={copied ? "default" : "outline"}
                   size="icon"
                   onClick={copyKey}
-                  className={copied ? 'bg-green-600' : ''}
+                  className={copied ? "bg-green-600" : ""}
                 >
-                  {copied ? <CheckCircle className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                  {copied ? (
+                    <CheckCircle className="h-4 w-4" />
+                  ) : (
+                    <Copy className="h-4 w-4" />
+                  )}
                 </Button>
               </div>
             </div>
           </div>
           <DialogFooter>
-            <Button onClick={() => {
-              setNewKeyDialogOpen(false);
-              setNewKey(null);
-              setShowKey(false);
-            }}>
+            <Button
+              onClick={() => {
+                setNewKeyDialogOpen(false);
+                setNewKey(null);
+                setShowKey(false);
+              }}
+            >
               Done
             </Button>
           </DialogFooter>
@@ -519,14 +562,16 @@ export function ApiKeyManagement() {
           <AlertDialogHeader>
             <AlertDialogTitle>Revoke API Key?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently revoke the key "{selectedKey?.name}". 
-              Any applications using this key will stop working immediately.
+              This will permanently revoke the key "{selectedKey?.name}". Any
+              applications using this key will stop working immediately.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
-              onClick={() => selectedKey && revokeKeyMutation.mutate(selectedKey.id)}
+              onClick={() =>
+                selectedKey && revokeKeyMutation.mutate(selectedKey.id)
+              }
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               {revokeKeyMutation.isPending ? (
@@ -538,19 +583,24 @@ export function ApiKeyManagement() {
         </AlertDialogContent>
       </AlertDialog>
 
-      <AlertDialog open={regenerateDialogOpen} onOpenChange={setRegenerateDialogOpen}>
+      <AlertDialog
+        open={regenerateDialogOpen}
+        onOpenChange={setRegenerateDialogOpen}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Regenerate API Key?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will generate a new key for "{selectedKey?.name}". 
-              The old key will be immediately invalidated.
+              This will generate a new key for "{selectedKey?.name}". The old
+              key will be immediately invalidated.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
-              onClick={() => selectedKey && regenerateKeyMutation.mutate(selectedKey.id)}
+              onClick={() =>
+                selectedKey && regenerateKeyMutation.mutate(selectedKey.id)
+              }
             >
               {regenerateKeyMutation.isPending ? (
                 <Loader2 className="h-4 w-4 animate-spin mr-2" />

@@ -4,13 +4,13 @@ on:
   workflow_dispatch:
     inputs:
       version_tag:
-        description: 'Version tag (e.g. v3.1.0) — leave blank for dev build'
+        description: "Version tag (e.g. v3.1.0) — leave blank for dev build"
         required: false
-        default: ''
+        default: ""
       desktop_platforms:
-        description: 'Desktop platforms to build'
+        description: "Desktop platforms to build"
         required: true
-        default: 'all'
+        default: "all"
         type: choice
         options:
           - all
@@ -18,27 +18,27 @@ on:
           - windows
           - macos
       mobile_platforms:
-        description: 'Mobile platforms to build'
+        description: "Mobile platforms to build"
         required: true
-        default: 'both'
+        default: "both"
         type: choice
         options:
           - both
           - android
           - ios
       build_type:
-        description: 'Mobile build type'
+        description: "Mobile build type"
         required: true
-        default: 'debug'
+        default: "debug"
         type: choice
         options:
           - debug
           - release
 
 env:
-  JAVA_VERSION: '21'
-  APP_NAME: 'Max Booster'
-  APP_ID: 'com.blawzmusic.maxbooster'
+  JAVA_VERSION: "21"
+  APP_NAME: "Max Booster"
+  APP_ID: "com.blawzmusic.maxbooster"
 
 # Manual workflow only — group by run id so concurrent dispatches don't clobber each other.
 concurrency:
@@ -62,8 +62,8 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version-file: '.nvmrc'
-          cache: 'npm'
+          node-version-file: ".nvmrc"
+          cache: "npm"
 
       - name: Install system dependencies
         run: |
@@ -80,7 +80,7 @@ jobs:
         run: npx tsx script/build.ts
         env:
           NODE_ENV: production
-          SKIP_BOOSTERSTATE: '1'
+          SKIP_BOOSTERSTATE: "1"
 
       - name: Remove dangling native module symlinks
         run: find node_modules -maxdepth 5 -name "*.so" -type l ! -exec test -e {} \; -delete 2>/dev/null || true
@@ -132,8 +132,8 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version-file: '.nvmrc'
-          cache: 'npm'
+          node-version-file: ".nvmrc"
+          cache: "npm"
 
       - name: Install dependencies
         run: npm ci --no-audit --no-fund --legacy-peer-deps
@@ -146,7 +146,7 @@ jobs:
         run: npx tsx script/build.ts
         env:
           NODE_ENV: production
-          SKIP_BOOSTERSTATE: '1'
+          SKIP_BOOSTERSTATE: "1"
 
       - name: Build Windows packages
         run: npx electron-builder --win --publish never
@@ -190,8 +190,8 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version-file: '.nvmrc'
-          cache: 'npm'
+          node-version-file: ".nvmrc"
+          cache: "npm"
 
       - name: Install dependencies
         run: npm ci --no-audit --no-fund --legacy-peer-deps
@@ -203,7 +203,7 @@ jobs:
         run: npx tsx script/build.ts
         env:
           NODE_ENV: production
-          SKIP_BOOSTERSTATE: '1'
+          SKIP_BOOSTERSTATE: "1"
 
       - name: Build macOS packages
         run: npx electron-builder --mac zip --x64 --arm64 --publish never
@@ -249,13 +249,13 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version-file: '.nvmrc'
-          cache: 'npm'
+          node-version-file: ".nvmrc"
+          cache: "npm"
 
       - name: Setup Java
         uses: actions/setup-java@v4
         with:
-          distribution: 'temurin'
+          distribution: "temurin"
           java-version: ${{ env.JAVA_VERSION }}
 
       - name: Setup Android SDK
@@ -281,7 +281,7 @@ jobs:
         run: npx tsx script/build.ts
         env:
           NODE_ENV: production
-          SKIP_BOOSTERSTATE: '1'
+          SKIP_BOOSTERSTATE: "1"
 
       - name: Copy logo assets into web dir
         run: |

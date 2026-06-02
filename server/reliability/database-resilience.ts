@@ -1,8 +1,8 @@
-import { drizzle } from 'drizzle-orm/neon-http';
-import { neon } from '@neondatabase/serverless';
-import { EventEmitter } from 'events';
-import { logger } from '../logger.js';
-import { env } from '../config/env.js';
+import { drizzle } from "drizzle-orm/neon-http";
+import { neon } from "@neondatabase/serverless";
+import { EventEmitter } from "events";
+import { logger } from "../logger.js";
+import { env } from "../config/env.js";
 
 interface ConnectionPool {
   connections: unknown[];
@@ -12,7 +12,7 @@ interface ConnectionPool {
   failedRequests: number;
   avgResponseTime: number;
   lastError?: Date;
-  circuitBreakerState: 'closed' | 'open' | 'half-open';
+  circuitBreakerState: "closed" | "open" | "half-open";
 }
 
 interface CircuitBreakerConfig {
@@ -38,7 +38,7 @@ class DatabaseResilience extends EventEmitter {
       totalRequests: 0,
       failedRequests: 0,
       avgResponseTime: 0,
-      circuitBreakerState: 'closed',
+      circuitBreakerState: "closed",
     };
 
     this.circuitBreaker = {
@@ -57,7 +57,7 @@ class DatabaseResilience extends EventEmitter {
       await this.performHealthCheck();
     }, 30000);
 
-    logger.info('✅ Database resilience monitoring started');
+    logger.info("✅ Database resilience monitoring started");
   }
 
   private async performHealthCheck(): Promise<void> {
@@ -68,32 +68,38 @@ class DatabaseResilience extends EventEmitter {
       // each time. The raw neon() call opens a new HTTP connection to Neon's serverless
       // API on every health check, which fails ("fetch failed") under network pressure
       // and leaks sockets. The pool reuses warm WebSocket connections with proper backoff.
-      const { pool } = await import('../db.js');
-      await pool.query('SELECT 1 AS health_check');
+      const { pool } = await import("../db.js");
+      await pool.query("SELECT 1 AS health_check");
 
       const responseTime = Date.now() - startTime;
 
       // Update average response time
-      this.pool.avgResponseTime = (this.pool.avgResponseTime + responseTime) / 2;
+      this.pool.avgResponseTime =
+        (this.pool.avgResponseTime + responseTime) / 2;
 
       // Reset circuit breaker if healthy
-      if (this.pool.circuitBreakerState === 'open' && responseTime < 1000) {
-        this.pool.circuitBreakerState = 'half-open';
-        logger.info('🔄 Database circuit breaker: half-open (testing recovery)');
-      } else if (this.pool.circuitBreakerState === 'half-open' && responseTime < 500) {
-        this.pool.circuitBreakerState = 'closed';
+      if (this.pool.circuitBreakerState === "open" && responseTime < 1000) {
+        this.pool.circuitBreakerState = "half-open";
+        logger.info(
+          "🔄 Database circuit breaker: half-open (testing recovery)",
+        );
+      } else if (
+        this.pool.circuitBreakerState === "half-open" &&
+        responseTime < 500
+      ) {
+        this.pool.circuitBreakerState = "closed";
         this.connectionRetryCount = 0;
-        logger.info('✅ Database circuit breaker: closed (fully recovered)');
-        this.emit('database-recovered');
+        logger.info("✅ Database circuit breaker: closed (fully recovered)");
+        this.emit("database-recovered");
       }
 
-      this.emit('health-check', {
+      this.emit("health-check", {
         healthy: true,
         responseTime,
         avgResponseTime: this.pool.avgResponseTime,
       });
     } catch (error: unknown) {
-      logger.warn({ err: error }, '❌ Database health check failed:');
+      logger.warn({ err: error }, "❌ Database health check failed:");
       this.handleConnectionFailure(error);
     }
   }
@@ -104,25 +110,29 @@ class DatabaseResilience extends EventEmitter {
 
     // Open circuit breaker if too many failures
     if (this.connectionRetryCount >= this.circuitBreaker.failureThreshold) {
-      this.pool.circuitBreakerState = 'open';
+      this.pool.circuitBreakerState = "open";
       this.pool.lastError = new Date();
 
-      logger.warn(`🚨 Database circuit breaker: OPEN (${this.connectionRetryCount} failures)`);
-      this.emit('circuit-breaker-open', {
+      logger.warn(
+        `🚨 Database circuit breaker: OPEN (${this.connectionRetryCount} failures)`,
+      );
+      this.emit("circuit-breaker-open", {
         failures: this.connectionRetryCount,
         lastError: error instanceof Error ? error.message : String(error),
       });
 
       // Auto-recovery attempt after timeout
       setTimeout(() => {
-        if (this.pool.circuitBreakerState === 'open') {
-          this.pool.circuitBreakerState = 'half-open';
-          logger.info('🔄 Database circuit breaker: half-open (attempting recovery)');
+        if (this.pool.circuitBreakerState === "open") {
+          this.pool.circuitBreakerState = "half-open";
+          logger.info(
+            "🔄 Database circuit breaker: half-open (attempting recovery)",
+          );
         }
       }, this.circuitBreaker.timeout);
     }
 
-    this.emit('connection-failure', {
+    this.emit("connection-failure", {
       error: error instanceof Error ? error.message : String(error),
       retryCount: this.connectionRetryCount,
       circuitState: this.pool.circuitBreakerState,
@@ -131,16 +141,20 @@ class DatabaseResilience extends EventEmitter {
 
   async executeWithRetry<T>(
     operation: () => Promise<T>,
-    context: string = 'database operation'
+    context: string = "database operation",
   ): Promise<T> {
     // Check circuit breaker
-    if (this.pool.circuitBreakerState === 'open') {
-      throw new Error('Database circuit breaker is open - operation rejected');
+    if (this.pool.circuitBreakerState === "open") {
+      throw new Error("Database circuit breaker is open - operation rejected");
     }
 
     let lastError: Error | null = null;
 
-    for (let attempt = 1; attempt <= this.circuitBreaker.retryAttempts; attempt++) {
+    for (
+      let attempt = 1;
+      attempt <= this.circuitBreaker.retryAttempts;
+      attempt++
+    ) {
       try {
         const startTime = Date.now();
 
@@ -151,16 +165,19 @@ class DatabaseResilience extends EventEmitter {
         const result = await this.executeWithTimeout(
           operation,
           this.circuitBreaker.timeout,
-          context
+          context,
         );
 
         const responseTime = Date.now() - startTime;
-        this.pool.avgResponseTime = (this.pool.avgResponseTime + responseTime) / 2;
+        this.pool.avgResponseTime =
+          (this.pool.avgResponseTime + responseTime) / 2;
 
         // Success - reset failure count if it was failing
         if (this.connectionRetryCount > 0) {
           this.connectionRetryCount = 0;
-          logger.info(`✅ Database operation recovered after ${attempt} attempts`);
+          logger.info(
+            `✅ Database operation recovered after ${attempt} attempts`,
+          );
         }
 
         this.pool.activeConnections--;
@@ -170,12 +187,13 @@ class DatabaseResilience extends EventEmitter {
         this.pool.activeConnections--;
 
         logger.warn(
-          `⚠️  Database ${context} failed (attempt ${attempt}/${this.circuitBreaker.retryAttempts}): ${error instanceof Error ? error.message : String(error)}`
+          `⚠️  Database ${context} failed (attempt ${attempt}/${this.circuitBreaker.retryAttempts}): ${error instanceof Error ? error.message : String(error)}`,
         );
 
         if (attempt < this.circuitBreaker.retryAttempts) {
           // Exponential backoff
-          const delay = this.circuitBreaker.retryDelay * Math.pow(2, attempt - 1);
+          const delay =
+            this.circuitBreaker.retryDelay * Math.pow(2, attempt - 1);
           await new Promise((resolve) => setTimeout(resolve, delay));
         }
       }
@@ -184,7 +202,7 @@ class DatabaseResilience extends EventEmitter {
     // All retries failed
     this.handleConnectionFailure(lastError!);
     throw new Error(
-      `Database ${context} failed after ${this.circuitBreaker.retryAttempts} attempts: ${lastError?.message}`
+      `Database ${context} failed after ${this.circuitBreaker.retryAttempts} attempts: ${lastError?.message}`,
     );
   }
 
@@ -194,7 +212,7 @@ class DatabaseResilience extends EventEmitter {
   private async executeWithTimeout<T>(
     operation: () => Promise<T>,
     timeoutMs: number,
-    operationName: string
+    operationName: string,
   ): Promise<T> {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => {
@@ -206,9 +224,11 @@ class DatabaseResilience extends EventEmitter {
       const result = await Promise.race([
         operation(),
         new Promise<never>((_, reject) => {
-          controller.signal.addEventListener('abort', () => {
+          controller.signal.addEventListener("abort", () => {
             reject(
-              new Error(`Database operation "${operationName}" timed out after ${timeoutMs}ms`)
+              new Error(
+                `Database operation "${operationName}" timed out after ${timeoutMs}ms`,
+              ),
             );
           });
         }),
@@ -220,9 +240,9 @@ class DatabaseResilience extends EventEmitter {
       clearTimeout(timeoutId);
 
       // Enhanced timeout error handling
-      if (error instanceof Error && error.message.includes('timed out')) {
+      if (error instanceof Error && error.message.includes("timed out")) {
         logger.warn(
-          `🔥 TIMEOUT: Database operation "${operationName}" exceeded ${timeoutMs}ms limit`
+          `🔥 TIMEOUT: Database operation "${operationName}" exceeded ${timeoutMs}ms limit`,
         );
         // Force circuit breaker to register this as a critical failure
         this.handleConnectionFailure(error);
@@ -233,14 +253,17 @@ class DatabaseResilience extends EventEmitter {
   }
 
   // Enhanced database query wrapper
-  async safeQuery<T>(queryFn: () => Promise<T>, queryName: string = 'query'): Promise<T> {
+  async safeQuery<T>(
+    queryFn: () => Promise<T>,
+    queryName: string = "query",
+  ): Promise<T> {
     return this.executeWithRetry(queryFn, queryName);
   }
 
   // Connection pool management
   async createConnection(): Promise<unknown> {
     if (this.pool.connections.length >= this.pool.maxConnections) {
-      throw new Error('Connection pool exhausted');
+      throw new Error("Connection pool exhausted");
     }
 
     const sql = neon(env.DATABASE_URL!);
@@ -265,7 +288,9 @@ class DatabaseResilience extends EventEmitter {
   getHealthMetrics(): Record<string, unknown> {
     const successRate =
       this.pool.totalRequests > 0
-        ? ((this.pool.totalRequests - this.pool.failedRequests) / this.pool.totalRequests) * 100
+        ? ((this.pool.totalRequests - this.pool.failedRequests) /
+            this.pool.totalRequests) *
+          100
         : 100;
 
     return {
@@ -283,7 +308,7 @@ class DatabaseResilience extends EventEmitter {
 
   // Graceful shutdown
   async gracefulShutdown(): Promise<void> {
-    logger.info('🔄 Database resilience shutting down...');
+    logger.info("🔄 Database resilience shutting down...");
 
     if (this.healthCheckInterval) {
       clearInterval(this.healthCheckInterval);
@@ -293,30 +318,35 @@ class DatabaseResilience extends EventEmitter {
     const timeout = 30000;
     const startTime = Date.now();
 
-    while (this.pool.activeConnections > 0 && Date.now() - startTime < timeout) {
-      logger.info(`⏳ Waiting for ${this.pool.activeConnections} active database connections...`);
+    while (
+      this.pool.activeConnections > 0 &&
+      Date.now() - startTime < timeout
+    ) {
+      logger.info(
+        `⏳ Waiting for ${this.pool.activeConnections} active database connections...`,
+      );
       await new Promise((resolve) => setTimeout(resolve, 1000));
     }
 
     if (this.pool.activeConnections > 0) {
       logger.warn(
-        `⚠️  Force closing ${this.pool.activeConnections} remaining database connections`
+        `⚠️  Force closing ${this.pool.activeConnections} remaining database connections`,
       );
     }
 
-    logger.info('✅ Database resilience shutdown complete');
+    logger.info("✅ Database resilience shutdown complete");
   }
 
   // Manual circuit breaker control
   resetCircuitBreaker(): void {
-    this.pool.circuitBreakerState = 'closed';
+    this.pool.circuitBreakerState = "closed";
     this.connectionRetryCount = 0;
-    logger.info('🔄 Database circuit breaker manually reset');
+    logger.info("🔄 Database circuit breaker manually reset");
   }
 
   openCircuitBreaker(): void {
-    this.pool.circuitBreakerState = 'open';
-    logger.info('🛑 Database circuit breaker manually opened');
+    this.pool.circuitBreakerState = "open";
+    logger.info("🛑 Database circuit breaker manually opened");
   }
 }
 

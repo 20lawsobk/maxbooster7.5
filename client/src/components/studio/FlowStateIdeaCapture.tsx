@@ -1,5 +1,5 @@
-import { useState, useCallback, useRef, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useState, useCallback, useRef, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Mic,
   MicOff,
@@ -12,23 +12,23 @@ import {
   Download,
   Lightbulb,
   Zap,
-  Volume2
-} from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
-import { Slider } from '@/components/ui/slider';
-import { Badge } from '@/components/ui/badge';
-import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
+  Volume2,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Slider } from "@/components/ui/slider";
+import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { useToast } from '@/hooks/use-toast';
-import { cn } from '@/lib/utils';
+} from "@/components/ui/select";
+import { useToast } from "@/hooks/use-toast";
+import { cn } from "@/lib/utils";
 
 interface DetectedNote {
   pitch: number;
@@ -56,10 +56,23 @@ interface FlowStateIdeaCaptureProps {
   className?: string;
 }
 
-const NOTE_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+const NOTE_NAMES = [
+  "C",
+  "C#",
+  "D",
+  "D#",
+  "E",
+  "F",
+  "F#",
+  "G",
+  "G#",
+  "A",
+  "A#",
+  "B",
+];
 
 const frequencyToNote = (frequency: number): { note: number; name: string } => {
-  const noteNum = 12 * (Math.log2(frequency / 440)) + 69;
+  const noteNum = 12 * Math.log2(frequency / 440) + 69;
   const roundedNote = Math.round(noteNum);
   const octave = Math.floor(roundedNote / 12) - 1;
   const noteName = NOTE_NAMES[roundedNote % 12] + octave;
@@ -69,7 +82,7 @@ const frequencyToNote = (frequency: number): { note: number; name: string } => {
 export function FlowStateIdeaCapture({
   onMidiExport,
   onSaveIdea,
-  className
+  className,
 }: FlowStateIdeaCaptureProps) {
   const { toast } = useToast();
   const [isRecording, setIsRecording] = useState(false);
@@ -77,13 +90,13 @@ export function FlowStateIdeaCapture({
   const [capturedIdeas, setCapturedIdeas] = useState<CapturedIdea[]>([]);
   const [currentNotes, setCurrentNotes] = useState<DetectedNote[]>([]);
   const [currentPitch, setCurrentPitch] = useState<number | null>(null);
-  const [currentNoteName, setCurrentNoteName] = useState<string>('');
+  const [currentNoteName, setCurrentNoteName] = useState<string>("");
   const [inputLevel, setInputLevel] = useState(0);
   const [recordingDuration, setRecordingDuration] = useState(0);
   const [selectedIdea, setSelectedIdea] = useState<string | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [quantizeEnabled, setQuantizeEnabled] = useState(true);
-  const [quantizeValue, setQuantizeValue] = useState('1/8');
+  const [quantizeValue, setQuantizeValue] = useState("1/8");
   const [sensitivity, setSensitivity] = useState([0.5]);
   const [minNoteDuration, setMinNoteDuration] = useState([0.1]);
 
@@ -96,35 +109,42 @@ export function FlowStateIdeaCapture({
   const chunksRef = useRef<Blob[]>([]);
   const lastNoteRef = useRef<{ pitch: number; startTime: number } | null>(null);
 
-  const detectPitch = useCallback((analyser: AnalyserNode): number | null => {
-    const bufferLength = analyser.fftSize;
-    const buffer = new Float32Array(bufferLength);
-    analyser.getFloatTimeDomainData(buffer);
+  const detectPitch = useCallback(
+    (analyser: AnalyserNode): number | null => {
+      const bufferLength = analyser.fftSize;
+      const buffer = new Float32Array(bufferLength);
+      analyser.getFloatTimeDomainData(buffer);
 
-    let maxCorrelation = 0;
-    let bestOffset = -1;
-    const sampleRate = audioContextRef.current?.sampleRate || 44100;
-    const minFreq = 80;
-    const maxFreq = 1000;
-    const minOffset = Math.floor(sampleRate / maxFreq);
-    const maxOffset = Math.floor(sampleRate / minFreq);
+      let maxCorrelation = 0;
+      let bestOffset = -1;
+      const sampleRate = audioContextRef.current?.sampleRate || 44100;
+      const minFreq = 80;
+      const maxFreq = 1000;
+      const minOffset = Math.floor(sampleRate / maxFreq);
+      const maxOffset = Math.floor(sampleRate / minFreq);
 
-    for (let offset = minOffset; offset < maxOffset && offset < bufferLength / 2; offset++) {
-      let correlation = 0;
-      for (let i = 0; i < bufferLength / 2; i++) {
-        correlation += buffer[i] * buffer[i + offset];
+      for (
+        let offset = minOffset;
+        offset < maxOffset && offset < bufferLength / 2;
+        offset++
+      ) {
+        let correlation = 0;
+        for (let i = 0; i < bufferLength / 2; i++) {
+          correlation += buffer[i] * buffer[i + offset];
+        }
+        if (correlation > maxCorrelation) {
+          maxCorrelation = correlation;
+          bestOffset = offset;
+        }
       }
-      if (correlation > maxCorrelation) {
-        maxCorrelation = correlation;
-        bestOffset = offset;
-      }
-    }
 
-    if (bestOffset > 0 && maxCorrelation > sensitivity[0] * 0.1) {
-      return sampleRate / bestOffset;
-    }
-    return null;
-  }, [sensitivity]);
+      if (bestOffset > 0 && maxCorrelation > sensitivity[0] * 0.1) {
+        return sampleRate / bestOffset;
+      }
+      return null;
+    },
+    [sensitivity],
+  );
 
   const processAudio = useCallback(() => {
     if (!analyserRef.current || !isRecording) return;
@@ -145,43 +165,52 @@ export function FlowStateIdeaCapture({
       setCurrentPitch(frequency);
       setCurrentNoteName(name);
 
-      if (!lastNoteRef.current || Math.abs(lastNoteRef.current.pitch - note) > 1) {
+      if (
+        !lastNoteRef.current ||
+        Math.abs(lastNoteRef.current.pitch - note) > 1
+      ) {
         if (lastNoteRef.current) {
           const duration = currentTime - lastNoteRef.current.startTime;
           if (duration >= minNoteDuration[0]) {
             const { name: prevName } = frequencyToNote(
-              440 * Math.pow(2, (lastNoteRef.current.pitch - 69) / 12)
+              440 * Math.pow(2, (lastNoteRef.current.pitch - 69) / 12),
             );
-            setCurrentNotes(prev => [...prev, {
-              pitch: lastNoteRef.current!.pitch,
-              noteName: prevName,
-              startTime: lastNoteRef.current!.startTime,
-              duration,
-              velocity: Math.min(127, Math.floor(average * 1.5)),
-              confidence: 0.8 + Math.random() * 0.2
-            }]);
+            setCurrentNotes((prev) => [
+              ...prev,
+              {
+                pitch: lastNoteRef.current!.pitch,
+                noteName: prevName,
+                startTime: lastNoteRef.current!.startTime,
+                duration,
+                velocity: Math.min(127, Math.floor(average * 1.5)),
+                confidence: 0.8 + Math.random() * 0.2,
+              },
+            ]);
           }
         }
         lastNoteRef.current = { pitch: note, startTime: currentTime };
       }
     } else {
       setCurrentPitch(null);
-      setCurrentNoteName('');
-      
+      setCurrentNoteName("");
+
       if (lastNoteRef.current) {
         const duration = currentTime - lastNoteRef.current.startTime;
         if (duration >= minNoteDuration[0]) {
           const { name } = frequencyToNote(
-            440 * Math.pow(2, (lastNoteRef.current.pitch - 69) / 12)
+            440 * Math.pow(2, (lastNoteRef.current.pitch - 69) / 12),
           );
-          setCurrentNotes(prev => [...prev, {
-            pitch: lastNoteRef.current!.pitch,
-            noteName: name,
-            startTime: lastNoteRef.current!.startTime,
-            duration,
-            velocity: 80,
-            confidence: 0.7
-          }]);
+          setCurrentNotes((prev) => [
+            ...prev,
+            {
+              pitch: lastNoteRef.current!.pitch,
+              noteName: name,
+              startTime: lastNoteRef.current!.startTime,
+              duration,
+              velocity: 80,
+              confidence: 0.7,
+            },
+          ]);
         }
         lastNoteRef.current = null;
       }
@@ -192,14 +221,14 @@ export function FlowStateIdeaCapture({
 
   const startRecording = async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ 
-        audio: { 
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: {
           echoCancellation: false,
           noiseSuppression: false,
-          autoGainControl: false 
-        } 
+          autoGainControl: false,
+        },
       });
-      
+
       mediaStreamRef.current = stream;
       audioContextRef.current = new AudioContext();
       analyserRef.current = audioContextRef.current.createAnalyser();
@@ -211,7 +240,7 @@ export function FlowStateIdeaCapture({
 
       mediaRecorderRef.current = new MediaRecorder(stream);
       chunksRef.current = [];
-      
+
       mediaRecorderRef.current.ondataavailable = (e) => {
         if (e.data.size > 0) {
           chunksRef.current.push(e.data);
@@ -223,15 +252,18 @@ export function FlowStateIdeaCapture({
       setIsRecording(true);
       setCurrentNotes([]);
       lastNoteRef.current = null;
-      
+
       animationFrameRef.current = requestAnimationFrame(processAudio);
-      
-      toast({ title: 'Recording started', description: 'Hum or sing your idea!' });
+
+      toast({
+        title: "Recording started",
+        description: "Hum or sing your idea!",
+      });
     } catch (err) {
-      toast({ 
-        title: 'Microphone access denied', 
-        description: 'Please allow microphone access to capture ideas',
-        variant: 'destructive' 
+      toast({
+        title: "Microphone access denied",
+        description: "Please allow microphone access to capture ideas",
+        variant: "destructive",
       });
     }
   };
@@ -240,20 +272,23 @@ export function FlowStateIdeaCapture({
     if (animationFrameRef.current) {
       cancelAnimationFrame(animationFrameRef.current);
     }
-    
-    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+
+    if (
+      mediaRecorderRef.current &&
+      mediaRecorderRef.current.state !== "inactive"
+    ) {
       mediaRecorderRef.current.stop();
     }
-    
+
     if (mediaStreamRef.current) {
-      mediaStreamRef.current.getTracks().forEach(track => track.stop());
+      mediaStreamRef.current.getTracks().forEach((track) => track.stop());
     }
 
     setIsRecording(false);
     setIsProcessing(true);
 
     setTimeout(() => {
-      const audioBlob = new Blob(chunksRef.current, { type: 'audio/webm' });
+      const audioBlob = new Blob(chunksRef.current, { type: "audio/webm" });
       const newIdea: CapturedIdea = {
         id: `idea-${Date.now()}`,
         name: `Idea ${capturedIdeas.length + 1}`,
@@ -262,24 +297,24 @@ export function FlowStateIdeaCapture({
         detectedNotes: currentNotes,
         duration: recordingDuration,
         key: detectKey(currentNotes),
-        tempo: estimateTempo(currentNotes)
+        tempo: estimateTempo(currentNotes),
       };
 
-      setCapturedIdeas(prev => [...prev, newIdea]);
+      setCapturedIdeas((prev) => [...prev, newIdea]);
       setSelectedIdea(newIdea.id);
       setIsProcessing(false);
-      
-      toast({ 
-        title: 'Idea captured!', 
-        description: `Detected ${currentNotes.length} notes in ${detectKey(currentNotes) || 'unknown'} key` 
+
+      toast({
+        title: "Idea captured!",
+        description: `Detected ${currentNotes.length} notes in ${detectKey(currentNotes) || "unknown"} key`,
       });
     }, 500);
   }, [currentNotes, recordingDuration, capturedIdeas.length, toast]);
 
   const detectKey = (notes: DetectedNote[]): string => {
-    if (notes.length === 0) return 'C Major';
+    if (notes.length === 0) return "C Major";
     const noteCount = new Array(12).fill(0);
-    notes.forEach(n => noteCount[n.pitch % 12]++);
+    notes.forEach((n) => noteCount[n.pitch % 12]++);
     const maxIndex = noteCount.indexOf(Math.max(...noteCount));
     return `${NOTE_NAMES[maxIndex]} Major`;
   };
@@ -296,32 +331,35 @@ export function FlowStateIdeaCapture({
 
   const quantizeNotes = (notes: DetectedNote[]): DetectedNote[] => {
     if (!quantizeEnabled) return notes;
-    
+
     const quantizeMap: Record<string, number> = {
-      '1/4': 0.5,
-      '1/8': 0.25,
-      '1/16': 0.125,
-      '1/32': 0.0625
+      "1/4": 0.5,
+      "1/8": 0.25,
+      "1/16": 0.125,
+      "1/32": 0.0625,
     };
     const grid = quantizeMap[quantizeValue] || 0.25;
 
-    return notes.map(note => ({
+    return notes.map((note) => ({
       ...note,
       startTime: Math.round(note.startTime / grid) * grid,
-      duration: Math.max(grid, Math.round(note.duration / grid) * grid)
+      duration: Math.max(grid, Math.round(note.duration / grid) * grid),
     }));
   };
 
   const exportToMidi = (idea: CapturedIdea) => {
     const quantized = quantizeNotes(idea.detectedNotes);
     onMidiExport?.(quantized);
-    toast({ title: 'Exported to MIDI', description: `${quantized.length} notes sent to piano roll` });
+    toast({
+      title: "Exported to MIDI",
+      description: `${quantized.length} notes sent to piano roll`,
+    });
   };
 
   const deleteIdea = (id: string) => {
-    setCapturedIdeas(prev => prev.filter(i => i.id !== id));
+    setCapturedIdeas((prev) => prev.filter((i) => i.id !== id));
     if (selectedIdea === id) setSelectedIdea(null);
-    toast({ title: 'Idea deleted' });
+    toast({ title: "Idea deleted" });
   };
 
   useEffect(() => {
@@ -330,15 +368,17 @@ export function FlowStateIdeaCapture({
         cancelAnimationFrame(animationFrameRef.current);
       }
       if (mediaStreamRef.current) {
-        mediaStreamRef.current.getTracks().forEach(track => track.stop());
+        mediaStreamRef.current.getTracks().forEach((track) => track.stop());
       }
     };
   }, []);
 
-  const selectedIdeaData = capturedIdeas.find(i => i.id === selectedIdea);
+  const selectedIdeaData = capturedIdeas.find((i) => i.id === selectedIdea);
 
   return (
-    <div className={cn("flex flex-col h-full bg-zinc-950 text-white", className)}>
+    <div
+      className={cn("flex flex-col h-full bg-zinc-950 text-white", className)}
+    >
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-800">
         <div className="flex items-center gap-3">
@@ -350,7 +390,10 @@ export function FlowStateIdeaCapture({
             <p className="text-xs text-zinc-500">Hum or sing → MIDI notes</p>
           </div>
         </div>
-        <Badge variant="outline" className="text-yellow-400 border-yellow-400/30">
+        <Badge
+          variant="outline"
+          className="text-yellow-400 border-yellow-400/30"
+        >
           <Zap className="w-3 h-3 mr-1" />
           AI Pitch Detection
         </Badge>
@@ -365,9 +408,9 @@ export function FlowStateIdeaCapture({
             disabled={isProcessing}
             className={cn(
               "relative w-32 h-32 mx-auto rounded-full flex items-center justify-center transition-all",
-              isRecording 
-                ? "bg-red-500/20 border-2 border-red-500" 
-                : "bg-zinc-800 border-2 border-zinc-700 hover:border-yellow-500/50"
+              isRecording
+                ? "bg-red-500/20 border-2 border-red-500"
+                : "bg-zinc-800 border-2 border-zinc-700 hover:border-yellow-500/50",
             )}
             animate={isRecording ? { scale: [1, 1.05, 1] } : {}}
             transition={{ repeat: Infinity, duration: 1.5 }}
@@ -387,8 +430,11 @@ export function FlowStateIdeaCapture({
           </motion.button>
 
           <p className="text-center text-sm text-zinc-400">
-            {isRecording ? `Recording... ${recordingDuration.toFixed(1)}s` : 
-             isProcessing ? 'Processing...' : 'Tap to start capturing'}
+            {isRecording
+              ? `Recording... ${recordingDuration.toFixed(1)}s`
+              : isProcessing
+                ? "Processing..."
+                : "Tap to start capturing"}
           </p>
 
           {/* Current Detection */}
@@ -397,7 +443,7 @@ export function FlowStateIdeaCapture({
               <div className="flex items-center justify-between mb-3">
                 <span className="text-sm text-zinc-400">Detected</span>
                 <Badge className="bg-yellow-500/20 text-yellow-400">
-                  {currentNoteName || '---'}
+                  {currentNoteName || "---"}
                 </Badge>
               </div>
               <div className="flex items-center gap-2">
@@ -410,7 +456,9 @@ export function FlowStateIdeaCapture({
                 </div>
               </div>
               <p className="text-xs text-zinc-500 mt-2">
-                {currentPitch ? `${currentPitch.toFixed(1)} Hz` : 'Waiting for input...'}
+                {currentPitch
+                  ? `${currentPitch.toFixed(1)} Hz`
+                  : "Waiting for input..."}
               </p>
               <p className="text-xs text-zinc-500 mt-1">
                 Notes detected: {currentNotes.length}
@@ -422,9 +470,12 @@ export function FlowStateIdeaCapture({
           <div className="space-y-4 mt-auto">
             <div className="flex items-center justify-between">
               <Label className="text-sm text-zinc-400">Quantize</Label>
-              <Switch checked={quantizeEnabled} onCheckedChange={setQuantizeEnabled} />
+              <Switch
+                checked={quantizeEnabled}
+                onCheckedChange={setQuantizeEnabled}
+              />
             </div>
-            
+
             {quantizeEnabled && (
               <Select value={quantizeValue} onValueChange={setQuantizeValue}>
                 <SelectTrigger className="bg-zinc-900 border-zinc-700">
@@ -492,7 +543,8 @@ export function FlowStateIdeaCapture({
                       <Card
                         className={cn(
                           "bg-zinc-900 border-zinc-800 p-4 cursor-pointer transition-all",
-                          selectedIdea === idea.id && "border-yellow-500/50 bg-yellow-500/5"
+                          selectedIdea === idea.id &&
+                            "border-yellow-500/50 bg-yellow-500/5",
                         )}
                         onClick={() => setSelectedIdea(idea.id)}
                       >
@@ -544,13 +596,17 @@ export function FlowStateIdeaCapture({
                         {/* Mini piano roll preview */}
                         <div className="h-16 bg-zinc-950 rounded overflow-hidden relative">
                           {idea.detectedNotes.map((note, idx) => {
-                            const minPitch = Math.min(...idea.detectedNotes.map(n => n.pitch));
-                            const maxPitch = Math.max(...idea.detectedNotes.map(n => n.pitch));
+                            const minPitch = Math.min(
+                              ...idea.detectedNotes.map((n) => n.pitch),
+                            );
+                            const maxPitch = Math.max(
+                              ...idea.detectedNotes.map((n) => n.pitch),
+                            );
                             const range = maxPitch - minPitch || 12;
                             const y = ((maxPitch - note.pitch) / range) * 100;
                             const x = (note.startTime / idea.duration) * 100;
                             const w = (note.duration / idea.duration) * 100;
-                            
+
                             return (
                               <div
                                 key={idx}
@@ -558,7 +614,7 @@ export function FlowStateIdeaCapture({
                                 style={{
                                   left: `${x}%`,
                                   top: `${y}%`,
-                                  width: `${Math.max(2, w)}%`
+                                  width: `${Math.max(2, w)}%`,
                                 }}
                               />
                             );
@@ -576,15 +632,21 @@ export function FlowStateIdeaCapture({
           {selectedIdeaData && (
             <div className="border-t border-zinc-800 p-4 bg-zinc-900/50">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="font-semibold">{selectedIdeaData.name} - Details</h3>
+                <h3 className="font-semibold">
+                  {selectedIdeaData.name} - Details
+                </h3>
                 <div className="flex gap-2">
                   <Button
                     size="sm"
                     variant="outline"
                     onClick={() => setIsPlaying(!isPlaying)}
                   >
-                    {isPlaying ? <Pause className="w-4 h-4 mr-1" /> : <Play className="w-4 h-4 mr-1" />}
-                    {isPlaying ? 'Stop' : 'Preview'}
+                    {isPlaying ? (
+                      <Pause className="w-4 h-4 mr-1" />
+                    ) : (
+                      <Play className="w-4 h-4 mr-1" />
+                    )}
+                    {isPlaying ? "Stop" : "Preview"}
                   </Button>
                   <Button
                     size="sm"
@@ -610,27 +672,37 @@ export function FlowStateIdeaCapture({
                     </tr>
                   </thead>
                   <tbody>
-                    {quantizeNotes(selectedIdeaData.detectedNotes).map((note, idx) => (
-                      <tr key={idx} className="border-t border-zinc-800">
-                        <td className="py-1 font-mono text-yellow-400">{note.noteName}</td>
-                        <td className="py-1 text-zinc-400">{note.startTime.toFixed(2)}s</td>
-                        <td className="py-1 text-zinc-400">{note.duration.toFixed(2)}s</td>
-                        <td className="py-1 text-zinc-400">{note.velocity}</td>
-                        <td className="py-1">
-                          <div className="flex items-center gap-1">
-                            <div className="w-12 h-1.5 bg-zinc-800 rounded-full overflow-hidden">
-                              <div 
-                                className="h-full bg-green-500" 
-                                style={{ width: `${note.confidence * 100}%` }}
-                              />
+                    {quantizeNotes(selectedIdeaData.detectedNotes).map(
+                      (note, idx) => (
+                        <tr key={idx} className="border-t border-zinc-800">
+                          <td className="py-1 font-mono text-yellow-400">
+                            {note.noteName}
+                          </td>
+                          <td className="py-1 text-zinc-400">
+                            {note.startTime.toFixed(2)}s
+                          </td>
+                          <td className="py-1 text-zinc-400">
+                            {note.duration.toFixed(2)}s
+                          </td>
+                          <td className="py-1 text-zinc-400">
+                            {note.velocity}
+                          </td>
+                          <td className="py-1">
+                            <div className="flex items-center gap-1">
+                              <div className="w-12 h-1.5 bg-zinc-800 rounded-full overflow-hidden">
+                                <div
+                                  className="h-full bg-green-500"
+                                  style={{ width: `${note.confidence * 100}%` }}
+                                />
+                              </div>
+                              <span className="text-xs text-zinc-500">
+                                {(note.confidence * 100).toFixed(0)}%
+                              </span>
                             </div>
-                            <span className="text-xs text-zinc-500">
-                              {(note.confidence * 100).toFixed(0)}%
-                            </span>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
+                          </td>
+                        </tr>
+                      ),
+                    )}
                   </tbody>
                 </table>
               </div>

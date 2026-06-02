@@ -1,5 +1,60 @@
-import type { PluginDefinition } from '../server/services/pluginHostService';
+import type { PluginDefinition } from "../server/services/pluginHostService";
 
-const MbEthnicCharangoPlugin: PluginDefinition = { id: 'mb-ethnic-charango', slug: 'mb-ethnic-charango', name: 'MB Charango', category: 'instrument', type: 'ethnic' as any, version: '1.0.0', description: 'Andean small guitar with bright paired strings', author: 'Max Booster', grade: 'A', oscillators: [{ type: 'triangle', detune: -4, gain: 0.35 }, { type: 'triangle', detune: 4, gain: 0.35 }, { type: 'sine', detune: 1200, gain: 0.3 }], envelope: { attack: 0.001, decay: 0.3, sustain: 0.15, release: 0.2 }, parameters: [{ id: 'brightness', name: 'Brightness', type: 'float', defaultValue: 0.8, minValue: 0, maxValue: 1, automatable: true }, { id: 'body', name: 'Body', type: 'float', defaultValue: 0.4, minValue: 0, maxValue: 1, automatable: true }, { id: 'strum', name: 'Strum', type: 'float', defaultValue: 0.5, minValue: 0, maxValue: 1, automatable: true }, { id: 'volume', name: 'Volume', type: 'float', defaultValue: 0.8, minValue: 0, maxValue: 1, automatable: true }], defaultPreset: { brightness: 0.8, body: 0.4, strum: 0.5, volume: 0.8 } };
+const MbEthnicCharangoPlugin: PluginDefinition = {
+  id: "mb-ethnic-charango",
+  slug: "mb-ethnic-charango",
+  name: "MB Charango",
+  category: "instrument",
+  type: "ethnic" as any,
+  version: "1.0.0",
+  description: "Andean small guitar with bright paired strings",
+  author: "Max Booster",
+  grade: "A",
+  oscillators: [
+    { type: "triangle", detune: -4, gain: 0.35 },
+    { type: "triangle", detune: 4, gain: 0.35 },
+    { type: "sine", detune: 1200, gain: 0.3 },
+  ],
+  envelope: { attack: 0.001, decay: 0.3, sustain: 0.15, release: 0.2 },
+  parameters: [
+    {
+      id: "brightness",
+      name: "Brightness",
+      type: "float",
+      defaultValue: 0.8,
+      minValue: 0,
+      maxValue: 1,
+      automatable: true,
+    },
+    {
+      id: "body",
+      name: "Body",
+      type: "float",
+      defaultValue: 0.4,
+      minValue: 0,
+      maxValue: 1,
+      automatable: true,
+    },
+    {
+      id: "strum",
+      name: "Strum",
+      type: "float",
+      defaultValue: 0.5,
+      minValue: 0,
+      maxValue: 1,
+      automatable: true,
+    },
+    {
+      id: "volume",
+      name: "Volume",
+      type: "float",
+      defaultValue: 0.8,
+      minValue: 0,
+      maxValue: 1,
+      automatable: true,
+    },
+  ],
+  defaultPreset: { brightness: 0.8, body: 0.4, strum: 0.5, volume: 0.8 },
+};
 
 export default MbEthnicCharangoPlugin;

@@ -12,27 +12,35 @@
  *   isAuthoritative(name) → boolean
  */
 
-import fs   from 'node:fs';
-import path from 'node:path';
-import https from 'node:https';
-import http  from 'node:http';
-import { ZoneData, ZoneRecord, DnsRecord, TYPE, CLASS_IN } from './types.js';
+import fs from "node:fs";
+import path from "node:path";
+import https from "node:https";
+import http from "node:http";
+import { ZoneData, ZoneRecord, DnsRecord, TYPE, CLASS_IN } from "./types.js";
 import {
-  rdataA, rdataAAAA, rdataName, rdataSOA,
-  rdataTXT, rdataMX, rdataCAA,
-} from './packet.js';
+  rdataA,
+  rdataAAAA,
+  rdataName,
+  rdataSOA,
+  rdataTXT,
+  rdataMX,
+  rdataCAA,
+} from "./packet.js";
 
 // ── Config ─────────────────────────────────────────────────────────────────
 
-const ZONE_FILE         = process.env.ZONE_FILE         || path.join(process.cwd(), 'dns-node', 'data', 'zone.json');
-const ZONE_SYNC_URL     = process.env.ZONE_SYNC_URL     || '';    // pull from primary
-const ZONE_SYNC_INTERVAL = parseInt(process.env.ZONE_SYNC_INTERVAL_S || '120') * 1000;
+const ZONE_FILE =
+  process.env.ZONE_FILE ||
+  path.join(process.cwd(), "dns-node", "data", "zone.json");
+const ZONE_SYNC_URL = process.env.ZONE_SYNC_URL || ""; // pull from primary
+const ZONE_SYNC_INTERVAL =
+  parseInt(process.env.ZONE_SYNC_INTERVAL_S || "120") * 1000;
 
 // ── State ──────────────────────────────────────────────────────────────────
 
-let zone: ZoneData    = { domain: '', serial: 0, records: [] };
-let compiled: Map<string, DnsRecord[]> = new Map();  // "name|type" → records
-let zoneLoaded        = false;
+let zone: ZoneData = { domain: "", serial: 0, records: [] };
+let compiled: Map<string, DnsRecord[]> = new Map(); // "name|type" → records
+let zoneLoaded = false;
 
 // ── Load ───────────────────────────────────────────────────────────────────
 
@@ -43,16 +51,23 @@ function typeCode(typeName: string): number {
 function buildRdata(rec: ZoneRecord): Buffer | null {
   const v = Array.isArray(rec.value) ? rec.value[0] : rec.value;
   switch (rec.type.toUpperCase()) {
-    case 'A':    return rdataA(v);
-    case 'AAAA': return rdataAAAA(v);
-    case 'NS':
-    case 'CNAME':
+    case "A":
+      return rdataA(v);
+    case "AAAA":
+      return rdataAAAA(v);
+    case "NS":
+    case "CNAME":
       return rdataName(v);
-    case 'SOA':  return rdataSOA(v);
-    case 'TXT':  return rdataTXT(v);
-    case 'MX':   return rdataMX(v, rec.priority ?? 10);
-    case 'CAA':  return rdataCAA(v);
-    default:     return null;
+    case "SOA":
+      return rdataSOA(v);
+    case "TXT":
+      return rdataTXT(v);
+    case "MX":
+      return rdataMX(v, rec.priority ?? 10);
+    case "CAA":
+      return rdataCAA(v);
+    default:
+      return null;
   }
 }
 
@@ -64,15 +79,20 @@ function compile(data: ZoneData): Map<string, DnsRecord[]> {
     const rdata = buildRdata(rec);
     if (!rdata) continue;
 
-    const rawName = rec.name === '@' ? domain : (rec.name === '*' ? `*.${domain}` : `${rec.name}.${domain}`);
+    const rawName =
+      rec.name === "@"
+        ? domain
+        : rec.name === "*"
+          ? `*.${domain}`
+          : `${rec.name}.${domain}`;
     const key = `${rawName.toLowerCase()}|${rec.type.toUpperCase()}`;
 
     if (!map.has(key)) map.set(key, []);
     map.get(key)!.push({
-      name:  rawName,
-      type:  typeCode(rec.type),
+      name: rawName,
+      type: typeCode(rec.type),
       class: CLASS_IN,
-      ttl:   rec.ttl,
+      ttl: rec.ttl,
       rdata,
     });
   }
@@ -82,12 +102,14 @@ function compile(data: ZoneData): Map<string, DnsRecord[]> {
 
 export function loadZoneFromFile(): void {
   try {
-    const raw  = fs.readFileSync(ZONE_FILE, 'utf8');
+    const raw = fs.readFileSync(ZONE_FILE, "utf8");
     const data: ZoneData = JSON.parse(raw);
-    zone     = data;
+    zone = data;
     compiled = compile(data);
     zoneLoaded = true;
-    console.log(`[zone] Loaded ${data.records.length} records for ${data.domain} (serial=${data.serial})`);
+    console.log(
+      `[zone] Loaded ${data.records.length} records for ${data.domain} (serial=${data.serial})`,
+    );
   } catch (err: any) {
     console.error(`[zone] Failed to load ${ZONE_FILE}: ${err.message}`);
   }
@@ -96,27 +118,29 @@ export function loadZoneFromFile(): void {
 async function fetchZoneFromPrimary(): Promise<void> {
   if (!ZONE_SYNC_URL) return;
   return new Promise((resolve) => {
-    const mod = ZONE_SYNC_URL.startsWith('https') ? https : http;
-    mod.get(ZONE_SYNC_URL, (res) => {
-      const chunks: Buffer[] = [];
-      res.on('data', c => chunks.push(c));
-      res.on('end', () => {
-        try {
-          const raw  = Buffer.concat(chunks).toString('utf8');
-          const data: ZoneData = JSON.parse(raw);
-          if (data.serial > zone.serial) {
-            zone     = data;
-            compiled = compile(data);
-            console.log(`[zone] Synced from primary: serial=${data.serial}`);
-            fs.writeFileSync(ZONE_FILE, raw, 'utf8'); // cache locally
+    const mod = ZONE_SYNC_URL.startsWith("https") ? https : http;
+    mod
+      .get(ZONE_SYNC_URL, (res) => {
+        const chunks: Buffer[] = [];
+        res.on("data", (c) => chunks.push(c));
+        res.on("end", () => {
+          try {
+            const raw = Buffer.concat(chunks).toString("utf8");
+            const data: ZoneData = JSON.parse(raw);
+            if (data.serial > zone.serial) {
+              zone = data;
+              compiled = compile(data);
+              console.log(`[zone] Synced from primary: serial=${data.serial}`);
+              fs.writeFileSync(ZONE_FILE, raw, "utf8"); // cache locally
+            }
+          } catch (err: any) {
+            console.error(`[zone] Sync parse error: ${err.message}`);
           }
-        } catch (err: any) {
-          console.error(`[zone] Sync parse error: ${err.message}`);
-        }
-        resolve();
-      });
-      res.on('error', () => resolve());
-    }).on('error', () => resolve());
+          resolve();
+        });
+        res.on("error", () => resolve());
+      })
+      .on("error", () => resolve());
   });
 }
 
@@ -138,7 +162,7 @@ export async function initZone(): Promise<void> {
 
 /** Normalize a query name to compare against zone domain. */
 function normalize(name: string): string {
-  return name.toLowerCase().replace(/\.$/, '');
+  return name.toLowerCase().replace(/\.$/, "");
 }
 
 export function isAuthoritative(name: string): boolean {
@@ -162,13 +186,13 @@ export function resolveRecords(name: string, typeName: string): DnsRecord[] {
 
   // Wildcard match — strip leftmost label and try *.domain
   const domain = zone.domain.toLowerCase();
-  const parts  = n.split('.');
-  if (parts.length > domain.split('.').length) {
+  const parts = n.split(".");
+  if (parts.length > domain.split(".").length) {
     const wildcardKey = `*.${domain}|${t}`;
     const wc = compiled.get(wildcardKey);
     if (wc) {
       // Return records with the original queried name substituted in
-      return wc.map(rr => ({ ...rr, name: name }));
+      return wc.map((rr) => ({ ...rr, name: name }));
     }
   }
 

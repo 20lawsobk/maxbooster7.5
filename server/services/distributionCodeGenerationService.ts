@@ -1,11 +1,11 @@
-import { storage } from '../storage';
-import * as crypto from 'crypto';
+import { storage } from "../storage";
+import * as crypto from "crypto";
 
 export async function generateISRC(
   userId: string,
   trackId: string,
   artist: string,
-  title: string
+  title: string,
 ): Promise<string> {
   const metadata = {
     artist,
@@ -21,7 +21,7 @@ export async function generateISRC(
 export async function generateUPC(
   userId: string,
   releaseId: string,
-  title: string
+  title: string,
 ): Promise<string> {
   const metadata = {
     title,

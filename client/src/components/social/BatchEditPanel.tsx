@@ -1,18 +1,18 @@
-import { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
+} from "@/components/ui/select";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from '@/components/ui/popover';
+} from "@/components/ui/popover";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -22,9 +22,9 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+} from "@/components/ui/alert-dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Trash2,
   Send,
@@ -34,7 +34,7 @@ import {
   CheckSquare,
   Loader2,
   ChevronDown,
-} from 'lucide-react';
+} from "lucide-react";
 
 export interface BatchUpdate {
   status?: string;
@@ -54,19 +54,19 @@ interface BatchEditPanelProps {
 }
 
 const PLATFORMS = [
-  { value: 'instagram', label: 'Instagram' },
-  { value: 'facebook', label: 'Facebook' },
-  { value: 'twitter', label: 'Twitter / X' },
-  { value: 'tiktok', label: 'TikTok' },
-  { value: 'linkedin', label: 'LinkedIn' },
-  { value: 'youtube', label: 'YouTube' },
-  { value: 'threads', label: 'Threads' },
+  { value: "instagram", label: "Instagram" },
+  { value: "facebook", label: "Facebook" },
+  { value: "twitter", label: "Twitter / X" },
+  { value: "tiktok", label: "TikTok" },
+  { value: "linkedin", label: "LinkedIn" },
+  { value: "youtube", label: "YouTube" },
+  { value: "threads", label: "Threads" },
 ];
 
 const STATUSES = [
-  { value: 'draft', label: 'Draft' },
-  { value: 'scheduled', label: 'Scheduled' },
-  { value: 'published', label: 'Published' },
+  { value: "draft", label: "Draft" },
+  { value: "scheduled", label: "Scheduled" },
+  { value: "published", label: "Published" },
 ];
 
 export function BatchEditPanel({
@@ -80,8 +80,8 @@ export function BatchEditPanel({
   isLoading = false,
 }: BatchEditPanelProps) {
   const [rescheduleOpen, setRescheduleOpen] = useState(false);
-  const [rescheduleDate, setRescheduleDate] = useState('');
-  const [rescheduleTime, setRescheduleTime] = useState('');
+  const [rescheduleDate, setRescheduleDate] = useState("");
+  const [rescheduleTime, setRescheduleTime] = useState("");
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
   if (selectedCount === 0) return null;
@@ -91,10 +91,10 @@ export function BatchEditPanel({
     const iso = rescheduleTime
       ? new Date(`${rescheduleDate}T${rescheduleTime}`).toISOString()
       : new Date(`${rescheduleDate}T09:00`).toISOString();
-    onBatchUpdate({ scheduledAt: iso, status: 'scheduled' });
+    onBatchUpdate({ scheduledAt: iso, status: "scheduled" });
     setRescheduleOpen(false);
-    setRescheduleDate('');
-    setRescheduleTime('');
+    setRescheduleDate("");
+    setRescheduleTime("");
   };
 
   const handleStatusChange = (status: string) => {
@@ -136,22 +136,29 @@ export function BatchEditPanel({
         {/* Reschedule */}
         <Popover open={rescheduleOpen} onOpenChange={setRescheduleOpen}>
           <PopoverTrigger asChild>
-            <Button variant="outline" size="sm" disabled={isLoading} className="gap-1">
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={isLoading}
+              className="gap-1"
+            >
               <Calendar className="h-3.5 w-3.5" />
               Reschedule
               <ChevronDown className="h-3 w-3 opacity-60" />
             </Button>
           </PopoverTrigger>
           <PopoverContent className="w-72 p-4" align="start">
-            <p className="text-sm font-semibold mb-3">Reschedule {selectedCount} post{selectedCount > 1 ? 's' : ''}</p>
+            <p className="text-sm font-semibold mb-3">
+              Reschedule {selectedCount} post{selectedCount > 1 ? "s" : ""}
+            </p>
             <div className="space-y-3">
               <div>
                 <Label className="text-xs mb-1 block">Date</Label>
                 <Input
                   type="date"
                   value={rescheduleDate}
-                  onChange={e => setRescheduleDate(e.target.value)}
-                  min={new Date().toISOString().split('T')[0]}
+                  onChange={(e) => setRescheduleDate(e.target.value)}
+                  min={new Date().toISOString().split("T")[0]}
                 />
               </div>
               <div>
@@ -159,7 +166,7 @@ export function BatchEditPanel({
                 <Input
                   type="time"
                   value={rescheduleTime}
-                  onChange={e => setRescheduleTime(e.target.value)}
+                  onChange={(e) => setRescheduleTime(e.target.value)}
                 />
               </div>
               <Button
@@ -168,7 +175,7 @@ export function BatchEditPanel({
                 disabled={!rescheduleDate}
                 onClick={handleReschedule}
               >
-                Apply to {selectedCount} post{selectedCount > 1 ? 's' : ''}
+                Apply to {selectedCount} post{selectedCount > 1 ? "s" : ""}
               </Button>
             </div>
           </PopoverContent>
@@ -181,7 +188,7 @@ export function BatchEditPanel({
             <SelectValue placeholder="Set status" />
           </SelectTrigger>
           <SelectContent>
-            {STATUSES.map(s => (
+            {STATUSES.map((s) => (
               <SelectItem key={s.value} value={s.value}>
                 {s.label}
               </SelectItem>
@@ -195,7 +202,7 @@ export function BatchEditPanel({
             <SelectValue placeholder="Move to platform" />
           </SelectTrigger>
           <SelectContent>
-            {PLATFORMS.map(p => (
+            {PLATFORMS.map((p) => (
               <SelectItem key={p.value} value={p.value}>
                 {p.label}
               </SelectItem>
@@ -238,18 +245,25 @@ export function BatchEditPanel({
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete {selectedCount} post{selectedCount > 1 ? 's' : ''}?</AlertDialogTitle>
+            <AlertDialogTitle>
+              Delete {selectedCount} post{selectedCount > 1 ? "s" : ""}?
+            </AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently remove {selectedCount} scheduled post{selectedCount > 1 ? 's' : ''} from your calendar. This action cannot be undone.
+              This will permanently remove {selectedCount} scheduled post
+              {selectedCount > 1 ? "s" : ""} from your calendar. This action
+              cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
-              onClick={() => { setDeleteDialogOpen(false); onBatchDelete(); }}
+              onClick={() => {
+                setDeleteDialogOpen(false);
+                onBatchDelete();
+              }}
               className="bg-red-600 hover:bg-red-700"
             >
-              Delete {selectedCount} post{selectedCount > 1 ? 's' : ''}
+              Delete {selectedCount} post{selectedCount > 1 ? "s" : ""}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

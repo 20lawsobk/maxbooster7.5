@@ -1,24 +1,30 @@
-import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useRequireAuth } from '@/hooks/useRequireAuth';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useRequireAuth } from "@/hooks/useRequireAuth";
+import { motion, AnimatePresence } from "framer-motion";
 
-import { AppLayout } from '@/components/layout/AppLayout';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { AppLayout } from "@/components/layout/AppLayout";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Skeleton } from '@/components/ui/skeleton';
+} from "@/components/ui/select";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Dialog,
   DialogContent,
@@ -27,9 +33,9 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@/components/ui/dialog';
-import { useToast } from '@/hooks/use-toast';
-import { apiRequest } from '@/lib/queryClient';
+} from "@/components/ui/dialog";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
 import {
   Code,
   Key,
@@ -51,13 +57,13 @@ import {
   Book,
   ExternalLink,
   RefreshCw,
-} from 'lucide-react';
+} from "lucide-react";
 
 interface ApiKey {
   id: string;
   keyName: string;
   apiKeyPreview: string;
-  tier: 'free' | 'pro' | 'enterprise';
+  tier: "free" | "pro" | "enterprise";
   rateLimit: number;
   isActive: boolean;
   lastUsedAt: string | null;
@@ -85,46 +91,57 @@ export default function DeveloperApi() {
   const queryClient = useQueryClient();
 
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
-  const [newKeyName, setNewKeyName] = useState('');
-  const [newKeyTier, setNewKeyTier] = useState<'free' | 'pro' | 'enterprise'>('free');
-  const [createdApiKey, setCreatedApiKey] = useState<string | null>(null);
-  const [selectedKeyForDeletion, setSelectedKeyForDeletion] = useState<string | null>(null);
-  const [copiedKey, setCopiedKey] = useState<string | null>(null);
-  const [selectedLanguage, setSelectedLanguage] = useState<'curl' | 'javascript' | 'python'>(
-    'curl'
+  const [newKeyName, setNewKeyName] = useState("");
+  const [newKeyTier, setNewKeyTier] = useState<"free" | "pro" | "enterprise">(
+    "free",
   );
+  const [createdApiKey, setCreatedApiKey] = useState<string | null>(null);
+  const [selectedKeyForDeletion, setSelectedKeyForDeletion] = useState<
+    string | null
+  >(null);
+  const [copiedKey, setCopiedKey] = useState<string | null>(null);
+  const [selectedLanguage, setSelectedLanguage] = useState<
+    "curl" | "javascript" | "python"
+  >("curl");
 
   // Fetch API keys
-  const { data: apiKeysData, isLoading: keysLoading} = useQuery({
-    queryKey: ['/api/developer/keys'],
+  const { data: apiKeysData, isLoading: keysLoading } = useQuery({
+    queryKey: ["/api/developer/keys"],
     enabled: !!user,
   });
 
   // Fetch usage statistics
   const { data: usageData, isLoading: usageLoading } = useQuery({
-    queryKey: ['/api/developer/usage'],
+    queryKey: ["/api/developer/usage"],
     enabled: !!user,
   });
 
   // Create API key mutation
   const createKeyMutation = useMutation({
-    mutationFn: async (data: { keyName: string; tier: 'free' | 'pro' | 'enterprise' }) => {
-      const response = await apiRequest('POST', '/api/developer/keys/create', data);
+    mutationFn: async (data: {
+      keyName: string;
+      tier: "free" | "pro" | "enterprise";
+    }) => {
+      const response = await apiRequest(
+        "POST",
+        "/api/developer/keys/create",
+        data,
+      );
       return response.json();
     },
     onSuccess: (data) => {
       setCreatedApiKey(data.apiKey.apiKey);
-      queryClient.invalidateQueries({ queryKey: ['/api/developer/keys'] });
+      queryClient.invalidateQueries({ queryKey: ["/api/developer/keys"] });
       toast({
-        title: 'API Key Created',
-        description: 'Your new API key has been generated successfully.',
+        title: "API Key Created",
+        description: "Your new API key has been generated successfully.",
       });
     },
     onError: (error: Error) => {
       toast({
-        title: 'Error',
-        description: error.message || 'Failed to create API key',
-        variant: 'destructive',
+        title: "Error",
+        description: error.message || "Failed to create API key",
+        variant: "destructive",
       });
     },
   });
@@ -132,23 +149,26 @@ export default function DeveloperApi() {
   // Delete API key mutation
   const deleteKeyMutation = useMutation({
     mutationFn: async (keyId: string) => {
-      const response = await apiRequest('DELETE', `/api/developer/keys/${keyId}`);
+      const response = await apiRequest(
+        "DELETE",
+        `/api/developer/keys/${keyId}`,
+      );
       return response;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/developer/keys'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/developer/usage'] });
+      queryClient.invalidateQueries({ queryKey: ["/api/developer/keys"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/developer/usage"] });
       setSelectedKeyForDeletion(null);
       toast({
-        title: 'API Key Revoked',
-        description: 'The API key has been revoked successfully.',
+        title: "API Key Revoked",
+        description: "The API key has been revoked successfully.",
       });
     },
     onError: (error: Error) => {
       toast({
-        title: 'Error',
-        description: error.message || 'Failed to revoke API key',
-        variant: 'destructive',
+        title: "Error",
+        description: error.message || "Failed to revoke API key",
+        variant: "destructive",
       });
     },
   });
@@ -156,9 +176,9 @@ export default function DeveloperApi() {
   const handleCreateKey = () => {
     if (!newKeyName.trim()) {
       toast({
-        title: 'Error',
-        description: 'Please provide a name for your API key',
-        variant: 'destructive',
+        title: "Error",
+        description: "Please provide a name for your API key",
+        variant: "destructive",
       });
       return;
     }
@@ -174,8 +194,8 @@ export default function DeveloperApi() {
     setCopiedKey(key);
     setTimeout(() => setCopiedKey(null), 2000);
     toast({
-      title: 'Copied',
-      description: 'API key copied to clipboard',
+      title: "Copied",
+      description: "API key copied to clipboard",
     });
   };
 
@@ -252,7 +272,7 @@ print('Demographics:', demographics)`,
     );
   }
 
-return (
+  return (
     <AppLayout>
       <div className="container mx-auto py-8 px-4 max-w-7xl">
         {/* Header */}
@@ -262,7 +282,8 @@ return (
             Developer API
           </h1>
           <p className="text-muted-foreground">
-            Access your music analytics data programmatically with our powerful REST API
+            Access your music analytics data programmatically with our powerful
+            REST API
           </p>
         </div>
 
@@ -290,10 +311,14 @@ return (
                   <div>
                     <CardTitle>Your API Keys</CardTitle>
                     <CardDescription>
-                      Create and manage API keys to access the Max Booster Analytics API
+                      Create and manage API keys to access the Max Booster
+                      Analytics API
                     </CardDescription>
                   </div>
-                  <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+                  <Dialog
+                    open={isCreateDialogOpen}
+                    onOpenChange={setIsCreateDialogOpen}
+                  >
                     <DialogTrigger asChild>
                       <Button>
                         <Plus className="h-4 w-4 mr-2" />
@@ -313,15 +338,19 @@ return (
                           <Alert>
                             <AlertCircle className="h-4 w-4" />
                             <AlertDescription>
-                              <strong>Save this API key securely!</strong> You won't be able to view
-                              it again.
+                              <strong>Save this API key securely!</strong> You
+                              won't be able to view it again.
                             </AlertDescription>
                           </Alert>
 
                           <div className="space-y-2">
                             <Label>Your API Key</Label>
                             <div className="flex gap-2">
-                              <Input value={createdApiKey} readOnly className="font-mono text-sm" />
+                              <Input
+                                value={createdApiKey}
+                                readOnly
+                                className="font-mono text-sm"
+                              />
                               <Button
                                 variant="outline"
                                 size="icon"
@@ -341,7 +370,7 @@ return (
                               onClick={() => {
                                 setCreatedApiKey(null);
                                 setIsCreateDialogOpen(false);
-                                setNewKeyName('');
+                                setNewKeyName("");
                               }}
                             >
                               Done
@@ -365,15 +394,21 @@ return (
                             <Select
                               value={newKeyTier}
                               onValueChange={(value) =>
-                                setNewKeyTier(value as 'free' | 'pro' | 'enterprise')
+                                setNewKeyTier(
+                                  value as "free" | "pro" | "enterprise",
+                                )
                               }
                             >
                               <SelectTrigger id="tier">
                                 <SelectValue />
                               </SelectTrigger>
                               <SelectContent>
-                                <SelectItem value="free">Free (100 req/sec)</SelectItem>
-                                <SelectItem value="pro">Pro (1,000 req/sec)</SelectItem>
+                                <SelectItem value="free">
+                                  Free (100 req/sec)
+                                </SelectItem>
+                                <SelectItem value="pro">
+                                  Pro (1,000 req/sec)
+                                </SelectItem>
                                 <SelectItem value="enterprise">
                                   Enterprise (5,000 req/sec)
                                 </SelectItem>
@@ -382,14 +417,19 @@ return (
                           </div>
 
                           <DialogFooter>
-                            <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
+                            <Button
+                              variant="outline"
+                              onClick={() => setIsCreateDialogOpen(false)}
+                            >
                               Cancel
                             </Button>
                             <Button
                               onClick={handleCreateKey}
                               disabled={createKeyMutation.isPending}
                             >
-                              {createKeyMutation.isPending ? 'Creating...' : 'Create Key'}
+                              {createKeyMutation.isPending
+                                ? "Creating..."
+                                : "Create Key"}
                             </Button>
                           </DialogFooter>
                         </div>
@@ -426,22 +466,30 @@ return (
                           <div className="flex-1">
                             <div className="flex items-center gap-2 mb-2">
                               <h3 className="font-semibold">{key.keyName}</h3>
-                              <Badge variant={key.isActive ? 'default' : 'secondary'}>
-                                {key.isActive ? 'Active' : 'Inactive'}
+                              <Badge
+                                variant={key.isActive ? "default" : "secondary"}
+                              >
+                                {key.isActive ? "Active" : "Inactive"}
                               </Badge>
-                              <Badge variant={key.tier === 'free' ? 'outline' : 'default'}>
-                                {key.tier === 'enterprise'
-                                  ? '🚀 Enterprise'
-                                  : key.tier === 'pro'
-                                    ? '⚡ Pro'
-                                    : '🆓 Free'}
+                              <Badge
+                                variant={
+                                  key.tier === "free" ? "outline" : "default"
+                                }
+                              >
+                                {key.tier === "enterprise"
+                                  ? "🚀 Enterprise"
+                                  : key.tier === "pro"
+                                    ? "⚡ Pro"
+                                    : "🆓 Free"}
                               </Badge>
                             </div>
 
                             <div className="space-y-1 text-sm text-muted-foreground">
                               <div className="flex items-center gap-2">
                                 <Code className="h-3 w-3" />
-                                <code className="font-mono">{key.apiKeyPreview}</code>
+                                <code className="font-mono">
+                                  {key.apiKeyPreview}
+                                </code>
                               </div>
                               <div className="flex items-center gap-4">
                                 <div className="flex items-center gap-1">
@@ -450,12 +498,16 @@ return (
                                 </div>
                                 <div className="flex items-center gap-1">
                                   <Clock className="h-3 w-3" />
-                                  Created {new Date(key.createdAt).toLocaleDateString()}
+                                  Created{" "}
+                                  {new Date(key.createdAt).toLocaleDateString()}
                                 </div>
                                 {key.lastUsedAt && (
                                   <div className="flex items-center gap-1">
                                     <Activity className="h-3 w-3" />
-                                    Last used {new Date(key.lastUsedAt).toLocaleDateString()}
+                                    Last used{" "}
+                                    {new Date(
+                                      key.lastUsedAt,
+                                    ).toLocaleDateString()}
                                   </div>
                                 )}
                               </div>
@@ -484,35 +536,49 @@ return (
             <div className="grid gap-6 md:grid-cols-3">
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-sm font-medium">Total Requests</CardTitle>
+                  <CardTitle className="text-sm font-medium">
+                    Total Requests
+                  </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-bold">{totalRequests.toLocaleString()}</div>
+                  <div className="text-3xl font-bold">
+                    {totalRequests.toLocaleString()}
+                  </div>
                   <p className="text-xs text-muted-foreground">Last 30 days</p>
                 </CardContent>
               </Card>
 
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-sm font-medium">Active Keys</CardTitle>
+                  <CardTitle className="text-sm font-medium">
+                    Active Keys
+                  </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="text-3xl font-bold">
                     {apiKeys.filter((k: ApiKey) => k.isActive).length}
                   </div>
-                  <p className="text-xs text-muted-foreground">of {apiKeys.length} total keys</p>
+                  <p className="text-xs text-muted-foreground">
+                    of {apiKeys.length} total keys
+                  </p>
                 </CardContent>
               </Card>
 
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-sm font-medium">Rate Limit</CardTitle>
+                  <CardTitle className="text-sm font-medium">
+                    Rate Limit
+                  </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="text-3xl font-bold">
-                    {apiKeys.length > 0 ? Math.max(...apiKeys.map((k: ApiKey) => k.rateLimit)) : 0}
+                    {apiKeys.length > 0
+                      ? Math.max(...apiKeys.map((k: ApiKey) => k.rateLimit))
+                      : 0}
                   </div>
-                  <p className="text-xs text-muted-foreground">requests per second</p>
+                  <p className="text-xs text-muted-foreground">
+                    requests per second
+                  </p>
                 </CardContent>
               </Card>
             </div>
@@ -521,12 +587,17 @@ return (
               <Card>
                 <CardHeader>
                   <CardTitle>Usage by API Key</CardTitle>
-                  <CardDescription>Request breakdown for each API key</CardDescription>
+                  <CardDescription>
+                    Request breakdown for each API key
+                  </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
                     {usageData.byApiKey.map((keyUsage: unknown) => (
-                      <div key={keyUsage.keyId} className="border-b last:border-0 pb-4 last:pb-0">
+                      <div
+                        key={keyUsage.keyId}
+                        className="border-b last:border-0 pb-4 last:pb-0"
+                      >
                         <div className="flex items-center justify-between mb-2">
                           <h4 className="font-medium">{keyUsage.keyName}</h4>
                           <Badge variant="outline">{keyUsage.tier}</Badge>
@@ -534,7 +605,9 @@ return (
                         <div className="text-2xl font-bold mb-1">
                           {keyUsage.totalRequests.toLocaleString()}
                         </div>
-                        <p className="text-sm text-muted-foreground">requests</p>
+                        <p className="text-sm text-muted-foreground">
+                          requests
+                        </p>
                       </div>
                     ))}
                   </div>
@@ -556,8 +629,8 @@ return (
                 <div>
                   <h3 className="font-semibold mb-2">Authentication</h3>
                   <p className="text-sm text-muted-foreground mb-2">
-                    All API requests require authentication using an API key in the Authorization
-                    header:
+                    All API requests require authentication using an API key in
+                    the Authorization header:
                   </p>
                   <code className="block bg-muted p-3 rounded text-sm">
                     Authorization: Bearer YOUR_API_KEY_HERE
@@ -588,7 +661,9 @@ return (
                 <div className="flex items-center justify-between">
                   <div>
                     <CardTitle>API Endpoints</CardTitle>
-                    <CardDescription>Available endpoints for analytics data</CardDescription>
+                    <CardDescription>
+                      Available endpoints for analytics data
+                    </CardDescription>
                   </div>
                 </div>
               </CardHeader>
@@ -596,49 +671,55 @@ return (
                 <div className="space-y-4">
                   {[
                     {
-                      method: 'GET',
-                      path: '/analytics/platforms',
-                      description: 'List connected streaming platforms',
+                      method: "GET",
+                      path: "/analytics/platforms",
+                      description: "List connected streaming platforms",
                     },
                     {
-                      method: 'GET',
-                      path: '/analytics/streams/:artistId?',
-                      description: 'Get streaming statistics across platforms',
+                      method: "GET",
+                      path: "/analytics/streams/:artistId?",
+                      description: "Get streaming statistics across platforms",
                     },
                     {
-                      method: 'GET',
-                      path: '/analytics/engagement/:artistId?',
-                      description: 'Get engagement metrics (likes, shares, comments)',
+                      method: "GET",
+                      path: "/analytics/engagement/:artistId?",
+                      description:
+                        "Get engagement metrics (likes, shares, comments)",
                     },
                     {
-                      method: 'GET',
-                      path: '/analytics/demographics/:artistId?',
-                      description: 'Get audience demographics data',
+                      method: "GET",
+                      path: "/analytics/demographics/:artistId?",
+                      description: "Get audience demographics data",
                     },
                     {
-                      method: 'GET',
-                      path: '/analytics/playlists/:artistId?',
-                      description: 'Get playlist placement information',
+                      method: "GET",
+                      path: "/analytics/playlists/:artistId?",
+                      description: "Get playlist placement information",
                     },
                     {
-                      method: 'GET',
-                      path: '/analytics/tracks/:artistId?',
-                      description: 'Get track performance data',
+                      method: "GET",
+                      path: "/analytics/tracks/:artistId?",
+                      description: "Get track performance data",
                     },
                     {
-                      method: 'GET',
-                      path: '/analytics/summary/:artistId?',
-                      description: 'Get complete analytics summary',
+                      method: "GET",
+                      path: "/analytics/summary/:artistId?",
+                      description: "Get complete analytics summary",
                     },
                   ].map((endpoint) => (
-                    <div key={endpoint.path} className="border-b last:border-0 pb-4 last:pb-0">
+                    <div
+                      key={endpoint.path}
+                      className="border-b last:border-0 pb-4 last:pb-0"
+                    >
                       <div className="flex items-center gap-2 mb-1">
                         <Badge variant="outline" className="font-mono">
                           {endpoint.method}
                         </Badge>
                         <code className="text-sm">{endpoint.path}</code>
                       </div>
-                      <p className="text-sm text-muted-foreground">{endpoint.description}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {endpoint.description}
+                      </p>
                     </div>
                   ))}
                 </div>
@@ -650,11 +731,15 @@ return (
                 <div className="flex items-center justify-between">
                   <div>
                     <CardTitle>Code Examples</CardTitle>
-                    <CardDescription>Example requests in different languages</CardDescription>
+                    <CardDescription>
+                      Example requests in different languages
+                    </CardDescription>
                   </div>
                   <Select
                     value={selectedLanguage}
-                    onValueChange={(value: unknown) => setSelectedLanguage(value)}
+                    onValueChange={(value: unknown) =>
+                      setSelectedLanguage(value)
+                    }
                   >
                     <SelectTrigger className="w-32">
                       <SelectValue />
@@ -670,15 +755,22 @@ return (
               <CardContent>
                 <div className="relative">
                   <pre className="bg-muted p-4 rounded-lg overflow-x-auto">
-                    <code className="text-sm">{codeExamples[selectedLanguage]}</code>
+                    <code className="text-sm">
+                      {codeExamples[selectedLanguage]}
+                    </code>
                   </pre>
                   <Button
                     variant="ghost"
                     size="sm"
                     className="absolute top-2 right-2"
                     onClick={() => {
-                      navigator.clipboard.writeText(codeExamples[selectedLanguage]);
-                      toast({ title: 'Copied', description: 'Code copied to clipboard' });
+                      navigator.clipboard.writeText(
+                        codeExamples[selectedLanguage],
+                      );
+                      toast({
+                        title: "Copied",
+                        description: "Code copied to clipboard",
+                      });
                     }}
                   >
                     <Copy className="h-4 w-4" />
@@ -698,22 +790,26 @@ return (
             <DialogHeader>
               <DialogTitle>Revoke API Key</DialogTitle>
               <DialogDescription>
-                Are you sure you want to revoke this API key? This action cannot be undone and any
-                applications using this key will lose access.
+                Are you sure you want to revoke this API key? This action cannot
+                be undone and any applications using this key will lose access.
               </DialogDescription>
             </DialogHeader>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setSelectedKeyForDeletion(null)}>
+              <Button
+                variant="outline"
+                onClick={() => setSelectedKeyForDeletion(null)}
+              >
                 Cancel
               </Button>
               <Button
                 variant="destructive"
                 onClick={() =>
-                  selectedKeyForDeletion && deleteKeyMutation.mutate(selectedKeyForDeletion)
+                  selectedKeyForDeletion &&
+                  deleteKeyMutation.mutate(selectedKeyForDeletion)
                 }
                 disabled={deleteKeyMutation.isPending}
               >
-                {deleteKeyMutation.isPending ? 'Revoking...' : 'Revoke Key'}
+                {deleteKeyMutation.isPending ? "Revoking..." : "Revoke Key"}
               </Button>
             </DialogFooter>
           </DialogContent>

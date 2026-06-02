@@ -1,5 +1,5 @@
-import { useEffect, useRef, useCallback } from 'react';
-import { useStudioStore, type AutoscrollMode } from '@/lib/studioStore';
+import { useEffect, useRef, useCallback } from "react";
+import { useStudioStore, type AutoscrollMode } from "@/lib/studioStore";
 
 interface UseAutoscrollOptions {
   containerRef: React.RefObject<HTMLElement>;
@@ -7,8 +7,13 @@ interface UseAutoscrollOptions {
   zoom: number;
 }
 
-export function useAutoscroll({ containerRef, duration, zoom }: UseAutoscrollOptions) {
-  const { currentTime, isPlaying, autoscrollMode, setScrollPosition } = useStudioStore();
+export function useAutoscroll({
+  containerRef,
+  duration,
+  zoom,
+}: UseAutoscrollOptions) {
+  const { currentTime, isPlaying, autoscrollMode, setScrollPosition } =
+    useStudioStore();
   const lastScrollTimeRef = useRef(0);
   const animationFrameRef = useRef<number | null>(null);
 
@@ -21,13 +26,16 @@ export function useAutoscroll({ containerRef, duration, zoom }: UseAutoscrollOpt
     return baseWidth * zoom;
   }, [zoom]);
 
-  const timeToPixels = useCallback((time: number) => {
-    const scrollableWidth = getScrollableWidth();
-    return (time / duration) * scrollableWidth;
-  }, [duration, getScrollableWidth]);
+  const timeToPixels = useCallback(
+    (time: number) => {
+      const scrollableWidth = getScrollableWidth();
+      return (time / duration) * scrollableWidth;
+    },
+    [duration, getScrollableWidth],
+  );
 
   const updateScroll = useCallback(() => {
-    if (!containerRef.current || !isPlaying || autoscrollMode === 'off') {
+    if (!containerRef.current || !isPlaying || autoscrollMode === "off") {
       return;
     }
 
@@ -36,7 +44,7 @@ export function useAutoscroll({ containerRef, duration, zoom }: UseAutoscrollOpt
     const playheadPosition = timeToPixels(currentTime);
 
     switch (autoscrollMode) {
-      case 'turnover': {
+      case "turnover": {
         const currentScroll = container.scrollLeft;
         const visibleEnd = currentScroll + containerWidth;
         const pageMargin = containerWidth * 0.1;
@@ -50,14 +58,14 @@ export function useAutoscroll({ containerRef, duration, zoom }: UseAutoscrollOpt
         break;
       }
 
-      case 'continuous-centered': {
+      case "continuous-centered": {
         const targetScroll = playheadPosition - containerWidth / 2;
         container.scrollLeft = Math.max(0, targetScroll);
         setScrollPosition(container.scrollLeft);
         break;
       }
 
-      case 'continuous-left': {
+      case "continuous-left": {
         const leftMargin = containerWidth * 0.1;
         const targetScroll = playheadPosition - leftMargin;
         container.scrollLeft = Math.max(0, targetScroll);
@@ -65,10 +73,18 @@ export function useAutoscroll({ containerRef, duration, zoom }: UseAutoscrollOpt
         break;
       }
     }
-  }, [containerRef, isPlaying, autoscrollMode, currentTime, getContainerWidth, timeToPixels, setScrollPosition]);
+  }, [
+    containerRef,
+    isPlaying,
+    autoscrollMode,
+    currentTime,
+    getContainerWidth,
+    timeToPixels,
+    setScrollPosition,
+  ]);
 
   useEffect(() => {
-    if (!isPlaying || autoscrollMode === 'off') {
+    if (!isPlaying || autoscrollMode === "off") {
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current);
         animationFrameRef.current = null;
@@ -92,31 +108,47 @@ export function useAutoscroll({ containerRef, duration, zoom }: UseAutoscrollOpt
   }, [isPlaying, autoscrollMode, updateScroll]);
 
   useEffect(() => {
-    if (isPlaying && autoscrollMode !== 'off') {
+    if (isPlaying && autoscrollMode !== "off") {
       updateScroll();
     }
   }, [currentTime, isPlaying, autoscrollMode, updateScroll]);
 
-  const scrollToTime = useCallback((time: number) => {
-    if (!containerRef.current) return;
-    const containerWidth = getContainerWidth();
-    const position = timeToPixels(time);
-    containerRef.current.scrollLeft = Math.max(0, position - containerWidth / 2);
-    setScrollPosition(containerRef.current.scrollLeft);
-  }, [containerRef, getContainerWidth, timeToPixels, setScrollPosition]);
+  const scrollToTime = useCallback(
+    (time: number) => {
+      if (!containerRef.current) return;
+      const containerWidth = getContainerWidth();
+      const position = timeToPixels(time);
+      containerRef.current.scrollLeft = Math.max(
+        0,
+        position - containerWidth / 2,
+      );
+      setScrollPosition(containerRef.current.scrollLeft);
+    },
+    [containerRef, getContainerWidth, timeToPixels, setScrollPosition],
+  );
 
   const getPlayheadStyle = useCallback(() => {
-    if (autoscrollMode === 'off' || !isPlaying) {
-      return { position: 'absolute' as const, left: `${(currentTime / duration) * 100}%` };
+    if (autoscrollMode === "off" || !isPlaying) {
+      return {
+        position: "absolute" as const,
+        left: `${(currentTime / duration) * 100}%`,
+      };
     }
 
     switch (autoscrollMode) {
-      case 'continuous-centered':
-        return { position: 'fixed' as const, left: '50%', transform: 'translateX(-50%)' };
-      case 'continuous-left':
-        return { position: 'fixed' as const, left: '10%' };
+      case "continuous-centered":
+        return {
+          position: "fixed" as const,
+          left: "50%",
+          transform: "translateX(-50%)",
+        };
+      case "continuous-left":
+        return { position: "fixed" as const, left: "10%" };
       default:
-        return { position: 'absolute' as const, left: `${(currentTime / duration) * 100}%` };
+        return {
+          position: "absolute" as const,
+          left: `${(currentTime / duration) * 100}%`,
+        };
     }
   }, [autoscrollMode, isPlaying, currentTime, duration]);
 
@@ -130,9 +162,13 @@ export function useAutoscroll({ containerRef, duration, zoom }: UseAutoscrollOpt
 
 export function getAutoscrollModeLabel(mode: AutoscrollMode): string {
   switch (mode) {
-    case 'off': return 'Off';
-    case 'turnover': return 'Turn Over';
-    case 'continuous-centered': return 'Continuous Centered';
-    case 'continuous-left': return 'Continuous Left';
+    case "off":
+      return "Off";
+    case "turnover":
+      return "Turn Over";
+    case "continuous-centered":
+      return "Continuous Centered";
+    case "continuous-left":
+      return "Continuous Left";
   }
 }

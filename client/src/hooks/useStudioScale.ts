@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect, useCallback, useMemo } from 'react';
+import { useRef, useState, useEffect, useCallback, useMemo } from "react";
 
 const DESIGN_BASELINE = 1440;
 
@@ -36,17 +36,20 @@ export function useStudioScale() {
   const trackHeaderWidth = Math.round(BASE_SIZES.trackHeaderW * scale);
   const aiPanelWidth = Math.round(BASE_SIZES.aiPanelW * scale);
 
-  const cssVars = useMemo(() => ({
-    '--track-header-w': `${Math.round(BASE_SIZES.trackHeaderW * scale)}px`,
-    '--transport-h': `${Math.round(BASE_SIZES.transportH * scale)}px`,
-    '--toolbar-h': `${Math.round(BASE_SIZES.toolbarH * scale)}px`,
-    '--inspector-w': `${Math.round(BASE_SIZES.inspectorW * scale)}px`,
-    '--ai-panel-w': `${Math.round(BASE_SIZES.aiPanelW * scale)}px`,
-    '--editor-h': `${Math.round(BASE_SIZES.editorH * scale)}px`,
-    '--mixer-h': `${Math.round(BASE_SIZES.mixerH * scale)}px`,
-    '--strip-w': `${Math.round(BASE_SIZES.stripW * scale)}px`,
-    '--ui-scale': `${scale}`,
-  }), [scale]);
+  const cssVars = useMemo(
+    () => ({
+      "--track-header-w": `${Math.round(BASE_SIZES.trackHeaderW * scale)}px`,
+      "--transport-h": `${Math.round(BASE_SIZES.transportH * scale)}px`,
+      "--toolbar-h": `${Math.round(BASE_SIZES.toolbarH * scale)}px`,
+      "--inspector-w": `${Math.round(BASE_SIZES.inspectorW * scale)}px`,
+      "--ai-panel-w": `${Math.round(BASE_SIZES.aiPanelW * scale)}px`,
+      "--editor-h": `${Math.round(BASE_SIZES.editorH * scale)}px`,
+      "--mixer-h": `${Math.round(BASE_SIZES.mixerH * scale)}px`,
+      "--strip-w": `${Math.round(BASE_SIZES.stripW * scale)}px`,
+      "--ui-scale": `${scale}`,
+    }),
+    [scale],
+  );
 
   return { ref, scale, cssVars, trackHeaderWidth, aiPanelWidth };
 }

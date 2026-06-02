@@ -1,7 +1,7 @@
-import type { ChunkStore } from './ChunkStore.js';
-import type { ChunkId } from '../types.js';
-import fs from 'fs/promises';
-import path from 'path';
+import type { ChunkStore } from "./ChunkStore.js";
+import type { ChunkId } from "../types.js";
+import fs from "fs/promises";
+import path from "path";
 
 export class LocalFsChunkStore implements ChunkStore {
   constructor(private baseDir: string) {}

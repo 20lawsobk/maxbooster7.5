@@ -1,6 +1,6 @@
-import React, { useEffect, useRef, useCallback } from 'react';
-import { getFocusableElements, trapFocus } from '@/lib/accessibility';
-import { announcePolite } from '@/lib/a11y/screenReader';
+import React, { useEffect, useRef, useCallback } from "react";
+import { getFocusableElements, trapFocus } from "@/lib/accessibility";
+import { announcePolite } from "@/lib/a11y/screenReader";
 
 export interface FocusTrapProps {
   children: React.ReactNode;
@@ -13,10 +13,10 @@ export interface FocusTrapProps {
   finalFocusRef?: React.RefObject<HTMLElement>;
   className?: string;
   role?: string;
-  'aria-label'?: string;
-  'aria-labelledby'?: string;
-  'aria-describedby'?: string;
-  'aria-modal'?: boolean;
+  "aria-label"?: string;
+  "aria-labelledby"?: string;
+  "aria-describedby"?: string;
+  "aria-modal"?: boolean;
 }
 
 export function FocusTrap({
@@ -28,12 +28,12 @@ export function FocusTrap({
   onClickOutside,
   initialFocusRef,
   finalFocusRef,
-  className = '',
+  className = "",
   role,
-  'aria-label': ariaLabel,
-  'aria-labelledby': ariaLabelledby,
-  'aria-describedby': ariaDescribedby,
-  'aria-modal': ariaModal,
+  "aria-label": ariaLabel,
+  "aria-labelledby": ariaLabelledby,
+  "aria-describedby": ariaDescribedby,
+  "aria-modal": ariaModal,
 }: FocusTrapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const previousActiveElementRef = useRef<HTMLElement | null>(null);
@@ -51,15 +51,16 @@ export function FocusTrap({
     if (focusableElements.length > 0) {
       focusableElements[0].focus();
     } else {
-      containerRef.current.setAttribute('tabindex', '-1');
+      containerRef.current.setAttribute("tabindex", "-1");
       containerRef.current.focus();
     }
   }, [initialFocusRef]);
 
   const restorePreviousFocus = useCallback(() => {
     if (restoreFocus) {
-      const elementToFocus = finalFocusRef?.current || previousActiveElementRef.current;
-      if (elementToFocus && typeof elementToFocus.focus === 'function') {
+      const elementToFocus =
+        finalFocusRef?.current || previousActiveElementRef.current;
+      if (elementToFocus && typeof elementToFocus.focus === "function") {
         elementToFocus.focus();
       }
     }
@@ -91,16 +92,16 @@ export function FocusTrap({
     if (!active || !onEscape) return;
 
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
+      if (event.key === "Escape") {
         event.preventDefault();
         event.stopPropagation();
         onEscape();
-        announcePolite('Dialog closed');
+        announcePolite("Dialog closed");
       }
     };
 
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
   }, [active, onEscape]);
 
   useEffect(() => {
@@ -115,8 +116,8 @@ export function FocusTrap({
       }
     };
 
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [active, onClickOutside]);
 
   return (
@@ -204,14 +205,14 @@ export function useFocusTrapHook(options: UseFocusTrapOptions = {}) {
     if (!active || !onEscape) return;
 
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
+      if (event.key === "Escape") {
         event.preventDefault();
         onEscape();
       }
     };
 
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
   }, [active, onEscape]);
 
   return {

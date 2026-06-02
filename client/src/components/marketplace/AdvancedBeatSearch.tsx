@@ -1,22 +1,22 @@
-import { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Badge } from '@/components/ui/badge';
-import { Slider } from '@/components/ui/slider';
+import { useState, useEffect } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
+import { Slider } from "@/components/ui/slider";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
+} from "@/components/ui/select";
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
-} from '@/components/ui/collapsible';
+} from "@/components/ui/collapsible";
 import {
   Search,
   Filter,
@@ -28,28 +28,98 @@ import {
   ChevronDown,
   ChevronUp,
   RotateCcw,
-} from 'lucide-react';
+} from "lucide-react";
 
 const GENRES = [
-  'Hip-Hop', 'Trap', 'R&B', 'Pop', 'Rock', 'Electronic', 'Jazz', 'Blues',
-  'Country', 'Reggae', 'Folk', 'Alternative', 'Indie', 'Punk', 'Metal',
-  'Funk', 'Soul', 'Gospel', 'World', 'Latin', 'Ambient', 'Drill', 'Lo-Fi',
+  "Hip-Hop",
+  "Trap",
+  "R&B",
+  "Pop",
+  "Rock",
+  "Electronic",
+  "Jazz",
+  "Blues",
+  "Country",
+  "Reggae",
+  "Folk",
+  "Alternative",
+  "Indie",
+  "Punk",
+  "Metal",
+  "Funk",
+  "Soul",
+  "Gospel",
+  "World",
+  "Latin",
+  "Ambient",
+  "Drill",
+  "Lo-Fi",
 ];
 
 const MOODS = [
-  'Aggressive', 'Chill', 'Dark', 'Happy', 'Sad', 'Energetic', 'Relaxed',
-  'Romantic', 'Mysterious', 'Uplifting', 'Melancholic', 'Confident',
-  'Nostalgic', 'Futuristic', 'Vintage', 'Modern', 'Dreamy', 'Intense',
+  "Aggressive",
+  "Chill",
+  "Dark",
+  "Happy",
+  "Sad",
+  "Energetic",
+  "Relaxed",
+  "Romantic",
+  "Mysterious",
+  "Uplifting",
+  "Melancholic",
+  "Confident",
+  "Nostalgic",
+  "Futuristic",
+  "Vintage",
+  "Modern",
+  "Dreamy",
+  "Intense",
 ];
 
 const MUSICAL_KEYS = [
-  'C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B',
-  'Cm', 'C#m', 'Dm', 'D#m', 'Em', 'Fm', 'F#m', 'Gm', 'G#m', 'Am', 'A#m', 'Bm',
+  "C",
+  "C#",
+  "D",
+  "D#",
+  "E",
+  "F",
+  "F#",
+  "G",
+  "G#",
+  "A",
+  "A#",
+  "B",
+  "Cm",
+  "C#m",
+  "Dm",
+  "D#m",
+  "Em",
+  "Fm",
+  "F#m",
+  "Gm",
+  "G#m",
+  "Am",
+  "A#m",
+  "Bm",
 ];
 
 const POPULAR_TAGS = [
-  'drake type', 'travis scott', 'juice wrld', 'piano', 'guitar', 'hard', 'melodic',
-  'bouncy', '808', 'sample', 'vocal', 'dark', 'emotional', 'club', 'radio ready',
+  "drake type",
+  "travis scott",
+  "juice wrld",
+  "piano",
+  "guitar",
+  "hard",
+  "melodic",
+  "bouncy",
+  "808",
+  "sample",
+  "vocal",
+  "dark",
+  "emotional",
+  "club",
+  "radio ready",
 ];
 
 interface SearchFilters {
@@ -70,22 +140,25 @@ interface AdvancedBeatSearchProps {
   initialFilters?: Partial<SearchFilters>;
 }
 
-export function AdvancedBeatSearch({ onSearch, initialFilters = {} }: AdvancedBeatSearchProps) {
+export function AdvancedBeatSearch({
+  onSearch,
+  initialFilters = {},
+}: AdvancedBeatSearchProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [filters, setFilters] = useState<SearchFilters>({
-    query: '',
-    genre: '',
-    mood: '',
-    key: '',
+    query: "",
+    genre: "",
+    mood: "",
+    key: "",
     bpmMin: 60,
     bpmMax: 200,
     priceMin: 0,
     priceMax: 1000,
     tags: [],
-    sortBy: 'newest',
+    sortBy: "newest",
     ...initialFilters,
   });
-  const [tagInput, setTagInput] = useState('');
+  const [tagInput, setTagInput] = useState("");
 
   const activeFilterCount = [
     filters.genre,
@@ -102,16 +175,16 @@ export function AdvancedBeatSearch({ onSearch, initialFilters = {} }: AdvancedBe
 
   const handleReset = () => {
     const resetFilters: SearchFilters = {
-      query: '',
-      genre: '',
-      mood: '',
-      key: '',
+      query: "",
+      genre: "",
+      mood: "",
+      key: "",
       bpmMin: 60,
       bpmMax: 200,
       priceMin: 0,
       priceMax: 1000,
       tags: [],
-      sortBy: 'newest',
+      sortBy: "newest",
     };
     setFilters(resetFilters);
     onSearch(resetFilters);
@@ -119,13 +192,16 @@ export function AdvancedBeatSearch({ onSearch, initialFilters = {} }: AdvancedBe
 
   const addTag = (tag: string) => {
     if (tag && !filters.tags.includes(tag)) {
-      setFilters(prev => ({ ...prev, tags: [...prev.tags, tag] }));
+      setFilters((prev) => ({ ...prev, tags: [...prev.tags, tag] }));
     }
-    setTagInput('');
+    setTagInput("");
   };
 
   const removeTag = (tag: string) => {
-    setFilters(prev => ({ ...prev, tags: prev.tags.filter(t => t !== tag) }));
+    setFilters((prev) => ({
+      ...prev,
+      tags: prev.tags.filter((t) => t !== tag),
+    }));
   };
 
   useEffect(() => {
@@ -144,8 +220,12 @@ export function AdvancedBeatSearch({ onSearch, initialFilters = {} }: AdvancedBe
             Find Your Beat
           </CardTitle>
           {activeFilterCount > 0 && (
-            <Badge variant="secondary" className="bg-purple-500/20 text-purple-300">
-              {activeFilterCount} filter{activeFilterCount > 1 ? 's' : ''} active
+            <Badge
+              variant="secondary"
+              className="bg-purple-500/20 text-purple-300"
+            >
+              {activeFilterCount} filter{activeFilterCount > 1 ? "s" : ""}{" "}
+              active
             </Badge>
           )}
         </div>
@@ -157,11 +237,18 @@ export function AdvancedBeatSearch({ onSearch, initialFilters = {} }: AdvancedBe
             <Input
               placeholder="Search beats, producers, tags..."
               value={filters.query}
-              onChange={(e) => setFilters(prev => ({ ...prev, query: e.target.value }))}
+              onChange={(e) =>
+                setFilters((prev) => ({ ...prev, query: e.target.value }))
+              }
               className="pl-10 bg-slate-700/50 border-slate-600 focus:border-purple-500"
             />
           </div>
-          <Select value={filters.sortBy} onValueChange={(v) => setFilters(prev => ({ ...prev, sortBy: v }))}>
+          <Select
+            value={filters.sortBy}
+            onValueChange={(v) =>
+              setFilters((prev) => ({ ...prev, sortBy: v }))
+            }
+          >
             <SelectTrigger className="w-[140px] bg-slate-700/50 border-slate-600">
               <SelectValue placeholder="Sort by" />
             </SelectTrigger>
@@ -173,47 +260,71 @@ export function AdvancedBeatSearch({ onSearch, initialFilters = {} }: AdvancedBe
               <SelectItem value="trending">Trending</SelectItem>
             </SelectContent>
           </Select>
-          <Button onClick={handleSearch} className="bg-purple-600 hover:bg-purple-700">
+          <Button
+            onClick={handleSearch}
+            className="bg-purple-600 hover:bg-purple-700"
+          >
             <Search className="h-4 w-4" />
           </Button>
         </div>
 
         <div className="flex flex-wrap gap-2">
-          <Select value={filters.genre || '_all'} onValueChange={(v) => setFilters(prev => ({ ...prev, genre: v === '_all' ? '' : v }))}>
+          <Select
+            value={filters.genre || "_all"}
+            onValueChange={(v) =>
+              setFilters((prev) => ({ ...prev, genre: v === "_all" ? "" : v }))
+            }
+          >
             <SelectTrigger className="w-[130px] bg-slate-700/50 border-slate-600">
               <Music className="h-4 w-4 mr-2 text-slate-400" />
               <SelectValue placeholder="Genre" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="_all">All Genres</SelectItem>
-              {GENRES.map(genre => (
-                <SelectItem key={genre} value={genre}>{genre}</SelectItem>
+              {GENRES.map((genre) => (
+                <SelectItem key={genre} value={genre}>
+                  {genre}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
 
-          <Select value={filters.mood || '_all'} onValueChange={(v) => setFilters(prev => ({ ...prev, mood: v === '_all' ? '' : v }))}>
+          <Select
+            value={filters.mood || "_all"}
+            onValueChange={(v) =>
+              setFilters((prev) => ({ ...prev, mood: v === "_all" ? "" : v }))
+            }
+          >
             <SelectTrigger className="w-[130px] bg-slate-700/50 border-slate-600">
               <Sparkles className="h-4 w-4 mr-2 text-slate-400" />
               <SelectValue placeholder="Mood" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="_all">All Moods</SelectItem>
-              {MOODS.map(mood => (
-                <SelectItem key={mood} value={mood}>{mood}</SelectItem>
+              {MOODS.map((mood) => (
+                <SelectItem key={mood} value={mood}>
+                  {mood}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
 
-          <Select value={filters.key || '_all'} onValueChange={(v) => setFilters(prev => ({ ...prev, key: v === '_all' ? '' : v }))}>
+          <Select
+            value={filters.key || "_all"}
+            onValueChange={(v) =>
+              setFilters((prev) => ({ ...prev, key: v === "_all" ? "" : v }))
+            }
+          >
             <SelectTrigger className="w-[110px] bg-slate-700/50 border-slate-600">
               <Hash className="h-4 w-4 mr-2 text-slate-400" />
               <SelectValue placeholder="Key" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="_all">All Keys</SelectItem>
-              {MUSICAL_KEYS.map(key => (
-                <SelectItem key={key} value={key}>{key}</SelectItem>
+              {MUSICAL_KEYS.map((key) => (
+                <SelectItem key={key} value={key}>
+                  {key}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
@@ -226,11 +337,20 @@ export function AdvancedBeatSearch({ onSearch, initialFilters = {} }: AdvancedBe
           >
             <Filter className="h-4 w-4 mr-2" />
             More Filters
-            {isExpanded ? <ChevronUp className="h-4 w-4 ml-2" /> : <ChevronDown className="h-4 w-4 ml-2" />}
+            {isExpanded ? (
+              <ChevronUp className="h-4 w-4 ml-2" />
+            ) : (
+              <ChevronDown className="h-4 w-4 ml-2" />
+            )}
           </Button>
 
           {activeFilterCount > 0 && (
-            <Button variant="ghost" size="sm" onClick={handleReset} className="text-slate-400 hover:text-white">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleReset}
+              className="text-slate-400 hover:text-white"
+            >
               <RotateCcw className="h-4 w-4 mr-2" />
               Reset
             </Button>
@@ -251,7 +371,13 @@ export function AdvancedBeatSearch({ onSearch, initialFilters = {} }: AdvancedBe
                     min={60}
                     max={200}
                     step={5}
-                    onValueChange={([min, max]) => setFilters(prev => ({ ...prev, bpmMin: min, bpmMax: max }))}
+                    onValueChange={([min, max]) =>
+                      setFilters((prev) => ({
+                        ...prev,
+                        bpmMin: min,
+                        bpmMax: max,
+                      }))
+                    }
                     className="w-full"
                   />
                 </div>
@@ -271,7 +397,13 @@ export function AdvancedBeatSearch({ onSearch, initialFilters = {} }: AdvancedBe
                     min={0}
                     max={1000}
                     step={10}
-                    onValueChange={([min, max]) => setFilters(prev => ({ ...prev, priceMin: min, priceMax: max }))}
+                    onValueChange={([min, max]) =>
+                      setFilters((prev) => ({
+                        ...prev,
+                        priceMin: min,
+                        priceMax: max,
+                      }))
+                    }
                     className="w-full"
                   />
                 </div>
@@ -285,7 +417,7 @@ export function AdvancedBeatSearch({ onSearch, initialFilters = {} }: AdvancedBe
             <div className="space-y-2">
               <Label className="text-sm text-slate-300">Tags</Label>
               <div className="flex flex-wrap gap-2 mb-2">
-                {filters.tags.map(tag => (
+                {filters.tags.map((tag) => (
                   <Badge
                     key={tag}
                     variant="secondary"
@@ -302,23 +434,31 @@ export function AdvancedBeatSearch({ onSearch, initialFilters = {} }: AdvancedBe
                   placeholder="Add tag..."
                   value={tagInput}
                   onChange={(e) => setTagInput(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && addTag(tagInput)}
+                  onKeyDown={(e) => e.key === "Enter" && addTag(tagInput)}
                   className="bg-slate-700/50 border-slate-600"
                 />
-                <Button variant="outline" onClick={() => addTag(tagInput)} className="border-slate-600">
+                <Button
+                  variant="outline"
+                  onClick={() => addTag(tagInput)}
+                  className="border-slate-600"
+                >
                   Add
                 </Button>
               </div>
               <div className="flex flex-wrap gap-1 pt-2">
                 <span className="text-xs text-slate-500 mr-2">Popular:</span>
-                {POPULAR_TAGS.slice(0, 8).map(tag => (
+                {POPULAR_TAGS.slice(0, 8).map((tag) => (
                   <Badge
                     key={tag}
                     variant="outline"
                     className={`text-xs cursor-pointer border-slate-600 ${
-                      filters.tags.includes(tag) ? 'bg-purple-500/20 text-purple-300' : 'text-slate-400 hover:text-white'
+                      filters.tags.includes(tag)
+                        ? "bg-purple-500/20 text-purple-300"
+                        : "text-slate-400 hover:text-white"
                     }`}
-                    onClick={() => filters.tags.includes(tag) ? removeTag(tag) : addTag(tag)}
+                    onClick={() =>
+                      filters.tags.includes(tag) ? removeTag(tag) : addTag(tag)
+                    }
                   >
                     {tag}
                   </Badge>

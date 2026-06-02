@@ -1,12 +1,17 @@
-import React, { useMemo } from 'react';
-import { motion, AnimatePresence, type MotionProps, type Transition } from 'framer-motion';
-import { useReducedMotion } from '@/hooks/useReducedMotion';
+import React, { useMemo } from "react";
+import {
+  motion,
+  AnimatePresence,
+  type MotionProps,
+  type Transition,
+} from "framer-motion";
+import { useReducedMotion } from "@/hooks/useReducedMotion";
 
 export interface SafeMotionProps extends MotionProps {
   children: React.ReactNode;
   as?: keyof typeof motion;
   className?: string;
-  reducedMotionVariant?: 'instant' | 'opacity' | 'none';
+  reducedMotionVariant?: "instant" | "opacity" | "none";
   forceReducedMotion?: boolean;
 }
 
@@ -17,14 +22,14 @@ const instantTransition: Transition = {
 
 const opacityOnlyTransition: Transition = {
   duration: 0.15,
-  ease: 'linear',
+  ease: "linear",
 };
 
 export function SafeMotion({
   children,
-  as = 'div',
+  as = "div",
   className,
-  reducedMotionVariant = 'instant',
+  reducedMotionVariant = "instant",
   forceReducedMotion,
   animate,
   initial,
@@ -48,7 +53,7 @@ export function SafeMotion({
     }
 
     switch (reducedMotionVariant) {
-      case 'none':
+      case "none":
         return {
           animate: undefined,
           initial: undefined,
@@ -57,23 +62,34 @@ export function SafeMotion({
           variants: undefined,
         };
 
-      case 'opacity':
+      case "opacity":
         return {
-          animate: typeof animate === 'object' ? { opacity: (animate as Record<string, unknown>).opacity ?? 1 } : animate,
-          initial: typeof initial === 'object' ? { opacity: (initial as Record<string, unknown>).opacity ?? 0 } : initial,
-          exit: typeof exit === 'object' ? { opacity: (exit as Record<string, unknown>).opacity ?? 0 } : exit,
+          animate:
+            typeof animate === "object"
+              ? { opacity: (animate as Record<string, unknown>).opacity ?? 1 }
+              : animate,
+          initial:
+            typeof initial === "object"
+              ? { opacity: (initial as Record<string, unknown>).opacity ?? 0 }
+              : initial,
+          exit:
+            typeof exit === "object"
+              ? { opacity: (exit as Record<string, unknown>).opacity ?? 0 }
+              : exit,
           transition: opacityOnlyTransition,
           variants: variants
             ? Object.fromEntries(
                 Object.entries(variants).map(([key, value]) => [
                   key,
-                  typeof value === 'object' ? { opacity: (value as Record<string, unknown>).opacity } : value,
-                ])
+                  typeof value === "object"
+                    ? { opacity: (value as Record<string, unknown>).opacity }
+                    : value,
+                ]),
               )
             : undefined,
         };
 
-      case 'instant':
+      case "instant":
       default:
         return {
           animate,
@@ -93,7 +109,9 @@ export function SafeMotion({
     variants,
   ]);
 
-  const MotionComponent = motion[as] as React.ComponentType<Record<string, unknown>>;
+  const MotionComponent = motion[as] as React.ComponentType<
+    Record<string, unknown>
+  >;
 
   return (
     <MotionComponent className={className} {...props} {...safeProps}>
@@ -104,14 +122,14 @@ export function SafeMotion({
 
 export interface SafeAnimatePresenceProps {
   children: React.ReactNode;
-  mode?: 'wait' | 'sync' | 'popLayout';
+  mode?: "wait" | "sync" | "popLayout";
   initial?: boolean;
   onExitComplete?: () => void;
 }
 
 export function SafeAnimatePresence({
   children,
-  mode = 'wait',
+  mode = "wait",
   initial = true,
   onExitComplete,
 }: SafeAnimatePresenceProps) {
@@ -119,7 +137,7 @@ export function SafeAnimatePresence({
 
   return (
     <AnimatePresence
-      mode={prefersReducedMotion ? 'sync' : mode}
+      mode={prefersReducedMotion ? "sync" : mode}
       initial={prefersReducedMotion ? false : initial}
       onExitComplete={onExitComplete}
     >
@@ -135,7 +153,12 @@ export interface FadeInProps {
   delay?: number;
 }
 
-export function FadeIn({ children, className, duration = 0.3, delay = 0 }: FadeInProps) {
+export function FadeIn({
+  children,
+  className,
+  duration = 0.3,
+  delay = 0,
+}: FadeInProps) {
   const { prefersReducedMotion } = useReducedMotion();
 
   return (
@@ -156,7 +179,7 @@ export function FadeIn({ children, className, duration = 0.3, delay = 0 }: FadeI
 export interface SlideInProps {
   children: React.ReactNode;
   className?: string;
-  direction?: 'left' | 'right' | 'up' | 'down';
+  direction?: "left" | "right" | "up" | "down";
   distance?: number;
   duration?: number;
   delay?: number;
@@ -165,7 +188,7 @@ export interface SlideInProps {
 export function SlideIn({
   children,
   className,
-  direction = 'up',
+  direction = "up",
   distance = 20,
   duration = 0.3,
   delay = 0,
@@ -174,13 +197,13 @@ export function SlideIn({
 
   const initialPosition = useMemo(() => {
     switch (direction) {
-      case 'left':
+      case "left":
         return { x: -distance, y: 0 };
-      case 'right':
+      case "right":
         return { x: distance, y: 0 };
-      case 'up':
+      case "up":
         return { x: 0, y: distance };
-      case 'down':
+      case "down":
         return { x: 0, y: -distance };
     }
   }, [direction, distance]);
@@ -194,7 +217,7 @@ export function SlideIn({
       className={className}
       initial={{ opacity: 0, ...initialPosition }}
       animate={{ opacity: 1, x: 0, y: 0 }}
-      transition={{ duration, delay, ease: 'easeOut' }}
+      transition={{ duration, delay, ease: "easeOut" }}
     >
       {children}
     </motion.div>
@@ -227,7 +250,7 @@ export function ScaleIn({
       className={className}
       initial={{ opacity: 0, scale: initialScale }}
       animate={{ opacity: 1, scale: 1 }}
-      transition={{ duration, delay, ease: 'easeOut' }}
+      transition={{ duration, delay, ease: "easeOut" }}
     >
       {children}
     </motion.div>
@@ -235,7 +258,8 @@ export function ScaleIn({
 }
 
 export function useMotionPreferences() {
-  const { prefersReducedMotion, getAnimationDuration, getTransition } = useReducedMotion();
+  const { prefersReducedMotion, getAnimationDuration, getTransition } =
+    useReducedMotion();
 
   const safeTransition = useMemo(
     () =>
@@ -245,7 +269,7 @@ export function useMotionPreferences() {
         }
         return normalTransition;
       },
-    [prefersReducedMotion]
+    [prefersReducedMotion],
   );
 
   const safeVariants = useMemo(
@@ -255,7 +279,7 @@ export function useMotionPreferences() {
 
         return Object.fromEntries(
           Object.entries(variants).map(([key, value]) => {
-            if (typeof value === 'object' && value !== null) {
+            if (typeof value === "object" && value !== null) {
               return [
                 key,
                 {
@@ -265,10 +289,10 @@ export function useMotionPreferences() {
               ];
             }
             return [key, value];
-          })
+          }),
         ) as T;
       },
-    [prefersReducedMotion]
+    [prefersReducedMotion],
   );
 
   return {

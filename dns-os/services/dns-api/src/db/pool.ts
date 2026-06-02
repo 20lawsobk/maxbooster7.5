@@ -1,7 +1,7 @@
-import { Pool } from 'pg';
+import { Pool } from "pg";
 
 if (!process.env.DATABASE_URL) {
-  throw new Error('DATABASE_URL environment variable is required');
+  throw new Error("DATABASE_URL environment variable is required");
 }
 
 export const pool = new Pool({
@@ -11,6 +11,6 @@ export const pool = new Pool({
   connectionTimeoutMillis: 5_000,
 });
 
-pool.on('error', (err) => {
-  console.error('[db] Unexpected pool error:', err);
+pool.on("error", (err) => {
+  console.error("[db] Unexpected pool error:", err);
 });

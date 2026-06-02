@@ -1,11 +1,11 @@
-import { useLocation } from 'wouter';
-import { ServerVideoGenerator } from '@/components/content/ServerVideoGenerator';
-import { useToast } from '@/hooks/use-toast';
-import { Video } from 'lucide-react';
+import { useLocation } from "wouter";
+import { ServerVideoGenerator } from "@/components/content/ServerVideoGenerator";
+import { useToast } from "@/hooks/use-toast";
+import { Video } from "lucide-react";
 
 function useSearchParams() {
   const [location] = useLocation();
-  const search = typeof window !== 'undefined' ? window.location.search : '';
+  const search = typeof window !== "undefined" ? window.location.search : "";
   return new URLSearchParams(search);
 }
 
@@ -13,30 +13,30 @@ export default function VideoGeneratorPage() {
   const { toast } = useToast();
   const params = useSearchParams();
 
-  const platform     = params.get('platform')     || 'tiktok';
-  const topic        = params.get('topic')         || '';
-  const tone         = params.get('tone')          || 'energetic';
-  const artistName   = params.get('artist_name')   || '';
-  const hook         = params.get('hook')          || '';
-  const body         = params.get('body')          || '';
-  const cta          = params.get('cta')           || '';
-  const template     = params.get('template')      || '';
-  const rawBg        = params.get('bg_color')      || '';
-  const rawAc        = params.get('accent_color')  || '';
+  const platform = params.get("platform") || "tiktok";
+  const topic = params.get("topic") || "";
+  const tone = params.get("tone") || "energetic";
+  const artistName = params.get("artist_name") || "";
+  const hook = params.get("hook") || "";
+  const body = params.get("body") || "";
+  const cta = params.get("cta") || "";
+  const template = params.get("template") || "";
+  const rawBg = params.get("bg_color") || "";
+  const rawAc = params.get("accent_color") || "";
 
   // Normalise colors — ContentGenerator strips the '#', so add it back
   const normColor = (c: string) => {
-    if (!c) return '';
-    return c.startsWith('#') ? c : `#${c}`;
+    if (!c) return "";
+    return c.startsWith("#") ? c : `#${c}`;
   };
 
-  const bgColor     = normColor(rawBg);
+  const bgColor = normColor(rawBg);
   const accentColor = normColor(rawAc);
 
   const handleVideoGenerated = (url: string) => {
     toast({
-      title: 'Video ready!',
-      description: 'Your promotional video has been generated.',
+      title: "Video ready!",
+      description: "Your promotional video has been generated.",
     });
   };
 

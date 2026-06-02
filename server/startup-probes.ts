@@ -1,11 +1,11 @@
 /**
  * STARTUP PROBES - Staged Readiness System
- * 
+ *
  * Implements staged health probes for Replit Reserved VM deployment:
  * - /health - Always responds immediately (liveness)
  * - /ready - Only responds after all critical systems are ready
  * - /startup - Verbose status with phase details
- * 
+ *
  * DEPLOYMENT HARDENING FEATURES:
  * - Database connection with retry (5 attempts, jitter)
  * - Redis connection with fallback to memory store
@@ -13,28 +13,32 @@
  * - Circuit breaker pattern for external services
  */
 
-import { resolve, dirname } from 'path';
-import { fileURLToPath } from 'url';
-import { existsSync, readFileSync } from 'fs';
-import { db } from './db.js';
-import { sql } from 'drizzle-orm';
-import { logger } from './logger.js';
-import { isProductionEnv } from './lib/envHelpers.js';
+import { resolve, dirname } from "path";
+import { fileURLToPath } from "url";
+import { existsSync, readFileSync } from "fs";
+import { db } from "./db.js";
+import { sql } from "drizzle-orm";
+import { logger } from "./logger.js";
+import { isProductionEnv } from "./lib/envHelpers.js";
 
-const __metaUrl = (import.meta as Record<string, unknown>)?.url as string | undefined;
-const __filename = __metaUrl ? fileURLToPath(__metaUrl) : resolve(process.argv[1] ?? '');
+const __metaUrl = (import.meta as Record<string, unknown>)?.url as
+  | string
+  | undefined;
+const __filename = __metaUrl
+  ? fileURLToPath(__metaUrl)
+  : resolve(process.argv[1] ?? "");
 const __dirname = dirname(__filename);
 
 interface ProbeStatus {
   name: string;
-  status: 'pending' | 'checking' | 'ready' | 'failed' | 'degraded';
+  status: "pending" | "checking" | "ready" | "failed" | "degraded";
   lastCheck: Date | null;
   error?: string;
   latencyMs?: number;
 }
 
 interface StartupStatus {
-  phase: 'initializing' | 'connecting' | 'ready' | 'degraded' | 'failed';
+  phase: "initializing" | "connecting" | "ready" | "degraded" | "failed";
   startTime: Date;
   readyTime: Date | null;
   probes: Record<string, ProbeStatus>;
@@ -48,20 +52,30 @@ class StartupProbeManager {
 
   constructor() {
     this.status = {
-      phase: 'initializing',
+      phase: "initializing",
       startTime: new Date(),
       readyTime: null,
       probes: {
-        database: { name: 'PostgreSQL Database', status: 'pending', lastCheck: null },
-        redis: { name: 'Redis Cache', status: 'pending', lastCheck: null },
-        tensorflow: { name: 'TensorFlow.js', status: 'pending', lastCheck: null },
+        database: {
+          name: "PostgreSQL Database",
+          status: "pending",
+          lastCheck: null,
+        },
+        redis: { name: "Redis Cache", status: "pending", lastCheck: null },
+        tensorflow: {
+          name: "TensorFlow.js",
+          status: "pending",
+          lastCheck: null,
+        },
       },
     };
 
     // Load deployment phases from capsule loader if available
     if (process.env.DEPLOYMENT_PHASES) {
       try {
-        this.status.deploymentPhases = JSON.parse(process.env.DEPLOYMENT_PHASES);
+        this.status.deploymentPhases = JSON.parse(
+          process.env.DEPLOYMENT_PHASES,
+        );
       } catch {
         // Ignore parse errors
       }
@@ -70,102 +84,126 @@ class StartupProbeManager {
 
   // Check database connection with retry
   async checkDatabase(maxRetries = 5): Promise<boolean> {
-    this.status.probes.database.status = 'checking';
-    
+    this.status.probes.database.status = "checking";
+
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       const startTime = Date.now();
       try {
         await db.execute(sql`SELECT 1`);
-        this.status.probes.database.status = 'ready';
+        this.status.probes.database.status = "ready";
         this.status.probes.database.lastCheck = new Date();
         this.status.probes.database.latencyMs = Date.now() - startTime;
         this.status.probes.database.error = undefined;
-        logger.info(`✅ Database probe ready (attempt ${attempt}, ${this.status.probes.database.latencyMs}ms)`);
+        logger.info(
+          `✅ Database probe ready (attempt ${attempt}, ${this.status.probes.database.latencyMs}ms)`,
+        );
         return true;
       } catch (error) {
         const jitter = Math.random() * 1000; // 0-1000ms jitter
-        const backoff = Math.min(1000 * Math.pow(2, attempt - 1) + jitter, 30000);
-        
-        this.status.probes.database.error = error instanceof Error ? error.message : String(error);
+        const backoff = Math.min(
+          1000 * Math.pow(2, attempt - 1) + jitter,
+          30000,
+        );
+
+        this.status.probes.database.error =
+          error instanceof Error ? error.message : String(error);
         this.status.probes.database.lastCheck = new Date();
-        
-        logger.warn(`⚠️ Database probe failed (attempt ${attempt}/${maxRetries}): ${this.status.probes.database.error}`);
-        
+
+        logger.warn(
+          `⚠️ Database probe failed (attempt ${attempt}/${maxRetries}): ${this.status.probes.database.error}`,
+        );
+
         if (attempt < maxRetries) {
-          await new Promise(resolve => setTimeout(resolve, backoff));
+          await new Promise((resolve) => setTimeout(resolve, backoff));
         }
       }
     }
-    
-    this.status.probes.database.status = 'failed';
-    logger.warn('❌ Database probe exhausted all retries');
+
+    this.status.probes.database.status = "failed";
+    logger.warn("❌ Database probe exhausted all retries");
     return false;
   }
 
   async checkRedis(): Promise<boolean> {
-    this.status.probes.redis.status = 'checking';
+    this.status.probes.redis.status = "checking";
     const startTime = Date.now();
-    
+
     try {
-      const { getRedisClient } = await import('./lib/redisConnectionFactory.js');
+      const { getRedisClient } = await import(
+        "./lib/redisConnectionFactory.js"
+      );
       const client = await getRedisClient();
 
       await client.ping();
-      this.status.probes.redis.status = 'ready';
+      this.status.probes.redis.status = "ready";
       this.status.probes.redis.lastCheck = new Date();
       this.status.probes.redis.latencyMs = Date.now() - startTime;
       this.status.probes.redis.error = undefined;
-      logger.info(`✅ PDIM probe ready (${this.status.probes.redis.latencyMs}ms)`);
+      logger.info(
+        `✅ PDIM probe ready (${this.status.probes.redis.latencyMs}ms)`,
+      );
       return true;
     } catch (error) {
-      this.status.probes.redis.status = 'degraded';
+      this.status.probes.redis.status = "degraded";
       this.status.probes.redis.lastCheck = new Date();
-      this.status.probes.redis.error = error instanceof Error ? error.message : String(error);
-      logger.warn(`⚠️ BoosterState probe failed: ${this.status.probes.redis.error}`);
+      this.status.probes.redis.error =
+        error instanceof Error ? error.message : String(error);
+      logger.warn(
+        `⚠️ BoosterState probe failed: ${this.status.probes.redis.error}`,
+      );
       return true;
     }
   }
 
   // Check TensorFlow.js initialization with timeout
   async checkTensorFlow(timeoutMs = 30000): Promise<boolean> {
-    this.status.probes.tensorflow.status = 'checking';
+    this.status.probes.tensorflow.status = "checking";
     const startTime = Date.now();
-    
+
     return new Promise(async (resolve) => {
       const timeout = setTimeout(() => {
-        this.status.probes.tensorflow.status = 'degraded';
+        this.status.probes.tensorflow.status = "degraded";
         this.status.probes.tensorflow.lastCheck = new Date();
         this.status.probes.tensorflow.error = `Initialization timed out after ${timeoutMs}ms`;
-        logger.warn(`⚠️ TensorFlow probe: ${this.status.probes.tensorflow.error}`);
+        logger.warn(
+          `⚠️ TensorFlow probe: ${this.status.probes.tensorflow.error}`,
+        );
         resolve(true); // Degraded but we continue
       }, timeoutMs);
-      
+
       try {
         // TensorFlow is initialized during content analysis module load
         // Just check if it's available
-        const tf = await import('@tensorflow/tfjs').catch(() => null);
-        
+        const tf = await import("@tensorflow/tfjs").catch(() => null);
+
         clearTimeout(timeout);
-        
+
         if (tf) {
-          this.status.probes.tensorflow.status = 'ready';
+          this.status.probes.tensorflow.status = "ready";
           this.status.probes.tensorflow.lastCheck = new Date();
           this.status.probes.tensorflow.latencyMs = Date.now() - startTime;
           this.status.probes.tensorflow.error = undefined;
-          logger.info(`✅ TensorFlow probe ready (${this.status.probes.tensorflow.latencyMs}ms)`);
+          logger.info(
+            `✅ TensorFlow probe ready (${this.status.probes.tensorflow.latencyMs}ms)`,
+          );
         } else {
-          this.status.probes.tensorflow.status = 'degraded';
+          this.status.probes.tensorflow.status = "degraded";
           this.status.probes.tensorflow.lastCheck = new Date();
-          this.status.probes.tensorflow.error = 'TensorFlow.js not available';
-          logger.warn('⚠️ TensorFlow probe: Not available, AI features limited');
+          this.status.probes.tensorflow.error = "TensorFlow.js not available";
+          logger.warn(
+            "⚠️ TensorFlow probe: Not available, AI features limited",
+          );
         }
         resolve(true);
       } catch (error) {
         clearTimeout(timeout);
-        this.status.probes.tensorflow.status = 'degraded';
+        this.status.probes.tensorflow.status = "degraded";
         this.status.probes.tensorflow.lastCheck = new Date();
-        this.status.probes.tensorflow.error = error instanceof Error ? error.message : String(error);
-        logger.warn(`⚠️ TensorFlow probe failed: ${this.status.probes.tensorflow.error}`);
+        this.status.probes.tensorflow.error =
+          error instanceof Error ? error.message : String(error);
+        logger.warn(
+          `⚠️ TensorFlow probe failed: ${this.status.probes.tensorflow.error}`,
+        );
         resolve(true); // Degraded but we continue
       }
     });
@@ -173,47 +211,51 @@ class StartupProbeManager {
 
   // Run all probes and determine overall readiness
   async runAllProbes(): Promise<boolean> {
-    this.status.phase = 'connecting';
-    
-    logger.info('🔍 Running startup probes...');
-    
+    this.status.phase = "connecting";
+
+    logger.info("🔍 Running startup probes...");
+
     // Run probes in parallel
     const [dbReady, redisReady, tfReady] = await Promise.all([
       this.checkDatabase(),
       this.checkRedis(),
       this.checkTensorFlow(),
     ]);
-    
+
     // Determine overall status
     const allProbes = Object.values(this.status.probes);
-    const failedCount = allProbes.filter(p => p.status === 'failed').length;
-    const degradedCount = allProbes.filter(p => p.status === 'degraded').length;
-    
+    const failedCount = allProbes.filter((p) => p.status === "failed").length;
+    const degradedCount = allProbes.filter(
+      (p) => p.status === "degraded",
+    ).length;
+
     if (failedCount > 0) {
       // Critical failure - database is required
-      if (this.status.probes.database.status === 'failed') {
-        this.status.phase = 'failed';
-        logger.warn('❌ Startup failed: Database connection required');
+      if (this.status.probes.database.status === "failed") {
+        this.status.phase = "failed";
+        logger.warn("❌ Startup failed: Database connection required");
         return false;
       }
     }
-    
+
     if (degradedCount > 0) {
-      this.status.phase = 'degraded';
-      logger.warn(`⚠️ Startup completed in degraded mode (${degradedCount} probe(s) degraded)`);
+      this.status.phase = "degraded";
+      logger.warn(
+        `⚠️ Startup completed in degraded mode (${degradedCount} probe(s) degraded)`,
+      );
     } else {
-      this.status.phase = 'ready';
-      logger.info('✅ All startup probes passed');
+      this.status.phase = "ready";
+      logger.info("✅ All startup probes passed");
     }
-    
+
     this.status.readyTime = new Date();
-    
+
     // Notify waiting handlers
     for (const resolver of this.readyResolvers) {
       resolver();
     }
     this.readyResolvers = [];
-    
+
     return true;
   }
 
@@ -222,14 +264,14 @@ class StartupProbeManager {
     if (this.isReady()) {
       return Promise.resolve();
     }
-    return new Promise(resolve => {
+    return new Promise((resolve) => {
       this.readyResolvers.push(resolve);
     });
   }
 
   // Check if system is ready
   isReady(): boolean {
-    return this.status.phase === 'ready' || this.status.phase === 'degraded';
+    return this.status.phase === "ready" || this.status.phase === "degraded";
   }
 
   // Get full status for /startup endpoint
@@ -255,16 +297,20 @@ class StartupProbeManager {
 export const startupProbes = new StartupProbeManager();
 
 // Express middleware to add startup endpoints
-export function setupStartupEndpoints(app: import('express').Express): void {
+export function setupStartupEndpoints(app: import("express").Express): void {
   // Registered before ALL middleware — designed for external uptime monitors.
   // No session, no auth, no rate-limiting, no DB. Just confirms the process is alive.
-  app.get('/api/ping', (_req, res) => {
-    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
-    res.json({ ok: true, pid: process.pid, uptime: Math.floor(process.uptime()) });
+  app.get("/api/ping", (_req, res) => {
+    res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+    res.json({
+      ok: true,
+      pid: process.pid,
+      uptime: Math.floor(process.uptime()),
+    });
   });
 
-  app.get('/health', (_req, res) => {
-    res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
+  app.get("/health", (_req, res) => {
+    res.status(200).json({ status: "ok", timestamp: new Date().toISOString() });
   });
 
   // Root route: serves the React app's index.html immediately so the Replit
@@ -279,12 +325,12 @@ export function setupStartupEndpoints(app: import('express').Express): void {
   // a zero-byte body in production.  Resolve the path against process.cwd()
   // so it works whether we run via tsx (dev), node dist/ (built), or cluster.
   if (isProductionEnv()) {
-    const indexPath = resolve(process.cwd(), 'dist', 'public', 'index.html');
+    const indexPath = resolve(process.cwd(), "dist", "public", "index.html");
     if (existsSync(indexPath)) {
-      const html = readFileSync(indexPath, 'utf8');
-      app.get('/', (_req, res) => {
-        res.setHeader('Content-Type', 'text/html; charset=utf-8');
-        res.setHeader('Cache-Control', 'no-cache');
+      const html = readFileSync(indexPath, "utf8");
+      app.get("/", (_req, res) => {
+        res.setHeader("Content-Type", "text/html; charset=utf-8");
+        res.setHeader("Cache-Control", "no-cache");
         res.status(200).send(html);
       });
     }
@@ -296,10 +342,10 @@ export function setupStartupEndpoints(app: import('express').Express): void {
   }
 
   // /startup - Verbose startup status
-  app.get('/startup', (_req, res) => {
+  app.get("/startup", (_req, res) => {
     const status = startupProbes.getStatus();
-    const httpStatus = status.phase === 'failed' ? 503 : 200;
-    
+    const httpStatus = status.phase === "failed" ? 503 : 200;
+
     res.status(httpStatus).json({
       ...status,
       uptime: startupProbes.getUptimeSeconds(),
@@ -307,16 +353,16 @@ export function setupStartupEndpoints(app: import('express').Express): void {
     });
   });
 
-  app.get('/status', (_req, res) => {
+  app.get("/status", (_req, res) => {
     if (startupProbes.isReady()) {
       res.status(200).json({
-        status: 'ok',
+        status: "ok",
         uptime: startupProbes.getUptimeSeconds(),
         timestamp: new Date().toISOString(),
       });
     } else {
       res.status(503).json({
-        status: 'starting',
+        status: "starting",
         phase: startupProbes.getStatus().phase,
         timestamp: new Date().toISOString(),
       });
@@ -324,17 +370,17 @@ export function setupStartupEndpoints(app: import('express').Express): void {
   });
 
   // Override /ready to use probe status
-  app.get('/ready', (_req, res) => {
+  app.get("/ready", (_req, res) => {
     if (startupProbes.isReady()) {
       res.status(200).json({
-        status: 'ready',
+        status: "ready",
         phase: startupProbes.getStatus().phase,
         uptime: startupProbes.getUptimeSeconds(),
         timestamp: new Date().toISOString(),
       });
     } else {
       res.status(503).json({
-        status: 'not_ready',
+        status: "not_ready",
         phase: startupProbes.getStatus().phase,
         probes: startupProbes.getStatus().probes,
         timestamp: new Date().toISOString(),
@@ -344,17 +390,17 @@ export function setupStartupEndpoints(app: import('express').Express): void {
 
   // /readyz — Kubernetes-style readiness probe alias for /ready.
   // Registered before middleware so uptime monitors never hit the middleware chain.
-  app.get('/readyz', (_req, res) => {
+  app.get("/readyz", (_req, res) => {
     if (startupProbes.isReady()) {
       res.status(200).json({
-        status: 'ready',
+        status: "ready",
         phase: startupProbes.getStatus().phase,
         uptime: startupProbes.getUptimeSeconds(),
         timestamp: new Date().toISOString(),
       });
     } else {
       res.status(503).json({
-        status: 'not_ready',
+        status: "not_ready",
         phase: startupProbes.getStatus().phase,
         probes: startupProbes.getStatus().probes,
         timestamp: new Date().toISOString(),

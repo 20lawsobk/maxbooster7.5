@@ -1,30 +1,77 @@
-import React, { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Badge } from '@/components/ui/badge';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Plus, Users, Music, Calendar, UserPlus, LogOut, Crown } from 'lucide-react';
-import { apiRequest } from '@/lib/queryClient';
-import { useToast } from '@/hooks/use-toast';
-import { useAuth } from '@/hooks/useAuth';
+import React, { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Plus,
+  Users,
+  Music,
+  Calendar,
+  UserPlus,
+  LogOut,
+  Crown,
+} from "lucide-react";
+import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
 
 const GENRES = [
-  'Hip Hop', 'R&B', 'Pop', 'Electronic', 'Rock', 'Jazz', 'Classical',
-  'Country', 'Reggae', 'Latin', 'Afrobeats', 'K-Pop', 'Indie', 'Metal', 'Folk',
+  "Hip Hop",
+  "R&B",
+  "Pop",
+  "Electronic",
+  "Rock",
+  "Jazz",
+  "Classical",
+  "Country",
+  "Reggae",
+  "Latin",
+  "Afrobeats",
+  "K-Pop",
+  "Indie",
+  "Metal",
+  "Folk",
 ];
 
 const ROLES = [
-  'Producer', 'Vocalist', 'Rapper', 'Singer', 'Songwriter', 'Beatmaker',
-  'Mixing Engineer', 'Mastering Engineer', 'DJ', 'Instrumentalist',
+  "Producer",
+  "Vocalist",
+  "Rapper",
+  "Singer",
+  "Songwriter",
+  "Beatmaker",
+  "Mixing Engineer",
+  "Mastering Engineer",
+  "DJ",
+  "Instrumentalist",
 ];
 
 export function ProjectBoard() {
@@ -33,95 +80,118 @@ export function ProjectBoard() {
   const { user } = useAuth();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [newProject, setNewProject] = useState({
-    title: '',
-    description: '',
-    genre: '',
+    title: "",
+    description: "",
+    genre: "",
     lookingFor: [] as string[],
     maxMembers: 10,
     isPublic: true,
   });
 
   const { data: allProjects, isLoading: allLoading } = useQuery({
-    queryKey: ['/api/collaborations/projects'],
+    queryKey: ["/api/collaborations/projects"],
     queryFn: async () => {
-      const res = await fetch('/api/collaborations/projects', {
-        credentials: 'include',
+      const res = await fetch("/api/collaborations/projects", {
+        credentials: "include",
       });
-      if (!res.ok) throw new Error('Failed to fetch projects');
+      if (!res.ok) throw new Error("Failed to fetch projects");
       return res.json();
     },
   });
 
   const { data: myProjects, isLoading: myLoading } = useQuery({
-    queryKey: ['/api/collaborations/projects', 'own'],
+    queryKey: ["/api/collaborations/projects", "own"],
     queryFn: async () => {
-      const res = await fetch('/api/collaborations/projects?ownOnly=true', {
-        credentials: 'include',
+      const res = await fetch("/api/collaborations/projects?ownOnly=true", {
+        credentials: "include",
       });
-      if (!res.ok) throw new Error('Failed to fetch my projects');
+      if (!res.ok) throw new Error("Failed to fetch my projects");
       return res.json();
     },
   });
 
   const createMutation = useMutation({
     mutationFn: async (data: typeof newProject) => {
-      const res = await apiRequest('POST', '/api/collaborations/projects', data);
+      const res = await apiRequest(
+        "POST",
+        "/api/collaborations/projects",
+        data,
+      );
       return res.json();
     },
     onSuccess: () => {
-      toast({ title: 'Project Created!' });
+      toast({ title: "Project Created!" });
       setIsCreateOpen(false);
       setNewProject({
-        title: '',
-        description: '',
-        genre: '',
+        title: "",
+        description: "",
+        genre: "",
         lookingFor: [],
         maxMembers: 10,
         isPublic: true,
       });
-      queryClient.invalidateQueries({ queryKey: ['/api/collaborations/projects'] });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/collaborations/projects"],
+      });
     },
     onError: (error: Error) => {
       toast({
-        title: 'Error',
-        description: error.message || 'Failed to create project',
-        variant: 'destructive',
+        title: "Error",
+        description: error.message || "Failed to create project",
+        variant: "destructive",
       });
     },
   });
 
   const joinMutation = useMutation({
-    mutationFn: async ({ projectId, role }: { projectId: string; role: string }) => {
-      const res = await apiRequest('POST', `/api/collaborations/projects/${projectId}/join`, { role });
+    mutationFn: async ({
+      projectId,
+      role,
+    }: {
+      projectId: string;
+      role: string;
+    }) => {
+      const res = await apiRequest(
+        "POST",
+        `/api/collaborations/projects/${projectId}/join`,
+        { role },
+      );
       return res.json();
     },
     onSuccess: () => {
-      toast({ title: 'Joined Project!' });
-      queryClient.invalidateQueries({ queryKey: ['/api/collaborations/projects'] });
+      toast({ title: "Joined Project!" });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/collaborations/projects"],
+      });
     },
     onError: (error: Error) => {
       toast({
-        title: 'Error',
-        description: error.message || 'Failed to join project',
-        variant: 'destructive',
+        title: "Error",
+        description: error.message || "Failed to join project",
+        variant: "destructive",
       });
     },
   });
 
   const leaveMutation = useMutation({
     mutationFn: async (projectId: string) => {
-      const res = await apiRequest('POST', `/api/collaborations/projects/${projectId}/leave`);
+      const res = await apiRequest(
+        "POST",
+        `/api/collaborations/projects/${projectId}/leave`,
+      );
       return res.json();
     },
     onSuccess: () => {
-      toast({ title: 'Left Project' });
-      queryClient.invalidateQueries({ queryKey: ['/api/collaborations/projects'] });
+      toast({ title: "Left Project" });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/collaborations/projects"],
+      });
     },
     onError: (error: Error) => {
       toast({
-        title: 'Error',
-        description: error.message || 'Failed to leave project',
-        variant: 'destructive',
+        title: "Error",
+        description: error.message || "Failed to leave project",
+        variant: "destructive",
       });
     },
   });
@@ -136,7 +206,9 @@ export function ProjectBoard() {
   };
 
   const isUserMember = (project: Record<string, unknown>) => {
-    return project.members?.some((m: Record<string, unknown>) => m.userId === user?.id);
+    return project.members?.some(
+      (m: Record<string, unknown>) => m.userId === user?.id,
+    );
   };
 
   const isProjectOwner = (project: Record<string, unknown>) => {
@@ -169,7 +241,9 @@ export function ProjectBoard() {
                 </Badge>
               )}
             </div>
-            <Badge variant={project.status === 'open' ? 'default' : 'secondary'}>
+            <Badge
+              variant={project.status === "open" ? "default" : "secondary"}
+            >
               {project.status}
             </Badge>
           </div>
@@ -207,14 +281,19 @@ export function ProjectBoard() {
 
           {project.members?.length > 0 && (
             <div className="flex -space-x-2">
-              {project.members.slice(0, 5).map((member: Record<string, unknown>) => (
-                <Avatar key={member.id} className="h-8 w-8 border-2 border-background">
-                  <AvatarImage src={member.user?.avatarUrl} />
-                  <AvatarFallback className="text-xs">
-                    {member.user?.username?.[0]?.toUpperCase() || 'U'}
-                  </AvatarFallback>
-                </Avatar>
-              ))}
+              {project.members
+                .slice(0, 5)
+                .map((member: Record<string, unknown>) => (
+                  <Avatar
+                    key={member.id}
+                    className="h-8 w-8 border-2 border-background"
+                  >
+                    <AvatarImage src={member.user?.avatarUrl} />
+                    <AvatarFallback className="text-xs">
+                      {member.user?.username?.[0]?.toUpperCase() || "U"}
+                    </AvatarFallback>
+                  </Avatar>
+                ))}
               {project.members.length > 5 && (
                 <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center text-xs border-2 border-background">
                   +{project.members.length - 5}
@@ -235,12 +314,17 @@ export function ProjectBoard() {
                 <LogOut className="h-4 w-4 mr-2" />
                 Leave Project
               </Button>
-            ) : !isMember && project.status === 'open' ? (
+            ) : !isMember && project.status === "open" ? (
               <Button
                 size="sm"
                 className="w-full"
-                onClick={() => joinMutation.mutate({ projectId: project.id, role: 'member' })}
-                disabled={joinMutation.isPending || memberCount >= (project.maxMembers || 10)}
+                onClick={() =>
+                  joinMutation.mutate({ projectId: project.id, role: "member" })
+                }
+                disabled={
+                  joinMutation.isPending ||
+                  memberCount >= (project.maxMembers || 10)
+                }
               >
                 <UserPlus className="h-4 w-4 mr-2" />
                 Join Project
@@ -281,7 +365,9 @@ export function ProjectBoard() {
             <Users className="h-5 w-5" />
             Collaboration Projects
           </CardTitle>
-          <CardDescription>Create or join projects with other artists</CardDescription>
+          <CardDescription>
+            Create or join projects with other artists
+          </CardDescription>
         </div>
         <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
           <DialogTrigger asChild>
@@ -299,7 +385,9 @@ export function ProjectBoard() {
                 <Label>Project Title</Label>
                 <Input
                   value={newProject.title}
-                  onChange={(e) => setNewProject((p) => ({ ...p, title: e.target.value }))}
+                  onChange={(e) =>
+                    setNewProject((p) => ({ ...p, title: e.target.value }))
+                  }
                   placeholder="Enter project title..."
                 />
               </div>
@@ -308,7 +396,12 @@ export function ProjectBoard() {
                 <Label>Description</Label>
                 <Textarea
                   value={newProject.description}
-                  onChange={(e) => setNewProject((p) => ({ ...p, description: e.target.value }))}
+                  onChange={(e) =>
+                    setNewProject((p) => ({
+                      ...p,
+                      description: e.target.value,
+                    }))
+                  }
                   placeholder="Describe your project..."
                   rows={3}
                 />
@@ -318,7 +411,9 @@ export function ProjectBoard() {
                 <Label>Genre</Label>
                 <Select
                   value={newProject.genre}
-                  onValueChange={(v) => setNewProject((p) => ({ ...p, genre: v }))}
+                  onValueChange={(v) =>
+                    setNewProject((p) => ({ ...p, genre: v }))
+                  }
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select genre" />
@@ -340,7 +435,11 @@ export function ProjectBoard() {
                     <Button
                       key={role}
                       type="button"
-                      variant={newProject.lookingFor.includes(role) ? 'default' : 'outline'}
+                      variant={
+                        newProject.lookingFor.includes(role)
+                          ? "default"
+                          : "outline"
+                      }
                       size="sm"
                       onClick={() => toggleRole(role)}
                     >
@@ -359,14 +458,19 @@ export function ProjectBoard() {
                     max={50}
                     value={newProject.maxMembers}
                     onChange={(e) =>
-                      setNewProject((p) => ({ ...p, maxMembers: parseInt(e.target.value) || 10 }))
+                      setNewProject((p) => ({
+                        ...p,
+                        maxMembers: parseInt(e.target.value) || 10,
+                      }))
                     }
                   />
                 </div>
                 <div className="flex items-center space-x-2 pt-6">
                   <Switch
                     checked={newProject.isPublic}
-                    onCheckedChange={(v) => setNewProject((p) => ({ ...p, isPublic: v }))}
+                    onCheckedChange={(v) =>
+                      setNewProject((p) => ({ ...p, isPublic: v }))
+                    }
                   />
                   <Label>Public Project</Label>
                 </div>
@@ -377,7 +481,7 @@ export function ProjectBoard() {
                 onClick={() => createMutation.mutate(newProject)}
                 disabled={!newProject.title || createMutation.isPending}
               >
-                {createMutation.isPending ? 'Creating...' : 'Create Project'}
+                {createMutation.isPending ? "Creating..." : "Create Project"}
               </Button>
             </div>
           </DialogContent>
@@ -401,7 +505,9 @@ export function ProjectBoard() {
               <div className="text-center py-8 text-muted-foreground">
                 <Users className="h-12 w-12 mx-auto mb-2 opacity-50" />
                 <p>No projects yet</p>
-                <p className="text-sm">Be the first to create a collaboration project!</p>
+                <p className="text-sm">
+                  Be the first to create a collaboration project!
+                </p>
               </div>
             )}
           </TabsContent>
@@ -417,7 +523,9 @@ export function ProjectBoard() {
               <div className="text-center py-8 text-muted-foreground">
                 <Users className="h-12 w-12 mx-auto mb-2 opacity-50" />
                 <p>No projects yet</p>
-                <p className="text-sm">Create a project to start collaborating!</p>
+                <p className="text-sm">
+                  Create a project to start collaborating!
+                </p>
               </div>
             )}
           </TabsContent>

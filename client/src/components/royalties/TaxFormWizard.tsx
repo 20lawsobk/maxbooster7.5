@@ -1,17 +1,23 @@
-import { useState, useMemo } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import { useState, useMemo } from "react";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { Badge } from '@/components/ui/badge';
-import { Checkbox } from '@/components/ui/checkbox';
+} from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   FileText,
   CheckCircle,
@@ -24,11 +30,16 @@ import {
   Globe,
   Info,
   Loader2,
-} from 'lucide-react';
-import { Progress } from '@/components/ui/progress';
+} from "lucide-react";
+import { Progress } from "@/components/ui/progress";
 
-type TaxFormType = 'W-9' | 'W-8BEN' | 'W-8BEN-E';
-type TaxFormStatus = 'not_started' | 'in_progress' | 'pending_review' | 'approved' | 'rejected';
+type TaxFormType = "W-9" | "W-8BEN" | "W-8BEN-E";
+type TaxFormStatus =
+  | "not_started"
+  | "in_progress"
+  | "pending_review"
+  | "approved"
+  | "rejected";
 
 interface TaxFormWizardProps {
   currentFormType?: TaxFormType | null;
@@ -53,7 +64,7 @@ export interface TaxFormData {
     postalCode: string;
     country: string;
   };
-  tinType: 'ssn' | 'ein' | 'itin' | 'foreign_tin';
+  tinType: "ssn" | "ein" | "itin" | "foreign_tin";
   tin: string;
   countryOfCitizenship?: string;
   claimTreatyBenefits?: boolean;
@@ -64,25 +75,52 @@ export interface TaxFormData {
 }
 
 const STEPS = [
-  { id: 'type', title: 'Form Type', description: 'Select your tax form' },
-  { id: 'info', title: 'Personal Info', description: 'Your details' },
-  { id: 'address', title: 'Address', description: 'Your address' },
-  { id: 'tin', title: 'Tax ID', description: 'Tax identification' },
-  { id: 'certify', title: 'Certify', description: 'Sign and submit' },
+  { id: "type", title: "Form Type", description: "Select your tax form" },
+  { id: "info", title: "Personal Info", description: "Your details" },
+  { id: "address", title: "Address", description: "Your address" },
+  { id: "tin", title: "Tax ID", description: "Tax identification" },
+  { id: "certify", title: "Certify", description: "Sign and submit" },
 ];
 
 const COUNTRIES_WITH_TREATIES = [
-  'Australia', 'Austria', 'Belgium', 'Canada', 'China', 'Czech Republic',
-  'Denmark', 'Finland', 'France', 'Germany', 'Greece', 'Hungary', 'India',
-  'Ireland', 'Israel', 'Italy', 'Japan', 'Luxembourg', 'Mexico', 'Netherlands',
-  'New Zealand', 'Norway', 'Poland', 'Portugal', 'Russia', 'Singapore',
-  'South Africa', 'South Korea', 'Spain', 'Sweden', 'Switzerland', 'Turkey',
-  'United Kingdom',
+  "Australia",
+  "Austria",
+  "Belgium",
+  "Canada",
+  "China",
+  "Czech Republic",
+  "Denmark",
+  "Finland",
+  "France",
+  "Germany",
+  "Greece",
+  "Hungary",
+  "India",
+  "Ireland",
+  "Israel",
+  "Italy",
+  "Japan",
+  "Luxembourg",
+  "Mexico",
+  "Netherlands",
+  "New Zealand",
+  "Norway",
+  "Poland",
+  "Portugal",
+  "Russia",
+  "Singapore",
+  "South Africa",
+  "South Korea",
+  "Spain",
+  "Sweden",
+  "Switzerland",
+  "Turkey",
+  "United Kingdom",
 ];
 
 export function TaxFormWizard({
   currentFormType,
-  currentStatus = 'not_started',
+  currentStatus = "not_started",
   rejectionReason,
   onSubmit,
   onDownloadForm,
@@ -95,14 +133,14 @@ export function TaxFormWizard({
   const [formData, setFormData] = useState<Partial<TaxFormData>>({
     formType: currentFormType || undefined,
     address: {
-      street: '',
-      city: '',
-      state: '',
-      postalCode: '',
-      country: isUSPerson ? 'United States' : '',
+      street: "",
+      city: "",
+      state: "",
+      postalCode: "",
+      country: isUSPerson ? "United States" : "",
     },
     certify: false,
-    signature: '',
+    signature: "",
     signatureDate: new Date(),
   });
 
@@ -111,35 +149,39 @@ export function TaxFormWizard({
   }, [step]);
 
   const getStatusBadge = () => {
-    const badges: Record<TaxFormStatus, { className: string; icon: React.ReactNode; label: string }> = {
+    const badges: Record<
+      TaxFormStatus,
+      { className: string; icon: React.ReactNode; label: string }
+    > = {
       not_started: {
-        className: 'bg-muted text-muted-foreground',
+        className: "bg-muted text-muted-foreground",
         icon: <AlertCircle className="w-3 h-3" />,
-        label: 'Not Started',
+        label: "Not Started",
       },
       in_progress: {
-        className: 'bg-blue-500/20 text-blue-500',
+        className: "bg-blue-500/20 text-blue-500",
         icon: <Clock className="w-3 h-3" />,
-        label: 'In Progress',
+        label: "In Progress",
       },
       pending_review: {
-        className: 'bg-amber-500/20 text-amber-500',
+        className: "bg-amber-500/20 text-amber-500",
         icon: <Clock className="w-3 h-3" />,
-        label: 'Pending Review',
+        label: "Pending Review",
       },
       approved: {
-        className: 'bg-green-500/20 text-green-500',
+        className: "bg-green-500/20 text-green-500",
         icon: <CheckCircle className="w-3 h-3" />,
-        label: 'Approved',
+        label: "Approved",
       },
       rejected: {
-        className: 'bg-red-500/20 text-red-500',
+        className: "bg-red-500/20 text-red-500",
         icon: <XCircle className="w-3 h-3" />,
-        label: 'Rejected',
+        label: "Rejected",
       },
     };
 
-    const config = (currentStatus && badges[currentStatus]) ?? badges.not_started;
+    const config =
+      (currentStatus && badges[currentStatus]) ?? badges.not_started;
     return (
       <Badge className={`${config.className} flex items-center gap-1`}>
         {config.icon}
@@ -175,7 +217,7 @@ export function TaxFormWizard({
     setFormData((prev) => ({ ...prev, ...updates }));
   };
 
-  const updateAddress = (updates: Partial<TaxFormData['address']>) => {
+  const updateAddress = (updates: Partial<TaxFormData["address"]>) => {
     setFormData((prev) => ({
       ...prev,
       address: { ...prev.address!, ...updates },
@@ -188,17 +230,19 @@ export function TaxFormWizard({
         return (
           <div className="space-y-4" data-testid="step-form-type">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {(['W-9', 'W-8BEN', 'W-8BEN-E'] as TaxFormType[]).map((type) => (
+              {(["W-9", "W-8BEN", "W-8BEN-E"] as TaxFormType[]).map((type) => (
                 <div
                   key={type}
                   onClick={() => {
                     updateFormData({ formType: type });
-                    updateAddress({ country: type === 'W-9' ? 'United States' : '' });
+                    updateAddress({
+                      country: type === "W-9" ? "United States" : "",
+                    });
                   }}
                   className={`p-4 rounded-lg border-2 cursor-pointer transition-all ${
                     formData.formType === type
-                      ? 'border-primary bg-primary/10'
-                      : 'border-border hover:border-primary/50'
+                      ? "border-primary bg-primary/10"
+                      : "border-border hover:border-primary/50"
                   }`}
                   data-testid={`form-type-${type}`}
                 >
@@ -207,9 +251,10 @@ export function TaxFormWizard({
                     <span className="font-semibold">{type}</span>
                   </div>
                   <p className="text-sm text-muted-foreground">
-                    {type === 'W-9' && 'For US persons (citizens, residents, entities)'}
-                    {type === 'W-8BEN' && 'For foreign individuals'}
-                    {type === 'W-8BEN-E' && 'For foreign entities'}
+                    {type === "W-9" &&
+                      "For US persons (citizens, residents, entities)"}
+                    {type === "W-8BEN" && "For foreign individuals"}
+                    {type === "W-8BEN-E" && "For foreign entities"}
                   </p>
                 </div>
               ))}
@@ -220,7 +265,9 @@ export function TaxFormWizard({
                 <div className="flex items-start gap-3">
                   <Info className="w-5 h-5 text-amber-500 mt-0.5" />
                   <div>
-                    <p className="font-medium text-amber-500">Tax Withholding</p>
+                    <p className="font-medium text-amber-500">
+                      Tax Withholding
+                    </p>
                     <p className="text-sm text-muted-foreground">
                       Current withholding rate: {withholdingRate}%
                       {treatyCountry && ` (${treatyCountry} treaty applied)`}
@@ -240,7 +287,7 @@ export function TaxFormWizard({
               <Input
                 id="name"
                 placeholder="As shown on your tax return"
-                value={formData.name || ''}
+                value={formData.name || ""}
                 onChange={(e) => updateFormData({ name: e.target.value })}
                 data-testid="input-legal-name"
               />
@@ -251,23 +298,29 @@ export function TaxFormWizard({
               <Input
                 id="businessName"
                 placeholder="DBA or disregarded entity name"
-                value={formData.businessName || ''}
-                onChange={(e) => updateFormData({ businessName: e.target.value })}
+                value={formData.businessName || ""}
+                onChange={(e) =>
+                  updateFormData({ businessName: e.target.value })
+                }
               />
             </div>
 
-            {formData.formType === 'W-9' && (
+            {formData.formType === "W-9" && (
               <div className="space-y-2">
                 <Label>Tax Classification *</Label>
                 <Select
-                  value={formData.taxClassification || ''}
-                  onValueChange={(value) => updateFormData({ taxClassification: value })}
+                  value={formData.taxClassification || ""}
+                  onValueChange={(value) =>
+                    updateFormData({ taxClassification: value })
+                  }
                 >
                   <SelectTrigger data-testid="select-tax-classification">
                     <SelectValue placeholder="Select classification" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="individual">Individual/Sole Proprietor</SelectItem>
+                    <SelectItem value="individual">
+                      Individual/Sole Proprietor
+                    </SelectItem>
                     <SelectItem value="c_corp">C Corporation</SelectItem>
                     <SelectItem value="s_corp">S Corporation</SelectItem>
                     <SelectItem value="partnership">Partnership</SelectItem>
@@ -278,12 +331,15 @@ export function TaxFormWizard({
               </div>
             )}
 
-            {(formData.formType === 'W-8BEN' || formData.formType === 'W-8BEN-E') && (
+            {(formData.formType === "W-8BEN" ||
+              formData.formType === "W-8BEN-E") && (
               <div className="space-y-2">
                 <Label>Country of Citizenship *</Label>
                 <Select
-                  value={formData.countryOfCitizenship || ''}
-                  onValueChange={(value) => updateFormData({ countryOfCitizenship: value })}
+                  value={formData.countryOfCitizenship || ""}
+                  onValueChange={(value) =>
+                    updateFormData({ countryOfCitizenship: value })
+                  }
                 >
                   <SelectTrigger data-testid="select-country-citizenship">
                     <SelectValue placeholder="Select country" />
@@ -309,7 +365,7 @@ export function TaxFormWizard({
               <Input
                 id="street"
                 placeholder="123 Main St, Apt 4"
-                value={formData.address?.street || ''}
+                value={formData.address?.street || ""}
                 onChange={(e) => updateAddress({ street: e.target.value })}
                 data-testid="input-street"
               />
@@ -320,7 +376,7 @@ export function TaxFormWizard({
                 <Label htmlFor="city">City *</Label>
                 <Input
                   id="city"
-                  value={formData.address?.city || ''}
+                  value={formData.address?.city || ""}
                   onChange={(e) => updateAddress({ city: e.target.value })}
                 />
               </div>
@@ -328,7 +384,7 @@ export function TaxFormWizard({
                 <Label htmlFor="state">State/Province *</Label>
                 <Input
                   id="state"
-                  value={formData.address?.state || ''}
+                  value={formData.address?.state || ""}
                   onChange={(e) => updateAddress({ state: e.target.value })}
                 />
               </div>
@@ -339,17 +395,19 @@ export function TaxFormWizard({
                 <Label htmlFor="postalCode">Postal Code *</Label>
                 <Input
                   id="postalCode"
-                  value={formData.address?.postalCode || ''}
-                  onChange={(e) => updateAddress({ postalCode: e.target.value })}
+                  value={formData.address?.postalCode || ""}
+                  onChange={(e) =>
+                    updateAddress({ postalCode: e.target.value })
+                  }
                 />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="country">Country *</Label>
                 <Input
                   id="country"
-                  value={formData.address?.country || ''}
+                  value={formData.address?.country || ""}
                   onChange={(e) => updateAddress({ country: e.target.value })}
-                  disabled={formData.formType === 'W-9'}
+                  disabled={formData.formType === "W-9"}
                 />
               </div>
             </div>
@@ -362,24 +420,38 @@ export function TaxFormWizard({
             <div className="space-y-2">
               <Label>Tax ID Type *</Label>
               <Select
-                value={formData.tinType || ''}
-                onValueChange={(value: TaxFormData['tinType']) => updateFormData({ tinType: value })}
+                value={formData.tinType || ""}
+                onValueChange={(value: TaxFormData["tinType"]) =>
+                  updateFormData({ tinType: value })
+                }
               >
                 <SelectTrigger data-testid="select-tin-type">
                   <SelectValue placeholder="Select TIN type" />
                 </SelectTrigger>
                 <SelectContent>
-                  {formData.formType === 'W-9' ? (
+                  {formData.formType === "W-9" ? (
                     <>
-                      <SelectItem value="ssn">Social Security Number (SSN)</SelectItem>
-                      <SelectItem value="ein">Employer Identification Number (EIN)</SelectItem>
-                      <SelectItem value="itin">Individual Taxpayer ID (ITIN)</SelectItem>
+                      <SelectItem value="ssn">
+                        Social Security Number (SSN)
+                      </SelectItem>
+                      <SelectItem value="ein">
+                        Employer Identification Number (EIN)
+                      </SelectItem>
+                      <SelectItem value="itin">
+                        Individual Taxpayer ID (ITIN)
+                      </SelectItem>
                     </>
                   ) : (
                     <>
-                      <SelectItem value="foreign_tin">Foreign Tax ID</SelectItem>
-                      <SelectItem value="ssn">US SSN (if applicable)</SelectItem>
-                      <SelectItem value="itin">US ITIN (if applicable)</SelectItem>
+                      <SelectItem value="foreign_tin">
+                        Foreign Tax ID
+                      </SelectItem>
+                      <SelectItem value="ssn">
+                        US SSN (if applicable)
+                      </SelectItem>
+                      <SelectItem value="itin">
+                        US ITIN (if applicable)
+                      </SelectItem>
                     </>
                   )}
                 </SelectContent>
@@ -392,7 +464,7 @@ export function TaxFormWizard({
                 id="tin"
                 type="password"
                 placeholder="XXX-XX-XXXX"
-                value={formData.tin || ''}
+                value={formData.tin || ""}
                 onChange={(e) => updateFormData({ tin: e.target.value })}
                 data-testid="input-tin"
               />
@@ -402,17 +474,23 @@ export function TaxFormWizard({
               </p>
             </div>
 
-            {(formData.formType === 'W-8BEN' || formData.formType === 'W-8BEN-E') && (
+            {(formData.formType === "W-8BEN" ||
+              formData.formType === "W-8BEN-E") && (
               <div className="space-y-4 pt-4 border-t">
                 <div className="flex items-center space-x-2">
                   <Checkbox
                     id="claimTreaty"
                     checked={formData.claimTreatyBenefits || false}
                     onCheckedChange={(checked) =>
-                      updateFormData({ claimTreatyBenefits: checked as boolean })
+                      updateFormData({
+                        claimTreatyBenefits: checked as boolean,
+                      })
                     }
                   />
-                  <Label htmlFor="claimTreaty" className="flex items-center gap-2">
+                  <Label
+                    htmlFor="claimTreaty"
+                    className="flex items-center gap-2"
+                  >
                     <Globe className="w-4 h-4" />
                     Claim tax treaty benefits
                   </Label>
@@ -422,8 +500,10 @@ export function TaxFormWizard({
                   <div className="space-y-2 pl-6">
                     <Label>Treaty Country</Label>
                     <Select
-                      value={formData.treatyCountry || ''}
-                      onValueChange={(value) => updateFormData({ treatyCountry: value })}
+                      value={formData.treatyCountry || ""}
+                      onValueChange={(value) =>
+                        updateFormData({ treatyCountry: value })
+                      }
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Select treaty country" />
@@ -450,13 +530,19 @@ export function TaxFormWizard({
               <p className="font-semibold">Certification</p>
               <p>Under penalties of perjury, I certify that:</p>
               <ol className="list-decimal list-inside space-y-1 text-muted-foreground">
-                <li>The number shown on this form is my correct taxpayer identification number</li>
+                <li>
+                  The number shown on this form is my correct taxpayer
+                  identification number
+                </li>
                 <li>I am not subject to backup withholding</li>
-                {formData.formType === 'W-9' && (
+                {formData.formType === "W-9" && (
                   <li>I am a U.S. citizen or other U.S. person</li>
                 )}
-                {formData.formType !== 'W-9' && (
-                  <li>I am the beneficial owner of the income to which this form relates</li>
+                {formData.formType !== "W-9" && (
+                  <li>
+                    I am the beneficial owner of the income to which this form
+                    relates
+                  </li>
                 )}
               </ol>
             </div>
@@ -465,11 +551,14 @@ export function TaxFormWizard({
               <Checkbox
                 id="certify"
                 checked={formData.certify || false}
-                onCheckedChange={(checked) => updateFormData({ certify: checked as boolean })}
+                onCheckedChange={(checked) =>
+                  updateFormData({ certify: checked as boolean })
+                }
                 data-testid="checkbox-certify"
               />
               <Label htmlFor="certify" className="text-sm">
-                I certify that the information provided above is true and correct.
+                I certify that the information provided above is true and
+                correct.
               </Label>
             </div>
 
@@ -478,7 +567,7 @@ export function TaxFormWizard({
               <Input
                 id="signature"
                 placeholder="Type your full legal name"
-                value={formData.signature || ''}
+                value={formData.signature || ""}
                 onChange={(e) => updateFormData({ signature: e.target.value })}
                 data-testid="input-signature"
               />
@@ -499,7 +588,10 @@ export function TaxFormWizard({
       case 0:
         return !!formData.formType;
       case 1:
-        return !!formData.name && (formData.formType !== 'W-9' || !!formData.taxClassification);
+        return (
+          !!formData.name &&
+          (formData.formType !== "W-9" || !!formData.taxClassification)
+        );
       case 2:
         return !!(
           formData.address?.street &&
@@ -517,7 +609,7 @@ export function TaxFormWizard({
     }
   };
 
-  if (currentStatus === 'approved') {
+  if (currentStatus === "approved") {
     return (
       <Card className="glassmorphism" data-testid="tax-form-approved">
         <CardHeader>
@@ -534,10 +626,14 @@ export function TaxFormWizard({
             <CheckCircle className="w-16 h-16 text-green-500 mb-4" />
             <p className="text-xl font-semibold mb-2">Tax Form Approved</p>
             <p className="text-muted-foreground text-center mb-4">
-              Your {currentFormType} form has been verified. You're all set to receive payouts.
+              Your {currentFormType} form has been verified. You're all set to
+              receive payouts.
             </p>
             {onDownloadForm && currentFormType && (
-              <Button variant="outline" onClick={() => onDownloadForm(currentFormType)}>
+              <Button
+                variant="outline"
+                onClick={() => onDownloadForm(currentFormType)}
+              >
                 <FileText className="w-4 h-4 mr-2" />
                 Download Copy
               </Button>
@@ -548,7 +644,7 @@ export function TaxFormWizard({
     );
   }
 
-  if (currentStatus === 'pending_review') {
+  if (currentStatus === "pending_review") {
     return (
       <Card className="glassmorphism" data-testid="tax-form-pending">
         <CardHeader>
@@ -565,8 +661,8 @@ export function TaxFormWizard({
             <Clock className="w-16 h-16 text-amber-500 mb-4" />
             <p className="text-xl font-semibold mb-2">Under Review</p>
             <p className="text-muted-foreground text-center">
-              Your {currentFormType} form has been submitted and is being reviewed.
-              This usually takes 1-2 business days.
+              Your {currentFormType} form has been submitted and is being
+              reviewed. This usually takes 1-2 business days.
             </p>
           </div>
         </CardContent>
@@ -583,19 +679,26 @@ export function TaxFormWizard({
               <FileText className="w-5 h-5" />
               Tax Information
             </CardTitle>
-            <CardDescription className="mt-1">{STEPS[step].description}</CardDescription>
+            <CardDescription className="mt-1">
+              {STEPS[step].description}
+            </CardDescription>
           </div>
-          {currentStatus !== 'not_started' && getStatusBadge()}
+          {currentStatus !== "not_started" && getStatusBadge()}
         </div>
       </CardHeader>
       <CardContent className="space-y-6">
-        {currentStatus === 'rejected' && rejectionReason && (
-          <div className="p-4 rounded-lg bg-red-500/10 border border-red-500/20" data-testid="rejection-notice">
+        {currentStatus === "rejected" && rejectionReason && (
+          <div
+            className="p-4 rounded-lg bg-red-500/10 border border-red-500/20"
+            data-testid="rejection-notice"
+          >
             <div className="flex items-start gap-3">
               <XCircle className="w-5 h-5 text-red-500 mt-0.5" />
               <div>
                 <p className="font-medium text-red-500">Form Rejected</p>
-                <p className="text-sm text-muted-foreground">{rejectionReason}</p>
+                <p className="text-sm text-muted-foreground">
+                  {rejectionReason}
+                </p>
               </div>
             </div>
           </div>
@@ -617,10 +720,10 @@ export function TaxFormWizard({
               key={s.id}
               className={`flex items-center gap-2 px-3 py-1 rounded-full text-xs whitespace-nowrap ${
                 index < step
-                  ? 'bg-green-500/20 text-green-500'
+                  ? "bg-green-500/20 text-green-500"
                   : index === step
-                  ? 'bg-primary text-primary-foreground'
-                  : 'bg-muted text-muted-foreground'
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-muted text-muted-foreground"
               }`}
             >
               {index < step ? (
@@ -636,11 +739,7 @@ export function TaxFormWizard({
         {renderStep()}
 
         <div className="flex justify-between pt-4 border-t">
-          <Button
-            variant="outline"
-            onClick={handleBack}
-            disabled={step === 0}
-          >
+          <Button variant="outline" onClick={handleBack} disabled={step === 0}>
             <ChevronLeft className="w-4 h-4 mr-1" />
             Back
           </Button>
@@ -651,7 +750,10 @@ export function TaxFormWizard({
               <ChevronRight className="w-4 h-4 ml-1" />
             </Button>
           ) : (
-            <Button onClick={handleSubmit} disabled={!canProceed() || isSubmitting}>
+            <Button
+              onClick={handleSubmit}
+              disabled={!canProceed() || isSubmitting}
+            >
               {isSubmitting ? (
                 <>
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />

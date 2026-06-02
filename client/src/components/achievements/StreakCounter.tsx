@@ -4,7 +4,12 @@ import { Flame, Zap, TrendingUp, Calendar } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { useEffect, useState } from "react";
 import { apiRequest } from "@/lib/queryClient";
@@ -25,7 +30,10 @@ interface StreakCounterProps {
   onStreakUpdate?: () => void;
 }
 
-const streakConfig: Record<string, { icon: typeof Flame; label: string; color: string }> = {
+const streakConfig: Record<
+  string,
+  { icon: typeof Flame; label: string; color: string }
+> = {
   login: {
     icon: Flame,
     label: "Login Streak",
@@ -62,7 +70,9 @@ export function StreakCounter({
       return res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/achievements/streaks"] });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/achievements/streaks"],
+      });
       setShowFlame(true);
       setTimeout(() => setShowFlame(false), 2000);
       onStreakUpdate?.();
@@ -79,7 +89,8 @@ export function StreakCounter({
     const Icon = config.icon;
     const currentStreak = streak?.currentStreak || 0;
     const longestStreak = streak?.longestStreak || 0;
-    const isActive = streak?.lastActivityDate === new Date().toISOString().split("T")[0];
+    const isActive =
+      streak?.lastActivityDate === new Date().toISOString().split("T")[0];
 
     if (compact) {
       return (
@@ -91,7 +102,7 @@ export function StreakCounter({
                   "relative flex items-center gap-1 px-3 py-1.5 rounded-full cursor-pointer",
                   "bg-gradient-to-r",
                   config.color,
-                  "text-white font-bold"
+                  "text-white font-bold",
                 )}
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
@@ -151,7 +162,7 @@ export function StreakCounter({
           "relative overflow-hidden border-0",
           "bg-gradient-to-br",
           config.color,
-          "text-white"
+          "text-white",
         )}
       >
         <CardContent className="p-4">
@@ -206,11 +217,7 @@ export function StreakCounter({
                   Check in
                 </Button>
               )}
-              {isActive && (
-                <Badge className="mt-2 bg-white/20">
-                  ✓ Active
-                </Badge>
-              )}
+              {isActive && <Badge className="mt-2 bg-white/20">✓ Active</Badge>}
             </div>
           </div>
 
@@ -234,9 +241,7 @@ export function StreakCounter({
   };
 
   if (isLoading) {
-    return (
-      <div className="h-16 bg-gray-800 rounded-lg animate-pulse" />
-    );
+    return <div className="h-16 bg-gray-800 rounded-lg animate-pulse" />;
   }
 
   if (showAll) {

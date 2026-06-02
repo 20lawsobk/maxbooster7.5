@@ -12,17 +12,22 @@
  *   - Only sends once per inactivity window (not until they log in again)
  */
 
-import { db } from '../db.js';
-import { customerHealthScores, users } from '@shared/schema';
-import { and, lte, gte, isNull, or, sql, eq } from 'drizzle-orm';
-import { logger } from '../logger.js';
-import { emailService } from './emailService.js';
-import { withLock } from '../lib/distributedLock.js';
+import { db } from "../db.js";
+import { customerHealthScores, users } from "@shared/schema";
+import { and, lte, gte, isNull, or, sql, eq } from "drizzle-orm";
+import { logger } from "../logger.js";
+import { emailService } from "./emailService.js";
+import { withLock } from "../lib/distributedLock.js";
 
-function buildReEngagementHtml(firstName: string, daysSinceLogin: number, appUrl: string): string {
-  const urgencyMessage = daysSinceLogin >= 20
-    ? `It's been ${daysSinceLogin} days — your career momentum doesn't have to pause.`
-    : `It's been ${daysSinceLogin} days since your last session.`;
+function buildReEngagementHtml(
+  firstName: string,
+  daysSinceLogin: number,
+  appUrl: string,
+): string {
+  const urgencyMessage =
+    daysSinceLogin >= 20
+      ? `It's been ${daysSinceLogin} days — your career momentum doesn't have to pause.`
+      : `It's been ${daysSinceLogin} days since your last session.`;
 
   return `
     <!DOCTYPE html>
@@ -67,9 +72,9 @@ class ReEngagementService {
   private isRunning = false;
 
   async runDailyCheck(): Promise<void> {
-    await withLock('reengagement-daily', 23 * 60 * 60, async () => {
+    await withLock("reengagement-daily", 23 * 60 * 60, async () => {
       if (this.isRunning) {
-        logger.warn('[ReEngagement] Daily check already running, skipping');
+        logger.warn("[ReEngagement] Daily check already running, skipping");
         return;
       }
 
@@ -95,31 +100,49 @@ class ReEngagementService {
               lte(customerHealthScores.daysSinceLastLogin!, 30),
               or(
                 isNull(customerHealthScores.reEngagementEmailSentAt),
-                lte(customerHealthScores.reEngagementEmailSentAt!, sevenDaysAgo)
-              )
-            )
+                lte(
+                  customerHealthScores.reEngagementEmailSentAt!,
+                  sevenDaysAgo,
+                ),
+              ),
+            ),
           )
           .limit(200);
 
-        logger.info(`[ReEngagement] Found ${eligibleUsers.length} eligible users for re-engagement`);
+        logger.info(
+          `[ReEngagement] Found ${eligibleUsers.length} eligible users for re-engagement`,
+        );
 
         let sent = 0;
         for (const user of eligibleUsers) {
           try {
-            const { userId, daysSinceLastLogin, email, firstName, notificationSettings } = user;
+            const {
+              userId,
+              daysSinceLastLogin,
+              email,
+              firstName,
+              notificationSettings,
+            } = user;
             if (!email) continue;
 
-            const settings = notificationSettings as Record<string, boolean> | null;
+            const settings = notificationSettings as Record<
+              string,
+              boolean
+            > | null;
             if (settings?.emailMarketing === false) continue;
 
-            const displayName = firstName ?? email.split('@')[0];
-            const appUrl = process.env.APP_URL ?? 'https://maxbooster.app';
-            const html = buildReEngagementHtml(displayName, daysSinceLastLogin ?? 10, appUrl);
+            const displayName = firstName ?? email.split("@")[0];
+            const appUrl = process.env.APP_URL ?? "https://maxbooster.app";
+            const html = buildReEngagementHtml(
+              displayName,
+              daysSinceLastLogin ?? 10,
+              appUrl,
+            );
 
             await emailService.sendTransactional(
               email,
               `${displayName}, your music career tools are waiting`,
-              html
+              html,
             );
 
             await db
@@ -129,7 +152,10 @@ class ReEngagementService {
 
             sent++;
           } catch (err) {
-            logger.warn({ err: err }, `[ReEngagement] Failed to send to user ${user.userId}:`);
+            logger.warn(
+              { err: err },
+              `[ReEngagement] Failed to send to user ${user.userId}:`,
+            );
           }
         }
 
@@ -154,7 +180,9 @@ class ReEngagementService {
 
     const scheduleNext = () => {
       const delay = runAtNoon();
-      logger.info(`[ReEngagement] Next run in ${Math.round(delay / MS_PER_HOUR)} hours`);
+      logger.info(
+        `[ReEngagement] Next run in ${Math.round(delay / MS_PER_HOUR)} hours`,
+      );
       setTimeout(async () => {
         await this.runDailyCheck();
         setInterval(() => this.runDailyCheck(), MS_PER_DAY);

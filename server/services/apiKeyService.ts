@@ -1,18 +1,23 @@
-import { Request, Response, NextFunction } from 'express';
-import crypto from 'crypto';
-import bcrypt from 'bcrypt';
-import { db } from '../db';
-import { apiKeys, apiUsage, insertApiKeySchema, insertApiUsageSchema } from '@shared/schema';
-import { eq, and, desc, sql, gte } from 'drizzle-orm';
-import { config } from '../config/defaults';
-import { logger } from '../logger.js';
+import { Request, Response, NextFunction } from "express";
+import crypto from "crypto";
+import bcrypt from "bcrypt";
+import { db } from "../db";
+import {
+  apiKeys,
+  apiUsage,
+  insertApiKeySchema,
+  insertApiUsageSchema,
+} from "@shared/schema";
+import { eq, and, desc, sql, gte } from "drizzle-orm";
+import { config } from "../config/defaults";
+import { logger } from "../logger.js";
 
 // Extended Express Request with API key info
 export interface ApiKeyRequest extends Request {
   apiKey?: {
     id: string;
     userId: string;
-    tier: 'free' | 'pro' | 'enterprise';
+    tier: "free" | "pro" | "enterprise";
     rateLimit: number;
   };
 }
@@ -25,20 +30,24 @@ export interface ApiKeyRequest extends Request {
 export async function generateApiKey(
   userId: string,
   keyName: string,
-  tier: 'free' | 'pro' | 'enterprise' = 'free'
+  tier: "free" | "pro" | "enterprise" = "free",
 ) {
   try {
     // Generate secure random API key
     const randomBytes = crypto.randomBytes(32);
-    const apiKey = `mb_live_${randomBytes.toString('hex')}`;
+    const apiKey = `mb_live_${randomBytes.toString("hex")}`;
 
     // Hash the API key for secure storage using SHA-256
     // Note: SHA-256 is deterministic (allows DB lookups) and secure for long random strings
     // bcrypt is unnecessary here since API keys are cryptographically random, not user passwords
-    const hashedApiKey = crypto.createHash('sha256').update(apiKey).digest('hex');
+    const hashedApiKey = crypto
+      .createHash("sha256")
+      .update(apiKey)
+      .digest("hex");
 
     // Determine rate limit based on tier
-    const rateLimit = tier === 'enterprise' ? 5000 : tier === 'pro' ? 1000 : 100;
+    const rateLimit =
+      tier === "enterprise" ? 5000 : tier === "pro" ? 1000 : 100;
 
     // Insert ONLY the hashed key into database (never store plaintext)
     const keyPrefix = apiKey.substring(0, 12); // Store first 12 chars for identification (mb_live_xxxx)
@@ -55,7 +64,7 @@ export async function generateApiKey(
       .returning();
 
     logger.info(
-      `🔑 Generated API key for user ${userId}: ${keyName} (${tier} tier, ${rateLimit} req/sec)`
+      `🔑 Generated API key for user ${userId}: ${keyName} (${tier} tier, ${rateLimit} req/sec)`,
     );
 
     // Return the plaintext key to user (ONLY TIME IT'S SHOWN)
@@ -66,8 +75,8 @@ export async function generateApiKey(
       apiKey, // Return plaintext key for user to save (not stored in DB)
     };
   } catch (error: unknown) {
-    logger.warn({ err: error }, 'Error generating API key:');
-    throw new Error('Failed to generate API key');
+    logger.warn({ err: error }, "Error generating API key:");
+    throw new Error("Failed to generate API key");
   }
 }
 
@@ -75,30 +84,38 @@ export async function generateApiKey(
  * Validate API key and attach key info to request
  * SECURITY: Validates by comparing hashes, never stores or looks up plaintext keys
  */
-export async function validateApiKey(req: ApiKeyRequest, res: Response, next: NextFunction) {
+export async function validateApiKey(
+  req: ApiKeyRequest,
+  res: Response,
+  next: NextFunction,
+) {
   try {
     // Extract API key from Authorization header
     const authHeader = req.headers.authorization;
 
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
       return res.status(401).json({
-        error: 'Unauthorized',
-        message: 'Missing or invalid API key. Use Authorization: Bearer <api_key>',
+        error: "Unauthorized",
+        message:
+          "Missing or invalid API key. Use Authorization: Bearer <api_key>",
       });
     }
 
     const apiKey = authHeader.substring(7); // Remove 'Bearer ' prefix
 
     // Check if API key format is valid
-    if (!apiKey.startsWith('mb_live_')) {
+    if (!apiKey.startsWith("mb_live_")) {
       return res.status(401).json({
-        error: 'Unauthorized',
-        message: 'Invalid API key format. API keys must start with mb_live_',
+        error: "Unauthorized",
+        message: "Invalid API key format. API keys must start with mb_live_",
       });
     }
 
     // Hash the incoming API key using SHA-256 (same algorithm as generateApiKey)
-    const hashedApiKey = crypto.createHash('sha256').update(apiKey).digest('hex');
+    const hashedApiKey = crypto
+      .createHash("sha256")
+      .update(apiKey)
+      .digest("hex");
 
     // Look up API key by hash (secure: no plaintext in database)
     const [keyRecord] = await db
@@ -109,16 +126,16 @@ export async function validateApiKey(req: ApiKeyRequest, res: Response, next: Ne
 
     if (!keyRecord) {
       return res.status(401).json({
-        error: 'Unauthorized',
-        message: 'Invalid or inactive API key',
+        error: "Unauthorized",
+        message: "Invalid or inactive API key",
       });
     }
 
     // Check if API key has expired
     if (keyRecord.expiresAt && new Date(keyRecord.expiresAt) < new Date()) {
       return res.status(401).json({
-        error: 'Unauthorized',
-        message: 'API key has expired',
+        error: "Unauthorized",
+        message: "API key has expired",
       });
     }
 
@@ -126,7 +143,7 @@ export async function validateApiKey(req: ApiKeyRequest, res: Response, next: Ne
     req.apiKey = {
       id: keyRecord.id,
       userId: keyRecord.userId,
-      tier: 'free', // Default tier since schema doesn't store tier
+      tier: "free", // Default tier since schema doesn't store tier
       rateLimit: keyRecord.rateLimit || 1000,
     };
 
@@ -135,14 +152,16 @@ export async function validateApiKey(req: ApiKeyRequest, res: Response, next: Ne
       .set({ lastUsedAt: new Date() })
       .where(eq(apiKeys.id, keyRecord.id))
       .execute()
-      .catch((err) => logger.warn({ err: err }, 'Error updating API key last used:'));
+      .catch((err) =>
+        logger.warn({ err: err }, "Error updating API key last used:"),
+      );
 
     next();
   } catch (error: unknown) {
-    logger.warn({ err: error }, 'Error validating API key:');
+    logger.warn({ err: error }, "Error validating API key:");
     return res.status(500).json({
-      error: 'Internal Server Error',
-      message: 'Failed to validate API key',
+      error: "Internal Server Error",
+      message: "Failed to validate API key",
     });
   }
 }
@@ -150,12 +169,16 @@ export async function validateApiKey(req: ApiKeyRequest, res: Response, next: Ne
 /**
  * Rate limiting middleware using Redis sliding window
  */
-export async function rateLimitApiKey(req: ApiKeyRequest, res: Response, next: NextFunction) {
+export async function rateLimitApiKey(
+  req: ApiKeyRequest,
+  res: Response,
+  next: NextFunction,
+) {
   try {
     if (!req.apiKey) {
       return res.status(401).json({
-        error: 'Unauthorized',
-        message: 'API key validation required before rate limiting',
+        error: "Unauthorized",
+        message: "API key validation required before rate limiting",
       });
     }
 
@@ -169,18 +192,27 @@ export async function rateLimitApiKey(req: ApiKeyRequest, res: Response, next: N
       // PDIM does not support ZREMRANGEBYSCORE or atomic pipelines, so we use
       // ZCOUNT (count only in-window members) instead of ZREMRANGEBYSCORE+ZCARD.
       const windowStart = now - windowSize;
-      const requestCount = await redisClient.zcount(redisKey, windowStart, '+inf');
+      const requestCount = await redisClient.zcount(
+        redisKey,
+        windowStart,
+        "+inf",
+      );
 
       // Check if rate limit exceeded
       if (requestCount >= rateLimit) {
         // Calculate retry after time
-        const oldestTimestamp = await redisClient.zrange(redisKey, 0, 0, 'WITHSCORES');
+        const oldestTimestamp = await redisClient.zrange(
+          redisKey,
+          0,
+          0,
+          "WITHSCORES",
+        );
         const retryAfter = oldestTimestamp[1]
           ? Math.ceil((parseInt(oldestTimestamp[1]) + windowSize - now) / 1000)
           : 1;
 
         return res.status(429).json({
-          error: 'Rate Limit Exceeded',
+          error: "Rate Limit Exceeded",
           message: `Rate limit of ${rateLimit} requests per second exceeded`,
           rateLimit: {
             limit: rateLimit,
@@ -193,28 +225,36 @@ export async function rateLimitApiKey(req: ApiKeyRequest, res: Response, next: N
 
       // Record this request and set expiry (fire-and-forget — not on critical path)
       Promise.resolve(
-        redisClient.zadd(redisKey, now, `${now}-${crypto.randomUUID()}`)
-          .then(() => redisClient.expire(redisKey, 2))
+        redisClient
+          .zadd(redisKey, now, `${now}-${crypto.randomUUID()}`)
+          .then(() => redisClient.expire(redisKey, 2)),
       ).catch(() => {});
 
       // Add rate limit headers
-      res.setHeader('X-RateLimit-Limit', rateLimit.toString());
-      res.setHeader('X-RateLimit-Remaining', (rateLimit - requestCount - 1).toString());
-      res.setHeader('X-RateLimit-Reset', Math.ceil((now + windowSize) / 1000).toString());
+      res.setHeader("X-RateLimit-Limit", rateLimit.toString());
+      res.setHeader(
+        "X-RateLimit-Remaining",
+        (rateLimit - requestCount - 1).toString(),
+      );
+      res.setHeader(
+        "X-RateLimit-Reset",
+        Math.ceil((now + windowSize) / 1000).toString(),
+      );
 
       next();
     } catch (redisError: unknown) {
-      logger.warn('Redis rate limiting error — request blocked:', redisError);
+      logger.warn("Redis rate limiting error — request blocked:", redisError);
       return res.status(503).json({
-        error: 'Service Unavailable',
-        message: 'Rate limiting is temporarily unavailable. Please try again shortly.',
+        error: "Service Unavailable",
+        message:
+          "Rate limiting is temporarily unavailable. Please try again shortly.",
       });
     }
   } catch (error: unknown) {
-    logger.warn({ err: error }, 'Error in rate limiting middleware:');
+    logger.warn({ err: error }, "Error in rate limiting middleware:");
     return res.status(500).json({
-      error: 'Internal Server Error',
-      message: 'Failed to enforce rate limiting',
+      error: "Internal Server Error",
+      message: "Failed to enforce rate limiting",
     });
   }
 }
@@ -222,7 +262,11 @@ export async function rateLimitApiKey(req: ApiKeyRequest, res: Response, next: N
 /**
  * Track API usage for analytics and billing
  */
-export async function trackApiUsage(req: ApiKeyRequest, res: Response, next: NextFunction) {
+export async function trackApiUsage(
+  req: ApiKeyRequest,
+  res: Response,
+  next: NextFunction,
+) {
   const startTime = Date.now();
 
   // Capture response to get status code
@@ -239,11 +283,12 @@ export async function trackApiUsage(req: ApiKeyRequest, res: Response, next: Nex
         statusCode: res.statusCode,
         responseTime,
         metadata: {
-          userAgent: req.headers['user-agent'],
+          userAgent: req.headers["user-agent"],
           ip: req.ip,
-          queryParams: Object.keys(req.query).length > 0 ? req.query : undefined,
+          queryParams:
+            Object.keys(req.query).length > 0 ? req.query : undefined,
         },
-      }).catch((err) => logger.warn({ err: err }, 'Error tracking API usage:'));
+      }).catch((err) => logger.warn({ err: err }, "Error tracking API usage:"));
     }
 
     return originalSend.call(this, data);
@@ -274,7 +319,7 @@ async function trackUsageRecord(usage: {
       metadata: usage.metadata,
     });
   } catch (error: unknown) {
-    logger.warn({ err: error }, 'Failed to track API usage:');
+    logger.warn({ err: error }, "Failed to track API usage:");
   }
 }
 
@@ -283,12 +328,16 @@ async function trackUsageRecord(usage: {
  */
 export async function getApiKeyById(keyId: string) {
   try {
-    const [key] = await db.select().from(apiKeys).where(eq(apiKeys.id, keyId)).limit(1);
+    const [key] = await db
+      .select()
+      .from(apiKeys)
+      .where(eq(apiKeys.id, keyId))
+      .limit(1);
 
     return key;
   } catch (error: unknown) {
-    logger.warn({ err: error }, 'Error fetching API key:');
-    throw new Error('Failed to fetch API key');
+    logger.warn({ err: error }, "Error fetching API key:");
+    throw new Error("Failed to fetch API key");
   }
 }
 
@@ -316,8 +365,8 @@ export async function listApiKeys(userId: string) {
 
     return keys;
   } catch (error: unknown) {
-    logger.warn({ err: error }, 'Error listing API keys:');
-    throw new Error('Failed to list API keys');
+    logger.warn({ err: error }, "Error listing API keys:");
+    throw new Error("Failed to list API keys");
   }
 }
 
@@ -333,14 +382,14 @@ export async function revokeApiKey(keyId: string, userId: string) {
       .returning();
 
     if (!updated) {
-      throw new Error('API key not found or unauthorized');
+      throw new Error("API key not found or unauthorized");
     }
 
     logger.info(`🔒 Revoked API key ${keyId} for user ${userId}`);
     return updated;
   } catch (error: unknown) {
-    logger.warn({ err: error }, 'Error revoking API key:');
-    throw new Error('Failed to revoke API key');
+    logger.warn({ err: error }, "Error revoking API key:");
+    throw new Error("Failed to revoke API key");
   }
 }
 
@@ -358,7 +407,9 @@ export async function getApiKeyUsageStats(apiKeyId: string, days: number = 30) {
         total: sql<number>`COALESCE(SUM(${apiUsage.requestCount}), 0)`,
       })
       .from(apiUsage)
-      .where(and(eq(apiUsage.apiKeyId, apiKeyId), gte(apiUsage.date, startDate)));
+      .where(
+        and(eq(apiUsage.apiKeyId, apiKeyId), gte(apiUsage.date, startDate)),
+      );
 
     // Get requests by endpoint
     const byEndpoint = await db
@@ -368,7 +419,9 @@ export async function getApiKeyUsageStats(apiKeyId: string, days: number = 30) {
         avgResponseTime: sql<number>`COALESCE(AVG(${apiUsage.responseTime}), 0)`,
       })
       .from(apiUsage)
-      .where(and(eq(apiUsage.apiKeyId, apiKeyId), gte(apiUsage.date, startDate)))
+      .where(
+        and(eq(apiUsage.apiKeyId, apiKeyId), gte(apiUsage.date, startDate)),
+      )
       .groupBy(apiUsage.endpoint)
       .orderBy(desc(sql`COALESCE(SUM(${apiUsage.requestCount}), 0)`))
       .limit(10);
@@ -381,7 +434,9 @@ export async function getApiKeyUsageStats(apiKeyId: string, days: number = 30) {
         avgResponseTime: sql<number>`COALESCE(AVG(${apiUsage.responseTime}), 0)`,
       })
       .from(apiUsage)
-      .where(and(eq(apiUsage.apiKeyId, apiKeyId), gte(apiUsage.date, startDate)))
+      .where(
+        and(eq(apiUsage.apiKeyId, apiKeyId), gte(apiUsage.date, startDate)),
+      )
       .groupBy(sql`DATE(${apiUsage.date})`)
       .orderBy(sql`DATE(${apiUsage.date})`);
 
@@ -392,7 +447,9 @@ export async function getApiKeyUsageStats(apiKeyId: string, days: number = 30) {
         count: sql<number>`COUNT(*)`,
       })
       .from(apiUsage)
-      .where(and(eq(apiUsage.apiKeyId, apiKeyId), gte(apiUsage.date, startDate)))
+      .where(
+        and(eq(apiUsage.apiKeyId, apiKeyId), gte(apiUsage.date, startDate)),
+      )
       .groupBy(apiUsage.statusCode);
 
     return {
@@ -402,8 +459,8 @@ export async function getApiKeyUsageStats(apiKeyId: string, days: number = 30) {
       byStatusCode,
     };
   } catch (error: unknown) {
-    logger.warn({ err: error }, 'Error fetching API usage stats:');
-    throw new Error('Failed to fetch API usage statistics');
+    logger.warn({ err: error }, "Error fetching API usage stats:");
+    throw new Error("Failed to fetch API usage statistics");
   }
 }
 
@@ -425,13 +482,13 @@ export async function getUserApiUsageStats(userId: string, days: number = 30) {
           tier: key.tier,
           ...stats,
         };
-      })
+      }),
     );
 
     return usageStats;
   } catch (error: unknown) {
-    logger.warn({ err: error }, 'Error fetching user API usage stats:');
-    throw new Error('Failed to fetch user API usage statistics');
+    logger.warn({ err: error }, "Error fetching user API usage stats:");
+    throw new Error("Failed to fetch user API usage statistics");
   }
 }
 

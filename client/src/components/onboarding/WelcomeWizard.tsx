@@ -1,19 +1,34 @@
-import { useState, useCallback, useRef } from 'react';
-import { useMutation } from '@tanstack/react-query';
-import { apiRequest } from '@/lib/queryClient';
-import { uploadImageFile, createLocalPreview, revokeLocalPreview } from '@/lib/imageUpload';
-import { useToast } from '@/hooks/use-toast';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Progress } from '@/components/ui/progress';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { announce } from '@/lib/accessibility';
-import { cn } from '@/lib/utils';
+import { useState, useCallback, useRef } from "react";
+import { useMutation } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
+import {
+  uploadImageFile,
+  createLocalPreview,
+  revokeLocalPreview,
+} from "@/lib/imageUpload";
+import { useToast } from "@/hooks/use-toast";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { announce } from "@/lib/accessibility";
+import { cn } from "@/lib/utils";
 import {
   Music,
   Mic2,
@@ -35,7 +50,7 @@ import {
   RotateCcw,
   ZoomIn,
   ZoomOut,
-} from 'lucide-react';
+} from "lucide-react";
 
 interface WelcomeWizardProps {
   isOpen: boolean;
@@ -54,37 +69,49 @@ interface WelcomeData {
 }
 
 const GENRES = [
-  { id: 'hip-hop', label: 'Hip-Hop/Rap', icon: Mic2 },
-  { id: 'pop', label: 'Pop', icon: Music },
-  { id: 'rock', label: 'Rock', icon: Guitar },
-  { id: 'electronic', label: 'Electronic/EDM', icon: Headphones },
-  { id: 'rnb', label: 'R&B/Soul', icon: Radio },
-  { id: 'jazz', label: 'Jazz', icon: Piano },
-  { id: 'classical', label: 'Classical', icon: Piano },
-  { id: 'country', label: 'Country', icon: Guitar },
-  { id: 'latin', label: 'Latin', icon: Drum },
-  { id: 'reggae', label: 'Reggae', icon: Drum },
-  { id: 'metal', label: 'Metal', icon: Guitar },
-  { id: 'indie', label: 'Indie', icon: Music },
+  { id: "hip-hop", label: "Hip-Hop/Rap", icon: Mic2 },
+  { id: "pop", label: "Pop", icon: Music },
+  { id: "rock", label: "Rock", icon: Guitar },
+  { id: "electronic", label: "Electronic/EDM", icon: Headphones },
+  { id: "rnb", label: "R&B/Soul", icon: Radio },
+  { id: "jazz", label: "Jazz", icon: Piano },
+  { id: "classical", label: "Classical", icon: Piano },
+  { id: "country", label: "Country", icon: Guitar },
+  { id: "latin", label: "Latin", icon: Drum },
+  { id: "reggae", label: "Reggae", icon: Drum },
+  { id: "metal", label: "Metal", icon: Guitar },
+  { id: "indie", label: "Indie", icon: Music },
 ];
 
 const INTERESTS = [
-  { id: 'production', label: 'Music Production' },
-  { id: 'distribution', label: 'Distribution' },
-  { id: 'marketing', label: 'Marketing & Promotion' },
-  { id: 'analytics', label: 'Analytics & Insights' },
-  { id: 'collaboration', label: 'Collaboration' },
-  { id: 'licensing', label: 'Licensing & Sync' },
-  { id: 'selling', label: 'Selling Beats' },
-  { id: 'streaming', label: 'Streaming Optimization' },
+  { id: "production", label: "Music Production" },
+  { id: "distribution", label: "Distribution" },
+  { id: "marketing", label: "Marketing & Promotion" },
+  { id: "analytics", label: "Analytics & Insights" },
+  { id: "collaboration", label: "Collaboration" },
+  { id: "licensing", label: "Licensing & Sync" },
+  { id: "selling", label: "Selling Beats" },
+  { id: "streaming", label: "Streaming Optimization" },
 ];
 
 const ARTIST_TYPES = [
-  { id: 'solo', label: 'Solo Artist', description: 'Independent musician creating my own music' },
-  { id: 'producer', label: 'Producer/Beatmaker', description: 'Creating beats and instrumentals' },
-  { id: 'band', label: 'Band/Group', description: 'Part of a musical group' },
-  { id: 'label', label: 'Label/Manager', description: 'Managing artists and releases' },
-  { id: 'hobbyist', label: 'Hobbyist', description: 'Making music for fun' },
+  {
+    id: "solo",
+    label: "Solo Artist",
+    description: "Independent musician creating my own music",
+  },
+  {
+    id: "producer",
+    label: "Producer/Beatmaker",
+    description: "Creating beats and instrumentals",
+  },
+  { id: "band", label: "Band/Group", description: "Part of a musical group" },
+  {
+    id: "label",
+    label: "Label/Manager",
+    description: "Managing artists and releases",
+  },
+  { id: "hobbyist", label: "Hobbyist", description: "Making music for fun" },
 ];
 
 export default function WelcomeWizard({
@@ -95,12 +122,12 @@ export default function WelcomeWizard({
 }: WelcomeWizardProps) {
   const [currentStep, setCurrentStep] = useState(0);
   const [data, setData] = useState<WelcomeData>({
-    displayName: '',
-    bio: '',
+    displayName: "",
+    bio: "",
     avatarUrl: null,
     genres: [],
     interests: [],
-    artistType: '',
+    artistType: "",
   });
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
@@ -112,33 +139,37 @@ export default function WelcomeWizard({
   const { toast } = useToast();
 
   const steps = [
-    { id: 'welcome', title: 'Welcome', description: 'Get started' },
-    { id: 'profile', title: 'Profile', description: 'Tell us about you' },
-    { id: 'avatar', title: 'Avatar', description: 'Add a photo' },
-    { id: 'genres', title: 'Genres', description: 'Your music style' },
-    { id: 'interests', title: 'Interests', description: 'What you want to do' },
+    { id: "welcome", title: "Welcome", description: "Get started" },
+    { id: "profile", title: "Profile", description: "Tell us about you" },
+    { id: "avatar", title: "Avatar", description: "Add a photo" },
+    { id: "genres", title: "Genres", description: "Your music style" },
+    { id: "interests", title: "Interests", description: "What you want to do" },
   ];
 
   const progress = ((currentStep + 1) / steps.length) * 100;
 
   const completeMutation = useMutation({
     mutationFn: async (welcomeData: WelcomeData) => {
-      const response = await apiRequest('POST', '/api/onboarding/complete-welcome', welcomeData);
+      const response = await apiRequest(
+        "POST",
+        "/api/onboarding/complete-welcome",
+        welcomeData,
+      );
       return response.json();
     },
     onSuccess: () => {
       toast({
-        title: '🎉 Profile Complete!',
+        title: "🎉 Profile Complete!",
         description: "You're all set to start your music journey.",
-        variant: 'success',
+        variant: "success",
       });
       onComplete(data);
     },
     onError: (error: Error) => {
       toast({
-        title: 'Setup Failed',
-        description: error.message || 'Please try again.',
-        variant: 'destructive',
+        title: "Setup Failed",
+        description: error.message || "Please try again.",
+        variant: "destructive",
       });
     },
   });
@@ -146,7 +177,9 @@ export default function WelcomeWizard({
   const handleNext = useCallback(() => {
     if (currentStep < steps.length - 1) {
       setCurrentStep((prev) => prev + 1);
-      announce(`Step ${currentStep + 2} of ${steps.length}: ${steps[currentStep + 1].title}`);
+      announce(
+        `Step ${currentStep + 2} of ${steps.length}: ${steps[currentStep + 1].title}`,
+      );
     } else {
       completeMutation.mutate(data);
     }
@@ -155,14 +188,16 @@ export default function WelcomeWizard({
   const handleBack = useCallback(() => {
     if (currentStep > 0) {
       setCurrentStep((prev) => prev - 1);
-      announce(`Step ${currentStep} of ${steps.length}: ${steps[currentStep - 1].title}`);
+      announce(
+        `Step ${currentStep} of ${steps.length}: ${steps[currentStep - 1].title}`,
+      );
     }
   }, [currentStep, steps]);
 
   const handleSkip = useCallback(() => {
     toast({
-      title: 'Complete Later',
-      description: 'You can finish your profile setup from Settings anytime.',
+      title: "Complete Later",
+      description: "You can finish your profile setup from Settings anytime.",
       action: (
         <Button variant="outline" size="sm" onClick={() => onSkip()}>
           <Clock className="w-4 h-4 mr-1" />
@@ -186,18 +221,22 @@ export default function WelcomeWizard({
     if (!avatarFile || avatarUploading) return;
     setAvatarUploading(true);
     try {
-      const serverUrl = await uploadImageFile(avatarFile, '/api/auth/avatar', 'avatar');
+      const serverUrl = await uploadImageFile(
+        avatarFile,
+        "/api/auth/avatar",
+        "avatar",
+      );
       setData((prev) => ({ ...prev, avatarUrl: serverUrl }));
       setShowCropDialog(false);
       toast({
-        title: 'Avatar Updated',
-        description: 'Your profile picture has been saved.',
+        title: "Avatar Updated",
+        description: "Your profile picture has been saved.",
       });
     } catch (err) {
       toast({
-        title: 'Upload failed',
-        description: err instanceof Error ? err.message : 'Please try again.',
-        variant: 'destructive',
+        title: "Upload failed",
+        description: err instanceof Error ? err.message : "Please try again.",
+        variant: "destructive",
       });
     } finally {
       if (avatarPreview) revokeLocalPreview(avatarPreview);
@@ -230,7 +269,7 @@ export default function WelcomeWizard({
       case 0:
         return true;
       case 1:
-        return data.displayName.trim().length > 0 && data.artistType !== '';
+        return data.displayName.trim().length > 0 && data.artistType !== "";
       case 2:
         return true;
       case 3:
@@ -257,15 +296,21 @@ export default function WelcomeWizard({
               <p className="text-muted-foreground text-lg max-w-md mx-auto">
                 {isFirstLogin
                   ? "Let's set up your profile to personalize your experience"
-                  : 'Complete your profile to unlock all features'}
+                  : "Complete your profile to unlock all features"}
               </p>
             </div>
             <div className="flex flex-wrap justify-center gap-2 pt-4">
-              {['AI Studio', 'Distribution', 'Analytics', 'Marketing'].map((feature) => (
-                <Badge key={feature} variant="secondary" className="text-sm py-1 px-3">
-                  {feature}
-                </Badge>
-              ))}
+              {["AI Studio", "Distribution", "Analytics", "Marketing"].map(
+                (feature) => (
+                  <Badge
+                    key={feature}
+                    variant="secondary"
+                    className="text-sm py-1 px-3"
+                  >
+                    {feature}
+                  </Badge>
+                ),
+              )}
             </div>
           </div>
         );
@@ -275,7 +320,9 @@ export default function WelcomeWizard({
           <div className="space-y-6">
             <div className="text-center space-y-2">
               <h2 className="text-2xl font-semibold">Tell us about yourself</h2>
-              <p className="text-muted-foreground">This helps us personalize your experience</p>
+              <p className="text-muted-foreground">
+                This helps us personalize your experience
+              </p>
             </div>
 
             <div className="space-y-4">
@@ -284,7 +331,12 @@ export default function WelcomeWizard({
                 <Input
                   id="displayName"
                   value={data.displayName}
-                  onChange={(e) => setData((prev) => ({ ...prev, displayName: e.target.value }))}
+                  onChange={(e) =>
+                    setData((prev) => ({
+                      ...prev,
+                      displayName: e.target.value,
+                    }))
+                  }
                   placeholder="Your artist or stage name"
                   className="text-lg"
                 />
@@ -295,7 +347,9 @@ export default function WelcomeWizard({
                 <Textarea
                   id="bio"
                   value={data.bio}
-                  onChange={(e) => setData((prev) => ({ ...prev, bio: e.target.value }))}
+                  onChange={(e) =>
+                    setData((prev) => ({ ...prev, bio: e.target.value }))
+                  }
                   placeholder="Tell fans about yourself and your music..."
                   rows={3}
                 />
@@ -307,18 +361,22 @@ export default function WelcomeWizard({
                   {ARTIST_TYPES.map((type) => (
                     <button
                       key={type.id}
-                      onClick={() => setData((prev) => ({ ...prev, artistType: type.id }))}
+                      onClick={() =>
+                        setData((prev) => ({ ...prev, artistType: type.id }))
+                      }
                       className={cn(
-                        'p-3 rounded-lg border-2 text-left transition-all',
+                        "p-3 rounded-lg border-2 text-left transition-all",
                         data.artistType === type.id
-                          ? 'border-blue-500 bg-blue-50 dark:bg-blue-950/30'
-                          : 'border-border hover:border-blue-300'
+                          ? "border-blue-500 bg-blue-50 dark:bg-blue-950/30"
+                          : "border-border hover:border-blue-300",
                       )}
                     >
                       <div className="flex items-center justify-between">
                         <div>
                           <p className="font-medium">{type.label}</p>
-                          <p className="text-sm text-muted-foreground">{type.description}</p>
+                          <p className="text-sm text-muted-foreground">
+                            {type.description}
+                          </p>
                         </div>
                         {data.artistType === type.id && (
                           <Check className="w-5 h-5 text-blue-500" />
@@ -345,7 +403,9 @@ export default function WelcomeWizard({
                 <Avatar className="w-32 h-32 border-4 border-border">
                   <AvatarImage src={data.avatarUrl || undefined} />
                   <AvatarFallback className="text-4xl bg-gradient-to-br from-blue-500 to-purple-600 text-white">
-                    {data.displayName?.[0]?.toUpperCase() || <User className="w-12 h-12" />}
+                    {data.displayName?.[0]?.toUpperCase() || (
+                      <User className="w-12 h-12" />
+                    )}
                   </AvatarFallback>
                 </Avatar>
                 <button
@@ -372,11 +432,17 @@ export default function WelcomeWizard({
                 disabled={avatarUploading}
               >
                 <Upload className="w-4 h-4 mr-2" />
-                {avatarUploading ? 'Uploading…' : data.avatarUrl ? 'Change Photo' : 'Upload Photo'}
+                {avatarUploading
+                  ? "Uploading…"
+                  : data.avatarUrl
+                    ? "Change Photo"
+                    : "Upload Photo"}
               </Button>
 
               {data.avatarUrl && !avatarUploading && (
-                <p className="text-sm text-green-600 font-medium">✓ Photo saved to your profile</p>
+                <p className="text-sm text-green-600 font-medium">
+                  ✓ Photo saved to your profile
+                </p>
               )}
 
               <p className="text-sm text-muted-foreground text-center">
@@ -390,7 +456,9 @@ export default function WelcomeWizard({
         return (
           <div className="space-y-6">
             <div className="text-center space-y-2">
-              <h2 className="text-2xl font-semibold">What genres do you make?</h2>
+              <h2 className="text-2xl font-semibold">
+                What genres do you make?
+              </h2>
               <p className="text-muted-foreground">Select all that apply</p>
             </div>
 
@@ -403,15 +471,22 @@ export default function WelcomeWizard({
                     key={genre.id}
                     onClick={() => toggleGenre(genre.id)}
                     className={cn(
-                      'flex items-center gap-2 p-3 rounded-lg border-2 transition-all',
+                      "flex items-center gap-2 p-3 rounded-lg border-2 transition-all",
                       isSelected
-                        ? 'border-blue-500 bg-blue-50 dark:bg-blue-950/30'
-                        : 'border-border hover:border-blue-300'
+                        ? "border-blue-500 bg-blue-50 dark:bg-blue-950/30"
+                        : "border-border hover:border-blue-300",
                     )}
                   >
-                    <Icon className={cn('w-4 h-4', isSelected ? 'text-blue-500' : 'text-muted-foreground')} />
+                    <Icon
+                      className={cn(
+                        "w-4 h-4",
+                        isSelected ? "text-blue-500" : "text-muted-foreground",
+                      )}
+                    />
                     <span className="text-sm font-medium">{genre.label}</span>
-                    {isSelected && <Check className="w-4 h-4 text-blue-500 ml-auto" />}
+                    {isSelected && (
+                      <Check className="w-4 h-4 text-blue-500 ml-auto" />
+                    )}
                   </button>
                 );
               })}
@@ -419,7 +494,8 @@ export default function WelcomeWizard({
 
             {data.genres.length > 0 && (
               <div className="text-center text-sm text-muted-foreground">
-                {data.genres.length} genre{data.genres.length > 1 ? 's' : ''} selected
+                {data.genres.length} genre{data.genres.length > 1 ? "s" : ""}{" "}
+                selected
               </div>
             )}
           </div>
@@ -429,8 +505,12 @@ export default function WelcomeWizard({
         return (
           <div className="space-y-6">
             <div className="text-center space-y-2">
-              <h2 className="text-2xl font-semibold">What do you want to do?</h2>
-              <p className="text-muted-foreground">We'll customize your dashboard</p>
+              <h2 className="text-2xl font-semibold">
+                What do you want to do?
+              </h2>
+              <p className="text-muted-foreground">
+                We'll customize your dashboard
+              </p>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -441,17 +521,19 @@ export default function WelcomeWizard({
                     key={interest.id}
                     onClick={() => toggleInterest(interest.id)}
                     className={cn(
-                      'flex items-center justify-between p-4 rounded-lg border-2 transition-all',
+                      "flex items-center justify-between p-4 rounded-lg border-2 transition-all",
                       isSelected
-                        ? 'border-purple-500 bg-purple-50 dark:bg-purple-950/30'
-                        : 'border-border hover:border-purple-300'
+                        ? "border-purple-500 bg-purple-50 dark:bg-purple-950/30"
+                        : "border-border hover:border-purple-300",
                     )}
                   >
                     <span className="font-medium">{interest.label}</span>
                     <div
                       className={cn(
-                        'w-5 h-5 rounded border-2 flex items-center justify-center',
-                        isSelected ? 'border-purple-500 bg-purple-500' : 'border-border'
+                        "w-5 h-5 rounded border-2 flex items-center justify-center",
+                        isSelected
+                          ? "border-purple-500 bg-purple-500"
+                          : "border-border",
                       )}
                     >
                       {isSelected && <Check className="w-3 h-3 text-white" />}
@@ -464,7 +546,8 @@ export default function WelcomeWizard({
             {data.interests.length > 0 && (
               <div className="bg-gradient-to-r from-purple-500/10 to-blue-500/10 rounded-lg p-4 text-center">
                 <p className="text-sm font-medium">
-                  Your dashboard will be optimized for {data.interests.length} area{data.interests.length > 1 ? 's' : ''}
+                  Your dashboard will be optimized for {data.interests.length}{" "}
+                  area{data.interests.length > 1 ? "s" : ""}
                 </p>
               </div>
             )}
@@ -503,8 +586,8 @@ export default function WelcomeWizard({
                   <div
                     key={step.id}
                     className={cn(
-                      'flex-1 h-1 rounded-full transition-colors',
-                      index <= currentStep ? 'bg-blue-500' : 'bg-muted'
+                      "flex-1 h-1 rounded-full transition-colors",
+                      index <= currentStep ? "bg-blue-500" : "bg-muted",
                     )}
                   />
                 ))}
@@ -530,7 +613,7 @@ export default function WelcomeWizard({
               className="min-w-[120px]"
             >
               {completeMutation.isPending ? (
-                'Saving...'
+                "Saving..."
               ) : currentStep === steps.length - 1 ? (
                 <>
                   Complete
@@ -615,9 +698,13 @@ export default function WelcomeWizard({
               >
                 Cancel
               </Button>
-              <Button className="flex-1" onClick={handleCropConfirm} disabled={avatarUploading}>
+              <Button
+                className="flex-1"
+                onClick={handleCropConfirm}
+                disabled={avatarUploading}
+              >
                 {avatarUploading ? (
-                  'Uploading…'
+                  "Uploading…"
                 ) : (
                   <>
                     <Check className="w-4 h-4 mr-2" />

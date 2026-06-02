@@ -1,5 +1,5 @@
-import { randomBytes } from 'crypto';
-import { db } from '../db';
+import { randomBytes } from "crypto";
+import { db } from "../db";
 import {
   storefronts,
   storefrontTemplates,
@@ -7,39 +7,82 @@ import {
   customerMemberships,
   listings,
   users,
-} from '@shared/schema';
-import { eq, and, desc, sql, count } from 'drizzle-orm';
-import Stripe from 'stripe';
+} from "@shared/schema";
+import { eq, and, desc, sql, count } from "drizzle-orm";
+import Stripe from "stripe";
 
-import { logger } from '../logger.js';
+import { logger } from "../logger.js";
 
-const stripe = process.env.STRIPE_SECRET_KEY?.startsWith('sk_')
-  ? new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: '2025-08-27.basil' })
+const stripe = process.env.STRIPE_SECRET_KEY?.startsWith("sk_")
+  ? new Stripe(process.env.STRIPE_SECRET_KEY, {
+      apiVersion: "2025-08-27.basil",
+    })
   : null;
 
 // Validation constraints
 const SLUG_PATTERN = /^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?$/;
-const DOMAIN_PATTERN = /^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,}$/i;
+const DOMAIN_PATTERN =
+  /^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,}$/i;
 const MAX_NAME_LENGTH = 100;
 const MIN_NAME_LENGTH = 2;
 const MAX_SLUG_LENGTH = 63;
 const MIN_SLUG_LENGTH = 3;
-const RESERVED_SLUGS = ['admin', 'api', 'www', 'app', 'dashboard', 'login', 'signup', 'help', 'support', 'billing', 'settings'];
+const RESERVED_SLUGS = [
+  "admin",
+  "api",
+  "www",
+  "app",
+  "dashboard",
+  "login",
+  "signup",
+  "help",
+  "support",
+  "billing",
+  "settings",
+];
 
 const ALLOWED_CUSTOMIZATION_KEYS = [
-  'primaryColor', 'secondaryColor', 'backgroundColor', 'textColor',
-  'fontFamily', 'headerFont', 'bodyFont',
-  'logoUrl', 'bannerUrl', 'favicon',
-  'borderRadius', 'buttonStyle', 'layoutType',
-  'showSocialLinks', 'socialLinks',
-  'headerLayout', 'footerLayout', 'gridColumns',
-  'accentColor', 'linkColor', 'shadowStyle',
-  'colors', 'fonts', 'layout', 'bio', 'logo', 'banner', 'avatar',
+  "primaryColor",
+  "secondaryColor",
+  "backgroundColor",
+  "textColor",
+  "fontFamily",
+  "headerFont",
+  "bodyFont",
+  "logoUrl",
+  "bannerUrl",
+  "favicon",
+  "borderRadius",
+  "buttonStyle",
+  "layoutType",
+  "showSocialLinks",
+  "socialLinks",
+  "headerLayout",
+  "footerLayout",
+  "gridColumns",
+  "accentColor",
+  "linkColor",
+  "shadowStyle",
+  "colors",
+  "fonts",
+  "layout",
+  "bio",
+  "logo",
+  "banner",
+  "avatar",
 ];
 
 const ALLOWED_SEO_KEYS = [
-  'title', 'description', 'keywords', 'ogImage', 'ogTitle', 'ogDescription',
-  'twitterCard', 'twitterHandle', 'canonicalUrl', 'robots',
+  "title",
+  "description",
+  "keywords",
+  "ogImage",
+  "ogTitle",
+  "ogDescription",
+  "twitterCard",
+  "twitterHandle",
+  "canonicalUrl",
+  "robots",
 ];
 
 /**
@@ -47,18 +90,20 @@ const ALLOWED_SEO_KEYS = [
  */
 function sanitizeString(input: string): string {
   return input
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#x27;')
-    .replace(/\//g, '&#x2F;');
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#x27;")
+    .replace(/\//g, "&#x2F;");
 }
 
 /**
  * Validate and sanitize customization object
  */
-function sanitizeCustomization(customization: Record<string, unknown>): Record<string, any> {
-  if (!customization || typeof customization !== 'object') {
+function sanitizeCustomization(
+  customization: Record<string, unknown>,
+): Record<string, any> {
+  if (!customization || typeof customization !== "object") {
     return {};
   }
 
@@ -68,64 +113,100 @@ function sanitizeCustomization(customization: Record<string, unknown>): Record<s
       continue;
     }
 
-    if (typeof value === 'string') {
-      if (key === 'logo' || key === 'banner' || key === 'avatar' || key.endsWith('Url') || key === 'logoUrl' || key === 'bannerUrl' || key === 'favicon') {
-        if (value.startsWith('http://') || value.startsWith('https://') || value.startsWith('/') || value === '') {
+    if (typeof value === "string") {
+      if (
+        key === "logo" ||
+        key === "banner" ||
+        key === "avatar" ||
+        key.endsWith("Url") ||
+        key === "logoUrl" ||
+        key === "bannerUrl" ||
+        key === "favicon"
+      ) {
+        if (
+          value.startsWith("http://") ||
+          value.startsWith("https://") ||
+          value.startsWith("/") ||
+          value === ""
+        ) {
           sanitized[key] = value;
         }
-      } else if (key.includes('Color') || key === 'primaryColor' || key === 'secondaryColor') {
-        if (/^#[0-9A-Fa-f]{3,8}$/.test(value) || /^rgba?\(/.test(value) || /^[a-z]+$/i.test(value)) {
+      } else if (
+        key.includes("Color") ||
+        key === "primaryColor" ||
+        key === "secondaryColor"
+      ) {
+        if (
+          /^#[0-9A-Fa-f]{3,8}$/.test(value) ||
+          /^rgba?\(/.test(value) ||
+          /^[a-z]+$/i.test(value)
+        ) {
           sanitized[key] = value;
         }
       } else {
         sanitized[key] = sanitizeString(value);
       }
-    } else if (typeof value === 'boolean' || typeof value === 'number') {
+    } else if (typeof value === "boolean" || typeof value === "number") {
       sanitized[key] = value;
-    } else if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
-      if (key === 'colors') {
+    } else if (
+      typeof value === "object" &&
+      value !== null &&
+      !Array.isArray(value)
+    ) {
+      if (key === "colors") {
         const colorObj: Record<string, string> = {};
         for (const [ck, cv] of Object.entries(value)) {
-          if (typeof cv === 'string' && (/^#[0-9A-Fa-f]{3,8}$/.test(cv) || /^rgba?\(/.test(cv) || /^[a-z]+$/i.test(cv))) {
+          if (
+            typeof cv === "string" &&
+            (/^#[0-9A-Fa-f]{3,8}$/.test(cv) ||
+              /^rgba?\(/.test(cv) ||
+              /^[a-z]+$/i.test(cv))
+          ) {
             colorObj[ck] = cv;
           }
         }
         sanitized[key] = colorObj;
-      } else if (key === 'fonts') {
+      } else if (key === "fonts") {
         const fontObj: Record<string, string> = {};
         for (const [fk, fv] of Object.entries(value)) {
-          if (typeof fv === 'string') {
+          if (typeof fv === "string") {
             fontObj[fk] = sanitizeString(fv);
           }
         }
         sanitized[key] = fontObj;
-      } else if (key === 'layout') {
+      } else if (key === "layout") {
         const layoutObj: Record<string, any> = {};
         for (const [lk, lv] of Object.entries(value)) {
-          if (typeof lv === 'string') layoutObj[lk] = sanitizeString(lv);
-          else if (typeof lv === 'number') layoutObj[lk] = lv;
-          else if (typeof lv === 'boolean') layoutObj[lk] = lv;
+          if (typeof lv === "string") layoutObj[lk] = sanitizeString(lv);
+          else if (typeof lv === "number") layoutObj[lk] = lv;
+          else if (typeof lv === "boolean") layoutObj[lk] = lv;
         }
         sanitized[key] = layoutObj;
-      } else if (key === 'socialLinks') {
+      } else if (key === "socialLinks") {
         const linksObj: Record<string, string> = {};
         for (const [sk, sv] of Object.entries(value)) {
-          if (typeof sv === 'string' && (sv.startsWith('http://') || sv.startsWith('https://') || sv === '')) {
+          if (
+            typeof sv === "string" &&
+            (sv.startsWith("http://") || sv.startsWith("https://") || sv === "")
+          ) {
             linksObj[sk] = sv;
           }
         }
         sanitized[key] = linksObj;
       }
-    } else if (Array.isArray(value) && key === 'socialLinks') {
-      sanitized[key] = value.filter((link: Record<string, unknown>) =>
-        typeof link === 'object' &&
-        typeof link.platform === 'string' &&
-        typeof link.url === 'string' &&
-        (link.url.startsWith('http://') || link.url.startsWith('https://'))
-      ).map((link: Record<string, unknown>) => ({
-        platform: sanitizeString(link.platform),
-        url: link.url,
-      }));
+    } else if (Array.isArray(value) && key === "socialLinks") {
+      sanitized[key] = value
+        .filter(
+          (link: Record<string, unknown>) =>
+            typeof link === "object" &&
+            typeof link.platform === "string" &&
+            typeof link.url === "string" &&
+            (link.url.startsWith("http://") || link.url.startsWith("https://")),
+        )
+        .map((link: Record<string, unknown>) => ({
+          platform: sanitizeString(link.platform),
+          url: link.url,
+        }));
     }
   }
 
@@ -136,7 +217,7 @@ function sanitizeCustomization(customization: Record<string, unknown>): Record<s
  * Validate and sanitize SEO object
  */
 function sanitizeSEO(seo: Record<string, unknown>): Record<string, any> {
-  if (!seo || typeof seo !== 'object') {
+  if (!seo || typeof seo !== "object") {
     return {};
   }
 
@@ -146,20 +227,22 @@ function sanitizeSEO(seo: Record<string, unknown>): Record<string, any> {
       continue;
     }
 
-    if (typeof value === 'string') {
-      if (key === 'ogImage' || key === 'canonicalUrl') {
-        if (value.startsWith('http://') || value.startsWith('https://')) {
+    if (typeof value === "string") {
+      if (key === "ogImage" || key === "canonicalUrl") {
+        if (value.startsWith("http://") || value.startsWith("https://")) {
           sanitized[key] = value;
         }
-      } else if (key === 'title' && value.length > 70) {
+      } else if (key === "title" && value.length > 70) {
         sanitized[key] = sanitizeString(value.substring(0, 70));
-      } else if (key === 'description' && value.length > 160) {
+      } else if (key === "description" && value.length > 160) {
         sanitized[key] = sanitizeString(value.substring(0, 160));
-      } else if (key === 'robots') {
+      } else if (key === "robots") {
         // Only allow valid robots directives
-        const validDirectives = ['index', 'noindex', 'follow', 'nofollow'];
-        const directives = value.split(',').map(d => d.trim().toLowerCase());
-        sanitized[key] = directives.filter(d => validDirectives.includes(d)).join(', ');
+        const validDirectives = ["index", "noindex", "follow", "nofollow"];
+        const directives = value.split(",").map((d) => d.trim().toLowerCase());
+        sanitized[key] = directives
+          .filter((d) => validDirectives.includes(d))
+          .join(", ");
       } else {
         sanitized[key] = sanitizeString(value);
       }
@@ -172,7 +255,11 @@ function sanitizeSEO(seo: Record<string, unknown>): Record<string, any> {
 /**
  * Validate storefront input
  */
-function validateStorefrontInput(input: { name?: string; slug?: string; customDomain?: string }): { valid: boolean; errors: string[] } {
+function validateStorefrontInput(input: {
+  name?: string;
+  slug?: string;
+  customDomain?: string;
+}): { valid: boolean; errors: string[] } {
   const errors: string[] = [];
 
   if (input.name !== undefined) {
@@ -192,16 +279,22 @@ function validateStorefrontInput(input: { name?: string; slug?: string; customDo
       errors.push(`Slug must be ${MAX_SLUG_LENGTH} characters or less`);
     }
     if (!SLUG_PATTERN.test(input.slug)) {
-      errors.push('Slug must contain only lowercase letters, numbers, and hyphens, and cannot start or end with a hyphen');
+      errors.push(
+        "Slug must contain only lowercase letters, numbers, and hyphens, and cannot start or end with a hyphen",
+      );
     }
     if (RESERVED_SLUGS.includes(input.slug.toLowerCase())) {
-      errors.push('This slug is reserved and cannot be used');
+      errors.push("This slug is reserved and cannot be used");
     }
   }
 
-  if (input.customDomain !== undefined && input.customDomain !== null && input.customDomain !== '') {
+  if (
+    input.customDomain !== undefined &&
+    input.customDomain !== null &&
+    input.customDomain !== ""
+  ) {
     if (!DOMAIN_PATTERN.test(input.customDomain)) {
-      errors.push('Invalid custom domain format');
+      errors.push("Invalid custom domain format");
     }
   }
 
@@ -236,7 +329,7 @@ export interface CreateMembershipTierInput {
   description?: string;
   priceCents: number;
   currency?: string;
-  interval: 'month' | 'year';
+  interval: "month" | "year";
   benefits?: Record<string, unknown>;
   maxSubscribers?: number;
 }
@@ -254,7 +347,7 @@ export class StorefrontService {
       });
 
       if (!validation.valid) {
-        throw new Error(`Validation failed: ${validation.errors.join('; ')}`);
+        throw new Error(`Validation failed: ${validation.errors.join("; ")}`);
       }
 
       const existingSlug = await db.query.storefronts.findFirst({
@@ -262,7 +355,7 @@ export class StorefrontService {
       });
 
       if (existingSlug) {
-        throw new Error('Slug already taken. Please choose a different one.');
+        throw new Error("Slug already taken. Please choose a different one.");
       }
 
       const userStorefronts = await db.query.storefronts.findMany({
@@ -270,14 +363,14 @@ export class StorefrontService {
       });
 
       if (userStorefronts.length >= 5) {
-        throw new Error('Maximum of 5 storefronts per user reached.');
+        throw new Error("Maximum of 5 storefronts per user reached.");
       }
 
       const template = input.templateId
         ? await db.query.storefrontTemplates.findFirst({
             where: and(
               eq(storefrontTemplates.id, input.templateId),
-              eq(storefrontTemplates.isActive, true)
+              eq(storefrontTemplates.isActive, true),
             ),
           })
         : null;
@@ -287,7 +380,7 @@ export class StorefrontService {
       // applied even when the user hasn't touched the customization panel yet).
       const templateConfig =
         template?.configuration &&
-        typeof template.configuration === 'object' &&
+        typeof template.configuration === "object" &&
         !Array.isArray(template.configuration)
           ? (template.configuration as Record<string, unknown>)
           : {};
@@ -314,10 +407,12 @@ export class StorefrontService {
         })
         .returning();
 
-      logger.info(`Created storefront ${storefront.id} for user ${input.userId} at ${autoSubdomain}.maxbooster.app`);
+      logger.info(
+        `Created storefront ${storefront.id} for user ${input.userId} at ${autoSubdomain}.maxbooster.app`,
+      );
       return storefront;
     } catch (error: unknown) {
-      logger.warn({ err: error }, 'Error creating storefront:');
+      logger.warn({ err: error }, "Error creating storefront:");
       throw error;
     }
   }
@@ -328,47 +423,49 @@ export class StorefrontService {
   async getStorefrontBySlug(slug: string) {
     try {
       const storefront = await db.query.storefronts.findFirst({
-        where: and(
-          eq(storefronts.slug, slug),
-          eq(storefronts.isActive, true)
-        ),
+        where: and(eq(storefronts.slug, slug), eq(storefronts.isActive, true)),
       });
 
       if (!storefront) {
-        throw new Error('Storefront not found');
+        throw new Error("Storefront not found");
       }
 
       // Note: views column doesn't exist in current schema - skip update
 
-      const [storefrontUser, userListings, tiers, template] = await Promise.all([
-        db.query.users.findFirst({
-          where: eq(users.id, storefront.userId),
-          columns: {
-            id: true,
-            username: true,
-            firstName: true,
-            lastName: true,
-            profileImageUrl: true,
-          },
-        }),
-        db.query.listings.findMany({
-          where: and(eq(listings.userId, storefront.userId), eq(listings.isPublished, true)),
-          orderBy: [desc(listings.createdAt)],
-          limit: 50,
-        }),
-        db.query.membershipTiers.findMany({
-          where: and(
-            eq(membershipTiers.storefrontId, storefront.id),
-            eq(membershipTiers.isActive, true)
-          ),
-          orderBy: [membershipTiers.createdAt],
-        }),
-        storefront.templateId
-          ? db.query.storefrontTemplates.findFirst({
-              where: eq(storefrontTemplates.id, storefront.templateId),
-            })
-          : null,
-      ]);
+      const [storefrontUser, userListings, tiers, template] = await Promise.all(
+        [
+          db.query.users.findFirst({
+            where: eq(users.id, storefront.userId),
+            columns: {
+              id: true,
+              username: true,
+              firstName: true,
+              lastName: true,
+              profileImageUrl: true,
+            },
+          }),
+          db.query.listings.findMany({
+            where: and(
+              eq(listings.userId, storefront.userId),
+              eq(listings.isPublished, true),
+            ),
+            orderBy: [desc(listings.createdAt)],
+            limit: 50,
+          }),
+          db.query.membershipTiers.findMany({
+            where: and(
+              eq(membershipTiers.storefrontId, storefront.id),
+              eq(membershipTiers.isActive, true),
+            ),
+            orderBy: [membershipTiers.createdAt],
+          }),
+          storefront.templateId
+            ? db.query.storefrontTemplates.findFirst({
+                where: eq(storefrontTemplates.id, storefront.templateId),
+              })
+            : null,
+        ],
+      );
 
       return {
         ...storefront,
@@ -379,7 +476,7 @@ export class StorefrontService {
         template,
       };
     } catch (error: unknown) {
-      logger.warn({ err: error }, 'Error fetching storefront:');
+      logger.warn({ err: error }, "Error fetching storefront:");
       throw error;
     }
   }
@@ -397,12 +494,12 @@ export class StorefrontService {
         },
       });
 
-      return userStorefronts.map(sf => ({
+      return userStorefronts.map((sf) => ({
         ...sf,
         publicUrl: this.getStorefrontUrl(sf),
       }));
     } catch (error: unknown) {
-      logger.warn({ err: error }, 'Error fetching user storefronts:');
+      logger.warn({ err: error }, "Error fetching user storefronts:");
       throw error;
     }
   }
@@ -410,18 +507,22 @@ export class StorefrontService {
   /**
    * Update storefront customization
    */
-  async updateStorefront(storefrontId: string, userId: string, updates: UpdateStorefrontInput) {
+  async updateStorefront(
+    storefrontId: string,
+    userId: string,
+    updates: UpdateStorefrontInput,
+  ) {
     try {
       const storefront = await db.query.storefronts.findFirst({
         where: eq(storefronts.id, storefrontId),
       });
 
       if (!storefront) {
-        throw new Error('Storefront not found');
+        throw new Error("Storefront not found");
       }
 
       if (storefront.userId !== userId) {
-        throw new Error('Unauthorized');
+        throw new Error("Unauthorized");
       }
 
       // Validate updates
@@ -432,7 +533,7 @@ export class StorefrontService {
       });
 
       if (!validation.valid) {
-        throw new Error(`Validation failed: ${validation.errors.join('; ')}`);
+        throw new Error(`Validation failed: ${validation.errors.join("; ")}`);
       }
 
       if (updates.slug && updates.slug !== storefront.slug) {
@@ -441,7 +542,7 @@ export class StorefrontService {
         });
 
         if (existingSlug) {
-          throw new Error('Slug already taken');
+          throw new Error("Slug already taken");
         }
       }
 
@@ -472,7 +573,9 @@ export class StorefrontService {
         sanitizedUpdates.templateId = updates.templateId;
       }
       if (updates.customization !== undefined) {
-        sanitizedUpdates.customization = sanitizeCustomization(updates.customization);
+        sanitizedUpdates.customization = sanitizeCustomization(
+          updates.customization,
+        );
       }
       if (updates.seo !== undefined) {
         sanitizedUpdates.seo = sanitizeSEO(updates.seo);
@@ -493,7 +596,7 @@ export class StorefrontService {
       logger.info(`Updated storefront ${storefrontId}`);
       return updatedStorefront;
     } catch (error: unknown) {
-      logger.warn({ err: error }, 'Error updating storefront:');
+      logger.warn({ err: error }, "Error updating storefront:");
       throw error;
     }
   }
@@ -508,18 +611,18 @@ export class StorefrontService {
       });
 
       if (!storefront) {
-        throw new Error('Storefront not found');
+        throw new Error("Storefront not found");
       }
 
       if (storefront.userId !== userId) {
-        throw new Error('Unauthorized');
+        throw new Error("Unauthorized");
       }
 
       await db.delete(storefronts).where(eq(storefronts.id, storefrontId));
 
       return { success: true };
     } catch (error: unknown) {
-      logger.warn({ err: error }, 'Error deleting storefront:');
+      logger.warn({ err: error }, "Error deleting storefront:");
       throw error;
     }
   }
@@ -538,7 +641,9 @@ export class StorefrontService {
       if (templates.length === 0) {
         // Lazy-seed built-in templates so they are always available without a
         // separate migration step.
-        const { seedStorefrontTemplates } = await import('../seed/seedStorefrontTemplates.js');
+        const { seedStorefrontTemplates } = await import(
+          "../seed/seedStorefrontTemplates.js"
+        );
         await seedStorefrontTemplates();
         return db
           .select()
@@ -549,7 +654,7 @@ export class StorefrontService {
 
       return templates;
     } catch (error: unknown) {
-      logger.warn({ err: error }, 'Error fetching templates:');
+      logger.warn({ err: error }, "Error fetching templates:");
       throw error;
     }
   }
@@ -564,7 +669,7 @@ export class StorefrontService {
       });
 
       if (!storefront) {
-        throw new Error('Storefront not found');
+        throw new Error("Storefront not found");
       }
 
       let stripePriceId: string | null = null;
@@ -573,7 +678,7 @@ export class StorefrontService {
         try {
           const price = await stripe.prices.create({
             unit_amount: input.priceCents,
-            currency: input.currency || 'usd',
+            currency: input.currency || "usd",
             recurring: {
               interval: input.interval,
             },
@@ -589,7 +694,7 @@ export class StorefrontService {
 
           stripePriceId = price.id;
         } catch (stripeError: unknown) {
-          logger.warn('Error creating Stripe price:', stripeError);
+          logger.warn("Error creating Stripe price:", stripeError);
         }
       }
 
@@ -604,7 +709,7 @@ export class StorefrontService {
           name: input.name,
           description: input.description || null,
           priceCents: input.priceCents,
-          currency: input.currency || 'usd',
+          currency: input.currency || "usd",
           interval: input.interval,
           benefits: input.benefits || {},
           stripePriceId,
@@ -617,7 +722,7 @@ export class StorefrontService {
 
       return tier;
     } catch (error: unknown) {
-      logger.warn({ err: error }, 'Error creating membership tier:');
+      logger.warn({ err: error }, "Error creating membership tier:");
       throw error;
     }
   }
@@ -628,7 +733,7 @@ export class StorefrontService {
   async updateMembershipTier(
     tierId: string,
     userId: string,
-    updates: Partial<CreateMembershipTierInput>
+    updates: Partial<CreateMembershipTierInput>,
   ) {
     try {
       const tierResults = await db
@@ -642,11 +747,11 @@ export class StorefrontService {
       const storefront = tierResults[0]?.storefront;
 
       if (!tier) {
-        throw new Error('Membership tier not found');
+        throw new Error("Membership tier not found");
       }
 
       if (storefront?.userId !== userId) {
-        throw new Error('Unauthorized');
+        throw new Error("Unauthorized");
       }
 
       const [updatedTier] = await db
@@ -660,7 +765,7 @@ export class StorefrontService {
 
       return updatedTier;
     } catch (error: unknown) {
-      logger.warn({ err: error }, 'Error updating membership tier:');
+      logger.warn({ err: error }, "Error updating membership tier:");
       throw error;
     }
   }
@@ -681,29 +786,29 @@ export class StorefrontService {
       const storefront = tierResults[0]?.storefront;
 
       if (!tier) {
-        throw new Error('Membership tier not found');
+        throw new Error("Membership tier not found");
       }
 
       if (storefront?.userId !== userId) {
-        throw new Error('Unauthorized');
+        throw new Error("Unauthorized");
       }
 
       const activeSubscriptions = await db.query.customerMemberships.findMany({
         where: and(
           eq(customerMemberships.tierId, tierId),
-          eq(customerMemberships.status, 'active')
+          eq(customerMemberships.status, "active"),
         ),
       });
 
       if (activeSubscriptions.length > 0) {
-        throw new Error('Cannot delete tier with active subscriptions');
+        throw new Error("Cannot delete tier with active subscriptions");
       }
 
       await db.delete(membershipTiers).where(eq(membershipTiers.id, tierId));
 
       return { success: true };
     } catch (error: unknown) {
-      logger.warn({ err: error }, 'Error deleting membership tier:');
+      logger.warn({ err: error }, "Error deleting membership tier:");
       throw error;
     }
   }
@@ -714,7 +819,7 @@ export class StorefrontService {
   async subscribeMembershipTier(customerId: string, tierId: string) {
     try {
       if (!stripe) {
-        throw new Error('Stripe not configured');
+        throw new Error("Stripe not configured");
       }
 
       const tierResults = await db
@@ -731,15 +836,18 @@ export class StorefrontService {
       const storefront = tierResults[0]?.storefront;
 
       if (!tier) {
-        throw new Error('Membership tier not found');
+        throw new Error("Membership tier not found");
       }
 
       if (!tier.isActive) {
-        throw new Error('This membership tier is not currently available');
+        throw new Error("This membership tier is not currently available");
       }
 
-      if (tier.maxSubscribers && tier.currentSubscribers >= tier.maxSubscribers) {
-        throw new Error('This membership tier is at maximum capacity');
+      if (
+        tier.maxSubscribers &&
+        tier.currentSubscribers >= tier.maxSubscribers
+      ) {
+        throw new Error("This membership tier is at maximum capacity");
       }
 
       const existingMemberships = await db
@@ -749,14 +857,14 @@ export class StorefrontService {
           and(
             eq(customerMemberships.customerId, customerId),
             eq(customerMemberships.tierId, tierId),
-            eq(customerMemberships.status, 'active')
-          )
+            eq(customerMemberships.status, "active"),
+          ),
         )
         .limit(1);
       const existingMembership = existingMemberships[0];
 
       if (existingMembership) {
-        throw new Error('You already have an active membership to this tier');
+        throw new Error("You already have an active membership to this tier");
       }
 
       const user = await db.query.users.findFirst({
@@ -764,7 +872,7 @@ export class StorefrontService {
       });
 
       if (!user) {
-        throw new Error('User not found');
+        throw new Error("User not found");
       }
 
       let stripeCustomerId = user.stripeCustomerId;
@@ -779,11 +887,14 @@ export class StorefrontService {
 
         stripeCustomerId = customer.id;
 
-        await db.update(users).set({ stripeCustomerId }).where(eq(users.id, customerId));
+        await db
+          .update(users)
+          .set({ stripeCustomerId })
+          .where(eq(users.id, customerId));
       }
 
       if (!tier.stripePriceId) {
-        throw new Error('Stripe price not configured for this tier');
+        throw new Error("Stripe price not configured for this tier");
       }
 
       const subscription = await stripe.subscriptions.create({
@@ -820,7 +931,7 @@ export class StorefrontService {
         subscription,
       };
     } catch (error: unknown) {
-      logger.warn({ err: error }, 'Error subscribing to membership tier:');
+      logger.warn({ err: error }, "Error subscribing to membership tier:");
       throw error;
     }
   }
@@ -831,7 +942,7 @@ export class StorefrontService {
   async cancelMembership(membershipId: string, customerId: string) {
     try {
       if (!stripe) {
-        throw new Error('Stripe not configured');
+        throw new Error("Stripe not configured");
       }
 
       const membership = await db.query.customerMemberships.findFirst({
@@ -839,11 +950,11 @@ export class StorefrontService {
       });
 
       if (!membership) {
-        throw new Error('Membership not found');
+        throw new Error("Membership not found");
       }
 
       if (membership.customerId !== customerId) {
-        throw new Error('Unauthorized');
+        throw new Error("Unauthorized");
       }
 
       if (membership.stripeSubscriptionId) {
@@ -864,7 +975,7 @@ export class StorefrontService {
 
       return updatedMembership;
     } catch (error: unknown) {
-      logger.warn({ err: error }, 'Error canceling membership:');
+      logger.warn({ err: error }, "Error canceling membership:");
       throw error;
     }
   }
@@ -895,13 +1006,19 @@ export class StorefrontService {
           ownerLastName: users.lastName,
         })
         .from(customerMemberships)
-        .leftJoin(membershipTiers, eq(customerMemberships.tierId, membershipTiers.id))
-        .leftJoin(storefronts, eq(customerMemberships.storefrontId, storefronts.id))
+        .leftJoin(
+          membershipTiers,
+          eq(customerMemberships.tierId, membershipTiers.id),
+        )
+        .leftJoin(
+          storefronts,
+          eq(customerMemberships.storefrontId, storefronts.id),
+        )
         .leftJoin(users, eq(storefronts.userId, users.id))
         .where(eq(customerMemberships.customerId, customerId))
         .orderBy(desc(customerMemberships.createdAt));
 
-      return results.map(r => ({
+      return results.map((r) => ({
         id: r.id,
         customerId: r.customerId,
         tierId: r.tierId,
@@ -911,15 +1028,27 @@ export class StorefrontService {
         startDate: r.startDate,
         endDate: r.endDate,
         createdAt: r.createdAt,
-        tier: r.tierName ? { name: r.tierName, priceCents: r.tierPriceCents, description: r.tierDescription } : null,
-        storefront: r.storefrontName ? {
-          name: r.storefrontName,
-          slug: r.storefrontSlug,
-          user: { username: r.ownerUsername, firstName: r.ownerFirstName, lastName: r.ownerLastName },
-        } : null,
+        tier: r.tierName
+          ? {
+              name: r.tierName,
+              priceCents: r.tierPriceCents,
+              description: r.tierDescription,
+            }
+          : null,
+        storefront: r.storefrontName
+          ? {
+              name: r.storefrontName,
+              slug: r.storefrontSlug,
+              user: {
+                username: r.ownerUsername,
+                firstName: r.ownerFirstName,
+                lastName: r.ownerLastName,
+              },
+            }
+          : null,
       }));
     } catch (error: unknown) {
-      logger.warn({ err: error }, 'Error fetching customer memberships:');
+      logger.warn({ err: error }, "Error fetching customer memberships:");
       throw error;
     }
   }
@@ -937,34 +1066,182 @@ export class StorefrontService {
    */
   // Music-themed word lists for Replit-style memorable URL generation
   private static readonly SLUG_ADJECTIVES = [
-    'acoustic', 'amber', 'atomic', 'azure', 'blazing', 'bold', 'bright',
-    'chrome', 'cobalt', 'cosmic', 'crisp', 'crystal', 'dark', 'deep',
-    'divine', 'dusk', 'dusty', 'electric', 'emerald', 'epic', 'fluid',
-    'golden', 'grand', 'hollow', 'infinite', 'jade', 'kinetic', 'laser',
-    'live', 'lost', 'loud', 'lunar', 'mellow', 'midnight', 'minor',
-    'mystic', 'neon', 'noble', 'obsidian', 'ocean', 'onyx', 'open',
-    'phantom', 'polar', 'prism', 'pure', 'quiet', 'radiant', 'rapid',
-    'rare', 'raw', 'rebel', 'regal', 'retro', 'rich', 'risen', 'roaming',
-    'rustic', 'sacred', 'savage', 'serene', 'sharp', 'silent', 'silver',
-    'smooth', 'soft', 'solar', 'solo', 'sonic', 'spectral', 'steady',
-    'stellar', 'still', 'stone', 'stormy', 'subtle', 'swift', 'thunder',
-    'twilight', 'ultra', 'urban', 'vast', 'vibrant', 'vivid', 'void',
-    'warm', 'wild', 'wired', 'zenith',
+    "acoustic",
+    "amber",
+    "atomic",
+    "azure",
+    "blazing",
+    "bold",
+    "bright",
+    "chrome",
+    "cobalt",
+    "cosmic",
+    "crisp",
+    "crystal",
+    "dark",
+    "deep",
+    "divine",
+    "dusk",
+    "dusty",
+    "electric",
+    "emerald",
+    "epic",
+    "fluid",
+    "golden",
+    "grand",
+    "hollow",
+    "infinite",
+    "jade",
+    "kinetic",
+    "laser",
+    "live",
+    "lost",
+    "loud",
+    "lunar",
+    "mellow",
+    "midnight",
+    "minor",
+    "mystic",
+    "neon",
+    "noble",
+    "obsidian",
+    "ocean",
+    "onyx",
+    "open",
+    "phantom",
+    "polar",
+    "prism",
+    "pure",
+    "quiet",
+    "radiant",
+    "rapid",
+    "rare",
+    "raw",
+    "rebel",
+    "regal",
+    "retro",
+    "rich",
+    "risen",
+    "roaming",
+    "rustic",
+    "sacred",
+    "savage",
+    "serene",
+    "sharp",
+    "silent",
+    "silver",
+    "smooth",
+    "soft",
+    "solar",
+    "solo",
+    "sonic",
+    "spectral",
+    "steady",
+    "stellar",
+    "still",
+    "stone",
+    "stormy",
+    "subtle",
+    "swift",
+    "thunder",
+    "twilight",
+    "ultra",
+    "urban",
+    "vast",
+    "vibrant",
+    "vivid",
+    "void",
+    "warm",
+    "wild",
+    "wired",
+    "zenith",
   ];
 
   private static readonly SLUG_NOUNS = [
-    'amp', 'anthem', 'arc', 'aria', 'atlas', 'aura', 'bar', 'bass',
-    'beat', 'bloom', 'bridge', 'canon', 'chord', 'clef', 'coda',
-    'current', 'decibel', 'demo', 'drop', 'drum', 'echo', 'fade',
-    'fender', 'flow', 'freq', 'funk', 'gate', 'groove', 'harmony',
-    'hook', 'hum', 'key', 'kick', 'lab', 'layer', 'loop', 'lush',
-    'lyric', 'melody', 'mix', 'mode', 'motion', 'muse', 'note',
-    'octave', 'orbit', 'origin', 'peak', 'pitch', 'pivot', 'prism',
-    'pulse', 'reverb', 'riff', 'rise', 'root', 'sample', 'scale',
-    'signal', 'snare', 'sol', 'sound', 'spark', 'stage', 'stem',
-    'strum', 'studio', 'sub', 'surge', 'synth', 'tempo', 'tone',
-    'track', 'treble', 'tune', 'valve', 'verse', 'vibe', 'vinyl',
-    'voice', 'volt', 'wave', 'wire', 'wub',
+    "amp",
+    "anthem",
+    "arc",
+    "aria",
+    "atlas",
+    "aura",
+    "bar",
+    "bass",
+    "beat",
+    "bloom",
+    "bridge",
+    "canon",
+    "chord",
+    "clef",
+    "coda",
+    "current",
+    "decibel",
+    "demo",
+    "drop",
+    "drum",
+    "echo",
+    "fade",
+    "fender",
+    "flow",
+    "freq",
+    "funk",
+    "gate",
+    "groove",
+    "harmony",
+    "hook",
+    "hum",
+    "key",
+    "kick",
+    "lab",
+    "layer",
+    "loop",
+    "lush",
+    "lyric",
+    "melody",
+    "mix",
+    "mode",
+    "motion",
+    "muse",
+    "note",
+    "octave",
+    "orbit",
+    "origin",
+    "peak",
+    "pitch",
+    "pivot",
+    "prism",
+    "pulse",
+    "reverb",
+    "riff",
+    "rise",
+    "root",
+    "sample",
+    "scale",
+    "signal",
+    "snare",
+    "sol",
+    "sound",
+    "spark",
+    "stage",
+    "stem",
+    "strum",
+    "studio",
+    "sub",
+    "surge",
+    "synth",
+    "tempo",
+    "tone",
+    "track",
+    "treble",
+    "tune",
+    "valve",
+    "verse",
+    "vibe",
+    "vinyl",
+    "voice",
+    "volt",
+    "wave",
+    "wire",
+    "wub",
   ];
 
   /**
@@ -982,8 +1259,8 @@ export class StorefrontService {
 
     const baseSlug = name
       .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/^-+|-+$/g, '');
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "");
 
     let slug = baseSlug;
     let counter = 1;
@@ -1013,7 +1290,8 @@ export class StorefrontService {
     for (let attempt = 0; attempt < 20; attempt++) {
       const a = adj[Math.floor(Math.random() * adj.length)];
       const n = nouns[Math.floor(Math.random() * nouns.length)];
-      const suffix = attempt === 0 ? '' : `-${Math.floor(Math.random() * 90 + 10)}`;
+      const suffix =
+        attempt === 0 ? "" : `-${Math.floor(Math.random() * 90 + 10)}`;
       const candidate = `${a}-${n}${suffix}`;
 
       const existing = await db.query.storefronts.findFirst({
@@ -1034,7 +1312,7 @@ export class StorefrontService {
     try {
       logger.info(`Recording view for storefront ${storefrontId}`);
     } catch (error: unknown) {
-      logger.warn({ err: error }, 'Error incrementing storefront views:');
+      logger.warn({ err: error }, "Error incrementing storefront views:");
     }
   }
 
@@ -1050,7 +1328,7 @@ export class StorefrontService {
 
       return tiers;
     } catch (error: unknown) {
-      logger.warn({ err: error }, 'Error fetching membership tiers:');
+      logger.warn({ err: error }, "Error fetching membership tiers:");
       throw error;
     }
   }
@@ -1065,13 +1343,13 @@ export class StorefrontService {
       });
 
       if (!storefront) {
-        throw new Error('Storefront not found');
+        throw new Error("Storefront not found");
       }
 
       const storefrontListings = await db.query.listings.findMany({
         where: and(
           eq(listings.userId, storefront.userId),
-          eq(listings.isPublished, true)
+          eq(listings.isPublished, true),
         ),
         orderBy: [desc(listings.createdAt)],
         limit: 50,
@@ -1081,11 +1359,11 @@ export class StorefrontService {
         const meta = (listing.metadata as Record<string, unknown>) || {};
         return {
           ...listing,
-          coverArtUrl: listing.artworkUrl || '',
-          audioUrl: listing.audioUrl || listing.previewUrl || '',
+          coverArtUrl: listing.artworkUrl || "",
+          audioUrl: listing.audioUrl || listing.previewUrl || "",
           bpm: meta.bpm || null,
           key: meta.key || null,
-          genre: listing.category || meta.genre || '',
+          genre: listing.category || meta.genre || "",
           mood: meta.mood || null,
           tags: meta.tags || [],
           isExclusive: meta.isExclusive || false,
@@ -1096,7 +1374,7 @@ export class StorefrontService {
         };
       });
     } catch (error: unknown) {
-      logger.warn({ err: error }, 'Error fetching storefront listings:');
+      logger.warn({ err: error }, "Error fetching storefront listings:");
       throw error;
     }
   }
@@ -1112,7 +1390,7 @@ export class StorefrontService {
       subdomainRegex.test(subdomain) &&
       subdomain.length >= 3 &&
       subdomain.length <= 30 &&
-      !subdomain.includes('--') &&
+      !subdomain.includes("--") &&
       !this.isReservedSubdomain(subdomain)
     );
   }
@@ -1122,11 +1400,35 @@ export class StorefrontService {
    */
   isReservedSubdomain(subdomain: string): boolean {
     const reserved = [
-      'www', 'api', 'app', 'admin', 'dashboard', 'help', 'support',
-      'blog', 'mail', 'email', 'ftp', 'cdn', 'static', 'assets',
-      'dev', 'staging', 'test', 'demo', 'beta', 'alpha',
-      'store', 'shop', 'marketplace', 'studio', 'music',
-      'maxbooster', 'blawz', 'b-lawz', 'blawzmusic'
+      "www",
+      "api",
+      "app",
+      "admin",
+      "dashboard",
+      "help",
+      "support",
+      "blog",
+      "mail",
+      "email",
+      "ftp",
+      "cdn",
+      "static",
+      "assets",
+      "dev",
+      "staging",
+      "test",
+      "demo",
+      "beta",
+      "alpha",
+      "store",
+      "shop",
+      "marketplace",
+      "studio",
+      "music",
+      "maxbooster",
+      "blawz",
+      "b-lawz",
+      "blawzmusic",
     ];
     return reserved.includes(subdomain.toLowerCase());
   }
@@ -1137,8 +1439,8 @@ export class StorefrontService {
   async generateSubdomain(name: string): Promise<string> {
     const baseSubdomain = name
       .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/^-+|-+$/g, '')
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "")
       .substring(0, 25);
 
     let subdomain = baseSubdomain;
@@ -1167,7 +1469,10 @@ export class StorefrontService {
   /**
    * Check if subdomain is available
    */
-  async isSubdomainAvailable(subdomain: string, excludeStorefrontId?: string): Promise<boolean> {
+  async isSubdomainAvailable(
+    subdomain: string,
+    excludeStorefrontId?: string,
+  ): Promise<boolean> {
     if (!this.validateSubdomain(subdomain)) {
       return false;
     }
@@ -1192,7 +1497,7 @@ export class StorefrontService {
         where: and(
           eq(storefronts.subdomain, subdomain),
           eq(storefronts.isSubdomainActive, true),
-          eq(storefronts.isActive, true)
+          eq(storefronts.isActive, true),
         ),
       });
 
@@ -1200,34 +1505,39 @@ export class StorefrontService {
         return null;
       }
 
-      const [storefrontUser, userListings, tiers, template] = await Promise.all([
-        db.query.users.findFirst({
-          where: eq(users.id, storefront.userId),
-          columns: {
-            id: true,
-            username: true,
-            firstName: true,
-            lastName: true,
-            profileImageUrl: true,
-          },
-        }),
-        db.query.listings.findMany({
-          where: and(eq(listings.userId, storefront.userId), eq(listings.isPublished, true)),
-          orderBy: [desc(listings.createdAt)],
-          limit: 50,
-        }),
-        db.query.membershipTiers.findMany({
-          where: and(
-            eq(membershipTiers.storefrontId, storefront.id),
-            eq(membershipTiers.isActive, true)
-          ),
-        }),
-        storefront.templateId
-          ? db.query.storefrontTemplates.findFirst({
-              where: eq(storefrontTemplates.id, storefront.templateId),
-            })
-          : null,
-      ]);
+      const [storefrontUser, userListings, tiers, template] = await Promise.all(
+        [
+          db.query.users.findFirst({
+            where: eq(users.id, storefront.userId),
+            columns: {
+              id: true,
+              username: true,
+              firstName: true,
+              lastName: true,
+              profileImageUrl: true,
+            },
+          }),
+          db.query.listings.findMany({
+            where: and(
+              eq(listings.userId, storefront.userId),
+              eq(listings.isPublished, true),
+            ),
+            orderBy: [desc(listings.createdAt)],
+            limit: 50,
+          }),
+          db.query.membershipTiers.findMany({
+            where: and(
+              eq(membershipTiers.storefrontId, storefront.id),
+              eq(membershipTiers.isActive, true),
+            ),
+          }),
+          storefront.templateId
+            ? db.query.storefrontTemplates.findFirst({
+                where: eq(storefrontTemplates.id, storefront.templateId),
+              })
+            : null,
+        ],
+      );
 
       return {
         ...storefront,
@@ -1238,7 +1548,7 @@ export class StorefrontService {
         template,
       };
     } catch (error: unknown) {
-      logger.warn({ err: error }, 'Error fetching storefront by subdomain:');
+      logger.warn({ err: error }, "Error fetching storefront by subdomain:");
       throw error;
     }
   }
@@ -1261,10 +1571,10 @@ export class StorefrontService {
     customDomain?: string | null;
     isCustomDomainActive?: boolean;
   }): string {
-    const baseDomain = process.env.BASE_DOMAIN || 'max-booster.com';
+    const baseDomain = process.env.BASE_DOMAIN || "max-booster.com";
     const slugUrl = `https://${baseDomain}/storefront/${storefront.slug}`;
 
-    if (process.env.STOREFRONT_URL_FORMAT === 'slug') {
+    if (process.env.STOREFRONT_URL_FORMAT === "slug") {
       return slugUrl;
     }
 

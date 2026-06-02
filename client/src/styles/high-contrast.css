@@ -10,7 +10,7 @@
   --hc-warning: #996600;
   --hc-selection-bg: #0000ff;
   --hc-selection-text: #ffffff;
-  
+
   --hc-focus-width: 3px;
   --hc-border-width: 2px;
   --hc-outline-offset: 2px;
@@ -26,7 +26,7 @@
   --ring: var(--hc-focus);
   --primary: var(--hc-link);
   --destructive: var(--hc-error);
-  
+
   color: var(--hc-text) !important;
   background-color: var(--hc-background) !important;
 }

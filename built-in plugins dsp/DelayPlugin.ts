@@ -1,4 +1,4 @@
-import { BasePlugin } from './BasePlugin';
+import { BasePlugin } from "./BasePlugin";
 
 export class DelayPlugin extends BasePlugin {
   private delayL: DelayNode;
@@ -44,15 +44,15 @@ export class DelayPlugin extends BasePlugin {
 
     this.filterL = context.createBiquadFilter();
     this.filterR = context.createBiquadFilter();
-    this.filterL.type = 'lowpass';
-    this.filterR.type = 'lowpass';
+    this.filterL.type = "lowpass";
+    this.filterR.type = "lowpass";
     this.filterL.frequency.value = this.filterFreq;
     this.filterR.frequency.value = this.filterFreq;
 
     this.highPassFilterL = context.createBiquadFilter();
     this.highPassFilterR = context.createBiquadFilter();
-    this.highPassFilterL.type = 'highpass';
-    this.highPassFilterR.type = 'highpass';
+    this.highPassFilterL.type = "highpass";
+    this.highPassFilterR.type = "highpass";
     this.highPassFilterL.frequency.value = this.highPassFreq;
     this.highPassFilterR.frequency.value = this.highPassFreq;
 
@@ -140,8 +140,14 @@ export class DelayPlugin extends BasePlugin {
       this.delayTimeR = Math.max(0.001, Math.min(5, right || left));
     }
 
-    this.delayL.delayTime.setValueAtTime(this.delayTimeL, this.context.currentTime);
-    this.delayR.delayTime.setValueAtTime(this.delayTimeR, this.context.currentTime);
+    this.delayL.delayTime.setValueAtTime(
+      this.delayTimeL,
+      this.context.currentTime,
+    );
+    this.delayR.delayTime.setValueAtTime(
+      this.delayTimeR,
+      this.context.currentTime,
+    );
   }
 
   private getNoteTime(division: number, beatLength: number): number {
@@ -190,14 +196,26 @@ export class DelayPlugin extends BasePlugin {
 
   setFilterFrequency(value: number): void {
     this.filterFreq = Math.max(20, Math.min(20000, value));
-    this.filterL.frequency.setValueAtTime(this.filterFreq, this.context.currentTime);
-    this.filterR.frequency.setValueAtTime(this.filterFreq, this.context.currentTime);
+    this.filterL.frequency.setValueAtTime(
+      this.filterFreq,
+      this.context.currentTime,
+    );
+    this.filterR.frequency.setValueAtTime(
+      this.filterFreq,
+      this.context.currentTime,
+    );
   }
 
   setHighPassFrequency(value: number): void {
     this.highPassFreq = Math.max(20, Math.min(2000, value));
-    this.highPassFilterL.frequency.setValueAtTime(this.highPassFreq, this.context.currentTime);
-    this.highPassFilterR.frequency.setValueAtTime(this.highPassFreq, this.context.currentTime);
+    this.highPassFilterL.frequency.setValueAtTime(
+      this.highPassFreq,
+      this.context.currentTime,
+    );
+    this.highPassFilterR.frequency.setValueAtTime(
+      this.highPassFreq,
+      this.context.currentTime,
+    );
   }
 
   setModulationDepth(value: number): void {
@@ -206,7 +224,10 @@ export class DelayPlugin extends BasePlugin {
   }
 
   setModulationRate(value: number): void {
-    this.lfo.frequency.setValueAtTime(Math.max(0.1, Math.min(10, value)), this.context.currentTime);
+    this.lfo.frequency.setValueAtTime(
+      Math.max(0.1, Math.min(10, value)),
+      this.context.currentTime,
+    );
   }
 
   setSync(enabled: boolean, bpm: number = 120): void {
@@ -223,32 +244,34 @@ export class DelayPlugin extends BasePlugin {
     this.panR.pan.setValueAtTime(spread, this.context.currentTime);
   }
 
-  applyPreset(preset: 'slapback' | 'echo' | 'ping-pong' | 'dotted' | 'tape' | 'dub'): void {
+  applyPreset(
+    preset: "slapback" | "echo" | "ping-pong" | "dotted" | "tape" | "dub",
+  ): void {
     switch (preset) {
-      case 'slapback':
+      case "slapback":
         this.setDelayTime(0.05, 0.07);
         this.setFeedback(0.1);
         this.setCrossFeedback(0);
         this.setFilterFrequency(8000);
         break;
-      case 'echo':
+      case "echo":
         this.setDelayTime(0.25, 0.25);
         this.setFeedback(0.4);
         this.setCrossFeedback(0);
         this.setFilterFrequency(4000);
         break;
-      case 'ping-pong':
+      case "ping-pong":
         this.setDelayTime(0.2, 0.3);
         this.setFeedback(0.3);
         this.setCrossFeedback(0.5);
         this.setStereoSpread(0.8);
         break;
-      case 'dotted':
+      case "dotted":
         this.setSync(true, this.bpm);
         this.setDelayTime(8, 12);
         this.setFeedback(0.35);
         break;
-      case 'tape':
+      case "tape":
         this.setDelayTime(0.3, 0.3);
         this.setFeedback(0.5);
         this.setFilterFrequency(2000);
@@ -256,7 +279,7 @@ export class DelayPlugin extends BasePlugin {
         this.setModulationDepth(0.003);
         this.setModulationRate(0.3);
         break;
-      case 'dub':
+      case "dub":
         this.setDelayTime(0.375, 0.375);
         this.setFeedback(0.7);
         this.setFilterFrequency(1000);
@@ -267,7 +290,7 @@ export class DelayPlugin extends BasePlugin {
   }
 
   getName(): string {
-    return 'Max Booster Stereo Delay';
+    return "Max Booster Stereo Delay";
   }
 
   getParameters(): Record<string, any> {
@@ -290,16 +313,24 @@ export class DelayPlugin extends BasePlugin {
 
   setParameters(params: Record<string, any>): void {
     if (params.delayTimeL !== undefined || params.delayTimeR !== undefined) {
-      this.setDelayTime(params.delayTimeL || this.delayTimeL, params.delayTimeR || this.delayTimeR);
+      this.setDelayTime(
+        params.delayTimeL || this.delayTimeL,
+        params.delayTimeR || this.delayTimeR,
+      );
     }
     if (params.feedback !== undefined) this.setFeedback(params.feedback);
-    if (params.crossFeedback !== undefined) this.setCrossFeedback(params.crossFeedback);
-    if (params.filterFreq !== undefined) this.setFilterFrequency(params.filterFreq);
-    if (params.highPassFreq !== undefined) this.setHighPassFrequency(params.highPassFreq);
+    if (params.crossFeedback !== undefined)
+      this.setCrossFeedback(params.crossFeedback);
+    if (params.filterFreq !== undefined)
+      this.setFilterFrequency(params.filterFreq);
+    if (params.highPassFreq !== undefined)
+      this.setHighPassFrequency(params.highPassFreq);
     if (params.modDepth !== undefined) this.setModulationDepth(params.modDepth);
     if (params.modRate !== undefined) this.setModulationRate(params.modRate);
-    if (params.syncMode !== undefined) this.setSync(params.syncMode, params.bpm || this.bpm);
-    if (params.stereoSpread !== undefined) this.setStereoSpread(params.stereoSpread);
+    if (params.syncMode !== undefined)
+      this.setSync(params.syncMode, params.bpm || this.bpm);
+    if (params.stereoSpread !== undefined)
+      this.setStereoSpread(params.stereoSpread);
     if (params.mix !== undefined) this.setMix(params.mix);
     if (params.bypass !== undefined) this.setBypass(params.bypass);
     if (params.preset !== undefined) this.applyPreset(params.preset);

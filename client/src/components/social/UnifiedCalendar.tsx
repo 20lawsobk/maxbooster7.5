@@ -1,23 +1,29 @@
-import { useState, useCallback } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Progress } from '@/components/ui/progress';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Switch } from '@/components/ui/switch';
+import { useState, useCallback } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Progress } from "@/components/ui/progress";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Switch } from "@/components/ui/switch";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
+} from "@/components/ui/select";
 import {
   Dialog,
   DialogContent,
@@ -25,20 +31,20 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog';
+} from "@/components/ui/dialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+} from "@/components/ui/dropdown-menu";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from '@/components/ui/tooltip';
+} from "@/components/ui/tooltip";
 import {
   Calendar,
   ChevronLeft,
@@ -70,7 +76,7 @@ import {
   CalendarDays,
   LayoutGrid,
   List,
-} from 'lucide-react';
+} from "lucide-react";
 import {
   FacebookIcon,
   InstagramIcon,
@@ -78,9 +84,19 @@ import {
   TikTokIcon,
   LinkedInIcon,
   TwitterIcon,
-} from '@/components/ui/brand-icons';
-import { useToast } from '@/hooks/use-toast';
-import { format, addDays, startOfWeek, endOfWeek, eachDayOfInterval, isSameDay, isToday, addMonths, subMonths } from 'date-fns';
+} from "@/components/ui/brand-icons";
+import { useToast } from "@/hooks/use-toast";
+import {
+  format,
+  addDays,
+  startOfWeek,
+  endOfWeek,
+  eachDayOfInterval,
+  isSameDay,
+  isToday,
+  addMonths,
+  subMonths,
+} from "date-fns";
 
 interface ScheduledPost {
   id: string;
@@ -88,8 +104,14 @@ interface ScheduledPost {
   content: string;
   platforms: string[];
   scheduledFor: string;
-  type: 'organic' | 'paid' | 'story' | 'reel' | 'live';
-  status: 'draft' | 'scheduled' | 'pending_approval' | 'approved' | 'published' | 'failed';
+  type: "organic" | "paid" | "story" | "reel" | "live";
+  status:
+    | "draft"
+    | "scheduled"
+    | "pending_approval"
+    | "approved"
+    | "published"
+    | "failed";
   campaign?: string;
   budget?: number;
   mediaUrls?: string[];
@@ -112,7 +134,7 @@ interface Campaign {
 interface Holiday {
   date: string;
   name: string;
-  type: 'holiday' | 'event' | 'awareness';
+  type: "holiday" | "event" | "awareness";
 }
 
 interface QueueItem {
@@ -124,72 +146,107 @@ interface QueueItem {
 }
 
 const PLATFORM_CONFIG = {
-  twitter: { icon: TwitterIcon, color: '#000000', name: 'Twitter' },
-  instagram: { icon: InstagramIcon, color: '#E4405F', name: 'Instagram' },
-  facebook: { icon: FacebookIcon, color: '#1877F2', name: 'Facebook' },
-  tiktok: { icon: TikTokIcon, color: '#000000', name: 'TikTok' },
-  youtube: { icon: YouTubeIcon, color: '#FF0000', name: 'YouTube' },
-  linkedin: { icon: LinkedInIcon, color: '#0077B5', name: 'LinkedIn' },
+  twitter: { icon: TwitterIcon, color: "#000000", name: "Twitter" },
+  instagram: { icon: InstagramIcon, color: "#E4405F", name: "Instagram" },
+  facebook: { icon: FacebookIcon, color: "#1877F2", name: "Facebook" },
+  tiktok: { icon: TikTokIcon, color: "#000000", name: "TikTok" },
+  youtube: { icon: YouTubeIcon, color: "#FF0000", name: "YouTube" },
+  linkedin: { icon: LinkedInIcon, color: "#0077B5", name: "LinkedIn" },
 };
 
 const POST_TYPE_CONFIG = {
-  organic: { label: 'Organic', color: 'bg-green-500/20 text-green-500', icon: FileText },
-  paid: { label: 'Paid', color: 'bg-blue-500/20 text-blue-500', icon: DollarSign },
-  story: { label: 'Story', color: 'bg-purple-500/20 text-purple-500', icon: Clock },
-  reel: { label: 'Reel', color: 'bg-pink-500/20 text-pink-500', icon: Zap },
-  live: { label: 'Live', color: 'bg-red-500/20 text-red-500', icon: Megaphone },
+  organic: {
+    label: "Organic",
+    color: "bg-green-500/20 text-green-500",
+    icon: FileText,
+  },
+  paid: {
+    label: "Paid",
+    color: "bg-blue-500/20 text-blue-500",
+    icon: DollarSign,
+  },
+  story: {
+    label: "Story",
+    color: "bg-purple-500/20 text-purple-500",
+    icon: Clock,
+  },
+  reel: { label: "Reel", color: "bg-pink-500/20 text-pink-500", icon: Zap },
+  live: { label: "Live", color: "bg-red-500/20 text-red-500", icon: Megaphone },
 };
 
 const STATUS_CONFIG = {
-  draft: { label: 'Draft', color: 'bg-gray-500/20 text-gray-500', icon: FileText },
-  scheduled: { label: 'Scheduled', color: 'bg-blue-500/20 text-blue-500', icon: Clock },
-  pending_approval: { label: 'Pending Approval', color: 'bg-yellow-500/20 text-yellow-500', icon: AlertCircle },
-  approved: { label: 'Approved', color: 'bg-green-500/20 text-green-500', icon: CheckCircle },
-  published: { label: 'Published', color: 'bg-emerald-500/20 text-emerald-500', icon: Send },
-  failed: { label: 'Failed', color: 'bg-red-500/20 text-red-500', icon: XCircle },
+  draft: {
+    label: "Draft",
+    color: "bg-gray-500/20 text-gray-500",
+    icon: FileText,
+  },
+  scheduled: {
+    label: "Scheduled",
+    color: "bg-blue-500/20 text-blue-500",
+    icon: Clock,
+  },
+  pending_approval: {
+    label: "Pending Approval",
+    color: "bg-yellow-500/20 text-yellow-500",
+    icon: AlertCircle,
+  },
+  approved: {
+    label: "Approved",
+    color: "bg-green-500/20 text-green-500",
+    icon: CheckCircle,
+  },
+  published: {
+    label: "Published",
+    color: "bg-emerald-500/20 text-emerald-500",
+    icon: Send,
+  },
+  failed: {
+    label: "Failed",
+    color: "bg-red-500/20 text-red-500",
+    icon: XCircle,
+  },
 };
-
 
 export function UnifiedCalendar() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  
+
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [viewMode, setViewMode] = useState<'month' | 'week' | 'day'>('month');
+  const [viewMode, setViewMode] = useState<"month" | "week" | "day">("month");
   const [selectedPost, setSelectedPost] = useState<ScheduledPost | null>(null);
   const [showPostDialog, setShowPostDialog] = useState(false);
   const [showApprovalDialog, setShowApprovalDialog] = useState(false);
   const [draggedPost, setDraggedPost] = useState<ScheduledPost | null>(null);
-  const [filterPlatform, setFilterPlatform] = useState<string>('all');
-  const [filterType, setFilterType] = useState<string>('all');
-  const [filterCampaign, setFilterCampaign] = useState<string>('all');
-  const [activeTab, setActiveTab] = useState('calendar');
+  const [filterPlatform, setFilterPlatform] = useState<string>("all");
+  const [filterType, setFilterType] = useState<string>("all");
+  const [filterCampaign, setFilterCampaign] = useState<string>("all");
+  const [activeTab, setActiveTab] = useState("calendar");
   const [hoveredCell, setHoveredCell] = useState<string | null>(null);
-  
+
   const [newPost, setNewPost] = useState({
-    title: '',
-    content: '',
+    title: "",
+    content: "",
     platforms: [] as string[],
-    scheduledFor: '',
-    type: 'organic' as const,
-    campaign: '',
+    scheduledFor: "",
+    type: "organic" as const,
+    campaign: "",
     budget: 0,
   });
 
   const { data: postsData, isLoading: postsLoading } = useQuery({
-    queryKey: ['/api/social/unified-calendar/posts'],
+    queryKey: ["/api/social/unified-calendar/posts"],
   });
 
   const { data: campaignsData } = useQuery({
-    queryKey: ['/api/social/unified-calendar/campaigns'],
+    queryKey: ["/api/social/unified-calendar/campaigns"],
   });
 
   const { data: holidaysData } = useQuery({
-    queryKey: ['/api/social/unified-calendar/holidays'],
+    queryKey: ["/api/social/unified-calendar/holidays"],
   });
 
   const { data: queueData } = useQuery({
-    queryKey: ['/api/social/unified-calendar/queue'],
+    queryKey: ["/api/social/unified-calendar/queue"],
   });
 
   const posts: ScheduledPost[] = postsData?.posts || [];
@@ -198,39 +255,63 @@ export function UnifiedCalendar() {
   const queue: QueueItem[] = queueData?.queue || [];
 
   const filteredPosts = posts.filter((post: ScheduledPost) => {
-    if (filterPlatform !== 'all' && !post.platforms.includes(filterPlatform)) return false;
-    if (filterType !== 'all' && post.type !== filterType) return false;
-    if (filterCampaign !== 'all' && post.campaign !== filterCampaign) return false;
+    if (filterPlatform !== "all" && !post.platforms.includes(filterPlatform))
+      return false;
+    if (filterType !== "all" && post.type !== filterType) return false;
+    if (filterCampaign !== "all" && post.campaign !== filterCampaign)
+      return false;
     return true;
   });
 
   const stats = {
-    scheduled: posts.filter((p: ScheduledPost) => p.status === 'scheduled').length,
-    pending: posts.filter((p: ScheduledPost) => p.status === 'pending_approval').length,
-    published: posts.filter((p: ScheduledPost) => p.status === 'published').length,
-    totalBudget: posts.reduce((acc: number, p: ScheduledPost) => acc + (p.budget || 0), 0),
+    scheduled: posts.filter((p: ScheduledPost) => p.status === "scheduled")
+      .length,
+    pending: posts.filter((p: ScheduledPost) => p.status === "pending_approval")
+      .length,
+    published: posts.filter((p: ScheduledPost) => p.status === "published")
+      .length,
+    totalBudget: posts.reduce(
+      (acc: number, p: ScheduledPost) => acc + (p.budget || 0),
+      0,
+    ),
   };
 
-  const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-  const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  const monthNames = [
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
+  ];
+  const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
   const hourSlots = Array.from({ length: 24 }, (_, i) => i);
 
   const cellVariants = {
     hidden: { opacity: 0, scale: 0.95 },
     visible: { opacity: 1, scale: 1 },
-    hover: { scale: 1.02, transition: { duration: 0.2 } }
+    hover: { scale: 1.02, transition: { duration: 0.2 } },
   };
 
   const postVariants = {
     hidden: { opacity: 0, y: -10 },
     visible: { opacity: 1, y: 0 },
     exit: { opacity: 0, scale: 0.9, transition: { duration: 0.15 } },
-    hover: { scale: 1.03, boxShadow: '0 4px 12px rgba(0,0,0,0.15)' }
+    hover: { scale: 1.03, boxShadow: "0 4px 12px rgba(0,0,0,0.15)" },
   };
 
   const getWeekDays = () => {
     const start = startOfWeek(currentDate, { weekStartsOn: 0 });
-    return eachDayOfInterval({ start, end: endOfWeek(start, { weekStartsOn: 0 }) });
+    return eachDayOfInterval({
+      start,
+      end: endOfWeek(start, { weekStartsOn: 0 }),
+    });
   };
 
   const getPostsForDateTime = (date: Date, hour: number) => {
@@ -254,22 +335,22 @@ export function UnifiedCalendar() {
     const lastDay = new Date(year, month + 1, 0);
     const daysInMonth = lastDay.getDate();
     const startingDay = firstDay.getDay();
-    
+
     return { daysInMonth, startingDay, year, month };
   };
 
   const getPostsForDate = (day: number) => {
     const { year, month } = getDaysInMonth();
-    const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    const dateStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
     return filteredPosts.filter((post: ScheduledPost) => {
-      const postDate = new Date(post.scheduledFor).toISOString().split('T')[0];
+      const postDate = new Date(post.scheduledFor).toISOString().split("T")[0];
       return postDate === dateStr;
     });
   };
 
   const getHolidayForDate = (day: number) => {
     const { year, month } = getDaysInMonth();
-    const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    const dateStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
     return holidays.find((h: Holiday) => h.date === dateStr);
   };
 
@@ -283,40 +364,40 @@ export function UnifiedCalendar() {
 
   const handleDrop = (day: number) => {
     if (!draggedPost) return;
-    
+
     const { year, month } = getDaysInMonth();
     const newDate = new Date(year, month, day, 12, 0, 0);
-    
+
     toast({
-      title: 'Post Rescheduled',
-      description: `"${draggedPost.title}" moved to ${format(newDate, 'MMM d, yyyy')}`,
+      title: "Post Rescheduled",
+      description: `"${draggedPost.title}" moved to ${format(newDate, "MMM d, yyyy")}`,
     });
-    
+
     setDraggedPost(null);
   };
 
   const handleCreatePost = () => {
     if (!newPost.title || !newPost.content || newPost.platforms.length === 0) {
       toast({
-        title: 'Missing Information',
-        description: 'Please fill in all required fields.',
-        variant: 'destructive',
+        title: "Missing Information",
+        description: "Please fill in all required fields.",
+        variant: "destructive",
       });
       return;
     }
-    
+
     toast({
-      title: 'Post Created',
-      description: 'Your post has been scheduled.',
+      title: "Post Created",
+      description: "Your post has been scheduled.",
     });
-    
+
     setNewPost({
-      title: '',
-      content: '',
+      title: "",
+      content: "",
       platforms: [],
-      scheduledFor: '',
-      type: 'organic',
-      campaign: '',
+      scheduledFor: "",
+      type: "organic",
+      campaign: "",
       budget: 0,
     });
     setShowPostDialog(false);
@@ -324,7 +405,7 @@ export function UnifiedCalendar() {
 
   const handleApprove = (post: ScheduledPost) => {
     toast({
-      title: 'Post Approved',
+      title: "Post Approved",
       description: `"${post.title}" has been approved for publishing.`,
     });
     setShowApprovalDialog(false);
@@ -332,7 +413,7 @@ export function UnifiedCalendar() {
 
   const handleReject = (post: ScheduledPost) => {
     toast({
-      title: 'Post Rejected',
+      title: "Post Rejected",
       description: `"${post.title}" has been sent back for revisions.`,
     });
     setShowApprovalDialog(false);
@@ -340,22 +421,22 @@ export function UnifiedCalendar() {
 
   const handlePublishNow = (post: ScheduledPost) => {
     toast({
-      title: 'Publishing...',
+      title: "Publishing...",
       description: `"${post.title}" is being published to ${post.platforms.length} platforms.`,
     });
   };
 
   const handleAddToQueue = (item: QueueItem) => {
     toast({
-      title: 'Added to Schedule',
+      title: "Added to Schedule",
       description: `Post scheduled for ${item.optimalTime}`,
     });
   };
 
   const renderWeekView = () => {
     const weekDays = getWeekDays();
-    const displayHours = hourSlots.filter(h => h >= 6 && h <= 23);
-    
+    const displayHours = hourSlots.filter((h) => h >= 6 && h <= 23);
+
     return (
       <div className="border border-border rounded-lg overflow-hidden">
         <div className="grid grid-cols-8 bg-muted/50">
@@ -366,38 +447,45 @@ export function UnifiedCalendar() {
             <div
               key={day.toISOString()}
               className={`p-2 text-center border-r border-border last:border-r-0 ${
-                isToday(day) ? 'bg-primary/10' : ''
+                isToday(day) ? "bg-primary/10" : ""
               }`}
             >
-              <div className="text-xs text-muted-foreground">{format(day, 'EEE')}</div>
-              <div className={`text-lg font-semibold ${isToday(day) ? 'text-primary' : ''}`}>
-                {format(day, 'd')}
+              <div className="text-xs text-muted-foreground">
+                {format(day, "EEE")}
+              </div>
+              <div
+                className={`text-lg font-semibold ${isToday(day) ? "text-primary" : ""}`}
+              >
+                {format(day, "d")}
               </div>
             </div>
           ))}
         </div>
-        
+
         <ScrollArea className="h-[600px]">
           <div className="grid grid-cols-8">
             {displayHours.map((hour) => (
               <>
-                <div 
+                <div
                   key={`time-${hour}`}
                   className="p-2 text-xs text-muted-foreground border-r border-b border-border text-right pr-3 bg-muted/30"
                 >
-                  {format(new Date().setHours(hour, 0), 'h:mm a')}
+                  {format(new Date().setHours(hour, 0), "h:mm a")}
                 </div>
                 {weekDays.map((day) => {
                   const cellId = `${day.toISOString()}-${hour}`;
                   const cellPosts = getPostsForDateTime(day, hour);
-                  const isCurrentHour = isToday(day) && new Date().getHours() === hour;
-                  
+                  const isCurrentHour =
+                    isToday(day) && new Date().getHours() === hour;
+
                   return (
                     <motion.div
                       key={cellId}
                       className={`min-h-16 p-1 border-r border-b border-border last:border-r-0 transition-colors ${
-                        isCurrentHour ? 'bg-primary/5 border-l-2 border-l-primary' : ''
-                      } ${hoveredCell === cellId ? 'bg-muted/50' : ''}`}
+                        isCurrentHour
+                          ? "bg-primary/5 border-l-2 border-l-primary"
+                          : ""
+                      } ${hoveredCell === cellId ? "bg-muted/50" : ""}`}
                       onMouseEnter={() => setHoveredCell(cellId)}
                       onMouseLeave={() => setHoveredCell(null)}
                       onDragOver={handleDragOver}
@@ -406,8 +494,8 @@ export function UnifiedCalendar() {
                           const newDate = new Date(day);
                           newDate.setHours(hour, 0, 0, 0);
                           toast({
-                            title: 'Post Rescheduled',
-                            description: `Moved to ${format(newDate, 'MMM d, h:mm a')}`,
+                            title: "Post Rescheduled",
+                            description: `Moved to ${format(newDate, "MMM d, h:mm a")}`,
                           });
                           setDraggedPost(null);
                         }
@@ -431,33 +519,53 @@ export function UnifiedCalendar() {
                                     onDragStart={() => handleDragStart(post)}
                                     onClick={() => {
                                       setSelectedPost(post);
-                                      if (post.status === 'pending_approval') {
+                                      if (post.status === "pending_approval") {
                                         setShowApprovalDialog(true);
                                       }
                                     }}
                                   >
                                     <div className="flex items-center gap-0.5 mb-0.5">
-                                      {post.platforms.slice(0, 2).map((platform) => {
-                                        const PlatformIcon = PLATFORM_CONFIG[platform as keyof typeof PLATFORM_CONFIG]?.icon;
-                                        return PlatformIcon ? (
-                                          <PlatformIcon
-                                            key={platform}
-                                            className="w-2.5 h-2.5"
-                                            style={{ color: PLATFORM_CONFIG[platform as keyof typeof PLATFORM_CONFIG]?.color }}
-                                          />
-                                        ) : null;
-                                      })}
+                                      {post.platforms
+                                        .slice(0, 2)
+                                        .map((platform) => {
+                                          const PlatformIcon =
+                                            PLATFORM_CONFIG[
+                                              platform as keyof typeof PLATFORM_CONFIG
+                                            ]?.icon;
+                                          return PlatformIcon ? (
+                                            <PlatformIcon
+                                              key={platform}
+                                              className="w-2.5 h-2.5"
+                                              style={{
+                                                color:
+                                                  PLATFORM_CONFIG[
+                                                    platform as keyof typeof PLATFORM_CONFIG
+                                                  ]?.color,
+                                              }}
+                                            />
+                                          ) : null;
+                                        })}
                                     </div>
-                                    <p className="truncate leading-tight">{post.title}</p>
+                                    <p className="truncate leading-tight">
+                                      {post.title}
+                                    </p>
                                   </motion.div>
                                 </TooltipTrigger>
-                                <TooltipContent side="right" className="max-w-xs">
+                                <TooltipContent
+                                  side="right"
+                                  className="max-w-xs"
+                                >
                                   <div className="space-y-1">
                                     <p className="font-medium">{post.title}</p>
-                                    <p className="text-xs text-muted-foreground">{post.content.slice(0, 100)}...</p>
+                                    <p className="text-xs text-muted-foreground">
+                                      {post.content.slice(0, 100)}...
+                                    </p>
                                     <div className="flex items-center gap-2 text-xs">
                                       <Clock className="w-3 h-3" />
-                                      {format(new Date(post.scheduledFor), 'h:mm a')}
+                                      {format(
+                                        new Date(post.scheduledFor),
+                                        "h:mm a",
+                                      )}
                                     </div>
                                   </div>
                                 </TooltipContent>
@@ -466,7 +574,7 @@ export function UnifiedCalendar() {
                           );
                         })}
                       </AnimatePresence>
-                      
+
                       {hoveredCell === cellId && cellPosts.length === 0 && (
                         <motion.button
                           initial={{ opacity: 0 }}
@@ -477,7 +585,10 @@ export function UnifiedCalendar() {
                             postDate.setHours(hour, 0, 0, 0);
                             setNewPost({
                               ...newPost,
-                              scheduledFor: format(postDate, "yyyy-MM-dd'T'HH:mm"),
+                              scheduledFor: format(
+                                postDate,
+                                "yyyy-MM-dd'T'HH:mm",
+                              ),
                             });
                             setShowPostDialog(true);
                           }}
@@ -497,37 +608,44 @@ export function UnifiedCalendar() {
   };
 
   const renderDayView = () => {
-    const displayHours = hourSlots.filter(h => h >= 6 && h <= 23);
+    const displayHours = hourSlots.filter((h) => h >= 6 && h <= 23);
     const dayPosts = getPostsForDay(currentDate);
-    
+
     return (
       <div className="border border-border rounded-lg overflow-hidden">
         <div className="bg-muted/50 p-4 border-b border-border">
-          <div className={`text-center ${isToday(currentDate) ? 'text-primary' : ''}`}>
-            <div className="text-sm text-muted-foreground">{format(currentDate, 'EEEE')}</div>
-            <div className="text-3xl font-bold">{format(currentDate, 'd')}</div>
-            <div className="text-sm text-muted-foreground">{format(currentDate, 'MMMM yyyy')}</div>
+          <div
+            className={`text-center ${isToday(currentDate) ? "text-primary" : ""}`}
+          >
+            <div className="text-sm text-muted-foreground">
+              {format(currentDate, "EEEE")}
+            </div>
+            <div className="text-3xl font-bold">{format(currentDate, "d")}</div>
+            <div className="text-sm text-muted-foreground">
+              {format(currentDate, "MMMM yyyy")}
+            </div>
           </div>
         </div>
-        
+
         <ScrollArea className="h-[600px]">
           <div className="divide-y divide-border">
             {displayHours.map((hour) => {
               const hourPosts = getPostsForDateTime(currentDate, hour);
-              const isCurrentHour = isToday(currentDate) && new Date().getHours() === hour;
-              
+              const isCurrentHour =
+                isToday(currentDate) && new Date().getHours() === hour;
+
               return (
                 <motion.div
                   key={hour}
-                  className={`flex min-h-20 ${isCurrentHour ? 'bg-primary/5' : ''}`}
+                  className={`flex min-h-20 ${isCurrentHour ? "bg-primary/5" : ""}`}
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ delay: hour * 0.02 }}
                 >
                   <div className="w-20 p-3 text-sm text-muted-foreground border-r border-border bg-muted/30 flex-shrink-0">
-                    {format(new Date().setHours(hour, 0), 'h:mm a')}
+                    {format(new Date().setHours(hour, 0), "h:mm a")}
                   </div>
-                  
+
                   <div className="flex-1 p-2">
                     <AnimatePresence mode="popLayout">
                       {hourPosts.map((post: ScheduledPost) => {
@@ -545,7 +663,7 @@ export function UnifiedCalendar() {
                             onDragStart={() => handleDragStart(post)}
                             onClick={() => {
                               setSelectedPost(post);
-                              if (post.status === 'pending_approval') {
+                              if (post.status === "pending_approval") {
                                 setShowApprovalDialog(true);
                               }
                             }}
@@ -554,21 +672,36 @@ export function UnifiedCalendar() {
                               <div className="flex-1">
                                 <div className="flex items-center gap-2 mb-1">
                                   {post.platforms.map((platform) => {
-                                    const PlatformIcon = PLATFORM_CONFIG[platform as keyof typeof PLATFORM_CONFIG]?.icon;
+                                    const PlatformIcon =
+                                      PLATFORM_CONFIG[
+                                        platform as keyof typeof PLATFORM_CONFIG
+                                      ]?.icon;
                                     return PlatformIcon ? (
                                       <PlatformIcon
                                         key={platform}
                                         className="w-4 h-4"
-                                        style={{ color: PLATFORM_CONFIG[platform as keyof typeof PLATFORM_CONFIG]?.color }}
+                                        style={{
+                                          color:
+                                            PLATFORM_CONFIG[
+                                              platform as keyof typeof PLATFORM_CONFIG
+                                            ]?.color,
+                                        }}
                                       />
                                     ) : null;
                                   })}
                                   <span className="text-xs text-muted-foreground">
-                                    {format(new Date(post.scheduledFor), 'h:mm a')}
+                                    {format(
+                                      new Date(post.scheduledFor),
+                                      "h:mm a",
+                                    )}
                                   </span>
                                 </div>
-                                <h4 className="font-medium text-sm">{post.title}</h4>
-                                <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{post.content}</p>
+                                <h4 className="font-medium text-sm">
+                                  {post.title}
+                                </h4>
+                                <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                                  {post.content}
+                                </p>
                               </div>
                               <Badge variant="outline" className="text-[10px]">
                                 {STATUS_CONFIG[post.status].label}
@@ -584,7 +717,7 @@ export function UnifiedCalendar() {
             })}
           </div>
         </ScrollArea>
-        
+
         <div className="p-4 border-t border-border bg-muted/30">
           <div className="text-center text-sm text-muted-foreground">
             {dayPosts.length} posts scheduled for this day
@@ -598,27 +731,32 @@ export function UnifiedCalendar() {
     const { daysInMonth, startingDay, year, month } = getDaysInMonth();
     const days = [];
     const totalCells = Math.ceil((startingDay + daysInMonth) / 7) * 7;
-    
+
     for (let i = 0; i < totalCells; i++) {
       const dayNumber = i - startingDay + 1;
       const isValidDay = dayNumber > 0 && dayNumber <= daysInMonth;
-      const isCurrentDay = isValidDay && isToday(new Date(year, month, dayNumber));
-      
+      const isCurrentDay =
+        isValidDay && isToday(new Date(year, month, dayNumber));
+
       if (isValidDay) {
         const dayPosts = getPostsForDate(dayNumber);
         const holiday = getHolidayForDate(dayNumber);
-        
+
         return days.push(
           <div
             key={i}
             className={`min-h-28 p-2 border border-border transition-colors ${
-              isCurrentDay ? 'bg-primary/10 border-primary' : 'bg-card hover:bg-muted/50'
+              isCurrentDay
+                ? "bg-primary/10 border-primary"
+                : "bg-card hover:bg-muted/50"
             }`}
             onDragOver={handleDragOver}
             onDrop={() => handleDrop(dayNumber)}
           >
             <div className="flex items-center justify-between mb-1">
-              <span className={`text-sm font-medium ${isCurrentDay ? 'text-primary' : ''}`}>
+              <span
+                className={`text-sm font-medium ${isCurrentDay ? "text-primary" : ""}`}
+              >
                 {dayNumber}
               </span>
               {holiday && (
@@ -628,7 +766,7 @@ export function UnifiedCalendar() {
                 </Badge>
               )}
             </div>
-            
+
             <div className="space-y-1">
               {dayPosts.slice(0, 3).map((post: ScheduledPost) => {
                 const TypeConfig = POST_TYPE_CONFIG[post.type];
@@ -640,26 +778,38 @@ export function UnifiedCalendar() {
                     onDragStart={() => handleDragStart(post)}
                     onClick={() => {
                       setSelectedPost(post);
-                      if (post.status === 'pending_approval') {
+                      if (post.status === "pending_approval") {
                         setShowApprovalDialog(true);
                       }
                     }}
                   >
                     <div className="flex items-center gap-1 mb-0.5">
                       {post.platforms.slice(0, 2).map((platform) => {
-                        const PlatformIcon = PLATFORM_CONFIG[platform as keyof typeof PLATFORM_CONFIG]?.icon;
+                        const PlatformIcon =
+                          PLATFORM_CONFIG[
+                            platform as keyof typeof PLATFORM_CONFIG
+                          ]?.icon;
                         return PlatformIcon ? (
                           <PlatformIcon
                             key={platform}
                             className="w-3 h-3"
-                            style={{ color: PLATFORM_CONFIG[platform as keyof typeof PLATFORM_CONFIG]?.color }}
+                            style={{
+                              color:
+                                PLATFORM_CONFIG[
+                                  platform as keyof typeof PLATFORM_CONFIG
+                                ]?.color,
+                            }}
                           />
                         ) : null;
                       })}
                       {post.platforms.length > 2 && (
-                        <span className="text-[10px] text-muted-foreground">+{post.platforms.length - 2}</span>
+                        <span className="text-[10px] text-muted-foreground">
+                          +{post.platforms.length - 2}
+                        </span>
                       )}
-                      {post.type === 'paid' && <DollarSign className="w-3 h-3 ml-auto" />}
+                      {post.type === "paid" && (
+                        <DollarSign className="w-3 h-3 ml-auto" />
+                      )}
                     </div>
                     <p className="truncate">{post.title}</p>
                   </div>
@@ -671,15 +821,18 @@ export function UnifiedCalendar() {
                 </div>
               )}
             </div>
-          </div>
+          </div>,
         );
       } else {
         days.push(
-          <div key={i} className="min-h-28 p-2 border border-border bg-muted/30" />
+          <div
+            key={i}
+            className="min-h-28 p-2 border border-border bg-muted/30"
+          />,
         );
       }
     }
-    
+
     return days;
   };
 
@@ -714,19 +867,21 @@ export function UnifiedCalendar() {
             </div>
           </CardContent>
         </Card>
-        
+
         <Card className="bg-gradient-to-br from-yellow-500/10 to-yellow-600/5 border-yellow-500/20">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Pending Approval</p>
+                <p className="text-sm text-muted-foreground">
+                  Pending Approval
+                </p>
                 <p className="text-2xl font-bold">{stats.pending}</p>
               </div>
               <AlertCircle className="w-8 h-8 text-yellow-500 opacity-50" />
             </div>
           </CardContent>
         </Card>
-        
+
         <Card className="bg-gradient-to-br from-green-500/10 to-green-600/5 border-green-500/20">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
@@ -738,13 +893,15 @@ export function UnifiedCalendar() {
             </div>
           </CardContent>
         </Card>
-        
+
         <Card className="bg-gradient-to-br from-purple-500/10 to-purple-600/5 border-purple-500/20">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Ad Spend</p>
-                <p className="text-2xl font-bold">${stats.totalBudget.toLocaleString()}</p>
+                <p className="text-2xl font-bold">
+                  ${stats.totalBudget.toLocaleString()}
+                </p>
               </div>
               <DollarSign className="w-8 h-8 text-purple-500 opacity-50" />
             </div>
@@ -773,26 +930,33 @@ export function UnifiedCalendar() {
                   <Users className="w-4 h-4 mr-2" />
                   Approvals
                   {stats.pending > 0 && (
-                    <Badge variant="destructive" className="ml-2">{stats.pending}</Badge>
+                    <Badge variant="destructive" className="ml-2">
+                      {stats.pending}
+                    </Badge>
                   )}
                 </TabsTrigger>
               </TabsList>
             </Tabs>
-            
-            {activeTab === 'calendar' && (
+
+            {activeTab === "calendar" && (
               <div className="flex items-center gap-2">
-                <Select value={filterPlatform} onValueChange={setFilterPlatform}>
+                <Select
+                  value={filterPlatform}
+                  onValueChange={setFilterPlatform}
+                >
                   <SelectTrigger className="w-[130px]">
                     <SelectValue placeholder="Platform" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All Platforms</SelectItem>
                     {Object.entries(PLATFORM_CONFIG).map(([key, config]) => (
-                      <SelectItem key={key} value={key}>{config.name}</SelectItem>
+                      <SelectItem key={key} value={key}>
+                        {config.name}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
-                
+
                 <Select value={filterType} onValueChange={setFilterType}>
                   <SelectTrigger className="w-[120px]">
                     <SelectValue placeholder="Type" />
@@ -800,19 +964,26 @@ export function UnifiedCalendar() {
                   <SelectContent>
                     <SelectItem value="all">All Types</SelectItem>
                     {Object.entries(POST_TYPE_CONFIG).map(([key, config]) => (
-                      <SelectItem key={key} value={key}>{config.label}</SelectItem>
+                      <SelectItem key={key} value={key}>
+                        {config.label}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
-                
-                <Select value={filterCampaign} onValueChange={setFilterCampaign}>
+
+                <Select
+                  value={filterCampaign}
+                  onValueChange={setFilterCampaign}
+                >
                   <SelectTrigger className="w-[140px]">
                     <SelectValue placeholder="Campaign" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All Campaigns</SelectItem>
                     {campaigns.map((campaign: Campaign) => (
-                      <SelectItem key={campaign.id} value={campaign.name}>{campaign.name}</SelectItem>
+                      <SelectItem key={campaign.id} value={campaign.name}>
+                        {campaign.name}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -820,24 +991,37 @@ export function UnifiedCalendar() {
             )}
           </div>
         </CardHeader>
-        
+
         <CardContent>
           <TabsContent value="calendar" className="mt-0">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
-                <Button variant="outline" size="icon" onClick={() => setCurrentDate(subMonths(currentDate, 1))}>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => setCurrentDate(subMonths(currentDate, 1))}
+                >
                   <ChevronLeft className="h-4 w-4" />
                 </Button>
-                <Button variant="outline" size="icon" onClick={() => setCurrentDate(addMonths(currentDate, 1))}>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => setCurrentDate(addMonths(currentDate, 1))}
+                >
                   <ChevronRight className="h-4 w-4" />
                 </Button>
                 <h3 className="text-lg font-semibold min-w-[180px]">
-                  {monthNames[currentDate.getMonth()]} {currentDate.getFullYear()}
+                  {monthNames[currentDate.getMonth()]}{" "}
+                  {currentDate.getFullYear()}
                 </h3>
               </div>
-              
+
               <div className="flex items-center gap-2">
-                <Button variant="outline" size="sm" onClick={() => setCurrentDate(new Date())}>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentDate(new Date())}
+                >
                   Today
                 </Button>
                 <div className="flex items-center border rounded-lg overflow-hidden">
@@ -845,9 +1029,9 @@ export function UnifiedCalendar() {
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <Button
-                          variant={viewMode === 'month' ? 'default' : 'ghost'}
+                          variant={viewMode === "month" ? "default" : "ghost"}
                           size="sm"
-                          onClick={() => setViewMode('month')}
+                          onClick={() => setViewMode("month")}
                           className="rounded-none"
                         >
                           <LayoutGrid className="w-4 h-4 mr-1" />
@@ -861,25 +1045,27 @@ export function UnifiedCalendar() {
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <Button
-                          variant={viewMode === 'week' ? 'default' : 'ghost'}
+                          variant={viewMode === "week" ? "default" : "ghost"}
                           size="sm"
-                          onClick={() => setViewMode('week')}
+                          onClick={() => setViewMode("week")}
                           className="rounded-none border-x"
                         >
                           <CalendarDays className="w-4 h-4 mr-1" />
                           Week
                         </Button>
                       </TooltipTrigger>
-                      <TooltipContent>Weekly schedule with time slots</TooltipContent>
+                      <TooltipContent>
+                        Weekly schedule with time slots
+                      </TooltipContent>
                     </Tooltip>
                   </TooltipProvider>
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <Button
-                          variant={viewMode === 'day' ? 'default' : 'ghost'}
+                          variant={viewMode === "day" ? "default" : "ghost"}
                           size="sm"
-                          onClick={() => setViewMode('day')}
+                          onClick={() => setViewMode("day")}
                           className="rounded-none"
                         >
                           <List className="w-4 h-4 mr-1" />
@@ -892,7 +1078,7 @@ export function UnifiedCalendar() {
                 </div>
               </div>
             </div>
-            
+
             <AnimatePresence mode="wait">
               <motion.div
                 key={viewMode}
@@ -901,28 +1087,35 @@ export function UnifiedCalendar() {
                 exit={{ opacity: 0, y: -10 }}
                 transition={{ duration: 0.2 }}
               >
-                {viewMode === 'month' && (
+                {viewMode === "month" && (
                   <div className="grid grid-cols-7 gap-0">
                     {dayNames.map((day) => (
-                      <div key={day} className="p-2 text-center text-sm font-semibold border-b border-border bg-muted">
+                      <div
+                        key={day}
+                        className="p-2 text-center text-sm font-semibold border-b border-border bg-muted"
+                      >
                         {day}
                       </div>
                     ))}
                     {renderCalendarDays()}
                   </div>
                 )}
-                
-                {viewMode === 'week' && renderWeekView()}
-                
-                {viewMode === 'day' && renderDayView()}
+
+                {viewMode === "week" && renderWeekView()}
+
+                {viewMode === "day" && renderDayView()}
               </motion.div>
             </AnimatePresence>
-            
+
             <div className="flex flex-wrap items-center gap-4 mt-4 pt-4 border-t">
               {Object.entries(POST_TYPE_CONFIG).map(([key, config]) => (
                 <div key={key} className="flex items-center gap-2">
-                  <div className={`w-3 h-3 rounded ${config.color.split(' ')[0]}`} />
-                  <span className="text-xs text-muted-foreground">{config.label}</span>
+                  <div
+                    className={`w-3 h-3 rounded ${config.color.split(" ")[0]}`}
+                  />
+                  <span className="text-xs text-muted-foreground">
+                    {config.label}
+                  </span>
                 </div>
               ))}
             </div>
@@ -942,7 +1135,7 @@ export function UnifiedCalendar() {
                   Recalculate Times
                 </Button>
               </div>
-              
+
               {queue.map((item: QueueItem) => (
                 <Card key={item.id}>
                   <CardContent className="p-4">
@@ -950,31 +1143,41 @@ export function UnifiedCalendar() {
                       <div className="cursor-grab">
                         <GripVertical className="w-5 h-5 text-muted-foreground" />
                       </div>
-                      
+
                       <div className="flex-1">
                         <p className="text-sm mb-2">{item.content}</p>
                         <div className="flex items-center gap-2">
                           {item.platforms.map((platform) => {
-                            const PlatformIcon = PLATFORM_CONFIG[platform as keyof typeof PLATFORM_CONFIG]?.icon;
+                            const PlatformIcon =
+                              PLATFORM_CONFIG[
+                                platform as keyof typeof PLATFORM_CONFIG
+                              ]?.icon;
                             return PlatformIcon ? (
                               <PlatformIcon
                                 key={platform}
                                 className="w-4 h-4"
-                                style={{ color: PLATFORM_CONFIG[platform as keyof typeof PLATFORM_CONFIG]?.color }}
+                                style={{
+                                  color:
+                                    PLATFORM_CONFIG[
+                                      platform as keyof typeof PLATFORM_CONFIG
+                                    ]?.color,
+                                }}
                               />
                             ) : null;
                           })}
                         </div>
                       </div>
-                      
+
                       <div className="text-right">
                         <div className="flex items-center gap-2 mb-1">
                           <Sparkles className="w-4 h-4 text-yellow-500" />
                           <span className="font-medium">{item.score}%</span>
                         </div>
-                        <p className="text-sm text-muted-foreground">{item.optimalTime}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {item.optimalTime}
+                        </p>
                       </div>
-                      
+
                       <Button size="sm" onClick={() => handleAddToQueue(item)}>
                         <Plus className="w-4 h-4 mr-1" />
                         Schedule
@@ -995,30 +1198,36 @@ export function UnifiedCalendar() {
                   Create Campaign
                 </Button>
               </div>
-              
+
               {campaigns.map((campaign: Campaign) => (
                 <Card key={campaign.id}>
                   <CardContent className="p-4">
                     <div className="flex items-center gap-4">
-                      <div className="w-4 h-12 rounded" style={{ backgroundColor: campaign.color }} />
-                      
+                      <div
+                        className="w-4 h-12 rounded"
+                        style={{ backgroundColor: campaign.color }}
+                      />
+
                       <div className="flex-1">
                         <h4 className="font-medium">{campaign.name}</h4>
                         <p className="text-sm text-muted-foreground">
-                          {format(new Date(campaign.startDate), 'MMM d')} - {format(new Date(campaign.endDate), 'MMM d, yyyy')}
+                          {format(new Date(campaign.startDate), "MMM d")} -{" "}
+                          {format(new Date(campaign.endDate), "MMM d, yyyy")}
                         </p>
                       </div>
-                      
+
                       <div className="text-center px-4 border-l">
                         <p className="text-lg font-bold">{campaign.posts}</p>
                         <p className="text-xs text-muted-foreground">Posts</p>
                       </div>
-                      
+
                       <div className="text-center px-4 border-l">
-                        <p className="text-lg font-bold">${campaign.budget.toLocaleString()}</p>
+                        <p className="text-lg font-bold">
+                          ${campaign.budget.toLocaleString()}
+                        </p>
                         <p className="text-xs text-muted-foreground">Budget</p>
                       </div>
-                      
+
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button variant="ghost" size="icon">
@@ -1050,60 +1259,84 @@ export function UnifiedCalendar() {
 
           <TabsContent value="approvals" className="mt-0">
             <div className="space-y-4">
-              {posts.filter((p: ScheduledPost) => p.status === 'pending_approval').length === 0 ? (
+              {posts.filter(
+                (p: ScheduledPost) => p.status === "pending_approval",
+              ).length === 0 ? (
                 <div className="text-center py-12">
                   <CheckCircle className="w-12 h-12 mx-auto mb-4 text-green-500 opacity-50" />
                   <p className="text-lg font-medium">All Caught Up!</p>
-                  <p className="text-muted-foreground">No posts pending approval</p>
+                  <p className="text-muted-foreground">
+                    No posts pending approval
+                  </p>
                 </div>
               ) : (
-                posts.filter((p: ScheduledPost) => p.status === 'pending_approval').map((post: ScheduledPost) => (
-                  <Card key={post.id}>
-                    <CardContent className="p-4">
-                      <div className="flex items-start gap-4">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-2">
-                            <h4 className="font-medium">{post.title}</h4>
-                            <Badge className={POST_TYPE_CONFIG[post.type].color}>
-                              {POST_TYPE_CONFIG[post.type].label}
-                            </Badge>
-                          </div>
-                          <p className="text-sm text-muted-foreground mb-3">{post.content}</p>
-                          
-                          <div className="flex items-center gap-4 text-sm">
-                            <span className="flex items-center gap-1">
-                              <Clock className="w-4 h-4" />
-                              {format(new Date(post.scheduledFor), 'MMM d, yyyy h:mm a')}
-                            </span>
-                            <div className="flex items-center gap-1">
-                              {post.platforms.map((platform) => {
-                                const PlatformIcon = PLATFORM_CONFIG[platform as keyof typeof PLATFORM_CONFIG]?.icon;
-                                return PlatformIcon ? (
-                                  <PlatformIcon
-                                    key={platform}
-                                    className="w-4 h-4"
-                                    style={{ color: PLATFORM_CONFIG[platform as keyof typeof PLATFORM_CONFIG]?.color }}
-                                  />
-                                ) : null;
-                              })}
+                posts
+                  .filter((p: ScheduledPost) => p.status === "pending_approval")
+                  .map((post: ScheduledPost) => (
+                    <Card key={post.id}>
+                      <CardContent className="p-4">
+                        <div className="flex items-start gap-4">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-2">
+                              <h4 className="font-medium">{post.title}</h4>
+                              <Badge
+                                className={POST_TYPE_CONFIG[post.type].color}
+                              >
+                                {POST_TYPE_CONFIG[post.type].label}
+                              </Badge>
+                            </div>
+                            <p className="text-sm text-muted-foreground mb-3">
+                              {post.content}
+                            </p>
+
+                            <div className="flex items-center gap-4 text-sm">
+                              <span className="flex items-center gap-1">
+                                <Clock className="w-4 h-4" />
+                                {format(
+                                  new Date(post.scheduledFor),
+                                  "MMM d, yyyy h:mm a",
+                                )}
+                              </span>
+                              <div className="flex items-center gap-1">
+                                {post.platforms.map((platform) => {
+                                  const PlatformIcon =
+                                    PLATFORM_CONFIG[
+                                      platform as keyof typeof PLATFORM_CONFIG
+                                    ]?.icon;
+                                  return PlatformIcon ? (
+                                    <PlatformIcon
+                                      key={platform}
+                                      className="w-4 h-4"
+                                      style={{
+                                        color:
+                                          PLATFORM_CONFIG[
+                                            platform as keyof typeof PLATFORM_CONFIG
+                                          ]?.color,
+                                      }}
+                                    />
+                                  ) : null;
+                                })}
+                              </div>
                             </div>
                           </div>
+
+                          <div className="flex gap-2">
+                            <Button
+                              variant="outline"
+                              onClick={() => handleReject(post)}
+                            >
+                              <XCircle className="w-4 h-4 mr-1" />
+                              Reject
+                            </Button>
+                            <Button onClick={() => handleApprove(post)}>
+                              <CheckCircle className="w-4 h-4 mr-1" />
+                              Approve
+                            </Button>
+                          </div>
                         </div>
-                        
-                        <div className="flex gap-2">
-                          <Button variant="outline" onClick={() => handleReject(post)}>
-                            <XCircle className="w-4 h-4 mr-1" />
-                            Reject
-                          </Button>
-                          <Button onClick={() => handleApprove(post)}>
-                            <CheckCircle className="w-4 h-4 mr-1" />
-                            Approve
-                          </Button>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))
+                      </CardContent>
+                    </Card>
+                  ))
               )}
             </div>
           </TabsContent>
@@ -1124,51 +1357,61 @@ export function UnifiedCalendar() {
               <Input
                 id="title"
                 value={newPost.title}
-                onChange={(e) => setNewPost({ ...newPost, title: e.target.value })}
+                onChange={(e) =>
+                  setNewPost({ ...newPost, title: e.target.value })
+                }
                 placeholder="Post title for internal reference"
               />
             </div>
-            
+
             <div className="space-y-2">
               <Label htmlFor="content">Content</Label>
               <Textarea
                 id="content"
                 value={newPost.content}
-                onChange={(e) => setNewPost({ ...newPost, content: e.target.value })}
+                onChange={(e) =>
+                  setNewPost({ ...newPost, content: e.target.value })
+                }
                 placeholder="Write your post content..."
                 rows={4}
               />
             </div>
-            
+
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Post Type</Label>
                 <Select
                   value={newPost.type}
-                  onValueChange={(value: 'organic' | 'paid' | 'story' | 'reel' | 'live') => setNewPost({ ...newPost, type: value })}
+                  onValueChange={(
+                    value: "organic" | "paid" | "story" | "reel" | "live",
+                  ) => setNewPost({ ...newPost, type: value })}
                 >
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
                     {Object.entries(POST_TYPE_CONFIG).map(([key, config]) => (
-                      <SelectItem key={key} value={key}>{config.label}</SelectItem>
+                      <SelectItem key={key} value={key}>
+                        {config.label}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
-              
+
               <div className="space-y-2">
                 <Label htmlFor="scheduledFor">Schedule For</Label>
                 <Input
                   id="scheduledFor"
                   type="datetime-local"
                   value={newPost.scheduledFor}
-                  onChange={(e) => setNewPost({ ...newPost, scheduledFor: e.target.value })}
+                  onChange={(e) =>
+                    setNewPost({ ...newPost, scheduledFor: e.target.value })
+                  }
                 />
               </div>
             </div>
-            
+
             <div className="space-y-2">
               <Label>Platforms</Label>
               <div className="flex flex-wrap gap-2">
@@ -1178,13 +1421,15 @@ export function UnifiedCalendar() {
                   return (
                     <Button
                       key={key}
-                      variant={isSelected ? 'default' : 'outline'}
+                      variant={isSelected ? "default" : "outline"}
                       size="sm"
                       onClick={() => {
                         if (isSelected) {
                           setNewPost({
                             ...newPost,
-                            platforms: newPost.platforms.filter((p) => p !== key),
+                            platforms: newPost.platforms.filter(
+                              (p) => p !== key,
+                            ),
                           });
                         } else {
                           setNewPost({
@@ -1201,33 +1446,42 @@ export function UnifiedCalendar() {
                 })}
               </div>
             </div>
-            
+
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Campaign (Optional)</Label>
                 <Select
                   value={newPost.campaign}
-                  onValueChange={(value) => setNewPost({ ...newPost, campaign: value })}
+                  onValueChange={(value) =>
+                    setNewPost({ ...newPost, campaign: value })
+                  }
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select campaign" />
                   </SelectTrigger>
                   <SelectContent>
                     {campaigns.map((campaign: Campaign) => (
-                      <SelectItem key={campaign.id} value={campaign.name}>{campaign.name}</SelectItem>
+                      <SelectItem key={campaign.id} value={campaign.name}>
+                        {campaign.name}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
-              
-              {newPost.type === 'paid' && (
+
+              {newPost.type === "paid" && (
                 <div className="space-y-2">
                   <Label htmlFor="budget">Budget ($)</Label>
                   <Input
                     id="budget"
                     type="number"
                     value={newPost.budget}
-                    onChange={(e) => setNewPost({ ...newPost, budget: parseInt(e.target.value) || 0 })}
+                    onChange={(e) =>
+                      setNewPost({
+                        ...newPost,
+                        budget: parseInt(e.target.value) || 0,
+                      })
+                    }
                     placeholder="0"
                   />
                 </div>
@@ -1265,20 +1519,32 @@ export function UnifiedCalendar() {
                   {selectedPost.content}
                 </p>
               </div>
-              
+
               <div className="flex items-center gap-4">
                 <div className="flex items-center gap-2">
                   <Clock className="w-4 h-4 text-muted-foreground" />
-                  <span className="text-sm">{format(new Date(selectedPost.scheduledFor), 'MMM d, yyyy h:mm a')}</span>
+                  <span className="text-sm">
+                    {format(
+                      new Date(selectedPost.scheduledFor),
+                      "MMM d, yyyy h:mm a",
+                    )}
+                  </span>
                 </div>
                 <div className="flex items-center gap-1">
                   {selectedPost.platforms.map((platform) => {
-                    const PlatformIcon = PLATFORM_CONFIG[platform as keyof typeof PLATFORM_CONFIG]?.icon;
+                    const PlatformIcon =
+                      PLATFORM_CONFIG[platform as keyof typeof PLATFORM_CONFIG]
+                        ?.icon;
                     return PlatformIcon ? (
                       <PlatformIcon
                         key={platform}
                         className="w-4 h-4"
-                        style={{ color: PLATFORM_CONFIG[platform as keyof typeof PLATFORM_CONFIG]?.color }}
+                        style={{
+                          color:
+                            PLATFORM_CONFIG[
+                              platform as keyof typeof PLATFORM_CONFIG
+                            ]?.color,
+                        }}
                       />
                     ) : null;
                   })}
@@ -1287,7 +1553,10 @@ export function UnifiedCalendar() {
             </div>
           )}
           <DialogFooter>
-            <Button variant="outline" onClick={() => selectedPost && handleReject(selectedPost)}>
+            <Button
+              variant="outline"
+              onClick={() => selectedPost && handleReject(selectedPost)}
+            >
               <XCircle className="w-4 h-4 mr-2" />
               Request Changes
             </Button>

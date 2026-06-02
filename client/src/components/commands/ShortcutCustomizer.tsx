@@ -1,1 +1,4 @@
-export { ShortcutCustomizer as default, ShortcutCustomizer } from '../shortcuts/ShortcutCustomizer';
+export {
+  ShortcutCustomizer as default,
+  ShortcutCustomizer,
+} from "../shortcuts/ShortcutCustomizer";

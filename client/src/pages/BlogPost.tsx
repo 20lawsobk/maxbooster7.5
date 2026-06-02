@@ -1,35 +1,49 @@
-import { Link, useParams } from 'wouter';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Card, CardContent } from '@/components/ui/card';
-import { Logo } from '@/components/ui/Logo';
-import { Calendar, User, Clock, ArrowLeft, ArrowRight, Lightbulb, Info, Quote } from 'lucide-react';
-import { getBlogPostBySlug, getRelatedPosts, type BlogPost, type BlogSection } from '@/data/blogPosts';
+import { Link, useParams } from "wouter";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
+import { Logo } from "@/components/ui/Logo";
+import {
+  Calendar,
+  User,
+  Clock,
+  ArrowLeft,
+  ArrowRight,
+  Lightbulb,
+  Info,
+  Quote,
+} from "lucide-react";
+import {
+  getBlogPostBySlug,
+  getRelatedPosts,
+  type BlogPost,
+  type BlogSection,
+} from "@/data/blogPosts";
 
 function SectionRenderer({ section }: { section: BlogSection }) {
   switch (section.type) {
-    case 'heading':
+    case "heading":
       return (
         <h2 className="text-2xl font-bold text-gray-900 dark:text-white mt-10 mb-4 leading-tight">
           {section.content}
         </h2>
       );
 
-    case 'subheading':
+    case "subheading":
       return (
         <h3 className="text-xl font-semibold text-gray-800 dark:text-gray-100 mt-6 mb-3">
           {section.content}
         </h3>
       );
 
-    case 'paragraph':
+    case "paragraph":
       return (
         <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-5 text-[1.05rem]">
           {section.content}
         </p>
       );
 
-    case 'list':
+    case "list":
       return (
         <div className="mb-5">
           {section.content && (
@@ -39,7 +53,10 @@ function SectionRenderer({ section }: { section: BlogSection }) {
           )}
           <ul className="space-y-2 pl-1">
             {section.items?.map((item, i) => (
-              <li key={i} className="flex gap-3 text-gray-700 dark:text-gray-300 text-[1.05rem]">
+              <li
+                key={i}
+                className="flex gap-3 text-gray-700 dark:text-gray-300 text-[1.05rem]"
+              >
                 <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-blue-500" />
                 <span className="leading-relaxed">{item}</span>
               </li>
@@ -48,7 +65,7 @@ function SectionRenderer({ section }: { section: BlogSection }) {
         </div>
       );
 
-    case 'numbered':
+    case "numbered":
       return (
         <div className="mb-5">
           {section.content && (
@@ -58,7 +75,10 @@ function SectionRenderer({ section }: { section: BlogSection }) {
           )}
           <ol className="space-y-3 pl-1">
             {section.items?.map((item, i) => (
-              <li key={i} className="flex gap-3 text-gray-700 dark:text-gray-300 text-[1.05rem]">
+              <li
+                key={i}
+                className="flex gap-3 text-gray-700 dark:text-gray-300 text-[1.05rem]"
+              >
                 <span className="flex-shrink-0 flex items-center justify-center w-6 h-6 rounded-full bg-blue-600 text-white text-xs font-bold mt-0.5">
                   {i + 1}
                 </span>
@@ -69,7 +89,7 @@ function SectionRenderer({ section }: { section: BlogSection }) {
         </div>
       );
 
-    case 'quote':
+    case "quote":
       return (
         <blockquote className="my-8 border-l-4 border-blue-500 pl-6 py-1">
           <div className="flex gap-3">
@@ -81,22 +101,28 @@ function SectionRenderer({ section }: { section: BlogSection }) {
         </blockquote>
       );
 
-    case 'tip':
+    case "tip":
       return (
         <div className="my-6 flex gap-4 rounded-xl bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800 p-5">
           <Lightbulb className="h-5 w-5 text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" />
           <div>
-            <p className="text-sm font-semibold text-blue-700 dark:text-blue-300 mb-1">Pro Tip</p>
-            <p className="text-blue-800 dark:text-blue-200 leading-relaxed text-[0.97rem]">{section.content}</p>
+            <p className="text-sm font-semibold text-blue-700 dark:text-blue-300 mb-1">
+              Pro Tip
+            </p>
+            <p className="text-blue-800 dark:text-blue-200 leading-relaxed text-[0.97rem]">
+              {section.content}
+            </p>
           </div>
         </div>
       );
 
-    case 'callout':
+    case "callout":
       return (
         <div className="my-6 flex gap-4 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 p-5">
           <Info className="h-5 w-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
-          <p className="text-amber-800 dark:text-amber-200 leading-relaxed text-[0.97rem]">{section.content}</p>
+          <p className="text-amber-800 dark:text-amber-200 leading-relaxed text-[0.97rem]">
+            {section.content}
+          </p>
         </div>
       );
 
@@ -110,10 +136,16 @@ function RelatedPostCard({ post }: { post: BlogPost }) {
     <Link href={`/blog/${post.slug}`}>
       <Card className="hover:shadow-md transition-shadow cursor-pointer dark:bg-gray-900 dark:border-gray-700 h-full">
         <CardContent className="p-5">
-          <div className={`h-24 rounded-lg bg-gradient-to-br ${post.coverGradient} mb-4 flex items-center justify-center`}>
-            <span className="text-white text-2xl font-bold opacity-30">{post.category[0]}</span>
+          <div
+            className={`h-24 rounded-lg bg-gradient-to-br ${post.coverGradient} mb-4 flex items-center justify-center`}
+          >
+            <span className="text-white text-2xl font-bold opacity-30">
+              {post.category[0]}
+            </span>
           </div>
-          <Badge variant="secondary" className="mb-2 text-xs">{post.category}</Badge>
+          <Badge variant="secondary" className="mb-2 text-xs">
+            {post.category}
+          </Badge>
           <h3 className="font-semibold text-gray-900 dark:text-white leading-snug mb-1 line-clamp-2">
             {post.title}
           </h3>
@@ -128,15 +160,19 @@ function RelatedPostCard({ post }: { post: BlogPost }) {
 
 export default function BlogPost() {
   const params = useParams<{ slug: string }>();
-  const post = getBlogPostBySlug(params.slug ?? '');
-  const related = getRelatedPosts(params.slug ?? '');
+  const post = getBlogPostBySlug(params.slug ?? "");
+  const related = getRelatedPosts(params.slug ?? "");
 
   if (!post) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-white dark:bg-gray-950">
         <div className="text-center px-4">
-          <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">Article Not Found</h1>
-          <p className="text-gray-600 dark:text-gray-400 mb-8">This article doesn't exist or may have moved.</p>
+          <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">
+            Article Not Found
+          </h1>
+          <p className="text-gray-600 dark:text-gray-400 mb-8">
+            This article doesn't exist or may have moved.
+          </p>
           <Link href="/blog">
             <Button>
               <ArrowLeft className="mr-2 h-4 w-4" />
@@ -173,9 +209,13 @@ export default function BlogPost() {
         </div>
       </nav>
 
-      <div className={`w-full bg-gradient-to-br ${post.coverGradient} py-16 px-4`}>
+      <div
+        className={`w-full bg-gradient-to-br ${post.coverGradient} py-16 px-4`}
+      >
         <div className="max-w-3xl mx-auto text-center">
-          <Badge className="bg-white/20 text-white border-white/30 mb-4">{post.category}</Badge>
+          <Badge className="bg-white/20 text-white border-white/30 mb-4">
+            {post.category}
+          </Badge>
           <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white leading-tight mb-6">
             {post.title}
           </h1>
@@ -209,12 +249,21 @@ export default function BlogPost() {
         <div className="mt-12 pt-8 border-t dark:border-gray-800">
           <div className="flex items-center justify-between flex-wrap gap-4">
             <div>
-              <p className="text-sm text-gray-500 dark:text-gray-400">Written by</p>
-              <p className="font-semibold text-gray-900 dark:text-white">{post.author}</p>
-              <p className="text-sm text-gray-500 dark:text-gray-400">{post.authorRole}</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                Written by
+              </p>
+              <p className="font-semibold text-gray-900 dark:text-white">
+                {post.author}
+              </p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                {post.authorRole}
+              </p>
             </div>
             <Link href="/pricing">
-              <Button size="lg" className={`bg-gradient-to-r ${post.coverGradient} text-white border-0`}>
+              <Button
+                size="lg"
+                className={`bg-gradient-to-r ${post.coverGradient} text-white border-0`}
+              >
                 Try Max Booster Free
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
@@ -226,7 +275,9 @@ export default function BlogPost() {
       {related.length > 0 && (
         <div className="border-t dark:border-gray-800 bg-gray-50 dark:bg-gray-900/50 py-12 px-4">
           <div className="max-w-3xl mx-auto">
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">More Articles</h2>
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">
+              More Articles
+            </h2>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               {related.map((p) => (
                 <RelatedPostCard key={p.slug} post={p} />

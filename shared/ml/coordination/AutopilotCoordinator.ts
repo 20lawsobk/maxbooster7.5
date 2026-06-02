@@ -36,8 +36,8 @@ export interface PerformanceLift {
 
 export interface CampaignState {
   campaignId: string;
-  campaignType: 'release' | 'tour' | 'merch' | 'awareness' | 'evergreen';
-  priority: 'critical' | 'high' | 'medium' | 'low';
+  campaignType: "release" | "tour" | "merch" | "awareness" | "evergreen";
+  priority: "critical" | "high" | "medium" | "low";
   startDate: Date;
   endDate?: Date;
   budgetAllocated: number;
@@ -48,8 +48,14 @@ export interface CampaignState {
 }
 
 export interface ExecutionIntent {
-  source: 'social' | 'advertising';
-  action: 'post' | 'schedule' | 'boost' | 'pause' | 'adjust_budget' | 'target_audience';
+  source: "social" | "advertising";
+  action:
+    | "post"
+    | "schedule"
+    | "boost"
+    | "pause"
+    | "adjust_budget"
+    | "target_audience";
   platform: string;
   audienceCohort?: string;
   scheduledTime?: Date;
@@ -70,7 +76,11 @@ export interface CoordinationDecision {
   conflictsWith?: ExecutionIntent[];
 }
 
-export type ConflictResolutionStrategy = 'organic_priority' | 'paid_priority' | 'balanced' | 'campaign_critical';
+export type ConflictResolutionStrategy =
+  | "organic_priority"
+  | "paid_priority"
+  | "balanced"
+  | "campaign_critical";
 
 export const COORDINATION_RULES = {
   organicLiftThreshold: 0.7,
@@ -83,7 +93,10 @@ export const COORDINATION_RULES = {
   conflictCooldownMinutes: 30,
 } as const;
 
-export const PRIORITY_MATRIX: Record<CampaignState['campaignType'], Record<CampaignState['priority'], number>> = {
+export const PRIORITY_MATRIX: Record<
+  CampaignState["campaignType"],
+  Record<CampaignState["priority"], number>
+> = {
   release: { critical: 100, high: 90, medium: 70, low: 50 },
   tour: { critical: 95, high: 85, medium: 65, low: 45 },
   merch: { critical: 80, high: 70, medium: 55, low: 35 },
@@ -97,8 +110,12 @@ export class AutopilotCoordinator {
   private performanceLifts: Map<string, PerformanceLift> = new Map();
   private activeCampaigns: Map<string, CampaignState> = new Map();
   private pendingIntents: ExecutionIntent[] = [];
-  private executionHistory: Array<{ intent: ExecutionIntent; timestamp: Date; outcome?: any }> = [];
-  private resolutionStrategy: ConflictResolutionStrategy = 'balanced';
+  private executionHistory: Array<{
+    intent: ExecutionIntent;
+    timestamp: Date;
+    outcome?: any;
+  }> = [];
+  private resolutionStrategy: ConflictResolutionStrategy = "balanced";
 
   constructor() {}
 
@@ -115,7 +132,8 @@ export class AutopilotCoordinator {
     const key = signal.platform;
     const signals = this.timingSignals.get(key) || [];
     const existingIdx = signals.findIndex(
-      s => s.hourOfDay === signal.hourOfDay && s.dayOfWeek === signal.dayOfWeek
+      (s) =>
+        s.hourOfDay === signal.hourOfDay && s.dayOfWeek === signal.dayOfWeek,
     );
     if (existingIdx >= 0) {
       signals[existingIdx] = signal;
@@ -125,7 +143,10 @@ export class AutopilotCoordinator {
     this.timingSignals.set(key, signals);
   }
 
-  public updatePerformanceLift(contentType: string, lift: PerformanceLift): void {
+  public updatePerformanceLift(
+    contentType: string,
+    lift: PerformanceLift,
+  ): void {
     this.performanceLifts.set(contentType, lift);
   }
 
@@ -133,7 +154,10 @@ export class AutopilotCoordinator {
     this.activeCampaigns.set(campaign.campaignId, campaign);
   }
 
-  public updateCampaignState(campaignId: string, updates: Partial<CampaignState>): void {
+  public updateCampaignState(
+    campaignId: string,
+    updates: Partial<CampaignState>,
+  ): void {
     const campaign = this.activeCampaigns.get(campaignId);
     if (campaign) {
       this.activeCampaigns.set(campaignId, { ...campaign, ...updates });
@@ -143,7 +167,10 @@ export class AutopilotCoordinator {
   public evaluateIntent(intent: ExecutionIntent): CoordinationDecision {
     const conflicts = this.detectConflicts(intent);
     const organicLift = this.getOrganicLift(intent.platform);
-    const audienceFatigue = this.getAudienceFatigue(intent.audienceCohort, intent.platform);
+    const audienceFatigue = this.getAudienceFatigue(
+      intent.audienceCohort,
+      intent.platform,
+    );
     const campaignPriority = this.getHighestCampaignPriority();
 
     if (conflicts.length > 0) {
@@ -158,8 +185,11 @@ export class AutopilotCoordinator {
       };
     }
 
-    if (intent.source === 'advertising' && organicLift > COORDINATION_RULES.organicLiftThreshold) {
-      if (this.resolutionStrategy !== 'paid_priority') {
+    if (
+      intent.source === "advertising" &&
+      organicLift > COORDINATION_RULES.organicLiftThreshold
+    ) {
+      if (this.resolutionStrategy !== "paid_priority") {
         return {
           approved: false,
           reason: `Organic content performing well (${(organicLift * 100).toFixed(0)}% lift). Consider delaying paid promotion.`,
@@ -171,11 +201,15 @@ export class AutopilotCoordinator {
     if (this.checkSynergy(intent)) {
       return {
         approved: true,
-        reason: 'Positive synergy detected between organic and paid activities.',
+        reason:
+          "Positive synergy detected between organic and paid activities.",
         adjustments: {
           expectedOutcome: {
             ...intent.expectedOutcome,
-            reach: Math.round(intent.expectedOutcome.reach * COORDINATION_RULES.synergyBoostThreshold),
+            reach: Math.round(
+              intent.expectedOutcome.reach *
+                COORDINATION_RULES.synergyBoostThreshold,
+            ),
           },
         },
       };
@@ -183,17 +217,17 @@ export class AutopilotCoordinator {
 
     return {
       approved: true,
-      reason: 'No conflicts detected. Execution approved.',
+      reason: "No conflicts detected. Execution approved.",
     };
   }
 
   public submitIntent(intent: ExecutionIntent): CoordinationDecision {
     const decision = this.evaluateIntent(intent);
-    
+
     if (decision.approved) {
       this.pendingIntents.push(intent);
       this.executionHistory.push({ intent, timestamp: new Date() });
-      
+
       if (this.pendingIntents.length > 100) {
         this.pendingIntents = this.pendingIntents.slice(-50);
       }
@@ -201,7 +235,7 @@ export class AutopilotCoordinator {
         this.executionHistory = this.executionHistory.slice(-250);
       }
     }
-    
+
     return decision;
   }
 
@@ -212,30 +246,35 @@ export class AutopilotCoordinator {
 
     for (const pending of this.pendingIntents) {
       if (pending.platform !== intent.platform) continue;
-      
+
       if (pending.scheduledTime && intent.scheduledTime) {
-        const timeDiff = Math.abs(pending.scheduledTime.getTime() - intent.scheduledTime.getTime());
+        const timeDiff = Math.abs(
+          pending.scheduledTime.getTime() - intent.scheduledTime.getTime(),
+        );
         if (timeDiff < cooldownMs) {
           conflicts.push(pending);
           continue;
         }
       }
 
-      if (pending.audienceCohort === intent.audienceCohort && 
-          pending.source !== intent.source) {
+      if (
+        pending.audienceCohort === intent.audienceCohort &&
+        pending.source !== intent.source
+      ) {
         conflicts.push(pending);
       }
     }
 
     const recentExecutions = this.executionHistory.filter(
-      e => now.getTime() - e.timestamp.getTime() < cooldownMs &&
-           e.intent.platform === intent.platform
+      (e) =>
+        now.getTime() - e.timestamp.getTime() < cooldownMs &&
+        e.intent.platform === intent.platform,
     );
-    
+
     if (recentExecutions.length >= COORDINATION_RULES.maxDailyTouchpoints) {
       const dummyConflict: ExecutionIntent = {
-        source: 'social',
-        action: 'post',
+        source: "social",
+        action: "post",
         platform: intent.platform,
         expectedOutcome: { reach: 0, engagement: 0 },
         conflictRisk: 1,
@@ -246,65 +285,70 @@ export class AutopilotCoordinator {
     return conflicts;
   }
 
-  private resolveConflicts(intent: ExecutionIntent, conflicts: ExecutionIntent[]): CoordinationDecision {
+  private resolveConflicts(
+    intent: ExecutionIntent,
+    conflicts: ExecutionIntent[],
+  ): CoordinationDecision {
     const intentPriority = this.calculateIntentPriority(intent);
-    const maxConflictPriority = Math.max(...conflicts.map(c => this.calculateIntentPriority(c)));
+    const maxConflictPriority = Math.max(
+      ...conflicts.map((c) => this.calculateIntentPriority(c)),
+    );
 
     switch (this.resolutionStrategy) {
-      case 'organic_priority':
-        if (intent.source === 'social') {
+      case "organic_priority":
+        if (intent.source === "social") {
           return {
             approved: true,
-            reason: 'Organic content prioritized per strategy.',
+            reason: "Organic content prioritized per strategy.",
             conflictsWith: conflicts,
           };
         }
         return {
           approved: false,
-          reason: 'Organic priority strategy: paid content deferred.',
+          reason: "Organic priority strategy: paid content deferred.",
           alternativeRecommendation: this.suggestAlternativeTime(intent),
         };
 
-      case 'paid_priority':
-        if (intent.source === 'advertising') {
+      case "paid_priority":
+        if (intent.source === "advertising") {
           return {
             approved: true,
-            reason: 'Paid content prioritized per strategy.',
+            reason: "Paid content prioritized per strategy.",
             conflictsWith: conflicts,
           };
         }
         return {
           approved: false,
-          reason: 'Paid priority strategy: organic content deferred.',
+          reason: "Paid priority strategy: organic content deferred.",
           alternativeRecommendation: this.suggestAlternativeTime(intent),
         };
 
-      case 'campaign_critical':
+      case "campaign_critical":
         if (intentPriority >= 80) {
           return {
             approved: true,
-            reason: 'Critical campaign priority override.',
+            reason: "Critical campaign priority override.",
             conflictsWith: conflicts,
           };
         }
         return {
           approved: false,
-          reason: 'Non-critical intent deferred for campaign focus.',
+          reason: "Non-critical intent deferred for campaign focus.",
           alternativeRecommendation: this.suggestAlternativeTime(intent),
         };
 
-      case 'balanced':
+      case "balanced":
       default:
         if (intentPriority > maxConflictPriority) {
           return {
             approved: true,
-            reason: 'Higher priority intent approved.',
+            reason: "Higher priority intent approved.",
             conflictsWith: conflicts,
           };
         }
         return {
           approved: false,
-          reason: 'Lower priority than existing scheduled activities.',
+          reason: "Lower priority than existing scheduled activities.",
           alternativeRecommendation: this.suggestAlternativeTime(intent),
         };
     }
@@ -315,14 +359,15 @@ export class AutopilotCoordinator {
 
     priority += intent.expectedOutcome.reach / 1000;
     priority += intent.expectedOutcome.engagement / 100;
-    
-    if (intent.action === 'boost') priority += 10;
-    if (intent.action === 'schedule') priority += 5;
-    
+
+    if (intent.action === "boost") priority += 10;
+    if (intent.action === "schedule") priority += 5;
+
     priority -= intent.conflictRisk * 20;
 
     for (const [, campaign] of this.activeCampaigns) {
-      const campaignScore = PRIORITY_MATRIX[campaign.campaignType][campaign.priority];
+      const campaignScore =
+        PRIORITY_MATRIX[campaign.campaignType][campaign.priority];
       priority = Math.max(priority, campaignScore);
     }
 
@@ -330,25 +375,31 @@ export class AutopilotCoordinator {
   }
 
   private getOrganicLift(platform: string): number {
-    const recentOrganic = this.executionHistory.filter(
-      e => e.intent.source === 'social' && 
-           e.intent.platform === platform &&
-           e.outcome?.engagement
-    ).slice(-10);
+    const recentOrganic = this.executionHistory
+      .filter(
+        (e) =>
+          e.intent.source === "social" &&
+          e.intent.platform === platform &&
+          e.outcome?.engagement,
+      )
+      .slice(-10);
 
     if (recentOrganic.length < 3) return 0;
 
-    const avgEngagement = recentOrganic.reduce(
-      (sum, e) => sum + (e.outcome?.engagement || 0), 0
-    ) / recentOrganic.length;
+    const avgEngagement =
+      recentOrganic.reduce((sum, e) => sum + (e.outcome?.engagement || 0), 0) /
+      recentOrganic.length;
 
     const baseline = 100;
     return Math.min(1, avgEngagement / baseline);
   }
 
-  private getAudienceFatigue(cohortId: string | undefined, platform: string): number {
+  private getAudienceFatigue(
+    cohortId: string | undefined,
+    platform: string,
+  ): number {
     if (!cohortId) return 0;
-    
+
     const key = `${cohortId}_${platform}`;
     const insight = this.audienceInsights.get(key);
     return insight?.fatigueScore || 0;
@@ -365,9 +416,10 @@ export class AutopilotCoordinator {
 
   private checkSynergy(intent: ExecutionIntent): boolean {
     const recentOpposite = this.executionHistory.filter(
-      e => e.intent.source !== intent.source &&
-           e.intent.platform === intent.platform &&
-           Date.now() - e.timestamp.getTime() < 24 * 60 * 60 * 1000
+      (e) =>
+        e.intent.source !== intent.source &&
+        e.intent.platform === intent.platform &&
+        Date.now() - e.timestamp.getTime() < 24 * 60 * 60 * 1000,
     );
 
     if (recentOpposite.length === 0) return false;
@@ -379,28 +431,34 @@ export class AutopilotCoordinator {
   private suggestAlternativeTime(intent: ExecutionIntent): ExecutionIntent {
     const signals = this.timingSignals.get(intent.platform) || [];
     const now = new Date();
-    
+
     const bestSignal = signals
-      .filter(s => {
+      .filter((s) => {
         const targetTime = new Date(now);
         targetTime.setHours(s.hourOfDay, 0, 0, 0);
         if (targetTime <= now) targetTime.setDate(targetTime.getDate() + 1);
-        return targetTime.getTime() - now.getTime() > COORDINATION_RULES.minimumPostGapHours * 60 * 60 * 1000;
+        return (
+          targetTime.getTime() - now.getTime() >
+          COORDINATION_RULES.minimumPostGapHours * 60 * 60 * 1000
+        );
       })
       .sort((a, b) => {
-        const scoreA = intent.source === 'social' 
-          ? a.organicPerformanceMultiplier 
-          : a.paidPerformanceMultiplier;
-        const scoreB = intent.source === 'social'
-          ? b.organicPerformanceMultiplier
-          : b.paidPerformanceMultiplier;
+        const scoreA =
+          intent.source === "social"
+            ? a.organicPerformanceMultiplier
+            : a.paidPerformanceMultiplier;
+        const scoreB =
+          intent.source === "social"
+            ? b.organicPerformanceMultiplier
+            : b.paidPerformanceMultiplier;
         return scoreB - scoreA;
       })[0];
 
     if (bestSignal) {
       const alternativeTime = new Date(now);
       alternativeTime.setHours(bestSignal.hourOfDay, 0, 0, 0);
-      if (alternativeTime <= now) alternativeTime.setDate(alternativeTime.getDate() + 1);
+      if (alternativeTime <= now)
+        alternativeTime.setDate(alternativeTime.getDate() + 1);
 
       return {
         ...intent,
@@ -409,7 +467,9 @@ export class AutopilotCoordinator {
       };
     }
 
-    const alternativeTime = new Date(now.getTime() + COORDINATION_RULES.minimumPostGapHours * 60 * 60 * 1000);
+    const alternativeTime = new Date(
+      now.getTime() + COORDINATION_RULES.minimumPostGapHours * 60 * 60 * 1000,
+    );
     return { ...intent, scheduledTime: alternativeTime };
   }
 
@@ -431,20 +491,23 @@ export class AutopilotCoordinator {
 
   public getRecommendedBudgetAllocation(
     totalBudget: number,
-    campaignType: CampaignState['campaignType']
+    campaignType: CampaignState["campaignType"],
   ): { organic: number; paid: number; reserve: number } {
     const organicLift = this.calculateAverageOrganicLift();
-    
-    const baseAllocations: Record<CampaignState['campaignType'], { organic: number; paid: number }> = {
+
+    const baseAllocations: Record<
+      CampaignState["campaignType"],
+      { organic: number; paid: number }
+    > = {
       release: { organic: 0.25, paid: 0.65 },
-      tour: { organic: 0.30, paid: 0.55 },
-      merch: { organic: 0.20, paid: 0.70 },
-      awareness: { organic: 0.40, paid: 0.45 },
-      evergreen: { organic: 0.50, paid: 0.35 },
+      tour: { organic: 0.3, paid: 0.55 },
+      merch: { organic: 0.2, paid: 0.7 },
+      awareness: { organic: 0.4, paid: 0.45 },
+      evergreen: { organic: 0.5, paid: 0.35 },
     };
 
     const base = baseAllocations[campaignType];
-    
+
     const organicBonus = organicLift > 0.5 ? 0.1 : 0;
     const adjustedOrganic = Math.min(0.6, base.organic + organicBonus);
     const adjustedPaid = Math.max(0.3, base.paid - organicBonus);
@@ -457,21 +520,22 @@ export class AutopilotCoordinator {
   }
 
   private calculateAverageOrganicLift(): number {
-    const platforms = ['instagram', 'twitter', 'tiktok', 'facebook', 'youtube'];
-    const lifts = platforms.map(p => this.getOrganicLift(p));
+    const platforms = ["instagram", "twitter", "tiktok", "facebook", "youtube"];
+    const lifts = platforms.map((p) => this.getOrganicLift(p));
     return lifts.reduce((a, b) => a + b, 0) / platforms.length;
   }
 
   public learnFromOutcome(
     intent: ExecutionIntent,
-    outcome: { reach: number; engagement: number; conversions?: number }
+    outcome: { reach: number; engagement: number; conversions?: number },
   ): void {
     const historyEntry = this.executionHistory.find(
-      e => e.intent === intent || 
-           (e.intent.action === intent.action && 
-            e.intent.platform === intent.platform &&
-            e.intent.source === intent.source &&
-            !e.outcome)
+      (e) =>
+        e.intent === intent ||
+        (e.intent.action === intent.action &&
+          e.intent.platform === intent.platform &&
+          e.intent.source === intent.source &&
+          !e.outcome),
     );
 
     if (historyEntry) {
@@ -481,15 +545,19 @@ export class AutopilotCoordinator {
     if (intent.audienceCohort) {
       const key = `${intent.audienceCohort}_${intent.platform}`;
       const existing = this.audienceInsights.get(key);
-      
+
       if (existing) {
-        const fatigueChange = outcome.engagement < intent.expectedOutcome.engagement * 0.7 
-          ? 0.05 
-          : -0.02;
-        
+        const fatigueChange =
+          outcome.engagement < intent.expectedOutcome.engagement * 0.7
+            ? 0.05
+            : -0.02;
+
         this.audienceInsights.set(key, {
           ...existing,
-          fatigueScore: Math.max(0, Math.min(1, existing.fatigueScore + fatigueChange)),
+          fatigueScore: Math.max(
+            0,
+            Math.min(1, existing.fatigueScore + fatigueChange),
+          ),
           lastUpdated: new Date(),
         });
       }
@@ -499,9 +567,10 @@ export class AutopilotCoordinator {
     if (lift) {
       const actualLift = outcome.engagement / intent.expectedOutcome.engagement;
       const hasOppositeRecent = this.executionHistory.some(
-        e => e.intent.source !== intent.source &&
-             e.intent.platform === intent.platform &&
-             Date.now() - e.timestamp.getTime() < 12 * 60 * 60 * 1000
+        (e) =>
+          e.intent.source !== intent.source &&
+          e.intent.platform === intent.platform &&
+          Date.now() - e.timestamp.getTime() < 12 * 60 * 60 * 1000,
       );
 
       if (hasOppositeRecent) {

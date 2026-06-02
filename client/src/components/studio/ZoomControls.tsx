@@ -1,28 +1,34 @@
-import { ZoomIn, ZoomOut, Maximize2, Grid3x3 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Slider } from '@/components/ui/slider';
+import { ZoomIn, ZoomOut, Maximize2, Grid3x3 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Slider } from "@/components/ui/slider";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { useStudioStore } from '@/lib/studioStore';
+} from "@/components/ui/select";
+import { useStudioStore } from "@/lib/studioStore";
 
 const SNAP_RESOLUTIONS = [
-  { value: 0.0625, label: '1/16' },
-  { value: 0.125, label: '1/8' },
-  { value: 0.25, label: '1/4' },
-  { value: 0.5, label: '1/2' },
-  { value: 1, label: '1 Bar' },
-  { value: 2, label: '2 Bars' },
-  { value: 4, label: '4 Bars' },
+  { value: 0.0625, label: "1/16" },
+  { value: 0.125, label: "1/8" },
+  { value: 0.25, label: "1/4" },
+  { value: 0.5, label: "1/2" },
+  { value: 1, label: "1 Bar" },
+  { value: 2, label: "2 Bars" },
+  { value: 4, label: "4 Bars" },
 ];
 
 export function ZoomControls() {
-  const { zoom, setZoom, snapEnabled, toggleSnap, snapResolution, setSnapResolution } =
-    useStudioStore();
+  const {
+    zoom,
+    setZoom,
+    snapEnabled,
+    toggleSnap,
+    snapResolution,
+    setSnapResolution,
+  } = useStudioStore();
 
   const handleZoomIn = () => setZoom(zoom * 1.2);
   const handleZoomOut = () => setZoom(zoom / 1.2);
@@ -32,8 +38,8 @@ export function ZoomControls() {
     <div
       className="h-10 flex items-center gap-2 px-3 border-b"
       style={{
-        background: 'var(--studio-bg-medium)',
-        borderColor: 'var(--studio-border)',
+        background: "var(--studio-bg-medium)",
+        borderColor: "var(--studio-border)",
       }}
     >
       {/* Zoom Controls */}
@@ -81,19 +87,22 @@ export function ZoomControls() {
 
         <div
           className="ml-2 px-2 text-[10px] font-mono font-medium"
-          style={{ color: 'var(--studio-text-muted)' }}
+          style={{ color: "var(--studio-text-muted)" }}
         >
           {zoom.toFixed(1)}x
         </div>
       </div>
 
-      <div className="h-5 w-px mx-2" style={{ background: 'var(--studio-border)' }} />
+      <div
+        className="h-5 w-px mx-2"
+        style={{ background: "var(--studio-border)" }}
+      />
 
       {/* Snap Controls */}
       <Button
         variant="ghost"
         size="sm"
-        className={`h-7 px-3 text-xs font-medium ${snapEnabled ? 'bg-blue-500/20 text-blue-400' : ''}`}
+        className={`h-7 px-3 text-xs font-medium ${snapEnabled ? "bg-blue-500/20 text-blue-400" : ""}`}
         onClick={toggleSnap}
         title="Toggle Snap to Grid"
       >

@@ -1,10 +1,13 @@
-import { useState } from 'react';
-import { useMutation, useQueryClient } from '@tantml:parameter>@/lib/queryClient';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
-import { Checkbox } from '@/components/ui/checkbox';
+import { useState } from "react";
+import {
+  useMutation,
+  useQueryClient,
+} from "@tantml:parameter>@/lib/queryClient";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -12,21 +15,21 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog';
+} from "@/components/ui/dialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+} from "@/components/ui/dropdown-menu";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
+} from "@/components/ui/select";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -36,8 +39,8 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
-import { useToast } from '@/hooks/use-toast';
+} from "@/components/ui/alert-dialog";
+import { useToast } from "@/hooks/use-toast";
 import {
   MoreVertical,
   Eye,
@@ -48,7 +51,7 @@ import {
   Clock,
   CheckCircle,
   XCircle,
-} from 'lucide-react';
+} from "lucide-react";
 
 interface ReleaseActionsPanelProps {
   release: {
@@ -65,38 +68,42 @@ interface ReleaseActionsPanelProps {
 }
 
 const TAKEDOWN_REASONS = [
-  { value: 'rights_issue', label: 'Rights Issue', description: 'Copyright or licensing problem' },
   {
-    value: 'quality_issue',
-    label: 'Quality Issue',
-    description: 'Audio or metadata quality problem',
+    value: "rights_issue",
+    label: "Rights Issue",
+    description: "Copyright or licensing problem",
   },
   {
-    value: 'artist_request',
-    label: 'Requested by Artist',
-    description: 'Artist wants to remove release',
+    value: "quality_issue",
+    label: "Quality Issue",
+    description: "Audio or metadata quality problem",
   },
   {
-    value: 'contract_dispute',
-    label: 'Contract Dispute',
-    description: 'Legal or contractual issue',
+    value: "artist_request",
+    label: "Requested by Artist",
+    description: "Artist wants to remove release",
   },
   {
-    value: 'duplicate',
-    label: 'Duplicate Release',
-    description: 'Release was uploaded multiple times',
+    value: "contract_dispute",
+    label: "Contract Dispute",
+    description: "Legal or contractual issue",
   },
-  { value: 'other', label: 'Other', description: 'Other reason not listed' },
+  {
+    value: "duplicate",
+    label: "Duplicate Release",
+    description: "Release was uploaded multiple times",
+  },
+  { value: "other", label: "Other", description: "Other reason not listed" },
 ];
 
 const PLATFORM_NAMES: Record<string, string> = {
-  spotify: 'Spotify',
-  'apple-music': 'Apple Music',
-  'youtube-music': 'YouTube Music',
-  'amazon-music': 'Amazon Music',
-  tidal: 'TIDAL',
-  deezer: 'Deezer',
-  soundcloud: 'SoundCloud',
+  spotify: "Spotify",
+  "apple-music": "Apple Music",
+  "youtube-music": "YouTube Music",
+  "amazon-music": "Amazon Music",
+  tidal: "TIDAL",
+  deezer: "Deezer",
+  soundcloud: "SoundCloud",
 };
 
 export function ReleaseActionsPanel({
@@ -111,44 +118,50 @@ export function ReleaseActionsPanel({
 
   const [showTakedownDialog, setShowTakedownDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-  const [takedownReason, setTakedownReason] = useState('');
-  const [takedownExplanation, setTakedownExplanation] = useState('');
-  const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>(release.platforms || []);
+  const [takedownReason, setTakedownReason] = useState("");
+  const [takedownExplanation, setTakedownExplanation] = useState("");
+  const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>(
+    release.platforms || [],
+  );
   const [takedownAllPlatforms, setTakedownAllPlatforms] = useState(true);
 
   // Takedown mutation
   const takedownMutation = useMutation({
     mutationFn: async () => {
       if (!takedownReason) {
-        throw new Error('Please select a reason for takedown');
+        throw new Error("Please select a reason for takedown");
       }
 
       const response = await apiRequest(
-        'POST',
+        "POST",
         `/api/distribution/releases/${release.id}/takedown`,
         {
           reason: takedownReason,
           explanation: takedownExplanation,
           platforms: takedownAllPlatforms ? undefined : selectedPlatforms,
           allPlatforms: takedownAllPlatforms,
-        }
+        },
       );
       return response.json();
     },
     onSuccess: () => {
       toast({
-        title: 'Takedown requested',
-        description: 'Your release will be removed from the selected platforms within 7-14 days.',
+        title: "Takedown requested",
+        description:
+          "Your release will be removed from the selected platforms within 7-14 days.",
       });
-      queryClient.invalidateQueries({ queryKey: ['/api/distribution/releases'] });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/distribution/releases"],
+      });
       setShowTakedownDialog(false);
       resetTakedownForm();
     },
     onError: (error: Error) => {
       toast({
-        title: 'Takedown failed',
-        description: error.message || 'Failed to request takedown. Please try again.',
-        variant: 'destructive',
+        title: "Takedown failed",
+        description:
+          error.message || "Failed to request takedown. Please try again.",
+        variant: "destructive",
       });
     },
   });
@@ -156,30 +169,35 @@ export function ReleaseActionsPanel({
   // Delete mutation
   const deleteMutation = useMutation({
     mutationFn: async () => {
-      const response = await apiRequest('DELETE', `/api/distribution/releases/${release.id}`);
+      const response = await apiRequest(
+        "DELETE",
+        `/api/distribution/releases/${release.id}`,
+      );
       return response.json();
     },
     onSuccess: () => {
       toast({
-        title: 'Release deleted',
-        description: 'Your release has been permanently deleted.',
+        title: "Release deleted",
+        description: "Your release has been permanently deleted.",
       });
-      queryClient.invalidateQueries({ queryKey: ['/api/distribution/releases'] });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/distribution/releases"],
+      });
       setShowDeleteDialog(false);
       onDelete?.();
     },
     onError: () => {
       toast({
-        title: 'Delete failed',
-        description: 'Failed to delete release. Please try again.',
-        variant: 'destructive',
+        title: "Delete failed",
+        description: "Failed to delete release. Please try again.",
+        variant: "destructive",
       });
     },
   });
 
   const resetTakedownForm = () => {
-    setTakedownReason('');
-    setTakedownExplanation('');
+    setTakedownReason("");
+    setTakedownExplanation("");
     setSelectedPlatforms(release.platforms || []);
     setTakedownAllPlatforms(true);
   };
@@ -194,7 +212,9 @@ export function ReleaseActionsPanel({
 
   const togglePlatform = (platform: string) => {
     setSelectedPlatforms((prev) =>
-      prev.includes(platform) ? prev.filter((p) => p !== platform) : [...prev, platform]
+      prev.includes(platform)
+        ? prev.filter((p) => p !== platform)
+        : [...prev, platform],
     );
   };
 
@@ -212,7 +232,7 @@ export function ReleaseActionsPanel({
             View Details
           </DropdownMenuItem>
 
-          {release.status === 'draft' && (
+          {release.status === "draft" && (
             <DropdownMenuItem onClick={onEdit}>
               <Edit className="h-4 w-4 mr-2" />
               Edit Release
@@ -226,7 +246,7 @@ export function ReleaseActionsPanel({
 
           <DropdownMenuSeparator />
 
-          {release.status !== 'draft' && (
+          {release.status !== "draft" && (
             <DropdownMenuItem
               onClick={() => setShowTakedownDialog(true)}
               className="text-yellow-600 focus:text-yellow-600"
@@ -252,8 +272,8 @@ export function ReleaseActionsPanel({
           <DialogHeader>
             <DialogTitle>Request Release Takedown</DialogTitle>
             <DialogDescription>
-              Remove your release from distribution platforms. This action typically takes 7-14 days
-              to complete.
+              Remove your release from distribution platforms. This action
+              typically takes 7-14 days to complete.
             </DialogDescription>
           </DialogHeader>
 
@@ -261,7 +281,9 @@ export function ReleaseActionsPanel({
             {/* Release Info */}
             <div className="p-4 bg-muted rounded-lg">
               <h4 className="font-semibold">{release.title}</h4>
-              <p className="text-sm text-muted-foreground">{release.artistName}</p>
+              <p className="text-sm text-muted-foreground">
+                {release.artistName}
+              </p>
             </div>
 
             {/* Platform Selection */}
@@ -270,7 +292,9 @@ export function ReleaseActionsPanel({
                 <Checkbox
                   id="takedown-all"
                   checked={takedownAllPlatforms}
-                  onCheckedChange={(checked) => setTakedownAllPlatforms(checked === true)}
+                  onCheckedChange={(checked) =>
+                    setTakedownAllPlatforms(checked === true)
+                  }
                 />
                 <label
                   htmlFor="takedown-all"
@@ -285,13 +309,19 @@ export function ReleaseActionsPanel({
                   <Label>Select platforms to remove from:</Label>
                   <div className="grid grid-cols-2 gap-2">
                     {(release.platforms || []).map((platform) => (
-                      <div key={platform} className="flex items-center space-x-2">
+                      <div
+                        key={platform}
+                        className="flex items-center space-x-2"
+                      >
                         <Checkbox
                           id={`platform-${platform}`}
                           checked={selectedPlatforms.includes(platform)}
                           onCheckedChange={() => togglePlatform(platform)}
                         />
-                        <label htmlFor={`platform-${platform}`} className="text-sm leading-none">
+                        <label
+                          htmlFor={`platform-${platform}`}
+                          className="text-sm leading-none"
+                        >
                           {PLATFORM_NAMES[platform] || platform}
                         </label>
                       </div>
@@ -313,7 +343,9 @@ export function ReleaseActionsPanel({
                     <SelectItem key={reason.value} value={reason.value}>
                       <div>
                         <div className="font-medium">{reason.label}</div>
-                        <div className="text-xs text-muted-foreground">{reason.description}</div>
+                        <div className="text-xs text-muted-foreground">
+                          {reason.description}
+                        </div>
                       </div>
                     </SelectItem>
                   ))}
@@ -323,7 +355,9 @@ export function ReleaseActionsPanel({
 
             {/* Explanation */}
             <div className="space-y-2">
-              <Label htmlFor="takedown-explanation">Additional Explanation (Optional)</Label>
+              <Label htmlFor="takedown-explanation">
+                Additional Explanation (Optional)
+              </Label>
               <Textarea
                 id="takedown-explanation"
                 placeholder="Provide additional details about the takedown request..."
@@ -338,10 +372,14 @@ export function ReleaseActionsPanel({
               <div className="flex gap-3">
                 <AlertTriangle className="h-5 w-5 text-yellow-500 flex-shrink-0 mt-0.5" />
                 <div className="space-y-1 text-sm">
-                  <p className="font-medium text-yellow-500">Important Information</p>
+                  <p className="font-medium text-yellow-500">
+                    Important Information
+                  </p>
                   <ul className="list-disc list-inside text-muted-foreground space-y-1">
                     <li>Takedown process typically takes 7-14 business days</li>
-                    <li>Some platforms may take longer to process removal requests</li>
+                    <li>
+                      Some platforms may take longer to process removal requests
+                    </li>
                     <li>Existing streams and sales data will be preserved</li>
                     <li>This action cannot be undone once processing begins</li>
                   </ul>
@@ -371,7 +409,7 @@ export function ReleaseActionsPanel({
                   Requesting...
                 </>
               ) : (
-                'Request Takedown'
+                "Request Takedown"
               )}
             </Button>
           </DialogFooter>
@@ -384,15 +422,18 @@ export function ReleaseActionsPanel({
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Release?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently delete "{release.title}" by {release.artistName}.
-              {release.status !== 'draft' && (
+              This will permanently delete "{release.title}" by{" "}
+              {release.artistName}.
+              {release.status !== "draft" && (
                 <span className="block mt-2 text-yellow-600">
                   <AlertTriangle className="h-4 w-4 inline mr-1" />
-                  Warning: This release is already distributed. Consider requesting a takedown
-                  instead.
+                  Warning: This release is already distributed. Consider
+                  requesting a takedown instead.
                 </span>
               )}
-              <span className="block mt-2 font-medium">This action cannot be undone.</span>
+              <span className="block mt-2 font-medium">
+                This action cannot be undone.
+              </span>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -402,7 +443,7 @@ export function ReleaseActionsPanel({
               disabled={deleteMutation.isPending}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              {deleteMutation.isPending ? 'Deleting...' : 'Delete Permanently'}
+              {deleteMutation.isPending ? "Deleting..." : "Delete Permanently"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

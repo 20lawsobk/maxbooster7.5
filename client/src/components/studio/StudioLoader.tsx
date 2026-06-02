@@ -1,15 +1,21 @@
-import { useState, useEffect, useCallback } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Progress } from '@/components/ui/progress';
+import { useState, useEffect, useCallback } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
 import {
   StudioSkeleton,
   ProjectListSkeleton,
   TrackLoadingSkeleton,
   FileBrowserSkeleton,
-} from './StudioSkeleton';
+} from "./StudioSkeleton";
 import {
   AlertCircle,
   RefreshCw,
@@ -20,11 +26,11 @@ import {
   Home,
   AlertTriangle,
   CheckCircle,
-} from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
-import { errorService, captureException } from '@/lib/errorService';
-import { apiRequest } from '@/lib/queryClient';
-import { useRouter } from 'wouter/use-location';
+} from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { errorService, captureException } from "@/lib/errorService";
+import { apiRequest } from "@/lib/queryClient";
+import { useRouter } from "wouter/use-location";
 
 interface LoadingState {
   projects: boolean;
@@ -82,13 +88,13 @@ export function StudioLoader({ children, userId }: StudioLoaderProps) {
     error: projectsErrorData,
     refetch: refetchProjects,
   } = useQuery({
-    queryKey: ['/api/studio/projects'],
+    queryKey: ["/api/studio/projects"],
     retry: 3,
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 10000),
     onError: (error) => {
       captureException(error, {
-        component: 'StudioLoader',
-        action: 'load-projects',
+        component: "StudioLoader",
+        action: "load-projects",
       });
       setErrorState((prev) => ({ ...prev, projects: error as Error }));
     },
@@ -106,7 +112,7 @@ export function StudioLoader({ children, userId }: StudioLoaderProps) {
     error: samplesErrorData,
     refetch: refetchSamples,
   } = useQuery({
-    queryKey: ['/api/studio/samples'],
+    queryKey: ["/api/studio/samples"],
     retry: 2,
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 5000),
     onError: (error) => {
@@ -162,15 +168,15 @@ export function StudioLoader({ children, userId }: StudioLoaderProps) {
       await Promise.all(retryPromises);
       setIsRetrying(false);
       toast({
-        title: 'Data loaded successfully',
-        description: 'All studio resources have been loaded.',
+        title: "Data loaded successfully",
+        description: "All studio resources have been loaded.",
       });
     } catch (error: unknown) {
       setIsRetrying(false);
       toast({
-        title: 'Some resources failed to load',
-        description: 'You can continue with partial functionality.',
-        variant: 'destructive',
+        title: "Some resources failed to load",
+        description: "You can continue with partial functionality.",
+        variant: "destructive",
       });
     }
   }, [retryCount, errorState, refetchProjects, refetchSamples, toast]);
@@ -178,38 +184,42 @@ export function StudioLoader({ children, userId }: StudioLoaderProps) {
   // Create empty project if none exist
   const handleCreateProject = async () => {
     try {
-      errorService.addBreadcrumb('create-empty-project', {});
+      errorService.addBreadcrumb("create-empty-project", {});
 
-      const response = await apiRequest('POST', '/api/studio/projects', {
-        title: 'Untitled Project',
+      const response = await apiRequest("POST", "/api/studio/projects", {
+        title: "Untitled Project",
         bpm: 120,
-        status: 'draft',
+        status: "draft",
       });
 
       const newProject = await response.json();
 
       // Invalidate and refetch - sync across all project views
-      await queryClient.invalidateQueries({ queryKey: ['/api/studio/projects'] });
-      await queryClient.invalidateQueries({ queryKey: ['/api/studio/start-hub/summary'] });
-      await queryClient.invalidateQueries({ queryKey: ['/api/projects'] });
+      await queryClient.invalidateQueries({
+        queryKey: ["/api/studio/projects"],
+      });
+      await queryClient.invalidateQueries({
+        queryKey: ["/api/studio/start-hub/summary"],
+      });
+      await queryClient.invalidateQueries({ queryKey: ["/api/projects"] });
 
       toast({
-        title: 'Project created',
-        description: 'A new project has been created for you.',
+        title: "Project created",
+        description: "A new project has been created for you.",
       });
 
       // Reload to apply the new project
       window.location.reload();
     } catch (error: unknown) {
       captureException(error, {
-        component: 'StudioLoader',
-        action: 'create-empty-project',
+        component: "StudioLoader",
+        action: "create-empty-project",
       });
 
       toast({
-        title: 'Failed to create project',
-        description: 'Please try again.',
-        variant: 'destructive',
+        title: "Failed to create project",
+        description: "Please try again.",
+        variant: "destructive",
       });
     }
   };
@@ -219,7 +229,8 @@ export function StudioLoader({ children, userId }: StudioLoaderProps) {
 
   // Determine if we're in a degraded state
   const isDegraded =
-    hasPartialData || (Object.values(errorState).some((e) => e) && !hasCriticalError);
+    hasPartialData ||
+    (Object.values(errorState).some((e) => e) && !hasCriticalError);
 
   // Show full loading skeleton initially
   if (projectsLoading && !projectsData) {
@@ -240,11 +251,12 @@ export function StudioLoader({ children, userId }: StudioLoaderProps) {
   // Show error state if critical resources failed
   if (hasCriticalError) {
     const isNetworkError =
-      projectsErrorData?.message?.includes('Network') ||
-      projectsErrorData?.message?.includes('fetch');
-    const isTimeoutError = projectsErrorData?.message?.includes('timeout');
+      projectsErrorData?.message?.includes("Network") ||
+      projectsErrorData?.message?.includes("fetch");
+    const isTimeoutError = projectsErrorData?.message?.includes("timeout");
     const isAuthError =
-      projectsErrorData?.message?.includes('401') || projectsErrorData?.message?.includes('403');
+      projectsErrorData?.message?.includes("401") ||
+      projectsErrorData?.message?.includes("403");
 
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 p-4">
@@ -263,21 +275,21 @@ export function StudioLoader({ children, userId }: StudioLoaderProps) {
               <div>
                 <CardTitle className="text-2xl">
                   {isAuthError
-                    ? 'Authentication Required'
+                    ? "Authentication Required"
                     : isNetworkError
-                      ? 'Connection Problem'
+                      ? "Connection Problem"
                       : isTimeoutError
-                        ? 'Loading Timeout'
-                        : 'Unable to Load Studio'}
+                        ? "Loading Timeout"
+                        : "Unable to Load Studio"}
                 </CardTitle>
                 <CardDescription>
                   {isAuthError
-                    ? 'Please log in to access the studio'
+                    ? "Please log in to access the studio"
                     : isNetworkError
-                      ? 'Check your internet connection and try again'
+                      ? "Check your internet connection and try again"
                       : isTimeoutError
-                        ? 'The studio is taking too long to load'
-                        : 'We encountered an error loading your projects'}
+                        ? "The studio is taking too long to load"
+                        : "We encountered an error loading your projects"}
                 </CardDescription>
               </div>
             </div>
@@ -287,9 +299,13 @@ export function StudioLoader({ children, userId }: StudioLoaderProps) {
               <Alert>
                 <RefreshCw className="h-4 w-4 animate-spin" />
                 <AlertDescription>
-                  Retrying in {retryCountdown} seconds... (Attempt {retryCount + 1} of 3)
+                  Retrying in {retryCountdown} seconds... (Attempt{" "}
+                  {retryCount + 1} of 3)
                 </AlertDescription>
-                <Progress value={(1 - retryCountdown / 10) * 100} className="mt-2" />
+                <Progress
+                  value={(1 - retryCountdown / 10) * 100}
+                  className="mt-2"
+                />
               </Alert>
             )}
 
@@ -305,18 +321,31 @@ export function StudioLoader({ children, userId }: StudioLoaderProps) {
 
             <div className="flex flex-col gap-2">
               {isAuthError ? (
-                <Button onClick={() => navigate('/login?returnUrl=/studio')} className="w-full">
+                <Button
+                  onClick={() => navigate("/login?returnUrl=/studio")}
+                  className="w-full"
+                >
                   Go to Login
                 </Button>
               ) : (
                 <>
-                  <Button onClick={handleRetryAll} disabled={isRetrying} className="w-full">
-                    <RefreshCw className={`h-4 w-4 mr-2 ${isRetrying ? 'animate-spin' : ''}`} />
-                    {isRetrying ? 'Retrying...' : 'Retry Loading'}
+                  <Button
+                    onClick={handleRetryAll}
+                    disabled={isRetrying}
+                    className="w-full"
+                  >
+                    <RefreshCw
+                      className={`h-4 w-4 mr-2 ${isRetrying ? "animate-spin" : ""}`}
+                    />
+                    {isRetrying ? "Retrying..." : "Retry Loading"}
                   </Button>
 
                   {!projectsData && (
-                    <Button onClick={handleCreateProject} variant="secondary" className="w-full">
+                    <Button
+                      onClick={handleCreateProject}
+                      variant="secondary"
+                      className="w-full"
+                    >
                       <Plus className="h-4 w-4 mr-2" />
                       Create Empty Project
                     </Button>
@@ -324,7 +353,11 @@ export function StudioLoader({ children, userId }: StudioLoaderProps) {
                 </>
               )}
 
-              <Button onClick={() => navigate('/dashboard')} variant="outline" className="w-full">
+              <Button
+                onClick={() => navigate("/dashboard")}
+                variant="outline"
+                className="w-full"
+              >
                 <Home className="h-4 w-4 mr-2" />
                 Back to Dashboard
               </Button>
@@ -349,8 +382,14 @@ export function StudioLoader({ children, userId }: StudioLoaderProps) {
             <AlertTriangle className="h-4 w-4 text-yellow-600 dark:text-yellow-400" />
             <AlertTitle>Limited Functionality</AlertTitle>
             <AlertDescription>
-              Some studio features are unavailable: {failedResources.join(', ')}.
-              <Button onClick={handleRetryAll} variant="link" className="px-0 mt-2" size="sm">
+              Some studio features are unavailable: {failedResources.join(", ")}
+              .
+              <Button
+                onClick={handleRetryAll}
+                variant="link"
+                className="px-0 mt-2"
+                size="sm"
+              >
                 Try to reload missing features
               </Button>
             </AlertDescription>
@@ -377,7 +416,9 @@ export function StudioLoader({ children, userId }: StudioLoaderProps) {
 }
 
 // Export a HOC for wrapping the Studio component
-export function withStudioLoader<P extends object>(Component: React.ComponentType<P>): React.FC<P> {
+export function withStudioLoader<P extends object>(
+  Component: React.ComponentType<P>,
+): React.FC<P> {
   return (props: P) => (
     <StudioLoader userId={(props as Record<string, unknown>).userId}>
       <Component {...props} />

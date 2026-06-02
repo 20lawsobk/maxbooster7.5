@@ -69,9 +69,10 @@ export function AchievementGrid() {
 
   const unlockedCount = achievements?.filter((a) => a.unlocked).length || 0;
   const totalCount = achievements?.length || 0;
-  const totalPoints = achievements
-    ?.filter((a) => a.unlocked)
-    .reduce((sum, a) => sum + a.points, 0) || 0;
+  const totalPoints =
+    achievements
+      ?.filter((a) => a.unlocked)
+      .reduce((sum, a) => sum + a.points, 0) || 0;
 
   const groupedByTier = {
     platinum: filteredAchievements?.filter((a) => a.tier === "platinum") || [],
@@ -90,7 +91,10 @@ export function AchievementGrid() {
           </CardTitle>
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2 text-sm">
-              <Badge variant="secondary" className="bg-yellow-500/20 text-yellow-500">
+              <Badge
+                variant="secondary"
+                className="bg-yellow-500/20 text-yellow-500"
+              >
                 {totalPoints} pts
               </Badge>
               <span className="text-muted-foreground">
@@ -127,7 +131,7 @@ export function AchievementGrid() {
           <TabsContent value={activeCategory} className="space-y-6">
             {Object.entries(groupedByTier).map(([tier, tierAchievements]) => {
               if (tierAchievements.length === 0) return null;
-              
+
               return (
                 <motion.div
                   key={tier}
@@ -142,7 +146,7 @@ export function AchievementGrid() {
                         tier === "platinum" && "bg-cyan-400",
                         tier === "gold" && "bg-yellow-400",
                         tier === "silver" && "bg-gray-400",
-                        tier === "bronze" && "bg-orange-600"
+                        tier === "bronze" && "bg-orange-600",
                       )}
                     />
                     {tier} Tier

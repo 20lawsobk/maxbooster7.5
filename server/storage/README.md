@@ -23,15 +23,19 @@ Each storage module exports a class:
 
 ```typescript
 export class UserStorage {
-  async getUser(id: string) { /* ... */ }
-  async createUser(data: any) { /* ... */ }
+  async getUser(id: string) {
+    /* ... */
+  }
+  async createUser(data: any) {
+    /* ... */
+  }
 }
 ```
 
 Main storage aggregates:
 
 ```typescript
-import { UserStorage } from './storage/users.js';
+import { UserStorage } from "./storage/users.js";
 export class DatabaseStorage {
   users = new UserStorage();
 }

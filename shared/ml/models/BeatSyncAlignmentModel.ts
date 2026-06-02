@@ -15,8 +15,8 @@
  *                       transition_type (0=cut_on_beat, 0.5=crossfade, 1=dissolve)
  */
 
-import * as tf from '@tensorflow/tfjs';
-import { BaseModel } from './BaseModel.js';
+import * as tf from "@tensorflow/tfjs";
+import { BaseModel } from "./BaseModel.js";
 
 export interface BeatAlignmentInput {
   bpm: number;
@@ -33,7 +33,7 @@ export interface BeatAlignmentOutput {
   /** Seconds to shift the cut point relative to the beat boundary (-0.5s → +0.5s) */
   cutTimeDelta: number;
   /** Transition type: 'cut_on_beat' | 'crossfade' | 'dissolve' */
-  transitionType: 'cut_on_beat' | 'crossfade' | 'dissolve';
+  transitionType: "cut_on_beat" | "crossfade" | "dissolve";
   /** Raw transition type score (0–1) */
   transitionScore: number;
 }
@@ -54,9 +54,9 @@ export function extractAlignmentFeatures(input: BeatAlignmentInput): number[] {
 export class BeatSyncAlignmentModel extends BaseModel {
   constructor() {
     super({
-      name: 'BeatSyncAlignmentModel',
-      version: '1.0.0',
-      type: 'regression',
+      name: "BeatSyncAlignmentModel",
+      version: "1.0.0",
+      type: "regression",
       inputShape: [8],
       outputShape: [2],
     });
@@ -64,12 +64,22 @@ export class BeatSyncAlignmentModel extends BaseModel {
 
   protected buildModel(): tf.LayersModel {
     const input = tf.input({ shape: [8] });
-    let x = tf.layers.dense({ units: 32, activation: 'relu', kernelInitializer: 'heNormal' }).apply(input) as tf.SymbolicTensor;
+    let x = tf.layers
+      .dense({ units: 32, activation: "relu", kernelInitializer: "heNormal" })
+      .apply(input) as tf.SymbolicTensor;
     x = tf.layers.batchNormalization().apply(x) as tf.SymbolicTensor;
-    x = tf.layers.dense({ units: 16, activation: 'relu' }).apply(x) as tf.SymbolicTensor;
-    const output = tf.layers.dense({ units: 2, activation: 'tanh' }).apply(x) as tf.SymbolicTensor;
+    x = tf.layers
+      .dense({ units: 16, activation: "relu" })
+      .apply(x) as tf.SymbolicTensor;
+    const output = tf.layers
+      .dense({ units: 2, activation: "tanh" })
+      .apply(x) as tf.SymbolicTensor;
     const model = tf.model({ inputs: input, outputs: output });
-    model.compile({ optimizer: tf.train.adam(0.001), loss: 'meanSquaredError', metrics: ['mae'] });
+    model.compile({
+      optimizer: tf.train.adam(0.001),
+      loss: "meanSquaredError",
+      metrics: ["mae"],
+    });
     return model;
   }
 
@@ -81,20 +91,28 @@ export class BeatSyncAlignmentModel extends BaseModel {
     const [delta, typeScore] = Array.from(output.dataSync());
     const cutTimeDelta = delta * 0.5;
     const normalizedType = (typeScore + 1) / 2;
-    const transitionType: BeatAlignmentOutput['transitionType'] =
-      normalizedType < 0.33 ? 'cut_on_beat' :
-      normalizedType < 0.67 ? 'crossfade' : 'dissolve';
+    const transitionType: BeatAlignmentOutput["transitionType"] =
+      normalizedType < 0.33
+        ? "cut_on_beat"
+        : normalizedType < 0.67
+          ? "crossfade"
+          : "dissolve";
     return { cutTimeDelta, transitionType, transitionScore: normalizedType };
   }
 
-  public async alignBeat(input: BeatAlignmentInput): Promise<BeatAlignmentOutput> {
+  public async alignBeat(
+    input: BeatAlignmentInput,
+  ): Promise<BeatAlignmentOutput> {
     if (!this.model) await this.initialize();
     const features = extractAlignmentFeatures(input);
     const result = await this.predict(features);
     return result.prediction as BeatAlignmentOutput;
   }
 
-  public static makeSyntheticSamples(count: number): { inputs: number[][]; labels: number[][] } {
+  public static makeSyntheticSamples(count: number): {
+    inputs: number[][];
+    labels: number[][];
+  } {
     const inputs: number[][] = [];
     const labels: number[][] = [];
 
@@ -108,10 +126,18 @@ export class BeatSyncAlignmentModel extends BaseModel {
       const accumulatedEnergy = Math.random();
       const transitionMomentum = Math.random();
 
-      inputs.push(extractAlignmentFeatures({
-        bpm, sectionEnergy, beatIndex, totalBeats, energyVariance,
-        isChorussOrDrop, accumulatedEnergy, transitionMomentum,
-      }));
+      inputs.push(
+        extractAlignmentFeatures({
+          bpm,
+          sectionEnergy,
+          beatIndex,
+          totalBeats,
+          energyVariance,
+          isChorussOrDrop,
+          accumulatedEnergy,
+          transitionMomentum,
+        }),
+      );
 
       // High-energy drops → cut_on_beat (tight, tanh near -1)
       // Mid energy → crossfade (tanh near 0)

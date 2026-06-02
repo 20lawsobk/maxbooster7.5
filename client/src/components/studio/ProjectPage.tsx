@@ -1,18 +1,38 @@
-import { useState, useCallback, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Slider } from '@/components/ui/slider';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
-import { Progress } from '@/components/ui/progress';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { useStudioStore, type MasteringProject, type MasteringSong } from '@/lib/studioStore';
-import { useToast } from '@/hooks/use-toast';
+import { useState, useCallback, useEffect } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Slider } from "@/components/ui/slider";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import { Progress } from "@/components/ui/progress";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import {
+  useStudioStore,
+  type MasteringProject,
+  type MasteringSong,
+} from "@/lib/studioStore";
+import { useToast } from "@/hooks/use-toast";
 import {
   Disc3,
   Music,
@@ -36,7 +56,7 @@ import {
   FileAudio,
   Settings2,
   Sparkles,
-} from 'lucide-react';
+} from "lucide-react";
 
 interface ProjectPageProps {
   isOpen: boolean;
@@ -66,31 +86,43 @@ interface MasterChainSettings {
 
 const DEFAULT_MASTER_CHAIN: MasterChainSettings = {
   eq: { lowGain: 0, midGain: 0, highGain: 0, bypass: false },
-  compressor: { threshold: -12, ratio: 4, attack: 10, release: 100, bypass: false },
+  compressor: {
+    threshold: -12,
+    ratio: 4,
+    attack: 10,
+    release: 100,
+    bypass: false,
+  },
   limiter: { ceiling: -0.3, release: 50, bypass: false },
 };
 
 function formatDuration(seconds: number): string {
   const mins = Math.floor(seconds / 60);
   const secs = Math.floor(seconds % 60);
-  return `${mins}:${secs.toString().padStart(2, '0')}`;
+  return `${mins}:${secs.toString().padStart(2, "0")}`;
 }
 
 function getLoudnessColor(lufs: number): string {
-  if (lufs >= -6) return '#ef4444';
-  if (lufs >= -9) return '#f97316';
-  if (lufs >= -12) return '#eab308';
-  return '#22c55e';
+  if (lufs >= -6) return "#ef4444";
+  if (lufs >= -9) return "#f97316";
+  if (lufs >= -12) return "#eab308";
+  return "#22c55e";
 }
 
 function getLoudnessLabel(lufs: number): string {
-  if (lufs >= -6) return 'Too Loud';
-  if (lufs >= -9) return 'Hot';
-  if (lufs >= -12) return 'Optimal';
-  return 'Safe';
+  if (lufs >= -6) return "Too Loud";
+  if (lufs >= -9) return "Hot";
+  if (lufs >= -12) return "Optimal";
+  return "Safe";
 }
 
-function MockWaveform({ color = '#3b82f6', height = 40 }: { color?: string; height?: number }) {
+function MockWaveform({
+  color = "#3b82f6",
+  height = 40,
+}: {
+  color?: string;
+  height?: number;
+}) {
   const bars = Array.from({ length: 60 }, () => Math.random() * 0.8 + 0.2);
   return (
     <div className="flex items-center gap-[1px] h-full" style={{ height }}>
@@ -111,7 +143,10 @@ function MockWaveform({ color = '#3b82f6', height = 40 }: { color?: string; heig
 
 function LoudnessMeter({ value, target }: { value: number; target: number }) {
   const percentage = Math.min(100, Math.max(0, ((value + 24) / 24) * 100));
-  const targetPercentage = Math.min(100, Math.max(0, ((target + 24) / 24) * 100));
+  const targetPercentage = Math.min(
+    100,
+    Math.max(0, ((target + 24) / 24) * 100),
+  );
   const color = getLoudnessColor(value);
 
   return (
@@ -150,17 +185,22 @@ function SongRow({
   isPlaying: boolean;
   targetLoudness: number;
 }) {
-  const needsRemaster = song.masteredFileUrl && song.lastUpdated > Date.now() - 60000;
-  const loudnessColor = song.loudness ? getLoudnessColor(song.loudness) : '#6b7280';
+  const needsRemaster =
+    song.masteredFileUrl && song.lastUpdated > Date.now() - 60000;
+  const loudnessColor = song.loudness
+    ? getLoudnessColor(song.loudness)
+    : "#6b7280";
 
   return (
     <div
       className="group flex items-center gap-3 p-3 rounded-lg border transition-all hover:bg-muted/50"
-      style={{ borderColor: 'var(--studio-border-subtle)' }}
+      style={{ borderColor: "var(--studio-border-subtle)" }}
     >
       <div className="flex items-center gap-2 w-8">
         <GripVertical className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 cursor-grab" />
-        <span className="text-sm font-mono text-muted-foreground">{index + 1}</span>
+        <span className="text-sm font-mono text-muted-foreground">
+          {index + 1}
+        </span>
       </div>
 
       <Button
@@ -181,7 +221,10 @@ function SongRow({
         <div className="flex items-center gap-2">
           <span className="font-medium truncate">{song.title}</span>
           {needsRemaster && (
-            <Badge variant="outline" className="text-amber-500 border-amber-500/50">
+            <Badge
+              variant="outline"
+              className="text-amber-500 border-amber-500/50"
+            >
               <RefreshCw className="h-3 w-3 mr-1" />
               Needs Update
             </Badge>
@@ -225,7 +268,7 @@ function SongRow({
           {song.peakLevel !== undefined ? (
             <span
               className="font-mono"
-              style={{ color: song.peakLevel > -1 ? '#ef4444' : 'inherit' }}
+              style={{ color: song.peakLevel > -1 ? "#ef4444" : "inherit" }}
             >
               {song.peakLevel.toFixed(1)} dB
             </span>
@@ -305,8 +348,9 @@ export function ProjectPage({ isOpen, onClose }: ProjectPageProps) {
     getActiveMasteringProject,
   } = useStudioStore();
 
-  const [newProjectName, setNewProjectName] = useState('');
-  const [masterChain, setMasterChain] = useState<MasterChainSettings>(DEFAULT_MASTER_CHAIN);
+  const [newProjectName, setNewProjectName] = useState("");
+  const [masterChain, setMasterChain] =
+    useState<MasterChainSettings>(DEFAULT_MASTER_CHAIN);
   const [playingSongId, setPlayingSongId] = useState<string | null>(null);
   const [masteringProgress, setMasteringProgress] = useState(0);
   const [isMasteringAll, setIsMasteringAll] = useState(false);
@@ -316,16 +360,16 @@ export function ProjectPage({ isOpen, onClose }: ProjectPageProps) {
   const handleCreateProject = useCallback(() => {
     if (!newProjectName.trim()) {
       toast({
-        title: 'Project name required',
-        description: 'Please enter a name for your mastering project.',
-        variant: 'destructive',
+        title: "Project name required",
+        description: "Please enter a name for your mastering project.",
+        variant: "destructive",
       });
       return;
     }
     createMasteringProject(newProjectName.trim());
-    setNewProjectName('');
+    setNewProjectName("");
     toast({
-      title: 'Project created',
+      title: "Project created",
       description: `"${newProjectName}" has been created.`,
     });
   }, [newProjectName, createMasteringProject, toast]);
@@ -335,7 +379,7 @@ export function ProjectPage({ isOpen, onClose }: ProjectPageProps) {
     const demoSong: Partial<MasteringSong> = {
       title: `Track ${activeProject.songs.length + 1}`,
       duration: Math.floor(Math.random() * 180) + 120,
-      sourceFileUrl: '/demo/track.wav',
+      sourceFileUrl: "/demo/track.wav",
     };
     addSongToProject(activeProject.id, demoSong);
   }, [activeProject, addSongToProject]);
@@ -352,11 +396,11 @@ export function ProjectPage({ isOpen, onClose }: ProjectPageProps) {
         peakLevel,
       });
       toast({
-        title: 'Analysis complete',
+        title: "Analysis complete",
         description: `Measured loudness: ${loudness.toFixed(1)} LUFS`,
       });
     },
-    [updateMasteringSong, toast]
+    [updateMasteringSong, toast],
   );
 
   const masterSong = useCallback(
@@ -374,11 +418,11 @@ export function ProjectPage({ isOpen, onClose }: ProjectPageProps) {
         lastUpdated: Date.now(),
       });
       toast({
-        title: 'Mastering complete',
-        description: 'Track has been mastered successfully.',
+        title: "Mastering complete",
+        description: "Track has been mastered successfully.",
       });
     },
-    [masteringProjects, updateMasteringSong, toast]
+    [masteringProjects, updateMasteringSong, toast],
   );
 
   const masterAllSongs = useCallback(async () => {
@@ -408,7 +452,7 @@ export function ProjectPage({ isOpen, onClose }: ProjectPageProps) {
     setMasteringProcessing(false);
     setIsMasteringAll(false);
     toast({
-      title: 'All tracks mastered',
+      title: "All tracks mastered",
       description: `${totalSongs} tracks have been processed.`,
     });
   }, [activeProject, updateMasteringSong, setMasteringProcessing, toast]);
@@ -416,13 +460,13 @@ export function ProjectPage({ isOpen, onClose }: ProjectPageProps) {
   const exportMaster = useCallback(() => {
     if (!activeProject) return;
     toast({
-      title: 'Export started',
+      title: "Export started",
       description: `Exporting ${activeProject.songs.length} tracks as ${activeProject.format.toUpperCase()}...`,
     });
     setTimeout(() => {
       toast({
-        title: 'Export complete',
-        description: 'Your mastered files are ready for download.',
+        title: "Export complete",
+        description: "Your mastered files are ready for download.",
       });
     }, 2000);
   }, [activeProject, toast]);
@@ -438,7 +482,10 @@ export function ProjectPage({ isOpen, onClose }: ProjectPageProps) {
         </DialogHeader>
 
         <div className="flex h-[calc(90vh-100px)]">
-          <div className="w-64 border-r p-4 space-y-4" style={{ borderColor: 'var(--studio-border)' }}>
+          <div
+            className="w-64 border-r p-4 space-y-4"
+            style={{ borderColor: "var(--studio-border)" }}
+          >
             <div className="space-y-2">
               <Label className="text-xs text-muted-foreground uppercase tracking-wider">
                 Projects
@@ -448,10 +495,14 @@ export function ProjectPage({ isOpen, onClose }: ProjectPageProps) {
                   placeholder="New project name..."
                   value={newProjectName}
                   onChange={(e) => setNewProjectName(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && handleCreateProject()}
+                  onKeyDown={(e) => e.key === "Enter" && handleCreateProject()}
                   className="h-8 text-sm"
                 />
-                <Button size="icon" className="h-8 w-8" onClick={handleCreateProject}>
+                <Button
+                  size="icon"
+                  className="h-8 w-8"
+                  onClick={handleCreateProject}
+                >
                   <Plus className="h-4 w-4" />
                 </Button>
               </div>
@@ -464,14 +515,16 @@ export function ProjectPage({ isOpen, onClose }: ProjectPageProps) {
                     key={project.id}
                     className={`flex items-center gap-2 p-2 rounded-lg cursor-pointer transition-colors ${
                       project.id === activeMasteringProjectId
-                        ? 'bg-primary/10 border border-primary/30'
-                        : 'hover:bg-muted/50'
+                        ? "bg-primary/10 border border-primary/30"
+                        : "hover:bg-muted/50"
                     }`}
                     onClick={() => setActiveMasteringProject(project.id)}
                   >
                     <Music className="h-4 w-4 text-muted-foreground" />
                     <div className="flex-1 min-w-0">
-                      <div className="font-medium truncate text-sm">{project.name}</div>
+                      <div className="font-medium truncate text-sm">
+                        {project.name}
+                      </div>
                       <div className="text-xs text-muted-foreground">
                         {project.songs.length} tracks
                       </div>
@@ -501,7 +554,7 @@ export function ProjectPage({ isOpen, onClose }: ProjectPageProps) {
                       value={activeProject.format}
                       onValueChange={(v) =>
                         updateMasteringSettings(activeProject.id, {
-                          format: v as MasteringProject['format'],
+                          format: v as MasteringProject["format"],
                         })
                       }
                     >
@@ -523,7 +576,9 @@ export function ProjectPage({ isOpen, onClose }: ProjectPageProps) {
                       value={String(activeProject.sampleRate)}
                       onValueChange={(v) =>
                         updateMasteringSettings(activeProject.id, {
-                          sampleRate: Number(v) as MasteringProject['sampleRate'],
+                          sampleRate: Number(
+                            v,
+                          ) as MasteringProject["sampleRate"],
                         })
                       }
                     >
@@ -544,7 +599,7 @@ export function ProjectPage({ isOpen, onClose }: ProjectPageProps) {
                       value={String(activeProject.bitDepth)}
                       onValueChange={(v) =>
                         updateMasteringSettings(activeProject.id, {
-                          bitDepth: Number(v) as MasteringProject['bitDepth'],
+                          bitDepth: Number(v) as MasteringProject["bitDepth"],
                         })
                       }
                     >
@@ -572,7 +627,9 @@ export function ProjectPage({ isOpen, onClose }: ProjectPageProps) {
                       max={-6}
                       step={0.5}
                       onValueChange={([v]) =>
-                        updateMasteringSettings(activeProject.id, { targetLoudness: v })
+                        updateMasteringSettings(activeProject.id, {
+                          targetLoudness: v,
+                        })
                       }
                     />
                     <div className="flex justify-between text-xs text-muted-foreground mt-1">
@@ -588,20 +645,32 @@ export function ProjectPage({ isOpen, onClose }: ProjectPageProps) {
           <div className="flex-1 flex flex-col">
             {activeProject ? (
               <>
-                <div className="p-4 border-b flex items-center justify-between" style={{ borderColor: 'var(--studio-border)' }}>
+                <div
+                  className="p-4 border-b flex items-center justify-between"
+                  style={{ borderColor: "var(--studio-border)" }}
+                >
                   <div>
-                    <h2 className="text-lg font-semibold">{activeProject.name}</h2>
+                    <h2 className="text-lg font-semibold">
+                      {activeProject.name}
+                    </h2>
                     <p className="text-sm text-muted-foreground">
-                      {activeProject.songs.length} tracks •{' '}
+                      {activeProject.songs.length} tracks •{" "}
                       {formatDuration(
-                        activeProject.songs.reduce((acc, s) => acc + s.duration, 0)
-                      )}{' '}
+                        activeProject.songs.reduce(
+                          (acc, s) => acc + s.duration,
+                          0,
+                        ),
+                      )}{" "}
                       total
                     </p>
                   </div>
 
                   <div className="flex items-center gap-2">
-                    <Button variant="outline" size="sm" onClick={handleAddDemoSong}>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleAddDemoSong}
+                    >
                       <Plus className="h-4 w-4 mr-1" />
                       Add Track
                     </Button>
@@ -609,7 +678,9 @@ export function ProjectPage({ isOpen, onClose }: ProjectPageProps) {
                       variant="default"
                       size="sm"
                       onClick={masterAllSongs}
-                      disabled={isMasteringAll || activeProject.songs.length === 0}
+                      disabled={
+                        isMasteringAll || activeProject.songs.length === 0
+                      }
                     >
                       {isMasteringAll ? (
                         <>
@@ -636,13 +707,18 @@ export function ProjectPage({ isOpen, onClose }: ProjectPageProps) {
                 </div>
 
                 {isMasteringAll && (
-                  <div className="px-4 py-2 bg-primary/5 border-b" style={{ borderColor: 'var(--studio-border)' }}>
+                  <div
+                    className="px-4 py-2 bg-primary/5 border-b"
+                    style={{ borderColor: "var(--studio-border)" }}
+                  >
                     <div className="flex items-center gap-3">
                       <Loader2 className="h-4 w-4 animate-spin text-primary" />
                       <div className="flex-1">
                         <div className="flex items-center justify-between text-sm mb-1">
                           <span>Mastering all tracks...</span>
-                          <span className="font-mono">{Math.round(masteringProgress)}%</span>
+                          <span className="font-mono">
+                            {Math.round(masteringProgress)}%
+                          </span>
                         </div>
                         <Progress value={masteringProgress} className="h-2" />
                       </div>
@@ -675,18 +751,29 @@ export function ProjectPage({ isOpen, onClose }: ProjectPageProps) {
                             isPlaying={playingSongId === song.id}
                             targetLoudness={activeProject.targetLoudness}
                             onPlay={() =>
-                              setPlayingSongId(playingSongId === song.id ? null : song.id)
+                              setPlayingSongId(
+                                playingSongId === song.id ? null : song.id,
+                              )
                             }
-                            onAnalyze={() => analyzeLoudness(activeProject.id, song.id)}
-                            onMaster={() => masterSong(activeProject.id, song.id)}
-                            onRemove={() => removeSongFromProject(activeProject.id, song.id)}
+                            onAnalyze={() =>
+                              analyzeLoudness(activeProject.id, song.id)
+                            }
+                            onMaster={() =>
+                              masterSong(activeProject.id, song.id)
+                            }
+                            onRemove={() =>
+                              removeSongFromProject(activeProject.id, song.id)
+                            }
                           />
                         ))
                     )}
                   </div>
                 </ScrollArea>
 
-                <div className="p-4 border-t" style={{ borderColor: 'var(--studio-border)' }}>
+                <div
+                  className="p-4 border-t"
+                  style={{ borderColor: "var(--studio-border)" }}
+                >
                   <div className="flex items-center gap-4">
                     <div className="flex-1">
                       <Label className="text-xs text-muted-foreground mb-2 block">
@@ -698,7 +785,9 @@ export function ProjectPage({ isOpen, onClose }: ProjectPageProps) {
                             <Settings2 className="h-4 w-4" />
                             <span className="text-sm font-medium">EQ</span>
                             <Badge
-                              variant={masterChain.eq.bypass ? 'secondary' : 'default'}
+                              variant={
+                                masterChain.eq.bypass ? "secondary" : "default"
+                              }
                               className="text-xs cursor-pointer"
                               onClick={() =>
                                 setMasterChain((p) => ({
@@ -707,28 +796,30 @@ export function ProjectPage({ isOpen, onClose }: ProjectPageProps) {
                                 }))
                               }
                             >
-                              {masterChain.eq.bypass ? 'OFF' : 'ON'}
+                              {masterChain.eq.bypass ? "OFF" : "ON"}
                             </Badge>
                           </div>
                           <div className="flex items-center gap-4 text-xs">
                             <div className="flex flex-col items-center">
                               <span className="text-muted-foreground">Low</span>
                               <span className="font-mono">
-                                {masterChain.eq.lowGain > 0 ? '+' : ''}
+                                {masterChain.eq.lowGain > 0 ? "+" : ""}
                                 {masterChain.eq.lowGain}dB
                               </span>
                             </div>
                             <div className="flex flex-col items-center">
                               <span className="text-muted-foreground">Mid</span>
                               <span className="font-mono">
-                                {masterChain.eq.midGain > 0 ? '+' : ''}
+                                {masterChain.eq.midGain > 0 ? "+" : ""}
                                 {masterChain.eq.midGain}dB
                               </span>
                             </div>
                             <div className="flex flex-col items-center">
-                              <span className="text-muted-foreground">High</span>
+                              <span className="text-muted-foreground">
+                                High
+                              </span>
                               <span className="font-mono">
-                                {masterChain.eq.highGain > 0 ? '+' : ''}
+                                {masterChain.eq.highGain > 0 ? "+" : ""}
                                 {masterChain.eq.highGain}dB
                               </span>
                             </div>
@@ -738,28 +829,45 @@ export function ProjectPage({ isOpen, onClose }: ProjectPageProps) {
                         <Card className="flex-1 p-3">
                           <div className="flex items-center gap-2 mb-2">
                             <Gauge className="h-4 w-4" />
-                            <span className="text-sm font-medium">Compressor</span>
+                            <span className="text-sm font-medium">
+                              Compressor
+                            </span>
                             <Badge
-                              variant={masterChain.compressor.bypass ? 'secondary' : 'default'}
+                              variant={
+                                masterChain.compressor.bypass
+                                  ? "secondary"
+                                  : "default"
+                              }
                               className="text-xs cursor-pointer"
                               onClick={() =>
                                 setMasterChain((p) => ({
                                   ...p,
-                                  compressor: { ...p.compressor, bypass: !p.compressor.bypass },
+                                  compressor: {
+                                    ...p.compressor,
+                                    bypass: !p.compressor.bypass,
+                                  },
                                 }))
                               }
                             >
-                              {masterChain.compressor.bypass ? 'OFF' : 'ON'}
+                              {masterChain.compressor.bypass ? "OFF" : "ON"}
                             </Badge>
                           </div>
                           <div className="flex items-center gap-4 text-xs">
                             <div className="flex flex-col items-center">
-                              <span className="text-muted-foreground">Thresh</span>
-                              <span className="font-mono">{masterChain.compressor.threshold}dB</span>
+                              <span className="text-muted-foreground">
+                                Thresh
+                              </span>
+                              <span className="font-mono">
+                                {masterChain.compressor.threshold}dB
+                              </span>
                             </div>
                             <div className="flex flex-col items-center">
-                              <span className="text-muted-foreground">Ratio</span>
-                              <span className="font-mono">{masterChain.compressor.ratio}:1</span>
+                              <span className="text-muted-foreground">
+                                Ratio
+                              </span>
+                              <span className="font-mono">
+                                {masterChain.compressor.ratio}:1
+                              </span>
                             </div>
                           </div>
                         </Card>
@@ -769,26 +877,41 @@ export function ProjectPage({ isOpen, onClose }: ProjectPageProps) {
                             <Volume2 className="h-4 w-4" />
                             <span className="text-sm font-medium">Limiter</span>
                             <Badge
-                              variant={masterChain.limiter.bypass ? 'secondary' : 'default'}
+                              variant={
+                                masterChain.limiter.bypass
+                                  ? "secondary"
+                                  : "default"
+                              }
                               className="text-xs cursor-pointer"
                               onClick={() =>
                                 setMasterChain((p) => ({
                                   ...p,
-                                  limiter: { ...p.limiter, bypass: !p.limiter.bypass },
+                                  limiter: {
+                                    ...p.limiter,
+                                    bypass: !p.limiter.bypass,
+                                  },
                                 }))
                               }
                             >
-                              {masterChain.limiter.bypass ? 'OFF' : 'ON'}
+                              {masterChain.limiter.bypass ? "OFF" : "ON"}
                             </Badge>
                           </div>
                           <div className="flex items-center gap-4 text-xs">
                             <div className="flex flex-col items-center">
-                              <span className="text-muted-foreground">Ceiling</span>
-                              <span className="font-mono">{masterChain.limiter.ceiling}dB</span>
+                              <span className="text-muted-foreground">
+                                Ceiling
+                              </span>
+                              <span className="font-mono">
+                                {masterChain.limiter.ceiling}dB
+                              </span>
                             </div>
                             <div className="flex flex-col items-center">
-                              <span className="text-muted-foreground">Release</span>
-                              <span className="font-mono">{masterChain.limiter.release}ms</span>
+                              <span className="text-muted-foreground">
+                                Release
+                              </span>
+                              <span className="font-mono">
+                                {masterChain.limiter.release}ms
+                              </span>
                             </div>
                           </div>
                         </Card>
@@ -800,17 +923,22 @@ export function ProjectPage({ isOpen, onClose }: ProjectPageProps) {
             ) : (
               <div className="flex-1 flex flex-col items-center justify-center text-center p-8">
                 <Disc3 className="h-16 w-16 text-muted-foreground/30 mb-6" />
-                <h2 className="text-xl font-semibold mb-2">Welcome to the Mastering Suite</h2>
+                <h2 className="text-xl font-semibold mb-2">
+                  Welcome to the Mastering Suite
+                </h2>
                 <p className="text-muted-foreground max-w-md mb-6">
-                  Create a mastering project to organize and master your tracks with professional
-                  loudness targeting, EQ, compression, and limiting.
+                  Create a mastering project to organize and master your tracks
+                  with professional loudness targeting, EQ, compression, and
+                  limiting.
                 </p>
                 <div className="flex gap-2">
                   <Input
                     placeholder="Enter project name..."
                     value={newProjectName}
                     onChange={(e) => setNewProjectName(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && handleCreateProject()}
+                    onKeyDown={(e) =>
+                      e.key === "Enter" && handleCreateProject()
+                    }
                     className="w-64"
                   />
                   <Button onClick={handleCreateProject}>

@@ -1,104 +1,120 @@
-export { TransportEngine, transportEngine } from './TransportEngine';
-export type { 
-  TempoEvent, 
-  TimeSignatureEvent, 
-  TransportEngineState, 
-  MusicalPosition, 
+export { TransportEngine, transportEngine } from "./TransportEngine";
+export type {
+  TempoEvent,
+  TimeSignatureEvent,
+  TransportEngineState,
+  MusicalPosition,
   TimePosition,
   TransportEventType,
-  TransportEvent 
-} from './TransportEngine';
+  TransportEvent,
+} from "./TransportEngine";
 
-export { TimelineEngine, timelineEngine } from './TimelineEngine';
-export type { 
-  TimelineEvent, 
-  TimelineMarker, 
-  TimelineRegion, 
+export { TimelineEngine, timelineEngine } from "./TimelineEngine";
+export type {
+  TimelineEvent,
+  TimelineMarker,
+  TimelineRegion,
   QuantizeSettings,
   EditMode,
-  TimelineEngineState 
-} from './TimelineEngine';
+  TimelineEngineState,
+} from "./TimelineEngine";
 
-export { AutomationEngine, automationEngine } from './AutomationEngine';
-export type { 
-  AutomationMode, 
-  CurveType, 
-  AutomationPoint, 
+export { AutomationEngine, automationEngine } from "./AutomationEngine";
+export type {
+  AutomationMode,
+  CurveType,
+  AutomationPoint,
   AutomationLane,
   AutomationClip,
-  AutomationEngineState 
-} from './AutomationEngine';
+  AutomationEngineState,
+} from "./AutomationEngine";
 
-export { RoutingEngine, routingEngine } from './RoutingEngine';
-export type { 
-  NodeType, 
-  RoutingNode, 
-  RoutingEdge, 
+export { RoutingEngine, routingEngine } from "./RoutingEngine";
+export type {
+  NodeType,
+  RoutingNode,
+  RoutingEdge,
   RoutingPath,
-  RoutingGraphState 
-} from './RoutingEngine';
+  RoutingGraphState,
+} from "./RoutingEngine";
 
-export { MIDIEngine, midiEngine } from './MIDIEngine';
-export type { 
-  MIDINote, 
-  MIDIControlChange, 
-  MIDIPitchBend, 
+export { MIDIEngine, midiEngine } from "./MIDIEngine";
+export type {
+  MIDINote,
+  MIDIControlChange,
+  MIDIPitchBend,
   MIDIClip,
   QuantizeOptions,
   VelocityEditOptions,
   MIDIEngineState,
   MIDIEventType,
-  MIDIEvent 
-} from './MIDIEngine';
+  MIDIEvent,
+} from "./MIDIEngine";
 
-export { NonDestructiveAudioEngine, nonDestructiveAudio } from './NonDestructiveAudio';
-export type { 
-  AudioSource, 
-  FadeSettings, 
-  TimeStretchSettings, 
+export {
+  NonDestructiveAudioEngine,
+  nonDestructiveAudio,
+} from "./NonDestructiveAudio";
+export type {
+  AudioSource,
+  FadeSettings,
+  TimeStretchSettings,
   PitchShiftSettings,
   AudioEvent,
   AudioClipboard,
-  NonDestructiveAudioState 
-} from './NonDestructiveAudio';
+  NonDestructiveAudioState,
+} from "./NonDestructiveAudio";
 
-export { PluginStateManager, pluginStateManager } from './PluginStateManager';
-export type { 
-  PluginPreset, 
-  PluginState, 
+export { PluginStateManager, pluginStateManager } from "./PluginStateManager";
+export type {
+  PluginPreset,
+  PluginState,
   PluginAutomationBinding,
-  PluginStateManagerState 
-} from './PluginStateManager';
+  PluginStateManagerState,
+} from "./PluginStateManager";
 
-export { MusicalIntelligenceEngine, musicalIntelligence } from './MusicalIntelligence';
-export type { 
-  ChordQuality, 
-  Chord, 
-  ChordProgression, 
+export {
+  MusicalIntelligenceEngine,
+  musicalIntelligence,
+} from "./MusicalIntelligence";
+export type {
+  ChordQuality,
+  Chord,
+  ChordProgression,
   ScaleInfo,
   AnalysisResult,
   MixSuggestion,
   ArrangementSuggestion,
-  MusicalIntelligenceState 
-} from './MusicalIntelligence';
+  MusicalIntelligenceState,
+} from "./MusicalIntelligence";
 
-export { ProjectManager, projectManager } from './ProjectManager';
-export type { 
-  ProjectMetadata, 
-  ProjectVersion, 
+export { ProjectManager, projectManager } from "./ProjectManager";
+export type {
+  ProjectMetadata,
+  ProjectVersion,
   MediaPoolItem,
   ProjectState,
-  ProjectManagerState 
-} from './ProjectManager';
+  ProjectManagerState,
+} from "./ProjectManager";
 
-export { CommandHistory, BatchCommand, commandHistory, createCommand } from './CommandSystem';
-export type { Command, CommandHistoryState } from './CommandSystem';
+export {
+  CommandHistory,
+  BatchCommand,
+  commandHistory,
+  createCommand,
+} from "./CommandSystem";
+export type { Command, CommandHistoryState } from "./CommandSystem";
 
-export { DAWCore, dawCore } from './DAWCore';
-export type { DAWTrack, DAWCoreState } from './DAWCore';
+export { DAWCore, dawCore } from "./DAWCore";
+export type { DAWTrack, DAWCoreState } from "./DAWCore";
 
-export { AudioRenderEngine, audioRenderEngine, RENDER_PRESETS, DEFAULT_RENDER_SETTINGS } from './AudioRenderEngine';
-export type { 
+export {
+  AudioRenderEngine,
+  audioRenderEngine,
+  RENDER_PRESETS,
+  DEFAULT_RENDER_SETTINGS,
+} from "./AudioRenderEngine";
+export type {
   AudioFormat,
   BitDepth,
   SampleRate,
@@ -108,46 +124,56 @@ export type {
   RenderMetadata,
   RenderSettings,
   RenderProgress,
-  RenderResult
-} from './AudioRenderEngine';
+  RenderResult,
+} from "./AudioRenderEngine";
 
-export { AudioWorkletEngine, audioWorkletEngine } from './AudioWorkletEngine';
+export { AudioWorkletEngine, audioWorkletEngine } from "./AudioWorkletEngine";
 export type {
   AudioEngineConfig,
   PlaybackState,
   MeteringData,
-  ScheduledClip
-} from './AudioWorkletEngine';
+  ScheduledClip,
+} from "./AudioWorkletEngine";
 
-export { PeakCacheEngine, peakCacheEngine } from './PeakCacheEngine';
-export type { PeakData, PeakCacheLevel, PeakCacheEntry } from './PeakCacheEngine';
+export { PeakCacheEngine, peakCacheEngine } from "./PeakCacheEngine";
+export type {
+  PeakData,
+  PeakCacheLevel,
+  PeakCacheEntry,
+} from "./PeakCacheEngine";
 
-export { NonDestructiveRenderer, nonDestructiveRenderer } from './NonDestructiveRenderer';
+export {
+  NonDestructiveRenderer,
+  nonDestructiveRenderer,
+} from "./NonDestructiveRenderer";
 export type {
   DataZoomState,
   CoordinateMapping,
   RenderViewport,
   WaveformRenderResult,
-  FadeOverlay
-} from './NonDestructiveRenderer';
+  FadeOverlay,
+} from "./NonDestructiveRenderer";
 
-export { TimelineRenderer } from './TimelineRenderer';
+export { TimelineRenderer } from "./TimelineRenderer";
 export type {
   TimelineRenderConfig,
   ClipRenderData,
-  PlayheadState
-} from './TimelineRenderer';
+  PlayheadState,
+} from "./TimelineRenderer";
 
-export { TransformRenderer, transformRenderer } from './TransformRenderer';
+export { TransformRenderer, transformRenderer } from "./TransformRenderer";
 export type {
   ProcessingChain,
   ProcessingPlugin,
   TransformState,
-  TransformEvent
-} from './TransformRenderer';
+  TransformEvent,
+} from "./TransformRenderer";
 
 export {
   StudioOneWaveformEngine,
   studioOneWaveformEngine,
-} from './StudioOneWaveformEngine';
-export type { StudioOneEngineConfig, EngineStats } from './StudioOneWaveformEngine';
+} from "./StudioOneWaveformEngine";
+export type {
+  StudioOneEngineConfig,
+  EngineStats,
+} from "./StudioOneWaveformEngine";

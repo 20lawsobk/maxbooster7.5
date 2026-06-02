@@ -1,6 +1,6 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from "react";
 
-export type ConnectionQuality = 'excellent' | 'good' | 'poor' | 'offline';
+export type ConnectionQuality = "excellent" | "good" | "poor" | "offline";
 
 export interface OnlineStatusState {
   isOnline: boolean;
@@ -19,8 +19,8 @@ interface NetworkInformation extends EventTarget {
   downlink: number;
   rtt: number;
   saveData: boolean;
-  addEventListener(type: 'change', listener: () => void): void;
-  removeEventListener(type: 'change', listener: () => void): void;
+  addEventListener(type: "change", listener: () => void): void;
+  removeEventListener(type: "change", listener: () => void): void;
 }
 
 declare global {
@@ -32,26 +32,33 @@ declare global {
 }
 
 function getNetworkConnection(): NetworkInformation | null {
-  return navigator.connection || navigator.mozConnection || navigator.webkitConnection || null;
+  return (
+    navigator.connection ||
+    navigator.mozConnection ||
+    navigator.webkitConnection ||
+    null
+  );
 }
 
-function assessConnectionQuality(connection: NetworkInformation | null): ConnectionQuality {
-  if (!navigator.onLine) return 'offline';
-  if (!connection) return 'good';
+function assessConnectionQuality(
+  connection: NetworkInformation | null,
+): ConnectionQuality {
+  if (!navigator.onLine) return "offline";
+  if (!connection) return "good";
 
   const { effectiveType, downlink, rtt } = connection;
 
-  if (effectiveType === '4g' && downlink >= 5 && rtt <= 100) {
-    return 'excellent';
+  if (effectiveType === "4g" && downlink >= 5 && rtt <= 100) {
+    return "excellent";
   }
-  if (effectiveType === '4g' || (effectiveType === '3g' && downlink >= 1)) {
-    return 'good';
+  if (effectiveType === "4g" || (effectiveType === "3g" && downlink >= 1)) {
+    return "good";
   }
-  if (effectiveType === '2g' || effectiveType === 'slow-2g' || rtt > 500) {
-    return 'poor';
+  if (effectiveType === "2g" || effectiveType === "slow-2g" || rtt > 500) {
+    return "poor";
   }
 
-  return 'good';
+  return "good";
 }
 
 export function useOnlineStatus(): OnlineStatusState & {
@@ -77,7 +84,7 @@ export function useOnlineStatus(): OnlineStatusState & {
 
     const handleOnline = () => {
       const now = Date.now();
-      setState(prev => ({
+      setState((prev) => ({
         ...prev,
         isOnline: true,
         isOffline: false,
@@ -88,18 +95,18 @@ export function useOnlineStatus(): OnlineStatusState & {
     };
 
     const handleOffline = () => {
-      setState(prev => ({
+      setState((prev) => ({
         ...prev,
         isOnline: false,
         isOffline: true,
-        connectionQuality: 'offline',
+        connectionQuality: "offline",
         lastOfflineAt: Date.now(),
       }));
     };
 
     const handleConnectionChange = () => {
       const conn = getNetworkConnection();
-      setState(prev => ({
+      setState((prev) => ({
         ...prev,
         connectionQuality: assessConnectionQuality(conn),
         effectiveType: conn?.effectiveType || null,
@@ -108,18 +115,18 @@ export function useOnlineStatus(): OnlineStatusState & {
       }));
     };
 
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
 
     if (connection) {
-      connection.addEventListener('change', handleConnectionChange);
+      connection.addEventListener("change", handleConnectionChange);
     }
 
     return () => {
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
       if (connection) {
-        connection.removeEventListener('change', handleConnectionChange);
+        connection.removeEventListener("change", handleConnectionChange);
       }
     };
   }, []);
@@ -131,9 +138,9 @@ export function useOnlineStatus(): OnlineStatusState & {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 5000);
 
-      const response = await fetch('/api/health', {
-        method: 'HEAD',
-        cache: 'no-store',
+      const response = await fetch("/api/health", {
+        method: "HEAD",
+        cache: "no-store",
         signal: controller.signal,
       });
 

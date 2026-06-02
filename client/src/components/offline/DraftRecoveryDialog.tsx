@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
-import { logger } from '@/lib/logger';
-import { FileText, Clock, Trash2, RotateCcw } from 'lucide-react';
+import { useEffect, useState } from "react";
+import { logger } from "@/lib/logger";
+import { FileText, Clock, Trash2, RotateCcw } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -8,12 +8,12 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Badge } from '@/components/ui/badge';
-import { draftStorage, Draft } from '@/lib/offline';
-import { formatDistanceToNow } from 'date-fns';
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Badge } from "@/components/ui/badge";
+import { draftStorage, Draft } from "@/lib/offline";
+import { formatDistanceToNow } from "date-fns";
 
 interface DraftRecoveryDialogProps {
   open: boolean;
@@ -48,7 +48,7 @@ export function DraftRecoveryDialog({
         : await draftStorage.getAllDrafts();
       setDrafts(allDrafts);
     } catch (error) {
-      logger.error('Failed to load drafts:', error);
+      logger.error("Failed to load drafts:", error);
     } finally {
       setLoading(false);
     }
@@ -73,14 +73,14 @@ export function DraftRecoveryDialog({
 
   const formatDraftInfo = (draft: Draft) => {
     const data = draft.data as Record<string, unknown>;
-    if (typeof data === 'object' && data !== null) {
+    if (typeof data === "object" && data !== null) {
       const keys = Object.keys(data);
       if (keys.length > 0) {
-        const preview = String(data[keys[0]] || '').substring(0, 50);
-        return preview + (preview.length >= 50 ? '...' : '');
+        const preview = String(data[keys[0]] || "").substring(0, 50);
+        return preview + (preview.length >= 50 ? "..." : "");
       }
     }
-    return 'Form data';
+    return "Form data";
   };
 
   return (
@@ -92,7 +92,7 @@ export function DraftRecoveryDialog({
             Recover Saved Drafts
           </DialogTitle>
           <DialogDescription>
-            Found {drafts.length} unsaved draft{drafts.length !== 1 ? 's' : ''}.
+            Found {drafts.length} unsaved draft{drafts.length !== 1 ? "s" : ""}.
             Would you like to restore any of them?
           </DialogDescription>
         </DialogHeader>
@@ -113,9 +113,10 @@ export function DraftRecoveryDialog({
                   key={draft.id}
                   className={`
                     p-3 rounded-lg border cursor-pointer transition-colors
-                    ${selectedDraft === draft.id
-                      ? 'border-primary bg-primary/5'
-                      : 'border-border hover:border-primary/50'
+                    ${
+                      selectedDraft === draft.id
+                        ? "border-primary bg-primary/5"
+                        : "border-border hover:border-primary/50"
                     }
                   `}
                   onClick={() => setSelectedDraft(draft.id)}
@@ -131,7 +132,9 @@ export function DraftRecoveryDialog({
                       <div className="flex items-center gap-2 mt-2 text-xs text-muted-foreground">
                         <Clock className="h-3 w-3" />
                         <span>
-                          {formatDistanceToNow(draft.updatedAt, { addSuffix: true })}
+                          {formatDistanceToNow(draft.updatedAt, {
+                            addSuffix: true,
+                          })}
                         </span>
                         <Badge variant="outline" className="text-xs px-1 py-0">
                           v{draft.version}
@@ -171,25 +174,19 @@ export function DraftRecoveryDialog({
         </ScrollArea>
 
         <DialogFooter className="flex-col sm:flex-row gap-2">
-          <Button
-            variant="outline"
-            onClick={() => onOpenChange(false)}
-          >
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
           {drafts.length > 0 && (
             <>
-              <Button
-                variant="destructive"
-                onClick={handleDiscardAll}
-              >
+              <Button variant="destructive" onClick={handleDiscardAll}>
                 <Trash2 className="h-4 w-4 mr-1" />
                 Discard All
               </Button>
               {selectedDraft && (
                 <Button
                   onClick={() => {
-                    const draft = drafts.find(d => d.id === selectedDraft);
+                    const draft = drafts.find((d) => d.id === selectedDraft);
                     if (draft) handleRecover(draft);
                   }}
                 >

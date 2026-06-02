@@ -1,33 +1,33 @@
-import { useState, useEffect } from 'react';
-import { Slider } from '@/components/ui/slider';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Label } from '@/components/ui/label';
+import { useState, useEffect } from "react";
+import { Slider } from "@/components/ui/slider";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
+} from "@/components/ui/select";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from '@/components/ui/popover';
-import { 
-  Play, 
-  Pause, 
-  RotateCcw, 
-  Volume2, 
+} from "@/components/ui/popover";
+import {
+  Play,
+  Pause,
+  RotateCcw,
+  Volume2,
   VolumeX,
   Gauge,
   Music,
   Settings2,
-  Loader2
-} from 'lucide-react';
-import { useAudioPreviewStore, MUSICAL_KEYS } from '@/lib/audioPreviewEngine';
-import { cn } from '@/lib/utils';
+  Loader2,
+} from "lucide-react";
+import { useAudioPreviewStore, MUSICAL_KEYS } from "@/lib/audioPreviewEngine";
+import { cn } from "@/lib/utils";
 
 interface BeatPreviewControlsProps {
   beatId: string;
@@ -37,14 +37,14 @@ interface BeatPreviewControlsProps {
   compact?: boolean;
   className?: string;
   onPlayStateChange?: (isPlaying: boolean) => void;
-  onInteraction?: (type: 'play' | 'pause' | 'preview' | 'repeat') => void;
+  onInteraction?: (type: "play" | "pause" | "preview" | "repeat") => void;
 }
 
 export function BeatPreviewControls({
   beatId,
   audioUrl,
   originalBpm = 120,
-  originalKey = 'C',
+  originalKey = "C",
   compact = false,
   className,
   onPlayStateChange,
@@ -83,13 +83,13 @@ export function BeatPreviewControls({
     if (!isCurrentBeat) {
       await loadBeat(beatId, audioUrl, originalBpm, originalKey);
       play();
-      onInteraction?.('play');
+      onInteraction?.("play");
     } else if (isPlaying) {
       pause();
-      onInteraction?.('pause');
+      onInteraction?.("pause");
     } else {
       play();
-      onInteraction?.('repeat');
+      onInteraction?.("repeat");
     }
   };
 
@@ -116,7 +116,7 @@ export function BeatPreviewControls({
 
   if (compact) {
     return (
-      <div className={cn('flex items-center gap-2', className)}>
+      <div className={cn("flex items-center gap-2", className)}>
         <Button
           size="sm"
           variant="ghost"
@@ -132,14 +132,17 @@ export function BeatPreviewControls({
             <Play className="h-4 w-4" />
           )}
         </Button>
-        
+
         <Popover>
           <PopoverTrigger asChild>
             <Button size="sm" variant="ghost" className="h-8 w-8 p-0">
               <Settings2 className="h-4 w-4" />
             </Button>
           </PopoverTrigger>
-          <PopoverContent className="w-72 bg-slate-900 border-slate-700" align="start">
+          <PopoverContent
+            className="w-72 bg-slate-900 border-slate-700"
+            align="start"
+          >
             <PreviewControlsContent
               originalBpm={originalBpm}
               originalKey={originalKey}
@@ -161,13 +164,21 @@ export function BeatPreviewControls({
         {(bpmDiff !== 0 || keyDiff !== 0) && (
           <div className="flex gap-1">
             {bpmDiff !== 0 && (
-              <Badge variant="secondary" className="text-xs bg-cyan-500/20 text-cyan-400">
-                {bpmDiff > 0 ? '+' : ''}{bpmDiff} BPM
+              <Badge
+                variant="secondary"
+                className="text-xs bg-cyan-500/20 text-cyan-400"
+              >
+                {bpmDiff > 0 ? "+" : ""}
+                {bpmDiff} BPM
               </Badge>
             )}
             {keyDiff !== 0 && (
-              <Badge variant="secondary" className="text-xs bg-purple-500/20 text-purple-400">
-                {keyDiff > 0 ? '+' : ''}{keyDiff} st
+              <Badge
+                variant="secondary"
+                className="text-xs bg-purple-500/20 text-purple-400"
+              >
+                {keyDiff > 0 ? "+" : ""}
+                {keyDiff} st
               </Badge>
             )}
           </div>
@@ -177,7 +188,12 @@ export function BeatPreviewControls({
   }
 
   return (
-    <div className={cn('space-y-4 p-4 bg-slate-800/50 rounded-lg border border-slate-700', className)}>
+    <div
+      className={cn(
+        "space-y-4 p-4 bg-slate-800/50 rounded-lg border border-slate-700",
+        className,
+      )}
+    >
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Button
@@ -193,9 +209,9 @@ export function BeatPreviewControls({
             ) : (
               <Play className="h-4 w-4 mr-2" />
             )}
-            {isLoading ? 'Buffering…' : isThisPlaying ? 'Pause' : 'Preview'}
+            {isLoading ? "Buffering…" : isThisPlaying ? "Pause" : "Preview"}
           </Button>
-          
+
           <Button
             size="sm"
             variant="ghost"
@@ -210,13 +226,21 @@ export function BeatPreviewControls({
         {(bpmDiff !== 0 || keyDiff !== 0) && (
           <div className="flex gap-2">
             {bpmDiff !== 0 && (
-              <Badge variant="secondary" className="bg-cyan-500/20 text-cyan-400">
-                {bpmDiff > 0 ? '+' : ''}{bpmDiff} BPM
+              <Badge
+                variant="secondary"
+                className="bg-cyan-500/20 text-cyan-400"
+              >
+                {bpmDiff > 0 ? "+" : ""}
+                {bpmDiff} BPM
               </Badge>
             )}
             {keyDiff !== 0 && (
-              <Badge variant="secondary" className="bg-purple-500/20 text-purple-400">
-                {keyDiff > 0 ? '+' : ''}{keyDiff} semitones
+              <Badge
+                variant="secondary"
+                className="bg-purple-500/20 text-purple-400"
+              >
+                {keyDiff > 0 ? "+" : ""}
+                {keyDiff} semitones
               </Badge>
             )}
           </div>
@@ -310,12 +334,18 @@ function PreviewControlsContent({
           <SelectContent className="bg-slate-800 border-slate-600">
             {MUSICAL_KEYS.map((key) => (
               <SelectItem key={key} value={key} className="text-slate-200">
-                {key} {key === originalKey.replace(/m$|min$|minor$/i, '').trim() && '(Original)'}
+                {key}{" "}
+                {key === originalKey.replace(/m$|min$|minor$/i, "").trim() &&
+                  "(Original)"}
               </SelectItem>
             ))}
             {MUSICAL_KEYS.map((key) => (
-              <SelectItem key={`${key}m`} value={`${key}m`} className="text-slate-200">
-                {key}m {`${key}m` === originalKey && '(Original)'}
+              <SelectItem
+                key={`${key}m`}
+                value={`${key}m`}
+                className="text-slate-200"
+              >
+                {key}m {`${key}m` === originalKey && "(Original)"}
               </SelectItem>
             ))}
           </SelectContent>
@@ -326,7 +356,11 @@ function PreviewControlsContent({
       <div className="space-y-2">
         <div className="flex items-center justify-between">
           <Label className="text-sm text-slate-300 flex items-center gap-1">
-            {isMuted ? <VolumeX className="h-3 w-3" /> : <Volume2 className="h-3 w-3" />}
+            {isMuted ? (
+              <VolumeX className="h-3 w-3" />
+            ) : (
+              <Volume2 className="h-3 w-3" />
+            )}
             Volume
           </Label>
           <Button
@@ -335,7 +369,11 @@ function PreviewControlsContent({
             className="h-6 w-6 p-0"
             onClick={onMuteToggle}
           >
-            {isMuted ? <VolumeX className="h-3 w-3" /> : <Volume2 className="h-3 w-3" />}
+            {isMuted ? (
+              <VolumeX className="h-3 w-3" />
+            ) : (
+              <Volume2 className="h-3 w-3" />
+            )}
           </Button>
         </div>
         <Slider
@@ -361,22 +399,30 @@ export function BeatPreviewBadges({
   className?: string;
 }) {
   const { targetBpm, pitchShift, currentBeatId } = useAudioPreviewStore();
-  
+
   const bpmDiff = targetBpm - originalBpm;
   const hasChanges = bpmDiff !== 0 || pitchShift !== 0;
 
   if (!hasChanges) return null;
 
   return (
-    <div className={cn('flex gap-1 flex-wrap', className)}>
+    <div className={cn("flex gap-1 flex-wrap", className)}>
       {bpmDiff !== 0 && (
-        <Badge variant="secondary" className="text-xs bg-cyan-500/20 text-cyan-400 border-cyan-500/30">
-          {bpmDiff > 0 ? '+' : ''}{Math.round(bpmDiff)} BPM
+        <Badge
+          variant="secondary"
+          className="text-xs bg-cyan-500/20 text-cyan-400 border-cyan-500/30"
+        >
+          {bpmDiff > 0 ? "+" : ""}
+          {Math.round(bpmDiff)} BPM
         </Badge>
       )}
       {pitchShift !== 0 && (
-        <Badge variant="secondary" className="text-xs bg-purple-500/20 text-purple-400 border-purple-500/30">
-          {pitchShift > 0 ? '+' : ''}{pitchShift} semitones
+        <Badge
+          variant="secondary"
+          className="text-xs bg-purple-500/20 text-purple-400 border-purple-500/30"
+        >
+          {pitchShift > 0 ? "+" : ""}
+          {pitchShift} semitones
         </Badge>
       )}
     </div>

@@ -1,8 +1,8 @@
-import { logger } from '../logger.js';
-import { EventEmitter } from 'events';
-import { randomBytes } from 'crypto';
+import { logger } from "../logger.js";
+import { EventEmitter } from "events";
+import { randomBytes } from "crypto";
 
-export type VSTFormat = 'vst2' | 'vst3' | 'au' | 'aax';
+export type VSTFormat = "vst2" | "vst3" | "au" | "aax";
 
 export interface VSTPluginInfo {
   id: string;
@@ -11,7 +11,7 @@ export interface VSTPluginInfo {
   version: string;
   format: VSTFormat;
   path: string;
-  category: 'instrument' | 'effect';
+  category: "instrument" | "effect";
   type: string;
   numInputs: number;
   numOutputs: number;
@@ -50,7 +50,7 @@ export interface VSTInstance {
   bypassed: boolean;
   sampleRate: number;
   blockSize: number;
-  state: 'loading' | 'ready' | 'processing' | 'error' | 'suspended';
+  state: "loading" | "ready" | "processing" | "error" | "suspended";
   editorOpen: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -74,7 +74,13 @@ export interface VSTProcessRequest {
 }
 
 export interface VSTMidiEvent {
-  type: 'noteOn' | 'noteOff' | 'controlChange' | 'pitchBend' | 'programChange' | 'aftertouch';
+  type:
+    | "noteOn"
+    | "noteOff"
+    | "controlChange"
+    | "pitchBend"
+    | "programChange"
+    | "aftertouch";
   channel: number;
   data1: number;
   data2?: number;
@@ -93,22 +99,22 @@ export interface VSTBridgeConfig {
 
 const DEFAULT_CONFIG: VSTBridgeConfig = {
   scanPaths: [
-    '/Library/Audio/Plug-Ins/VST',
-    '/Library/Audio/Plug-Ins/VST3',
-    '/Library/Audio/Plug-Ins/Components',
-    'C:\\Program Files\\VstPlugins',
-    'C:\\Program Files\\Common Files\\VST3',
-    'C:\\Program Files\\Steinberg\\VstPlugins',
-    '~/.vst',
-    '~/.vst3',
-    '~/.lv2',
+    "/Library/Audio/Plug-Ins/VST",
+    "/Library/Audio/Plug-Ins/VST3",
+    "/Library/Audio/Plug-Ins/Components",
+    "C:\\Program Files\\VstPlugins",
+    "C:\\Program Files\\Common Files\\VST3",
+    "C:\\Program Files\\Steinberg\\VstPlugins",
+    "~/.vst",
+    "~/.vst3",
+    "~/.lv2",
   ],
   cachePluginList: true,
   sandboxPlugins: true,
   maxInstances: 32,
   processTimeout: 5000,
   enableMidiLearn: true,
-  preferredFormat: 'vst3',
+  preferredFormat: "vst3",
 };
 
 class VSTPluginBridge extends EventEmitter {
@@ -127,12 +133,12 @@ class VSTPluginBridge extends EventEmitter {
 
   async initialize(): Promise<void> {
     try {
-      logger.info('Initializing VST Plugin Bridge...');
+      logger.info("Initializing VST Plugin Bridge...");
       this.bridgeReady = true;
-      this.emit('bridgeReady');
-      logger.info('VST Plugin Bridge initialized successfully');
+      this.emit("bridgeReady");
+      logger.info("VST Plugin Bridge initialized successfully");
     } catch (error) {
-      logger.warn({ err: error }, 'Failed to initialize VST Plugin Bridge:');
+      logger.warn({ err: error }, "Failed to initialize VST Plugin Bridge:");
       throw error;
     }
   }
@@ -145,32 +151,35 @@ class VSTPluginBridge extends EventEmitter {
     return this.desktopConnection !== null;
   }
 
-  async connectDesktopApp(connectionInfo: { sessionId: string; userId: string }): Promise<boolean> {
+  async connectDesktopApp(connectionInfo: {
+    sessionId: string;
+    userId: string;
+  }): Promise<boolean> {
     try {
-      logger.info('Desktop app connection request:', connectionInfo);
+      logger.info("Desktop app connection request:", connectionInfo);
       this.desktopConnection = {
         sessionId: connectionInfo.sessionId,
         userId: connectionInfo.userId,
         connectedAt: new Date(),
       };
-      this.emit('desktopConnected', this.desktopConnection);
+      this.emit("desktopConnected", this.desktopConnection);
       return true;
     } catch (error) {
-      logger.warn({ err: error }, 'Failed to connect desktop app:');
+      logger.warn({ err: error }, "Failed to connect desktop app:");
       return false;
     }
   }
 
   disconnectDesktopApp(): void {
     if (this.desktopConnection) {
-      this.emit('desktopDisconnected', this.desktopConnection);
+      this.emit("desktopDisconnected", this.desktopConnection);
       this.desktopConnection = null;
     }
   }
 
   async scanPlugins(paths?: string[]): Promise<VSTScanResult> {
     if (this.isScanning) {
-      throw new Error('Plugin scan already in progress');
+      throw new Error("Plugin scan already in progress");
     }
 
     this.isScanning = true;
@@ -186,8 +195,8 @@ class VSTPluginBridge extends EventEmitter {
     };
 
     try {
-      logger.info('Starting VST plugin scan...', { paths: scanPaths });
-      this.emit('scanStart', { paths: scanPaths });
+      logger.info("Starting VST plugin scan...", { paths: scanPaths });
+      this.emit("scanStart", { paths: scanPaths });
 
       for (const scanPath of scanPaths) {
         try {
@@ -209,14 +218,14 @@ class VSTPluginBridge extends EventEmitter {
       this.lastScanTime = new Date();
       result.scanTime = Date.now() - startTime;
 
-      logger.info('VST plugin scan completed', {
+      logger.info("VST plugin scan completed", {
         scanned: result.scanned,
         valid: result.valid,
         invalid: result.invalid,
         scanTime: result.scanTime,
       });
 
-      this.emit('scanComplete', result);
+      this.emit("scanComplete", result);
       return result;
     } finally {
       this.isScanning = false;
@@ -244,14 +253,14 @@ class VSTPluginBridge extends EventEmitter {
   private getBuiltInVSTEmulations(): VSTPluginInfo[] {
     return [
       {
-        id: 'vst-serum-emulation',
-        name: 'Wavetable Synth Pro',
-        vendor: 'Max Booster',
-        version: '1.0.0',
-        format: 'vst3',
-        path: 'internal://wavetable-synth-pro',
-        category: 'instrument',
-        type: 'wavetable',
+        id: "vst-serum-emulation",
+        name: "Wavetable Synth Pro",
+        vendor: "Max Booster",
+        version: "1.0.0",
+        format: "vst3",
+        path: "internal://wavetable-synth-pro",
+        category: "instrument",
+        type: "wavetable",
         numInputs: 0,
         numOutputs: 2,
         numParameters: 32,
@@ -261,17 +270,23 @@ class VSTPluginBridge extends EventEmitter {
         latency: 0,
         tailSize: 0,
         parameters: this.generateWavetableParams(),
-        programs: ['Init', 'Bass Drop', 'Lead Saw', 'Pad Evolve', 'Pluck Sharp'],
+        programs: [
+          "Init",
+          "Bass Drop",
+          "Lead Saw",
+          "Pad Evolve",
+          "Pluck Sharp",
+        ],
       },
       {
-        id: 'vst-massive-emulation',
-        name: 'Massive Synth',
-        vendor: 'Max Booster',
-        version: '1.0.0',
-        format: 'vst3',
-        path: 'internal://massive-synth',
-        category: 'instrument',
-        type: 'synth',
+        id: "vst-massive-emulation",
+        name: "Massive Synth",
+        vendor: "Max Booster",
+        version: "1.0.0",
+        format: "vst3",
+        path: "internal://massive-synth",
+        category: "instrument",
+        type: "synth",
         numInputs: 0,
         numOutputs: 2,
         numParameters: 48,
@@ -281,17 +296,23 @@ class VSTPluginBridge extends EventEmitter {
         latency: 0,
         tailSize: 0,
         parameters: this.generateMassiveParams(),
-        programs: ['Init', 'Wobble Bass', 'Supersaw Lead', 'Ambient Pad', 'Arp Sequence'],
+        programs: [
+          "Init",
+          "Wobble Bass",
+          "Supersaw Lead",
+          "Ambient Pad",
+          "Arp Sequence",
+        ],
       },
       {
-        id: 'vst-fabfilter-proq-emulation',
-        name: 'Pro EQ 3',
-        vendor: 'Max Booster',
-        version: '1.0.0',
-        format: 'vst3',
-        path: 'internal://pro-eq-3',
-        category: 'effect',
-        type: 'eq',
+        id: "vst-fabfilter-proq-emulation",
+        name: "Pro EQ 3",
+        vendor: "Max Booster",
+        version: "1.0.0",
+        format: "vst3",
+        path: "internal://pro-eq-3",
+        category: "effect",
+        type: "eq",
         numInputs: 2,
         numOutputs: 2,
         numParameters: 64,
@@ -301,17 +322,23 @@ class VSTPluginBridge extends EventEmitter {
         latency: 0,
         tailSize: 0,
         parameters: this.generateProEQParams(),
-        programs: ['Flat', 'Vocal Presence', 'Bass Enhancement', 'High Shelf Boost', 'Notch Filter'],
+        programs: [
+          "Flat",
+          "Vocal Presence",
+          "Bass Enhancement",
+          "High Shelf Boost",
+          "Notch Filter",
+        ],
       },
       {
-        id: 'vst-fabfilter-prol-emulation',
-        name: 'Pro Limiter',
-        vendor: 'Max Booster',
-        version: '1.0.0',
-        format: 'vst3',
-        path: 'internal://pro-limiter',
-        category: 'effect',
-        type: 'limiter',
+        id: "vst-fabfilter-prol-emulation",
+        name: "Pro Limiter",
+        vendor: "Max Booster",
+        version: "1.0.0",
+        format: "vst3",
+        path: "internal://pro-limiter",
+        category: "effect",
+        type: "limiter",
         numInputs: 2,
         numOutputs: 2,
         numParameters: 16,
@@ -321,17 +348,22 @@ class VSTPluginBridge extends EventEmitter {
         latency: 64,
         tailSize: 0,
         parameters: this.generateLimiterParams(),
-        programs: ['Transparent', 'Loud Master', 'Safe Limiting', 'Analog Character'],
+        programs: [
+          "Transparent",
+          "Loud Master",
+          "Safe Limiting",
+          "Analog Character",
+        ],
       },
       {
-        id: 'vst-ozone-emulation',
-        name: 'Master Suite',
-        vendor: 'Max Booster',
-        version: '1.0.0',
-        format: 'vst3',
-        path: 'internal://master-suite',
-        category: 'effect',
-        type: 'mastering',
+        id: "vst-ozone-emulation",
+        name: "Master Suite",
+        vendor: "Max Booster",
+        version: "1.0.0",
+        format: "vst3",
+        path: "internal://master-suite",
+        category: "effect",
+        type: "mastering",
         numInputs: 2,
         numOutputs: 2,
         numParameters: 96,
@@ -341,17 +373,23 @@ class VSTPluginBridge extends EventEmitter {
         latency: 128,
         tailSize: 4096,
         parameters: this.generateMasterSuiteParams(),
-        programs: ['Balanced Master', 'Loud EDM', 'Warm Analog', 'Broadcast Ready', 'Streaming Optimized'],
+        programs: [
+          "Balanced Master",
+          "Loud EDM",
+          "Warm Analog",
+          "Broadcast Ready",
+          "Streaming Optimized",
+        ],
       },
       {
-        id: 'vst-valhalla-room-emulation',
-        name: 'Ethereal Reverb',
-        vendor: 'Max Booster',
-        version: '1.0.0',
-        format: 'vst3',
-        path: 'internal://ethereal-reverb',
-        category: 'effect',
-        type: 'reverb',
+        id: "vst-valhalla-room-emulation",
+        name: "Ethereal Reverb",
+        vendor: "Max Booster",
+        version: "1.0.0",
+        format: "vst3",
+        path: "internal://ethereal-reverb",
+        category: "effect",
+        type: "reverb",
         numInputs: 2,
         numOutputs: 2,
         numParameters: 24,
@@ -361,17 +399,24 @@ class VSTPluginBridge extends EventEmitter {
         latency: 0,
         tailSize: 48000,
         parameters: this.generateReverbParams(),
-        programs: ['Small Room', 'Large Hall', 'Plate', 'Cathedral', 'Shimmer', 'Ambient Cloud'],
+        programs: [
+          "Small Room",
+          "Large Hall",
+          "Plate",
+          "Cathedral",
+          "Shimmer",
+          "Ambient Cloud",
+        ],
       },
       {
-        id: 'vst-soundtoys-decapitator-emulation',
-        name: 'Analog Saturation',
-        vendor: 'Max Booster',
-        version: '1.0.0',
-        format: 'vst3',
-        path: 'internal://analog-saturation',
-        category: 'effect',
-        type: 'distortion',
+        id: "vst-soundtoys-decapitator-emulation",
+        name: "Analog Saturation",
+        vendor: "Max Booster",
+        version: "1.0.0",
+        format: "vst3",
+        path: "internal://analog-saturation",
+        category: "effect",
+        type: "distortion",
         numInputs: 2,
         numOutputs: 2,
         numParameters: 16,
@@ -381,17 +426,23 @@ class VSTPluginBridge extends EventEmitter {
         latency: 0,
         tailSize: 0,
         parameters: this.generateSaturationParams(),
-        programs: ['Subtle Warmth', 'Tube Drive', 'Tape Saturation', 'Heavy Distortion', 'Lo-Fi'],
+        programs: [
+          "Subtle Warmth",
+          "Tube Drive",
+          "Tape Saturation",
+          "Heavy Distortion",
+          "Lo-Fi",
+        ],
       },
       {
-        id: 'vst-ssl-comp-emulation',
-        name: 'Bus Compressor',
-        vendor: 'Max Booster',
-        version: '1.0.0',
-        format: 'vst3',
-        path: 'internal://bus-compressor',
-        category: 'effect',
-        type: 'compressor',
+        id: "vst-ssl-comp-emulation",
+        name: "Bus Compressor",
+        vendor: "Max Booster",
+        version: "1.0.0",
+        format: "vst3",
+        path: "internal://bus-compressor",
+        category: "effect",
+        type: "compressor",
         numInputs: 2,
         numOutputs: 2,
         numParameters: 12,
@@ -401,98 +452,704 @@ class VSTPluginBridge extends EventEmitter {
         latency: 32,
         tailSize: 0,
         parameters: this.generateBusCompParams(),
-        programs: ['Glue', 'Punchy', 'Transparent', 'Aggressive', 'Parallel Crush'],
+        programs: [
+          "Glue",
+          "Punchy",
+          "Transparent",
+          "Aggressive",
+          "Parallel Crush",
+        ],
       },
     ];
   }
 
   private generateWavetableParams(): VSTParameter[] {
     return [
-      { index: 0, id: 'wt_position_a', name: 'WT Position A', label: '%', value: 0, defaultValue: 0, minValue: 0, maxValue: 1, stepSize: 0.01, isAutomatable: true, isReadOnly: false },
-      { index: 1, id: 'wt_position_b', name: 'WT Position B', label: '%', value: 0, defaultValue: 0, minValue: 0, maxValue: 1, stepSize: 0.01, isAutomatable: true, isReadOnly: false },
-      { index: 2, id: 'filter_cutoff', name: 'Filter Cutoff', label: 'Hz', value: 20000, defaultValue: 20000, minValue: 20, maxValue: 20000, stepSize: 1, isAutomatable: true, isReadOnly: false },
-      { index: 3, id: 'filter_res', name: 'Filter Resonance', label: '%', value: 0, defaultValue: 0, minValue: 0, maxValue: 1, stepSize: 0.01, isAutomatable: true, isReadOnly: false },
-      { index: 4, id: 'osc_mix', name: 'Oscillator Mix', label: '%', value: 0.5, defaultValue: 0.5, minValue: 0, maxValue: 1, stepSize: 0.01, isAutomatable: true, isReadOnly: false },
-      { index: 5, id: 'unison_voices', name: 'Unison Voices', label: '', value: 1, defaultValue: 1, minValue: 1, maxValue: 16, stepSize: 1, isAutomatable: false, isReadOnly: false },
-      { index: 6, id: 'unison_detune', name: 'Unison Detune', label: 'cents', value: 0, defaultValue: 0, minValue: 0, maxValue: 100, stepSize: 1, isAutomatable: true, isReadOnly: false },
-      { index: 7, id: 'env_attack', name: 'Amp Attack', label: 's', value: 0.001, defaultValue: 0.001, minValue: 0, maxValue: 10, stepSize: 0.001, isAutomatable: true, isReadOnly: false },
+      {
+        index: 0,
+        id: "wt_position_a",
+        name: "WT Position A",
+        label: "%",
+        value: 0,
+        defaultValue: 0,
+        minValue: 0,
+        maxValue: 1,
+        stepSize: 0.01,
+        isAutomatable: true,
+        isReadOnly: false,
+      },
+      {
+        index: 1,
+        id: "wt_position_b",
+        name: "WT Position B",
+        label: "%",
+        value: 0,
+        defaultValue: 0,
+        minValue: 0,
+        maxValue: 1,
+        stepSize: 0.01,
+        isAutomatable: true,
+        isReadOnly: false,
+      },
+      {
+        index: 2,
+        id: "filter_cutoff",
+        name: "Filter Cutoff",
+        label: "Hz",
+        value: 20000,
+        defaultValue: 20000,
+        minValue: 20,
+        maxValue: 20000,
+        stepSize: 1,
+        isAutomatable: true,
+        isReadOnly: false,
+      },
+      {
+        index: 3,
+        id: "filter_res",
+        name: "Filter Resonance",
+        label: "%",
+        value: 0,
+        defaultValue: 0,
+        minValue: 0,
+        maxValue: 1,
+        stepSize: 0.01,
+        isAutomatable: true,
+        isReadOnly: false,
+      },
+      {
+        index: 4,
+        id: "osc_mix",
+        name: "Oscillator Mix",
+        label: "%",
+        value: 0.5,
+        defaultValue: 0.5,
+        minValue: 0,
+        maxValue: 1,
+        stepSize: 0.01,
+        isAutomatable: true,
+        isReadOnly: false,
+      },
+      {
+        index: 5,
+        id: "unison_voices",
+        name: "Unison Voices",
+        label: "",
+        value: 1,
+        defaultValue: 1,
+        minValue: 1,
+        maxValue: 16,
+        stepSize: 1,
+        isAutomatable: false,
+        isReadOnly: false,
+      },
+      {
+        index: 6,
+        id: "unison_detune",
+        name: "Unison Detune",
+        label: "cents",
+        value: 0,
+        defaultValue: 0,
+        minValue: 0,
+        maxValue: 100,
+        stepSize: 1,
+        isAutomatable: true,
+        isReadOnly: false,
+      },
+      {
+        index: 7,
+        id: "env_attack",
+        name: "Amp Attack",
+        label: "s",
+        value: 0.001,
+        defaultValue: 0.001,
+        minValue: 0,
+        maxValue: 10,
+        stepSize: 0.001,
+        isAutomatable: true,
+        isReadOnly: false,
+      },
     ];
   }
 
   private generateMassiveParams(): VSTParameter[] {
     return [
-      { index: 0, id: 'osc1_wave', name: 'Osc 1 Wave', label: '', value: 0, defaultValue: 0, minValue: 0, maxValue: 1, stepSize: 0.01, isAutomatable: true, isReadOnly: false },
-      { index: 1, id: 'osc2_wave', name: 'Osc 2 Wave', label: '', value: 0, defaultValue: 0, minValue: 0, maxValue: 1, stepSize: 0.01, isAutomatable: true, isReadOnly: false },
-      { index: 2, id: 'osc3_wave', name: 'Osc 3 Wave', label: '', value: 0, defaultValue: 0, minValue: 0, maxValue: 1, stepSize: 0.01, isAutomatable: true, isReadOnly: false },
-      { index: 3, id: 'filter1_cutoff', name: 'Filter 1 Cutoff', label: 'Hz', value: 20000, defaultValue: 20000, minValue: 20, maxValue: 20000, stepSize: 1, isAutomatable: true, isReadOnly: false },
-      { index: 4, id: 'filter2_cutoff', name: 'Filter 2 Cutoff', label: 'Hz', value: 20000, defaultValue: 20000, minValue: 20, maxValue: 20000, stepSize: 1, isAutomatable: true, isReadOnly: false },
-      { index: 5, id: 'macro1', name: 'Macro 1', label: '%', value: 0, defaultValue: 0, minValue: 0, maxValue: 1, stepSize: 0.01, isAutomatable: true, isReadOnly: false },
-      { index: 6, id: 'macro2', name: 'Macro 2', label: '%', value: 0, defaultValue: 0, minValue: 0, maxValue: 1, stepSize: 0.01, isAutomatable: true, isReadOnly: false },
-      { index: 7, id: 'macro3', name: 'Macro 3', label: '%', value: 0, defaultValue: 0, minValue: 0, maxValue: 1, stepSize: 0.01, isAutomatable: true, isReadOnly: false },
+      {
+        index: 0,
+        id: "osc1_wave",
+        name: "Osc 1 Wave",
+        label: "",
+        value: 0,
+        defaultValue: 0,
+        minValue: 0,
+        maxValue: 1,
+        stepSize: 0.01,
+        isAutomatable: true,
+        isReadOnly: false,
+      },
+      {
+        index: 1,
+        id: "osc2_wave",
+        name: "Osc 2 Wave",
+        label: "",
+        value: 0,
+        defaultValue: 0,
+        minValue: 0,
+        maxValue: 1,
+        stepSize: 0.01,
+        isAutomatable: true,
+        isReadOnly: false,
+      },
+      {
+        index: 2,
+        id: "osc3_wave",
+        name: "Osc 3 Wave",
+        label: "",
+        value: 0,
+        defaultValue: 0,
+        minValue: 0,
+        maxValue: 1,
+        stepSize: 0.01,
+        isAutomatable: true,
+        isReadOnly: false,
+      },
+      {
+        index: 3,
+        id: "filter1_cutoff",
+        name: "Filter 1 Cutoff",
+        label: "Hz",
+        value: 20000,
+        defaultValue: 20000,
+        minValue: 20,
+        maxValue: 20000,
+        stepSize: 1,
+        isAutomatable: true,
+        isReadOnly: false,
+      },
+      {
+        index: 4,
+        id: "filter2_cutoff",
+        name: "Filter 2 Cutoff",
+        label: "Hz",
+        value: 20000,
+        defaultValue: 20000,
+        minValue: 20,
+        maxValue: 20000,
+        stepSize: 1,
+        isAutomatable: true,
+        isReadOnly: false,
+      },
+      {
+        index: 5,
+        id: "macro1",
+        name: "Macro 1",
+        label: "%",
+        value: 0,
+        defaultValue: 0,
+        minValue: 0,
+        maxValue: 1,
+        stepSize: 0.01,
+        isAutomatable: true,
+        isReadOnly: false,
+      },
+      {
+        index: 6,
+        id: "macro2",
+        name: "Macro 2",
+        label: "%",
+        value: 0,
+        defaultValue: 0,
+        minValue: 0,
+        maxValue: 1,
+        stepSize: 0.01,
+        isAutomatable: true,
+        isReadOnly: false,
+      },
+      {
+        index: 7,
+        id: "macro3",
+        name: "Macro 3",
+        label: "%",
+        value: 0,
+        defaultValue: 0,
+        minValue: 0,
+        maxValue: 1,
+        stepSize: 0.01,
+        isAutomatable: true,
+        isReadOnly: false,
+      },
     ];
   }
 
   private generateProEQParams(): VSTParameter[] {
     return [
-      { index: 0, id: 'band1_freq', name: 'Band 1 Freq', label: 'Hz', value: 30, defaultValue: 30, minValue: 10, maxValue: 30000, stepSize: 1, isAutomatable: true, isReadOnly: false },
-      { index: 1, id: 'band1_gain', name: 'Band 1 Gain', label: 'dB', value: 0, defaultValue: 0, minValue: -30, maxValue: 30, stepSize: 0.1, isAutomatable: true, isReadOnly: false },
-      { index: 2, id: 'band1_q', name: 'Band 1 Q', label: '', value: 1, defaultValue: 1, minValue: 0.1, maxValue: 30, stepSize: 0.1, isAutomatable: true, isReadOnly: false },
-      { index: 3, id: 'band2_freq', name: 'Band 2 Freq', label: 'Hz', value: 100, defaultValue: 100, minValue: 10, maxValue: 30000, stepSize: 1, isAutomatable: true, isReadOnly: false },
-      { index: 4, id: 'band2_gain', name: 'Band 2 Gain', label: 'dB', value: 0, defaultValue: 0, minValue: -30, maxValue: 30, stepSize: 0.1, isAutomatable: true, isReadOnly: false },
-      { index: 5, id: 'band2_q', name: 'Band 2 Q', label: '', value: 1, defaultValue: 1, minValue: 0.1, maxValue: 30, stepSize: 0.1, isAutomatable: true, isReadOnly: false },
+      {
+        index: 0,
+        id: "band1_freq",
+        name: "Band 1 Freq",
+        label: "Hz",
+        value: 30,
+        defaultValue: 30,
+        minValue: 10,
+        maxValue: 30000,
+        stepSize: 1,
+        isAutomatable: true,
+        isReadOnly: false,
+      },
+      {
+        index: 1,
+        id: "band1_gain",
+        name: "Band 1 Gain",
+        label: "dB",
+        value: 0,
+        defaultValue: 0,
+        minValue: -30,
+        maxValue: 30,
+        stepSize: 0.1,
+        isAutomatable: true,
+        isReadOnly: false,
+      },
+      {
+        index: 2,
+        id: "band1_q",
+        name: "Band 1 Q",
+        label: "",
+        value: 1,
+        defaultValue: 1,
+        minValue: 0.1,
+        maxValue: 30,
+        stepSize: 0.1,
+        isAutomatable: true,
+        isReadOnly: false,
+      },
+      {
+        index: 3,
+        id: "band2_freq",
+        name: "Band 2 Freq",
+        label: "Hz",
+        value: 100,
+        defaultValue: 100,
+        minValue: 10,
+        maxValue: 30000,
+        stepSize: 1,
+        isAutomatable: true,
+        isReadOnly: false,
+      },
+      {
+        index: 4,
+        id: "band2_gain",
+        name: "Band 2 Gain",
+        label: "dB",
+        value: 0,
+        defaultValue: 0,
+        minValue: -30,
+        maxValue: 30,
+        stepSize: 0.1,
+        isAutomatable: true,
+        isReadOnly: false,
+      },
+      {
+        index: 5,
+        id: "band2_q",
+        name: "Band 2 Q",
+        label: "",
+        value: 1,
+        defaultValue: 1,
+        minValue: 0.1,
+        maxValue: 30,
+        stepSize: 0.1,
+        isAutomatable: true,
+        isReadOnly: false,
+      },
     ];
   }
 
   private generateLimiterParams(): VSTParameter[] {
     return [
-      { index: 0, id: 'ceiling', name: 'Ceiling', label: 'dB', value: -0.3, defaultValue: -0.3, minValue: -6, maxValue: 0, stepSize: 0.1, isAutomatable: true, isReadOnly: false },
-      { index: 1, id: 'gain', name: 'Input Gain', label: 'dB', value: 0, defaultValue: 0, minValue: 0, maxValue: 24, stepSize: 0.1, isAutomatable: true, isReadOnly: false },
-      { index: 2, id: 'release', name: 'Release', label: 'ms', value: 100, defaultValue: 100, minValue: 1, maxValue: 1000, stepSize: 1, isAutomatable: true, isReadOnly: false },
-      { index: 3, id: 'lookahead', name: 'Lookahead', label: 'ms', value: 5, defaultValue: 5, minValue: 0, maxValue: 10, stepSize: 0.1, isAutomatable: false, isReadOnly: false },
+      {
+        index: 0,
+        id: "ceiling",
+        name: "Ceiling",
+        label: "dB",
+        value: -0.3,
+        defaultValue: -0.3,
+        minValue: -6,
+        maxValue: 0,
+        stepSize: 0.1,
+        isAutomatable: true,
+        isReadOnly: false,
+      },
+      {
+        index: 1,
+        id: "gain",
+        name: "Input Gain",
+        label: "dB",
+        value: 0,
+        defaultValue: 0,
+        minValue: 0,
+        maxValue: 24,
+        stepSize: 0.1,
+        isAutomatable: true,
+        isReadOnly: false,
+      },
+      {
+        index: 2,
+        id: "release",
+        name: "Release",
+        label: "ms",
+        value: 100,
+        defaultValue: 100,
+        minValue: 1,
+        maxValue: 1000,
+        stepSize: 1,
+        isAutomatable: true,
+        isReadOnly: false,
+      },
+      {
+        index: 3,
+        id: "lookahead",
+        name: "Lookahead",
+        label: "ms",
+        value: 5,
+        defaultValue: 5,
+        minValue: 0,
+        maxValue: 10,
+        stepSize: 0.1,
+        isAutomatable: false,
+        isReadOnly: false,
+      },
     ];
   }
 
   private generateMasterSuiteParams(): VSTParameter[] {
     return [
-      { index: 0, id: 'eq_low', name: 'Low Shelf', label: 'dB', value: 0, defaultValue: 0, minValue: -12, maxValue: 12, stepSize: 0.1, isAutomatable: true, isReadOnly: false },
-      { index: 1, id: 'eq_mid', name: 'Mid', label: 'dB', value: 0, defaultValue: 0, minValue: -12, maxValue: 12, stepSize: 0.1, isAutomatable: true, isReadOnly: false },
-      { index: 2, id: 'eq_high', name: 'High Shelf', label: 'dB', value: 0, defaultValue: 0, minValue: -12, maxValue: 12, stepSize: 0.1, isAutomatable: true, isReadOnly: false },
-      { index: 3, id: 'comp_threshold', name: 'Comp Threshold', label: 'dB', value: -12, defaultValue: -12, minValue: -40, maxValue: 0, stepSize: 0.5, isAutomatable: true, isReadOnly: false },
-      { index: 4, id: 'comp_ratio', name: 'Comp Ratio', label: ':1', value: 2, defaultValue: 2, minValue: 1, maxValue: 20, stepSize: 0.1, isAutomatable: true, isReadOnly: false },
-      { index: 5, id: 'stereo_width', name: 'Stereo Width', label: '%', value: 100, defaultValue: 100, minValue: 0, maxValue: 200, stepSize: 1, isAutomatable: true, isReadOnly: false },
-      { index: 6, id: 'limiter_ceiling', name: 'Ceiling', label: 'dB', value: -0.1, defaultValue: -0.1, minValue: -6, maxValue: 0, stepSize: 0.1, isAutomatable: true, isReadOnly: false },
+      {
+        index: 0,
+        id: "eq_low",
+        name: "Low Shelf",
+        label: "dB",
+        value: 0,
+        defaultValue: 0,
+        minValue: -12,
+        maxValue: 12,
+        stepSize: 0.1,
+        isAutomatable: true,
+        isReadOnly: false,
+      },
+      {
+        index: 1,
+        id: "eq_mid",
+        name: "Mid",
+        label: "dB",
+        value: 0,
+        defaultValue: 0,
+        minValue: -12,
+        maxValue: 12,
+        stepSize: 0.1,
+        isAutomatable: true,
+        isReadOnly: false,
+      },
+      {
+        index: 2,
+        id: "eq_high",
+        name: "High Shelf",
+        label: "dB",
+        value: 0,
+        defaultValue: 0,
+        minValue: -12,
+        maxValue: 12,
+        stepSize: 0.1,
+        isAutomatable: true,
+        isReadOnly: false,
+      },
+      {
+        index: 3,
+        id: "comp_threshold",
+        name: "Comp Threshold",
+        label: "dB",
+        value: -12,
+        defaultValue: -12,
+        minValue: -40,
+        maxValue: 0,
+        stepSize: 0.5,
+        isAutomatable: true,
+        isReadOnly: false,
+      },
+      {
+        index: 4,
+        id: "comp_ratio",
+        name: "Comp Ratio",
+        label: ":1",
+        value: 2,
+        defaultValue: 2,
+        minValue: 1,
+        maxValue: 20,
+        stepSize: 0.1,
+        isAutomatable: true,
+        isReadOnly: false,
+      },
+      {
+        index: 5,
+        id: "stereo_width",
+        name: "Stereo Width",
+        label: "%",
+        value: 100,
+        defaultValue: 100,
+        minValue: 0,
+        maxValue: 200,
+        stepSize: 1,
+        isAutomatable: true,
+        isReadOnly: false,
+      },
+      {
+        index: 6,
+        id: "limiter_ceiling",
+        name: "Ceiling",
+        label: "dB",
+        value: -0.1,
+        defaultValue: -0.1,
+        minValue: -6,
+        maxValue: 0,
+        stepSize: 0.1,
+        isAutomatable: true,
+        isReadOnly: false,
+      },
     ];
   }
 
   private generateReverbParams(): VSTParameter[] {
     return [
-      { index: 0, id: 'mix', name: 'Mix', label: '%', value: 30, defaultValue: 30, minValue: 0, maxValue: 100, stepSize: 1, isAutomatable: true, isReadOnly: false },
-      { index: 1, id: 'size', name: 'Size', label: '', value: 0.5, defaultValue: 0.5, minValue: 0, maxValue: 1, stepSize: 0.01, isAutomatable: true, isReadOnly: false },
-      { index: 2, id: 'decay', name: 'Decay', label: 's', value: 2, defaultValue: 2, minValue: 0.1, maxValue: 30, stepSize: 0.1, isAutomatable: true, isReadOnly: false },
-      { index: 3, id: 'damping', name: 'Damping', label: '%', value: 50, defaultValue: 50, minValue: 0, maxValue: 100, stepSize: 1, isAutomatable: true, isReadOnly: false },
-      { index: 4, id: 'predelay', name: 'Pre-Delay', label: 'ms', value: 20, defaultValue: 20, minValue: 0, maxValue: 500, stepSize: 1, isAutomatable: true, isReadOnly: false },
-      { index: 5, id: 'modulation', name: 'Modulation', label: '%', value: 20, defaultValue: 20, minValue: 0, maxValue: 100, stepSize: 1, isAutomatable: true, isReadOnly: false },
+      {
+        index: 0,
+        id: "mix",
+        name: "Mix",
+        label: "%",
+        value: 30,
+        defaultValue: 30,
+        minValue: 0,
+        maxValue: 100,
+        stepSize: 1,
+        isAutomatable: true,
+        isReadOnly: false,
+      },
+      {
+        index: 1,
+        id: "size",
+        name: "Size",
+        label: "",
+        value: 0.5,
+        defaultValue: 0.5,
+        minValue: 0,
+        maxValue: 1,
+        stepSize: 0.01,
+        isAutomatable: true,
+        isReadOnly: false,
+      },
+      {
+        index: 2,
+        id: "decay",
+        name: "Decay",
+        label: "s",
+        value: 2,
+        defaultValue: 2,
+        minValue: 0.1,
+        maxValue: 30,
+        stepSize: 0.1,
+        isAutomatable: true,
+        isReadOnly: false,
+      },
+      {
+        index: 3,
+        id: "damping",
+        name: "Damping",
+        label: "%",
+        value: 50,
+        defaultValue: 50,
+        minValue: 0,
+        maxValue: 100,
+        stepSize: 1,
+        isAutomatable: true,
+        isReadOnly: false,
+      },
+      {
+        index: 4,
+        id: "predelay",
+        name: "Pre-Delay",
+        label: "ms",
+        value: 20,
+        defaultValue: 20,
+        minValue: 0,
+        maxValue: 500,
+        stepSize: 1,
+        isAutomatable: true,
+        isReadOnly: false,
+      },
+      {
+        index: 5,
+        id: "modulation",
+        name: "Modulation",
+        label: "%",
+        value: 20,
+        defaultValue: 20,
+        minValue: 0,
+        maxValue: 100,
+        stepSize: 1,
+        isAutomatable: true,
+        isReadOnly: false,
+      },
     ];
   }
 
   private generateSaturationParams(): VSTParameter[] {
     return [
-      { index: 0, id: 'drive', name: 'Drive', label: 'dB', value: 0, defaultValue: 0, minValue: 0, maxValue: 24, stepSize: 0.1, isAutomatable: true, isReadOnly: false },
-      { index: 1, id: 'mix', name: 'Mix', label: '%', value: 100, defaultValue: 100, minValue: 0, maxValue: 100, stepSize: 1, isAutomatable: true, isReadOnly: false },
-      { index: 2, id: 'tone', name: 'Tone', label: '', value: 0.5, defaultValue: 0.5, minValue: 0, maxValue: 1, stepSize: 0.01, isAutomatable: true, isReadOnly: false },
-      { index: 3, id: 'output', name: 'Output', label: 'dB', value: 0, defaultValue: 0, minValue: -24, maxValue: 24, stepSize: 0.1, isAutomatable: true, isReadOnly: false },
-      { index: 4, id: 'style', name: 'Style', label: '', value: 0, defaultValue: 0, minValue: 0, maxValue: 4, stepSize: 1, isAutomatable: false, isReadOnly: false },
+      {
+        index: 0,
+        id: "drive",
+        name: "Drive",
+        label: "dB",
+        value: 0,
+        defaultValue: 0,
+        minValue: 0,
+        maxValue: 24,
+        stepSize: 0.1,
+        isAutomatable: true,
+        isReadOnly: false,
+      },
+      {
+        index: 1,
+        id: "mix",
+        name: "Mix",
+        label: "%",
+        value: 100,
+        defaultValue: 100,
+        minValue: 0,
+        maxValue: 100,
+        stepSize: 1,
+        isAutomatable: true,
+        isReadOnly: false,
+      },
+      {
+        index: 2,
+        id: "tone",
+        name: "Tone",
+        label: "",
+        value: 0.5,
+        defaultValue: 0.5,
+        minValue: 0,
+        maxValue: 1,
+        stepSize: 0.01,
+        isAutomatable: true,
+        isReadOnly: false,
+      },
+      {
+        index: 3,
+        id: "output",
+        name: "Output",
+        label: "dB",
+        value: 0,
+        defaultValue: 0,
+        minValue: -24,
+        maxValue: 24,
+        stepSize: 0.1,
+        isAutomatable: true,
+        isReadOnly: false,
+      },
+      {
+        index: 4,
+        id: "style",
+        name: "Style",
+        label: "",
+        value: 0,
+        defaultValue: 0,
+        minValue: 0,
+        maxValue: 4,
+        stepSize: 1,
+        isAutomatable: false,
+        isReadOnly: false,
+      },
     ];
   }
 
   private generateBusCompParams(): VSTParameter[] {
     return [
-      { index: 0, id: 'threshold', name: 'Threshold', label: 'dB', value: -10, defaultValue: -10, minValue: -30, maxValue: 0, stepSize: 0.5, isAutomatable: true, isReadOnly: false },
-      { index: 1, id: 'ratio', name: 'Ratio', label: ':1', value: 4, defaultValue: 4, minValue: 1, maxValue: 10, stepSize: 0.5, isAutomatable: false, isReadOnly: false },
-      { index: 2, id: 'attack', name: 'Attack', label: 'ms', value: 10, defaultValue: 10, minValue: 0.1, maxValue: 30, stepSize: 0.1, isAutomatable: false, isReadOnly: false },
-      { index: 3, id: 'release', name: 'Release', label: 'ms', value: 100, defaultValue: 100, minValue: 50, maxValue: 1200, stepSize: 10, isAutomatable: false, isReadOnly: false },
-      { index: 4, id: 'makeup', name: 'Makeup Gain', label: 'dB', value: 0, defaultValue: 0, minValue: 0, maxValue: 20, stepSize: 0.5, isAutomatable: true, isReadOnly: false },
-      { index: 5, id: 'mix', name: 'Mix', label: '%', value: 100, defaultValue: 100, minValue: 0, maxValue: 100, stepSize: 1, isAutomatable: true, isReadOnly: false },
+      {
+        index: 0,
+        id: "threshold",
+        name: "Threshold",
+        label: "dB",
+        value: -10,
+        defaultValue: -10,
+        minValue: -30,
+        maxValue: 0,
+        stepSize: 0.5,
+        isAutomatable: true,
+        isReadOnly: false,
+      },
+      {
+        index: 1,
+        id: "ratio",
+        name: "Ratio",
+        label: ":1",
+        value: 4,
+        defaultValue: 4,
+        minValue: 1,
+        maxValue: 10,
+        stepSize: 0.5,
+        isAutomatable: false,
+        isReadOnly: false,
+      },
+      {
+        index: 2,
+        id: "attack",
+        name: "Attack",
+        label: "ms",
+        value: 10,
+        defaultValue: 10,
+        minValue: 0.1,
+        maxValue: 30,
+        stepSize: 0.1,
+        isAutomatable: false,
+        isReadOnly: false,
+      },
+      {
+        index: 3,
+        id: "release",
+        name: "Release",
+        label: "ms",
+        value: 100,
+        defaultValue: 100,
+        minValue: 50,
+        maxValue: 1200,
+        stepSize: 10,
+        isAutomatable: false,
+        isReadOnly: false,
+      },
+      {
+        index: 4,
+        id: "makeup",
+        name: "Makeup Gain",
+        label: "dB",
+        value: 0,
+        defaultValue: 0,
+        minValue: 0,
+        maxValue: 20,
+        stepSize: 0.5,
+        isAutomatable: true,
+        isReadOnly: false,
+      },
+      {
+        index: 5,
+        id: "mix",
+        name: "Mix",
+        label: "%",
+        value: 100,
+        defaultValue: 100,
+        minValue: 0,
+        maxValue: 100,
+        stepSize: 1,
+        isAutomatable: true,
+        isReadOnly: false,
+      },
     ];
   }
 
@@ -504,12 +1161,12 @@ class VSTPluginBridge extends EventEmitter {
     return this.scannedPlugins.get(pluginId);
   }
 
-  getPluginsByCategory(category: 'instrument' | 'effect'): VSTPluginInfo[] {
-    return this.getScannedPlugins().filter(p => p.category === category);
+  getPluginsByCategory(category: "instrument" | "effect"): VSTPluginInfo[] {
+    return this.getScannedPlugins().filter((p) => p.category === category);
   }
 
   getPluginsByFormat(format: VSTFormat): VSTPluginInfo[] {
-    return this.getScannedPlugins().filter(p => p.format === format);
+    return this.getScannedPlugins().filter((p) => p.format === format);
   }
 
   async createInstance(
@@ -518,7 +1175,7 @@ class VSTPluginBridge extends EventEmitter {
     trackId?: string,
     chainPosition: number = 0,
     sampleRate: number = 44100,
-    blockSize: number = 512
+    blockSize: number = 512,
   ): Promise<VSTInstance> {
     const plugin = this.getPluginById(pluginId);
     if (!plugin) {
@@ -526,30 +1183,37 @@ class VSTPluginBridge extends EventEmitter {
     }
 
     if (this.instances.size >= this.config.maxInstances) {
-      throw new Error(`Maximum plugin instances reached: ${this.config.maxInstances}`);
+      throw new Error(
+        `Maximum plugin instances reached: ${this.config.maxInstances}`,
+      );
     }
 
     const instance: VSTInstance = {
-      id: `vst-inst-${Date.now()}-${randomBytes(6).toString('hex')}`,
+      id: `vst-inst-${Date.now()}-${randomBytes(6).toString("hex")}`,
       pluginId,
       pluginInfo: plugin,
       projectId,
       trackId,
       chainPosition,
-      parameters: Object.fromEntries(plugin.parameters.map(p => [p.id, p.defaultValue])),
+      parameters: Object.fromEntries(
+        plugin.parameters.map((p) => [p.id, p.defaultValue]),
+      ),
       bypassed: false,
       sampleRate,
       blockSize,
-      state: 'ready',
+      state: "ready",
       editorOpen: false,
       createdAt: new Date(),
       updatedAt: new Date(),
     };
 
     this.instances.set(instance.id, instance);
-    this.emit('instanceCreated', instance);
+    this.emit("instanceCreated", instance);
 
-    logger.info('VST instance created:', { instanceId: instance.id, pluginName: plugin.name });
+    logger.info("VST instance created:", {
+      instanceId: instance.id,
+      pluginName: plugin.name,
+    });
     return instance;
   }
 
@@ -560,8 +1224,8 @@ class VSTPluginBridge extends EventEmitter {
     }
 
     this.instances.delete(instanceId);
-    this.emit('instanceDeleted', { instanceId });
-    logger.info('VST instance deleted:', { instanceId });
+    this.emit("instanceDeleted", { instanceId });
+    logger.info("VST instance deleted:", { instanceId });
   }
 
   getInstance(instanceId: string): VSTInstance | undefined {
@@ -569,14 +1233,21 @@ class VSTPluginBridge extends EventEmitter {
   }
 
   getProjectInstances(projectId: string): VSTInstance[] {
-    return Array.from(this.instances.values()).filter(i => i.projectId === projectId);
+    return Array.from(this.instances.values()).filter(
+      (i) => i.projectId === projectId,
+    );
   }
 
   getTrackInstances(trackId: string): VSTInstance[] {
-    return Array.from(this.instances.values()).filter(i => i.trackId === trackId);
+    return Array.from(this.instances.values()).filter(
+      (i) => i.trackId === trackId,
+    );
   }
 
-  async updateParameters(instanceId: string, parameters: Record<string, number>): Promise<VSTInstance> {
+  async updateParameters(
+    instanceId: string,
+    parameters: Record<string, number>,
+  ): Promise<VSTInstance> {
     const instance = this.instances.get(instanceId);
     if (!instance) {
       throw new Error(`Instance not found: ${instanceId}`);
@@ -585,7 +1256,7 @@ class VSTPluginBridge extends EventEmitter {
     instance.parameters = { ...instance.parameters, ...parameters };
     instance.updatedAt = new Date();
 
-    this.emit('parametersChanged', { instanceId, parameters });
+    this.emit("parametersChanged", { instanceId, parameters });
     return instance;
   }
 
@@ -598,7 +1269,7 @@ class VSTPluginBridge extends EventEmitter {
     instance.bypassed = bypassed;
     instance.updatedAt = new Date();
 
-    this.emit('bypassChanged', { instanceId, bypassed });
+    this.emit("bypassChanged", { instanceId, bypassed });
     return instance;
   }
 
@@ -626,8 +1297,15 @@ class VSTPluginBridge extends EventEmitter {
       throw new Error(`Invalid program index: ${programIndex}`);
     }
 
-    logger.info('VST program loaded:', { instanceId, program: plugin.programs[programIndex] });
-    this.emit('programChanged', { instanceId, programIndex, programName: plugin.programs[programIndex] });
+    logger.info("VST program loaded:", {
+      instanceId,
+      program: plugin.programs[programIndex],
+    });
+    this.emit("programChanged", {
+      instanceId,
+      programIndex,
+      programName: plugin.programs[programIndex],
+    });
   }
 
   async openEditor(instanceId: string): Promise<{ windowId: string }> {
@@ -639,7 +1317,7 @@ class VSTPluginBridge extends EventEmitter {
     instance.editorOpen = true;
     const windowId = `editor-${instanceId}`;
 
-    this.emit('editorOpened', { instanceId, windowId });
+    this.emit("editorOpened", { instanceId, windowId });
     return { windowId };
   }
 
@@ -650,7 +1328,7 @@ class VSTPluginBridge extends EventEmitter {
     }
 
     instance.editorOpen = false;
-    this.emit('editorClosed', { instanceId });
+    this.emit("editorClosed", { instanceId });
   }
 
   getStats(): {

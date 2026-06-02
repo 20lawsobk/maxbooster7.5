@@ -1,7 +1,7 @@
-import { useQuery } from '@tanstack/react-query';
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+import { useQuery } from "@tanstack/react-query";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import {
   Search,
   Lightbulb,
@@ -12,8 +12,8 @@ import {
   ArrowRight,
   Frown,
   HelpCircle,
-} from 'lucide-react';
-import { cn } from '@/lib/utils';
+} from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface SearchEmptyStateProps {
   query: string;
@@ -24,24 +24,24 @@ interface SearchEmptyStateProps {
 }
 
 const SEARCH_TIPS = [
-  'Try using fewer or more general keywords',
-  'Check for spelling mistakes',
-  'Try searching for a genre or mood instead',
+  "Try using fewer or more general keywords",
+  "Check for spelling mistakes",
+  "Try searching for a genre or mood instead",
   'Use quotes for exact phrases: "trap beat"',
-  'Filter by BPM range for more specific results',
+  "Filter by BPM range for more specific results",
 ];
 
 const COMMON_CORRECTIONS: Record<string, string> = {
-  'tarp': 'trap',
-  'hiphop': 'hip-hop',
-  'lofi': 'lo-fi',
-  'rnb': 'r&b',
-  'dril': 'drill',
-  'drll': 'drill',
-  'beaat': 'beat',
-  'melodc': 'melodic',
-  'aggresive': 'aggressive',
-  'chil': 'chill',
+  tarp: "trap",
+  hiphop: "hip-hop",
+  lofi: "lo-fi",
+  rnb: "r&b",
+  dril: "drill",
+  drll: "drill",
+  beaat: "beat",
+  melodc: "melodic",
+  aggresive: "aggressive",
+  chil: "chill",
 };
 
 export function SearchEmptyState({
@@ -52,10 +52,12 @@ export function SearchEmptyState({
   className,
 }: SearchEmptyStateProps) {
   const { data: trendingData } = useQuery({
-    queryKey: ['/api/search/trending'],
+    queryKey: ["/api/search/trending"],
     queryFn: async () => {
-      const res = await fetch('/api/search/trending', { credentials: 'include' });
-      if (!res.ok) throw new Error('Failed to fetch trending');
+      const res = await fetch("/api/search/trending", {
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error("Failed to fetch trending");
       return res.json();
     },
     staleTime: 300000,
@@ -76,7 +78,7 @@ export function SearchEmptyState({
   const trendingGenres = trendingData?.genres?.slice(0, 8) || [];
 
   return (
-    <div className={cn('py-12 px-4', className)}>
+    <div className={cn("py-12 px-4", className)}>
       <div className="max-w-2xl mx-auto text-center space-y-8">
         <div className="space-y-4">
           <div className="w-20 h-20 mx-auto rounded-full bg-slate-800 flex items-center justify-center">
@@ -116,7 +118,10 @@ export function SearchEmptyState({
               </h3>
               <ul className="space-y-2">
                 {SEARCH_TIPS.map((tip, index) => (
-                  <li key={index} className="flex items-start gap-2 text-slate-400">
+                  <li
+                    key={index}
+                    className="flex items-start gap-2 text-slate-400"
+                  >
                     <span className="text-purple-400 mt-1">•</span>
                     {tip}
                   </li>
@@ -192,24 +197,30 @@ export function NoResultsInline({
   onSuggestionClick?: (suggestion: string) => void;
 }) {
   const suggestedCorrection = Object.entries(COMMON_CORRECTIONS).find(
-    ([typo]) => query.toLowerCase().includes(typo)
+    ([typo]) => query.toLowerCase().includes(typo),
   );
 
   return (
     <div className="flex items-center gap-4 p-4 rounded-lg bg-slate-800/50 border border-slate-700">
       <Search className="h-5 w-5 text-slate-500" />
       <div className="flex-1">
-        <p className="text-slate-300">
-          No results for "{query}"
-        </p>
+        <p className="text-slate-300">No results for "{query}"</p>
         {suggestedCorrection && (
           <button
             className="text-sm text-purple-400 hover:text-purple-300 mt-1"
-            onClick={() => onSuggestionClick?.(
-              query.toLowerCase().replace(suggestedCorrection[0], suggestedCorrection[1])
-            )}
+            onClick={() =>
+              onSuggestionClick?.(
+                query
+                  .toLowerCase()
+                  .replace(suggestedCorrection[0], suggestedCorrection[1]),
+              )
+            }
           >
-            Did you mean "{query.toLowerCase().replace(suggestedCorrection[0], suggestedCorrection[1])}"?
+            Did you mean "
+            {query
+              .toLowerCase()
+              .replace(suggestedCorrection[0], suggestedCorrection[1])}
+            "?
           </button>
         )}
       </div>
@@ -230,8 +241,9 @@ export function PartialResultsNotice({
     <div className="flex items-center gap-3 p-3 rounded-lg bg-yellow-500/10 border border-yellow-500/30 text-sm">
       <Sparkles className="h-4 w-4 text-yellow-400" />
       <span className="text-yellow-200">
-        Showing {resultCount} partial match{resultCount !== 1 ? 'es' : ''} for "{query}"
-        {category && ` in ${category}`}. Try adjusting your search for more results.
+        Showing {resultCount} partial match{resultCount !== 1 ? "es" : ""} for "
+        {query}"{category && ` in ${category}`}. Try adjusting your search for
+        more results.
       </span>
     </div>
   );

@@ -1,6 +1,6 @@
-import { getRedisClient } from '../lib/redisConnectionFactory.js';
-import { logger } from '../logger.js';
-import crypto from 'crypto';
+import { getRedisClient } from "../lib/redisConnectionFactory.js";
+import { logger } from "../logger.js";
+import crypto from "crypto";
 
 export interface CursorPosition {
   trackIndex: number;
@@ -16,7 +16,7 @@ export interface SelectionState {
   clipIds?: string[];
 }
 
-export type PresenceStatus = 'online' | 'away' | 'editing';
+export type PresenceStatus = "online" | "away" | "editing";
 
 export interface PresenceState {
   odisableCI?: boolean;
@@ -40,19 +40,31 @@ export interface CollaboratorInfo {
   selection: SelectionState | null;
 }
 
-const PRESENCE_PREFIX = 'presence:project:';
+const PRESENCE_PREFIX = "presence:project:";
 const HEARTBEAT_INTERVAL_MS = 15000;
 const STALE_TIMEOUT_MS = 45000;
 const AWAY_TIMEOUT_MS = 30000;
 
 const USER_COLORS = [
-  '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7',
-  '#DDA0DD', '#98D8C8', '#F7DC6F', '#BB8FCE', '#85C1E9',
-  '#F8B500', '#00CED1', '#FF69B4', '#32CD32', '#FF4500',
+  "#FF6B6B",
+  "#4ECDC4",
+  "#45B7D1",
+  "#96CEB4",
+  "#FFEAA7",
+  "#DDA0DD",
+  "#98D8C8",
+  "#F7DC6F",
+  "#BB8FCE",
+  "#85C1E9",
+  "#F8B500",
+  "#00CED1",
+  "#FF69B4",
+  "#32CD32",
+  "#FF4500",
 ];
 
 function generateUserColor(userId: string): string {
-  const hash = crypto.createHash('md5').update(userId).digest('hex');
+  const hash = crypto.createHash("md5").update(userId).digest("hex");
   const index = parseInt(hash.slice(0, 8), 16) % USER_COLORS.length;
   return USER_COLORS[index];
 }
@@ -74,7 +86,7 @@ export class PresenceManager {
     projectId: string,
     userId: string,
     displayName: string,
-    existingColor?: string
+    existingColor?: string,
   ): Promise<PresenceState> {
     const connectionId = generateConnectionId();
     const now = Date.now();
@@ -85,7 +97,7 @@ export class PresenceManager {
       color: existingColor || generateUserColor(userId),
       cursor: null,
       selection: null,
-      status: 'online',
+      status: "online",
       lastActivity: now,
       connectedAt: now,
       connectionId,
@@ -98,12 +110,18 @@ export class PresenceManager {
       this.startStaleCleanup(projectId);
     }
 
-    logger.info(`[Presence] User ${displayName} (${userId}) joined project ${projectId}`);
+    logger.info(
+      `[Presence] User ${displayName} (${userId}) joined project ${projectId}`,
+    );
     return presence;
   }
 
-  async removeCollaborator(projectId: string, userId: string, connectionId?: string): Promise<void> {
-    const key = `${userId}:${connectionId || '*'}`;
+  async removeCollaborator(
+    projectId: string,
+    userId: string,
+    connectionId?: string,
+  ): Promise<void> {
+    const key = `${userId}:${connectionId || "*"}`;
     this.stopHeartbeat(key);
 
     try {
@@ -121,7 +139,10 @@ export class PresenceManager {
         }
       }
     } catch (error) {
-      logger.warn({ err: error }, `[Presence] Failed to remove collaborator from Redis:`);
+      logger.warn(
+        { err: error },
+        `[Presence] Failed to remove collaborator from Redis:`,
+      );
     }
 
     const projectPresence = this.localPresence.get(projectId);
@@ -146,13 +167,13 @@ export class PresenceManager {
     projectId: string,
     userId: string,
     connectionId: string,
-    cursor: CursorPosition
+    cursor: CursorPosition,
   ): Promise<void> {
     const presence = await this.getPresence(projectId, userId, connectionId);
     if (presence) {
       presence.cursor = cursor;
       presence.lastActivity = Date.now();
-      presence.status = 'editing';
+      presence.status = "editing";
       await this.savePresence(projectId, presence);
     }
   }
@@ -161,13 +182,13 @@ export class PresenceManager {
     projectId: string,
     userId: string,
     connectionId: string,
-    selection: SelectionState | null
+    selection: SelectionState | null,
   ): Promise<void> {
     const presence = await this.getPresence(projectId, userId, connectionId);
     if (presence) {
       presence.selection = selection;
       presence.lastActivity = Date.now();
-      presence.status = 'editing';
+      presence.status = "editing";
       await this.savePresence(projectId, presence);
     }
   }
@@ -176,7 +197,7 @@ export class PresenceManager {
     projectId: string,
     userId: string,
     connectionId: string,
-    status: PresenceStatus
+    status: PresenceStatus,
   ): Promise<void> {
     const presence = await this.getPresence(projectId, userId, connectionId);
     if (presence) {
@@ -186,14 +207,21 @@ export class PresenceManager {
     }
   }
 
-  async heartbeat(projectId: string, userId: string, connectionId: string): Promise<void> {
+  async heartbeat(
+    projectId: string,
+    userId: string,
+    connectionId: string,
+  ): Promise<void> {
     const presence = await this.getPresence(projectId, userId, connectionId);
     if (presence) {
       const now = Date.now();
       const timeSinceActivity = now - presence.lastActivity;
 
-      if (presence.status === 'editing' && timeSinceActivity > AWAY_TIMEOUT_MS) {
-        presence.status = 'online';
+      if (
+        presence.status === "editing" &&
+        timeSinceActivity > AWAY_TIMEOUT_MS
+      ) {
+        presence.status = "online";
       }
       presence.lastActivity = now;
       await this.savePresence(projectId, presence);
@@ -225,12 +253,18 @@ export class PresenceManager {
               });
             }
           } catch (e) {
-            logger.warn({ err: e }, '[Presence] Failed to parse presence data:');
+            logger.warn(
+              { err: e },
+              "[Presence] Failed to parse presence data:",
+            );
           }
         }
       }
     } catch (error) {
-      logger.warn({ err: error }, '[Presence] Failed to get collaborators from Redis:');
+      logger.warn(
+        { err: error },
+        "[Presence] Failed to get collaborators from Redis:",
+      );
     }
 
     if (collaborators.length === 0) {
@@ -260,7 +294,10 @@ export class PresenceManager {
     return collaborators.length;
   }
 
-  private async savePresence(projectId: string, presence: PresenceState): Promise<void> {
+  private async savePresence(
+    projectId: string,
+    presence: PresenceState,
+  ): Promise<void> {
     const fieldKey = `${presence.userId}:${presence.connectionId}`;
 
     let projectPresence = this.localPresence.get(projectId);
@@ -278,14 +315,17 @@ export class PresenceManager {
         await redis.expire(redisKey, 3600);
       }
     } catch (error) {
-      logger.warn({ err: error }, '[Presence] Failed to save presence to Redis:');
+      logger.warn(
+        { err: error },
+        "[Presence] Failed to save presence to Redis:",
+      );
     }
   }
 
   private async getPresence(
     projectId: string,
     userId: string,
-    connectionId: string
+    connectionId: string,
   ): Promise<PresenceState | null> {
     const fieldKey = `${userId}:${connectionId}`;
 
@@ -304,17 +344,24 @@ export class PresenceManager {
         }
       }
     } catch (error) {
-      logger.warn({ err: error }, '[Presence] Failed to get presence from Redis:');
+      logger.warn(
+        { err: error },
+        "[Presence] Failed to get presence from Redis:",
+      );
     }
 
     return null;
   }
 
-  private startHeartbeat(projectId: string, userId: string, connectionId: string): void {
+  private startHeartbeat(
+    projectId: string,
+    userId: string,
+    connectionId: string,
+  ): void {
     const key = `${userId}:${connectionId}`;
     const interval = setInterval(() => {
       this.heartbeat(projectId, userId, connectionId).catch((err) => {
-        logger.warn({ err: err }, '[Presence] Heartbeat failed:');
+        logger.warn({ err: err }, "[Presence] Heartbeat failed:");
       });
     }, HEARTBEAT_INTERVAL_MS);
 
@@ -331,7 +378,11 @@ export class PresenceManager {
 
   private startStaleCleanup(projectId: string): void {
     const interval = setInterval(async () => {
-      try { await this.cleanupStalePresence(projectId); } catch { /* non-fatal */ }
+      try {
+        await this.cleanupStalePresence(projectId);
+      } catch {
+        /* non-fatal */
+      }
     }, STALE_TIMEOUT_MS);
 
     this.cleanupIntervals.set(projectId, interval);
@@ -361,7 +412,9 @@ export class PresenceManager {
             if (now - presence.lastActivity > STALE_TIMEOUT_MS) {
               await redis.hDel(redisKey, fieldKey);
               staleUsers.push(presence.userId);
-              logger.info(`[Presence] Cleaned up stale presence for user ${presence.userId}`);
+              logger.info(
+                `[Presence] Cleaned up stale presence for user ${presence.userId}`,
+              );
             }
           } catch (e) {
             await redis.hDel(redisKey, fieldKey);
@@ -369,7 +422,10 @@ export class PresenceManager {
         }
       }
     } catch (error) {
-      logger.warn({ err: error }, '[Presence] Failed to cleanup stale presence:');
+      logger.warn(
+        { err: error },
+        "[Presence] Failed to cleanup stale presence:",
+      );
     }
 
     const projectPresence = this.localPresence.get(projectId);
@@ -400,7 +456,7 @@ export class PresenceManager {
 
     this.localPresence.clear();
 
-    logger.info('[Presence] PresenceManager shutdown complete');
+    logger.info("[Presence] PresenceManager shutdown complete");
   }
 }
 

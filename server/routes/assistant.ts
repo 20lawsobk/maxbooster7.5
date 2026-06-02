@@ -1,14 +1,14 @@
-import { Router, Request, Response } from 'express';
-import { db } from '../db.js';
-import { eq, desc, asc, lt, sql, inArray } from 'drizzle-orm';
+import { Router, Request, Response } from "express";
+import { db } from "../db.js";
+import { eq, desc, asc, lt, sql, inArray } from "drizzle-orm";
 import {
   assistantConversations,
   assistantMessages,
-} from '../../shared/schema.js';
-import { generateMaxResponse } from '../services/maxAssistantService.js';
-import { logger } from '../logger.js';
-import { aiRateLimiter } from '../middleware/rateLimiter.js';
-import rateLimit from 'express-rate-limit';
+} from "../../shared/schema.js";
+import { generateMaxResponse } from "../services/maxAssistantService.js";
+import { logger } from "../logger.js";
+import { aiRateLimiter } from "../middleware/rateLimiter.js";
+import rateLimit from "express-rate-limit";
 
 // Unauthenticated callers get a tighter IP-based cap.
 // Authenticated users are handled by the Redis-backed aiRateLimiter (100/hr).
@@ -18,7 +18,9 @@ const anonChatLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   skip: (req) => !!req.user,
-  message: { error: 'Too many messages — please sign in or wait before sending again.' },
+  message: {
+    error: "Too many messages — please sign in or wait before sending again.",
+  },
 });
 
 const router = Router();
@@ -50,11 +52,16 @@ async function getOrCreateConversation(userId: string): Promise<string> {
 // Returns the latest PAGE_SIZE messages for the user's conversation.
 // For pagination, pass ?before=<messageId> to get messages older than that ID.
 // Response: { messages, hasMore, total, conversationId }
-router.get('/history', async (req: Request, res: Response) => {
+router.get("/history", async (req: Request, res: Response) => {
   try {
     const user = req.user;
     if (!user) {
-      return res.json({ messages: [], hasMore: false, total: 0, conversationId: null });
+      return res.json({
+        messages: [],
+        hasMore: false,
+        total: 0,
+        conversationId: null,
+      });
     }
 
     const beforeId = req.query.before as string | undefined;
@@ -67,7 +74,12 @@ router.get('/history', async (req: Request, res: Response) => {
       .limit(1);
 
     if (conversation.length === 0) {
-      return res.json({ messages: [], hasMore: false, total: 0, conversationId: null });
+      return res.json({
+        messages: [],
+        hasMore: false,
+        total: 0,
+        conversationId: null,
+      });
     }
 
     const convId = conversation[0].id;
@@ -95,7 +107,12 @@ router.get('/history', async (req: Request, res: Response) => {
         .limit(1);
 
       if (cursorMsg.length === 0) {
-        return res.json({ messages: [], hasMore: false, total, conversationId: convId });
+        return res.json({
+          messages: [],
+          hasMore: false,
+          total,
+          conversationId: convId,
+        });
       }
 
       const cursorDate = cursorMsg[0].createdAt;
@@ -104,7 +121,7 @@ router.get('/history', async (req: Request, res: Response) => {
         .select()
         .from(assistantMessages)
         .where(
-          sql`${assistantMessages.conversationId} = ${convId} AND ${assistantMessages.createdAt} < ${cursorDate}`
+          sql`${assistantMessages.conversationId} = ${convId} AND ${assistantMessages.createdAt} < ${cursorDate}`,
         )
         .orderBy(desc(assistantMessages.createdAt))
         .limit(PAGE_SIZE + 1);
@@ -126,8 +143,13 @@ router.get('/history', async (req: Request, res: Response) => {
 
     return res.json({ messages, hasMore, total, conversationId: convId });
   } catch (error) {
-    logger.warn('[assistant] Error fetching history:', error.message);
-    return res.json({ messages: [], hasMore: false, total: 0, conversationId: null });
+    logger.warn("[assistant] Error fetching history:", error.message);
+    return res.json({
+      messages: [],
+      hasMore: false,
+      total: 0,
+      conversationId: null,
+    });
   }
 });
 
@@ -135,86 +157,101 @@ router.get('/history', async (req: Request, res: Response) => {
 // Sends a message to Max, persists it, returns the in-house AI response.
 // Body: { message: string }
 // Response: { content, category, confidence, proactiveSuggestions, relatedTopics, quickActions, messageId, assistantMessageId }
-router.post('/chat', aiRateLimiter, anonChatLimiter, async (req: Request, res: Response) => {
-  try {
-    const { message } = req.body ?? {};
+router.post(
+  "/chat",
+  aiRateLimiter,
+  anonChatLimiter,
+  async (req: Request, res: Response) => {
+    try {
+      const { message } = req.body ?? {};
 
-    if (!message || typeof message !== 'string' || message.trim().length === 0) {
-      return res.status(400).json({ error: 'Message is required' });
+      if (
+        !message ||
+        typeof message !== "string" ||
+        message.trim().length === 0
+      ) {
+        return res.status(400).json({ error: "Message is required" });
+      }
+
+      const trimmed = message.trim().slice(0, 2000);
+      const user = req.user;
+
+      let history: { role: "user" | "assistant"; content: string }[] = [];
+      let conversationId: string | null = null;
+      let userMessageId: string | null = null;
+      let assistantMessageId: string | null = null;
+
+      if (user) {
+        conversationId = await getOrCreateConversation(user.id);
+
+        // Fetch the last AI_CONTEXT_MESSAGES for conversation context
+        const priorRows = await db
+          .select()
+          .from(assistantMessages)
+          .where(eq(assistantMessages.conversationId, conversationId))
+          .orderBy(desc(assistantMessages.createdAt))
+          .limit(AI_CONTEXT_MESSAGES);
+
+        history = priorRows.reverse().map((m) => ({
+          role: m.role as "user" | "assistant",
+          content: m.content,
+        }));
+
+        // Persist the user's message
+        const [inserted] = await db
+          .insert(assistantMessages)
+          .values({ conversationId, role: "user", content: trimmed })
+          .returning();
+
+        userMessageId = inserted.id;
+      }
+
+      const aiResponse = generateMaxResponse(trimmed, history);
+
+      if (user && conversationId) {
+        const [aiInserted] = await db
+          .insert(assistantMessages)
+          .values({
+            conversationId,
+            role: "assistant",
+            content: aiResponse.content,
+          })
+          .returning();
+
+        assistantMessageId = aiInserted.id;
+
+        await db
+          .update(assistantConversations)
+          .set({ updatedAt: new Date() })
+          .where(eq(assistantConversations.id, conversationId));
+      }
+
+      return res.json({
+        content: aiResponse.content,
+        category: aiResponse.category,
+        confidence: aiResponse.confidence,
+        proactiveSuggestions: aiResponse.proactiveSuggestions ?? [],
+        relatedTopics: aiResponse.relatedTopics ?? [],
+        quickActions: aiResponse.quickActions ?? [],
+        messageId: userMessageId,
+        assistantMessageId,
+      });
+    } catch (error) {
+      logger.warn("[assistant] Error processing chat:", error.message);
+      return res
+        .status(500)
+        .json({ error: "Failed to process your message. Please try again." });
     }
-
-    const trimmed = message.trim().slice(0, 2000);
-    const user = req.user;
-
-    let history: { role: 'user' | 'assistant'; content: string }[] = [];
-    let conversationId: string | null = null;
-    let userMessageId: string | null = null;
-    let assistantMessageId: string | null = null;
-
-    if (user) {
-      conversationId = await getOrCreateConversation(user.id);
-
-      // Fetch the last AI_CONTEXT_MESSAGES for conversation context
-      const priorRows = await db
-        .select()
-        .from(assistantMessages)
-        .where(eq(assistantMessages.conversationId, conversationId))
-        .orderBy(desc(assistantMessages.createdAt))
-        .limit(AI_CONTEXT_MESSAGES);
-
-      history = priorRows.reverse().map((m) => ({
-        role: m.role as 'user' | 'assistant',
-        content: m.content,
-      }));
-
-      // Persist the user's message
-      const [inserted] = await db
-        .insert(assistantMessages)
-        .values({ conversationId, role: 'user', content: trimmed })
-        .returning();
-
-      userMessageId = inserted.id;
-    }
-
-    const aiResponse = generateMaxResponse(trimmed, history);
-
-    if (user && conversationId) {
-      const [aiInserted] = await db
-        .insert(assistantMessages)
-        .values({ conversationId, role: 'assistant', content: aiResponse.content })
-        .returning();
-
-      assistantMessageId = aiInserted.id;
-
-      await db
-        .update(assistantConversations)
-        .set({ updatedAt: new Date() })
-        .where(eq(assistantConversations.id, conversationId));
-    }
-
-    return res.json({
-      content: aiResponse.content,
-      category: aiResponse.category,
-      confidence: aiResponse.confidence,
-      proactiveSuggestions: aiResponse.proactiveSuggestions ?? [],
-      relatedTopics: aiResponse.relatedTopics ?? [],
-      quickActions: aiResponse.quickActions ?? [],
-      messageId: userMessageId,
-      assistantMessageId,
-    });
-  } catch (error) {
-    logger.warn('[assistant] Error processing chat:', error.message);
-    return res.status(500).json({ error: 'Failed to process your message. Please try again.' });
-  }
-});
+  },
+);
 
 // DELETE /api/assistant/history
 // Clears all messages and conversation records for the user.
-router.delete('/history', async (req: Request, res: Response) => {
+router.delete("/history", async (req: Request, res: Response) => {
   try {
     const user = req.user;
     if (!user) {
-      return res.status(401).json({ error: 'Not authenticated' });
+      return res.status(401).json({ error: "Not authenticated" });
     }
 
     const conversations = await db
@@ -236,8 +273,8 @@ router.delete('/history', async (req: Request, res: Response) => {
 
     return res.json({ success: true });
   } catch (error) {
-    logger.warn('[assistant] Error clearing history:', error.message);
-    return res.status(500).json({ error: 'Failed to clear history' });
+    logger.warn("[assistant] Error clearing history:", error.message);
+    return res.status(500).json({ error: "Failed to clear history" });
   }
 });
 

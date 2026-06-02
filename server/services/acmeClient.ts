@@ -27,25 +27,25 @@
  *     (single account reused for every cert).
  */
 
-import acme from 'acme-client';
-import crypto from 'crypto';
-import { pool } from '../db.js';
-import { logger } from '../logger.js';
+import acme from "acme-client";
+import crypto from "crypto";
+import { pool } from "../db.js";
+import { logger } from "../logger.js";
 
 // ─── Config ───────────────────────────────────────────────────────────────────
 
-const ACME_ENABLED = process.env.ACME_ENABLED === 'true';
+const ACME_ENABLED = process.env.ACME_ENABLED === "true";
 const ACME_DIRECTORY_URL =
   process.env.ACME_DIRECTORY_URL || acme.directory.letsencrypt.staging;
 const ACME_CONTACT_EMAIL =
-  process.env.ACME_CONTACT_EMAIL || 'admin@max-booster.com';
+  process.env.ACME_CONTACT_EMAIL || "admin@max-booster.com";
 
-const RENEWAL_THRESHOLD_DAYS = 30;       // Renew when < this many days remain
+const RENEWAL_THRESHOLD_DAYS = 30; // Renew when < this many days remain
 const MAX_PROVISION_ATTEMPTS = 5;
-const BASE_BACKOFF_MS = 60_000;          // 1 min, doubled per attempt
+const BASE_BACKOFF_MS = 60_000; // 1 min, doubled per attempt
 const RENEWAL_CRON_INTERVAL_MS = 6 * 60 * 60 * 1000; // every 6 hours
-const ENCRYPTION_KEY_SETTING = 'acme_key_encryption_key';
-const ACME_ACCOUNT_KEY_SETTING = 'acme_account_key_encrypted';
+const ENCRYPTION_KEY_SETTING = "acme_key_encryption_key";
+const ACME_ACCOUNT_KEY_SETTING = "acme_account_key_encrypted";
 const IV_LENGTH = 12;
 
 // ─── Encryption (AES-256-GCM, robust 32-byte key) ─────────────────────────────
@@ -58,7 +58,7 @@ let _encryptionKey: Buffer | null = null;
 
 function parseKeyHex(hex: string): Buffer | null {
   if (!/^[0-9a-fA-F]{64}$/.test(hex)) return null;
-  const buf = Buffer.from(hex, 'hex');
+  const buf = Buffer.from(hex, "hex");
   return buf.length === 32 ? buf : null;
 }
 
@@ -71,7 +71,7 @@ async function getEncryptionKey(): Promise<Buffer> {
     const parsed = parseKeyHex(env);
     if (!parsed) {
       throw new Error(
-        '[acme] ACME_KEY_ENCRYPTION_KEY is set but is not a valid 64-character hex string (32 bytes). Refusing to fall back to a generated key — fix the env var.',
+        "[acme] ACME_KEY_ENCRYPTION_KEY is set but is not a valid 64-character hex string (32 bytes). Refusing to fall back to a generated key — fix the env var.",
       );
     }
     _encryptionKey = parsed;
@@ -95,7 +95,7 @@ async function getEncryptionKey(): Promise<Buffer> {
   }
 
   // 3. Generate + persist with a race-safe re-read on conflict.
-  const fresh = crypto.randomBytes(32).toString('hex');
+  const fresh = crypto.randomBytes(32).toString("hex");
   const insert = await pool.query<{ value: string }>(
     `INSERT INTO platform_settings (key, value, description)
      VALUES ($1, $2, $3)
@@ -104,7 +104,7 @@ async function getEncryptionKey(): Promise<Buffer> {
     [
       ENCRYPTION_KEY_SETTING,
       fresh,
-      'AES-256-GCM key (64 hex chars / 32 bytes) for ACME private-key encryption — do not delete',
+      "AES-256-GCM key (64 hex chars / 32 bytes) for ACME private-key encryption — do not delete",
     ],
   );
 
@@ -118,10 +118,12 @@ async function getEncryptionKey(): Promise<Buffer> {
     canonical = reread.rows[0]?.value ?? null;
   }
   if (!canonical) {
-    throw new Error('[acme] Failed to read or persist encryption key after insert race');
+    throw new Error(
+      "[acme] Failed to read or persist encryption key after insert race",
+    );
   }
   const parsed = parseKeyHex(canonical);
-  if (!parsed) throw new Error('[acme] Persisted encryption key is malformed');
+  if (!parsed) throw new Error("[acme] Persisted encryption key is malformed");
   _encryptionKey = parsed;
   return parsed;
 }
@@ -129,25 +131,26 @@ async function getEncryptionKey(): Promise<Buffer> {
 async function encryptKey(plain: string): Promise<string> {
   const key = await getEncryptionKey();
   const iv = crypto.randomBytes(IV_LENGTH);
-  const cipher = crypto.createCipheriv('aes-256-gcm', key, iv);
-  let enc = cipher.update(plain, 'utf8', 'hex');
-  enc += cipher.final('hex');
-  return `${iv.toString('hex')}:${cipher.getAuthTag().toString('hex')}:${enc}`;
+  const cipher = crypto.createCipheriv("aes-256-gcm", key, iv);
+  let enc = cipher.update(plain, "utf8", "hex");
+  enc += cipher.final("hex");
+  return `${iv.toString("hex")}:${cipher.getAuthTag().toString("hex")}:${enc}`;
 }
 
 async function decryptKey(blob: string): Promise<string> {
-  const [ivHex, tagHex, encHex] = blob.split(':');
-  if (!ivHex || !tagHex || !encHex) throw new Error('malformed encrypted payload');
+  const [ivHex, tagHex, encHex] = blob.split(":");
+  if (!ivHex || !tagHex || !encHex)
+    throw new Error("malformed encrypted payload");
   const key = await getEncryptionKey();
   const decipher = crypto.createDecipheriv(
-    'aes-256-gcm',
+    "aes-256-gcm",
     key,
-    Buffer.from(ivHex, 'hex'),
+    Buffer.from(ivHex, "hex"),
     { authTagLength: 16 },
   );
-  decipher.setAuthTag(Buffer.from(tagHex, 'hex'));
-  let dec = decipher.update(encHex, 'hex', 'utf8');
-  dec += decipher.final('utf8');
+  decipher.setAuthTag(Buffer.from(tagHex, "hex"));
+  let dec = decipher.update(encHex, "hex", "utf8");
+  dec += decipher.final("utf8");
   return dec;
 }
 
@@ -179,10 +182,10 @@ async function getOrCreateClient(): Promise<acme.Client> {
       [
         ACME_ACCOUNT_KEY_SETTING,
         enc,
-        'ACME account private key (encrypted) — single account for all storefront cert issuance',
+        "ACME account private key (encrypted) — single account for all storefront cert issuance",
       ],
     );
-    logger.info('[acme] Generated and persisted new ACME account key');
+    logger.info("[acme] Generated and persisted new ACME account key");
   }
 
   _client = new acme.Client({
@@ -199,7 +202,10 @@ async function getOrCreateClient(): Promise<acme.Client> {
   } catch (err) {
     // "Account already exists" is fine — acme-client surfaces it as an
     // existing-account response, but defensively we tolerate it.
-    logger.debug({ err }, '[acme] createAccount returned (likely already-exists)');
+    logger.debug(
+      { err },
+      "[acme] createAccount returned (likely already-exists)",
+    );
   }
 
   return _client;
@@ -207,16 +213,23 @@ async function getOrCreateClient(): Promise<acme.Client> {
 
 // ─── DNS-01 challenge handlers (write/clean TXT in our own DB-backed DNS) ─────
 
-async function dnsZoneIdForHost(host: string): Promise<{ zoneId: string; userId: string; rootDomain: string } | null> {
+async function dnsZoneIdForHost(
+  host: string,
+): Promise<{ zoneId: string; userId: string; rootDomain: string } | null> {
   // Match the closest dns_zone whose `domain` is a suffix of `host`.
-  const parts = host.split('.');
+  const parts = host.split(".");
   for (let i = 0; i < parts.length - 1; i++) {
-    const candidate = parts.slice(i).join('.');
+    const candidate = parts.slice(i).join(".");
     const { rows } = await pool.query<{ id: string; user_id: string }>(
       `SELECT id, user_id FROM dns_zones WHERE domain = $1`,
       [candidate],
     );
-    if (rows[0]) return { zoneId: rows[0].id, userId: rows[0].user_id, rootDomain: candidate };
+    if (rows[0])
+      return {
+        zoneId: rows[0].id,
+        userId: rows[0].user_id,
+        rootDomain: candidate,
+      };
   }
   return null;
 }
@@ -226,28 +239,37 @@ async function challengeCreateFn(
   challenge: acme.Challenge,
   keyAuthorization: string,
 ): Promise<void> {
-  if (challenge.type !== 'dns-01') return;
-  const host = (authz.identifier.value || '').toLowerCase();
+  if (challenge.type !== "dns-01") return;
+  const host = (authz.identifier.value || "").toLowerCase();
   const zoneInfo = await dnsZoneIdForHost(host);
-  if (!zoneInfo) throw new Error(`No dns_zone found for host '${host}' — cannot publish DNS-01 challenge`);
+  if (!zoneInfo)
+    throw new Error(
+      `No dns_zone found for host '${host}' — cannot publish DNS-01 challenge`,
+    );
 
   // _acme-challenge.<host> within the zone — name is the part of host left of zone domain
   const fullName = `_acme-challenge.${host}`;
-  const recordName = fullName === `_acme-challenge.${zoneInfo.rootDomain}`
-    ? '_acme-challenge'
-    : fullName.replace(`.${zoneInfo.rootDomain}`, '');
+  const recordName =
+    fullName === `_acme-challenge.${zoneInfo.rootDomain}`
+      ? "_acme-challenge"
+      : fullName.replace(`.${zoneInfo.rootDomain}`, "");
 
   await pool.query(
     `INSERT INTO dns_zone_records (zone_id, user_id, domain, type, name, value, ttl)
      VALUES ($1, $2, $3, 'TXT', $4, $5, 60)
      ON CONFLICT DO NOTHING`,
-    [zoneInfo.zoneId, zoneInfo.userId, zoneInfo.rootDomain, recordName, keyAuthorization],
+    [
+      zoneInfo.zoneId,
+      zoneInfo.userId,
+      zoneInfo.rootDomain,
+      recordName,
+      keyAuthorization,
+    ],
   );
-  await pool.query(
-    `UPDATE dns_zones SET updated_at = now() WHERE id = $1`,
-    [zoneInfo.zoneId],
-  );
-  logger.info({ host, recordName }, '[acme] published DNS-01 challenge TXT');
+  await pool.query(`UPDATE dns_zones SET updated_at = now() WHERE id = $1`, [
+    zoneInfo.zoneId,
+  ]);
+  logger.info({ host, recordName }, "[acme] published DNS-01 challenge TXT");
 }
 
 async function challengeRemoveFn(
@@ -255,28 +277,29 @@ async function challengeRemoveFn(
   challenge: acme.Challenge,
   keyAuthorization: string,
 ): Promise<void> {
-  if (challenge.type !== 'dns-01') return;
-  const host = (authz.identifier.value || '').toLowerCase();
+  if (challenge.type !== "dns-01") return;
+  const host = (authz.identifier.value || "").toLowerCase();
   const zoneInfo = await dnsZoneIdForHost(host);
   if (!zoneInfo) return;
 
   const fullName = `_acme-challenge.${host}`;
-  const recordName = fullName === `_acme-challenge.${zoneInfo.rootDomain}`
-    ? '_acme-challenge'
-    : fullName.replace(`.${zoneInfo.rootDomain}`, '');
+  const recordName =
+    fullName === `_acme-challenge.${zoneInfo.rootDomain}`
+      ? "_acme-challenge"
+      : fullName.replace(`.${zoneInfo.rootDomain}`, "");
 
   await pool.query(
     `DELETE FROM dns_zone_records
      WHERE zone_id = $1 AND type = 'TXT' AND name = $2 AND value = $3`,
     [zoneInfo.zoneId, recordName, keyAuthorization],
   );
-  logger.info({ host, recordName }, '[acme] removed DNS-01 challenge TXT');
+  logger.info({ host, recordName }, "[acme] removed DNS-01 challenge TXT");
 }
 
 // ─── Public API ───────────────────────────────────────────────────────────────
 
 export interface ProvisionResult {
-  status: 'issued' | 'failed' | 'skipped' | 'backoff';
+  status: "issued" | "failed" | "skipped" | "backoff";
   reason?: string;
   expiresAt?: Date;
 }
@@ -286,9 +309,11 @@ export interface ProvisionResult {
  * Idempotent: re-issues a fresh cert and overwrites prior columns on success.
  * Cleanly no-ops with `status:'skipped'` when ACME_ENABLED is not true.
  */
-export async function provisionCertificate(host: string): Promise<ProvisionResult> {
+export async function provisionCertificate(
+  host: string,
+): Promise<ProvisionResult> {
   if (!ACME_ENABLED) {
-    return { status: 'skipped', reason: 'ACME_ENABLED is not set to "true"' };
+    return { status: "skipped", reason: 'ACME_ENABLED is not set to "true"' };
   }
 
   const normalized = host.toLowerCase().trim();
@@ -306,18 +331,24 @@ export async function provisionCertificate(host: string): Promise<ProvisionResul
   const existing = existingRows[0];
   if (!existing) {
     return {
-      status: 'failed',
+      status: "failed",
       reason: `no storefront_hosts row for '${normalized}' — call activateStorefrontDomain() first`,
     };
   }
   if (existing.cert_provision_attempts >= MAX_PROVISION_ATTEMPTS) {
-    return { status: 'backoff', reason: `max attempts (${MAX_PROVISION_ATTEMPTS}) reached` };
+    return {
+      status: "backoff",
+      reason: `max attempts (${MAX_PROVISION_ATTEMPTS}) reached`,
+    };
   }
   const required = BASE_BACKOFF_MS * 2 ** existing.cert_provision_attempts;
   if (existing.cert_last_attempt_at) {
     const elapsed = Date.now() - existing.cert_last_attempt_at.getTime();
     if (elapsed < required) {
-      return { status: 'backoff', reason: `backoff: wait ${Math.ceil((required - elapsed) / 1000)}s` };
+      return {
+        status: "backoff",
+        reason: `backoff: wait ${Math.ceil((required - elapsed) / 1000)}s`,
+      };
     }
   }
 
@@ -328,7 +359,11 @@ export async function provisionCertificate(host: string): Promise<ProvisionResul
   let acquired = false;
   try {
     const lockKey = parseInt(
-      crypto.createHash('sha1').update(`acme:host:${normalized}`).digest('hex').slice(0, 15),
+      crypto
+        .createHash("sha1")
+        .update(`acme:host:${normalized}`)
+        .digest("hex")
+        .slice(0, 15),
       16,
     );
     const lockRes = await lockClient.query<{ ok: boolean }>(
@@ -337,7 +372,10 @@ export async function provisionCertificate(host: string): Promise<ProvisionResul
     );
     acquired = !!lockRes.rows[0]?.ok;
     if (!acquired) {
-      return { status: 'backoff', reason: 'another worker holds the per-host advisory lock' };
+      return {
+        status: "backoff",
+        reason: "another worker holds the per-host advisory lock",
+      };
     }
 
     await pool.query(
@@ -354,15 +392,16 @@ export async function provisionCertificate(host: string): Promise<ProvisionResul
   } finally {
     if (acquired) {
       try {
-        await lockClient.query(
-          `SELECT pg_advisory_unlock($1)`,
-          [
-            parseInt(
-              crypto.createHash('sha1').update(`acme:host:${normalized}`).digest('hex').slice(0, 15),
-              16,
-            ),
-          ],
-        );
+        await lockClient.query(`SELECT pg_advisory_unlock($1)`, [
+          parseInt(
+            crypto
+              .createHash("sha1")
+              .update(`acme:host:${normalized}`)
+              .digest("hex")
+              .slice(0, 15),
+            16,
+          ),
+        ]);
       } catch {
         /* ignore unlock errors */
       }
@@ -372,7 +411,6 @@ export async function provisionCertificate(host: string): Promise<ProvisionResul
 }
 
 async function issueAndStore(normalized: string): Promise<ProvisionResult> {
-
   try {
     const client = await getOrCreateClient();
     const [key, csr] = await acme.crypto.createCsr({
@@ -383,7 +421,7 @@ async function issueAndStore(normalized: string): Promise<ProvisionResult> {
       csr,
       email: ACME_CONTACT_EMAIL,
       termsOfServiceAgreed: true,
-      challengePriority: ['dns-01'],
+      challengePriority: ["dns-01"],
       challengeCreateFn,
       challengeRemoveFn,
     });
@@ -392,16 +430,21 @@ async function issueAndStore(normalized: string): Promise<ProvisionResult> {
     const x509 = new crypto.X509Certificate(cert);
     const expiresAt = new Date(x509.validTo);
     const serial = x509.serialNumber;
-    const renewalAfter = new Date(expiresAt.getTime() - RENEWAL_THRESHOLD_DAYS * 86_400_000);
+    const renewalAfter = new Date(
+      expiresAt.getTime() - RENEWAL_THRESHOLD_DAYS * 86_400_000,
+    );
 
     const certPem = cert.toString();
     const keyPem = key.toString();
     const encryptedKey = await encryptKey(keyPem);
 
     // Split leaf and chain. acme-client returns the full PEM bundle (leaf first, then chain).
-    const pemBlocks = certPem.match(/-----BEGIN CERTIFICATE-----[\s\S]+?-----END CERTIFICATE-----/g) ?? [];
+    const pemBlocks =
+      certPem.match(
+        /-----BEGIN CERTIFICATE-----[\s\S]+?-----END CERTIFICATE-----/g,
+      ) ?? [];
     const leafPem = pemBlocks[0] ?? certPem;
-    const chainPem = pemBlocks.slice(1).join('\n') || null;
+    const chainPem = pemBlocks.slice(1).join("\n") || null;
 
     const updateRes = await pool.query(
       `UPDATE storefront_hosts
@@ -417,7 +460,15 @@ async function issueAndStore(normalized: string): Promise<ProvisionResult> {
            cert_last_error = NULL,
            updated_at = now()
        WHERE host = $7`,
-      [leafPem, encryptedKey, chainPem, serial, expiresAt, renewalAfter, normalized],
+      [
+        leafPem,
+        encryptedKey,
+        chainPem,
+        serial,
+        expiresAt,
+        renewalAfter,
+        normalized,
+      ],
     );
 
     // Defensive: if the row vanished between precondition and now (rare —
@@ -426,19 +477,19 @@ async function issueAndStore(normalized: string): Promise<ProvisionResult> {
     if (updateRes.rowCount !== 1) {
       logger.error(
         { host: normalized, rowCount: updateRes.rowCount },
-        '[acme] cert issued but storefront_hosts row missing/changed — cert was not persisted',
+        "[acme] cert issued but storefront_hosts row missing/changed — cert was not persisted",
       );
       return {
-        status: 'failed',
+        status: "failed",
         reason: `cert issued but persist UPDATE affected ${updateRes.rowCount} rows (expected 1)`,
       };
     }
 
     logger.info(
       { host: normalized, expiresAt: expiresAt.toISOString(), serial },
-      '[acme] certificate issued',
+      "[acme] certificate issued",
     );
-    return { status: 'issued', expiresAt };
+    return { status: "issued", expiresAt };
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     await pool.query(
@@ -447,8 +498,11 @@ async function issueAndStore(normalized: string): Promise<ProvisionResult> {
        WHERE host = $2`,
       [msg.slice(0, 1000), normalized],
     );
-    logger.error({ err, host: normalized }, '[acme] certificate provisioning failed');
-    return { status: 'failed', reason: msg };
+    logger.error(
+      { err, host: normalized },
+      "[acme] certificate provisioning failed",
+    );
+    return { status: "failed", reason: msg };
   }
 }
 
@@ -456,7 +510,9 @@ async function issueAndStore(normalized: string): Promise<ProvisionResult> {
  * Decrypt a stored private key — used by whatever serves TLS (load-balancer
  * config writer, nginx reload script, or in-process TLS context refresher).
  */
-export async function decryptStoredKey(encryptedKeyPem: string): Promise<string> {
+export async function decryptStoredKey(
+  encryptedKeyPem: string,
+): Promise<string> {
   return decryptKey(encryptedKeyPem);
 }
 
@@ -467,7 +523,11 @@ let _renewalTimer: NodeJS.Timeout | null = null;
 // Stable advisory-lock key for "only one worker runs the sweep at a time".
 // 63-bit signed int derived from a sha1 prefix.
 const SWEEP_LOCK_KEY = parseInt(
-  crypto.createHash('sha1').update('acme:renewal-sweep').digest('hex').slice(0, 15),
+  crypto
+    .createHash("sha1")
+    .update("acme:renewal-sweep")
+    .digest("hex")
+    .slice(0, 15),
   16,
 );
 
@@ -485,7 +545,9 @@ async function runRenewalSweep(): Promise<void> {
     );
     acquired = !!lockRes.rows[0]?.ok;
     if (!acquired) {
-      logger.debug('[acme/renewal] sweep skipped — another worker holds the lock');
+      logger.debug(
+        "[acme/renewal] sweep skipped — another worker holds the lock",
+      );
       return;
     }
 
@@ -499,20 +561,22 @@ async function runRenewalSweep(): Promise<void> {
       [MAX_PROVISION_ATTEMPTS],
     );
     if (rows.length === 0) {
-      logger.debug('[acme/renewal] no hosts due');
+      logger.debug("[acme/renewal] no hosts due");
       return;
     }
-    logger.info({ count: rows.length }, '[acme/renewal] sweep started');
+    logger.info({ count: rows.length }, "[acme/renewal] sweep started");
     for (const { host } of rows) {
       const result = await provisionCertificate(host);
-      logger.info({ host, result }, '[acme/renewal] processed');
+      logger.info({ host, result }, "[acme/renewal] processed");
       // Small gap between hosts to avoid bursting LE rate limits.
       await new Promise((r) => setTimeout(r, 1500));
     }
   } finally {
     if (acquired) {
       try {
-        await lockClient.query(`SELECT pg_advisory_unlock($1)`, [SWEEP_LOCK_KEY]);
+        await lockClient.query(`SELECT pg_advisory_unlock($1)`, [
+          SWEEP_LOCK_KEY,
+        ]);
       } catch {
         /* ignore */
       }
@@ -524,17 +588,19 @@ async function runRenewalSweep(): Promise<void> {
 export function startAcmeRenewalCron(): void {
   if (_renewalTimer) return;
   if (!ACME_ENABLED) {
-    logger.info('[acme/renewal] disabled (ACME_ENABLED!=true) — cron not started');
+    logger.info(
+      "[acme/renewal] disabled (ACME_ENABLED!=true) — cron not started",
+    );
     return;
   }
   logger.info(
     { intervalMs: RENEWAL_CRON_INTERVAL_MS, directoryUrl: ACME_DIRECTORY_URL },
-    '[acme/renewal] cron started',
+    "[acme/renewal] cron started",
   );
   // Initial run after 30s grace, then every RENEWAL_CRON_INTERVAL_MS.
   _renewalTimer = setTimeout(function tick() {
     void runRenewalSweep().catch((err) =>
-      logger.error({ err }, '[acme/renewal] sweep crashed'),
+      logger.error({ err }, "[acme/renewal] sweep crashed"),
     );
     _renewalTimer = setTimeout(tick, RENEWAL_CRON_INTERVAL_MS);
     if (_renewalTimer.unref) _renewalTimer.unref();
@@ -562,7 +628,7 @@ export function stopAcmeRenewalCron(): void {
 // Until LE production supports it, the record is inert but harmless to have.
 // Call activateAcmePersistValidation() once after first ACME account creation.
 
-const ACME_ACCOUNT_URL_SETTING = 'acme_account_url';
+const ACME_ACCOUNT_URL_SETTING = "acme_account_url";
 
 async function getOrCreateAccountUrl(): Promise<string | null> {
   // Return cached value if present in platform_settings.
@@ -585,16 +651,18 @@ async function getOrCreateAccountUrl(): Promise<string | null> {
         [
           ACME_ACCOUNT_URL_SETTING,
           url,
-          'ACME account URL — used in DNS-PERSIST-01 _validation-persist TXT record',
+          "ACME account URL — used in DNS-PERSIST-01 _validation-persist TXT record",
         ],
       );
-      logger.info({ url }, '[acme] persisted ACME account URL');
+      logger.info({ url }, "[acme] persisted ACME account URL");
       return url;
     }
-    logger.warn('[acme] acme-client does not expose getAccountUrl() — upgrade to v5+');
+    logger.warn(
+      "[acme] acme-client does not expose getAccountUrl() — upgrade to v5+",
+    );
     return null;
   } catch (err) {
-    logger.warn({ err }, '[acme] could not retrieve account URL');
+    logger.warn({ err }, "[acme] could not retrieve account URL");
     return null;
   }
 }
@@ -609,21 +677,29 @@ async function getOrCreateAccountUrl(): Promise<string | null> {
  */
 export async function activateAcmePersistValidation(
   rootDomain: string,
-): Promise<{ recordValue: string; accountUri: string | null; status: 'written' | 'unchanged' | 'no_account_url' }> {
+): Promise<{
+  recordValue: string;
+  accountUri: string | null;
+  status: "written" | "unchanged" | "no_account_url";
+}> {
   const accountUri = await getOrCreateAccountUrl();
 
   if (!accountUri) {
-    logger.warn('[acme/persist] No account URI available — record will contain PLACEHOLDER');
+    logger.warn(
+      "[acme/persist] No account URI available — record will contain PLACEHOLDER",
+    );
   }
 
   const recordValue = accountUri
     ? `letsencrypt.org; accounturi=${accountUri}; policy=wildcard`
-    : 'letsencrypt.org; accounturi=PLACEHOLDER; policy=wildcard';
+    : "letsencrypt.org; accounturi=PLACEHOLDER; policy=wildcard";
 
   // Find the zone
   const zoneInfo = await dnsZoneIdForHost(rootDomain);
   if (!zoneInfo) {
-    throw new Error(`No dns_zone found for '${rootDomain}' — run zone seed migration first`);
+    throw new Error(
+      `No dns_zone found for '${rootDomain}' — run zone seed migration first`,
+    );
   }
 
   // Upsert the TXT record
@@ -645,16 +721,36 @@ export async function activateAcmePersistValidation(
          AND value != $1`,
       [recordValue, zoneInfo.zoneId],
     );
-    await pool.query(`UPDATE dns_zones SET updated_at = now() WHERE id = $1`, [zoneInfo.zoneId]);
-    const status = (upd.rowCount ?? 0) > 0 ? 'written' : 'unchanged';
-    logger.info({ domain: rootDomain, status }, '[acme/persist] _validation-persist TXT');
+    await pool.query(`UPDATE dns_zones SET updated_at = now() WHERE id = $1`, [
+      zoneInfo.zoneId,
+    ]);
+    const status = (upd.rowCount ?? 0) > 0 ? "written" : "unchanged";
+    logger.info(
+      { domain: rootDomain, status },
+      "[acme/persist] _validation-persist TXT",
+    );
     return { recordValue, accountUri, status };
   }
 
-  await pool.query(`UPDATE dns_zones SET updated_at = now() WHERE id = $1`, [zoneInfo.zoneId]);
-  logger.info({ domain: rootDomain, recordValue }, '[acme/persist] _validation-persist TXT written');
-  return { recordValue, accountUri, status: accountUri ? 'written' : 'no_account_url' };
+  await pool.query(`UPDATE dns_zones SET updated_at = now() WHERE id = $1`, [
+    zoneInfo.zoneId,
+  ]);
+  logger.info(
+    { domain: rootDomain, recordValue },
+    "[acme/persist] _validation-persist TXT written",
+  );
+  return {
+    recordValue,
+    accountUri,
+    status: accountUri ? "written" : "no_account_url",
+  };
 }
 
 // Exposed for tests / admin scripts.
-export const __internal = { runRenewalSweep, getOrCreateClient, encryptKey, decryptKey, getOrCreateAccountUrl };
+export const __internal = {
+  runRenewalSweep,
+  getOrCreateClient,
+  encryptKey,
+  decryptKey,
+  getOrCreateAccountUrl,
+};

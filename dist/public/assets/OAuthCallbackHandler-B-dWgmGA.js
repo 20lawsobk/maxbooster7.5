@@ -1,1 +1,24 @@
-import{r as s}from"./vendor-react-31oK5L0i.js";import"./vendor-utils-C_Rs6IXs.js";import"./vendor-ui-Ds7F22HT.js";import"./vendor-state-Bxk_Qy8r.js";const i=/^\/auth\/([^/]+)\/callback$/;function f(){return s.useEffect(()=>{const a=window.location.pathname.match(i);if(!a)return;const r=a[1],o=window.location.search,t=new URLSearchParams(o),c=t.get("code");t.get("state");const n=t.get("error");if(!c&&!n)return;const e=`/api/social/callback/${r}${o}`;window.location.replace(e)},[]),null}export{f as OAuthCallbackHandler};
+import { r as s } from "./vendor-react-31oK5L0i.js";
+import "./vendor-utils-C_Rs6IXs.js";
+import "./vendor-ui-Ds7F22HT.js";
+import "./vendor-state-Bxk_Qy8r.js";
+const i = /^\/auth\/([^/]+)\/callback$/;
+function f() {
+  return (
+    s.useEffect(() => {
+      const a = window.location.pathname.match(i);
+      if (!a) return;
+      const r = a[1],
+        o = window.location.search,
+        t = new URLSearchParams(o),
+        c = t.get("code");
+      t.get("state");
+      const n = t.get("error");
+      if (!c && !n) return;
+      const e = `/api/social/callback/${r}${o}`;
+      window.location.replace(e);
+    }, []),
+    null
+  );
+}
+export { f as OAuthCallbackHandler };

@@ -1,7 +1,7 @@
-import { logger } from '../logger.js';
-import type { Redis } from 'ioredis';
-import { applyIoredisCompatShim } from '../lib/redisCompat.js';
-import { getPdimClient } from '../lib/pdimClient.js';
+import { logger } from "../logger.js";
+import type { Redis } from "ioredis";
+import { applyIoredisCompatShim } from "../lib/redisCompat.js";
+import { getPdimClient } from "../lib/pdimClient.js";
 
 interface CacheConfig {
   defaultTTL: number;
@@ -27,21 +27,26 @@ export class DistributedCache {
   // still well below any user-visible consistency window.
   // L1_MAX raised to 5000 to absorb larger hot-key sets without evicting.
   private l1 = new Map<string, { raw: string; expiresAt: number }>();
-  private readonly L1_MAX    = 5_000;
+  private readonly L1_MAX = 5_000;
   private readonly L1_TTL_MS = 4_000;
   private l1PrunedAt = Date.now();
 
   private l1Get(key: string): string | null {
     const entry = this.l1.get(key);
     if (!entry) return null;
-    if (Date.now() > entry.expiresAt) { this.l1.delete(key); return null; }
+    if (Date.now() > entry.expiresAt) {
+      this.l1.delete(key);
+      return null;
+    }
     return entry.raw;
   }
 
   private l1Set(key: string, raw: string): void {
     const now = Date.now();
     if (now - this.l1PrunedAt > 10_000) {
-      for (const [k, v] of this.l1) { if (now > v.expiresAt) this.l1.delete(k); }
+      for (const [k, v] of this.l1) {
+        if (now > v.expiresAt) this.l1.delete(k);
+      }
       this.l1PrunedAt = now;
     }
     if (this.l1.size >= this.L1_MAX) {
@@ -51,7 +56,9 @@ export class DistributedCache {
     this.l1.set(key, { raw, expiresAt: now + this.L1_TTL_MS });
   }
 
-  private l1Del(key: string): void { this.l1.delete(key); }
+  private l1Del(key: string): void {
+    this.l1.delete(key);
+  }
 
   private constructor(config: Partial<CacheConfig> = {}) {
     this.config = {
@@ -71,7 +78,7 @@ export class DistributedCache {
   async connect(): Promise<void> {
     this.redis = getPdimClient() as Record<string, unknown>;
     applyIoredisCompatShim(this.redis);
-    logger.info('✅ [DistributedCache] Connected (PDIM)');
+    logger.info("✅ [DistributedCache] Connected (PDIM)");
   }
 
   get isRedisConnected(): boolean {
@@ -87,10 +94,17 @@ export class DistributedCache {
     const l1raw = this.l1Get(key);
     if (l1raw !== null) {
       this.stats.hits++;
-      try { return JSON.parse(l1raw) as T; } catch { return null; }
+      try {
+        return JSON.parse(l1raw) as T;
+      } catch {
+        return null;
+      }
     }
 
-    if (!this.redis) { this.stats.misses++; return null; }
+    if (!this.redis) {
+      this.stats.misses++;
+      return null;
+    }
 
     // Timeout guard: under PDIM congestion the ioredis call can hang indefinitely.
     // After 500 ms we treat the result as a cache miss and let the fetcher run.
@@ -100,7 +114,7 @@ export class DistributedCache {
       const value = await Promise.race([
         this.redis.get(key),
         new Promise<null>((resolve) =>
-          setTimeout(() => resolve(null), PDIM_GET_TIMEOUT_MS)
+          setTimeout(() => resolve(null), PDIM_GET_TIMEOUT_MS),
         ),
       ]);
       if (value) {
@@ -112,7 +126,10 @@ export class DistributedCache {
       return null;
     } catch (err: unknown) {
       // PDIM circuit open or network error — treat as cache miss, never throw
-      logger.warn({ err }, '[DistributedCache] get() failed — treating as cache miss');
+      logger.warn(
+        { err },
+        "[DistributedCache] get() failed — treating as cache miss",
+      );
       this.stats.misses++;
       return null;
     }
@@ -139,7 +156,10 @@ export class DistributedCache {
     try {
       await this.redis.setex(key, ttl, serialized);
     } catch (err: unknown) {
-      logger.warn({ err }, '[DistributedCache] set() failed — entry in L1 only');
+      logger.warn(
+        { err },
+        "[DistributedCache] set() failed — entry in L1 only",
+      );
     }
   }
 
@@ -149,25 +169,30 @@ export class DistributedCache {
     try {
       await this.redis.del(key);
     } catch (err: unknown) {
-      logger.warn({ err }, '[DistributedCache] delete() failed');
+      logger.warn({ err }, "[DistributedCache] delete() failed");
     }
   }
 
   async invalidatePattern(pattern: string): Promise<number> {
     // Evict matching L1 entries synchronously — always works
-    const regex = new RegExp(pattern.replace(/\*/g, '.*'));
-    for (const key of this.l1.keys()) { if (regex.test(key)) this.l1.delete(key); }
+    const regex = new RegExp(pattern.replace(/\*/g, ".*"));
+    for (const key of this.l1.keys()) {
+      if (regex.test(key)) this.l1.delete(key);
+    }
 
     if (!this.redis) return 0;
     try {
       const keys = await this.redis.keys(`cache:${pattern}`);
       if (keys.length > 0) {
-        const stripped = keys.map(k => k.replace(/^cache:/, ''));
+        const stripped = keys.map((k) => k.replace(/^cache:/, ""));
         await this.redis.del(...stripped);
         return stripped.length;
       }
     } catch (err: unknown) {
-      logger.warn({ err }, '[DistributedCache] invalidatePattern() failed — L1 evicted only');
+      logger.warn(
+        { err },
+        "[DistributedCache] invalidatePattern() failed — L1 evicted only",
+      );
     }
     return 0;
   }
@@ -179,7 +204,7 @@ export class DistributedCache {
   async getOrSet<T>(
     key: string,
     fetcher: () => Promise<T>,
-    ttlSeconds?: number
+    ttlSeconds?: number,
   ): Promise<T> {
     try {
       const cached = await this.get<T>(key);
@@ -201,7 +226,7 @@ export class DistributedCache {
     fetcher: () => Promise<T>,
     ttlSeconds?: number,
     lockTtlSeconds: number = 10,
-    _attempt: number = 0
+    _attempt: number = 0,
   ): Promise<T> {
     const MAX_WAIT_ATTEMPTS = 50;
 
@@ -218,7 +243,13 @@ export class DistributedCache {
 
     let acquired: string | null = null;
     try {
-      acquired = await this.redis.set(lockKey, 'locked', 'EX', lockTtlSeconds, 'NX');
+      acquired = await this.redis.set(
+        lockKey,
+        "locked",
+        "EX",
+        lockTtlSeconds,
+        "NX",
+      );
     } catch {
       // Can't acquire lock — fetch directly
       return fetcher();
@@ -228,11 +259,19 @@ export class DistributedCache {
       // 3. Lock is held by another request — wait and retry cache check
       if (_attempt >= MAX_WAIT_ATTEMPTS) {
         // Waited 5s (50 × 100ms) — lock holder is stuck or dead; fetch directly
-        logger.warn(`[DistributedCache] Lock wait exceeded for key ${key}, fetching directly`);
+        logger.warn(
+          `[DistributedCache] Lock wait exceeded for key ${key}, fetching directly`,
+        );
         return this.getOrSet(key, fetcher, ttlSeconds);
       }
-      await new Promise(resolve => setTimeout(resolve, 100));
-      return this.getOrSetWithLock(key, fetcher, ttlSeconds, lockTtlSeconds, _attempt + 1);
+      await new Promise((resolve) => setTimeout(resolve, 100));
+      return this.getOrSetWithLock(
+        key,
+        fetcher,
+        ttlSeconds,
+        lockTtlSeconds,
+        _attempt + 1,
+      );
     }
 
     // 4. Lock acquired — run fetcher, cache result, release
@@ -251,17 +290,18 @@ export class DistributedCache {
     try {
       await this.redis.flushdb();
     } catch (err: unknown) {
-      logger.warn({ err }, '[DistributedCache] flush() failed');
+      logger.warn({ err }, "[DistributedCache] flush() failed");
     }
     this.stats.size = 0;
   }
 
   getStats(): CacheStats & { mode: string; hitRate: string } {
     const total = this.stats.hits + this.stats.misses;
-    const hitRate = total > 0 ? ((this.stats.hits / total) * 100).toFixed(2) : '0.00';
+    const hitRate =
+      total > 0 ? ((this.stats.hits / total) * 100).toFixed(2) : "0.00";
     return {
       ...this.stats,
-      mode: 'pdim',
+      mode: "pdim",
       hitRate: `${hitRate}%`,
     };
   }
@@ -272,7 +312,9 @@ export class DistributedCache {
 
   async disconnect(): Promise<void> {
     // PDIM client is shared — do not close it here
-    logger.info('[DistributedCache] disconnect() called — PDIM client is shared and remains open');
+    logger.info(
+      "[DistributedCache] disconnect() called — PDIM client is shared and remains open",
+    );
   }
 }
 

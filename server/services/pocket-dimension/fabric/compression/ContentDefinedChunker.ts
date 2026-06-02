@@ -1,5 +1,5 @@
-import { createHash } from 'crypto';
-import type { CdcChunk } from './types.js';
+import { createHash } from "crypto";
+import type { CdcChunk } from "./types.js";
 
 const WINDOW_SIZE = 48;
 const MIN_CHUNK = 512 * 1024;
@@ -61,12 +61,18 @@ export class ContentDefinedChunker {
   }
 
   private hashChunk(data: Buffer): string {
-    return createHash('sha256').update(data).digest('hex');
+    return createHash("sha256").update(data).digest("hex");
   }
 
-  stats(chunks: CdcChunk[]): { count: number; avgBytes: number; minBytes: number; maxBytes: number } {
-    if (chunks.length === 0) return { count: 0, avgBytes: 0, minBytes: 0, maxBytes: 0 };
-    const sizes = chunks.map(c => c.length);
+  stats(chunks: CdcChunk[]): {
+    count: number;
+    avgBytes: number;
+    minBytes: number;
+    maxBytes: number;
+  } {
+    if (chunks.length === 0)
+      return { count: 0, avgBytes: 0, minBytes: 0, maxBytes: 0 };
+    const sizes = chunks.map((c) => c.length);
     return {
       count: chunks.length,
       avgBytes: Math.round(sizes.reduce((a, b) => a + b, 0) / sizes.length),

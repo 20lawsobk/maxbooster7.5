@@ -1,22 +1,22 @@
-import { Button } from '@/components/ui/button';
-import { Slider } from '@/components/ui/slider';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Badge } from '@/components/ui/badge';
-import { Card } from '@/components/ui/card';
+import { Button } from "@/components/ui/button";
+import { Slider } from "@/components/ui/slider";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
+import { Card } from "@/components/ui/card";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { Switch } from '@/components/ui/switch';
-import { Separator } from '@/components/ui/separator';
-import { Volume2, Music4, Play, Square } from 'lucide-react';
-import { useState } from 'react';
-import { useMetronome } from '@/hooks/useMetronome';
-import { logger } from '@/lib/logger';
+} from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
+import { Separator } from "@/components/ui/separator";
+import { Volume2, Music4, Play, Square } from "lucide-react";
+import { useState } from "react";
+import { useMetronome } from "@/hooks/useMetronome";
+import { logger } from "@/lib/logger";
 
 interface MetronomeControlProps {
   bpm?: number;
@@ -41,7 +41,7 @@ export function MetronomeControl({
     return (
       <div className="flex items-center gap-2">
         <Button
-          variant={metronome.enabled ? 'default' : 'outline'}
+          variant={metronome.enabled ? "default" : "outline"}
           size="sm"
           onClick={metronome.toggle}
           className="h-7 w-7 p-0"
@@ -64,14 +64,18 @@ export function MetronomeControl({
         {metronome.isPlaying && (
           <div className="flex items-center gap-1">
             <div className="flex gap-1">
-              {Array.from({ length: metronome.timeSignature.numerator }).map((_, i) => (
-                <div
-                  key={i}
-                  className={`h-2 w-2 rounded-full transition-colors ${
-                    i === metronome.currentBeat ? 'bg-green-500' : 'bg-gray-700'
-                  }`}
-                />
-              ))}
+              {Array.from({ length: metronome.timeSignature.numerator }).map(
+                (_, i) => (
+                  <div
+                    key={i}
+                    className={`h-2 w-2 rounded-full transition-colors ${
+                      i === metronome.currentBeat
+                        ? "bg-green-500"
+                        : "bg-gray-700"
+                    }`}
+                  />
+                ),
+              )}
             </div>
           </div>
         )}
@@ -91,7 +95,10 @@ export function MetronomeControl({
             </Badge>
           )}
         </div>
-        <Switch checked={metronome.enabled} onCheckedChange={metronome.toggle} />
+        <Switch
+          checked={metronome.enabled}
+          onCheckedChange={metronome.toggle}
+        />
       </div>
 
       {/* BPM Control */}
@@ -129,7 +136,10 @@ export function MetronomeControl({
           <Select
             value={metronome.timeSignature.numerator.toString()}
             onValueChange={(value) =>
-              metronome.setTimeSignature(parseInt(value), metronome.timeSignature.denominator)
+              metronome.setTimeSignature(
+                parseInt(value),
+                metronome.timeSignature.denominator,
+              )
             }
           >
             <SelectTrigger className="w-full">
@@ -147,7 +157,10 @@ export function MetronomeControl({
           <Select
             value={metronome.timeSignature.denominator.toString()}
             onValueChange={(value) =>
-              metronome.setTimeSignature(metronome.timeSignature.numerator, parseInt(value))
+              metronome.setTimeSignature(
+                metronome.timeSignature.numerator,
+                parseInt(value),
+              )
             }
           >
             <SelectTrigger className="w-full">
@@ -170,20 +183,24 @@ export function MetronomeControl({
           <Label className="text-xs">Beat</Label>
           <div className="flex items-center gap-2">
             <div className="flex gap-1">
-              {Array.from({ length: metronome.timeSignature.numerator }).map((_, i) => (
-                <div
-                  key={i}
-                  className={`h-8 w-8 rounded border-2 flex items-center justify-center text-xs font-medium transition-all ${
-                    i === metronome.currentBeat
-                      ? 'bg-green-500 border-green-400 text-white scale-110'
-                      : 'bg-gray-900 border-gray-700 text-gray-500'
-                  }`}
-                >
-                  {i + 1}
-                </div>
-              ))}
+              {Array.from({ length: metronome.timeSignature.numerator }).map(
+                (_, i) => (
+                  <div
+                    key={i}
+                    className={`h-8 w-8 rounded border-2 flex items-center justify-center text-xs font-medium transition-all ${
+                      i === metronome.currentBeat
+                        ? "bg-green-500 border-green-400 text-white scale-110"
+                        : "bg-gray-900 border-gray-700 text-gray-500"
+                    }`}
+                  >
+                    {i + 1}
+                  </div>
+                ),
+              )}
             </div>
-            <div className="text-xs text-gray-500">Measure {metronome.currentMeasure + 1}</div>
+            <div className="text-xs text-gray-500">
+              Measure {metronome.currentMeasure + 1}
+            </div>
           </div>
         </div>
       )}
@@ -198,7 +215,7 @@ export function MetronomeControl({
           onClick={() => setShowAdvanced(!showAdvanced)}
           className="w-full text-xs"
         >
-          {showAdvanced ? 'Hide' : 'Show'} Advanced Settings
+          {showAdvanced ? "Hide" : "Show"} Advanced Settings
         </Button>
 
         {showAdvanced && (
@@ -208,7 +225,7 @@ export function MetronomeControl({
               <Label className="text-xs">Subdivision</Label>
               <Select
                 value={metronome.subdivision}
-                onValueChange={(value: 'quarter' | 'eighth' | 'sixteenth') =>
+                onValueChange={(value: "quarter" | "eighth" | "sixteenth") =>
                   metronome.updateSettings({ subdivision: value })
                 }
               >
@@ -228,7 +245,9 @@ export function MetronomeControl({
               <Label className="text-xs">Count-In (Measures)</Label>
               <Select
                 value={metronome.countIn.toString()}
-                onValueChange={(value) => metronome.updateSettings({ countIn: parseInt(value) })}
+                onValueChange={(value) =>
+                  metronome.updateSettings({ countIn: parseInt(value) })
+                }
               >
                 <SelectTrigger>
                   <SelectValue />
@@ -236,7 +255,9 @@ export function MetronomeControl({
                 <SelectContent>
                   {[0, 1, 2, 4].map((num) => (
                     <SelectItem key={num} value={num.toString()}>
-                      {num === 0 ? 'None' : `${num} measure${num > 1 ? 's' : ''}`}
+                      {num === 0
+                        ? "None"
+                        : `${num} measure${num > 1 ? "s" : ""}`}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -281,7 +302,7 @@ export function MetronomeControl({
       {/* Control Buttons */}
       <div className="flex gap-2">
         <Button
-          variant={metronome.isPlaying ? 'destructive' : 'default'}
+          variant={metronome.isPlaying ? "destructive" : "default"}
           onClick={metronome.isPlaying ? metronome.stop : metronome.start}
           className="flex-1 gap-2"
           disabled={!metronome.enabled}
@@ -300,7 +321,9 @@ export function MetronomeControl({
         </Button>
         <Button
           variant="outline"
-          onClick={() => metronome.countIn(() => logger.info('Count-in complete'))}
+          onClick={() =>
+            metronome.countIn(() => logger.info("Count-in complete"))
+          }
           disabled={!metronome.enabled || metronome.isPlaying}
         >
           Count-In

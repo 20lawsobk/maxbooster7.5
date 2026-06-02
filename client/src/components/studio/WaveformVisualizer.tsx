@@ -1,20 +1,20 @@
-import { useEffect, useRef, useState, useCallback } from 'react';
-import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
-import { Activity, BarChart3 } from 'lucide-react';
-import type AudioEngine from '@/lib/audioEngine';
+import { useEffect, useRef, useState, useCallback } from "react";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Activity, BarChart3 } from "lucide-react";
+import type AudioEngine from "@/lib/audioEngine";
 
 interface WaveformVisualizerProps {
   audioEngine: AudioEngine;
   isPlaying: boolean;
-  mode?: 'waveform' | 'spectrum';
-  onModeChange?: (mode: 'waveform' | 'spectrum') => void;
+  mode?: "waveform" | "spectrum";
+  onModeChange?: (mode: "waveform" | "spectrum") => void;
 }
 
 export function WaveformVisualizer({
   audioEngine,
   isPlaying,
-  mode = 'waveform',
+  mode = "waveform",
   onModeChange,
 }: WaveformVisualizerProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -26,7 +26,7 @@ export function WaveformVisualizer({
   const waveformBufferRef = useRef<Float32Array | null>(null);
   const frequencyBufferRef = useRef<Uint8Array | null>(null);
 
-  const [localMode, setLocalMode] = useState<'waveform' | 'spectrum'>(mode);
+  const [localMode, setLocalMode] = useState<"waveform" | "spectrum">(mode);
   const [buffersReady, setBuffersReady] = useState(false);
 
   // Initialize buffers with retry mechanism
@@ -74,9 +74,9 @@ export function WaveformVisualizer({
       isPageVisibleRef.current = !document.hidden;
     };
 
-    document.addEventListener('visibilitychange', handleVisibilityChange);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
     return () => {
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
   }, []);
 
@@ -86,26 +86,31 @@ export function WaveformVisualizer({
   }, [mode]);
 
   const handleModeChange = useCallback(
-    (newMode: 'waveform' | 'spectrum') => {
+    (newMode: "waveform" | "spectrum") => {
       setLocalMode(newMode);
       onModeChange?.(newMode);
     },
-    [onModeChange]
+    [onModeChange],
   );
 
   // Drawing functions
   const drawWaveform = useCallback(
-    (ctx: CanvasRenderingContext2D, buffer: Float32Array, width: number, height: number) => {
+    (
+      ctx: CanvasRenderingContext2D,
+      buffer: Float32Array,
+      width: number,
+      height: number,
+    ) => {
       const bufferLength = buffer.length;
       const sliceWidth = width / bufferLength;
 
       // Clear canvas
-      ctx.fillStyle = 'rgb(15, 23, 42)'; // Dark background
+      ctx.fillStyle = "rgb(15, 23, 42)"; // Dark background
       ctx.fillRect(0, 0, width, height);
 
       // Draw waveform
       ctx.lineWidth = 2;
-      ctx.strokeStyle = 'rgb(34, 197, 94)'; // Green waveform
+      ctx.strokeStyle = "rgb(34, 197, 94)"; // Green waveform
       ctx.beginPath();
 
       let x = 0;
@@ -126,23 +131,28 @@ export function WaveformVisualizer({
       ctx.stroke();
 
       // Draw center line
-      ctx.strokeStyle = 'rgba(148, 163, 184, 0.3)';
+      ctx.strokeStyle = "rgba(148, 163, 184, 0.3)";
       ctx.lineWidth = 1;
       ctx.beginPath();
       ctx.moveTo(0, height / 2);
       ctx.lineTo(width, height / 2);
       ctx.stroke();
     },
-    []
+    [],
   );
 
   const drawSpectrum = useCallback(
-    (ctx: CanvasRenderingContext2D, buffer: Uint8Array, width: number, height: number) => {
+    (
+      ctx: CanvasRenderingContext2D,
+      buffer: Uint8Array,
+      width: number,
+      height: number,
+    ) => {
       const bufferLength = buffer.length;
       const barWidth = (width / bufferLength) * 2.5;
 
       // Clear canvas
-      ctx.fillStyle = 'rgb(15, 23, 42)'; // Dark background
+      ctx.fillStyle = "rgb(15, 23, 42)"; // Dark background
       ctx.fillRect(0, 0, width, height);
 
       // Draw spectrum bars
@@ -158,7 +168,7 @@ export function WaveformVisualizer({
         x += barWidth + 1;
       }
     },
-    []
+    [],
   );
 
   // Animation loop
@@ -175,7 +185,7 @@ export function WaveformVisualizer({
         return;
       }
 
-      const ctx = canvas.getContext('2d');
+      const ctx = canvas.getContext("2d");
       if (!ctx) {
         animationFrameRef.current = requestAnimationFrame(animate);
         return;
@@ -194,17 +204,24 @@ export function WaveformVisualizer({
       const height = canvas.height;
 
       // Get data from analyser
-      if (localMode === 'waveform' && waveformBufferRef.current) {
+      if (localMode === "waveform" && waveformBufferRef.current) {
         audioEngine.getRealtimeWaveformData(waveformBufferRef.current);
         drawWaveform(ctx, waveformBufferRef.current, width, height);
-      } else if (localMode === 'spectrum' && frequencyBufferRef.current) {
+      } else if (localMode === "spectrum" && frequencyBufferRef.current) {
         audioEngine.getRealtimeFrequencyData(frequencyBufferRef.current);
         drawSpectrum(ctx, frequencyBufferRef.current, width, height);
       }
 
       animationFrameRef.current = requestAnimationFrame(animate);
     },
-    [audioEngine, isPlaying, localMode, drawWaveform, drawSpectrum, buffersReady]
+    [
+      audioEngine,
+      isPlaying,
+      localMode,
+      drawWaveform,
+      drawSpectrum,
+      buffersReady,
+    ],
   );
 
   // Start/stop animation based on playback state
@@ -223,9 +240,9 @@ export function WaveformVisualizer({
       // Clear canvas when stopped
       const canvas = canvasRef.current;
       if (canvas) {
-        const ctx = canvas.getContext('2d');
+        const ctx = canvas.getContext("2d");
         if (ctx) {
-          ctx.fillStyle = 'rgb(15, 23, 42)';
+          ctx.fillStyle = "rgb(15, 23, 42)";
           ctx.fillRect(0, 0, canvas.width, canvas.height);
         }
       }
@@ -253,7 +270,7 @@ export function WaveformVisualizer({
         canvas.style.width = `${width}px`;
         canvas.style.height = `${height}px`;
 
-        const ctx = canvas.getContext('2d');
+        const ctx = canvas.getContext("2d");
         if (ctx) {
           ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
         }
@@ -270,12 +287,14 @@ export function WaveformVisualizer({
   return (
     <Card className="bg-slate-900 border-slate-700 p-4">
       <div className="flex items-center justify-between mb-3">
-        <h3 className="text-sm font-medium text-slate-200">Audio Visualization</h3>
+        <h3 className="text-sm font-medium text-slate-200">
+          Audio Visualization
+        </h3>
         <div className="flex gap-2" data-testid="select-visualizer-mode">
           <Button
-            variant={localMode === 'waveform' ? 'default' : 'outline'}
+            variant={localMode === "waveform" ? "default" : "outline"}
             size="sm"
-            onClick={() => handleModeChange('waveform')}
+            onClick={() => handleModeChange("waveform")}
             className="h-8"
             data-testid="button-visualizer-mode-waveform"
           >
@@ -283,9 +302,9 @@ export function WaveformVisualizer({
             Waveform
           </Button>
           <Button
-            variant={localMode === 'spectrum' ? 'default' : 'outline'}
+            variant={localMode === "spectrum" ? "default" : "outline"}
             size="sm"
-            onClick={() => handleModeChange('spectrum')}
+            onClick={() => handleModeChange("spectrum")}
             className="h-8"
             data-testid="button-visualizer-mode-spectrum"
           >
@@ -298,7 +317,9 @@ export function WaveformVisualizer({
         <canvas
           ref={canvasRef}
           className="w-full h-full"
-          data-testid={localMode === 'waveform' ? 'canvas-waveform' : 'canvas-spectrum'}
+          data-testid={
+            localMode === "waveform" ? "canvas-waveform" : "canvas-spectrum"
+          }
         />
       </div>
     </Card>

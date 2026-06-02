@@ -10,7 +10,7 @@
  *   const items = await db.select().from(table).where(...).orderBy(...).limit(limit).offset(offset);
  */
 
-import type { Request } from 'express';
+import type { Request } from "express";
 
 export const MAX_PAGE_SIZE = 500;
 export const DEFAULT_PAGE_SIZE = 50;
@@ -28,13 +28,17 @@ export interface PaginationParams {
  * - offset: computed from page × limit
  */
 export function parsePaginationParams(req: Request): PaginationParams {
-  const rawLimit = parseInt(String(req.query.limit ?? req.query.pageSize ?? DEFAULT_PAGE_SIZE), 10);
+  const rawLimit = parseInt(
+    String(req.query.limit ?? req.query.pageSize ?? DEFAULT_PAGE_SIZE),
+    10,
+  );
   const rawPage = parseInt(String(req.query.page ?? 1), 10);
 
   const page = Number.isFinite(rawPage) && rawPage >= 1 ? rawPage : 1;
-  const limit = Number.isFinite(rawLimit) && rawLimit >= 1
-    ? Math.min(rawLimit, MAX_PAGE_SIZE)
-    : DEFAULT_PAGE_SIZE;
+  const limit =
+    Number.isFinite(rawLimit) && rawLimit >= 1
+      ? Math.min(rawLimit, MAX_PAGE_SIZE)
+      : DEFAULT_PAGE_SIZE;
   const offset = (page - 1) * limit;
 
   return { limit, offset, page };

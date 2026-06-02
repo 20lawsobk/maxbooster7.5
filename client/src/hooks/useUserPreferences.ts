@@ -1,16 +1,26 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { apiRequest } from '@/lib/queryClient';
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
 
-export type ArtistType = 'solo' | 'band' | 'producer' | 'label' | 'dj' | 'songwriter';
-export type CareerStage = 'emerging' | 'developing' | 'established' | 'professional';
-export type LayoutPreset = 'compact' | 'standard' | 'detailed';
+export type ArtistType =
+  | "solo"
+  | "band"
+  | "producer"
+  | "label"
+  | "dj"
+  | "songwriter";
+export type CareerStage =
+  | "emerging"
+  | "developing"
+  | "established"
+  | "professional";
+export type LayoutPreset = "compact" | "standard" | "detailed";
 
 export interface DashboardWidget {
   id: string;
   name: string;
   visible: boolean;
   order: number;
-  size: 'small' | 'medium' | 'large';
+  size: "small" | "medium" | "large";
   column: number;
 }
 
@@ -46,9 +56,9 @@ export interface UserPreferences {
     email: boolean;
     push: boolean;
     inApp: boolean;
-    frequency: 'realtime' | 'daily' | 'weekly';
+    frequency: "realtime" | "daily" | "weekly";
   };
-  aiAssistantLevel: 'minimal' | 'moderate' | 'aggressive';
+  aiAssistantLevel: "minimal" | "moderate" | "aggressive";
   betaFeatures: boolean;
 }
 
@@ -56,7 +66,7 @@ export interface PreferenceRecommendation {
   category: string;
   recommendation: string;
   reason: string;
-  priority: 'high' | 'medium' | 'low';
+  priority: "high" | "medium" | "low";
   actionable: boolean;
   suggestedValue?: Record<string, unknown>;
 }
@@ -70,23 +80,36 @@ export function useUserPreferences() {
     error,
     refetch,
   } = useQuery<UserPreferences>({
-    queryKey: ['/api/preferences/user'],
+    queryKey: ["/api/preferences/user"],
     staleTime: 5 * 60 * 1000,
   });
 
   const updatePreferencesMutation = useMutation({
     mutationFn: async (updates: Partial<UserPreferences>) => {
-      const response = await apiRequest('PUT', '/api/preferences/user', updates);
+      const response = await apiRequest(
+        "PUT",
+        "/api/preferences/user",
+        updates,
+      );
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/preferences/user'] });
+      queryClient.invalidateQueries({ queryKey: ["/api/preferences/user"] });
     },
   });
 
   const recordBehaviorMutation = useMutation({
-    mutationFn: async ({ eventType, context }: { eventType: string; context?: Record<string, any> }) => {
-      const response = await apiRequest('POST', '/api/preferences/learn', { eventType, context });
+    mutationFn: async ({
+      eventType,
+      context,
+    }: {
+      eventType: string;
+      context?: Record<string, any>;
+    }) => {
+      const response = await apiRequest("POST", "/api/preferences/learn", {
+        eventType,
+        context,
+      });
       return response.json();
     },
   });
@@ -118,18 +141,24 @@ export function useDashboardLayout() {
     isLoading,
     error,
   } = useQuery<DashboardLayout>({
-    queryKey: ['/api/preferences/dashboard-layout'],
+    queryKey: ["/api/preferences/dashboard-layout"],
     staleTime: 5 * 60 * 1000,
   });
 
   const saveLayoutMutation = useMutation({
     mutationFn: async (newLayout: DashboardLayout) => {
-      const response = await apiRequest('PUT', '/api/preferences/dashboard-layout', newLayout);
+      const response = await apiRequest(
+        "PUT",
+        "/api/preferences/dashboard-layout",
+        newLayout,
+      );
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/preferences/dashboard-layout'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/preferences/user'] });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/preferences/dashboard-layout"],
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/preferences/user"] });
     },
   });
 
@@ -137,10 +166,13 @@ export function useDashboardLayout() {
     return saveLayoutMutation.mutateAsync(newLayout);
   };
 
-  const updateWidget = (widgetId: string, updates: Partial<DashboardWidget>) => {
+  const updateWidget = (
+    widgetId: string,
+    updates: Partial<DashboardWidget>,
+  ) => {
     if (!layout) return;
-    const newWidgets = layout.widgets.map(w =>
-      w.id === widgetId ? { ...w, ...updates } : w
+    const newWidgets = layout.widgets.map((w) =>
+      w.id === widgetId ? { ...w, ...updates } : w,
     );
     return saveLayout({ ...layout, widgets: newWidgets });
   };
@@ -157,7 +189,7 @@ export function useDashboardLayout() {
 
   const toggleWidget = (widgetId: string) => {
     if (!layout) return;
-    const widget = layout.widgets.find(w => w.id === widgetId);
+    const widget = layout.widgets.find((w) => w.id === widgetId);
     if (widget) {
       return updateWidget(widgetId, { visible: !widget.visible });
     }

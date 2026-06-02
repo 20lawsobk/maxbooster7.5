@@ -1,8 +1,8 @@
-import { Request, Response, Router } from 'express';
-import os from 'os';
-import { logger } from '../logger.js';
-import { distributedCache } from './distributedCache.js';
-import { circuitBreakerRegistry } from './circuitBreaker.js';
+import { Request, Response, Router } from "express";
+import os from "os";
+import { logger } from "../logger.js";
+import { distributedCache } from "./distributedCache.js";
+import { circuitBreakerRegistry } from "./circuitBreaker.js";
 
 interface ScalingMetrics {
   cpu: {
@@ -64,15 +64,17 @@ class AutoScalingManager {
 
   private constructor() {
     this.config = {
-      cpuThresholdUp: parseFloat(process.env.SCALE_CPU_UP || '70'),
-      cpuThresholdDown: parseFloat(process.env.SCALE_CPU_DOWN || '30'),
-      memoryThresholdUp: parseFloat(process.env.SCALE_MEMORY_UP || '80'),
-      memoryThresholdDown: parseFloat(process.env.SCALE_MEMORY_DOWN || '40'),
-      latencyThresholdMs: parseInt(process.env.SCALE_LATENCY_THRESHOLD || '1000'),
-      errorRateThreshold: parseFloat(process.env.SCALE_ERROR_RATE || '5'),
-      minReplicas: parseInt(process.env.SCALE_MIN_REPLICAS || '1'),
-      maxReplicas: parseInt(process.env.SCALE_MAX_REPLICAS || '100'),
-      cooldownSeconds: parseInt(process.env.SCALE_COOLDOWN || '300'),
+      cpuThresholdUp: parseFloat(process.env.SCALE_CPU_UP || "70"),
+      cpuThresholdDown: parseFloat(process.env.SCALE_CPU_DOWN || "30"),
+      memoryThresholdUp: parseFloat(process.env.SCALE_MEMORY_UP || "80"),
+      memoryThresholdDown: parseFloat(process.env.SCALE_MEMORY_DOWN || "40"),
+      latencyThresholdMs: parseInt(
+        process.env.SCALE_LATENCY_THRESHOLD || "1000",
+      ),
+      errorRateThreshold: parseFloat(process.env.SCALE_ERROR_RATE || "5"),
+      minReplicas: parseInt(process.env.SCALE_MIN_REPLICAS || "1"),
+      maxReplicas: parseInt(process.env.SCALE_MAX_REPLICAS || "100"),
+      cooldownSeconds: parseInt(process.env.SCALE_COOLDOWN || "300"),
     };
   }
 
@@ -96,7 +98,10 @@ class AutoScalingManager {
   }
 
   decrementConnections(): void {
-    this.requestMetrics.activeConnections = Math.max(0, this.requestMetrics.activeConnections - 1);
+    this.requestMetrics.activeConnections = Math.max(
+      0,
+      this.requestMetrics.activeConnections - 1,
+    );
   }
 
   getMetrics(): ScalingMetrics {
@@ -105,7 +110,11 @@ class AutoScalingManager {
     const requestStats = this.getRequestStats();
     const cacheStats = distributedCache.getStats();
     const circuitBreakers = circuitBreakerRegistry.getAllStats();
-    const scalingDecision = this.calculateScalingDecision(cpuUsage, memoryInfo, requestStats);
+    const scalingDecision = this.calculateScalingDecision(
+      cpuUsage,
+      memoryInfo,
+      requestStats,
+    );
 
     return {
       cpu: {
@@ -133,10 +142,10 @@ class AutoScalingManager {
       totalIdle += cpu.times.idle;
     }
 
-    return ((1 - totalIdle / totalTick) * 100);
+    return (1 - totalIdle / totalTick) * 100;
   }
 
-  private getMemoryInfo(): ScalingMetrics['memory'] {
+  private getMemoryInfo(): ScalingMetrics["memory"] {
     const totalMem = os.totalmem();
     const freeMem = os.freemem();
     const usedMem = totalMem - freeMem;
@@ -152,17 +161,22 @@ class AutoScalingManager {
     };
   }
 
-  private getRequestStats(): ScalingMetrics['requests'] {
+  private getRequestStats(): ScalingMetrics["requests"] {
     const windowMs = Date.now() - this.requestMetrics.windowStart;
     const windowSeconds = windowMs / 1000;
-    
-    const rps = windowSeconds > 0 ? this.requestMetrics.totalRequests / windowSeconds : 0;
-    const avgLatency = this.requestMetrics.totalRequests > 0 
-      ? this.requestMetrics.totalLatency / this.requestMetrics.totalRequests 
-      : 0;
-    const errorRate = this.requestMetrics.totalRequests > 0
-      ? (this.requestMetrics.totalErrors / this.requestMetrics.totalRequests) * 100
-      : 0;
+
+    const rps =
+      windowSeconds > 0 ? this.requestMetrics.totalRequests / windowSeconds : 0;
+    const avgLatency =
+      this.requestMetrics.totalRequests > 0
+        ? this.requestMetrics.totalLatency / this.requestMetrics.totalRequests
+        : 0;
+    const errorRate =
+      this.requestMetrics.totalRequests > 0
+        ? (this.requestMetrics.totalErrors /
+            this.requestMetrics.totalRequests) *
+          100
+        : 0;
 
     if (windowMs > 60000) {
       this.requestMetrics.totalRequests = 0;
@@ -181,15 +195,16 @@ class AutoScalingManager {
 
   private calculateScalingDecision(
     cpuUsage: number,
-    memoryInfo: ScalingMetrics['memory'],
-    requestStats: ScalingMetrics['requests']
-  ): ScalingMetrics['scaling'] {
+    memoryInfo: ScalingMetrics["memory"],
+    requestStats: ScalingMetrics["requests"],
+  ): ScalingMetrics["scaling"] {
     const now = Date.now();
-    const cooldownActive = (now - this.lastScaleAction) < this.config.cooldownSeconds * 1000;
+    const cooldownActive =
+      now - this.lastScaleAction < this.config.cooldownSeconds * 1000;
 
     let shouldScaleUp = false;
     let shouldScaleDown = false;
-    let reason = 'Stable';
+    let reason = "Stable";
 
     if (cpuUsage > this.config.cpuThresholdUp) {
       shouldScaleUp = true;
@@ -203,9 +218,14 @@ class AutoScalingManager {
     } else if (requestStats.errorRate > this.config.errorRateThreshold) {
       shouldScaleUp = true;
       reason = `Error rate ${requestStats.errorRate}% exceeds threshold ${this.config.errorRateThreshold}%`;
-    } else if (cpuUsage < this.config.cpuThresholdDown && memoryInfo.percentage < this.config.memoryThresholdDown) {
+    } else if (
+      cpuUsage < this.config.cpuThresholdDown &&
+      memoryInfo.percentage < this.config.memoryThresholdDown
+    ) {
       shouldScaleDown = this.currentReplicas > this.config.minReplicas;
-      reason = shouldScaleDown ? 'Low resource utilization' : 'At minimum replicas';
+      reason = shouldScaleDown
+        ? "Low resource utilization"
+        : "At minimum replicas";
     }
 
     if (cooldownActive) {
@@ -216,9 +236,15 @@ class AutoScalingManager {
 
     let recommendedReplicas = this.currentReplicas;
     if (shouldScaleUp) {
-      recommendedReplicas = Math.min(this.currentReplicas * 2, this.config.maxReplicas);
+      recommendedReplicas = Math.min(
+        this.currentReplicas * 2,
+        this.config.maxReplicas,
+      );
     } else if (shouldScaleDown) {
-      recommendedReplicas = Math.max(Math.ceil(this.currentReplicas / 2), this.config.minReplicas);
+      recommendedReplicas = Math.max(
+        Math.ceil(this.currentReplicas / 2),
+        this.config.minReplicas,
+      );
     }
 
     return {
@@ -236,14 +262,25 @@ class AutoScalingManager {
         kind: "ExternalMetricValueList",
         apiVersion: "external.metrics.k8s.io/v1beta1",
         items: [
-          { metricName: "http_requests_per_second", value: metrics.requests.requestsPerSecond.toString() },
-          { metricName: "cpu_usage_percent", value: metrics.cpu.usage.toFixed(0) },
-          { metricName: "memory_usage_percent", value: metrics.memory.percentage.toFixed(0) }
-        ]
+          {
+            metricName: "http_requests_per_second",
+            value: metrics.requests.requestsPerSecond.toString(),
+          },
+          {
+            metricName: "cpu_usage_percent",
+            value: metrics.cpu.usage.toFixed(0),
+          },
+          {
+            metricName: "memory_usage_percent",
+            value: metrics.memory.percentage.toFixed(0),
+          },
+        ],
       });
     } catch (error) {
-      logger.warn({ err: error }, 'Error fetching kube metrics:');
-      res.status(500).json({ success: false, error: 'Failed to fetch kube metrics' });
+      logger.warn({ err: error }, "Error fetching kube metrics:");
+      res
+        .status(500)
+        .json({ success: false, error: "Failed to fetch kube metrics" });
     }
   }
 
@@ -264,67 +301,87 @@ export const autoScalingManager = AutoScalingManager.getInstance();
 
 export const scalingMetricsRouter = Router();
 
-function requireAdminInline(req: Request, res: Response, next: () => void): void {
+function requireAdminInline(
+  req: Request,
+  res: Response,
+  next: () => void,
+): void {
   const user = (req as Record<string, unknown>).user;
-  if (!user || user.role !== 'admin') {
-    res.status(403).json({ error: 'Admin access required' });
+  if (!user || user.role !== "admin") {
+    res.status(403).json({ error: "Admin access required" });
     return;
   }
   next();
 }
 
-scalingMetricsRouter.get('/metrics', requireAdminInline, (req: Request, res: Response) => {
-  try {
-    const metrics = autoScalingManager.getMetrics();
-    res.json({
-      success: true,
-      timestamp: new Date().toISOString(),
-      instanceId: process.env.INSTANCE_ID || 'primary',
-      metrics,
-    });
-  } catch (error) {
-    logger.warn({ err: error }, 'Error fetching scaling metrics:');
-    res.status(500).json({ success: false, error: 'Failed to fetch metrics' });
-  }
-});
+scalingMetricsRouter.get(
+  "/metrics",
+  requireAdminInline,
+  (req: Request, res: Response) => {
+    try {
+      const metrics = autoScalingManager.getMetrics();
+      res.json({
+        success: true,
+        timestamp: new Date().toISOString(),
+        instanceId: process.env.INSTANCE_ID || "primary",
+        metrics,
+      });
+    } catch (error) {
+      logger.warn({ err: error }, "Error fetching scaling metrics:");
+      res
+        .status(500)
+        .json({ success: false, error: "Failed to fetch metrics" });
+    }
+  },
+);
 
-scalingMetricsRouter.get('/metrics/kube', requireAdminInline, (req: Request, res: Response) => {
-  autoScalingManager.getKubeMetricsHandler(req, res);
-});
+scalingMetricsRouter.get(
+  "/metrics/kube",
+  requireAdminInline,
+  (req: Request, res: Response) => {
+    autoScalingManager.getKubeMetricsHandler(req, res);
+  },
+);
 
-scalingMetricsRouter.get('/health/detailed', requireAdminInline, (req: Request, res: Response) => {
-  try {
-    const metrics = autoScalingManager.getMetrics();
-    const isHealthy = 
-      metrics.cpu.usage < 90 &&
-      metrics.memory.percentage < 95 &&
-      metrics.requests.errorRate < 10;
+scalingMetricsRouter.get(
+  "/health/detailed",
+  requireAdminInline,
+  (req: Request, res: Response) => {
+    try {
+      const metrics = autoScalingManager.getMetrics();
+      const isHealthy =
+        metrics.cpu.usage < 90 &&
+        metrics.memory.percentage < 95 &&
+        metrics.requests.errorRate < 10;
 
-    res.status(isHealthy ? 200 : 503).json({
-      status: isHealthy ? 'healthy' : 'unhealthy',
-      timestamp: new Date().toISOString(),
-      checks: {
-        cpu: metrics.cpu.usage < 90 ? 'pass' : 'fail',
-        memory: metrics.memory.percentage < 95 ? 'pass' : 'fail',
-        errorRate: metrics.requests.errorRate < 10 ? 'pass' : 'fail',
-      },
-      metrics: {
-        cpuUsage: `${metrics.cpu.usage.toFixed(1)}%`,
-        memoryUsage: `${metrics.memory.percentage.toFixed(1)}%`,
-        requestsPerSecond: metrics.requests.requestsPerSecond,
-        averageLatency: `${metrics.requests.averageLatency}ms`,
-        errorRate: `${metrics.requests.errorRate}%`,
-      },
-    });
-  } catch (error) {
-    res.status(503).json({ status: 'unhealthy', error: 'Health check failed' });
-  }
-});
+      res.status(isHealthy ? 200 : 503).json({
+        status: isHealthy ? "healthy" : "unhealthy",
+        timestamp: new Date().toISOString(),
+        checks: {
+          cpu: metrics.cpu.usage < 90 ? "pass" : "fail",
+          memory: metrics.memory.percentage < 95 ? "pass" : "fail",
+          errorRate: metrics.requests.errorRate < 10 ? "pass" : "fail",
+        },
+        metrics: {
+          cpuUsage: `${metrics.cpu.usage.toFixed(1)}%`,
+          memoryUsage: `${metrics.memory.percentage.toFixed(1)}%`,
+          requestsPerSecond: metrics.requests.requestsPerSecond,
+          averageLatency: `${metrics.requests.averageLatency}ms`,
+          errorRate: `${metrics.requests.errorRate}%`,
+        },
+      });
+    } catch (error) {
+      res
+        .status(503)
+        .json({ status: "unhealthy", error: "Health check failed" });
+    }
+  },
+);
 
-scalingMetricsRouter.get('/ready', (req: Request, res: Response) => {
+scalingMetricsRouter.get("/ready", (req: Request, res: Response) => {
   res.status(200).json({ ready: true, timestamp: new Date().toISOString() });
 });
 
-scalingMetricsRouter.get('/live', (req: Request, res: Response) => {
+scalingMetricsRouter.get("/live", (req: Request, res: Response) => {
   res.status(200).json({ alive: true, uptime: process.uptime() });
 });

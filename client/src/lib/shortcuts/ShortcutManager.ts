@@ -1,4 +1,4 @@
-import { logger } from '../logger';
+import { logger } from "../logger";
 import {
   ShortcutDefinition,
   ShortcutConfig,
@@ -9,9 +9,9 @@ import {
   ShortcutModifier,
   matchesShortcut,
   formatShortcutKeys,
-} from './types';
+} from "./types";
 
-const STORAGE_KEY = 'max-booster-shortcuts';
+const STORAGE_KEY = "max-booster-shortcuts";
 
 interface ShortcutManagerOptions {
   persistConfig?: boolean;
@@ -22,7 +22,7 @@ class ShortcutManagerImpl {
   private shortcuts: Map<string, ShortcutDefinition> = new Map();
   private customConfigs: Map<string, ShortcutConfig> = new Map();
   private listeners: ShortcutListener[] = [];
-  private currentContext: ShortcutContext = 'global';
+  private currentContext: ShortcutContext = "global";
   private enabled: boolean = true;
   private handleKeyDown: (event: KeyboardEvent) => void;
   private options: ShortcutManagerOptions;
@@ -30,37 +30,37 @@ class ShortcutManagerImpl {
   constructor(options: ShortcutManagerOptions = {}) {
     this.options = options;
     this.handleKeyDown = this.onKeyDown.bind(this);
-    
-    if (typeof window !== 'undefined') {
+
+    if (typeof window !== "undefined") {
       this.loadCustomConfigs();
-      window.addEventListener('keydown', this.handleKeyDown);
+      window.addEventListener("keydown", this.handleKeyDown);
     }
   }
 
   private loadCustomConfigs(): void {
     if (!this.options.persistConfig) return;
-    
+
     try {
       const stored = localStorage.getItem(STORAGE_KEY);
       if (stored) {
         const configs: ShortcutConfig[] = JSON.parse(stored);
-        configs.forEach(config => {
+        configs.forEach((config) => {
           this.customConfigs.set(config.id, config);
         });
       }
     } catch (e) {
-      logger.warn('Failed to load shortcut configs:', e);
+      logger.warn("Failed to load shortcut configs:", e);
     }
   }
 
   private saveCustomConfigs(): void {
     if (!this.options.persistConfig) return;
-    
+
     try {
       const configs = Array.from(this.customConfigs.values());
       localStorage.setItem(STORAGE_KEY, JSON.stringify(configs));
     } catch (e) {
-      logger.warn('Failed to save shortcut configs:', e);
+      logger.warn("Failed to save shortcut configs:", e);
     }
   }
 
@@ -93,7 +93,7 @@ class ShortcutManagerImpl {
   }
 
   registerMany(shortcuts: ShortcutDefinition[]): void {
-    shortcuts.forEach(s => this.register(s));
+    shortcuts.forEach((s) => this.register(s));
   }
 
   getShortcut(id: string): ShortcutDefinition | undefined {
@@ -106,12 +106,12 @@ class ShortcutManagerImpl {
 
   getShortcutsByContext(context: ShortcutContext): ShortcutDefinition[] {
     return this.getAllShortcuts().filter(
-      s => s.context === context || s.context === 'global'
+      (s) => s.context === context || s.context === "global",
     );
   }
 
   getShortcutsByCategory(category: string): ShortcutDefinition[] {
-    return this.getAllShortcuts().filter(s => s.category === category);
+    return this.getAllShortcuts().filter((s) => s.category === category);
   }
 
   setContext(context: ShortcutContext): void {
@@ -146,7 +146,7 @@ class ShortcutManagerImpl {
       ...shortcut,
       ...newConfig,
     });
-    
+
     this.saveCustomConfigs();
   }
 
@@ -162,21 +162,22 @@ class ShortcutManagerImpl {
 
   private detectConflicts(shortcut: ShortcutDefinition): string[] {
     const conflicts: string[] = [];
-    
+
     this.shortcuts.forEach((existing, id) => {
       if (id === shortcut.id) return;
-      
-      const sameContext = existing.context === shortcut.context || 
-        existing.context === 'global' || 
-        shortcut.context === 'global';
-      
+
+      const sameContext =
+        existing.context === shortcut.context ||
+        existing.context === "global" ||
+        shortcut.context === "global";
+
       if (!sameContext) return;
 
       if (!existing.key || !shortcut.key) return;
       const sameKey = existing.key.toLowerCase() === shortcut.key.toLowerCase();
       const sameModifiers = this.modifiersEqual(
         existing.modifiers || [],
-        shortcut.modifiers || []
+        shortcut.modifiers || [],
       );
 
       if (sameKey && sameModifiers) {
@@ -187,7 +188,10 @@ class ShortcutManagerImpl {
     return conflicts;
   }
 
-  private modifiersEqual(a: ShortcutModifier[], b: ShortcutModifier[]): boolean {
+  private modifiersEqual(
+    a: ShortcutModifier[],
+    b: ShortcutModifier[],
+  ): boolean {
     if (a.length !== b.length) return false;
     const sortedA = [...a].sort();
     const sortedB = [...b].sort();
@@ -201,20 +205,25 @@ class ShortcutManagerImpl {
   }
 
   removeListener(id: string): void {
-    this.listeners = this.listeners.filter(l => l.id !== id);
+    this.listeners = this.listeners.filter((l) => l.id !== id);
   }
 
   private onKeyDown(event: KeyboardEvent): void {
     if (!this.enabled) return;
 
     const target = event.target as HTMLElement;
-    const isInput = target.tagName === 'INPUT' || 
-      target.tagName === 'TEXTAREA' || 
+    const isInput =
+      target.tagName === "INPUT" ||
+      target.tagName === "TEXTAREA" ||
       target.isContentEditable;
 
     for (const shortcut of this.shortcuts.values()) {
       if (shortcut.enabled === false) continue;
-      if (shortcut.context !== 'global' && shortcut.context !== this.currentContext) continue;
+      if (
+        shortcut.context !== "global" &&
+        shortcut.context !== this.currentContext
+      )
+        continue;
       if (isInput && !shortcut.allowInInput) continue;
 
       if (matchesShortcut(event, shortcut)) {
@@ -231,11 +240,11 @@ class ShortcutManagerImpl {
           context: this.currentContext,
         };
 
-        if (typeof shortcut.action === 'function') {
+        if (typeof shortcut.action === "function") {
           shortcut.action();
         }
 
-        this.listeners.forEach(l => l.callback(shortcutEvent));
+        this.listeners.forEach((l) => l.callback(shortcutEvent));
         return;
       }
     }
@@ -243,13 +252,13 @@ class ShortcutManagerImpl {
 
   getFormattedShortcut(id: string): string {
     const shortcut = this.shortcuts.get(id);
-    if (!shortcut) return '';
+    if (!shortcut) return "";
     return formatShortcutKeys(shortcut.key, shortcut.modifiers);
   }
 
   destroy(): void {
-    if (typeof window !== 'undefined') {
-      window.removeEventListener('keydown', this.handleKeyDown);
+    if (typeof window !== "undefined") {
+      window.removeEventListener("keydown", this.handleKeyDown);
     }
     this.shortcuts.clear();
     this.customConfigs.clear();
@@ -259,7 +268,9 @@ class ShortcutManagerImpl {
 
 let instance: ShortcutManagerImpl | null = null;
 
-export function getShortcutManager(options?: ShortcutManagerOptions): ShortcutManagerImpl {
+export function getShortcutManager(
+  options?: ShortcutManagerOptions,
+): ShortcutManagerImpl {
   if (!instance) {
     instance = new ShortcutManagerImpl(options);
   }
@@ -275,211 +286,211 @@ export function resetShortcutManager(): void {
 
 export const DEFAULT_SHORTCUTS: ShortcutDefinition[] = [
   {
-    id: 'global.command-palette',
-    key: 'k',
-    modifiers: ['cmd'],
-    description: 'Open command palette',
-    category: 'global',
-    context: 'global',
-    action: 'openCommandPalette',
+    id: "global.command-palette",
+    key: "k",
+    modifiers: ["cmd"],
+    description: "Open command palette",
+    category: "global",
+    context: "global",
+    action: "openCommandPalette",
   },
   {
-    id: 'global.help',
-    key: '/',
-    modifiers: ['cmd'],
-    description: 'Show keyboard shortcuts',
-    category: 'global',
-    context: 'global',
-    action: 'showHelp',
+    id: "global.help",
+    key: "/",
+    modifiers: ["cmd"],
+    description: "Show keyboard shortcuts",
+    category: "global",
+    context: "global",
+    action: "showHelp",
   },
   {
-    id: 'global.settings',
-    key: ',',
-    modifiers: ['cmd'],
-    description: 'Open settings',
-    category: 'navigation',
-    context: 'global',
-    action: 'openSettings',
+    id: "global.settings",
+    key: ",",
+    modifiers: ["cmd"],
+    description: "Open settings",
+    category: "navigation",
+    context: "global",
+    action: "openSettings",
   },
   {
-    id: 'global.search',
-    key: '/',
-    description: 'Focus search',
-    category: 'global',
-    context: 'global',
-    action: 'focusSearch',
+    id: "global.search",
+    key: "/",
+    description: "Focus search",
+    category: "global",
+    context: "global",
+    action: "focusSearch",
   },
   {
-    id: 'global.escape',
-    key: 'Escape',
-    description: 'Close modal/dialog',
-    category: 'global',
-    context: 'global',
-    action: 'closeModal',
+    id: "global.escape",
+    key: "Escape",
+    description: "Close modal/dialog",
+    category: "global",
+    context: "global",
+    action: "closeModal",
     allowInInput: true,
   },
   {
-    id: 'studio.play-pause',
-    key: ' ',
-    description: 'Play/Pause',
-    category: 'transport',
-    context: 'studio',
-    action: 'togglePlayPause',
+    id: "studio.play-pause",
+    key: " ",
+    description: "Play/Pause",
+    category: "transport",
+    context: "studio",
+    action: "togglePlayPause",
   },
   {
-    id: 'studio.record',
-    key: 'r',
-    description: 'Toggle recording',
-    category: 'transport',
-    context: 'studio',
-    action: 'toggleRecord',
+    id: "studio.record",
+    key: "r",
+    description: "Toggle recording",
+    category: "transport",
+    context: "studio",
+    action: "toggleRecord",
   },
   {
-    id: 'studio.mute',
-    key: 'm',
-    description: 'Mute selected track',
-    category: 'track',
-    context: 'studio',
-    action: 'toggleMute',
+    id: "studio.mute",
+    key: "m",
+    description: "Mute selected track",
+    category: "track",
+    context: "studio",
+    action: "toggleMute",
   },
   {
-    id: 'studio.solo',
-    key: 's',
-    description: 'Solo selected track',
-    category: 'track',
-    context: 'studio',
-    action: 'toggleSolo',
+    id: "studio.solo",
+    key: "s",
+    description: "Solo selected track",
+    category: "track",
+    context: "studio",
+    action: "toggleSolo",
   },
   {
-    id: 'studio.save',
-    key: 's',
-    modifiers: ['cmd'],
-    description: 'Save project',
-    category: 'file',
-    context: 'studio',
-    action: 'saveProject',
+    id: "studio.save",
+    key: "s",
+    modifiers: ["cmd"],
+    description: "Save project",
+    category: "file",
+    context: "studio",
+    action: "saveProject",
   },
   {
-    id: 'studio.undo',
-    key: 'z',
-    modifiers: ['cmd'],
-    description: 'Undo',
-    category: 'editing',
-    context: 'studio',
-    action: 'undo',
+    id: "studio.undo",
+    key: "z",
+    modifiers: ["cmd"],
+    description: "Undo",
+    category: "editing",
+    context: "studio",
+    action: "undo",
   },
   {
-    id: 'studio.redo',
-    key: 'z',
-    modifiers: ['cmd', 'shift'],
-    description: 'Redo',
-    category: 'editing',
-    context: 'studio',
-    action: 'redo',
+    id: "studio.redo",
+    key: "z",
+    modifiers: ["cmd", "shift"],
+    description: "Redo",
+    category: "editing",
+    context: "studio",
+    action: "redo",
   },
   {
-    id: 'studio.loop',
-    key: 'l',
-    description: 'Toggle loop',
-    category: 'transport',
-    context: 'studio',
-    action: 'toggleLoop',
+    id: "studio.loop",
+    key: "l",
+    description: "Toggle loop",
+    category: "transport",
+    context: "studio",
+    action: "toggleLoop",
   },
   {
-    id: 'studio.metronome',
-    key: 'k',
-    description: 'Toggle metronome',
-    category: 'transport',
-    context: 'studio',
-    action: 'toggleMetronome',
+    id: "studio.metronome",
+    key: "k",
+    description: "Toggle metronome",
+    category: "transport",
+    context: "studio",
+    action: "toggleMetronome",
   },
   {
-    id: 'dashboard.new-project',
-    key: 'n',
-    description: 'Create new project',
-    category: 'actions',
-    context: 'dashboard',
-    action: 'newProject',
+    id: "dashboard.new-project",
+    key: "n",
+    description: "Create new project",
+    category: "actions",
+    context: "dashboard",
+    action: "newProject",
   },
   {
-    id: 'dashboard.upload',
-    key: 'u',
-    description: 'Upload file',
-    category: 'actions',
-    context: 'dashboard',
-    action: 'uploadFile',
+    id: "dashboard.upload",
+    key: "u",
+    description: "Upload file",
+    category: "actions",
+    context: "dashboard",
+    action: "uploadFile",
   },
   {
-    id: 'dashboard.distribution',
-    key: 'd',
-    description: 'Go to distribution',
-    category: 'navigation',
-    context: 'dashboard',
-    action: 'goToDistribution',
+    id: "dashboard.distribution",
+    key: "d",
+    description: "Go to distribution",
+    category: "navigation",
+    context: "dashboard",
+    action: "goToDistribution",
   },
   {
-    id: 'social.new-post',
-    key: 'p',
-    description: 'Create new post',
-    category: 'actions',
-    context: 'social',
-    action: 'newPost',
+    id: "social.new-post",
+    key: "p",
+    description: "Create new post",
+    category: "actions",
+    context: "social",
+    action: "newPost",
   },
   {
-    id: 'social.schedule',
-    key: 's',
-    description: 'Open scheduler',
-    category: 'actions',
-    context: 'social',
-    action: 'openScheduler',
+    id: "social.schedule",
+    key: "s",
+    description: "Open scheduler",
+    category: "actions",
+    context: "social",
+    action: "openScheduler",
   },
   {
-    id: 'social.analytics',
-    key: 'a',
-    description: 'View analytics',
-    category: 'navigation',
-    context: 'social',
-    action: 'viewAnalytics',
+    id: "social.analytics",
+    key: "a",
+    description: "View analytics",
+    category: "navigation",
+    context: "social",
+    action: "viewAnalytics",
   },
   {
-    id: 'social.preview',
-    key: 'p',
-    description: 'Preview post',
-    category: 'actions',
-    context: 'social',
-    action: 'previewPost',
+    id: "social.preview",
+    key: "p",
+    description: "Preview post",
+    category: "actions",
+    context: "social",
+    action: "previewPost",
   },
   {
-    id: 'distribution.new-release',
-    key: 'n',
-    description: 'New release',
-    category: 'actions',
-    context: 'distribution',
-    action: 'newRelease',
+    id: "distribution.new-release",
+    key: "n",
+    description: "New release",
+    category: "actions",
+    context: "distribution",
+    action: "newRelease",
   },
   {
-    id: 'distribution.submit',
-    key: 'Enter',
-    description: 'Submit release',
-    category: 'actions',
-    context: 'distribution',
-    action: 'submitRelease',
+    id: "distribution.submit",
+    key: "Enter",
+    description: "Submit release",
+    category: "actions",
+    context: "distribution",
+    action: "submitRelease",
   },
   {
-    id: 'analytics.refresh',
-    key: 'r',
-    description: 'Refresh data',
-    category: 'actions',
-    context: 'analytics',
-    action: 'refreshData',
+    id: "analytics.refresh",
+    key: "r",
+    description: "Refresh data",
+    category: "actions",
+    context: "analytics",
+    action: "refreshData",
   },
   {
-    id: 'analytics.export',
-    key: 'e',
-    description: 'Export report',
-    category: 'actions',
-    context: 'analytics',
-    action: 'exportReport',
+    id: "analytics.export",
+    key: "e",
+    description: "Export report",
+    category: "actions",
+    context: "analytics",
+    action: "exportReport",
   },
 ];
 

@@ -1,18 +1,32 @@
-import { db } from '../db.js';
-import { 
+import { db } from "../db.js";
+import {
   users,
   royaltyStatements,
   recoupmentAccounts,
   instantPayouts,
   systemSettings,
-} from '@shared/schema';
-import { eq, and, desc, gte, lte, sql } from 'drizzle-orm';
-import { logger } from '../logger.js';
-import crypto from 'crypto';
+} from "@shared/schema";
+import { eq, and, desc, gte, lte, sql } from "drizzle-orm";
+import { logger } from "../logger.js";
+import crypto from "crypto";
 
-export type PaymentFrequency = 'monthly' | 'quarterly' | 'semi_annual' | 'annual';
-export type PaymentMethod = 'bank_transfer' | 'paypal' | 'stripe' | 'check' | 'crypto';
-export type PayoutStatus = 'pending' | 'processing' | 'completed' | 'failed' | 'cancelled';
+export type PaymentFrequency =
+  | "monthly"
+  | "quarterly"
+  | "semi_annual"
+  | "annual";
+export type PaymentMethod =
+  | "bank_transfer"
+  | "paypal"
+  | "stripe"
+  | "check"
+  | "crypto";
+export type PayoutStatus =
+  | "pending"
+  | "processing"
+  | "completed"
+  | "failed"
+  | "cancelled";
 
 export interface PaymentPreferences {
   userId: string;
@@ -35,12 +49,12 @@ export interface BankDetails {
   routingNumber: string;
   swiftCode?: string;
   iban?: string;
-  accountType: 'checking' | 'savings';
+  accountType: "checking" | "savings";
   country: string;
 }
 
 export interface CryptoWalletDetails {
-  network: 'ethereum' | 'bitcoin' | 'usdc' | 'usdt';
+  network: "ethereum" | "bitcoin" | "usdc" | "usdt";
   walletAddress: string;
 }
 
@@ -78,7 +92,7 @@ export interface TaxWithholdingCalculation {
   withholdingAmount: number;
   netAmount: number;
   taxFormRequired: boolean;
-  taxFormType?: '1099-MISC' | 'W-8BEN' | 'none';
+  taxFormType?: "1099-MISC" | "W-8BEN" | "none";
 }
 
 export interface PaymentReceipt {
@@ -94,61 +108,70 @@ export interface PaymentReceipt {
 }
 
 const DEFAULT_THRESHOLDS: Record<string, number> = {
-  USD: 25.00,
-  EUR: 25.00,
-  GBP: 20.00,
-  CAD: 35.00,
-  AUD: 35.00,
+  USD: 25.0,
+  EUR: 25.0,
+  GBP: 20.0,
+  CAD: 35.0,
+  AUD: 35.0,
   JPY: 3000,
 };
 
 const TAX_WITHHOLDING_RATES: Record<string, number> = {
-  US_DOMESTIC: 0.00,
-  US_FOREIGN: 0.30,
-  EU_VAT: 0.20,
-  default: 0.00,
+  US_DOMESTIC: 0.0,
+  US_FOREIGN: 0.3,
+  EU_VAT: 0.2,
+  default: 0.0,
 };
 
-const PREF_CACHE_MAX  = 50_000;   // max users cached in-process
-const PREF_CACHE_TTL  = 30 * 60 * 1000; // 30 min read-through cache
+const PREF_CACHE_MAX = 50_000; // max users cached in-process
+const PREF_CACHE_TTL = 30 * 60 * 1000; // 30 min read-through cache
 
 export class PayoutService {
   private payoutRequests: Map<string, PayoutRequest> = new Map();
-  private readonly MAX_PAYOUT_REQUESTS = 20_000;  // cap in-flight request cache
-  private readonly MAX_RECEIPTS        = 50_000;  // cap receipt cache
+  private readonly MAX_PAYOUT_REQUESTS = 20_000; // cap in-flight request cache
+  private readonly MAX_RECEIPTS = 50_000; // cap receipt cache
   private receipts: Map<string, PaymentReceipt> = new Map();
 
   // payment preferences: DB-backed with in-process LRU read-through cache.
   // Key: userId, Value: { prefs, cachedAt }
-  private paymentPreferences: Map<string, { prefs: PaymentPreferences; cachedAt: number }> = new Map();
+  private paymentPreferences: Map<
+    string,
+    { prefs: PaymentPreferences; cachedAt: number }
+  > = new Map();
 
   constructor() {
     // Periodic cleanup: evict stale cache entries and enforce hard caps.
-    setInterval(() => {
-      const cutoff = Date.now() - PREF_CACHE_TTL;
-      for (const [uid, entry] of this.paymentPreferences.entries()) {
-        if (entry.cachedAt < cutoff) this.paymentPreferences.delete(uid);
-      }
-      // Hard caps
-      while (this.paymentPreferences.size > PREF_CACHE_MAX) {
-        const k = this.paymentPreferences.keys().next().value;
-        if (k !== undefined) this.paymentPreferences.delete(k);
-      }
-      while (this.payoutRequests.size > this.MAX_PAYOUT_REQUESTS) {
-        const k = this.payoutRequests.keys().next().value;
-        if (k !== undefined) this.payoutRequests.delete(k);
-      }
-      while (this.receipts.size > this.MAX_RECEIPTS) {
-        const k = this.receipts.keys().next().value;
-        if (k !== undefined) this.receipts.delete(k);
-      }
-    }, 15 * 60 * 1000).unref();
+    setInterval(
+      () => {
+        const cutoff = Date.now() - PREF_CACHE_TTL;
+        for (const [uid, entry] of this.paymentPreferences.entries()) {
+          if (entry.cachedAt < cutoff) this.paymentPreferences.delete(uid);
+        }
+        // Hard caps
+        while (this.paymentPreferences.size > PREF_CACHE_MAX) {
+          const k = this.paymentPreferences.keys().next().value;
+          if (k !== undefined) this.paymentPreferences.delete(k);
+        }
+        while (this.payoutRequests.size > this.MAX_PAYOUT_REQUESTS) {
+          const k = this.payoutRequests.keys().next().value;
+          if (k !== undefined) this.payoutRequests.delete(k);
+        }
+        while (this.receipts.size > this.MAX_RECEIPTS) {
+          const k = this.receipts.keys().next().value;
+          if (k !== undefined) this.receipts.delete(k);
+        }
+      },
+      15 * 60 * 1000,
+    ).unref();
   }
 
-  async getPaymentPreferences(userId: string): Promise<PaymentPreferences | null> {
+  async getPaymentPreferences(
+    userId: string,
+  ): Promise<PaymentPreferences | null> {
     // 1. Check in-process cache
     const cached = this.paymentPreferences.get(userId);
-    if (cached && Date.now() - cached.cachedAt < PREF_CACHE_TTL) return cached.prefs;
+    if (cached && Date.now() - cached.cachedAt < PREF_CACHE_TTL)
+      return cached.prefs;
     // 2. Read through to DB
     try {
       const row = await db
@@ -162,22 +185,41 @@ export class PayoutService {
         return prefs;
       }
     } catch (err) {
-      logger.warn({ err }, `[PayoutService] Failed to read payment prefs for ${userId} from DB`);
+      logger.warn(
+        { err },
+        `[PayoutService] Failed to read payment prefs for ${userId} from DB`,
+      );
     }
     return null;
   }
 
-  async setPaymentPreferences(preferences: PaymentPreferences): Promise<PaymentPreferences> {
-    if (preferences.minimumThreshold < this.getMinimumThreshold(preferences.currency)) {
-      throw new Error(`Minimum threshold must be at least ${this.getMinimumThreshold(preferences.currency)} ${preferences.currency}`);
+  async setPaymentPreferences(
+    preferences: PaymentPreferences,
+  ): Promise<PaymentPreferences> {
+    if (
+      preferences.minimumThreshold <
+      this.getMinimumThreshold(preferences.currency)
+    ) {
+      throw new Error(
+        `Minimum threshold must be at least ${this.getMinimumThreshold(preferences.currency)} ${preferences.currency}`,
+      );
     }
     // Persist to DB first
     await db
       .insert(systemSettings)
-      .values({ key: `payment_prefs:${preferences.userId}`, value: preferences as Record<string, unknown> })
-      .onConflictDoUpdate({ target: systemSettings.key, set: { value: preferences as unknown as Record<string, unknown> } });
+      .values({
+        key: `payment_prefs:${preferences.userId}`,
+        value: preferences as Record<string, unknown>,
+      })
+      .onConflictDoUpdate({
+        target: systemSettings.key,
+        set: { value: preferences as unknown as Record<string, unknown> },
+      });
     // Update in-process cache
-    this.paymentPreferences.set(preferences.userId, { prefs: preferences, cachedAt: Date.now() });
+    this.paymentPreferences.set(preferences.userId, {
+      prefs: preferences,
+      cachedAt: Date.now(),
+    });
     logger.info(`Updated payment preferences for user ${preferences.userId}`);
     return preferences;
   }
@@ -198,43 +240,49 @@ export class PayoutService {
       .where(
         and(
           eq(royaltyStatements.userId, userId),
-          eq(royaltyStatements.status, 'finalized')
-        )
+          eq(royaltyStatements.status, "finalized"),
+        ),
       );
 
-    const pendingPayouts = Array.from(this.payoutRequests.values())
-      .filter(p => p.userId === userId && (p.status === 'pending' || p.status === 'processing'));
+    const pendingPayouts = Array.from(this.payoutRequests.values()).filter(
+      (p) =>
+        p.userId === userId &&
+        (p.status === "pending" || p.status === "processing"),
+    );
 
-    const available = statements.reduce((sum, s) => sum + Number(s.payableAmount), 0);
+    const available = statements.reduce(
+      (sum, s) => sum + Number(s.payableAmount),
+      0,
+    );
     const pending = pendingPayouts.reduce((sum, p) => sum + p.amount, 0);
 
     return {
       available: Math.max(0, available - pending),
       pending,
       held: 0,
-      currency: 'USD',
+      currency: "USD",
     };
   }
 
   calculateTaxWithholding(
     amount: number,
     userCountry: string,
-    taxProfileComplete: boolean
+    taxProfileComplete: boolean,
   ): TaxWithholdingCalculation {
     let withholdingRate = TAX_WITHHOLDING_RATES.default;
     let taxFormRequired = false;
-    let taxFormType: '1099-MISC' | 'W-8BEN' | 'none' = 'none';
+    let taxFormType: "1099-MISC" | "W-8BEN" | "none" = "none";
 
-    if (userCountry === 'US') {
+    if (userCountry === "US") {
       withholdingRate = TAX_WITHHOLDING_RATES.US_DOMESTIC;
       if (amount >= 600) {
         taxFormRequired = true;
-        taxFormType = '1099-MISC';
+        taxFormType = "1099-MISC";
       }
     } else if (!taxProfileComplete) {
       withholdingRate = TAX_WITHHOLDING_RATES.US_FOREIGN;
       taxFormRequired = true;
-      taxFormType = 'W-8BEN';
+      taxFormType = "W-8BEN";
     }
 
     const withholdingAmount = amount * withholdingRate;
@@ -253,23 +301,27 @@ export class PayoutService {
   async requestPayout(
     userId: string,
     amount: number,
-    method?: PaymentMethod
+    method?: PaymentMethod,
   ): Promise<PayoutRequest> {
     const preferences = await this.getPaymentPreferences(userId);
-    const paymentMethod = method || preferences?.preferredMethod || 'bank_transfer';
-    const currency = preferences?.currency || 'USD';
+    const paymentMethod =
+      method || preferences?.preferredMethod || "bank_transfer";
+    const currency = preferences?.currency || "USD";
 
     const balance = await this.calculateAvailableBalance(userId);
     if (amount > balance.available) {
-      throw new Error(`Requested amount $${amount} exceeds available balance $${balance.available}`);
+      throw new Error(
+        `Requested amount $${amount} exceeds available balance $${balance.available}`,
+      );
     }
 
-    const threshold = preferences?.minimumThreshold || this.getMinimumThreshold(currency);
+    const threshold =
+      preferences?.minimumThreshold || this.getMinimumThreshold(currency);
     if (amount < threshold) {
       throw new Error(`Amount must be at least ${threshold} ${currency}`);
     }
 
-    const taxCalc = this.calculateTaxWithholding(amount, 'US', true);
+    const taxCalc = this.calculateTaxWithholding(amount, "US", true);
 
     const payoutId = crypto.randomUUID();
     const payout: PayoutRequest = {
@@ -278,7 +330,7 @@ export class PayoutService {
       amount,
       currency,
       method: paymentMethod,
-      status: 'pending',
+      status: "pending",
       grossAmount: amount,
       taxWithheld: taxCalc.withholdingAmount,
       netAmount: taxCalc.netAmount,
@@ -286,7 +338,9 @@ export class PayoutService {
     };
 
     this.payoutRequests.set(payoutId, payout);
-    logger.info(`Created payout request ${payoutId} for user ${userId}, amount: ${amount}`);
+    logger.info(
+      `Created payout request ${payoutId} for user ${userId}, amount: ${amount}`,
+    );
 
     return payout;
   }
@@ -297,11 +351,11 @@ export class PayoutService {
       throw new Error(`Payout ${payoutId} not found`);
     }
 
-    if (payout.status !== 'pending') {
+    if (payout.status !== "pending") {
       throw new Error(`Payout ${payoutId} is not in pending status`);
     }
 
-    payout.status = 'processing';
+    payout.status = "processing";
     payout.processedAt = new Date();
     this.payoutRequests.set(payoutId, payout);
 
@@ -310,19 +364,21 @@ export class PayoutService {
     try {
       await this.executePayment(payout);
 
-      payout.status = 'completed';
+      payout.status = "completed";
       payout.completedAt = new Date();
       payout.transactionId = `txn_${crypto.randomUUID().slice(0, 8)}`;
-      
+
       const receipt = await this.generateReceipt(payout);
       payout.receiptUrl = `/receipts/${receipt.receiptId}`;
 
       this.payoutRequests.set(payoutId, payout);
-      logger.info(`Completed payout ${payoutId}, transaction: ${payout.transactionId}`);
-
+      logger.info(
+        `Completed payout ${payoutId}, transaction: ${payout.transactionId}`,
+      );
     } catch (error) {
-      payout.status = 'failed';
-      payout.failureReason = error instanceof Error ? error.message : 'Unknown error';
+      payout.status = "failed";
+      payout.failureReason =
+        error instanceof Error ? error.message : "Unknown error";
       this.payoutRequests.set(payoutId, payout);
       logger.warn(`Failed payout ${payoutId}: ${payout.failureReason}`);
     }
@@ -332,20 +388,20 @@ export class PayoutService {
 
   private async executePayment(payout: PayoutRequest): Promise<void> {
     switch (payout.method) {
-      case 'stripe':
+      case "stripe":
         logger.info(`Executing Stripe payout for ${payout.id}`);
         break;
-      case 'paypal':
+      case "paypal":
         logger.info(`Executing PayPal payout for ${payout.id}`);
         break;
-      case 'bank_transfer':
+      case "bank_transfer":
         logger.info(`Executing bank transfer for ${payout.id}`);
         break;
       default:
         logger.info(`Executing ${payout.method} payout for ${payout.id}`);
     }
-    
-    await new Promise(resolve => setTimeout(resolve, 100));
+
+    await new Promise((resolve) => setTimeout(resolve, 100));
   }
 
   async cancelPayout(payoutId: string, reason: string): Promise<PayoutRequest> {
@@ -354,11 +410,11 @@ export class PayoutService {
       throw new Error(`Payout ${payoutId} not found`);
     }
 
-    if (payout.status !== 'pending') {
+    if (payout.status !== "pending") {
       throw new Error(`Cannot cancel payout in ${payout.status} status`);
     }
 
-    payout.status = 'cancelled';
+    payout.status = "cancelled";
     payout.failureReason = reason;
     this.payoutRequests.set(payoutId, payout);
 
@@ -368,14 +424,14 @@ export class PayoutService {
 
   async getPayoutHistory(
     userId: string,
-    options?: { limit?: number; status?: PayoutStatus }
+    options?: { limit?: number; status?: PayoutStatus },
   ): Promise<PayoutRequest[]> {
     let payouts = Array.from(this.payoutRequests.values())
-      .filter(p => p.userId === userId)
+      .filter((p) => p.userId === userId)
       .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
 
     if (options?.status) {
-      payouts = payouts.filter(p => p.status === options.status);
+      payouts = payouts.filter((p) => p.status === options.status);
     }
 
     if (options?.limit) {
@@ -388,27 +444,32 @@ export class PayoutService {
   async getPayoutSchedule(userId: string): Promise<PayoutSchedule> {
     const preferences = await this.getPaymentPreferences(userId);
     const balance = await this.calculateAvailableBalance(userId);
-    
-    const frequency = preferences?.frequency || 'monthly';
-    const minimumThreshold = preferences?.minimumThreshold || this.getMinimumThreshold('USD');
+
+    const frequency = preferences?.frequency || "monthly";
+    const minimumThreshold =
+      preferences?.minimumThreshold || this.getMinimumThreshold("USD");
 
     const today = new Date();
     let nextPayoutDate = new Date(today);
 
     switch (frequency) {
-      case 'monthly':
+      case "monthly":
         nextPayoutDate.setMonth(nextPayoutDate.getMonth() + 1);
         nextPayoutDate.setDate(1);
         break;
-      case 'quarterly':
-        nextPayoutDate.setMonth(Math.ceil((nextPayoutDate.getMonth() + 1) / 3) * 3);
+      case "quarterly":
+        nextPayoutDate.setMonth(
+          Math.ceil((nextPayoutDate.getMonth() + 1) / 3) * 3,
+        );
         nextPayoutDate.setDate(1);
         break;
-      case 'semi_annual':
-        nextPayoutDate.setMonth(Math.ceil((nextPayoutDate.getMonth() + 1) / 6) * 6);
+      case "semi_annual":
+        nextPayoutDate.setMonth(
+          Math.ceil((nextPayoutDate.getMonth() + 1) / 6) * 6,
+        );
         nextPayoutDate.setDate(1);
         break;
-      case 'annual':
+      case "annual":
         nextPayoutDate.setFullYear(nextPayoutDate.getFullYear() + 1);
         nextPayoutDate.setMonth(0);
         nextPayoutDate.setDate(1);
@@ -460,16 +521,22 @@ export class PayoutService {
 
   async getReceiptsByUser(userId: string): Promise<PaymentReceipt[]> {
     return Array.from(this.receipts.values())
-      .filter(r => r.userId === userId)
+      .filter((r) => r.userId === userId)
       .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
   }
 
-  async processScheduledPayouts(): Promise<{ processed: number; failed: number; skipped: number }> {
+  async processScheduledPayouts(): Promise<{
+    processed: number;
+    failed: number;
+    skipped: number;
+  }> {
     let processed = 0;
     let failed = 0;
     let skipped = 0;
 
-    const allPreferences = Array.from(this.paymentPreferences.values()).map(e => e.prefs);
+    const allPreferences = Array.from(this.paymentPreferences.values()).map(
+      (e) => e.prefs,
+    );
 
     for (const prefs of allPreferences) {
       if (!prefs.autoPayoutEnabled) {
@@ -479,7 +546,7 @@ export class PayoutService {
 
       try {
         const schedule = await this.getPayoutSchedule(prefs.userId);
-        
+
         if (!schedule.isEligible) {
           skipped++;
           continue;
@@ -488,24 +555,28 @@ export class PayoutService {
         const payout = await this.requestPayout(
           prefs.userId,
           schedule.currentBalance,
-          prefs.preferredMethod
+          prefs.preferredMethod,
         );
 
         await this.processPayout(payout.id);
         processed++;
-
       } catch (error) {
-        logger.warn({ err: error }, `Failed scheduled payout for user ${prefs.userId}:`);
+        logger.warn(
+          { err: error },
+          `Failed scheduled payout for user ${prefs.userId}:`,
+        );
         failed++;
       }
     }
 
-    logger.info(`Scheduled payouts complete: ${processed} processed, ${failed} failed, ${skipped} skipped`);
+    logger.info(
+      `Scheduled payouts complete: ${processed} processed, ${failed} failed, ${skipped} skipped`,
+    );
     return { processed, failed, skipped };
   }
 
   getSupportedPaymentMethods(): PaymentMethod[] {
-    return ['bank_transfer', 'paypal', 'stripe', 'check', 'crypto'];
+    return ["bank_transfer", "paypal", "stripe", "check", "crypto"];
   }
 
   getSupportedCurrencies(): string[] {
@@ -513,7 +584,7 @@ export class PayoutService {
   }
 
   getPaymentFrequencyOptions(): PaymentFrequency[] {
-    return ['monthly', 'quarterly', 'semi_annual', 'annual'];
+    return ["monthly", "quarterly", "semi_annual", "annual"];
   }
 }
 

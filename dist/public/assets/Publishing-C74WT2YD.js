@@ -1,1 +1,3293 @@
-import{r as V,aH as C,aI as y,f as e,fb as R,ai as T,cc as L,b$ as _,a_ as U,ca as $,d7 as z,bu as G,ei as J}from"./vendor-react-31oK5L0i.js";import{A as X}from"./AppLayout-D2pri0rw.js";import{u as Z,o as A,ae as ee,j as u,p as I,r as W,v as F,L as i,I as r,ac as O,C as m,d as c,f as o,h,a8 as d,B as se,a0 as ie,a1 as re,a2 as le,a3 as M,a7 as ne,H as ae,K as ue,M as te,N as me,O as ce,Q as oe,R as he,U as be,q as b,a as S}from"./studio-DOUfHW5v.js";import{T as Ne,a as pe,b as Y,c as N,d as de,e as p}from"./table-BLAeU9Q6.js";import{a as ge}from"./useRequireAuth-K5x5riUd.js";import{R as xe,P as fe,f as ve,g as we,T as Pe}from"./vendor-charts-N9yX2QVH.js";import"./vendor-utils-C_Rs6IXs.js";import"./vendor-ui-Ds7F22HT.js";import"./vendor-state-Bxk_Qy8r.js";import"./TopBar-jcH3P98k.js";import"./index-D5xLbTBZ.js";import"./vendor-animation-CFQslDag.js";function We(){const{user:q}=ge(),{toast:x}=Z(),[B,f]=V.useState(!1),[l,g]=V.useState(null),[v,w]=V.useState(null),{data:t=[],isLoading:K}=C({queryKey:["/api/publishing"]}),{data:P}=C({queryKey:["/api/publishing/stats"]}),D=y({mutationFn:async s=>(await S("POST","/api/publishing",s)).json(),onSuccess:()=>{b.invalidateQueries({queryKey:["/api/publishing"]}),b.invalidateQueries({queryKey:["/api/publishing/stats"]}),f(!1),x({title:"Work registered successfully"})}}),k=y({mutationFn:async({id:s,...a})=>(await S("PUT",`/api/publishing/${s}`,a)).json(),onSuccess:()=>{b.invalidateQueries({queryKey:["/api/publishing"]}),b.invalidateQueries({queryKey:["/api/publishing/stats"]}),g(null),x({title:"Work updated"})}}),Q=y({mutationFn:async s=>{await S("DELETE",`/api/publishing/${s}`)},onSuccess:()=>{b.invalidateQueries({queryKey:["/api/publishing"]}),b.invalidateQueries({queryKey:["/api/publishing/stats"]}),x({title:"Work removed"})}}),H=s=>{s.preventDefault();const a=new FormData(s.currentTarget),n=Object.fromEntries(a.entries());D.mutate({...n,copyrightYear:n.copyrightYear?parseInt(n.copyrightYear):void 0})},j=t.length>0?(()=>{const s=t.reduce((n,E)=>n+(Number(E.writerSplit)||0),0)/t.length,a=t.reduce((n,E)=>n+(Number(E.publishingSplit)||0),0)/t.length;return[{name:"Writer Split",value:Math.round(s),color:"#3b82f6"},{name:"Publisher Split",value:Math.round(a),color:"#10b981"}]})():[{name:"Writer Split",value:50,color:"#3b82f6"},{name:"Publisher Split",value:50,color:"#10b981"}];return q?e.jsxDEV(X,{children:[e.jsxDEV("div",{className:"p-6 space-y-8",children:[e.jsxDEV("div",{className:"flex flex-col md:flex-row md:items-center justify-between gap-4",children:[e.jsxDEV("div",{children:[e.jsxDEV("h1",{className:"text-3xl font-bold gradient-text mb-2 flex items-center gap-2",children:[e.jsxDEV(R,{className:"w-8 h-8"},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:152,columnNumber:15},this),"Publishing Rights"]},void 0,!0,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:151,columnNumber:13},this),e.jsxDEV("p",{className:"text-muted-foreground",children:"Manage your PRO registrations and publishing splits"},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:155,columnNumber:13},this)]},void 0,!0,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:150,columnNumber:11},this),e.jsxDEV(A,{open:B,onOpenChange:f,children:[e.jsxDEV(ee,{asChild:!0,children:e.jsxDEV(u,{children:[e.jsxDEV(T,{className:"w-4 h-4 mr-2"},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:160,columnNumber:17},this),"Register Work"]},void 0,!0,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:159,columnNumber:15},this)},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:158,columnNumber:13},this),e.jsxDEV(I,{className:"max-w-2xl",children:[e.jsxDEV(W,{children:e.jsxDEV(F,{children:"Register New Work"},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:166,columnNumber:17},this)},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:165,columnNumber:15},this),e.jsxDEV("form",{onSubmit:H,className:"space-y-4",children:[e.jsxDEV("div",{className:"grid grid-cols-2 gap-4",children:[e.jsxDEV("div",{className:"space-y-2",children:[e.jsxDEV(i,{htmlFor:"trackTitle",children:"Track Title"},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:171,columnNumber:21},this),e.jsxDEV(r,{id:"trackTitle",name:"trackTitle",required:!0},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:172,columnNumber:21},this)]},void 0,!0,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:170,columnNumber:19},this),e.jsxDEV("div",{className:"space-y-2",children:[e.jsxDEV(i,{htmlFor:"copyrightYear",children:"Copyright Year"},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:175,columnNumber:21},this),e.jsxDEV(r,{id:"copyrightYear",name:"copyrightYear",type:"number",defaultValue:new Date().getFullYear()},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:176,columnNumber:21},this)]},void 0,!0,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:174,columnNumber:19},this),e.jsxDEV("div",{className:"space-y-2",children:[e.jsxDEV(i,{htmlFor:"iswc",children:"ISWC"},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:179,columnNumber:21},this),e.jsxDEV(r,{id:"iswc",name:"iswc",placeholder:"T-123.456.789-C"},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:180,columnNumber:21},this)]},void 0,!0,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:178,columnNumber:19},this),e.jsxDEV("div",{className:"space-y-2",children:[e.jsxDEV(i,{htmlFor:"isrc",children:"ISRC"},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:183,columnNumber:21},this),e.jsxDEV(r,{id:"isrc",name:"isrc",placeholder:"US-ABC-12-34567"},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:184,columnNumber:21},this)]},void 0,!0,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:182,columnNumber:19},this),e.jsxDEV("div",{className:"space-y-2",children:[e.jsxDEV(i,{htmlFor:"proName",children:"PRO"},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:187,columnNumber:21},this),e.jsxDEV(r,{id:"proName",name:"proName",placeholder:"ASCAP, BMI, SESAC"},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:188,columnNumber:21},this)]},void 0,!0,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:186,columnNumber:19},this),e.jsxDEV("div",{className:"space-y-2",children:[e.jsxDEV(i,{htmlFor:"proRegistrationId",children:"PRO Work ID"},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:191,columnNumber:21},this),e.jsxDEV(r,{id:"proRegistrationId",name:"proRegistrationId"},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:192,columnNumber:21},this)]},void 0,!0,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:190,columnNumber:19},this),e.jsxDEV("div",{className:"space-y-2",children:[e.jsxDEV(i,{htmlFor:"writerSplit",children:"Writer Split %"},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:195,columnNumber:21},this),e.jsxDEV(r,{id:"writerSplit",name:"writerSplit",type:"number",defaultValue:"50"},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:196,columnNumber:21},this)]},void 0,!0,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:194,columnNumber:19},this),e.jsxDEV("div",{className:"space-y-2",children:[e.jsxDEV(i,{htmlFor:"publishingSplit",children:"Publisher Split %"},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:199,columnNumber:21},this),e.jsxDEV(r,{id:"publishingSplit",name:"publishingSplit",type:"number",defaultValue:"50"},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:200,columnNumber:21},this)]},void 0,!0,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:198,columnNumber:19},this)]},void 0,!0,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:169,columnNumber:17},this),e.jsxDEV("div",{className:"space-y-2",children:[e.jsxDEV(i,{htmlFor:"publisherName",children:"Publisher Name"},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:204,columnNumber:19},this),e.jsxDEV(r,{id:"publisherName",name:"publisherName"},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:205,columnNumber:19},this)]},void 0,!0,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:203,columnNumber:17},this),e.jsxDEV(O,{children:e.jsxDEV(u,{type:"submit",disabled:D.isPending,children:D.isPending?"Registering...":"Register Work"},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:208,columnNumber:19},this)},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:207,columnNumber:17},this)]},void 0,!0,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:168,columnNumber:15},this)]},void 0,!0,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:164,columnNumber:13},this)]},void 0,!0,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:157,columnNumber:11},this)]},void 0,!0,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:149,columnNumber:9},this),e.jsxDEV("div",{className:"grid grid-cols-1 md:grid-cols-4 gap-4",children:[e.jsxDEV(m,{children:[e.jsxDEV(c,{className:"flex flex-row items-center justify-between space-y-0 pb-2",children:[e.jsxDEV(o,{className:"text-sm font-medium",children:"Registered Works"},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:220,columnNumber:15},this),e.jsxDEV(L,{className:"h-4 h-4 text-muted-foreground"},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:221,columnNumber:15},this)]},void 0,!0,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:219,columnNumber:13},this),e.jsxDEV(h,{children:e.jsxDEV("div",{className:"text-2xl font-bold",children:P?.totalWorks||0},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:224,columnNumber:15},this)},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:223,columnNumber:13},this)]},void 0,!0,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:218,columnNumber:11},this),e.jsxDEV(m,{children:[e.jsxDEV(c,{className:"flex flex-row items-center justify-between space-y-0 pb-2",children:[e.jsxDEV(o,{className:"text-sm font-medium",children:"Confirmed"},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:229,columnNumber:15},this),e.jsxDEV(_,{className:"h-4 h-4 text-muted-foreground"},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:230,columnNumber:15},this)]},void 0,!0,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:228,columnNumber:13},this),e.jsxDEV(h,{children:e.jsxDEV("div",{className:"text-2xl font-bold",children:P?.confirmedCount||0},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:233,columnNumber:15},this)},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:232,columnNumber:13},this)]},void 0,!0,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:227,columnNumber:11},this),e.jsxDEV(m,{children:[e.jsxDEV(c,{className:"flex flex-row items-center justify-between space-y-0 pb-2",children:[e.jsxDEV(o,{className:"text-sm font-medium",children:"Pending"},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:238,columnNumber:15},this),e.jsxDEV(U,{className:"h-4 h-4 text-muted-foreground"},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:239,columnNumber:15},this)]},void 0,!0,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:237,columnNumber:13},this),e.jsxDEV(h,{children:e.jsxDEV("div",{className:"text-2xl font-bold",children:P?.pendingCount||0},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:242,columnNumber:15},this)},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:241,columnNumber:13},this)]},void 0,!0,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:236,columnNumber:11},this),e.jsxDEV(m,{className:"row-span-2",children:[e.jsxDEV(c,{children:e.jsxDEV(o,{className:"text-sm font-medium",children:"Split Breakdown"},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:247,columnNumber:15},this)},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:246,columnNumber:13},this),e.jsxDEV(h,{className:"h-[150px]",children:[e.jsxDEV(xe,{width:"100%",height:"100%",children:e.jsxDEV(fe,{children:[e.jsxDEV(ve,{data:j,innerRadius:40,outerRadius:60,paddingAngle:5,dataKey:"value",children:j.map((s,a)=>e.jsxDEV(we,{fill:s.color},`cell-${a}`,!1,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:260,columnNumber:23},this))},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:252,columnNumber:19},this),e.jsxDEV(Pe,{},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:263,columnNumber:19},this)]},void 0,!0,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:251,columnNumber:17},this)},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:250,columnNumber:15},this),e.jsxDEV("div",{className:"mt-4 space-y-1",children:j.map(s=>e.jsxDEV("div",{className:"flex items-center justify-between text-xs",children:[e.jsxDEV("span",{className:"flex items-center gap-1",children:[e.jsxDEV("div",{className:"w-2 h-2 rounded-full",style:{backgroundColor:s.color}},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:270,columnNumber:23},this),s.name]},void 0,!0,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:269,columnNumber:21},this),e.jsxDEV("span",{children:[s.value,"%"]},void 0,!0,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:273,columnNumber:21},this)]},s.name,!0,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:268,columnNumber:19},this))},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:266,columnNumber:15},this)]},void 0,!0,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:249,columnNumber:13},this)]},void 0,!0,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:245,columnNumber:11},this)]},void 0,!0,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:217,columnNumber:9},this),e.jsxDEV(m,{children:[e.jsxDEV(c,{children:e.jsxDEV(o,{children:"Registered Works"},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:283,columnNumber:13},this)},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:282,columnNumber:11},this),e.jsxDEV(h,{children:K?e.jsxDEV("div",{className:"space-y-2 py-2",children:[1,2,3,4].map(s=>e.jsxDEV("div",{className:"flex items-center gap-4 px-4 py-3 border-b last:border-0",children:[e.jsxDEV(d,{className:"h-4 w-40"},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:290,columnNumber:21},this),e.jsxDEV(d,{className:"h-4 w-28"},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:291,columnNumber:21},this),e.jsxDEV(d,{className:"h-4 w-16"},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:292,columnNumber:21},this),e.jsxDEV(d,{className:"h-4 w-20"},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:293,columnNumber:21},this),e.jsxDEV(d,{className:"h-5 w-16 rounded-full"},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:294,columnNumber:21},this)]},s,!0,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:289,columnNumber:19},this))},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:287,columnNumber:15},this):t.length===0?e.jsxDEV("div",{className:"py-14 text-center space-y-5",children:[e.jsxDEV("div",{className:"mx-auto w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center",children:e.jsxDEV(R,{className:"h-7 w-7 text-primary"},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:301,columnNumber:19},this)},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:300,columnNumber:17},this),e.jsxDEV("div",{children:[e.jsxDEV("h3",{className:"text-lg font-semibold mb-1",children:"No registered works yet"},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:304,columnNumber:19},this),e.jsxDEV("p",{className:"text-sm text-muted-foreground max-w-sm mx-auto",children:"Register each track with your PRO to collect performance royalties whenever your music is played on radio, TV, or live venues."},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:305,columnNumber:19},this)]},void 0,!0,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:303,columnNumber:17},this),e.jsxDEV("div",{className:"flex flex-wrap justify-center gap-2 max-w-md mx-auto",children:["ASCAP","BMI","SESAC","PRS","SOCAN","APRA"].map(s=>e.jsxDEV("span",{className:"px-3 py-1 rounded-full border text-xs font-medium text-muted-foreground",children:s},s,!1,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:311,columnNumber:21},this))},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:309,columnNumber:17},this),e.jsxDEV("button",{type:"button",onClick:()=>f(!0),className:"inline-flex items-center gap-2 px-4 py-2 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 text-sm font-medium transition-colors",children:[e.jsxDEV(T,{className:"h-4 w-4"},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:319,columnNumber:19},this),"Register Your First Work"]},void 0,!0,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:314,columnNumber:17},this)]},void 0,!0,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:299,columnNumber:15},this):e.jsxDEV(Ne,{children:[e.jsxDEV(pe,{children:e.jsxDEV(Y,{children:[e.jsxDEV(N,{children:"Title"},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:327,columnNumber:21},this),e.jsxDEV(N,{children:"ISWC / ISRC"},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:328,columnNumber:21},this),e.jsxDEV(N,{children:"PRO"},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:329,columnNumber:21},this),e.jsxDEV(N,{children:"Splits (W/P)"},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:330,columnNumber:21},this),e.jsxDEV(N,{children:"Status"},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:331,columnNumber:21},this),e.jsxDEV(N,{className:"w-10"},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:332,columnNumber:21},this)]},void 0,!0,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:326,columnNumber:19},this)},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:325,columnNumber:17},this),e.jsxDEV(de,{children:t.map(s=>e.jsxDEV(Y,{children:[e.jsxDEV(p,{className:"font-medium",children:s.trackTitle},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:338,columnNumber:23},this),e.jsxDEV(p,{children:[e.jsxDEV("div",{className:"text-xs",children:["ISWC: ",s.iswc||"—"]},void 0,!0,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:340,columnNumber:25},this),e.jsxDEV("div",{className:"text-xs text-muted-foreground",children:["ISRC: ",s.isrc||"—"]},void 0,!0,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:341,columnNumber:25},this)]},void 0,!0,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:339,columnNumber:23},this),e.jsxDEV(p,{children:s.proName||"—"},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:343,columnNumber:23},this),e.jsxDEV(p,{children:[s.writerSplit??"—","% / ",s.publishingSplit??"—","%"]},void 0,!0,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:344,columnNumber:23},this),e.jsxDEV(p,{children:e.jsxDEV(se,{variant:"outline",className:s.status==="confirmed"?"border-green-500/30 text-green-500 bg-green-500/10":s.status==="pending"?"border-yellow-500/30 text-yellow-500 bg-yellow-500/10":"border-muted-foreground/30",children:s.status==="confirmed"?"✓ Confirmed":s.status==="pending"?"⏳ Pending":s.status},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:348,columnNumber:25},this)},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:347,columnNumber:23},this),e.jsxDEV(p,{children:e.jsxDEV(ie,{children:[e.jsxDEV(re,{asChild:!0,children:e.jsxDEV(u,{variant:"ghost",size:"icon",className:"h-7 w-7",children:e.jsxDEV($,{className:"h-3.5 w-3.5"},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:362,columnNumber:31},this)},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:361,columnNumber:29},this)},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:360,columnNumber:27},this),e.jsxDEV(le,{align:"end",children:[e.jsxDEV(M,{onClick:()=>g(s),children:[e.jsxDEV(z,{className:"h-4 w-4 mr-2"},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:367,columnNumber:31},this),"Edit"]},void 0,!0,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:366,columnNumber:29},this),e.jsxDEV(ne,{},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:370,columnNumber:29},this),e.jsxDEV(M,{className:"text-destructive",onClick:()=>w(s.id),children:[e.jsxDEV(G,{className:"h-4 w-4 mr-2"},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:375,columnNumber:31},this),"Delete"]},void 0,!0,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:371,columnNumber:29},this)]},void 0,!0,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:365,columnNumber:27},this)]},void 0,!0,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:359,columnNumber:25},this)},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:358,columnNumber:23},this)]},s.id,!0,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:337,columnNumber:21},this))},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:335,columnNumber:17},this)]},void 0,!0,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:324,columnNumber:15},this)},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:285,columnNumber:11},this)]},void 0,!0,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:281,columnNumber:9},this),e.jsxDEV("div",{className:"grid grid-cols-1 md:grid-cols-2 gap-6",children:e.jsxDEV(m,{children:[e.jsxDEV(c,{children:e.jsxDEV(o,{className:"text-lg flex items-center gap-2",children:[e.jsxDEV(J,{className:"w-5 h-5"},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:393,columnNumber:17},this),"PRO Registration Guide"]},void 0,!0,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:392,columnNumber:15},this)},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:391,columnNumber:13},this),e.jsxDEV(h,{className:"space-y-4",children:[e.jsxDEV("p",{className:"text-sm text-muted-foreground",children:"Registering your works with a Performing Rights Organization (PRO) is essential to collect performance royalties."},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:398,columnNumber:15},this),e.jsxDEV("div",{className:"grid grid-cols-2 gap-2",children:[e.jsxDEV(u,{variant:"outline",className:"justify-start",asChild:!0,children:e.jsxDEV("a",{href:"https://www.ascap.com",target:"_blank",rel:"noopener noreferrer",children:"ASCAP Website"},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:403,columnNumber:19},this)},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:402,columnNumber:17},this),e.jsxDEV(u,{variant:"outline",className:"justify-start",asChild:!0,children:e.jsxDEV("a",{href:"https://www.bmi.com",target:"_blank",rel:"noopener noreferrer",children:"BMI Website"},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:406,columnNumber:19},this)},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:405,columnNumber:17},this),e.jsxDEV(u,{variant:"outline",className:"justify-start",asChild:!0,children:e.jsxDEV("a",{href:"https://www.sesac.com",target:"_blank",rel:"noopener noreferrer",children:"SESAC Website"},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:409,columnNumber:19},this)},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:408,columnNumber:17},this),e.jsxDEV(u,{variant:"outline",className:"justify-start",asChild:!0,children:e.jsxDEV("a",{href:"https://www.prsformusic.com",target:"_blank",rel:"noopener noreferrer",children:"PRS for Music"},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:412,columnNumber:19},this)},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:411,columnNumber:17},this)]},void 0,!0,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:401,columnNumber:15},this)]},void 0,!0,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:397,columnNumber:13},this)]},void 0,!0,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:390,columnNumber:11},this)},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:389,columnNumber:9},this)]},void 0,!0,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:148,columnNumber:7},this),e.jsxDEV(A,{open:!!l,onOpenChange:s=>{s||g(null)},children:e.jsxDEV(I,{className:"max-w-2xl",children:[e.jsxDEV(W,{children:e.jsxDEV(F,{children:"Edit Work"},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:424,columnNumber:13},this)},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:423,columnNumber:11},this),l&&e.jsxDEV("form",{onSubmit:s=>{s.preventDefault();const a=new FormData(s.currentTarget),n=Object.fromEntries(a.entries());k.mutate({id:l.id,...n,copyrightYear:n.copyrightYear?parseInt(n.copyrightYear):void 0})},className:"space-y-4",children:[e.jsxDEV("div",{className:"grid grid-cols-2 gap-4",children:[e.jsxDEV("div",{className:"space-y-2",children:[e.jsxDEV(i,{htmlFor:"edit-trackTitle",children:"Track Title"},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:439,columnNumber:19},this),e.jsxDEV(r,{id:"edit-trackTitle",name:"trackTitle",defaultValue:l.trackTitle,required:!0},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:440,columnNumber:19},this)]},void 0,!0,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:438,columnNumber:17},this),e.jsxDEV("div",{className:"space-y-2",children:[e.jsxDEV(i,{htmlFor:"edit-copyrightYear",children:"Copyright Year"},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:443,columnNumber:19},this),e.jsxDEV(r,{id:"edit-copyrightYear",name:"copyrightYear",type:"number",defaultValue:l.copyrightYear},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:444,columnNumber:19},this)]},void 0,!0,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:442,columnNumber:17},this),e.jsxDEV("div",{className:"space-y-2",children:[e.jsxDEV(i,{htmlFor:"edit-iswc",children:"ISWC"},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:447,columnNumber:19},this),e.jsxDEV(r,{id:"edit-iswc",name:"iswc",defaultValue:l.iswc,placeholder:"T-123.456.789-C"},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:448,columnNumber:19},this)]},void 0,!0,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:446,columnNumber:17},this),e.jsxDEV("div",{className:"space-y-2",children:[e.jsxDEV(i,{htmlFor:"edit-isrc",children:"ISRC"},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:451,columnNumber:19},this),e.jsxDEV(r,{id:"edit-isrc",name:"isrc",defaultValue:l.isrc,placeholder:"US-ABC-12-34567"},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:452,columnNumber:19},this)]},void 0,!0,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:450,columnNumber:17},this),e.jsxDEV("div",{className:"space-y-2",children:[e.jsxDEV(i,{htmlFor:"edit-proName",children:"PRO"},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:455,columnNumber:19},this),e.jsxDEV(r,{id:"edit-proName",name:"proName",defaultValue:l.proName,placeholder:"ASCAP, BMI, SESAC"},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:456,columnNumber:19},this)]},void 0,!0,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:454,columnNumber:17},this),e.jsxDEV("div",{className:"space-y-2",children:[e.jsxDEV(i,{htmlFor:"edit-proRegistrationId",children:"PRO Work ID"},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:459,columnNumber:19},this),e.jsxDEV(r,{id:"edit-proRegistrationId",name:"proRegistrationId",defaultValue:l.proRegistrationId},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:460,columnNumber:19},this)]},void 0,!0,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:458,columnNumber:17},this),e.jsxDEV("div",{className:"space-y-2",children:[e.jsxDEV(i,{htmlFor:"edit-writerSplit",children:"Writer Split %"},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:463,columnNumber:19},this),e.jsxDEV(r,{id:"edit-writerSplit",name:"writerSplit",type:"number",defaultValue:l.writerSplit},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:464,columnNumber:19},this)]},void 0,!0,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:462,columnNumber:17},this),e.jsxDEV("div",{className:"space-y-2",children:[e.jsxDEV(i,{htmlFor:"edit-publishingSplit",children:"Publisher Split %"},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:467,columnNumber:19},this),e.jsxDEV(r,{id:"edit-publishingSplit",name:"publishingSplit",type:"number",defaultValue:l.publishingSplit},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:468,columnNumber:19},this)]},void 0,!0,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:466,columnNumber:17},this)]},void 0,!0,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:437,columnNumber:15},this),e.jsxDEV("div",{className:"space-y-2",children:[e.jsxDEV(i,{htmlFor:"edit-publisherName",children:"Publisher Name"},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:472,columnNumber:17},this),e.jsxDEV(r,{id:"edit-publisherName",name:"publisherName",defaultValue:l.publisherName},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:473,columnNumber:17},this)]},void 0,!0,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:471,columnNumber:15},this),e.jsxDEV(O,{children:[e.jsxDEV(u,{type:"button",variant:"outline",onClick:()=>g(null),children:"Cancel"},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:476,columnNumber:17},this),e.jsxDEV(u,{type:"submit",disabled:k.isPending,children:k.isPending?"Saving...":"Save Changes"},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:477,columnNumber:17},this)]},void 0,!0,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:475,columnNumber:15},this)]},void 0,!0,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:427,columnNumber:13},this)]},void 0,!0,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:422,columnNumber:9},this)},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:421,columnNumber:7},this),e.jsxDEV(ae,{open:!!v,onOpenChange:s=>{s||w(null)},children:e.jsxDEV(ue,{children:[e.jsxDEV(te,{children:[e.jsxDEV(me,{children:"Delete Registered Work"},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:490,columnNumber:13},this),e.jsxDEV(ce,{children:"Are you sure you want to delete this work registration? This action cannot be undone."},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:491,columnNumber:13},this)]},void 0,!0,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:489,columnNumber:11},this),e.jsxDEV(oe,{children:[e.jsxDEV(he,{children:"Cancel"},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:496,columnNumber:13},this),e.jsxDEV(be,{className:"bg-destructive text-destructive-foreground hover:bg-destructive/90",onClick:()=>{v&&(Q.mutate(v),w(null))},children:"Delete Work"},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:497,columnNumber:13},this)]},void 0,!0,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:495,columnNumber:11},this)]},void 0,!0,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:488,columnNumber:9},this)},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:487,columnNumber:7},this)]},void 0,!0,{fileName:"/home/runner/workspace/client/src/pages/Publishing.tsx",lineNumber:147,columnNumber:5},this):null}export{We as default};
+import {
+  r as V,
+  aH as C,
+  aI as y,
+  f as e,
+  fb as R,
+  ai as T,
+  cc as L,
+  b$ as _,
+  a_ as U,
+  ca as $,
+  d7 as z,
+  bu as G,
+  ei as J,
+} from "./vendor-react-31oK5L0i.js";
+import { A as X } from "./AppLayout-D2pri0rw.js";
+import {
+  u as Z,
+  o as A,
+  ae as ee,
+  j as u,
+  p as I,
+  r as W,
+  v as F,
+  L as i,
+  I as r,
+  ac as O,
+  C as m,
+  d as c,
+  f as o,
+  h,
+  a8 as d,
+  B as se,
+  a0 as ie,
+  a1 as re,
+  a2 as le,
+  a3 as M,
+  a7 as ne,
+  H as ae,
+  K as ue,
+  M as te,
+  N as me,
+  O as ce,
+  Q as oe,
+  R as he,
+  U as be,
+  q as b,
+  a as S,
+} from "./studio-DOUfHW5v.js";
+import {
+  T as Ne,
+  a as pe,
+  b as Y,
+  c as N,
+  d as de,
+  e as p,
+} from "./table-BLAeU9Q6.js";
+import { a as ge } from "./useRequireAuth-K5x5riUd.js";
+import {
+  R as xe,
+  P as fe,
+  f as ve,
+  g as we,
+  T as Pe,
+} from "./vendor-charts-N9yX2QVH.js";
+import "./vendor-utils-C_Rs6IXs.js";
+import "./vendor-ui-Ds7F22HT.js";
+import "./vendor-state-Bxk_Qy8r.js";
+import "./TopBar-jcH3P98k.js";
+import "./index-D5xLbTBZ.js";
+import "./vendor-animation-CFQslDag.js";
+function We() {
+  const { user: q } = ge(),
+    { toast: x } = Z(),
+    [B, f] = V.useState(!1),
+    [l, g] = V.useState(null),
+    [v, w] = V.useState(null),
+    { data: t = [], isLoading: K } = C({ queryKey: ["/api/publishing"] }),
+    { data: P } = C({ queryKey: ["/api/publishing/stats"] }),
+    D = y({
+      mutationFn: async (s) => (await S("POST", "/api/publishing", s)).json(),
+      onSuccess: () => {
+        (b.invalidateQueries({ queryKey: ["/api/publishing"] }),
+          b.invalidateQueries({ queryKey: ["/api/publishing/stats"] }),
+          f(!1),
+          x({ title: "Work registered successfully" }));
+      },
+    }),
+    k = y({
+      mutationFn: async ({ id: s, ...a }) =>
+        (await S("PUT", `/api/publishing/${s}`, a)).json(),
+      onSuccess: () => {
+        (b.invalidateQueries({ queryKey: ["/api/publishing"] }),
+          b.invalidateQueries({ queryKey: ["/api/publishing/stats"] }),
+          g(null),
+          x({ title: "Work updated" }));
+      },
+    }),
+    Q = y({
+      mutationFn: async (s) => {
+        await S("DELETE", `/api/publishing/${s}`);
+      },
+      onSuccess: () => {
+        (b.invalidateQueries({ queryKey: ["/api/publishing"] }),
+          b.invalidateQueries({ queryKey: ["/api/publishing/stats"] }),
+          x({ title: "Work removed" }));
+      },
+    }),
+    H = (s) => {
+      s.preventDefault();
+      const a = new FormData(s.currentTarget),
+        n = Object.fromEntries(a.entries());
+      D.mutate({
+        ...n,
+        copyrightYear: n.copyrightYear ? parseInt(n.copyrightYear) : void 0,
+      });
+    },
+    j =
+      t.length > 0
+        ? (() => {
+            const s =
+                t.reduce((n, E) => n + (Number(E.writerSplit) || 0), 0) /
+                t.length,
+              a =
+                t.reduce((n, E) => n + (Number(E.publishingSplit) || 0), 0) /
+                t.length;
+            return [
+              { name: "Writer Split", value: Math.round(s), color: "#3b82f6" },
+              {
+                name: "Publisher Split",
+                value: Math.round(a),
+                color: "#10b981",
+              },
+            ];
+          })()
+        : [
+            { name: "Writer Split", value: 50, color: "#3b82f6" },
+            { name: "Publisher Split", value: 50, color: "#10b981" },
+          ];
+  return q
+    ? e.jsxDEV(
+        X,
+        {
+          children: [
+            e.jsxDEV(
+              "div",
+              {
+                className: "p-6 space-y-8",
+                children: [
+                  e.jsxDEV(
+                    "div",
+                    {
+                      className:
+                        "flex flex-col md:flex-row md:items-center justify-between gap-4",
+                      children: [
+                        e.jsxDEV(
+                          "div",
+                          {
+                            children: [
+                              e.jsxDEV(
+                                "h1",
+                                {
+                                  className:
+                                    "text-3xl font-bold gradient-text mb-2 flex items-center gap-2",
+                                  children: [
+                                    e.jsxDEV(
+                                      R,
+                                      { className: "w-8 h-8" },
+                                      void 0,
+                                      !1,
+                                      {
+                                        fileName:
+                                          "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                                        lineNumber: 152,
+                                        columnNumber: 15,
+                                      },
+                                      this,
+                                    ),
+                                    "Publishing Rights",
+                                  ],
+                                },
+                                void 0,
+                                !0,
+                                {
+                                  fileName:
+                                    "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                                  lineNumber: 151,
+                                  columnNumber: 13,
+                                },
+                                this,
+                              ),
+                              e.jsxDEV(
+                                "p",
+                                {
+                                  className: "text-muted-foreground",
+                                  children:
+                                    "Manage your PRO registrations and publishing splits",
+                                },
+                                void 0,
+                                !1,
+                                {
+                                  fileName:
+                                    "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                                  lineNumber: 155,
+                                  columnNumber: 13,
+                                },
+                                this,
+                              ),
+                            ],
+                          },
+                          void 0,
+                          !0,
+                          {
+                            fileName:
+                              "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                            lineNumber: 150,
+                            columnNumber: 11,
+                          },
+                          this,
+                        ),
+                        e.jsxDEV(
+                          A,
+                          {
+                            open: B,
+                            onOpenChange: f,
+                            children: [
+                              e.jsxDEV(
+                                ee,
+                                {
+                                  asChild: !0,
+                                  children: e.jsxDEV(
+                                    u,
+                                    {
+                                      children: [
+                                        e.jsxDEV(
+                                          T,
+                                          { className: "w-4 h-4 mr-2" },
+                                          void 0,
+                                          !1,
+                                          {
+                                            fileName:
+                                              "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                                            lineNumber: 160,
+                                            columnNumber: 17,
+                                          },
+                                          this,
+                                        ),
+                                        "Register Work",
+                                      ],
+                                    },
+                                    void 0,
+                                    !0,
+                                    {
+                                      fileName:
+                                        "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                                      lineNumber: 159,
+                                      columnNumber: 15,
+                                    },
+                                    this,
+                                  ),
+                                },
+                                void 0,
+                                !1,
+                                {
+                                  fileName:
+                                    "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                                  lineNumber: 158,
+                                  columnNumber: 13,
+                                },
+                                this,
+                              ),
+                              e.jsxDEV(
+                                I,
+                                {
+                                  className: "max-w-2xl",
+                                  children: [
+                                    e.jsxDEV(
+                                      W,
+                                      {
+                                        children: e.jsxDEV(
+                                          F,
+                                          { children: "Register New Work" },
+                                          void 0,
+                                          !1,
+                                          {
+                                            fileName:
+                                              "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                                            lineNumber: 166,
+                                            columnNumber: 17,
+                                          },
+                                          this,
+                                        ),
+                                      },
+                                      void 0,
+                                      !1,
+                                      {
+                                        fileName:
+                                          "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                                        lineNumber: 165,
+                                        columnNumber: 15,
+                                      },
+                                      this,
+                                    ),
+                                    e.jsxDEV(
+                                      "form",
+                                      {
+                                        onSubmit: H,
+                                        className: "space-y-4",
+                                        children: [
+                                          e.jsxDEV(
+                                            "div",
+                                            {
+                                              className:
+                                                "grid grid-cols-2 gap-4",
+                                              children: [
+                                                e.jsxDEV(
+                                                  "div",
+                                                  {
+                                                    className: "space-y-2",
+                                                    children: [
+                                                      e.jsxDEV(
+                                                        i,
+                                                        {
+                                                          htmlFor: "trackTitle",
+                                                          children:
+                                                            "Track Title",
+                                                        },
+                                                        void 0,
+                                                        !1,
+                                                        {
+                                                          fileName:
+                                                            "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                                                          lineNumber: 171,
+                                                          columnNumber: 21,
+                                                        },
+                                                        this,
+                                                      ),
+                                                      e.jsxDEV(
+                                                        r,
+                                                        {
+                                                          id: "trackTitle",
+                                                          name: "trackTitle",
+                                                          required: !0,
+                                                        },
+                                                        void 0,
+                                                        !1,
+                                                        {
+                                                          fileName:
+                                                            "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                                                          lineNumber: 172,
+                                                          columnNumber: 21,
+                                                        },
+                                                        this,
+                                                      ),
+                                                    ],
+                                                  },
+                                                  void 0,
+                                                  !0,
+                                                  {
+                                                    fileName:
+                                                      "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                                                    lineNumber: 170,
+                                                    columnNumber: 19,
+                                                  },
+                                                  this,
+                                                ),
+                                                e.jsxDEV(
+                                                  "div",
+                                                  {
+                                                    className: "space-y-2",
+                                                    children: [
+                                                      e.jsxDEV(
+                                                        i,
+                                                        {
+                                                          htmlFor:
+                                                            "copyrightYear",
+                                                          children:
+                                                            "Copyright Year",
+                                                        },
+                                                        void 0,
+                                                        !1,
+                                                        {
+                                                          fileName:
+                                                            "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                                                          lineNumber: 175,
+                                                          columnNumber: 21,
+                                                        },
+                                                        this,
+                                                      ),
+                                                      e.jsxDEV(
+                                                        r,
+                                                        {
+                                                          id: "copyrightYear",
+                                                          name: "copyrightYear",
+                                                          type: "number",
+                                                          defaultValue:
+                                                            new Date().getFullYear(),
+                                                        },
+                                                        void 0,
+                                                        !1,
+                                                        {
+                                                          fileName:
+                                                            "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                                                          lineNumber: 176,
+                                                          columnNumber: 21,
+                                                        },
+                                                        this,
+                                                      ),
+                                                    ],
+                                                  },
+                                                  void 0,
+                                                  !0,
+                                                  {
+                                                    fileName:
+                                                      "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                                                    lineNumber: 174,
+                                                    columnNumber: 19,
+                                                  },
+                                                  this,
+                                                ),
+                                                e.jsxDEV(
+                                                  "div",
+                                                  {
+                                                    className: "space-y-2",
+                                                    children: [
+                                                      e.jsxDEV(
+                                                        i,
+                                                        {
+                                                          htmlFor: "iswc",
+                                                          children: "ISWC",
+                                                        },
+                                                        void 0,
+                                                        !1,
+                                                        {
+                                                          fileName:
+                                                            "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                                                          lineNumber: 179,
+                                                          columnNumber: 21,
+                                                        },
+                                                        this,
+                                                      ),
+                                                      e.jsxDEV(
+                                                        r,
+                                                        {
+                                                          id: "iswc",
+                                                          name: "iswc",
+                                                          placeholder:
+                                                            "T-123.456.789-C",
+                                                        },
+                                                        void 0,
+                                                        !1,
+                                                        {
+                                                          fileName:
+                                                            "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                                                          lineNumber: 180,
+                                                          columnNumber: 21,
+                                                        },
+                                                        this,
+                                                      ),
+                                                    ],
+                                                  },
+                                                  void 0,
+                                                  !0,
+                                                  {
+                                                    fileName:
+                                                      "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                                                    lineNumber: 178,
+                                                    columnNumber: 19,
+                                                  },
+                                                  this,
+                                                ),
+                                                e.jsxDEV(
+                                                  "div",
+                                                  {
+                                                    className: "space-y-2",
+                                                    children: [
+                                                      e.jsxDEV(
+                                                        i,
+                                                        {
+                                                          htmlFor: "isrc",
+                                                          children: "ISRC",
+                                                        },
+                                                        void 0,
+                                                        !1,
+                                                        {
+                                                          fileName:
+                                                            "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                                                          lineNumber: 183,
+                                                          columnNumber: 21,
+                                                        },
+                                                        this,
+                                                      ),
+                                                      e.jsxDEV(
+                                                        r,
+                                                        {
+                                                          id: "isrc",
+                                                          name: "isrc",
+                                                          placeholder:
+                                                            "US-ABC-12-34567",
+                                                        },
+                                                        void 0,
+                                                        !1,
+                                                        {
+                                                          fileName:
+                                                            "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                                                          lineNumber: 184,
+                                                          columnNumber: 21,
+                                                        },
+                                                        this,
+                                                      ),
+                                                    ],
+                                                  },
+                                                  void 0,
+                                                  !0,
+                                                  {
+                                                    fileName:
+                                                      "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                                                    lineNumber: 182,
+                                                    columnNumber: 19,
+                                                  },
+                                                  this,
+                                                ),
+                                                e.jsxDEV(
+                                                  "div",
+                                                  {
+                                                    className: "space-y-2",
+                                                    children: [
+                                                      e.jsxDEV(
+                                                        i,
+                                                        {
+                                                          htmlFor: "proName",
+                                                          children: "PRO",
+                                                        },
+                                                        void 0,
+                                                        !1,
+                                                        {
+                                                          fileName:
+                                                            "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                                                          lineNumber: 187,
+                                                          columnNumber: 21,
+                                                        },
+                                                        this,
+                                                      ),
+                                                      e.jsxDEV(
+                                                        r,
+                                                        {
+                                                          id: "proName",
+                                                          name: "proName",
+                                                          placeholder:
+                                                            "ASCAP, BMI, SESAC",
+                                                        },
+                                                        void 0,
+                                                        !1,
+                                                        {
+                                                          fileName:
+                                                            "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                                                          lineNumber: 188,
+                                                          columnNumber: 21,
+                                                        },
+                                                        this,
+                                                      ),
+                                                    ],
+                                                  },
+                                                  void 0,
+                                                  !0,
+                                                  {
+                                                    fileName:
+                                                      "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                                                    lineNumber: 186,
+                                                    columnNumber: 19,
+                                                  },
+                                                  this,
+                                                ),
+                                                e.jsxDEV(
+                                                  "div",
+                                                  {
+                                                    className: "space-y-2",
+                                                    children: [
+                                                      e.jsxDEV(
+                                                        i,
+                                                        {
+                                                          htmlFor:
+                                                            "proRegistrationId",
+                                                          children:
+                                                            "PRO Work ID",
+                                                        },
+                                                        void 0,
+                                                        !1,
+                                                        {
+                                                          fileName:
+                                                            "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                                                          lineNumber: 191,
+                                                          columnNumber: 21,
+                                                        },
+                                                        this,
+                                                      ),
+                                                      e.jsxDEV(
+                                                        r,
+                                                        {
+                                                          id: "proRegistrationId",
+                                                          name: "proRegistrationId",
+                                                        },
+                                                        void 0,
+                                                        !1,
+                                                        {
+                                                          fileName:
+                                                            "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                                                          lineNumber: 192,
+                                                          columnNumber: 21,
+                                                        },
+                                                        this,
+                                                      ),
+                                                    ],
+                                                  },
+                                                  void 0,
+                                                  !0,
+                                                  {
+                                                    fileName:
+                                                      "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                                                    lineNumber: 190,
+                                                    columnNumber: 19,
+                                                  },
+                                                  this,
+                                                ),
+                                                e.jsxDEV(
+                                                  "div",
+                                                  {
+                                                    className: "space-y-2",
+                                                    children: [
+                                                      e.jsxDEV(
+                                                        i,
+                                                        {
+                                                          htmlFor:
+                                                            "writerSplit",
+                                                          children:
+                                                            "Writer Split %",
+                                                        },
+                                                        void 0,
+                                                        !1,
+                                                        {
+                                                          fileName:
+                                                            "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                                                          lineNumber: 195,
+                                                          columnNumber: 21,
+                                                        },
+                                                        this,
+                                                      ),
+                                                      e.jsxDEV(
+                                                        r,
+                                                        {
+                                                          id: "writerSplit",
+                                                          name: "writerSplit",
+                                                          type: "number",
+                                                          defaultValue: "50",
+                                                        },
+                                                        void 0,
+                                                        !1,
+                                                        {
+                                                          fileName:
+                                                            "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                                                          lineNumber: 196,
+                                                          columnNumber: 21,
+                                                        },
+                                                        this,
+                                                      ),
+                                                    ],
+                                                  },
+                                                  void 0,
+                                                  !0,
+                                                  {
+                                                    fileName:
+                                                      "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                                                    lineNumber: 194,
+                                                    columnNumber: 19,
+                                                  },
+                                                  this,
+                                                ),
+                                                e.jsxDEV(
+                                                  "div",
+                                                  {
+                                                    className: "space-y-2",
+                                                    children: [
+                                                      e.jsxDEV(
+                                                        i,
+                                                        {
+                                                          htmlFor:
+                                                            "publishingSplit",
+                                                          children:
+                                                            "Publisher Split %",
+                                                        },
+                                                        void 0,
+                                                        !1,
+                                                        {
+                                                          fileName:
+                                                            "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                                                          lineNumber: 199,
+                                                          columnNumber: 21,
+                                                        },
+                                                        this,
+                                                      ),
+                                                      e.jsxDEV(
+                                                        r,
+                                                        {
+                                                          id: "publishingSplit",
+                                                          name: "publishingSplit",
+                                                          type: "number",
+                                                          defaultValue: "50",
+                                                        },
+                                                        void 0,
+                                                        !1,
+                                                        {
+                                                          fileName:
+                                                            "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                                                          lineNumber: 200,
+                                                          columnNumber: 21,
+                                                        },
+                                                        this,
+                                                      ),
+                                                    ],
+                                                  },
+                                                  void 0,
+                                                  !0,
+                                                  {
+                                                    fileName:
+                                                      "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                                                    lineNumber: 198,
+                                                    columnNumber: 19,
+                                                  },
+                                                  this,
+                                                ),
+                                              ],
+                                            },
+                                            void 0,
+                                            !0,
+                                            {
+                                              fileName:
+                                                "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                                              lineNumber: 169,
+                                              columnNumber: 17,
+                                            },
+                                            this,
+                                          ),
+                                          e.jsxDEV(
+                                            "div",
+                                            {
+                                              className: "space-y-2",
+                                              children: [
+                                                e.jsxDEV(
+                                                  i,
+                                                  {
+                                                    htmlFor: "publisherName",
+                                                    children: "Publisher Name",
+                                                  },
+                                                  void 0,
+                                                  !1,
+                                                  {
+                                                    fileName:
+                                                      "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                                                    lineNumber: 204,
+                                                    columnNumber: 19,
+                                                  },
+                                                  this,
+                                                ),
+                                                e.jsxDEV(
+                                                  r,
+                                                  {
+                                                    id: "publisherName",
+                                                    name: "publisherName",
+                                                  },
+                                                  void 0,
+                                                  !1,
+                                                  {
+                                                    fileName:
+                                                      "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                                                    lineNumber: 205,
+                                                    columnNumber: 19,
+                                                  },
+                                                  this,
+                                                ),
+                                              ],
+                                            },
+                                            void 0,
+                                            !0,
+                                            {
+                                              fileName:
+                                                "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                                              lineNumber: 203,
+                                              columnNumber: 17,
+                                            },
+                                            this,
+                                          ),
+                                          e.jsxDEV(
+                                            O,
+                                            {
+                                              children: e.jsxDEV(
+                                                u,
+                                                {
+                                                  type: "submit",
+                                                  disabled: D.isPending,
+                                                  children: D.isPending
+                                                    ? "Registering..."
+                                                    : "Register Work",
+                                                },
+                                                void 0,
+                                                !1,
+                                                {
+                                                  fileName:
+                                                    "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                                                  lineNumber: 208,
+                                                  columnNumber: 19,
+                                                },
+                                                this,
+                                              ),
+                                            },
+                                            void 0,
+                                            !1,
+                                            {
+                                              fileName:
+                                                "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                                              lineNumber: 207,
+                                              columnNumber: 17,
+                                            },
+                                            this,
+                                          ),
+                                        ],
+                                      },
+                                      void 0,
+                                      !0,
+                                      {
+                                        fileName:
+                                          "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                                        lineNumber: 168,
+                                        columnNumber: 15,
+                                      },
+                                      this,
+                                    ),
+                                  ],
+                                },
+                                void 0,
+                                !0,
+                                {
+                                  fileName:
+                                    "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                                  lineNumber: 164,
+                                  columnNumber: 13,
+                                },
+                                this,
+                              ),
+                            ],
+                          },
+                          void 0,
+                          !0,
+                          {
+                            fileName:
+                              "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                            lineNumber: 157,
+                            columnNumber: 11,
+                          },
+                          this,
+                        ),
+                      ],
+                    },
+                    void 0,
+                    !0,
+                    {
+                      fileName:
+                        "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                      lineNumber: 149,
+                      columnNumber: 9,
+                    },
+                    this,
+                  ),
+                  e.jsxDEV(
+                    "div",
+                    {
+                      className: "grid grid-cols-1 md:grid-cols-4 gap-4",
+                      children: [
+                        e.jsxDEV(
+                          m,
+                          {
+                            children: [
+                              e.jsxDEV(
+                                c,
+                                {
+                                  className:
+                                    "flex flex-row items-center justify-between space-y-0 pb-2",
+                                  children: [
+                                    e.jsxDEV(
+                                      o,
+                                      {
+                                        className: "text-sm font-medium",
+                                        children: "Registered Works",
+                                      },
+                                      void 0,
+                                      !1,
+                                      {
+                                        fileName:
+                                          "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                                        lineNumber: 220,
+                                        columnNumber: 15,
+                                      },
+                                      this,
+                                    ),
+                                    e.jsxDEV(
+                                      L,
+                                      {
+                                        className:
+                                          "h-4 h-4 text-muted-foreground",
+                                      },
+                                      void 0,
+                                      !1,
+                                      {
+                                        fileName:
+                                          "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                                        lineNumber: 221,
+                                        columnNumber: 15,
+                                      },
+                                      this,
+                                    ),
+                                  ],
+                                },
+                                void 0,
+                                !0,
+                                {
+                                  fileName:
+                                    "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                                  lineNumber: 219,
+                                  columnNumber: 13,
+                                },
+                                this,
+                              ),
+                              e.jsxDEV(
+                                h,
+                                {
+                                  children: e.jsxDEV(
+                                    "div",
+                                    {
+                                      className: "text-2xl font-bold",
+                                      children: P?.totalWorks || 0,
+                                    },
+                                    void 0,
+                                    !1,
+                                    {
+                                      fileName:
+                                        "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                                      lineNumber: 224,
+                                      columnNumber: 15,
+                                    },
+                                    this,
+                                  ),
+                                },
+                                void 0,
+                                !1,
+                                {
+                                  fileName:
+                                    "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                                  lineNumber: 223,
+                                  columnNumber: 13,
+                                },
+                                this,
+                              ),
+                            ],
+                          },
+                          void 0,
+                          !0,
+                          {
+                            fileName:
+                              "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                            lineNumber: 218,
+                            columnNumber: 11,
+                          },
+                          this,
+                        ),
+                        e.jsxDEV(
+                          m,
+                          {
+                            children: [
+                              e.jsxDEV(
+                                c,
+                                {
+                                  className:
+                                    "flex flex-row items-center justify-between space-y-0 pb-2",
+                                  children: [
+                                    e.jsxDEV(
+                                      o,
+                                      {
+                                        className: "text-sm font-medium",
+                                        children: "Confirmed",
+                                      },
+                                      void 0,
+                                      !1,
+                                      {
+                                        fileName:
+                                          "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                                        lineNumber: 229,
+                                        columnNumber: 15,
+                                      },
+                                      this,
+                                    ),
+                                    e.jsxDEV(
+                                      _,
+                                      {
+                                        className:
+                                          "h-4 h-4 text-muted-foreground",
+                                      },
+                                      void 0,
+                                      !1,
+                                      {
+                                        fileName:
+                                          "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                                        lineNumber: 230,
+                                        columnNumber: 15,
+                                      },
+                                      this,
+                                    ),
+                                  ],
+                                },
+                                void 0,
+                                !0,
+                                {
+                                  fileName:
+                                    "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                                  lineNumber: 228,
+                                  columnNumber: 13,
+                                },
+                                this,
+                              ),
+                              e.jsxDEV(
+                                h,
+                                {
+                                  children: e.jsxDEV(
+                                    "div",
+                                    {
+                                      className: "text-2xl font-bold",
+                                      children: P?.confirmedCount || 0,
+                                    },
+                                    void 0,
+                                    !1,
+                                    {
+                                      fileName:
+                                        "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                                      lineNumber: 233,
+                                      columnNumber: 15,
+                                    },
+                                    this,
+                                  ),
+                                },
+                                void 0,
+                                !1,
+                                {
+                                  fileName:
+                                    "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                                  lineNumber: 232,
+                                  columnNumber: 13,
+                                },
+                                this,
+                              ),
+                            ],
+                          },
+                          void 0,
+                          !0,
+                          {
+                            fileName:
+                              "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                            lineNumber: 227,
+                            columnNumber: 11,
+                          },
+                          this,
+                        ),
+                        e.jsxDEV(
+                          m,
+                          {
+                            children: [
+                              e.jsxDEV(
+                                c,
+                                {
+                                  className:
+                                    "flex flex-row items-center justify-between space-y-0 pb-2",
+                                  children: [
+                                    e.jsxDEV(
+                                      o,
+                                      {
+                                        className: "text-sm font-medium",
+                                        children: "Pending",
+                                      },
+                                      void 0,
+                                      !1,
+                                      {
+                                        fileName:
+                                          "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                                        lineNumber: 238,
+                                        columnNumber: 15,
+                                      },
+                                      this,
+                                    ),
+                                    e.jsxDEV(
+                                      U,
+                                      {
+                                        className:
+                                          "h-4 h-4 text-muted-foreground",
+                                      },
+                                      void 0,
+                                      !1,
+                                      {
+                                        fileName:
+                                          "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                                        lineNumber: 239,
+                                        columnNumber: 15,
+                                      },
+                                      this,
+                                    ),
+                                  ],
+                                },
+                                void 0,
+                                !0,
+                                {
+                                  fileName:
+                                    "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                                  lineNumber: 237,
+                                  columnNumber: 13,
+                                },
+                                this,
+                              ),
+                              e.jsxDEV(
+                                h,
+                                {
+                                  children: e.jsxDEV(
+                                    "div",
+                                    {
+                                      className: "text-2xl font-bold",
+                                      children: P?.pendingCount || 0,
+                                    },
+                                    void 0,
+                                    !1,
+                                    {
+                                      fileName:
+                                        "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                                      lineNumber: 242,
+                                      columnNumber: 15,
+                                    },
+                                    this,
+                                  ),
+                                },
+                                void 0,
+                                !1,
+                                {
+                                  fileName:
+                                    "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                                  lineNumber: 241,
+                                  columnNumber: 13,
+                                },
+                                this,
+                              ),
+                            ],
+                          },
+                          void 0,
+                          !0,
+                          {
+                            fileName:
+                              "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                            lineNumber: 236,
+                            columnNumber: 11,
+                          },
+                          this,
+                        ),
+                        e.jsxDEV(
+                          m,
+                          {
+                            className: "row-span-2",
+                            children: [
+                              e.jsxDEV(
+                                c,
+                                {
+                                  children: e.jsxDEV(
+                                    o,
+                                    {
+                                      className: "text-sm font-medium",
+                                      children: "Split Breakdown",
+                                    },
+                                    void 0,
+                                    !1,
+                                    {
+                                      fileName:
+                                        "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                                      lineNumber: 247,
+                                      columnNumber: 15,
+                                    },
+                                    this,
+                                  ),
+                                },
+                                void 0,
+                                !1,
+                                {
+                                  fileName:
+                                    "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                                  lineNumber: 246,
+                                  columnNumber: 13,
+                                },
+                                this,
+                              ),
+                              e.jsxDEV(
+                                h,
+                                {
+                                  className: "h-[150px]",
+                                  children: [
+                                    e.jsxDEV(
+                                      xe,
+                                      {
+                                        width: "100%",
+                                        height: "100%",
+                                        children: e.jsxDEV(
+                                          fe,
+                                          {
+                                            children: [
+                                              e.jsxDEV(
+                                                ve,
+                                                {
+                                                  data: j,
+                                                  innerRadius: 40,
+                                                  outerRadius: 60,
+                                                  paddingAngle: 5,
+                                                  dataKey: "value",
+                                                  children: j.map((s, a) =>
+                                                    e.jsxDEV(
+                                                      we,
+                                                      { fill: s.color },
+                                                      `cell-${a}`,
+                                                      !1,
+                                                      {
+                                                        fileName:
+                                                          "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                                                        lineNumber: 260,
+                                                        columnNumber: 23,
+                                                      },
+                                                      this,
+                                                    ),
+                                                  ),
+                                                },
+                                                void 0,
+                                                !1,
+                                                {
+                                                  fileName:
+                                                    "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                                                  lineNumber: 252,
+                                                  columnNumber: 19,
+                                                },
+                                                this,
+                                              ),
+                                              e.jsxDEV(
+                                                Pe,
+                                                {},
+                                                void 0,
+                                                !1,
+                                                {
+                                                  fileName:
+                                                    "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                                                  lineNumber: 263,
+                                                  columnNumber: 19,
+                                                },
+                                                this,
+                                              ),
+                                            ],
+                                          },
+                                          void 0,
+                                          !0,
+                                          {
+                                            fileName:
+                                              "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                                            lineNumber: 251,
+                                            columnNumber: 17,
+                                          },
+                                          this,
+                                        ),
+                                      },
+                                      void 0,
+                                      !1,
+                                      {
+                                        fileName:
+                                          "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                                        lineNumber: 250,
+                                        columnNumber: 15,
+                                      },
+                                      this,
+                                    ),
+                                    e.jsxDEV(
+                                      "div",
+                                      {
+                                        className: "mt-4 space-y-1",
+                                        children: j.map((s) =>
+                                          e.jsxDEV(
+                                            "div",
+                                            {
+                                              className:
+                                                "flex items-center justify-between text-xs",
+                                              children: [
+                                                e.jsxDEV(
+                                                  "span",
+                                                  {
+                                                    className:
+                                                      "flex items-center gap-1",
+                                                    children: [
+                                                      e.jsxDEV(
+                                                        "div",
+                                                        {
+                                                          className:
+                                                            "w-2 h-2 rounded-full",
+                                                          style: {
+                                                            backgroundColor:
+                                                              s.color,
+                                                          },
+                                                        },
+                                                        void 0,
+                                                        !1,
+                                                        {
+                                                          fileName:
+                                                            "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                                                          lineNumber: 270,
+                                                          columnNumber: 23,
+                                                        },
+                                                        this,
+                                                      ),
+                                                      s.name,
+                                                    ],
+                                                  },
+                                                  void 0,
+                                                  !0,
+                                                  {
+                                                    fileName:
+                                                      "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                                                    lineNumber: 269,
+                                                    columnNumber: 21,
+                                                  },
+                                                  this,
+                                                ),
+                                                e.jsxDEV(
+                                                  "span",
+                                                  { children: [s.value, "%"] },
+                                                  void 0,
+                                                  !0,
+                                                  {
+                                                    fileName:
+                                                      "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                                                    lineNumber: 273,
+                                                    columnNumber: 21,
+                                                  },
+                                                  this,
+                                                ),
+                                              ],
+                                            },
+                                            s.name,
+                                            !0,
+                                            {
+                                              fileName:
+                                                "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                                              lineNumber: 268,
+                                              columnNumber: 19,
+                                            },
+                                            this,
+                                          ),
+                                        ),
+                                      },
+                                      void 0,
+                                      !1,
+                                      {
+                                        fileName:
+                                          "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                                        lineNumber: 266,
+                                        columnNumber: 15,
+                                      },
+                                      this,
+                                    ),
+                                  ],
+                                },
+                                void 0,
+                                !0,
+                                {
+                                  fileName:
+                                    "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                                  lineNumber: 249,
+                                  columnNumber: 13,
+                                },
+                                this,
+                              ),
+                            ],
+                          },
+                          void 0,
+                          !0,
+                          {
+                            fileName:
+                              "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                            lineNumber: 245,
+                            columnNumber: 11,
+                          },
+                          this,
+                        ),
+                      ],
+                    },
+                    void 0,
+                    !0,
+                    {
+                      fileName:
+                        "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                      lineNumber: 217,
+                      columnNumber: 9,
+                    },
+                    this,
+                  ),
+                  e.jsxDEV(
+                    m,
+                    {
+                      children: [
+                        e.jsxDEV(
+                          c,
+                          {
+                            children: e.jsxDEV(
+                              o,
+                              { children: "Registered Works" },
+                              void 0,
+                              !1,
+                              {
+                                fileName:
+                                  "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                                lineNumber: 283,
+                                columnNumber: 13,
+                              },
+                              this,
+                            ),
+                          },
+                          void 0,
+                          !1,
+                          {
+                            fileName:
+                              "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                            lineNumber: 282,
+                            columnNumber: 11,
+                          },
+                          this,
+                        ),
+                        e.jsxDEV(
+                          h,
+                          {
+                            children: K
+                              ? e.jsxDEV(
+                                  "div",
+                                  {
+                                    className: "space-y-2 py-2",
+                                    children: [1, 2, 3, 4].map((s) =>
+                                      e.jsxDEV(
+                                        "div",
+                                        {
+                                          className:
+                                            "flex items-center gap-4 px-4 py-3 border-b last:border-0",
+                                          children: [
+                                            e.jsxDEV(
+                                              d,
+                                              { className: "h-4 w-40" },
+                                              void 0,
+                                              !1,
+                                              {
+                                                fileName:
+                                                  "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                                                lineNumber: 290,
+                                                columnNumber: 21,
+                                              },
+                                              this,
+                                            ),
+                                            e.jsxDEV(
+                                              d,
+                                              { className: "h-4 w-28" },
+                                              void 0,
+                                              !1,
+                                              {
+                                                fileName:
+                                                  "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                                                lineNumber: 291,
+                                                columnNumber: 21,
+                                              },
+                                              this,
+                                            ),
+                                            e.jsxDEV(
+                                              d,
+                                              { className: "h-4 w-16" },
+                                              void 0,
+                                              !1,
+                                              {
+                                                fileName:
+                                                  "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                                                lineNumber: 292,
+                                                columnNumber: 21,
+                                              },
+                                              this,
+                                            ),
+                                            e.jsxDEV(
+                                              d,
+                                              { className: "h-4 w-20" },
+                                              void 0,
+                                              !1,
+                                              {
+                                                fileName:
+                                                  "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                                                lineNumber: 293,
+                                                columnNumber: 21,
+                                              },
+                                              this,
+                                            ),
+                                            e.jsxDEV(
+                                              d,
+                                              {
+                                                className:
+                                                  "h-5 w-16 rounded-full",
+                                              },
+                                              void 0,
+                                              !1,
+                                              {
+                                                fileName:
+                                                  "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                                                lineNumber: 294,
+                                                columnNumber: 21,
+                                              },
+                                              this,
+                                            ),
+                                          ],
+                                        },
+                                        s,
+                                        !0,
+                                        {
+                                          fileName:
+                                            "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                                          lineNumber: 289,
+                                          columnNumber: 19,
+                                        },
+                                        this,
+                                      ),
+                                    ),
+                                  },
+                                  void 0,
+                                  !1,
+                                  {
+                                    fileName:
+                                      "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                                    lineNumber: 287,
+                                    columnNumber: 15,
+                                  },
+                                  this,
+                                )
+                              : t.length === 0
+                                ? e.jsxDEV(
+                                    "div",
+                                    {
+                                      className: "py-14 text-center space-y-5",
+                                      children: [
+                                        e.jsxDEV(
+                                          "div",
+                                          {
+                                            className:
+                                              "mx-auto w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center",
+                                            children: e.jsxDEV(
+                                              R,
+                                              {
+                                                className:
+                                                  "h-7 w-7 text-primary",
+                                              },
+                                              void 0,
+                                              !1,
+                                              {
+                                                fileName:
+                                                  "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                                                lineNumber: 301,
+                                                columnNumber: 19,
+                                              },
+                                              this,
+                                            ),
+                                          },
+                                          void 0,
+                                          !1,
+                                          {
+                                            fileName:
+                                              "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                                            lineNumber: 300,
+                                            columnNumber: 17,
+                                          },
+                                          this,
+                                        ),
+                                        e.jsxDEV(
+                                          "div",
+                                          {
+                                            children: [
+                                              e.jsxDEV(
+                                                "h3",
+                                                {
+                                                  className:
+                                                    "text-lg font-semibold mb-1",
+                                                  children:
+                                                    "No registered works yet",
+                                                },
+                                                void 0,
+                                                !1,
+                                                {
+                                                  fileName:
+                                                    "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                                                  lineNumber: 304,
+                                                  columnNumber: 19,
+                                                },
+                                                this,
+                                              ),
+                                              e.jsxDEV(
+                                                "p",
+                                                {
+                                                  className:
+                                                    "text-sm text-muted-foreground max-w-sm mx-auto",
+                                                  children:
+                                                    "Register each track with your PRO to collect performance royalties whenever your music is played on radio, TV, or live venues.",
+                                                },
+                                                void 0,
+                                                !1,
+                                                {
+                                                  fileName:
+                                                    "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                                                  lineNumber: 305,
+                                                  columnNumber: 19,
+                                                },
+                                                this,
+                                              ),
+                                            ],
+                                          },
+                                          void 0,
+                                          !0,
+                                          {
+                                            fileName:
+                                              "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                                            lineNumber: 303,
+                                            columnNumber: 17,
+                                          },
+                                          this,
+                                        ),
+                                        e.jsxDEV(
+                                          "div",
+                                          {
+                                            className:
+                                              "flex flex-wrap justify-center gap-2 max-w-md mx-auto",
+                                            children: [
+                                              "ASCAP",
+                                              "BMI",
+                                              "SESAC",
+                                              "PRS",
+                                              "SOCAN",
+                                              "APRA",
+                                            ].map((s) =>
+                                              e.jsxDEV(
+                                                "span",
+                                                {
+                                                  className:
+                                                    "px-3 py-1 rounded-full border text-xs font-medium text-muted-foreground",
+                                                  children: s,
+                                                },
+                                                s,
+                                                !1,
+                                                {
+                                                  fileName:
+                                                    "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                                                  lineNumber: 311,
+                                                  columnNumber: 21,
+                                                },
+                                                this,
+                                              ),
+                                            ),
+                                          },
+                                          void 0,
+                                          !1,
+                                          {
+                                            fileName:
+                                              "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                                            lineNumber: 309,
+                                            columnNumber: 17,
+                                          },
+                                          this,
+                                        ),
+                                        e.jsxDEV(
+                                          "button",
+                                          {
+                                            type: "button",
+                                            onClick: () => f(!0),
+                                            className:
+                                              "inline-flex items-center gap-2 px-4 py-2 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 text-sm font-medium transition-colors",
+                                            children: [
+                                              e.jsxDEV(
+                                                T,
+                                                { className: "h-4 w-4" },
+                                                void 0,
+                                                !1,
+                                                {
+                                                  fileName:
+                                                    "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                                                  lineNumber: 319,
+                                                  columnNumber: 19,
+                                                },
+                                                this,
+                                              ),
+                                              "Register Your First Work",
+                                            ],
+                                          },
+                                          void 0,
+                                          !0,
+                                          {
+                                            fileName:
+                                              "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                                            lineNumber: 314,
+                                            columnNumber: 17,
+                                          },
+                                          this,
+                                        ),
+                                      ],
+                                    },
+                                    void 0,
+                                    !0,
+                                    {
+                                      fileName:
+                                        "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                                      lineNumber: 299,
+                                      columnNumber: 15,
+                                    },
+                                    this,
+                                  )
+                                : e.jsxDEV(
+                                    Ne,
+                                    {
+                                      children: [
+                                        e.jsxDEV(
+                                          pe,
+                                          {
+                                            children: e.jsxDEV(
+                                              Y,
+                                              {
+                                                children: [
+                                                  e.jsxDEV(
+                                                    N,
+                                                    { children: "Title" },
+                                                    void 0,
+                                                    !1,
+                                                    {
+                                                      fileName:
+                                                        "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                                                      lineNumber: 327,
+                                                      columnNumber: 21,
+                                                    },
+                                                    this,
+                                                  ),
+                                                  e.jsxDEV(
+                                                    N,
+                                                    { children: "ISWC / ISRC" },
+                                                    void 0,
+                                                    !1,
+                                                    {
+                                                      fileName:
+                                                        "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                                                      lineNumber: 328,
+                                                      columnNumber: 21,
+                                                    },
+                                                    this,
+                                                  ),
+                                                  e.jsxDEV(
+                                                    N,
+                                                    { children: "PRO" },
+                                                    void 0,
+                                                    !1,
+                                                    {
+                                                      fileName:
+                                                        "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                                                      lineNumber: 329,
+                                                      columnNumber: 21,
+                                                    },
+                                                    this,
+                                                  ),
+                                                  e.jsxDEV(
+                                                    N,
+                                                    {
+                                                      children: "Splits (W/P)",
+                                                    },
+                                                    void 0,
+                                                    !1,
+                                                    {
+                                                      fileName:
+                                                        "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                                                      lineNumber: 330,
+                                                      columnNumber: 21,
+                                                    },
+                                                    this,
+                                                  ),
+                                                  e.jsxDEV(
+                                                    N,
+                                                    { children: "Status" },
+                                                    void 0,
+                                                    !1,
+                                                    {
+                                                      fileName:
+                                                        "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                                                      lineNumber: 331,
+                                                      columnNumber: 21,
+                                                    },
+                                                    this,
+                                                  ),
+                                                  e.jsxDEV(
+                                                    N,
+                                                    { className: "w-10" },
+                                                    void 0,
+                                                    !1,
+                                                    {
+                                                      fileName:
+                                                        "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                                                      lineNumber: 332,
+                                                      columnNumber: 21,
+                                                    },
+                                                    this,
+                                                  ),
+                                                ],
+                                              },
+                                              void 0,
+                                              !0,
+                                              {
+                                                fileName:
+                                                  "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                                                lineNumber: 326,
+                                                columnNumber: 19,
+                                              },
+                                              this,
+                                            ),
+                                          },
+                                          void 0,
+                                          !1,
+                                          {
+                                            fileName:
+                                              "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                                            lineNumber: 325,
+                                            columnNumber: 17,
+                                          },
+                                          this,
+                                        ),
+                                        e.jsxDEV(
+                                          de,
+                                          {
+                                            children: t.map((s) =>
+                                              e.jsxDEV(
+                                                Y,
+                                                {
+                                                  children: [
+                                                    e.jsxDEV(
+                                                      p,
+                                                      {
+                                                        className:
+                                                          "font-medium",
+                                                        children: s.trackTitle,
+                                                      },
+                                                      void 0,
+                                                      !1,
+                                                      {
+                                                        fileName:
+                                                          "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                                                        lineNumber: 338,
+                                                        columnNumber: 23,
+                                                      },
+                                                      this,
+                                                    ),
+                                                    e.jsxDEV(
+                                                      p,
+                                                      {
+                                                        children: [
+                                                          e.jsxDEV(
+                                                            "div",
+                                                            {
+                                                              className:
+                                                                "text-xs",
+                                                              children: [
+                                                                "ISWC: ",
+                                                                s.iswc || "—",
+                                                              ],
+                                                            },
+                                                            void 0,
+                                                            !0,
+                                                            {
+                                                              fileName:
+                                                                "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                                                              lineNumber: 340,
+                                                              columnNumber: 25,
+                                                            },
+                                                            this,
+                                                          ),
+                                                          e.jsxDEV(
+                                                            "div",
+                                                            {
+                                                              className:
+                                                                "text-xs text-muted-foreground",
+                                                              children: [
+                                                                "ISRC: ",
+                                                                s.isrc || "—",
+                                                              ],
+                                                            },
+                                                            void 0,
+                                                            !0,
+                                                            {
+                                                              fileName:
+                                                                "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                                                              lineNumber: 341,
+                                                              columnNumber: 25,
+                                                            },
+                                                            this,
+                                                          ),
+                                                        ],
+                                                      },
+                                                      void 0,
+                                                      !0,
+                                                      {
+                                                        fileName:
+                                                          "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                                                        lineNumber: 339,
+                                                        columnNumber: 23,
+                                                      },
+                                                      this,
+                                                    ),
+                                                    e.jsxDEV(
+                                                      p,
+                                                      {
+                                                        children:
+                                                          s.proName || "—",
+                                                      },
+                                                      void 0,
+                                                      !1,
+                                                      {
+                                                        fileName:
+                                                          "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                                                        lineNumber: 343,
+                                                        columnNumber: 23,
+                                                      },
+                                                      this,
+                                                    ),
+                                                    e.jsxDEV(
+                                                      p,
+                                                      {
+                                                        children: [
+                                                          s.writerSplit ?? "—",
+                                                          "% / ",
+                                                          s.publishingSplit ??
+                                                            "—",
+                                                          "%",
+                                                        ],
+                                                      },
+                                                      void 0,
+                                                      !0,
+                                                      {
+                                                        fileName:
+                                                          "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                                                        lineNumber: 344,
+                                                        columnNumber: 23,
+                                                      },
+                                                      this,
+                                                    ),
+                                                    e.jsxDEV(
+                                                      p,
+                                                      {
+                                                        children: e.jsxDEV(
+                                                          se,
+                                                          {
+                                                            variant: "outline",
+                                                            className:
+                                                              s.status ===
+                                                              "confirmed"
+                                                                ? "border-green-500/30 text-green-500 bg-green-500/10"
+                                                                : s.status ===
+                                                                    "pending"
+                                                                  ? "border-yellow-500/30 text-yellow-500 bg-yellow-500/10"
+                                                                  : "border-muted-foreground/30",
+                                                            children:
+                                                              s.status ===
+                                                              "confirmed"
+                                                                ? "✓ Confirmed"
+                                                                : s.status ===
+                                                                    "pending"
+                                                                  ? "⏳ Pending"
+                                                                  : s.status,
+                                                          },
+                                                          void 0,
+                                                          !1,
+                                                          {
+                                                            fileName:
+                                                              "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                                                            lineNumber: 348,
+                                                            columnNumber: 25,
+                                                          },
+                                                          this,
+                                                        ),
+                                                      },
+                                                      void 0,
+                                                      !1,
+                                                      {
+                                                        fileName:
+                                                          "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                                                        lineNumber: 347,
+                                                        columnNumber: 23,
+                                                      },
+                                                      this,
+                                                    ),
+                                                    e.jsxDEV(
+                                                      p,
+                                                      {
+                                                        children: e.jsxDEV(
+                                                          ie,
+                                                          {
+                                                            children: [
+                                                              e.jsxDEV(
+                                                                re,
+                                                                {
+                                                                  asChild: !0,
+                                                                  children:
+                                                                    e.jsxDEV(
+                                                                      u,
+                                                                      {
+                                                                        variant:
+                                                                          "ghost",
+                                                                        size: "icon",
+                                                                        className:
+                                                                          "h-7 w-7",
+                                                                        children:
+                                                                          e.jsxDEV(
+                                                                            $,
+                                                                            {
+                                                                              className:
+                                                                                "h-3.5 w-3.5",
+                                                                            },
+                                                                            void 0,
+                                                                            !1,
+                                                                            {
+                                                                              fileName:
+                                                                                "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                                                                              lineNumber: 362,
+                                                                              columnNumber: 31,
+                                                                            },
+                                                                            this,
+                                                                          ),
+                                                                      },
+                                                                      void 0,
+                                                                      !1,
+                                                                      {
+                                                                        fileName:
+                                                                          "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                                                                        lineNumber: 361,
+                                                                        columnNumber: 29,
+                                                                      },
+                                                                      this,
+                                                                    ),
+                                                                },
+                                                                void 0,
+                                                                !1,
+                                                                {
+                                                                  fileName:
+                                                                    "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                                                                  lineNumber: 360,
+                                                                  columnNumber: 27,
+                                                                },
+                                                                this,
+                                                              ),
+                                                              e.jsxDEV(
+                                                                le,
+                                                                {
+                                                                  align: "end",
+                                                                  children: [
+                                                                    e.jsxDEV(
+                                                                      M,
+                                                                      {
+                                                                        onClick:
+                                                                          () =>
+                                                                            g(
+                                                                              s,
+                                                                            ),
+                                                                        children:
+                                                                          [
+                                                                            e.jsxDEV(
+                                                                              z,
+                                                                              {
+                                                                                className:
+                                                                                  "h-4 w-4 mr-2",
+                                                                              },
+                                                                              void 0,
+                                                                              !1,
+                                                                              {
+                                                                                fileName:
+                                                                                  "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                                                                                lineNumber: 367,
+                                                                                columnNumber: 31,
+                                                                              },
+                                                                              this,
+                                                                            ),
+                                                                            "Edit",
+                                                                          ],
+                                                                      },
+                                                                      void 0,
+                                                                      !0,
+                                                                      {
+                                                                        fileName:
+                                                                          "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                                                                        lineNumber: 366,
+                                                                        columnNumber: 29,
+                                                                      },
+                                                                      this,
+                                                                    ),
+                                                                    e.jsxDEV(
+                                                                      ne,
+                                                                      {},
+                                                                      void 0,
+                                                                      !1,
+                                                                      {
+                                                                        fileName:
+                                                                          "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                                                                        lineNumber: 370,
+                                                                        columnNumber: 29,
+                                                                      },
+                                                                      this,
+                                                                    ),
+                                                                    e.jsxDEV(
+                                                                      M,
+                                                                      {
+                                                                        className:
+                                                                          "text-destructive",
+                                                                        onClick:
+                                                                          () =>
+                                                                            w(
+                                                                              s.id,
+                                                                            ),
+                                                                        children:
+                                                                          [
+                                                                            e.jsxDEV(
+                                                                              G,
+                                                                              {
+                                                                                className:
+                                                                                  "h-4 w-4 mr-2",
+                                                                              },
+                                                                              void 0,
+                                                                              !1,
+                                                                              {
+                                                                                fileName:
+                                                                                  "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                                                                                lineNumber: 375,
+                                                                                columnNumber: 31,
+                                                                              },
+                                                                              this,
+                                                                            ),
+                                                                            "Delete",
+                                                                          ],
+                                                                      },
+                                                                      void 0,
+                                                                      !0,
+                                                                      {
+                                                                        fileName:
+                                                                          "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                                                                        lineNumber: 371,
+                                                                        columnNumber: 29,
+                                                                      },
+                                                                      this,
+                                                                    ),
+                                                                  ],
+                                                                },
+                                                                void 0,
+                                                                !0,
+                                                                {
+                                                                  fileName:
+                                                                    "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                                                                  lineNumber: 365,
+                                                                  columnNumber: 27,
+                                                                },
+                                                                this,
+                                                              ),
+                                                            ],
+                                                          },
+                                                          void 0,
+                                                          !0,
+                                                          {
+                                                            fileName:
+                                                              "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                                                            lineNumber: 359,
+                                                            columnNumber: 25,
+                                                          },
+                                                          this,
+                                                        ),
+                                                      },
+                                                      void 0,
+                                                      !1,
+                                                      {
+                                                        fileName:
+                                                          "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                                                        lineNumber: 358,
+                                                        columnNumber: 23,
+                                                      },
+                                                      this,
+                                                    ),
+                                                  ],
+                                                },
+                                                s.id,
+                                                !0,
+                                                {
+                                                  fileName:
+                                                    "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                                                  lineNumber: 337,
+                                                  columnNumber: 21,
+                                                },
+                                                this,
+                                              ),
+                                            ),
+                                          },
+                                          void 0,
+                                          !1,
+                                          {
+                                            fileName:
+                                              "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                                            lineNumber: 335,
+                                            columnNumber: 17,
+                                          },
+                                          this,
+                                        ),
+                                      ],
+                                    },
+                                    void 0,
+                                    !0,
+                                    {
+                                      fileName:
+                                        "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                                      lineNumber: 324,
+                                      columnNumber: 15,
+                                    },
+                                    this,
+                                  ),
+                          },
+                          void 0,
+                          !1,
+                          {
+                            fileName:
+                              "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                            lineNumber: 285,
+                            columnNumber: 11,
+                          },
+                          this,
+                        ),
+                      ],
+                    },
+                    void 0,
+                    !0,
+                    {
+                      fileName:
+                        "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                      lineNumber: 281,
+                      columnNumber: 9,
+                    },
+                    this,
+                  ),
+                  e.jsxDEV(
+                    "div",
+                    {
+                      className: "grid grid-cols-1 md:grid-cols-2 gap-6",
+                      children: e.jsxDEV(
+                        m,
+                        {
+                          children: [
+                            e.jsxDEV(
+                              c,
+                              {
+                                children: e.jsxDEV(
+                                  o,
+                                  {
+                                    className:
+                                      "text-lg flex items-center gap-2",
+                                    children: [
+                                      e.jsxDEV(
+                                        J,
+                                        { className: "w-5 h-5" },
+                                        void 0,
+                                        !1,
+                                        {
+                                          fileName:
+                                            "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                                          lineNumber: 393,
+                                          columnNumber: 17,
+                                        },
+                                        this,
+                                      ),
+                                      "PRO Registration Guide",
+                                    ],
+                                  },
+                                  void 0,
+                                  !0,
+                                  {
+                                    fileName:
+                                      "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                                    lineNumber: 392,
+                                    columnNumber: 15,
+                                  },
+                                  this,
+                                ),
+                              },
+                              void 0,
+                              !1,
+                              {
+                                fileName:
+                                  "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                                lineNumber: 391,
+                                columnNumber: 13,
+                              },
+                              this,
+                            ),
+                            e.jsxDEV(
+                              h,
+                              {
+                                className: "space-y-4",
+                                children: [
+                                  e.jsxDEV(
+                                    "p",
+                                    {
+                                      className:
+                                        "text-sm text-muted-foreground",
+                                      children:
+                                        "Registering your works with a Performing Rights Organization (PRO) is essential to collect performance royalties.",
+                                    },
+                                    void 0,
+                                    !1,
+                                    {
+                                      fileName:
+                                        "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                                      lineNumber: 398,
+                                      columnNumber: 15,
+                                    },
+                                    this,
+                                  ),
+                                  e.jsxDEV(
+                                    "div",
+                                    {
+                                      className: "grid grid-cols-2 gap-2",
+                                      children: [
+                                        e.jsxDEV(
+                                          u,
+                                          {
+                                            variant: "outline",
+                                            className: "justify-start",
+                                            asChild: !0,
+                                            children: e.jsxDEV(
+                                              "a",
+                                              {
+                                                href: "https://www.ascap.com",
+                                                target: "_blank",
+                                                rel: "noopener noreferrer",
+                                                children: "ASCAP Website",
+                                              },
+                                              void 0,
+                                              !1,
+                                              {
+                                                fileName:
+                                                  "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                                                lineNumber: 403,
+                                                columnNumber: 19,
+                                              },
+                                              this,
+                                            ),
+                                          },
+                                          void 0,
+                                          !1,
+                                          {
+                                            fileName:
+                                              "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                                            lineNumber: 402,
+                                            columnNumber: 17,
+                                          },
+                                          this,
+                                        ),
+                                        e.jsxDEV(
+                                          u,
+                                          {
+                                            variant: "outline",
+                                            className: "justify-start",
+                                            asChild: !0,
+                                            children: e.jsxDEV(
+                                              "a",
+                                              {
+                                                href: "https://www.bmi.com",
+                                                target: "_blank",
+                                                rel: "noopener noreferrer",
+                                                children: "BMI Website",
+                                              },
+                                              void 0,
+                                              !1,
+                                              {
+                                                fileName:
+                                                  "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                                                lineNumber: 406,
+                                                columnNumber: 19,
+                                              },
+                                              this,
+                                            ),
+                                          },
+                                          void 0,
+                                          !1,
+                                          {
+                                            fileName:
+                                              "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                                            lineNumber: 405,
+                                            columnNumber: 17,
+                                          },
+                                          this,
+                                        ),
+                                        e.jsxDEV(
+                                          u,
+                                          {
+                                            variant: "outline",
+                                            className: "justify-start",
+                                            asChild: !0,
+                                            children: e.jsxDEV(
+                                              "a",
+                                              {
+                                                href: "https://www.sesac.com",
+                                                target: "_blank",
+                                                rel: "noopener noreferrer",
+                                                children: "SESAC Website",
+                                              },
+                                              void 0,
+                                              !1,
+                                              {
+                                                fileName:
+                                                  "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                                                lineNumber: 409,
+                                                columnNumber: 19,
+                                              },
+                                              this,
+                                            ),
+                                          },
+                                          void 0,
+                                          !1,
+                                          {
+                                            fileName:
+                                              "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                                            lineNumber: 408,
+                                            columnNumber: 17,
+                                          },
+                                          this,
+                                        ),
+                                        e.jsxDEV(
+                                          u,
+                                          {
+                                            variant: "outline",
+                                            className: "justify-start",
+                                            asChild: !0,
+                                            children: e.jsxDEV(
+                                              "a",
+                                              {
+                                                href: "https://www.prsformusic.com",
+                                                target: "_blank",
+                                                rel: "noopener noreferrer",
+                                                children: "PRS for Music",
+                                              },
+                                              void 0,
+                                              !1,
+                                              {
+                                                fileName:
+                                                  "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                                                lineNumber: 412,
+                                                columnNumber: 19,
+                                              },
+                                              this,
+                                            ),
+                                          },
+                                          void 0,
+                                          !1,
+                                          {
+                                            fileName:
+                                              "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                                            lineNumber: 411,
+                                            columnNumber: 17,
+                                          },
+                                          this,
+                                        ),
+                                      ],
+                                    },
+                                    void 0,
+                                    !0,
+                                    {
+                                      fileName:
+                                        "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                                      lineNumber: 401,
+                                      columnNumber: 15,
+                                    },
+                                    this,
+                                  ),
+                                ],
+                              },
+                              void 0,
+                              !0,
+                              {
+                                fileName:
+                                  "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                                lineNumber: 397,
+                                columnNumber: 13,
+                              },
+                              this,
+                            ),
+                          ],
+                        },
+                        void 0,
+                        !0,
+                        {
+                          fileName:
+                            "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                          lineNumber: 390,
+                          columnNumber: 11,
+                        },
+                        this,
+                      ),
+                    },
+                    void 0,
+                    !1,
+                    {
+                      fileName:
+                        "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                      lineNumber: 389,
+                      columnNumber: 9,
+                    },
+                    this,
+                  ),
+                ],
+              },
+              void 0,
+              !0,
+              {
+                fileName:
+                  "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                lineNumber: 148,
+                columnNumber: 7,
+              },
+              this,
+            ),
+            e.jsxDEV(
+              A,
+              {
+                open: !!l,
+                onOpenChange: (s) => {
+                  s || g(null);
+                },
+                children: e.jsxDEV(
+                  I,
+                  {
+                    className: "max-w-2xl",
+                    children: [
+                      e.jsxDEV(
+                        W,
+                        {
+                          children: e.jsxDEV(
+                            F,
+                            { children: "Edit Work" },
+                            void 0,
+                            !1,
+                            {
+                              fileName:
+                                "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                              lineNumber: 424,
+                              columnNumber: 13,
+                            },
+                            this,
+                          ),
+                        },
+                        void 0,
+                        !1,
+                        {
+                          fileName:
+                            "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                          lineNumber: 423,
+                          columnNumber: 11,
+                        },
+                        this,
+                      ),
+                      l &&
+                        e.jsxDEV(
+                          "form",
+                          {
+                            onSubmit: (s) => {
+                              s.preventDefault();
+                              const a = new FormData(s.currentTarget),
+                                n = Object.fromEntries(a.entries());
+                              k.mutate({
+                                id: l.id,
+                                ...n,
+                                copyrightYear: n.copyrightYear
+                                  ? parseInt(n.copyrightYear)
+                                  : void 0,
+                              });
+                            },
+                            className: "space-y-4",
+                            children: [
+                              e.jsxDEV(
+                                "div",
+                                {
+                                  className: "grid grid-cols-2 gap-4",
+                                  children: [
+                                    e.jsxDEV(
+                                      "div",
+                                      {
+                                        className: "space-y-2",
+                                        children: [
+                                          e.jsxDEV(
+                                            i,
+                                            {
+                                              htmlFor: "edit-trackTitle",
+                                              children: "Track Title",
+                                            },
+                                            void 0,
+                                            !1,
+                                            {
+                                              fileName:
+                                                "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                                              lineNumber: 439,
+                                              columnNumber: 19,
+                                            },
+                                            this,
+                                          ),
+                                          e.jsxDEV(
+                                            r,
+                                            {
+                                              id: "edit-trackTitle",
+                                              name: "trackTitle",
+                                              defaultValue: l.trackTitle,
+                                              required: !0,
+                                            },
+                                            void 0,
+                                            !1,
+                                            {
+                                              fileName:
+                                                "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                                              lineNumber: 440,
+                                              columnNumber: 19,
+                                            },
+                                            this,
+                                          ),
+                                        ],
+                                      },
+                                      void 0,
+                                      !0,
+                                      {
+                                        fileName:
+                                          "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                                        lineNumber: 438,
+                                        columnNumber: 17,
+                                      },
+                                      this,
+                                    ),
+                                    e.jsxDEV(
+                                      "div",
+                                      {
+                                        className: "space-y-2",
+                                        children: [
+                                          e.jsxDEV(
+                                            i,
+                                            {
+                                              htmlFor: "edit-copyrightYear",
+                                              children: "Copyright Year",
+                                            },
+                                            void 0,
+                                            !1,
+                                            {
+                                              fileName:
+                                                "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                                              lineNumber: 443,
+                                              columnNumber: 19,
+                                            },
+                                            this,
+                                          ),
+                                          e.jsxDEV(
+                                            r,
+                                            {
+                                              id: "edit-copyrightYear",
+                                              name: "copyrightYear",
+                                              type: "number",
+                                              defaultValue: l.copyrightYear,
+                                            },
+                                            void 0,
+                                            !1,
+                                            {
+                                              fileName:
+                                                "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                                              lineNumber: 444,
+                                              columnNumber: 19,
+                                            },
+                                            this,
+                                          ),
+                                        ],
+                                      },
+                                      void 0,
+                                      !0,
+                                      {
+                                        fileName:
+                                          "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                                        lineNumber: 442,
+                                        columnNumber: 17,
+                                      },
+                                      this,
+                                    ),
+                                    e.jsxDEV(
+                                      "div",
+                                      {
+                                        className: "space-y-2",
+                                        children: [
+                                          e.jsxDEV(
+                                            i,
+                                            {
+                                              htmlFor: "edit-iswc",
+                                              children: "ISWC",
+                                            },
+                                            void 0,
+                                            !1,
+                                            {
+                                              fileName:
+                                                "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                                              lineNumber: 447,
+                                              columnNumber: 19,
+                                            },
+                                            this,
+                                          ),
+                                          e.jsxDEV(
+                                            r,
+                                            {
+                                              id: "edit-iswc",
+                                              name: "iswc",
+                                              defaultValue: l.iswc,
+                                              placeholder: "T-123.456.789-C",
+                                            },
+                                            void 0,
+                                            !1,
+                                            {
+                                              fileName:
+                                                "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                                              lineNumber: 448,
+                                              columnNumber: 19,
+                                            },
+                                            this,
+                                          ),
+                                        ],
+                                      },
+                                      void 0,
+                                      !0,
+                                      {
+                                        fileName:
+                                          "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                                        lineNumber: 446,
+                                        columnNumber: 17,
+                                      },
+                                      this,
+                                    ),
+                                    e.jsxDEV(
+                                      "div",
+                                      {
+                                        className: "space-y-2",
+                                        children: [
+                                          e.jsxDEV(
+                                            i,
+                                            {
+                                              htmlFor: "edit-isrc",
+                                              children: "ISRC",
+                                            },
+                                            void 0,
+                                            !1,
+                                            {
+                                              fileName:
+                                                "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                                              lineNumber: 451,
+                                              columnNumber: 19,
+                                            },
+                                            this,
+                                          ),
+                                          e.jsxDEV(
+                                            r,
+                                            {
+                                              id: "edit-isrc",
+                                              name: "isrc",
+                                              defaultValue: l.isrc,
+                                              placeholder: "US-ABC-12-34567",
+                                            },
+                                            void 0,
+                                            !1,
+                                            {
+                                              fileName:
+                                                "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                                              lineNumber: 452,
+                                              columnNumber: 19,
+                                            },
+                                            this,
+                                          ),
+                                        ],
+                                      },
+                                      void 0,
+                                      !0,
+                                      {
+                                        fileName:
+                                          "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                                        lineNumber: 450,
+                                        columnNumber: 17,
+                                      },
+                                      this,
+                                    ),
+                                    e.jsxDEV(
+                                      "div",
+                                      {
+                                        className: "space-y-2",
+                                        children: [
+                                          e.jsxDEV(
+                                            i,
+                                            {
+                                              htmlFor: "edit-proName",
+                                              children: "PRO",
+                                            },
+                                            void 0,
+                                            !1,
+                                            {
+                                              fileName:
+                                                "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                                              lineNumber: 455,
+                                              columnNumber: 19,
+                                            },
+                                            this,
+                                          ),
+                                          e.jsxDEV(
+                                            r,
+                                            {
+                                              id: "edit-proName",
+                                              name: "proName",
+                                              defaultValue: l.proName,
+                                              placeholder: "ASCAP, BMI, SESAC",
+                                            },
+                                            void 0,
+                                            !1,
+                                            {
+                                              fileName:
+                                                "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                                              lineNumber: 456,
+                                              columnNumber: 19,
+                                            },
+                                            this,
+                                          ),
+                                        ],
+                                      },
+                                      void 0,
+                                      !0,
+                                      {
+                                        fileName:
+                                          "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                                        lineNumber: 454,
+                                        columnNumber: 17,
+                                      },
+                                      this,
+                                    ),
+                                    e.jsxDEV(
+                                      "div",
+                                      {
+                                        className: "space-y-2",
+                                        children: [
+                                          e.jsxDEV(
+                                            i,
+                                            {
+                                              htmlFor: "edit-proRegistrationId",
+                                              children: "PRO Work ID",
+                                            },
+                                            void 0,
+                                            !1,
+                                            {
+                                              fileName:
+                                                "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                                              lineNumber: 459,
+                                              columnNumber: 19,
+                                            },
+                                            this,
+                                          ),
+                                          e.jsxDEV(
+                                            r,
+                                            {
+                                              id: "edit-proRegistrationId",
+                                              name: "proRegistrationId",
+                                              defaultValue: l.proRegistrationId,
+                                            },
+                                            void 0,
+                                            !1,
+                                            {
+                                              fileName:
+                                                "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                                              lineNumber: 460,
+                                              columnNumber: 19,
+                                            },
+                                            this,
+                                          ),
+                                        ],
+                                      },
+                                      void 0,
+                                      !0,
+                                      {
+                                        fileName:
+                                          "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                                        lineNumber: 458,
+                                        columnNumber: 17,
+                                      },
+                                      this,
+                                    ),
+                                    e.jsxDEV(
+                                      "div",
+                                      {
+                                        className: "space-y-2",
+                                        children: [
+                                          e.jsxDEV(
+                                            i,
+                                            {
+                                              htmlFor: "edit-writerSplit",
+                                              children: "Writer Split %",
+                                            },
+                                            void 0,
+                                            !1,
+                                            {
+                                              fileName:
+                                                "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                                              lineNumber: 463,
+                                              columnNumber: 19,
+                                            },
+                                            this,
+                                          ),
+                                          e.jsxDEV(
+                                            r,
+                                            {
+                                              id: "edit-writerSplit",
+                                              name: "writerSplit",
+                                              type: "number",
+                                              defaultValue: l.writerSplit,
+                                            },
+                                            void 0,
+                                            !1,
+                                            {
+                                              fileName:
+                                                "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                                              lineNumber: 464,
+                                              columnNumber: 19,
+                                            },
+                                            this,
+                                          ),
+                                        ],
+                                      },
+                                      void 0,
+                                      !0,
+                                      {
+                                        fileName:
+                                          "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                                        lineNumber: 462,
+                                        columnNumber: 17,
+                                      },
+                                      this,
+                                    ),
+                                    e.jsxDEV(
+                                      "div",
+                                      {
+                                        className: "space-y-2",
+                                        children: [
+                                          e.jsxDEV(
+                                            i,
+                                            {
+                                              htmlFor: "edit-publishingSplit",
+                                              children: "Publisher Split %",
+                                            },
+                                            void 0,
+                                            !1,
+                                            {
+                                              fileName:
+                                                "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                                              lineNumber: 467,
+                                              columnNumber: 19,
+                                            },
+                                            this,
+                                          ),
+                                          e.jsxDEV(
+                                            r,
+                                            {
+                                              id: "edit-publishingSplit",
+                                              name: "publishingSplit",
+                                              type: "number",
+                                              defaultValue: l.publishingSplit,
+                                            },
+                                            void 0,
+                                            !1,
+                                            {
+                                              fileName:
+                                                "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                                              lineNumber: 468,
+                                              columnNumber: 19,
+                                            },
+                                            this,
+                                          ),
+                                        ],
+                                      },
+                                      void 0,
+                                      !0,
+                                      {
+                                        fileName:
+                                          "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                                        lineNumber: 466,
+                                        columnNumber: 17,
+                                      },
+                                      this,
+                                    ),
+                                  ],
+                                },
+                                void 0,
+                                !0,
+                                {
+                                  fileName:
+                                    "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                                  lineNumber: 437,
+                                  columnNumber: 15,
+                                },
+                                this,
+                              ),
+                              e.jsxDEV(
+                                "div",
+                                {
+                                  className: "space-y-2",
+                                  children: [
+                                    e.jsxDEV(
+                                      i,
+                                      {
+                                        htmlFor: "edit-publisherName",
+                                        children: "Publisher Name",
+                                      },
+                                      void 0,
+                                      !1,
+                                      {
+                                        fileName:
+                                          "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                                        lineNumber: 472,
+                                        columnNumber: 17,
+                                      },
+                                      this,
+                                    ),
+                                    e.jsxDEV(
+                                      r,
+                                      {
+                                        id: "edit-publisherName",
+                                        name: "publisherName",
+                                        defaultValue: l.publisherName,
+                                      },
+                                      void 0,
+                                      !1,
+                                      {
+                                        fileName:
+                                          "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                                        lineNumber: 473,
+                                        columnNumber: 17,
+                                      },
+                                      this,
+                                    ),
+                                  ],
+                                },
+                                void 0,
+                                !0,
+                                {
+                                  fileName:
+                                    "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                                  lineNumber: 471,
+                                  columnNumber: 15,
+                                },
+                                this,
+                              ),
+                              e.jsxDEV(
+                                O,
+                                {
+                                  children: [
+                                    e.jsxDEV(
+                                      u,
+                                      {
+                                        type: "button",
+                                        variant: "outline",
+                                        onClick: () => g(null),
+                                        children: "Cancel",
+                                      },
+                                      void 0,
+                                      !1,
+                                      {
+                                        fileName:
+                                          "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                                        lineNumber: 476,
+                                        columnNumber: 17,
+                                      },
+                                      this,
+                                    ),
+                                    e.jsxDEV(
+                                      u,
+                                      {
+                                        type: "submit",
+                                        disabled: k.isPending,
+                                        children: k.isPending
+                                          ? "Saving..."
+                                          : "Save Changes",
+                                      },
+                                      void 0,
+                                      !1,
+                                      {
+                                        fileName:
+                                          "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                                        lineNumber: 477,
+                                        columnNumber: 17,
+                                      },
+                                      this,
+                                    ),
+                                  ],
+                                },
+                                void 0,
+                                !0,
+                                {
+                                  fileName:
+                                    "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                                  lineNumber: 475,
+                                  columnNumber: 15,
+                                },
+                                this,
+                              ),
+                            ],
+                          },
+                          void 0,
+                          !0,
+                          {
+                            fileName:
+                              "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                            lineNumber: 427,
+                            columnNumber: 13,
+                          },
+                          this,
+                        ),
+                    ],
+                  },
+                  void 0,
+                  !0,
+                  {
+                    fileName:
+                      "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                    lineNumber: 422,
+                    columnNumber: 9,
+                  },
+                  this,
+                ),
+              },
+              void 0,
+              !1,
+              {
+                fileName:
+                  "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                lineNumber: 421,
+                columnNumber: 7,
+              },
+              this,
+            ),
+            e.jsxDEV(
+              ae,
+              {
+                open: !!v,
+                onOpenChange: (s) => {
+                  s || w(null);
+                },
+                children: e.jsxDEV(
+                  ue,
+                  {
+                    children: [
+                      e.jsxDEV(
+                        te,
+                        {
+                          children: [
+                            e.jsxDEV(
+                              me,
+                              { children: "Delete Registered Work" },
+                              void 0,
+                              !1,
+                              {
+                                fileName:
+                                  "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                                lineNumber: 490,
+                                columnNumber: 13,
+                              },
+                              this,
+                            ),
+                            e.jsxDEV(
+                              ce,
+                              {
+                                children:
+                                  "Are you sure you want to delete this work registration? This action cannot be undone.",
+                              },
+                              void 0,
+                              !1,
+                              {
+                                fileName:
+                                  "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                                lineNumber: 491,
+                                columnNumber: 13,
+                              },
+                              this,
+                            ),
+                          ],
+                        },
+                        void 0,
+                        !0,
+                        {
+                          fileName:
+                            "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                          lineNumber: 489,
+                          columnNumber: 11,
+                        },
+                        this,
+                      ),
+                      e.jsxDEV(
+                        oe,
+                        {
+                          children: [
+                            e.jsxDEV(
+                              he,
+                              { children: "Cancel" },
+                              void 0,
+                              !1,
+                              {
+                                fileName:
+                                  "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                                lineNumber: 496,
+                                columnNumber: 13,
+                              },
+                              this,
+                            ),
+                            e.jsxDEV(
+                              be,
+                              {
+                                className:
+                                  "bg-destructive text-destructive-foreground hover:bg-destructive/90",
+                                onClick: () => {
+                                  v && (Q.mutate(v), w(null));
+                                },
+                                children: "Delete Work",
+                              },
+                              void 0,
+                              !1,
+                              {
+                                fileName:
+                                  "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                                lineNumber: 497,
+                                columnNumber: 13,
+                              },
+                              this,
+                            ),
+                          ],
+                        },
+                        void 0,
+                        !0,
+                        {
+                          fileName:
+                            "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                          lineNumber: 495,
+                          columnNumber: 11,
+                        },
+                        this,
+                      ),
+                    ],
+                  },
+                  void 0,
+                  !0,
+                  {
+                    fileName:
+                      "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                    lineNumber: 488,
+                    columnNumber: 9,
+                  },
+                  this,
+                ),
+              },
+              void 0,
+              !1,
+              {
+                fileName:
+                  "/home/runner/workspace/client/src/pages/Publishing.tsx",
+                lineNumber: 487,
+                columnNumber: 7,
+              },
+              this,
+            ),
+          ],
+        },
+        void 0,
+        !0,
+        {
+          fileName: "/home/runner/workspace/client/src/pages/Publishing.tsx",
+          lineNumber: 147,
+          columnNumber: 5,
+        },
+        this,
+      )
+    : null;
+}
+export { We as default };

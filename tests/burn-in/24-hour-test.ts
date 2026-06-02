@@ -1,5 +1,5 @@
-import { logger } from '../../server/logger.ts';
-import { FeatureValidators } from './feature-validators.js';
+import { logger } from "../../server/logger.ts";
+import { FeatureValidators } from "./feature-validators.js";
 
 interface FeatureValidationSnapshot {
   timestamp: Date;
@@ -21,14 +21,19 @@ interface BurnInMetrics {
   featureValidations: number;
   errors: Array<{ timestamp: Date; error: string }>;
   memorySnapshots: Array<{ timestamp: Date; heapUsed: number; rss: number }>;
-  queueMetrics: Array<{ timestamp: Date; redisLatency: number; waiting: number; failed: number }>;
+  queueMetrics: Array<{
+    timestamp: Date;
+    redisLatency: number;
+    waiting: number;
+    failed: number;
+  }>;
   featureValidationSnapshots: FeatureValidationSnapshot[];
 }
 
 class BurnInTest {
   private metrics: BurnInMetrics;
   private isRunning = false;
-  private baseUrl = 'http://localhost:5000';
+  private baseUrl = "http://localhost:5000";
   private intervalMinutes = 0.625;
   private featureValidationIntervalMinutes = 15;
   private featureValidators: FeatureValidators;
@@ -62,7 +67,9 @@ class BurnInTest {
 
     while (Date.now() - startTime < maxWaitMs) {
       try {
-        const response = await fetch(`${this.baseUrl}/api/monitoring/system-health`);
+        const response = await fetch(
+          `${this.baseUrl}/api/monitoring/system-health`,
+        );
         if (response.ok) {
           return; // Server is ready
         }
@@ -72,14 +79,22 @@ class BurnInTest {
 
       attempt++;
       const delay = Math.min(1000 * Math.pow(1.5, attempt), 5000); // Exponential backoff, max 5s
-      logger.info(`⏳ Server not ready, retrying in ${Math.round(delay)}ms (attempt ${attempt})`);
-      await new Promise(resolve => setTimeout(resolve, delay));
+      logger.info(
+        `⏳ Server not ready, retrying in ${Math.round(delay)}ms (attempt ${attempt})`,
+      );
+      await new Promise((resolve) => setTimeout(resolve, delay));
     }
 
-    logger.warn('⚠️ Server may not be fully ready, proceeding with tests anyway');
+    logger.warn(
+      "⚠️ Server may not be fully ready, proceeding with tests anyway",
+    );
   }
 
-  async makeRequest(url: string, description: string, retries = 3): Promise<boolean> {
+  async makeRequest(
+    url: string,
+    description: string,
+    retries = 3,
+  ): Promise<boolean> {
     this.metrics.totalRequests++;
 
     for (let attempt = 0; attempt <= retries; attempt++) {
@@ -88,10 +103,14 @@ class BurnInTest {
 
         if (response.status === 429) {
           if (attempt < retries) {
-            const retryAfter = response.headers.get('retry-after');
-            const waitMs = retryAfter ? parseInt(retryAfter) * 1000 : Math.pow(2, attempt) * 1000;
-            logger.warn(`⏳ Rate limited on ${description}, retrying in ${waitMs}ms (attempt ${attempt + 1}/${retries})`);
-            await new Promise(resolve => setTimeout(resolve, waitMs));
+            const retryAfter = response.headers.get("retry-after");
+            const waitMs = retryAfter
+              ? parseInt(retryAfter) * 1000
+              : Math.pow(2, attempt) * 1000;
+            logger.warn(
+              `⏳ Rate limited on ${description}, retrying in ${waitMs}ms (attempt ${attempt + 1}/${retries})`,
+            );
+            await new Promise((resolve) => setTimeout(resolve, waitMs));
             continue;
           }
           throw new Error(`HTTP 429 (Rate Limited after ${retries} retries)`);
@@ -107,7 +126,7 @@ class BurnInTest {
       } catch (error) {
         if (attempt === retries) {
           this.metrics.failedRequests++;
-          const errorMsg = `${description}: ${error instanceof Error ? error.message : 'Unknown error'}`;
+          const errorMsg = `${description}: ${error instanceof Error ? error.message : "Unknown error"}`;
           this.metrics.errors.push({ timestamp: new Date(), error: errorMsg });
           logger.error(`❌ Burn-in test: ${errorMsg}`);
           return false;
@@ -122,12 +141,14 @@ class BurnInTest {
     this.metrics.queueHealthChecks++;
     const success = await this.makeRequest(
       `${this.baseUrl}/api/monitoring/queue-health`,
-      'Queue Health Check'
+      "Queue Health Check",
     );
 
     if (success) {
       try {
-        const response = await fetch(`${this.baseUrl}/api/monitoring/queue-metrics`);
+        const response = await fetch(
+          `${this.baseUrl}/api/monitoring/queue-metrics`,
+        );
         const data = await response.json();
         if (data.metrics && data.metrics.length > 0) {
           const queueData = data.metrics[0];
@@ -143,7 +164,7 @@ class BurnInTest {
           }
         }
       } catch (error) {
-        logger.warn('Failed to capture queue metrics detail');
+        logger.warn("Failed to capture queue metrics detail");
       }
     }
   }
@@ -152,7 +173,7 @@ class BurnInTest {
     this.metrics.aiModelChecks++;
     await this.makeRequest(
       `${this.baseUrl}/api/monitoring/ai-models`,
-      'AI Model Telemetry Check'
+      "AI Model Telemetry Check",
     );
   }
 
@@ -160,7 +181,7 @@ class BurnInTest {
     this.metrics.systemHealthChecks++;
     await this.makeRequest(
       `${this.baseUrl}/api/monitoring/system-health`,
-      'System Health Check'
+      "System Health Check",
     );
   }
 
@@ -188,16 +209,18 @@ class BurnInTest {
       this.metrics.memorySnapshots = this.metrics.memorySnapshots.slice(-150);
     }
     if (this.metrics.featureValidationSnapshots.length > 10) {
-      this.metrics.featureValidationSnapshots = this.metrics.featureValidationSnapshots.slice(-10);
+      this.metrics.featureValidationSnapshots =
+        this.metrics.featureValidationSnapshots.slice(-10);
     }
   }
 
   async runFeatureValidation(): Promise<void> {
     this.metrics.featureValidations++;
-    logger.info('🔍 Running comprehensive feature validation...');
+    logger.info("🔍 Running comprehensive feature validation...");
 
     try {
-      const validationResults = await this.featureValidators.validateAllFeatures();
+      const validationResults =
+        await this.featureValidators.validateAllFeatures();
 
       const failedTests = validationResults.results
         .filter((r) => !r.passed)
@@ -218,21 +241,23 @@ class BurnInTest {
 
       if (validationResults.successRate >= 95) {
         logger.info(
-          `✅ Feature validation passed: ${validationResults.passed}/${validationResults.totalTests} tests (${validationResults.successRate.toFixed(1)}%)`
+          `✅ Feature validation passed: ${validationResults.passed}/${validationResults.totalTests} tests (${validationResults.successRate.toFixed(1)}%)`,
         );
       } else {
         logger.warn(
-          `⚠️ Feature validation completed with issues: ${validationResults.failed} failures`
+          `⚠️ Feature validation completed with issues: ${validationResults.failed} failures`,
         );
         failedTests.forEach((test) => {
-          logger.warn(`   - ${test.category}: ${test.testName} - ${test.error}`);
+          logger.warn(
+            `   - ${test.category}: ${test.testName} - ${test.error}`,
+          );
         });
       }
     } catch (error) {
-      logger.error('❌ Feature validation failed:', error);
+      logger.error("❌ Feature validation failed:", error);
       this.metrics.errors.push({
         timestamp: new Date(),
-        error: `Feature validation error: ${error instanceof Error ? error.message : 'Unknown'}`,
+        error: `Feature validation error: ${error instanceof Error ? error.message : "Unknown"}`,
       });
     }
   }
@@ -250,7 +275,8 @@ class BurnInTest {
     this.captureMemorySnapshot();
     this.limitArraySizes();
 
-    const cyclesPerFeatureValidation = this.featureValidationIntervalMinutes / this.intervalMinutes;
+    const cyclesPerFeatureValidation =
+      this.featureValidationIntervalMinutes / this.intervalMinutes;
     if (this.cycleCount % cyclesPerFeatureValidation === 0) {
       await this.runFeatureValidation();
     }
@@ -259,20 +285,29 @@ class BurnInTest {
   }
 
   printCurrentStatus(): void {
-    const runtime = (Date.now() - this.metrics.startTime.getTime()) / 1000 / 60 / 60;
-    const successRate = this.metrics.totalRequests > 0
-      ? ((this.metrics.successfulRequests / this.metrics.totalRequests) * 100).toFixed(2)
-      : '0';
+    const runtime =
+      (Date.now() - this.metrics.startTime.getTime()) / 1000 / 60 / 60;
+    const successRate =
+      this.metrics.totalRequests > 0
+        ? (
+            (this.metrics.successfulRequests / this.metrics.totalRequests) *
+            100
+          ).toFixed(2)
+        : "0";
 
-    const latestMemory = this.metrics.memorySnapshots[this.metrics.memorySnapshots.length - 1];
-    const memoryMB = latestMemory ? (latestMemory.heapUsed / 1024 / 1024).toFixed(2) : '0';
+    const latestMemory =
+      this.metrics.memorySnapshots[this.metrics.memorySnapshots.length - 1];
+    const memoryMB = latestMemory
+      ? (latestMemory.heapUsed / 1024 / 1024).toFixed(2)
+      : "0";
 
-    const latestFeatureValidation = this.metrics.featureValidationSnapshots[
-      this.metrics.featureValidationSnapshots.length - 1
-    ];
+    const latestFeatureValidation =
+      this.metrics.featureValidationSnapshots[
+        this.metrics.featureValidationSnapshots.length - 1
+      ];
     const featureStatus = latestFeatureValidation
       ? `${latestFeatureValidation.passed}/${latestFeatureValidation.totalTests} (${latestFeatureValidation.successRate.toFixed(1)}%)`
-      : 'Pending...';
+      : "Pending...";
 
     logger.info(`
 ╔═══════════════════════════════════════════════════════════════╗
@@ -299,7 +334,7 @@ class BurnInTest {
     `);
 
     if (this.metrics.errors.length > 0) {
-      logger.warn('Recent errors:');
+      logger.warn("Recent errors:");
       this.metrics.errors.slice(-3).forEach((err) => {
         logger.warn(`  - [${err.timestamp.toISOString()}] ${err.error}`);
       });
@@ -307,8 +342,12 @@ class BurnInTest {
   }
 
   printFinalReport(): void {
-    const totalRuntime = (Date.now() - this.metrics.startTime.getTime()) / 1000 / 60 / 60;
-    const successRate = ((this.metrics.successfulRequests / this.metrics.totalRequests) * 100).toFixed(2);
+    const totalRuntime =
+      (Date.now() - this.metrics.startTime.getTime()) / 1000 / 60 / 60;
+    const successRate = (
+      (this.metrics.successfulRequests / this.metrics.totalRequests) *
+      100
+    ).toFixed(2);
 
     const memoryGrowth = this.analyzeMemoryGrowth();
     const queuePerformance = this.analyzeQueuePerformance();
@@ -352,14 +391,14 @@ class BurnInTest {
     `);
 
     if (this.metrics.errors.length > 0) {
-      logger.warn('\n📋 ERROR SUMMARY:');
+      logger.warn("\n📋 ERROR SUMMARY:");
       this.metrics.errors.forEach((err) => {
         logger.warn(`  - [${err.timestamp.toISOString()}] ${err.error}`);
       });
     }
 
     if (featurePerformance.failedCategories.length > 0) {
-      logger.warn('\n⚠️ FEATURE VALIDATION FAILURES:');
+      logger.warn("\n⚠️ FEATURE VALIDATION FAILURES:");
       featurePerformance.failedCategories.forEach((failure) => {
         logger.warn(`  - ${failure.category}: ${failure.testName}`);
         if (failure.error) {
@@ -368,25 +407,40 @@ class BurnInTest {
       });
     }
 
-    const verdict = this.getVerdict(successRate, memoryGrowth, queuePerformance, featurePerformance);
+    const verdict = this.getVerdict(
+      successRate,
+      memoryGrowth,
+      queuePerformance,
+      featurePerformance,
+    );
     logger.info(`\n${verdict}`);
   }
 
   analyzeMemoryGrowth() {
     if (this.metrics.memorySnapshots.length === 0) {
-      return { initial: 0, final: 0, growth: 0, growthPercent: '0.00', status: 'No data' };
+      return {
+        initial: 0,
+        final: 0,
+        growth: 0,
+        growthPercent: "0.00",
+        status: "No data",
+      };
     }
 
     const initial = this.metrics.memorySnapshots[0].heapUsed / 1024 / 1024;
-    const final = this.metrics.memorySnapshots[this.metrics.memorySnapshots.length - 1].heapUsed / 1024 / 1024;
+    const final =
+      this.metrics.memorySnapshots[this.metrics.memorySnapshots.length - 1]
+        .heapUsed /
+      1024 /
+      1024;
     const growth = final - initial;
     const growthPercent = ((growth / initial) * 100).toFixed(2);
 
-    let status = '✅ HEALTHY';
+    let status = "✅ HEALTHY";
     if (growth > 500) {
-      status = '⚠️ POTENTIAL LEAK';
+      status = "⚠️ POTENTIAL LEAK";
     } else if (growth > 200) {
-      status = '⚠️ HIGH GROWTH';
+      status = "⚠️ HIGH GROWTH";
     }
 
     return {
@@ -400,19 +454,27 @@ class BurnInTest {
 
   analyzeQueuePerformance() {
     if (this.metrics.queueMetrics.length === 0) {
-      return { avgLatency: 0, maxLatency: 0, totalFailed: 0, status: 'No data' };
+      return {
+        avgLatency: 0,
+        maxLatency: 0,
+        totalFailed: 0,
+        status: "No data",
+      };
     }
 
-    const latencies = this.metrics.queueMetrics.map(m => m.redisLatency);
-    const avgLatency = (latencies.reduce((a, b) => a + b, 0) / latencies.length).toFixed(2);
+    const latencies = this.metrics.queueMetrics.map((m) => m.redisLatency);
+    const avgLatency = (
+      latencies.reduce((a, b) => a + b, 0) / latencies.length
+    ).toFixed(2);
     const maxLatency = Math.max(...latencies);
-    const totalFailed = this.metrics.queueMetrics[this.metrics.queueMetrics.length - 1].failed;
+    const totalFailed =
+      this.metrics.queueMetrics[this.metrics.queueMetrics.length - 1].failed;
 
-    let status = '✅ HEALTHY';
+    let status = "✅ HEALTHY";
     if (maxLatency > 100) {
-      status = '⚠️ HIGH LATENCY';
+      status = "⚠️ HIGH LATENCY";
     } else if (totalFailed > 50) {
-      status = '⚠️ HIGH FAILURES';
+      status = "⚠️ HIGH FAILURES";
     }
 
     return {
@@ -426,39 +488,57 @@ class BurnInTest {
   analyzeFeatureValidation() {
     if (this.metrics.featureValidationSnapshots.length === 0) {
       return {
-        avgSuccessRate: '0.00',
+        avgSuccessRate: "0.00",
         totalTests: 0,
         totalPassed: 0,
         totalFailed: 0,
-        status: 'No data',
+        status: "No data",
         failedCategories: [],
       };
     }
 
     const allSnapshots = this.metrics.featureValidationSnapshots;
     const avgSuccessRate = (
-      allSnapshots.reduce((sum, snap) => sum + snap.successRate, 0) / allSnapshots.length
+      allSnapshots.reduce((sum, snap) => sum + snap.successRate, 0) /
+      allSnapshots.length
     ).toFixed(2);
 
-    const totalTests = allSnapshots.reduce((sum, snap) => sum + snap.totalTests, 0);
-    const totalPassed = allSnapshots.reduce((sum, snap) => sum + snap.passed, 0);
-    const totalFailed = allSnapshots.reduce((sum, snap) => sum + snap.failed, 0);
+    const totalTests = allSnapshots.reduce(
+      (sum, snap) => sum + snap.totalTests,
+      0,
+    );
+    const totalPassed = allSnapshots.reduce(
+      (sum, snap) => sum + snap.passed,
+      0,
+    );
+    const totalFailed = allSnapshots.reduce(
+      (sum, snap) => sum + snap.failed,
+      0,
+    );
 
-    const failedCategories: Array<{ category: string; testName: string; error?: string }> = [];
+    const failedCategories: Array<{
+      category: string;
+      testName: string;
+      error?: string;
+    }> = [];
     allSnapshots.forEach((snap) => {
       snap.failedTests.forEach((test) => {
-        if (!failedCategories.find((f) => f.category === test.category && f.testName === test.testName)) {
+        if (
+          !failedCategories.find(
+            (f) => f.category === test.category && f.testName === test.testName,
+          )
+        ) {
           failedCategories.push(test);
         }
       });
     });
 
-    let status = '✅ HEALTHY';
+    let status = "✅ HEALTHY";
     const rate = parseFloat(avgSuccessRate);
     if (rate < 95) {
-      status = '❌ FAILING';
+      status = "❌ FAILING";
     } else if (rate < 99) {
-      status = '⚠️ DEGRADED';
+      status = "⚠️ DEGRADED";
     }
 
     return {
@@ -471,21 +551,26 @@ class BurnInTest {
     };
   }
 
-  getVerdict(successRate: string, memoryGrowth: any, queuePerformance: any, featurePerformance: any): string {
+  getVerdict(
+    successRate: string,
+    memoryGrowth: any,
+    queuePerformance: any,
+    featurePerformance: any,
+  ): string {
     const rate = parseFloat(successRate);
     const featureRate = parseFloat(featurePerformance.avgSuccessRate);
 
     const allHealthy =
       rate >= 99.9 &&
-      memoryGrowth.status === '✅ HEALTHY' &&
-      queuePerformance.status === '✅ HEALTHY' &&
-      featurePerformance.status === '✅ HEALTHY';
+      memoryGrowth.status === "✅ HEALTHY" &&
+      queuePerformance.status === "✅ HEALTHY" &&
+      featurePerformance.status === "✅ HEALTHY";
 
     const mostlyHealthy =
       rate >= 95 &&
       featureRate >= 95 &&
-      memoryGrowth.status !== '⚠️ POTENTIAL LEAK' &&
-      queuePerformance.status !== '⚠️ HIGH FAILURES';
+      memoryGrowth.status !== "⚠️ POTENTIAL LEAK" &&
+      queuePerformance.status !== "⚠️ HIGH FAILURES";
 
     if (allHealthy) {
       return `
@@ -566,9 +651,9 @@ class BurnInTest {
     `);
 
     // Wait for server to be fully ready before starting tests
-    logger.info('⏳ Waiting for server to be ready...');
+    logger.info("⏳ Waiting for server to be ready...");
     await this.waitForServer();
-    logger.info('✅ Server is ready, starting burn-in tests');
+    logger.info("✅ Server is ready, starting burn-in tests");
 
     await this.runHealthCheckCycle();
 
@@ -579,14 +664,17 @@ class BurnInTest {
       }
     }, intervalMs);
 
-    setTimeout(() => {
-      this.stop();
-    }, 3 * 60 * 60 * 1000);
+    setTimeout(
+      () => {
+        this.stop();
+      },
+      3 * 60 * 60 * 1000,
+    );
   }
 
   stop(): void {
     this.isRunning = false;
-    logger.info('🛑 Stopping 3-hour burn-in test...');
+    logger.info("🛑 Stopping 3-hour burn-in test...");
     this.printFinalReport();
     process.exit(0);
   }
@@ -594,12 +682,12 @@ class BurnInTest {
 
 const burnInTest = new BurnInTest();
 
-process.on('SIGINT', () => {
-  logger.info('\n⚠️ Received interrupt signal...');
+process.on("SIGINT", () => {
+  logger.info("\n⚠️ Received interrupt signal...");
   burnInTest.stop();
 });
 
 burnInTest.start().catch((error) => {
-  logger.error('Fatal error in burn-in test:', error);
+  logger.error("Fatal error in burn-in test:", error);
   process.exit(1);
 });

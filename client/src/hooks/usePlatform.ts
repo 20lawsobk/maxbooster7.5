@@ -6,7 +6,10 @@ declare global {
       toggleFullscreen?: () => Promise<boolean>;
       isFullscreen?: () => Promise<boolean>;
       onFullscreenChanged?: (cb: (val: boolean) => void) => () => void;
-      getAudioDevices?: () => Promise<{ inputs: MediaDeviceInfo[]; outputs: MediaDeviceInfo[] }>;
+      getAudioDevices?: () => Promise<{
+        inputs: MediaDeviceInfo[];
+        outputs: MediaDeviceInfo[];
+      }>;
       [key: string]: unknown;
     };
     Capacitor?: {
@@ -16,7 +19,7 @@ declare global {
   }
 }
 
-export type PlatformType = 'web' | 'electron' | 'android' | 'ios';
+export type PlatformType = "web" | "electron" | "android" | "ios";
 
 export interface PlatformInfo {
   type: PlatformType;
@@ -30,24 +33,27 @@ export interface PlatformInfo {
 }
 
 function detect(): PlatformInfo {
-  const isElectron = typeof window !== 'undefined' && !!window.electronAPI?.isElectron;
+  const isElectron =
+    typeof window !== "undefined" && !!window.electronAPI?.isElectron;
 
   const isCapacitorNative =
-    typeof window !== 'undefined' &&
-    typeof window.Capacitor !== 'undefined' &&
+    typeof window !== "undefined" &&
+    typeof window.Capacitor !== "undefined" &&
     window.Capacitor.isNativePlatform();
 
   const capacitorPlatform =
-    isCapacitorNative && window.Capacitor ? window.Capacitor.getPlatform() : null;
+    isCapacitorNative && window.Capacitor
+      ? window.Capacitor.getPlatform()
+      : null;
 
-  const isAndroid = capacitorPlatform === 'android';
-  const isIOS = capacitorPlatform === 'ios';
+  const isAndroid = capacitorPlatform === "android";
+  const isIOS = capacitorPlatform === "ios";
   const isMobile = isAndroid || isIOS;
 
-  let type: PlatformType = 'web';
-  if (isElectron) type = 'electron';
-  else if (isAndroid) type = 'android';
-  else if (isIOS) type = 'ios';
+  let type: PlatformType = "web";
+  if (isElectron) type = "electron";
+  else if (isAndroid) type = "android";
+  else if (isIOS) type = "ios";
 
   return {
     type,
@@ -57,7 +63,9 @@ function detect(): PlatformInfo {
     isIOS,
     isMobile,
     isDesktop: isElectron,
-    electronOS: isElectron ? (window.electronAPI?.platform as string) ?? null : null,
+    electronOS: isElectron
+      ? ((window.electronAPI?.platform as string) ?? null)
+      : null,
   };
 }
 

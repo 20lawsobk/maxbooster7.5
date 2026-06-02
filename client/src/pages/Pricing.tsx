@@ -1,122 +1,136 @@
-import { useState } from 'react';
-import { Link } from 'wouter';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Logo } from '@/components/ui/Logo';
-import { Check, ArrowLeft, Sparkles, Shield, Clock, CheckCircle, Menu } from 'lucide-react';
-import { Separator } from '@/components/ui/separator';
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
+import { useState } from "react";
+import { Link } from "wouter";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Logo } from "@/components/ui/Logo";
+import {
+  Check,
+  ArrowLeft,
+  Sparkles,
+  Shield,
+  Clock,
+  CheckCircle,
+  Menu,
+} from "lucide-react";
+import { Separator } from "@/components/ui/separator";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 
 export default function Pricing() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const plans = [
     {
-      id: 'monthly',
-      name: 'Monthly',
+      id: "monthly",
+      name: "Monthly",
       price: 49,
-      period: 'month',
-      description: 'Perfect for getting started',
+      period: "month",
+      description: "Perfect for getting started",
       popular: false,
       features: [
-        'Professional AI Music Studio (DAW)',
-        'Autonomous Social Media Autopilot (24/7)',
-        'AI-Enhanced Organic Advertisement Autopilot',
-        'Beat Marketplace & Licensing',
-        'Professional Analytics Dashboard',
-        'Distribution to 150+ Platforms — Included',
-        'AI Mixing & Mastering',
-        'Royalty Tracking & Splits',
-        'Email Marketing System',
-        'Custom Storefront (yourname.maxbooster.app)',
-        'Unlimited Active Projects',
-        'Premium Content Library',
-        'Cloud Storage',
-        'No Hidden Fees or Feature Top-Ups',
+        "Professional AI Music Studio (DAW)",
+        "Autonomous Social Media Autopilot (24/7)",
+        "AI-Enhanced Organic Advertisement Autopilot",
+        "Beat Marketplace & Licensing",
+        "Professional Analytics Dashboard",
+        "Distribution to 150+ Platforms — Included",
+        "AI Mixing & Mastering",
+        "Royalty Tracking & Splits",
+        "Email Marketing System",
+        "Custom Storefront (yourname.maxbooster.app)",
+        "Unlimited Active Projects",
+        "Premium Content Library",
+        "Cloud Storage",
+        "No Hidden Fees or Feature Top-Ups",
       ],
     },
     {
-      id: 'yearly',
-      name: 'Yearly',
+      id: "yearly",
+      name: "Yearly",
       price: 39,
       originalPrice: 49,
-      period: 'month',
+      period: "month",
       billedAnnually: true,
-      description: 'Save $120/year with annual billing',
+      description: "Save $120/year with annual billing",
       popular: true,
       features: [
-        'Professional AI Music Studio (DAW)',
-        'Autonomous Social Media Autopilot (24/7)',
-        'AI-Enhanced Organic Advertisement Autopilot',
-        'Beat Marketplace & Licensing',
-        'Professional Analytics Dashboard',
-        'Distribution to 150+ Platforms — Included',
-        'AI Mixing & Mastering',
-        'Royalty Tracking & Splits',
-        'Email Marketing System',
-        'Custom Storefront (yourname.maxbooster.app)',
-        'Unlimited Active Projects',
-        'Premium Content Library',
-        'Cloud Storage',
-        'No Hidden Fees or Feature Top-Ups',
+        "Professional AI Music Studio (DAW)",
+        "Autonomous Social Media Autopilot (24/7)",
+        "AI-Enhanced Organic Advertisement Autopilot",
+        "Beat Marketplace & Licensing",
+        "Professional Analytics Dashboard",
+        "Distribution to 150+ Platforms — Included",
+        "AI Mixing & Mastering",
+        "Royalty Tracking & Splits",
+        "Email Marketing System",
+        "Custom Storefront (yourname.maxbooster.app)",
+        "Unlimited Active Projects",
+        "Premium Content Library",
+        "Cloud Storage",
+        "No Hidden Fees or Feature Top-Ups",
       ],
     },
     {
-      id: 'lifetime',
-      name: 'Lifetime',
+      id: "lifetime",
+      name: "Lifetime",
       price: 699,
-      period: 'once',
-      description: 'Pay once, access forever',
+      period: "once",
+      description: "Pay once, access forever",
       popular: false,
       features: [
-        'Professional AI Music Studio (DAW)',
-        'Autonomous Social Media Autopilot (24/7)',
-        'AI-Enhanced Organic Advertisement Autopilot',
-        'Beat Marketplace & Licensing',
-        'Professional Analytics Dashboard',
-        'Distribution to 150+ Platforms — Included',
-        'AI Mixing & Mastering',
-        'Royalty Tracking & Splits',
-        'Email Marketing System',
-        'Custom Storefront (yourname.maxbooster.app)',
-        'Unlimited Active Projects',
-        'Premium Content Library',
-        'Cloud Storage',
-        'No Hidden Fees or Feature Top-Ups',
+        "Professional AI Music Studio (DAW)",
+        "Autonomous Social Media Autopilot (24/7)",
+        "AI-Enhanced Organic Advertisement Autopilot",
+        "Beat Marketplace & Licensing",
+        "Professional Analytics Dashboard",
+        "Distribution to 150+ Platforms — Included",
+        "AI Mixing & Mastering",
+        "Royalty Tracking & Splits",
+        "Email Marketing System",
+        "Custom Storefront (yourname.maxbooster.app)",
+        "Unlimited Active Projects",
+        "Premium Content Library",
+        "Cloud Storage",
+        "No Hidden Fees or Feature Top-Ups",
       ],
     },
   ];
 
   const faqItems = [
     {
-      question: 'What payment methods do you accept?',
+      question: "What payment methods do you accept?",
       answer:
-        'Max Booster accepts all major credit cards (Visa, MasterCard, American Express) and PayPal through secure Stripe payment processing.',
+        "Max Booster accepts all major credit cards (Visa, MasterCard, American Express) and PayPal through secure Stripe payment processing.",
     },
     {
-      question: 'Can I change my plan later?',
+      question: "Can I change my plan later?",
       answer:
-        'Yes! You can upgrade or downgrade your plan at any time. Changes will be prorated and reflected in your next billing cycle.',
+        "Yes! You can upgrade or downgrade your plan at any time. Changes will be prorated and reflected in your next billing cycle.",
     },
     {
-      question: 'Do you offer a money-back guarantee?',
+      question: "Do you offer a money-back guarantee?",
       answer:
         "Absolutely! Max Booster offers a full 90-day 100% money-back guarantee. If you're not completely satisfied, you'll receive a full refund of your entire payment, no questions asked.",
     },
     {
-      question: 'What happens to my projects if I cancel?',
+      question: "What happens to my projects if I cancel?",
       answer:
-        'Your projects and data remain accessible for 30 days after cancellation. You can download all your content during this period.',
+        "Your projects and data remain accessible for 30 days after cancellation. You can download all your content during this period.",
     },
     {
-      question: 'Do you offer student discounts?',
+      question: "Do you offer student discounts?",
       answer:
-        'Yes! Students receive 50% off all plans with valid student verification through the partner program.',
+        "Yes! Students receive 50% off all plans with valid student verification through the partner program.",
     },
     {
-      question: 'Are there any hidden fees or feature top-ups?',
+      question: "Are there any hidden fees or feature top-ups?",
       answer:
-        'No. Your Max Booster subscription includes everything — distribution to 150+ platforms, the AI studio, social media autopilot, beat marketplace, analytics, custom storefront, and all future features. The only additional costs are standard Stripe payment processing fees (2.9% + $0.30) when you sell products through your storefront. You keep 100% of your revenue.',
+        "No. Your Max Booster subscription includes everything — distribution to 150+ platforms, the AI studio, social media autopilot, beat marketplace, analytics, custom storefront, and all future features. The only additional costs are standard Stripe payment processing fees (2.9% + $0.30) when you sell products through your storefront. You keep 100% of your revenue.",
     },
   ];
 
@@ -177,7 +191,10 @@ export default function Pricing() {
                     </Button>
                   </Link>
                   <Link href="/pricing">
-                    <Button className="w-full" onClick={() => setIsMobileMenuOpen(false)}>
+                    <Button
+                      className="w-full"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                    >
                       Get Started
                     </Button>
                   </Link>
@@ -199,8 +216,9 @@ export default function Pricing() {
                   90-Day Money Back Guarantee
                 </h2>
                 <p className="text-gray-600 dark:text-gray-300">
-                  Purchase Max Booster with confidence. If you're not completely satisfied within 90
-                  days, you'll receive a 100% refund of your payment—no questions asked.
+                  Purchase Max Booster with confidence. If you're not completely
+                  satisfied within 90 days, you'll receive a 100% refund of your
+                  payment—no questions asked.
                 </p>
               </div>
             </div>
@@ -217,8 +235,9 @@ export default function Pricing() {
             Simple, Transparent Pricing
           </h1>
           <p className="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto mb-8">
-            Replace $45,000+/year in tools and labor. Get professional AI studio, autonomous
-            autopilots for social media & advertising, marketplace, analytics, and distribution.
+            Replace $45,000+/year in tools and labor. Get professional AI
+            studio, autonomous autopilots for social media & advertising,
+            marketplace, analytics, and distribution.
           </p>
           <div className="flex items-center justify-center space-x-4 flex-wrap gap-2">
             <div className="flex items-center text-sm text-gray-600 dark:text-gray-300 font-medium">
@@ -245,8 +264,8 @@ export default function Pricing() {
               key={plan.id}
               className={`relative dark:bg-gray-900 dark:border-gray-700 ${
                 plan.popular
-                  ? 'border-primary shadow-2xl scale-105 z-10'
-                  : 'shadow-lg hover:shadow-xl'
+                  ? "border-primary shadow-2xl scale-105 z-10"
+                  : "shadow-lg hover:shadow-xl"
               } transition-all duration-300`}
             >
               {plan.popular && (
@@ -264,15 +283,23 @@ export default function Pricing() {
                   </Badge>
                 </div>
 
-                <CardTitle className="text-2xl font-bold text-gray-900 dark:text-white mb-2">{plan.name}</CardTitle>
+                <CardTitle className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+                  {plan.name}
+                </CardTitle>
                 <div className="mb-4">
                   <div className="flex items-baseline justify-center">
-                    <span className="text-5xl font-bold text-gray-900 dark:text-white">${plan.price}</span>
-                    <span className="text-gray-500 dark:text-gray-400 ml-2">/{plan.period}</span>
+                    <span className="text-5xl font-bold text-gray-900 dark:text-white">
+                      ${plan.price}
+                    </span>
+                    <span className="text-gray-500 dark:text-gray-400 ml-2">
+                      /{plan.period}
+                    </span>
                   </div>
                   {plan.originalPrice && (
                     <div className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                      <span className="line-through">${plan.originalPrice}/month</span>
+                      <span className="line-through">
+                        ${plan.originalPrice}/month
+                      </span>
                       <span className="text-green-600 dark:text-green-400 ml-2 font-medium">
                         Save ${(plan.originalPrice - plan.price) * 12}/year
                       </span>
@@ -284,7 +311,9 @@ export default function Pricing() {
                     </p>
                   )}
                 </div>
-                <p className="text-gray-600 dark:text-gray-400">{plan.description}</p>
+                <p className="text-gray-600 dark:text-gray-400">
+                  {plan.description}
+                </p>
               </CardHeader>
 
               <CardContent className="pt-0">
@@ -292,7 +321,9 @@ export default function Pricing() {
                   {plan.features.map((feature, idx) => (
                     <li key={idx} className="flex items-start space-x-3">
                       <Check className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
-                      <span className="text-gray-700 dark:text-gray-300">{feature}</span>
+                      <span className="text-gray-700 dark:text-gray-300">
+                        {feature}
+                      </span>
                     </li>
                   ))}
                 </ul>
@@ -301,21 +332,23 @@ export default function Pricing() {
                   <Button
                     className={`w-full py-3 ${
                       plan.popular
-                        ? 'bg-gradient-to-r from-primary to-purple-600 hover:from-primary/90 hover:to-purple-600/90'
-                        : ''
+                        ? "bg-gradient-to-r from-primary to-purple-600 hover:from-primary/90 hover:to-purple-600/90"
+                        : ""
                     }`}
-                    variant={plan.popular ? 'default' : 'outline'}
+                    variant={plan.popular ? "default" : "outline"}
                     size="lg"
                     data-testid={`button-select-${plan.id}`}
                   >
-                    {plan.period === 'once' ? 'Get Lifetime Access' : 'Get Started Now'}
+                    {plan.period === "once"
+                      ? "Get Lifetime Access"
+                      : "Get Started Now"}
                   </Button>
                 </Link>
 
                 <p className="text-center text-xs text-gray-500 dark:text-gray-400 mt-3">
-                  {plan.period === 'once'
-                    ? 'One-time payment, lifetime access • 90-day guarantee'
-                    : '90-day money-back guarantee • Cancel anytime'}
+                  {plan.period === "once"
+                    ? "One-time payment, lifetime access • 90-day guarantee"
+                    : "90-day money-back guarantee • Cancel anytime"}
                 </p>
               </CardContent>
             </Card>
@@ -324,134 +357,149 @@ export default function Pricing() {
 
         {/* Features Comparison */}
         <div className="mb-20">
-          <h2 className="text-3xl font-bold text-center text-gray-900 dark:text-white mb-12">Compare Plans</h2>
+          <h2 className="text-3xl font-bold text-center text-gray-900 dark:text-white mb-12">
+            Compare Plans
+          </h2>
 
           <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-lg overflow-hidden dark:border dark:border-gray-700">
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead className="bg-gray-50 dark:bg-gray-800">
                   <tr>
-                    <th className="text-left p-6 font-semibold text-gray-900 dark:text-white">Features</th>
-                    <th className="text-center p-6 font-semibold text-gray-900 dark:text-white">Monthly</th>
+                    <th className="text-left p-6 font-semibold text-gray-900 dark:text-white">
+                      Features
+                    </th>
+                    <th className="text-center p-6 font-semibold text-gray-900 dark:text-white">
+                      Monthly
+                    </th>
                     <th className="text-center p-6 font-semibold text-gray-900 dark:text-white bg-primary/5">
                       Yearly
                       <Badge className="ml-2 bg-primary text-xs">Popular</Badge>
                     </th>
-                    <th className="text-center p-6 font-semibold text-gray-900 dark:text-white">Lifetime</th>
+                    <th className="text-center p-6 font-semibold text-gray-900 dark:text-white">
+                      Lifetime
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
                   {[
                     {
-                      feature: 'AI Music Studio (DAW)',
+                      feature: "AI Music Studio (DAW)",
                       monthly: true,
                       yearly: true,
                       lifetime: true,
                     },
                     {
-                      feature: 'Social Media Autopilot (24/7)',
+                      feature: "Social Media Autopilot (24/7)",
                       monthly: true,
                       yearly: true,
                       lifetime: true,
                     },
                     {
-                      feature: 'Advertisement Autopilot (Zero Cost)',
+                      feature: "Advertisement Autopilot (Zero Cost)",
                       monthly: true,
                       yearly: true,
                       lifetime: true,
                     },
                     {
-                      feature: 'Beat Marketplace & Licensing',
+                      feature: "Beat Marketplace & Licensing",
                       monthly: true,
                       yearly: true,
                       lifetime: true,
                     },
                     {
-                      feature: 'Professional Analytics',
+                      feature: "Professional Analytics",
                       monthly: true,
                       yearly: true,
                       lifetime: true,
                     },
                     {
-                      feature: 'Distribution to 150+ Platforms',
+                      feature: "Distribution to 150+ Platforms",
                       monthly: true,
                       yearly: true,
                       lifetime: true,
                     },
                     {
-                      feature: 'AI Mixing & Mastering',
+                      feature: "AI Mixing & Mastering",
                       monthly: true,
                       yearly: true,
                       lifetime: true,
                     },
-                    { feature: 'Email Marketing', monthly: true, yearly: true, lifetime: true },
                     {
-                      feature: 'Custom Storefront URL',
-                      monthly: 'yourname.maxbooster.app',
-                      yearly: 'yourname.maxbooster.app',
-                      lifetime: 'yourname.maxbooster.app',
+                      feature: "Email Marketing",
+                      monthly: true,
+                      yearly: true,
+                      lifetime: true,
                     },
                     {
-                      feature: 'Active Projects',
-                      monthly: 'Unlimited',
-                      yearly: 'Unlimited',
-                      lifetime: 'Unlimited',
+                      feature: "Custom Storefront URL",
+                      monthly: "yourname.maxbooster.app",
+                      yearly: "yourname.maxbooster.app",
+                      lifetime: "yourname.maxbooster.app",
                     },
                     {
-                      feature: 'Cloud Storage',
-                      monthly: 'Included',
-                      yearly: 'Included',
-                      lifetime: 'Included',
+                      feature: "Active Projects",
+                      monthly: "Unlimited",
+                      yearly: "Unlimited",
+                      lifetime: "Unlimited",
                     },
                     {
-                      feature: 'Distribution & Platform Fees',
-                      monthly: '$0 — Included',
-                      yearly: '$0 — Included',
-                      lifetime: '$0 — Included',
+                      feature: "Cloud Storage",
+                      monthly: "Included",
+                      yearly: "Included",
+                      lifetime: "Included",
                     },
                     {
-                      feature: 'Feature Top-Ups Required',
-                      monthly: 'None',
-                      yearly: 'None',
-                      lifetime: 'None',
+                      feature: "Distribution & Platform Fees",
+                      monthly: "$0 — Included",
+                      yearly: "$0 — Included",
+                      lifetime: "$0 — Included",
                     },
                     {
-                      feature: 'Support Level',
-                      monthly: 'Email & Chat',
-                      yearly: 'Email & Chat',
-                      lifetime: 'Email & Chat',
+                      feature: "Feature Top-Ups Required",
+                      monthly: "None",
+                      yearly: "None",
+                      lifetime: "None",
+                    },
+                    {
+                      feature: "Support Level",
+                      monthly: "Email & Chat",
+                      yearly: "Email & Chat",
+                      lifetime: "Email & Chat",
                     },
                   ].map((row, index) => (
                     <tr key={index}>
-                      <td className="p-6 font-medium text-gray-900 dark:text-white">{row.feature}</td>
+                      <td className="p-6 font-medium text-gray-900 dark:text-white">
+                        {row.feature}
+                      </td>
                       <td className="p-6 text-center">
-                        {typeof row.monthly === 'boolean' ? (
+                        {typeof row.monthly === "boolean" ? (
                           row.monthly ? (
                             <Check className="h-5 w-5 text-green-500 mx-auto" />
                           ) : (
-                            '—'
+                            "—"
                           )
                         ) : (
                           row.monthly
                         )}
                       </td>
                       <td className="p-6 text-center bg-primary/5">
-                        {typeof row.yearly === 'boolean' ? (
+                        {typeof row.yearly === "boolean" ? (
                           row.yearly ? (
                             <Check className="h-5 w-5 text-green-500 mx-auto" />
                           ) : (
-                            '—'
+                            "—"
                           )
                         ) : (
                           row.yearly
                         )}
                       </td>
                       <td className="p-6 text-center">
-                        {typeof row.lifetime === 'boolean' ? (
+                        {typeof row.lifetime === "boolean" ? (
                           row.lifetime ? (
                             <Check className="h-5 w-5 text-green-500 mx-auto" />
                           ) : (
-                            '—'
+                            "—"
                           )
                         ) : (
                           row.lifetime
@@ -474,10 +522,17 @@ export default function Pricing() {
           <div className="max-w-3xl mx-auto">
             <div className="space-y-6">
               {faqItems.map((faq, index) => (
-                <Card key={index} className="dark:bg-gray-900 dark:border-gray-700">
+                <Card
+                  key={index}
+                  className="dark:bg-gray-900 dark:border-gray-700"
+                >
                   <CardContent className="p-6">
-                    <h3 className="font-semibold text-gray-900 dark:text-white mb-3">{faq.question}</h3>
-                    <p className="text-gray-600 dark:text-gray-400">{faq.answer}</p>
+                    <h3 className="font-semibold text-gray-900 dark:text-white mb-3">
+                      {faq.question}
+                    </h3>
+                    <p className="text-gray-600 dark:text-gray-400">
+                      {faq.answer}
+                    </p>
                   </CardContent>
                 </Card>
               ))}
@@ -487,9 +542,12 @@ export default function Pricing() {
 
         {/* CTA Section */}
         <div className="text-center mt-20 p-12 bg-gradient-to-r from-blue-600 to-cyan-600 rounded-2xl text-white">
-          <h2 className="text-3xl font-bold mb-4">Ready to Boost Your Music Career?</h2>
+          <h2 className="text-3xl font-bold mb-4">
+            Ready to Boost Your Music Career?
+          </h2>
           <p className="text-xl mb-8 opacity-90">
-            Join thousands of artists who are already using Max Booster to grow their careers.
+            Join thousands of artists who are already using Max Booster to grow
+            their careers.
           </p>
           <div className="flex justify-center">
             <Link href="/register/payment/yearly">

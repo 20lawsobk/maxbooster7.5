@@ -1,15 +1,15 @@
-import { randomBytes } from 'crypto';
+import { randomBytes } from "crypto";
 /**
  * Sharp-based Image Generation Service
  * Production-ready image generation using Sharp instead of Canvas
  * Supports all platform dimensions and promotional graphics
  */
 
-import sharp from 'sharp';
+import sharp from "sharp";
 
-import * as fs from 'fs/promises';
-import * as path from 'path';
-import { logger } from '../logger.js';
+import * as fs from "fs/promises";
+import * as path from "path";
+import { logger } from "../logger.js";
 
 export interface ImageDimensions {
   width: number;
@@ -19,7 +19,7 @@ export interface ImageDimensions {
 export interface ImageGenerationOptions {
   prompt: string;
   platform: string;
-  tone?: 'professional' | 'casual' | 'energetic' | 'creative' | 'promotional';
+  tone?: "professional" | "casual" | "energetic" | "creative" | "promotional";
   brandColors?: string[];
   overlayText?: string;
 }
@@ -32,28 +32,28 @@ interface GradientColors {
 
 // B-Lawz Music brand colors
 const BRAND_COLORS = {
-  primary: '#FFD700',      // Gold
-  secondary: '#9B59B6',    // Purple  
-  dark: '#1A1A2E',         // Dark background
-  accent: '#E94560',       // Red accent
-  white: '#FFFFFF',
-  black: '#0F0F1A',
+  primary: "#FFD700", // Gold
+  secondary: "#9B59B6", // Purple
+  dark: "#1A1A2E", // Dark background
+  accent: "#E94560", // Red accent
+  white: "#FFFFFF",
+  black: "#0F0F1A",
 };
 
 // Tone-based gradient colors
 const TONE_GRADIENTS: Record<string, GradientColors> = {
-  professional: { start: '#1A1A2E', end: '#16213E', accent: '#FFD700' },
-  casual: { start: '#2D1F4F', end: '#1A1A2E', accent: '#9B59B6' },
-  energetic: { start: '#E94560', end: '#FF6B6B', accent: '#FFD700' },
-  creative: { start: '#9B59B6', end: '#3498DB', accent: '#FFD700' },
-  promotional: { start: '#FFD700', end: '#E94560', accent: '#1A1A2E' },
+  professional: { start: "#1A1A2E", end: "#16213E", accent: "#FFD700" },
+  casual: { start: "#2D1F4F", end: "#1A1A2E", accent: "#9B59B6" },
+  energetic: { start: "#E94560", end: "#FF6B6B", accent: "#FFD700" },
+  creative: { start: "#9B59B6", end: "#3498DB", accent: "#FFD700" },
+  promotional: { start: "#FFD700", end: "#E94560", accent: "#1A1A2E" },
 };
 
 // Platform-specific dimensions
 const PLATFORM_DIMENSIONS: Record<string, ImageDimensions> = {
   twitter: { width: 1200, height: 675 },
   instagram: { width: 1080, height: 1080 },
-  'instagram-story': { width: 1080, height: 1920 },
+  "instagram-story": { width: 1080, height: 1920 },
   facebook: { width: 1200, height: 630 },
   linkedin: { width: 1200, height: 627 },
   youtube: { width: 1280, height: 720 },
@@ -65,14 +65,21 @@ class SharpImageService {
   private outputDir: string;
 
   constructor() {
-    this.outputDir = path.join(process.cwd(), 'public', 'generated-content', 'images');
+    this.outputDir = path.join(
+      process.cwd(),
+      "public",
+      "generated-content",
+      "images",
+    );
   }
 
   /**
    * Get platform-specific dimensions
    */
   getDimensions(platform: string): ImageDimensions {
-    return PLATFORM_DIMENSIONS[platform.toLowerCase()] || PLATFORM_DIMENSIONS.default;
+    return (
+      PLATFORM_DIMENSIONS[platform.toLowerCase()] || PLATFORM_DIMENSIONS.default
+    );
   }
 
   /**
@@ -81,7 +88,7 @@ class SharpImageService {
   private async createGradientBackground(
     width: number,
     height: number,
-    colors: GradientColors
+    colors: GradientColors,
   ): Promise<Buffer> {
     // Create SVG gradient
     const svg = `
@@ -105,11 +112,11 @@ class SharpImageService {
   private async createDecorativeOverlay(
     width: number,
     height: number,
-    tone: string
+    tone: string,
   ): Promise<Buffer> {
     const colors = TONE_GRADIENTS[tone] || TONE_GRADIENTS.creative;
     const accentColor = colors.accent || BRAND_COLORS.primary;
-    
+
     // Create decorative shapes with SVG
     const svg = `
       <svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg">
@@ -149,23 +156,25 @@ class SharpImageService {
     width: number,
     height: number,
     text: string,
-    platform: string
+    platform: string,
   ): Promise<Buffer> {
     // Calculate font size based on dimensions and text length
-    const maxCharsPerLine = platform === 'instagram' || platform === 'tiktok' ? 20 : 35;
+    const maxCharsPerLine =
+      platform === "instagram" || platform === "tiktok" ? 20 : 35;
     const lines = this.wrapText(text, maxCharsPerLine);
     const fontSize = Math.min(
       Math.floor(width / 15),
-      Math.floor(height / (lines.length * 2 + 2))
+      Math.floor(height / (lines.length * 2 + 2)),
     );
     const lineHeight = fontSize * 1.4;
     const totalTextHeight = lines.length * lineHeight;
     const startY = (height - totalTextHeight) / 2 + fontSize;
 
     // Create text SVG
-    const textElements = lines.map((line, i) => {
-      const y = startY + i * lineHeight;
-      return `
+    const textElements = lines
+      .map((line, i) => {
+        const y = startY + i * lineHeight;
+        return `
         <text x="50%" y="${y}" 
               text-anchor="middle" 
               font-family="Arial, Helvetica, sans-serif" 
@@ -175,7 +184,8 @@ class SharpImageService {
           <tspan filter="drop-shadow(2px 2px 4px rgba(0,0,0,0.5))">${this.escapeXml(line)}</tspan>
         </text>
       `;
-    }).join('');
+      })
+      .join("");
 
     const svg = `
       <svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg">
@@ -191,9 +201,9 @@ class SharpImageService {
    */
   private async createBrandingOverlay(
     width: number,
-    height: number
+    height: number,
   ): Promise<Buffer> {
-    const brandText = 'B-Lawz Music';
+    const brandText = "B-Lawz Music";
     const fontSize = Math.floor(width / 30);
     const padding = fontSize;
 
@@ -226,13 +236,13 @@ class SharpImageService {
    * Word wrap text into lines
    */
   private wrapText(text: string, maxCharsPerLine: number): string[] {
-    const words = text.split(' ');
+    const words = text.split(" ");
     const lines: string[] = [];
-    let currentLine = '';
+    let currentLine = "";
 
     for (const word of words) {
-      if ((currentLine + ' ' + word).trim().length <= maxCharsPerLine) {
-        currentLine = (currentLine + ' ' + word).trim();
+      if ((currentLine + " " + word).trim().length <= maxCharsPerLine) {
+        currentLine = (currentLine + " " + word).trim();
       } else {
         if (currentLine) lines.push(currentLine);
         currentLine = word;
@@ -249,11 +259,11 @@ class SharpImageService {
    */
   private escapeXml(text: string): string {
     return text
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;')
-      .replace(/'/g, '&apos;');
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&apos;");
   }
 
   /**
@@ -265,10 +275,10 @@ class SharpImageService {
     filename: string;
     publicUrl: string;
   }> {
-    const { prompt, platform, tone = 'creative' } = options;
+    const { prompt, platform, tone = "creative" } = options;
     const dimensions = this.getDimensions(platform);
     const { width, height } = dimensions;
-    const filename = `${randomBytes(8).toString('hex')}.png`;
+    const filename = `${randomBytes(8).toString("hex")}.png`;
     const outputPath = path.join(this.outputDir, filename);
     const publicUrl = `/generated-content/images/${filename}`;
 
@@ -279,12 +289,13 @@ class SharpImageService {
       const colors = TONE_GRADIENTS[tone] || TONE_GRADIENTS.creative;
 
       // Create layers
-      const [gradientBuffer, decorativeBuffer, textBuffer, brandingBuffer] = await Promise.all([
-        this.createGradientBackground(width, height, colors),
-        this.createDecorativeOverlay(width, height, tone),
-        this.createTextOverlay(width, height, prompt, platform),
-        this.createBrandingOverlay(width, height),
-      ]);
+      const [gradientBuffer, decorativeBuffer, textBuffer, brandingBuffer] =
+        await Promise.all([
+          this.createGradientBackground(width, height, colors),
+          this.createDecorativeOverlay(width, height, tone),
+          this.createTextOverlay(width, height, prompt, platform),
+          this.createBrandingOverlay(width, height),
+        ]);
 
       // Compose the final image using Sharp
       const finalImage = await sharp({
@@ -296,10 +307,22 @@ class SharpImageService {
         },
       })
         .composite([
-          { input: await sharp(gradientBuffer).png().toBuffer(), top: 0, left: 0 },
-          { input: await sharp(decorativeBuffer).png().toBuffer(), top: 0, left: 0 },
+          {
+            input: await sharp(gradientBuffer).png().toBuffer(),
+            top: 0,
+            left: 0,
+          },
+          {
+            input: await sharp(decorativeBuffer).png().toBuffer(),
+            top: 0,
+            left: 0,
+          },
           { input: await sharp(textBuffer).png().toBuffer(), top: 0, left: 0 },
-          { input: await sharp(brandingBuffer).png().toBuffer(), top: 0, left: 0 },
+          {
+            input: await sharp(brandingBuffer).png().toBuffer(),
+            top: 0,
+            left: 0,
+          },
         ])
         .png({ quality: 90 })
         .toBuffer();
@@ -309,7 +332,9 @@ class SharpImageService {
 
       // Verify file was created
       const stats = await fs.stat(outputPath);
-      logger.info(`✅ Sharp generated image: ${publicUrl} (${width}x${height}, ${stats.size} bytes)`);
+      logger.info(
+        `✅ Sharp generated image: ${publicUrl} (${width}x${height}, ${stats.size} bytes)`,
+      );
 
       return {
         buffer: finalImage,
@@ -329,10 +354,10 @@ class SharpImageService {
   async generateSimpleImage(
     width: number,
     height: number,
-    backgroundColor: string = BRAND_COLORS.dark
+    backgroundColor: string = BRAND_COLORS.dark,
   ): Promise<Buffer> {
     // Convert hex to RGB
-    const hex = backgroundColor.replace('#', '');
+    const hex = backgroundColor.replace("#", "");
     const r = parseInt(hex.substring(0, 2), 16);
     const g = parseInt(hex.substring(2, 4), 16);
     const b = parseInt(hex.substring(4, 6), 16);
@@ -359,11 +384,11 @@ class SharpImageService {
   }> {
     // Use the same image generation but with play button overlay
     const result = await this.generateImage(options);
-    
+
     // Add play button overlay
     const playButton = await this.createPlayButtonOverlay(
       result.dimensions.width,
-      result.dimensions.height
+      result.dimensions.height,
     );
 
     const thumbnailBuffer = await sharp(result.buffer)
@@ -373,7 +398,7 @@ class SharpImageService {
       .png()
       .toBuffer();
 
-    const thumbnailFilename = result.filename.replace('.png', '-thumb.png');
+    const thumbnailFilename = result.filename.replace(".png", "-thumb.png");
     const thumbnailPath = path.join(this.outputDir, thumbnailFilename);
     await fs.writeFile(thumbnailPath, thumbnailBuffer);
 
@@ -387,7 +412,10 @@ class SharpImageService {
   /**
    * Create play button overlay for video thumbnails
    */
-  private async createPlayButtonOverlay(width: number, height: number): Promise<Buffer> {
+  private async createPlayButtonOverlay(
+    width: number,
+    height: number,
+  ): Promise<Buffer> {
     const buttonRadius = Math.min(width, height) * 0.1;
     const cx = width / 2;
     const cy = height / 2;
@@ -417,4 +445,6 @@ class SharpImageService {
 export const sharpImageService = new SharpImageService();
 
 // Log initialization
-logger.info('✅ Sharp Image Service initialized - production-ready image generation available');
+logger.info(
+  "✅ Sharp Image Service initialized - production-ready image generation available",
+);

@@ -1,11 +1,26 @@
-import { logger } from '@/lib/logger';
-import { useEffect, useState, useCallback, ReactNode } from 'react';
-import { initOfflineSystem, syncManager, offlineQueue, offlineCache, SyncStatus, SyncProgress } from '@/lib/offline';
-import { toast } from '@/hooks/use-toast';
-import { OfflineContext, OfflineContextValue } from '@/contexts/OfflineContext';
+import { logger } from "@/lib/logger";
+import { useEffect, useState, useCallback, ReactNode } from "react";
+import {
+  initOfflineSystem,
+  syncManager,
+  offlineQueue,
+  offlineCache,
+  SyncStatus,
+  SyncProgress,
+} from "@/lib/offline";
+import { toast } from "@/hooks/use-toast";
+import { OfflineContext, OfflineContextValue } from "@/contexts/OfflineContext";
 
-export type { OfflineContextValue } from '@/contexts/OfflineContext';
-export { useOfflineContext, useOffline, useIsOnline, useIsOffline, useSyncStatus, usePendingChanges, useConnectionQuality } from '@/contexts/OfflineContext';
+export type { OfflineContextValue } from "@/contexts/OfflineContext";
+export {
+  useOfflineContext,
+  useOffline,
+  useIsOnline,
+  useIsOffline,
+  useSyncStatus,
+  usePendingChanges,
+  useConnectionQuality,
+} from "@/contexts/OfflineContext";
 
 interface OfflineProviderProps {
   children: ReactNode;
@@ -13,15 +28,19 @@ interface OfflineProviderProps {
   autoSync?: boolean;
 }
 
-export function OfflineProvider({ children, showToasts = true, autoSync = true }: OfflineProviderProps) {
+export function OfflineProvider({
+  children,
+  showToasts = true,
+  autoSync = true,
+}: OfflineProviderProps) {
   const [isInitialized, setIsInitialized] = useState(false);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [isReconnecting, setIsReconnecting] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
-  const [connectionQuality, setConnectionQuality] = useState<'excellent' | 'good' | 'slow' | 'offline'>(
-    navigator.onLine ? 'good' : 'offline'
-  );
-  const [syncStatus, setSyncStatus] = useState<SyncStatus>('idle');
+  const [connectionQuality, setConnectionQuality] = useState<
+    "excellent" | "good" | "slow" | "offline"
+  >(navigator.onLine ? "good" : "offline");
+  const [syncStatus, setSyncStatus] = useState<SyncStatus>("idle");
   const [syncProgress, setSyncProgress] = useState<SyncProgress>({
     total: 0,
     completed: 0,
@@ -42,7 +61,10 @@ export function OfflineProvider({ children, showToasts = true, autoSync = true }
         setIsInitialized(true);
         await loadStats();
       } catch (error) {
-        logger.info('[OfflineProvider] Offline features unavailable (IndexedDB not accessible in this environment):', error);
+        logger.info(
+          "[OfflineProvider] Offline features unavailable (IndexedDB not accessible in this environment):",
+          error,
+        );
       }
     };
     init();
@@ -55,7 +77,7 @@ export function OfflineProvider({ children, showToasts = true, autoSync = true }
       setFailedActions(stats.failed);
       setConflictCount(stats.conflict);
     } catch (error) {
-      logger.info('[OfflineProvider] Failed to load offline stats:', error);
+      logger.info("[OfflineProvider] Failed to load offline stats:", error);
     }
   }, []);
 
@@ -65,12 +87,12 @@ export function OfflineProvider({ children, showToasts = true, autoSync = true }
     const handleOnline = async () => {
       setIsOnline(true);
       setIsReconnecting(true);
-      setConnectionQuality('good');
+      setConnectionQuality("good");
 
       if (showToasts) {
         toast({
           title: "You're back online",
-          description: 'Syncing your changes...',
+          description: "Syncing your changes...",
         });
       }
 
@@ -83,78 +105,79 @@ export function OfflineProvider({ children, showToasts = true, autoSync = true }
 
     const handleOffline = () => {
       setIsOnline(false);
-      setConnectionQuality('offline');
+      setConnectionQuality("offline");
 
       if (showToasts) {
         toast({
           title: "You're offline",
-          description: 'Your changes will be saved locally and synced when you reconnect.',
-          variant: 'warning',
+          description:
+            "Your changes will be saved locally and synced when you reconnect.",
+          variant: "warning",
         });
       }
     };
 
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
 
     const connection = (navigator as Record<string, unknown>).connection;
     if (connection) {
       const handleConnectionChange = () => {
         const effectiveType = connection.effectiveType;
-        if (effectiveType === '4g') {
-          setConnectionQuality('excellent');
-        } else if (effectiveType === '3g') {
-          setConnectionQuality('good');
+        if (effectiveType === "4g") {
+          setConnectionQuality("excellent");
+        } else if (effectiveType === "3g") {
+          setConnectionQuality("good");
         } else {
-          setConnectionQuality('slow');
+          setConnectionQuality("slow");
         }
       };
-      connection.addEventListener('change', handleConnectionChange);
+      connection.addEventListener("change", handleConnectionChange);
       handleConnectionChange();
     }
 
-    const unsubStatusChange = syncManager.on('status-change', (event) => {
+    const unsubStatusChange = syncManager.on("status-change", (event) => {
       if (event.status) {
         setSyncStatus(event.status);
-        setIsSyncing(event.status === 'syncing');
+        setIsSyncing(event.status === "syncing");
       }
     });
 
-    const unsubProgress = syncManager.on('progress-update', (event) => {
+    const unsubProgress = syncManager.on("progress-update", (event) => {
       if (event.progress) {
         setSyncProgress(event.progress);
       }
     });
 
-    const unsubComplete = syncManager.on('sync-complete', () => {
+    const unsubComplete = syncManager.on("sync-complete", () => {
       setLastSyncAt(Date.now());
       loadStats();
       if (showToasts) {
         toast({
-          title: 'Sync complete',
-          description: 'All your changes have been saved.',
+          title: "Sync complete",
+          description: "All your changes have been saved.",
         });
       }
     });
 
-    const unsubError = syncManager.on('sync-error', (event) => {
+    const unsubError = syncManager.on("sync-error", (event) => {
       loadStats();
       if (showToasts && event.error) {
         toast({
-          title: 'Sync failed',
+          title: "Sync failed",
           description: event.error.message,
-          variant: 'destructive',
+          variant: "destructive",
         });
       }
     });
 
-    const unsubQueueChange = offlineQueue.on('action-added', loadStats);
-    const unsubQueueRemove = offlineQueue.on('action-removed', loadStats);
-    const unsubQueueUpdate = offlineQueue.on('action-updated', loadStats);
+    const unsubQueueChange = offlineQueue.on("action-added", loadStats);
+    const unsubQueueRemove = offlineQueue.on("action-removed", loadStats);
+    const unsubQueueUpdate = offlineQueue.on("action-updated", loadStats);
 
     return () => {
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
       unsubStatusChange();
       unsubProgress();
       unsubComplete();
@@ -186,13 +209,28 @@ export function OfflineProvider({ children, showToasts = true, autoSync = true }
     await loadStats();
   }, [loadStats]);
 
-  const cacheData = useCallback(async <T,>(key: string, data: T, category: 'analytics' | 'dashboard' | 'ui' | 'user' | 'general' = 'general') => {
-    await offlineCache.set(key, data, { category });
-  }, []);
+  const cacheData = useCallback(
+    async <T,>(
+      key: string,
+      data: T,
+      category:
+        | "analytics"
+        | "dashboard"
+        | "ui"
+        | "user"
+        | "general" = "general",
+    ) => {
+      await offlineCache.set(key, data, { category });
+    },
+    [],
+  );
 
-  const getCachedData = useCallback(async <T,>(key: string): Promise<T | null> => {
-    return offlineCache.get<T>(key);
-  }, []);
+  const getCachedData = useCallback(
+    async <T,>(key: string): Promise<T | null> => {
+      return offlineCache.get<T>(key);
+    },
+    [],
+  );
 
   const value: OfflineContextValue = {
     isOnline,
@@ -217,9 +255,7 @@ export function OfflineProvider({ children, showToasts = true, autoSync = true }
   };
 
   return (
-    <OfflineContext.Provider value={value}>
-      {children}
-    </OfflineContext.Provider>
+    <OfflineContext.Provider value={value}>{children}</OfflineContext.Provider>
   );
 }
 

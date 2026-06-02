@@ -1,6 +1,11 @@
-import { useCallback, useRef } from 'react';
-import { useUndo } from '@/contexts/UndoContext';
-import { ActionType, ActionCategory, ActionMetadata, UndoableAction } from '@/lib/undo/types';
+import { useCallback, useRef } from "react";
+import { useUndo } from "@/contexts/UndoContext";
+import {
+  ActionType,
+  ActionCategory,
+  ActionMetadata,
+  UndoableAction,
+} from "@/lib/undo/types";
 
 export interface RecoverableOptions<T> {
   type: ActionType;
@@ -22,7 +27,7 @@ export interface RecoverableResult<T, R = void> {
     data: T,
     executeFn: (data: T) => Promise<R>,
     undoFn: (data: T, result: R) => Promise<void>,
-    redoFn?: (data: T) => Promise<R>
+    redoFn?: (data: T) => Promise<R>,
   ) => Promise<R>;
   lastData: T | null;
   lastResult: R | null;
@@ -30,7 +35,7 @@ export interface RecoverableResult<T, R = void> {
 }
 
 export function useRecoverable<T, R = void>(
-  options: RecoverableOptions<T>
+  options: RecoverableOptions<T>,
 ): RecoverableResult<T, R> {
   const { executeAction } = useUndo();
   const lastDataRef = useRef<T | null>(null);
@@ -41,10 +46,10 @@ export function useRecoverable<T, R = void>(
       data: T,
       executeFn: (data: T) => Promise<R>,
       undoFn: (data: T, result: R) => Promise<void>,
-      redoFn?: (data: T) => Promise<R>
+      redoFn?: (data: T) => Promise<R>,
     ): Promise<R> => {
       const description =
-        typeof options.description === 'function'
+        typeof options.description === "function"
           ? options.description(data)
           : options.description || `${options.type} action`;
 
@@ -52,7 +57,7 @@ export function useRecoverable<T, R = void>(
         timestamp: Date.now(),
         module: options.module,
         description,
-        category: options.category || 'other',
+        category: options.category || "other",
         entityType: options.entityType,
         isDestructive: options.isDestructive ?? false,
         requiresConfirmation: options.requiresConfirmation ?? false,
@@ -61,7 +66,7 @@ export function useRecoverable<T, R = void>(
 
       let result: R;
 
-      const action: Omit<UndoableAction<R>, 'id' | 'isUndone' | 'result'> = {
+      const action: Omit<UndoableAction<R>, "id" | "isUndone" | "result"> = {
         type: options.type,
         metadata,
         execute: async () => {
@@ -88,7 +93,7 @@ export function useRecoverable<T, R = void>(
 
       return executeAction(action);
     },
-    [executeAction, options]
+    [executeAction, options],
   );
 
   const execute = useCallback(
@@ -96,10 +101,10 @@ export function useRecoverable<T, R = void>(
       return executeWithRecovery(
         data,
         async () => undefined as R,
-        async () => {}
+        async () => {},
       );
     },
-    [executeWithRecovery]
+    [executeWithRecovery],
   );
 
   return {
@@ -115,7 +120,7 @@ export function useRecoverableDelete<T extends { id: string }>(
   module: string,
   entityType: string,
   deleteFn: (item: T) => Promise<void>,
-  restoreFn: (item: T) => Promise<void>
+  restoreFn: (item: T) => Promise<void>,
 ) {
   const { executeAction } = useUndo();
 
@@ -125,7 +130,7 @@ export function useRecoverableDelete<T extends { id: string }>(
         timestamp: Date.now(),
         module,
         description: description || `Delete ${entityType}`,
-        category: 'CRUD',
+        category: "CRUD",
         entityId: item.id,
         entityType,
         isDestructive: true,
@@ -133,8 +138,8 @@ export function useRecoverableDelete<T extends { id: string }>(
         previousState: item,
       };
 
-      const action: Omit<UndoableAction<void>, 'id' | 'isUndone' | 'result'> = {
-        type: 'delete',
+      const action: Omit<UndoableAction<void>, "id" | "isUndone" | "result"> = {
+        type: "delete",
         metadata,
         execute: async () => {
           await deleteFn(item);
@@ -151,7 +156,7 @@ export function useRecoverableDelete<T extends { id: string }>(
 
       return executeAction(action);
     },
-    [executeAction, module, entityType, deleteFn, restoreFn]
+    [executeAction, module, entityType, deleteFn, restoreFn],
   );
 }
 
@@ -159,7 +164,7 @@ export function useRecoverableUpdate<T extends { id: string }>(
   module: string,
   entityType: string,
   updateFn: (id: string, newData: Partial<T>) => Promise<T>,
-  revertFn: (id: string, previousData: T) => Promise<void>
+  revertFn: (id: string, previousData: T) => Promise<void>,
 ) {
   const { executeAction } = useUndo();
 
@@ -168,13 +173,13 @@ export function useRecoverableUpdate<T extends { id: string }>(
       id: string,
       newData: Partial<T>,
       previousData: T,
-      description?: string
+      description?: string,
     ): Promise<T> => {
       const metadata: ActionMetadata = {
         timestamp: Date.now(),
         module,
         description: description || `Update ${entityType}`,
-        category: 'CRUD',
+        category: "CRUD",
         entityId: id,
         entityType,
         previousState: previousData,
@@ -183,8 +188,8 @@ export function useRecoverableUpdate<T extends { id: string }>(
 
       let result: T;
 
-      const action: Omit<UndoableAction<T>, 'id' | 'isUndone' | 'result'> = {
-        type: 'update',
+      const action: Omit<UndoableAction<T>, "id" | "isUndone" | "result"> = {
+        type: "update",
         metadata,
         execute: async () => {
           result = await updateFn(id, newData);
@@ -203,33 +208,33 @@ export function useRecoverableUpdate<T extends { id: string }>(
 
       return executeAction(action);
     },
-    [executeAction, module, entityType, updateFn, revertFn]
+    [executeAction, module, entityType, updateFn, revertFn],
   );
 }
 
 export function useRecoverableCreate<T extends { id: string }>(
   module: string,
   entityType: string,
-  createFn: (data: Omit<T, 'id'>) => Promise<T>,
-  deleteFn: (id: string) => Promise<void>
+  createFn: (data: Omit<T, "id">) => Promise<T>,
+  deleteFn: (id: string) => Promise<void>,
 ) {
   const { executeAction } = useUndo();
 
   return useCallback(
-    async (data: Omit<T, 'id'>, description?: string): Promise<T> => {
+    async (data: Omit<T, "id">, description?: string): Promise<T> => {
       let createdItem: T;
 
       const metadata: ActionMetadata = {
         timestamp: Date.now(),
         module,
         description: description || `Create ${entityType}`,
-        category: 'CRUD',
+        category: "CRUD",
         entityType,
         newState: data,
       };
 
-      const action: Omit<UndoableAction<T>, 'id' | 'isUndone' | 'result'> = {
-        type: 'create',
+      const action: Omit<UndoableAction<T>, "id" | "isUndone" | "result"> = {
+        type: "create",
         metadata,
         execute: async () => {
           createdItem = await createFn(data);
@@ -250,14 +255,14 @@ export function useRecoverableCreate<T extends { id: string }>(
 
       return executeAction(action);
     },
-    [executeAction, module, entityType, createFn, deleteFn]
+    [executeAction, module, entityType, createFn, deleteFn],
   );
 }
 
 export function useRecoverableSettingsChange<T extends Record<string, unknown>>(
   module: string,
   updateSettingsFn: (settings: Partial<T>) => Promise<T>,
-  revertSettingsFn: (previousSettings: T) => Promise<void>
+  revertSettingsFn: (previousSettings: T) => Promise<void>,
 ) {
   const { executeAction } = useUndo();
 
@@ -265,19 +270,19 @@ export function useRecoverableSettingsChange<T extends Record<string, unknown>>(
     async (
       newSettings: Partial<T>,
       previousSettings: T,
-      description?: string
+      description?: string,
     ): Promise<T> => {
       const metadata: ActionMetadata = {
         timestamp: Date.now(),
         module,
-        description: description || 'Settings changed',
-        category: 'settings',
+        description: description || "Settings changed",
+        category: "settings",
         previousState: previousSettings,
         newState: newSettings,
       };
 
-      const action: Omit<UndoableAction<T>, 'id' | 'isUndone' | 'result'> = {
-        type: 'settings_change',
+      const action: Omit<UndoableAction<T>, "id" | "isUndone" | "result"> = {
+        type: "settings_change",
         metadata,
         execute: async () => updateSettingsFn(newSettings),
         undo: async () => revertSettingsFn(previousSettings),
@@ -288,7 +293,7 @@ export function useRecoverableSettingsChange<T extends Record<string, unknown>>(
 
       return executeAction(action);
     },
-    [executeAction, module, updateSettingsFn, revertSettingsFn]
+    [executeAction, module, updateSettingsFn, revertSettingsFn],
   );
 }
 
@@ -299,28 +304,25 @@ export function useRecoverableBatch(module: string) {
     (name: string): string => {
       return startGroup(name);
     },
-    [startGroup]
+    [startGroup],
   );
 
   const endBatch = useCallback(
     (batchId: string): void => {
       endGroup(batchId);
     },
-    [endGroup]
+    [endGroup],
   );
 
   const undoBatch = useCallback(
     async (batchId: string): Promise<void> => {
       await undoGroup(batchId);
     },
-    [undoGroup]
+    [undoGroup],
   );
 
   const executeBatch = useCallback(
-    async <T>(
-      name: string,
-      operations: (() => Promise<T>)[]
-    ): Promise<T[]> => {
+    async <T>(name: string, operations: (() => Promise<T>)[]): Promise<T[]> => {
       const batchId = startBatch(name);
       try {
         const results: T[] = [];
@@ -333,7 +335,7 @@ export function useRecoverableBatch(module: string) {
         endBatch(batchId);
       }
     },
-    [startBatch, endBatch]
+    [startBatch, endBatch],
   );
 
   return {

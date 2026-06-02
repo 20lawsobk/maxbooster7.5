@@ -1,8 +1,8 @@
-import { db } from '../db';
-import { sessions, users, passwordResetTokens } from '@shared/schema';
-import { gte, sql, count, desc, eq, and } from 'drizzle-orm';
-import { env } from '../config/env.js';
-import { isProductionEnv } from '../lib/envHelpers.js';
+import { db } from "../db";
+import { sessions, users, passwordResetTokens } from "@shared/schema";
+import { gte, sql, count, desc, eq, and } from "drizzle-orm";
+import { env } from "../config/env.js";
+import { isProductionEnv } from "../lib/envHelpers.js";
 
 // Track metrics in memory (for production, use Redis or dedicated monitoring)
 let requestCounter = 0;
@@ -51,13 +51,15 @@ export async function getSecurityMetrics() {
 
   const failedLogins = failedLoginsResult?.count || 0;
 
-  const successRate = totalLogins > 0 ? ((totalLogins - failedLogins) / totalLogins) * 100 : 100;
+  const successRate =
+    totalLogins > 0 ? ((totalLogins - failedLogins) / totalLogins) * 100 : 100;
 
   // Calculate real metrics from tracked data
   const minutesSinceReset = (Date.now() - lastMetricsReset) / 60000;
   const requestsPerMinute =
     minutesSinceReset > 0 ? Math.round(requestCounter / minutesSinceReset) : 0;
-  const errorRate = requestCounter > 0 ? (errorCounter / requestCounter) * 100 : 0;
+  const errorRate =
+    requestCounter > 0 ? (errorCounter / requestCounter) * 100 : 0;
 
   // Reset counters every hour to prevent overflow
   if (minutesSinceReset >= 60) {
@@ -66,7 +68,8 @@ export async function getSecurityMetrics() {
     lastMetricsReset = Date.now();
   }
 
-  const status = errorRate > 10 ? 'critical' : errorRate > 5 ? 'degraded' : 'healthy';
+  const status =
+    errorRate > 10 ? "critical" : errorRate > 5 ? "degraded" : "healthy";
 
   // Count suspicious activity (multiple sessions from same user)
   const [suspiciousActivityResult] = await db
@@ -75,7 +78,10 @@ export async function getSecurityMetrics() {
     .where(gte(sessions.createdAt, oneHourAgo))
     .limit(1);
 
-  const suspiciousActivity = Math.max(0, (suspiciousActivityResult?.count || 0) - activeSessions);
+  const suspiciousActivity = Math.max(
+    0,
+    (suspiciousActivityResult?.count || 0) - activeSessions,
+  );
 
   return {
     systemHealth: {
@@ -124,9 +130,9 @@ export async function getBehavioralAlerts() {
       alerts.push({
         id: `alert-${suspiciousUser.userId}-${Date.now()}`,
         userId: suspiciousUser.userId,
-        username: user.username || user.email || 'Unknown',
-        type: 'unusual_activity' as const,
-        severity: 'medium' as const,
+        username: user.username || user.email || "Unknown",
+        type: "unusual_activity" as const,
+        severity: "medium" as const,
         timestamp: new Date().toISOString(),
         description: `User has created ${suspiciousUser.sessionCount} sessions in the last hour`,
         resolved: false,
@@ -156,9 +162,9 @@ export async function getBehavioralAlerts() {
       alerts.push({
         id: `alert-reset-${user.id}-${Date.now()}`,
         userId: user.id,
-        username: user.username || user.email || 'Unknown',
-        type: 'multiple_failed_logins' as const,
-        severity: 'high' as const,
+        username: user.username || user.email || "Unknown",
+        type: "multiple_failed_logins" as const,
+        severity: "high" as const,
         timestamp: new Date().toISOString(),
         description: `${resetAttempt.tokenCount} password reset requests in the last 24 hours`,
         resolved: false,
@@ -184,24 +190,31 @@ export async function detectSecurityAnomalies() {
   const [previousSessionsResult] = await db
     .select({ count: count() })
     .from(sessions)
-    .where(and(gte(sessions.createdAt, twoDaysAgo), sql`${sessions.createdAt} < ${yesterday}`))
+    .where(
+      and(
+        gte(sessions.createdAt, twoDaysAgo),
+        sql`${sessions.createdAt} < ${yesterday}`,
+      ),
+    )
     .limit(1);
 
   const recentSessions = recentSessionsResult?.count || 0;
   const previousSessions = previousSessionsResult?.count || 0;
 
   if (previousSessions > 0) {
-    const percentageChange = ((recentSessions - previousSessions) / previousSessions) * 100;
+    const percentageChange =
+      ((recentSessions - previousSessions) / previousSessions) * 100;
 
     if (Math.abs(percentageChange) > 200) {
       anomalies.push({
-        type: 'traffic_spike' as const,
+        type: "traffic_spike" as const,
         timestamp: new Date().toISOString(),
-        metric: 'session_creation_rate',
+        metric: "session_creation_rate",
         expectedValue: previousSessions,
         actualValue: recentSessions,
-        severity: percentageChange > 0 ? ('high' as const) : ('medium' as const),
-        description: `Session creation ${percentageChange > 0 ? 'increased' : 'decreased'} by ${Math.abs(percentageChange).toFixed(1)}% in the last 24 hours`,
+        severity:
+          percentageChange > 0 ? ("high" as const) : ("medium" as const),
+        description: `Session creation ${percentageChange > 0 ? "increased" : "decreased"} by ${Math.abs(percentageChange).toFixed(1)}% in the last 24 hours`,
       });
     }
   }
@@ -216,12 +229,12 @@ export async function detectSecurityAnomalies() {
 
   if (passwordResets > 10) {
     anomalies.push({
-      type: 'auth_pattern' as const,
+      type: "auth_pattern" as const,
       timestamp: new Date().toISOString(),
-      metric: 'password_reset_requests',
+      metric: "password_reset_requests",
       expectedValue: 0,
       actualValue: passwordResets,
-      severity: passwordResets > 50 ? ('high' as const) : ('medium' as const),
+      severity: passwordResets > 50 ? ("high" as const) : ("medium" as const),
       description: `${passwordResets} password reset requests in the last 24 hours`,
     });
   }
@@ -238,55 +251,62 @@ export async function getPentestResults() {
 
   if (!hasHttps && isProductionEnv()) {
     vulnerabilities.push({
-      id: 'vuln-https-001',
-      severity: 'high' as const,
-      category: 'Transport Security',
-      description: 'Application not using HTTPS in production',
-      status: 'open' as const,
+      id: "vuln-https-001",
+      severity: "high" as const,
+      category: "Transport Security",
+      description: "Application not using HTTPS in production",
+      status: "open" as const,
       detectedDate: new Date().toISOString(),
     });
-    recommendations.push('Enable HTTPS/TLS for all production traffic');
+    recommendations.push("Enable HTTPS/TLS for all production traffic");
   }
 
   if (
     !env.SESSION_SECRET ||
-    env.SESSION_SECRET === 'fallback-secret-change-in-production'
+    env.SESSION_SECRET === "fallback-secret-change-in-production"
   ) {
     vulnerabilities.push({
-      id: 'vuln-session-001',
-      severity: 'critical' as const,
-      category: 'Session Management',
-      description: 'Weak or default session secret detected',
-      status: 'open' as const,
+      id: "vuln-session-001",
+      severity: "critical" as const,
+      category: "Session Management",
+      description: "Weak or default session secret detected",
+      status: "open" as const,
       detectedDate: new Date().toISOString(),
     });
-    recommendations.push('Set a strong, unique SESSION_SECRET environment variable');
+    recommendations.push(
+      "Set a strong, unique SESSION_SECRET environment variable",
+    );
   }
 
-  if (!process.env.STRIPE_SECRET_KEY || !process.env.STRIPE_SECRET_KEY.startsWith('sk_')) {
+  if (
+    !process.env.STRIPE_SECRET_KEY ||
+    !process.env.STRIPE_SECRET_KEY.startsWith("sk_")
+  ) {
     vulnerabilities.push({
-      id: 'vuln-stripe-001',
-      severity: 'medium' as const,
-      category: 'Payment Security',
-      description: 'Stripe API key not properly configured',
-      status: 'open' as const,
+      id: "vuln-stripe-001",
+      severity: "medium" as const,
+      category: "Payment Security",
+      description: "Stripe API key not properly configured",
+      status: "open" as const,
       detectedDate: new Date().toISOString(),
     });
-    recommendations.push('Configure valid Stripe API keys for payment processing');
+    recommendations.push(
+      "Configure valid Stripe API keys for payment processing",
+    );
   }
 
   const summary = {
-    critical: vulnerabilities.filter((v) => v.severity === 'critical').length,
-    high: vulnerabilities.filter((v) => v.severity === 'high').length,
-    medium: vulnerabilities.filter((v) => v.severity === 'medium').length,
-    low: vulnerabilities.filter((v) => v.severity === 'low').length,
+    critical: vulnerabilities.filter((v) => v.severity === "critical").length,
+    high: vulnerabilities.filter((v) => v.severity === "high").length,
+    medium: vulnerabilities.filter((v) => v.severity === "medium").length,
+    low: vulnerabilities.filter((v) => v.severity === "low").length,
     passed: hasHttps && hasSecurityHeaders ? 2 : hasSecurityHeaders ? 1 : 0,
   };
 
   if (vulnerabilities.length === 0) {
-    recommendations.push('No critical vulnerabilities detected');
-    recommendations.push('Continue regular security audits');
-    recommendations.push('Keep dependencies up to date');
+    recommendations.push("No critical vulnerabilities detected");
+    recommendations.push("Continue regular security audits");
+    recommendations.push("Keep dependencies up to date");
   }
 
   return {

@@ -1,7 +1,7 @@
 UNITED STATES PATENT APPLICATION
 
-APPLICANT/ASSIGNEE:  B-Lawz Music LLC
-CORRESPONDENCE ADDRESS:  B-Lawz Music LLC
+APPLICANT/ASSIGNEE: B-Lawz Music LLC
+CORRESPONDENCE ADDRESS: B-Lawz Music LLC
 
 TITLE OF INVENTION
 
@@ -38,25 +38,25 @@ DETAILED DESCRIPTION OF PREFERRED EMBODIMENTS
 I. UCB1 Multi-Armed Bandit for Topic Selection
 
 The content generation system maintains two maps for each known topic t:
-  topicPerformanceMap(t): the empirical average engagement rate of published content on topic t
-  topicTrialCountMap(t): the number of times topic t has been selected and its outcome observed
+topicPerformanceMap(t): the empirical average engagement rate of published content on topic t
+topicTrialCountMap(t): the number of times topic t has been selected and its outcome observed
 
 The UCB1 score for topic t is computed as:
 
-  UCB1(t) = avg_reward(t) + UCB1_C × √(ln(N) / n(t))
+UCB1(t) = avg_reward(t) + UCB1_C × √(ln(N) / n(t))
 
 where N = total trials across all topics, n(t) = trials for topic t, and UCB1_C = 0.25. The exploration constant UCB1_C = 0.25 is calibrated for engagement rate reward signals in the range [0, 1], specifically for social media engagement rates that typically fall between 0.001 and 0.10. At this constant, the exploration bonus at n(t) = 1 and N = 10 is 0.25 × √(2.303) ≈ 0.379, sufficient to ensure every topic is tried at least once in the first 10 rounds regardless of the observed reward of early-tried topics.
 
 The topic with the highest UCB1 score is selected for each content generation cycle. After publication, the observed engagement rate is recorded and the incremental mean is updated:
 
-  avg_reward(t) ← (avg_reward(t) × n(t) + new_reward) / (n(t) + 1)
-  n(t) ← n(t) + 1
+avg_reward(t) ← (avg_reward(t) × n(t) + new_reward) / (n(t) + 1)
+n(t) ← n(t) + 1
 
 II. UCB1 Multi-Armed Bandit for Training Scenario Families
 
 The same UCB1 algorithm is applied to scenario job family selection in the AB Test Scenario Layer. The arms are the eight job families of the Music Industry Scenario Engine. The reward signal is a composite of compound depth (normalized) and scenario intensity:
 
-  reward = min(1.0, depth_reward + intensity × 0.3)
+reward = min(1.0, depth_reward + intensity × 0.3)
 
 where depth_reward = 0.2 (depth 0), 0.5 (depth 1), or 0.8 (depth 2+).
 
@@ -66,20 +66,20 @@ III. Caffeine Mode Pressure Engine
 
 The schedule pressure for content generation is computed from posting history:
 
-  pressure = max(0, (min_posts_per_day − posts_today)) / max(0.5, hours_remaining)
+pressure = max(0, (min_posts_per_day − posts_today)) / max(0.5, hours_remaining)
 
 This produces a dimensionless ratio with units of posts per hour. Four pressure tiers are defined:
 
-  Tier 0 (on-track):     pressure = 0     → normal operation
-  Tier 1 (mild lag):     0 < pressure ≤ 0.5 → minor posting window relaxation
-  Tier 2 (behind):       0.5 < pressure ≤ 1.5 → gate floor −7 points, minInterval posting
-  Tier 3 (critical):     pressure > 1.5    → CAFFEINE MODE: gate floor −10 points, 20-min interval
+Tier 0 (on-track): pressure = 0 → normal operation
+Tier 1 (mild lag): 0 < pressure ≤ 0.5 → minor posting window relaxation
+Tier 2 (behind): 0.5 < pressure ≤ 1.5 → gate floor −7 points, minInterval posting
+Tier 3 (critical): pressure > 1.5 → CAFFEINE MODE: gate floor −10 points, 20-min interval
 
 The pressure tier is broadcast to downstream systems only when it changes, preventing redundant updates during sustained pressure states.
 
 For training scenario selection, the pressure is derived from the year-equivalent deficit of the time simulator:
 
-  pressure = min(1.5, deficit_years / MAX_YE_DEFICIT × 1.5)
+pressure = min(1.5, deficit_years / MAX_YE_DEFICIT × 1.5)
 
 where MAX_YE_DEFICIT is a configurable saturation point (default 5.0 simulated years).
 
@@ -88,13 +88,15 @@ IV. Caffeine Mode Modifications
 Under each pressure tier, the following modifications are applied:
 
 Content generation:
-  - The content quality gate threshold is reduced by pressure-proportional amount (see Patent No. 4)
-  - The next content generation interval is reduced from 2 hours (base) to 30 minutes (mild), 20 minutes (critical)
-  - Optimal timing window constraints are bypassed: content is published whenever it is ready rather than waiting for the statistically optimal time-of-day
+
+- The content quality gate threshold is reduced by pressure-proportional amount (see Patent No. 4)
+- The next content generation interval is reduced from 2 hours (base) to 30 minutes (mild), 20 minutes (critical)
+- Optimal timing window constraints are bypassed: content is published whenever it is ready rather than waiting for the statistically optimal time-of-day
 
 Scenario selection:
-  - High-YE job families (release_architect, visual_director, fan_engagement) receive an additive UCB1 score bonus = min(0.5, pressure / 3.0)
-  - This bonus shifts the bandit toward exploitation of proven high-gradient families without entirely eliminating exploration of untried families
+
+- High-YE job families (release_architect, visual_director, fan_engagement) receive an additive UCB1 score bonus = min(0.5, pressure / 3.0)
+- This bonus shifts the bandit toward exploitation of proven high-gradient families without entirely eliminating exploration of untried families
 
 V. Platform Rotation
 
@@ -104,20 +106,21 @@ VI. Next-Generation Interval Scheduler
 
 The interval scheduler computes the next content generation interval as follows:
 
-  if pressure > 1.5:  return caffeineModeInterval (20 minutes)
-  if pressure > 0.5:  return minInterval (30 minutes)
-  if avg_engagement > 0.05: return minInterval
-  if avg_engagement < 0.01: return maxInterval (6 hours)
-  else: return baseInterval (2 hours)
+if pressure > 1.5: return caffeineModeInterval (20 minutes)
+if pressure > 0.5: return minInterval (30 minutes)
+if avg_engagement > 0.05: return minInterval
+if avg_engagement < 0.01: return maxInterval (6 hours)
+else: return baseInterval (2 hours)
 
 This produces a feedback loop where high-performing content in normal mode accelerates posting, while schedule pressure independently triggers acceleration regardless of engagement performance.
 
 VII. Pressure Broadcasting
 
 The pressure computation is executed before each content generation cycle. The result is compared to the last broadcast pressure tier; if the tier has changed, the new pressure value is broadcast to:
-  - The content quality pipeline (updates floor score and urgency scoring bonuses)
-  - The HyperLearning engine (applies deadline pressure to learning multiplier)
-  - The AB Test Scenario Layer (adjusts UCB1 exploration-exploitation balance)
+
+- The content quality pipeline (updates floor score and urgency scoring bonuses)
+- The HyperLearning engine (applies deadline pressure to learning multiplier)
+- The AB Test Scenario Layer (adjusts UCB1 exploration-exploitation balance)
 
 Broadcasting occurs only on tier changes, not on continuous pressure value changes, to avoid flooding downstream systems with redundant updates.
 
@@ -161,11 +164,11 @@ CLAIMS
 12. The system of claim 11, wherein the next-generation interval at the critical pressure tier is shorter than the next-generation interval applied when recent average engagement exceeds a high-performance threshold, such that schedule pressure can override engagement-based acceleration.
 
 13. A method of adaptively selecting a domain for artificial intelligence model training under deadline pressure, the method comprising:
-   maintaining empirical average reward values and trial counts for each of a plurality of training domains;
-   selecting a training domain by maximizing a UCB1 score comprising an exploitation term and an exploration term;
-   computing a training deficit pressure as a normalized measure of how far actual training throughput lags behind a target throughput schedule;
-   applying an additive exploitation bonus to UCB1 scores of domains identified as high-yield when the training deficit pressure exceeds a threshold; and
-   recording the reward earned by training on the selected domain and updating the domain's empirical average reward using an incremental mean estimator.
+    maintaining empirical average reward values and trial counts for each of a plurality of training domains;
+    selecting a training domain by maximizing a UCB1 score comprising an exploitation term and an exploration term;
+    computing a training deficit pressure as a normalized measure of how far actual training throughput lags behind a target throughput schedule;
+    applying an additive exploitation bonus to UCB1 scores of domains identified as high-yield when the training deficit pressure exceeds a threshold; and
+    recording the reward earned by training on the selected domain and updating the domain's empirical average reward using an incremental mean estimator.
 
 14. The method of claim 13, wherein the reward signal for a training domain is a composite function of the compound depth of scenarios drawn from that domain and the intensity of the highest-scoring scenario variant produced by a quality gate evaluation.
 
@@ -174,11 +177,11 @@ CLAIMS
 16. The method of claim 13, wherein the exploitation bonus increases linearly with training deficit pressure from zero at zero pressure to a maximum bonus value at a critical pressure saturation point.
 
 17. A non-transitory computer-readable medium storing instructions that, when executed by a processor, implement:
-   a UCB1 bandit engine configured to maintain empirical average rewards and trial counts for each of a plurality of selectable arms, compute UCB1 scores, and select the arm with the highest score;
-   a pressure computation engine configured to derive a dimensionless pressure score from a real-time deficit between required and actual outputs;
-   a high-yield arm registry storing identifiers of arms that receive an additive UCB1 score bonus proportional to the current pressure score;
-   a tier classifier configured to classify the pressure score into a plurality of discrete tiers and trigger distinct behavioral modifications for each tier; and
-   a pressure broadcaster configured to propagate the pressure score to registered downstream systems only on tier transitions.
+    a UCB1 bandit engine configured to maintain empirical average rewards and trial counts for each of a plurality of selectable arms, compute UCB1 scores, and select the arm with the highest score;
+    a pressure computation engine configured to derive a dimensionless pressure score from a real-time deficit between required and actual outputs;
+    a high-yield arm registry storing identifiers of arms that receive an additive UCB1 score bonus proportional to the current pressure score;
+    a tier classifier configured to classify the pressure score into a plurality of discrete tiers and trigger distinct behavioral modifications for each tier; and
+    a pressure broadcaster configured to propagate the pressure score to registered downstream systems only on tier transitions.
 
 18. The computer-readable medium of claim 17, further storing instructions that implement a platform rotation selector that returns social media platforms in a deterministic round-robin sequence, ensuring even coverage of all configured platforms during normal operation.
 

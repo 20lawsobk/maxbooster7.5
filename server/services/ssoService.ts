@@ -1,4 +1,4 @@
-import { db } from '../db';
+import { db } from "../db";
 import {
   ssoConfigs,
   workspaceMembers,
@@ -7,12 +7,12 @@ import {
   workspaceAuditLog,
   type SSOConfig,
   type InsertSSOConfig,
-} from '@shared/schema';
-import { eq, and, sql } from 'drizzle-orm';
-import { logger } from '../logger.js';
-import crypto from 'crypto';
+} from "@shared/schema";
+import { eq, and, sql } from "drizzle-orm";
+import { logger } from "../logger.js";
+import crypto from "crypto";
 
-export type SSOProvider = 'saml' | 'oidc';
+export type SSOProvider = "saml" | "oidc";
 
 export interface SAMLMetadata {
   entityId: string;
@@ -75,7 +75,7 @@ interface ConfigureSSOParams {
 
 export class SSOService {
   private generateSCIMToken(): string {
-    return `scim_${crypto.randomBytes(32).toString('hex')}`;
+    return `scim_${crypto.randomBytes(32).toString("hex")}`;
   }
 
   async configureSAML(
@@ -88,11 +88,11 @@ export class SSOService {
       jitProvisioning?: boolean;
       defaultRoleId?: string;
       configuredBy: string;
-    }
+    },
   ): Promise<{ success: boolean; config?: SSOConfig; error?: string }> {
     return this.configureSSOInternal({
       workspaceId,
-      provider: 'saml',
+      provider: "saml",
       metadata,
       ...options,
     });
@@ -108,17 +108,19 @@ export class SSOService {
       jitProvisioning?: boolean;
       defaultRoleId?: string;
       configuredBy: string;
-    }
+    },
   ): Promise<{ success: boolean; config?: SSOConfig; error?: string }> {
     return this.configureSSOInternal({
       workspaceId,
-      provider: 'oidc',
+      provider: "oidc",
       metadata,
       ...options,
     });
   }
 
-  private async configureSSOInternal(params: ConfigureSSOParams): Promise<{ success: boolean; config?: SSOConfig; error?: string }> {
+  private async configureSSOInternal(
+    params: ConfigureSSOParams,
+  ): Promise<{ success: boolean; config?: SSOConfig; error?: string }> {
     try {
       const existingConfig = await this.getSSOConfig(params.workspaceId);
 
@@ -129,10 +131,10 @@ export class SSOService {
             provider: params.provider,
             metadata: params.metadata,
             attributeMapping: params.attributeMapping || {
-              email: 'email',
-              firstName: 'given_name',
-              lastName: 'family_name',
-              groups: 'groups',
+              email: "email",
+              firstName: "given_name",
+              lastName: "family_name",
+              groups: "groups",
             },
             allowedDomains: params.allowedDomains || [],
             autoProvision: params.autoProvision ?? true,
@@ -146,8 +148,8 @@ export class SSOService {
         await this.logAuditEvent({
           workspaceId: params.workspaceId,
           userId: params.configuredBy,
-          action: 'sso.updated',
-          resourceType: 'sso_config',
+          action: "sso.updated",
+          resourceType: "sso_config",
           resourceId: config.id,
           newValues: { provider: params.provider },
         });
@@ -163,10 +165,10 @@ export class SSOService {
           enabled: false,
           metadata: params.metadata,
           attributeMapping: params.attributeMapping || {
-            email: 'email',
-            firstName: 'given_name',
-            lastName: 'family_name',
-            groups: 'groups',
+            email: "email",
+            firstName: "given_name",
+            lastName: "family_name",
+            groups: "groups",
           },
           allowedDomains: params.allowedDomains || [],
           autoProvision: params.autoProvision ?? true,
@@ -178,16 +180,16 @@ export class SSOService {
       await this.logAuditEvent({
         workspaceId: params.workspaceId,
         userId: params.configuredBy,
-        action: 'sso.configured',
-        resourceType: 'sso_config',
+        action: "sso.configured",
+        resourceType: "sso_config",
         resourceId: config.id,
         newValues: { provider: params.provider },
       });
 
       return { success: true, config };
     } catch (error: unknown) {
-      logger.warn({ err: error }, 'Configure SSO error:');
-      return { success: false, error: 'Failed to configure SSO' };
+      logger.warn({ err: error }, "Configure SSO error:");
+      return { success: false, error: "Failed to configure SSO" };
     }
   }
 
@@ -200,16 +202,22 @@ export class SSOService {
         .limit(1);
       return config || null;
     } catch (error: unknown) {
-      logger.warn({ err: error }, 'Get SSO config error:');
+      logger.warn({ err: error }, "Get SSO config error:");
       return null;
     }
   }
 
-  async enableSSO(workspaceId: string, enabledBy: string): Promise<{ success: boolean; error?: string }> {
+  async enableSSO(
+    workspaceId: string,
+    enabledBy: string,
+  ): Promise<{ success: boolean; error?: string }> {
     try {
       const config = await this.getSSOConfig(workspaceId);
       if (!config) {
-        return { success: false, error: 'SSO is not configured for this workspace' };
+        return {
+          success: false,
+          error: "SSO is not configured for this workspace",
+        };
       }
 
       await db
@@ -220,23 +228,29 @@ export class SSOService {
       await this.logAuditEvent({
         workspaceId,
         userId: enabledBy,
-        action: 'sso.enabled',
-        resourceType: 'sso_config',
+        action: "sso.enabled",
+        resourceType: "sso_config",
         resourceId: config.id,
       });
 
       return { success: true };
     } catch (error: unknown) {
-      logger.warn({ err: error }, 'Enable SSO error:');
-      return { success: false, error: 'Failed to enable SSO' };
+      logger.warn({ err: error }, "Enable SSO error:");
+      return { success: false, error: "Failed to enable SSO" };
     }
   }
 
-  async disableSSO(workspaceId: string, disabledBy: string): Promise<{ success: boolean; error?: string }> {
+  async disableSSO(
+    workspaceId: string,
+    disabledBy: string,
+  ): Promise<{ success: boolean; error?: string }> {
     try {
       const config = await this.getSSOConfig(workspaceId);
       if (!config) {
-        return { success: false, error: 'SSO is not configured for this workspace' };
+        return {
+          success: false,
+          error: "SSO is not configured for this workspace",
+        };
       }
 
       await db
@@ -247,23 +261,34 @@ export class SSOService {
       await this.logAuditEvent({
         workspaceId,
         userId: disabledBy,
-        action: 'sso.disabled',
-        resourceType: 'sso_config',
+        action: "sso.disabled",
+        resourceType: "sso_config",
         resourceId: config.id,
       });
 
       return { success: true };
     } catch (error: unknown) {
-      logger.warn({ err: error }, 'Disable SSO error:');
-      return { success: false, error: 'Failed to disable SSO' };
+      logger.warn({ err: error }, "Disable SSO error:");
+      return { success: false, error: "Failed to disable SSO" };
     }
   }
 
-  async enableSCIM(workspaceId: string, enabledBy: string): Promise<{ success: boolean; token?: string; endpoint?: string; error?: string }> {
+  async enableSCIM(
+    workspaceId: string,
+    enabledBy: string,
+  ): Promise<{
+    success: boolean;
+    token?: string;
+    endpoint?: string;
+    error?: string;
+  }> {
     try {
       const config = await this.getSSOConfig(workspaceId);
       if (!config) {
-        return { success: false, error: 'SSO must be configured before enabling SCIM' };
+        return {
+          success: false,
+          error: "SSO must be configured before enabling SCIM",
+        };
       }
 
       const token = this.generateSCIMToken();
@@ -282,23 +307,29 @@ export class SSOService {
       await this.logAuditEvent({
         workspaceId,
         userId: enabledBy,
-        action: 'scim.enabled',
-        resourceType: 'sso_config',
+        action: "scim.enabled",
+        resourceType: "sso_config",
         resourceId: config.id,
       });
 
       return { success: true, token, endpoint };
     } catch (error: unknown) {
-      logger.warn({ err: error }, 'Enable SCIM error:');
-      return { success: false, error: 'Failed to enable SCIM' };
+      logger.warn({ err: error }, "Enable SCIM error:");
+      return { success: false, error: "Failed to enable SCIM" };
     }
   }
 
-  async disableSCIM(workspaceId: string, disabledBy: string): Promise<{ success: boolean; error?: string }> {
+  async disableSCIM(
+    workspaceId: string,
+    disabledBy: string,
+  ): Promise<{ success: boolean; error?: string }> {
     try {
       const config = await this.getSSOConfig(workspaceId);
       if (!config) {
-        return { success: false, error: 'SSO is not configured for this workspace' };
+        return {
+          success: false,
+          error: "SSO is not configured for this workspace",
+        };
       }
 
       await db
@@ -313,23 +344,29 @@ export class SSOService {
       await this.logAuditEvent({
         workspaceId,
         userId: disabledBy,
-        action: 'scim.disabled',
-        resourceType: 'sso_config',
+        action: "scim.disabled",
+        resourceType: "sso_config",
         resourceId: config.id,
       });
 
       return { success: true };
     } catch (error: unknown) {
-      logger.warn({ err: error }, 'Disable SCIM error:');
-      return { success: false, error: 'Failed to disable SCIM' };
+      logger.warn({ err: error }, "Disable SCIM error:");
+      return { success: false, error: "Failed to disable SCIM" };
     }
   }
 
-  async rotateSCIMToken(workspaceId: string, rotatedBy: string): Promise<{ success: boolean; token?: string; error?: string }> {
+  async rotateSCIMToken(
+    workspaceId: string,
+    rotatedBy: string,
+  ): Promise<{ success: boolean; token?: string; error?: string }> {
     try {
       const config = await this.getSSOConfig(workspaceId);
       if (!config || !config.scimEnabled) {
-        return { success: false, error: 'SCIM is not enabled for this workspace' };
+        return {
+          success: false,
+          error: "SCIM is not enabled for this workspace",
+        };
       }
 
       const newToken = this.generateSCIMToken();
@@ -345,36 +382,47 @@ export class SSOService {
       await this.logAuditEvent({
         workspaceId,
         userId: rotatedBy,
-        action: 'scim.token_rotated',
-        resourceType: 'sso_config',
+        action: "scim.token_rotated",
+        resourceType: "sso_config",
         resourceId: config.id,
       });
 
       return { success: true, token: newToken };
     } catch (error: unknown) {
-      logger.warn({ err: error }, 'Rotate SCIM token error:');
-      return { success: false, error: 'Failed to rotate SCIM token' };
+      logger.warn({ err: error }, "Rotate SCIM token error:");
+      return { success: false, error: "Failed to rotate SCIM token" };
     }
   }
 
-  async validateSCIMToken(workspaceId: string, token: string): Promise<boolean> {
+  async validateSCIMToken(
+    workspaceId: string,
+    token: string,
+  ): Promise<boolean> {
     try {
       const config = await this.getSSOConfig(workspaceId);
       return config?.scimEnabled === true && config?.scimToken === token;
     } catch (error: unknown) {
-      logger.warn({ err: error }, 'Validate SCIM token error:');
+      logger.warn({ err: error }, "Validate SCIM token error:");
       return false;
     }
   }
 
   async handleSAMLResponse(
     workspaceId: string,
-    samlResponse: Record<string, unknown>
-  ): Promise<{ success: boolean; userId?: string; isNewUser?: boolean; error?: string }> {
+    samlResponse: Record<string, unknown>,
+  ): Promise<{
+    success: boolean;
+    userId?: string;
+    isNewUser?: boolean;
+    error?: string;
+  }> {
     try {
       const config = await this.getSSOConfig(workspaceId);
-      if (!config || !config.enabled || config.provider !== 'saml') {
-        return { success: false, error: 'SAML SSO is not enabled for this workspace' };
+      if (!config || !config.enabled || config.provider !== "saml") {
+        return {
+          success: false,
+          error: "SAML SSO is not enabled for this workspace",
+        };
       }
 
       const attributeMapping = config.attributeMapping as AttributeMapping;
@@ -383,14 +431,14 @@ export class SSOService {
       const lastName = samlResponse[attributeMapping.lastName];
 
       if (!email) {
-        return { success: false, error: 'Email not found in SAML response' };
+        return { success: false, error: "Email not found in SAML response" };
       }
 
       const allowedDomains = config.allowedDomains as string[];
       if (allowedDomains.length > 0) {
-        const emailDomain = email.split('@')[1];
+        const emailDomain = email.split("@")[1];
         if (!allowedDomains.includes(emailDomain)) {
-          return { success: false, error: 'Email domain not allowed' };
+          return { success: false, error: "Email domain not allowed" };
         }
       }
 
@@ -421,10 +469,12 @@ export class SSOService {
         const [existingMember] = await db
           .select()
           .from(workspaceMembers)
-          .where(and(
-            eq(workspaceMembers.workspaceId, workspaceId),
-            eq(workspaceMembers.userId, userId)
-          ))
+          .where(
+            and(
+              eq(workspaceMembers.workspaceId, workspaceId),
+              eq(workspaceMembers.userId, userId),
+            ),
+          )
           .limit(1);
 
         if (!existingMember) {
@@ -432,40 +482,51 @@ export class SSOService {
             workspaceId,
             userId,
             roleId: config.defaultRoleId,
-            role: config.defaultRole || 'member',
+            role: config.defaultRole || "member",
             joinedAt: new Date(),
-            status: 'active',
+            status: "active",
           });
         }
 
         await this.logAuditEvent({
           workspaceId,
           userId,
-          action: 'sso.jit_provision',
-          resourceType: 'user',
+          action: "sso.jit_provision",
+          resourceType: "user",
           resourceId: userId,
-          newValues: { email, provider: 'saml' },
+          newValues: { email, provider: "saml" },
         });
       } else {
-        return { success: false, error: 'User does not exist and auto-provisioning is disabled' };
+        return {
+          success: false,
+          error: "User does not exist and auto-provisioning is disabled",
+        };
       }
 
       return { success: true, userId, isNewUser };
     } catch (error: unknown) {
-      logger.warn({ err: error }, 'Handle SAML response error:');
-      return { success: false, error: 'Failed to process SAML response' };
+      logger.warn({ err: error }, "Handle SAML response error:");
+      return { success: false, error: "Failed to process SAML response" };
     }
   }
 
   async handleOIDCCallback(
     workspaceId: string,
     tokenData: Record<string, unknown>,
-    userInfo: Record<string, unknown>
-  ): Promise<{ success: boolean; userId?: string; isNewUser?: boolean; error?: string }> {
+    userInfo: Record<string, unknown>,
+  ): Promise<{
+    success: boolean;
+    userId?: string;
+    isNewUser?: boolean;
+    error?: string;
+  }> {
     try {
       const config = await this.getSSOConfig(workspaceId);
-      if (!config || !config.enabled || config.provider !== 'oidc') {
-        return { success: false, error: 'OIDC SSO is not enabled for this workspace' };
+      if (!config || !config.enabled || config.provider !== "oidc") {
+        return {
+          success: false,
+          error: "OIDC SSO is not enabled for this workspace",
+        };
       }
 
       const attributeMapping = config.attributeMapping as AttributeMapping;
@@ -474,14 +535,14 @@ export class SSOService {
       const lastName = userInfo[attributeMapping.lastName];
 
       if (!email) {
-        return { success: false, error: 'Email not found in user info' };
+        return { success: false, error: "Email not found in user info" };
       }
 
       const allowedDomains = config.allowedDomains as string[];
       if (allowedDomains.length > 0) {
-        const emailDomain = email.split('@')[1];
+        const emailDomain = email.split("@")[1];
         if (!allowedDomains.includes(emailDomain)) {
-          return { success: false, error: 'Email domain not allowed' };
+          return { success: false, error: "Email domain not allowed" };
         }
       }
 
@@ -512,10 +573,12 @@ export class SSOService {
         const [existingMember] = await db
           .select()
           .from(workspaceMembers)
-          .where(and(
-            eq(workspaceMembers.workspaceId, workspaceId),
-            eq(workspaceMembers.userId, userId)
-          ))
+          .where(
+            and(
+              eq(workspaceMembers.workspaceId, workspaceId),
+              eq(workspaceMembers.userId, userId),
+            ),
+          )
           .limit(1);
 
         if (!existingMember) {
@@ -523,44 +586,57 @@ export class SSOService {
             workspaceId,
             userId,
             roleId: config.defaultRoleId,
-            role: config.defaultRole || 'member',
+            role: config.defaultRole || "member",
             joinedAt: new Date(),
-            status: 'active',
+            status: "active",
           });
         }
 
         await this.logAuditEvent({
           workspaceId,
           userId,
-          action: 'sso.jit_provision',
-          resourceType: 'user',
+          action: "sso.jit_provision",
+          resourceType: "user",
           resourceId: userId,
-          newValues: { email, provider: 'oidc' },
+          newValues: { email, provider: "oidc" },
         });
       } else {
-        return { success: false, error: 'User does not exist and auto-provisioning is disabled' };
+        return {
+          success: false,
+          error: "User does not exist and auto-provisioning is disabled",
+        };
       }
 
       return { success: true, userId, isNewUser };
     } catch (error: unknown) {
-      logger.warn({ err: error }, 'Handle OIDC callback error:');
-      return { success: false, error: 'Failed to process OIDC callback' };
+      logger.warn({ err: error }, "Handle OIDC callback error:");
+      return { success: false, error: "Failed to process OIDC callback" };
     }
   }
 
   async createSCIMUser(
     workspaceId: string,
-    scimUser: SCIMUser
-  ): Promise<{ success: boolean; user?: Record<string, unknown>; error?: string }> {
+    scimUser: SCIMUser,
+  ): Promise<{
+    success: boolean;
+    user?: Record<string, unknown>;
+    error?: string;
+  }> {
     try {
       const config = await this.getSSOConfig(workspaceId);
       if (!config || !config.scimEnabled) {
-        return { success: false, error: 'SCIM is not enabled for this workspace' };
+        return {
+          success: false,
+          error: "SCIM is not enabled for this workspace",
+        };
       }
 
-      const email = scimUser.emails?.find(e => e.primary)?.value || scimUser.emails?.[0]?.value || scimUser.userName;
+      const email =
+        scimUser.emails?.find((e) => e.primary)?.value ||
+        scimUser.emails?.[0]?.value ||
+        scimUser.userName;
       if (!email) {
-        return { success: false, error: 'Email is required' };
+        return { success: false, error: "Email is required" };
       }
 
       const [existingUser] = await db
@@ -570,7 +646,7 @@ export class SSOService {
         .limit(1);
 
       if (existingUser) {
-        return { success: false, error: 'User already exists' };
+        return { success: false, error: "User already exists" };
       }
 
       const [newUser] = await db
@@ -587,18 +663,18 @@ export class SSOService {
           workspaceId,
           userId: newUser.id,
           roleId: config.defaultRoleId,
-          role: config.defaultRole || 'member',
+          role: config.defaultRole || "member",
           joinedAt: new Date(),
-          status: 'active',
+          status: "active",
         });
       }
 
-      await this.updateSyncStatus(workspaceId, 'success');
+      await this.updateSyncStatus(workspaceId, "success");
 
       await this.logAuditEvent({
         workspaceId,
-        action: 'scim.user_created',
-        resourceType: 'user',
+        action: "scim.user_created",
+        resourceType: "user",
         resourceId: newUser.id,
         newValues: { email, externalId: scimUser.externalId },
       });
@@ -606,7 +682,7 @@ export class SSOService {
       return {
         success: true,
         user: {
-          schemas: ['urn:ietf:params:scim:schemas:core:2.0:User'],
+          schemas: ["urn:ietf:params:scim:schemas:core:2.0:User"],
           id: newUser.id,
           userName: email,
           name: {
@@ -619,21 +695,28 @@ export class SSOService {
         },
       };
     } catch (error: unknown) {
-      logger.warn({ err: error }, 'Create SCIM user error:');
-      await this.updateSyncStatus(workspaceId, 'error', String(error));
-      return { success: false, error: 'Failed to create user' };
+      logger.warn({ err: error }, "Create SCIM user error:");
+      await this.updateSyncStatus(workspaceId, "error", String(error));
+      return { success: false, error: "Failed to create user" };
     }
   }
 
   async updateSCIMUser(
     workspaceId: string,
     userId: string,
-    scimUser: Partial<SCIMUser>
-  ): Promise<{ success: boolean; user?: Record<string, unknown>; error?: string }> {
+    scimUser: Partial<SCIMUser>,
+  ): Promise<{
+    success: boolean;
+    user?: Record<string, unknown>;
+    error?: string;
+  }> {
     try {
       const config = await this.getSSOConfig(workspaceId);
       if (!config || !config.scimEnabled) {
-        return { success: false, error: 'SCIM is not enabled for this workspace' };
+        return {
+          success: false,
+          error: "SCIM is not enabled for this workspace",
+        };
       }
 
       const [existingUser] = await db
@@ -643,12 +726,13 @@ export class SSOService {
         .limit(1);
 
       if (!existingUser) {
-        return { success: false, error: 'User not found' };
+        return { success: false, error: "User not found" };
       }
 
       const updates: Record<string, unknown> = {};
       if (scimUser.name?.givenName) updates.firstName = scimUser.name.givenName;
-      if (scimUser.name?.familyName) updates.lastName = scimUser.name.familyName;
+      if (scimUser.name?.familyName)
+        updates.lastName = scimUser.name.familyName;
       if (scimUser.emails?.[0]?.value) updates.email = scimUser.emails[0].value;
 
       if (Object.keys(updates).length > 0) {
@@ -662,21 +746,23 @@ export class SSOService {
         await db
           .update(workspaceMembers)
           .set({
-            status: scimUser.active ? 'active' : 'inactive',
+            status: scimUser.active ? "active" : "inactive",
             updatedAt: new Date(),
           })
-          .where(and(
-            eq(workspaceMembers.workspaceId, workspaceId),
-            eq(workspaceMembers.userId, userId)
-          ));
+          .where(
+            and(
+              eq(workspaceMembers.workspaceId, workspaceId),
+              eq(workspaceMembers.userId, userId),
+            ),
+          );
       }
 
-      await this.updateSyncStatus(workspaceId, 'success');
+      await this.updateSyncStatus(workspaceId, "success");
 
       await this.logAuditEvent({
         workspaceId,
-        action: 'scim.user_updated',
-        resourceType: 'user',
+        action: "scim.user_updated",
+        resourceType: "user",
         resourceId: userId,
         previousValues: existingUser,
         newValues: updates,
@@ -691,7 +777,7 @@ export class SSOService {
       return {
         success: true,
         user: {
-          schemas: ['urn:ietf:params:scim:schemas:core:2.0:User'],
+          schemas: ["urn:ietf:params:scim:schemas:core:2.0:User"],
           id: updatedUser.id,
           userName: updatedUser.email,
           name: {
@@ -703,44 +789,49 @@ export class SSOService {
         },
       };
     } catch (error: unknown) {
-      logger.warn({ err: error }, 'Update SCIM user error:');
-      await this.updateSyncStatus(workspaceId, 'error', String(error));
-      return { success: false, error: 'Failed to update user' };
+      logger.warn({ err: error }, "Update SCIM user error:");
+      await this.updateSyncStatus(workspaceId, "error", String(error));
+      return { success: false, error: "Failed to update user" };
     }
   }
 
   async deleteSCIMUser(
     workspaceId: string,
-    userId: string
+    userId: string,
   ): Promise<{ success: boolean; error?: string }> {
     try {
       const config = await this.getSSOConfig(workspaceId);
       if (!config || !config.scimEnabled) {
-        return { success: false, error: 'SCIM is not enabled for this workspace' };
+        return {
+          success: false,
+          error: "SCIM is not enabled for this workspace",
+        };
       }
 
       await db
         .update(workspaceMembers)
-        .set({ status: 'removed', updatedAt: new Date() })
-        .where(and(
-          eq(workspaceMembers.workspaceId, workspaceId),
-          eq(workspaceMembers.userId, userId)
-        ));
+        .set({ status: "removed", updatedAt: new Date() })
+        .where(
+          and(
+            eq(workspaceMembers.workspaceId, workspaceId),
+            eq(workspaceMembers.userId, userId),
+          ),
+        );
 
-      await this.updateSyncStatus(workspaceId, 'success');
+      await this.updateSyncStatus(workspaceId, "success");
 
       await this.logAuditEvent({
         workspaceId,
-        action: 'scim.user_deleted',
-        resourceType: 'user',
+        action: "scim.user_deleted",
+        resourceType: "user",
         resourceId: userId,
       });
 
       return { success: true };
     } catch (error: unknown) {
-      logger.warn({ err: error }, 'Delete SCIM user error:');
-      await this.updateSyncStatus(workspaceId, 'error', String(error));
-      return { success: false, error: 'Failed to delete user' };
+      logger.warn({ err: error }, "Delete SCIM user error:");
+      await this.updateSyncStatus(workspaceId, "error", String(error));
+      return { success: false, error: "Failed to delete user" };
     }
   }
 
@@ -748,8 +839,13 @@ export class SSOService {
     workspaceId: string,
     filter?: string,
     startIndex: number = 1,
-    count: number = 100
-  ): Promise<{ totalResults: number; itemsPerPage: number; startIndex: number; Resources: unknown[] }> {
+    count: number = 100,
+  ): Promise<{
+    totalResults: number;
+    itemsPerPage: number;
+    startIndex: number;
+    Resources: unknown[];
+  }> {
     try {
       const members = await db
         .select({
@@ -771,8 +867,8 @@ export class SSOService {
         .where(eq(workspaceMembers.workspaceId, workspaceId))
         .limit(1);
 
-      const resources = members.map(member => ({
-        schemas: ['urn:ietf:params:scim:schemas:core:2.0:User'],
+      const resources = members.map((member) => ({
+        schemas: ["urn:ietf:params:scim:schemas:core:2.0:User"],
         id: member.id,
         userName: member.email,
         name: {
@@ -780,7 +876,7 @@ export class SSOService {
           familyName: member.lastName,
         },
         emails: [{ value: member.email, primary: true }],
-        active: member.status === 'active',
+        active: member.status === "active",
       }));
 
       return {
@@ -790,12 +886,21 @@ export class SSOService {
         Resources: resources,
       };
     } catch (error: unknown) {
-      logger.warn({ err: error }, 'Get SCIM users error:');
-      return { totalResults: 0, itemsPerPage: count, startIndex, Resources: [] };
+      logger.warn({ err: error }, "Get SCIM users error:");
+      return {
+        totalResults: 0,
+        itemsPerPage: count,
+        startIndex,
+        Resources: [],
+      };
     }
   }
 
-  private async updateSyncStatus(workspaceId: string, status: string, error?: string): Promise<void> {
+  private async updateSyncStatus(
+    workspaceId: string,
+    status: string,
+    error?: string,
+  ): Promise<void> {
     try {
       await db
         .update(ssoConfigs)
@@ -807,7 +912,7 @@ export class SSOService {
         })
         .where(eq(ssoConfigs.workspaceId, workspaceId));
     } catch (err: unknown) {
-      logger.warn({ err: err }, 'Update sync status error:');
+      logger.warn({ err: err }, "Update sync status error:");
     }
   }
 
@@ -815,47 +920,62 @@ export class SSOService {
     try {
       await db.insert(workspaceAuditLog).values(params);
     } catch (error: unknown) {
-      logger.warn({ err: error }, 'Log audit event error:');
+      logger.warn({ err: error }, "Log audit event error:");
     }
   }
 
-  async getIdPMetadata(workspaceId: string): Promise<{ success: boolean; metadata?: Record<string, unknown>; error?: string }> {
+  async getIdPMetadata(
+    workspaceId: string,
+  ): Promise<{
+    success: boolean;
+    metadata?: Record<string, unknown>;
+    error?: string;
+  }> {
     try {
       const config = await this.getSSOConfig(workspaceId);
       if (!config) {
-        return { success: false, error: 'SSO is not configured for this workspace' };
+        return {
+          success: false,
+          error: "SSO is not configured for this workspace",
+        };
       }
 
       return { success: true, metadata: config.metadata };
     } catch (error: unknown) {
-      logger.warn({ err: error }, 'Get IdP metadata error:');
-      return { success: false, error: 'Failed to get IdP metadata' };
+      logger.warn({ err: error }, "Get IdP metadata error:");
+      return { success: false, error: "Failed to get IdP metadata" };
     }
   }
 
-  async testSSOConnection(workspaceId: string): Promise<{ success: boolean; message?: string; error?: string }> {
+  async testSSOConnection(
+    workspaceId: string,
+  ): Promise<{ success: boolean; message?: string; error?: string }> {
     try {
       const config = await this.getSSOConfig(workspaceId);
       if (!config) {
-        return { success: false, error: 'SSO is not configured' };
+        return { success: false, error: "SSO is not configured" };
       }
 
-      if (config.provider === 'saml') {
+      if (config.provider === "saml") {
         const metadata = config.metadata as SAMLMetadata;
         if (!metadata.entityId || !metadata.ssoUrl || !metadata.certificate) {
-          return { success: false, error: 'Incomplete SAML configuration' };
+          return { success: false, error: "Incomplete SAML configuration" };
         }
-      } else if (config.provider === 'oidc') {
+      } else if (config.provider === "oidc") {
         const metadata = config.metadata as OIDCMetadata;
-        if (!metadata.issuer || !metadata.authorizationEndpoint || !metadata.clientId) {
-          return { success: false, error: 'Incomplete OIDC configuration' };
+        if (
+          !metadata.issuer ||
+          !metadata.authorizationEndpoint ||
+          !metadata.clientId
+        ) {
+          return { success: false, error: "Incomplete OIDC configuration" };
         }
       }
 
-      return { success: true, message: 'SSO configuration is valid' };
+      return { success: true, message: "SSO configuration is valid" };
     } catch (error: unknown) {
-      logger.warn({ err: error }, 'Test SSO connection error:');
-      return { success: false, error: 'Failed to test SSO connection' };
+      logger.warn({ err: error }, "Test SSO connection error:");
+      return { success: false, error: "Failed to test SSO connection" };
     }
   }
 }

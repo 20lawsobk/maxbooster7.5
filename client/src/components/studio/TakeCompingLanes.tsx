@@ -1,10 +1,19 @@
-import { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Separator } from '@/components/ui/separator';
-import { Layers, Star, Trash2, Eye, EyeOff, Scissors, Copy, Sparkles } from 'lucide-react';
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Separator } from "@/components/ui/separator";
+import {
+  Layers,
+  Star,
+  Trash2,
+  Eye,
+  EyeOff,
+  Scissors,
+  Copy,
+  Sparkles,
+} from "lucide-react";
 
 export interface Take {
   id: string;
@@ -50,7 +59,7 @@ export function TakeCompingLanes({
   const formatTime = (seconds: number): string => {
     const mins = Math.floor(seconds / 60);
     const secs = Math.floor(seconds % 60);
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
+    return `${mins}:${secs.toString().padStart(2, "0")}`;
   };
 
   const formatDuration = (seconds: number): string => {
@@ -114,7 +123,8 @@ export function TakeCompingLanes({
 
       {takes.length === 0 ? (
         <div className="text-xs text-gray-500 text-center p-6 bg-gray-900/50 rounded border border-gray-800">
-          No takes recorded yet. Arm a track and start recording to create takes.
+          No takes recorded yet. Arm a track and start recording to create
+          takes.
         </div>
       ) : (
         <ScrollArea className="h-[400px]">
@@ -146,7 +156,9 @@ export function TakeCompingLanes({
               </div>
             )}
 
-            {compedTakes.length > 0 && nonCompedTakes.length > 0 && <Separator />}
+            {compedTakes.length > 0 && nonCompedTakes.length > 0 && (
+              <Separator />
+            )}
 
             {/* Non-Comped Takes */}
             {nonCompedTakes.length > 0 && (
@@ -224,10 +236,10 @@ function TakeLaneItem({
     <div
       className={`p-3 rounded border transition-all cursor-pointer ${
         isSelected
-          ? 'bg-blue-500/20 border-blue-500/50'
+          ? "bg-blue-500/20 border-blue-500/50"
           : isMultiSelected
-            ? 'bg-purple-500/20 border-purple-500/50'
-            : 'bg-gray-900/50 border-gray-800 hover:bg-gray-800/50'
+            ? "bg-purple-500/20 border-purple-500/50"
+            : "bg-gray-900/50 border-gray-800 hover:bg-gray-800/50"
       }`}
       onClick={onSelect}
     >
@@ -244,7 +256,10 @@ function TakeLaneItem({
               }}
               className="rounded"
             />
-            <Badge variant={take.isComped ? 'default' : 'secondary'} className="text-xs">
+            <Badge
+              variant={take.isComped ? "default" : "secondary"}
+              className="text-xs"
+            >
               Take {take.takeNumber}
             </Badge>
             {take.isComped && <Sparkles className="h-3 w-3 text-green-500" />}
@@ -273,8 +288,8 @@ function TakeLaneItem({
                   <Star
                     className={`h-3 w-3 ${
                       take.rating && rating <= take.rating
-                        ? 'fill-yellow-500 text-yellow-500'
-                        : 'text-gray-600'
+                        ? "fill-yellow-500 text-yellow-500"
+                        : "text-gray-600"
                     }`}
                   />
                 </button>
@@ -312,9 +327,13 @@ function TakeLaneItem({
               onToggleMute();
             }}
             className="h-7 w-7 p-0"
-            title={take.isMuted ? 'Unmute' : 'Mute'}
+            title={take.isMuted ? "Unmute" : "Mute"}
           >
-            {take.isMuted ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
+            {take.isMuted ? (
+              <EyeOff className="h-3 w-3" />
+            ) : (
+              <Eye className="h-3 w-3" />
+            )}
           </Button>
 
           <Button
@@ -325,9 +344,11 @@ function TakeLaneItem({
               onToggleComp();
             }}
             className="h-7 w-7 p-0"
-            title={take.isComped ? 'Remove from comp' : 'Add to comp'}
+            title={take.isComped ? "Remove from comp" : "Add to comp"}
           >
-            <Sparkles className={`h-3 w-3 ${take.isComped ? 'text-green-500' : ''}`} />
+            <Sparkles
+              className={`h-3 w-3 ${take.isComped ? "text-green-500" : ""}`}
+            />
           </Button>
 
           <Button

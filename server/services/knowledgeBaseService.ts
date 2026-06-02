@@ -1,15 +1,18 @@
-import { db } from '../db';
+import { db } from "../db";
 import {
   knowledgeBaseArticles,
   type InsertKnowledgeBaseArticle,
   type UpdateKnowledgeBaseArticle,
-} from '@shared/schema';
-import { eq, and, desc, or, sql, ilike } from 'drizzle-orm';
-import { logger } from '../logger.js';
+} from "@shared/schema";
+import { eq, and, desc, or, sql, ilike } from "drizzle-orm";
+import { logger } from "../logger.js";
 
 export class KnowledgeBaseService {
   async createArticle(articleData: InsertKnowledgeBaseArticle) {
-    const [article] = await db.insert(knowledgeBaseArticles).values(articleData).returning();
+    const [article] = await db
+      .insert(knowledgeBaseArticles)
+      .values(articleData)
+      .returning();
     return article;
   }
 
@@ -44,8 +47,8 @@ export class KnowledgeBaseService {
       conditions.push(
         or(
           ilike(knowledgeBaseArticles.title, `%${query}%`),
-          ilike(knowledgeBaseArticles.content, `%${query}%`)
-        )
+          ilike(knowledgeBaseArticles.content, `%${query}%`),
+        ),
       );
     }
 
@@ -57,7 +60,9 @@ export class KnowledgeBaseService {
       dbQuery = dbQuery.where(and(...conditions));
     }
 
-    const articles = await dbQuery.orderBy(desc(knowledgeBaseArticles.views)).limit(limit);
+    const articles = await dbQuery
+      .orderBy(desc(knowledgeBaseArticles.views))
+      .limit(limit);
 
     return articles;
   }
@@ -79,8 +84,8 @@ export class KnowledgeBaseService {
       .where(
         and(
           eq(knowledgeBaseArticles.category, category),
-          eq(knowledgeBaseArticles.isPublished, true)
-        )
+          eq(knowledgeBaseArticles.isPublished, true),
+        ),
       )
       .orderBy(desc(knowledgeBaseArticles.views));
   }
@@ -123,12 +128,16 @@ export class KnowledgeBaseService {
 
     await db
       .update(knowledgeBaseArticles)
-      .set({ [isHelpful ? 'helpfulCount' : 'notHelpfulCount']: sql`${field} + 1` })
+      .set({
+        [isHelpful ? "helpfulCount" : "notHelpfulCount"]: sql`${field} + 1`,
+      })
       .where(eq(knowledgeBaseArticles.id, articleId));
   }
 
   async deleteArticle(articleId: string) {
-    await db.delete(knowledgeBaseArticles).where(eq(knowledgeBaseArticles.id, articleId));
+    await db
+      .delete(knowledgeBaseArticles)
+      .where(eq(knowledgeBaseArticles.id, articleId));
   }
 
   async getCategories() {
@@ -176,14 +185,17 @@ export class KnowledgeBaseService {
   }
 
   async seedDefaultArticles() {
-    const existingArticles = await db.select().from(knowledgeBaseArticles).limit(1);
+    const existingArticles = await db
+      .select()
+      .from(knowledgeBaseArticles)
+      .limit(1);
     if (existingArticles.length > 0) {
       return;
     }
 
     const defaultArticles: InsertKnowledgeBaseArticle[] = [
       {
-        title: 'Getting Started with Max Booster',
+        title: "Getting Started with Max Booster",
         content: `# Getting Started with Max Booster
 
 Welcome to Max Booster! This guide will help you get started with our platform.
@@ -203,12 +215,12 @@ Welcome to Max Booster! This guide will help you get started with our platform.
 
 ## Managing Royalties
 Track your earnings in real-time on the Royalties page. We process payouts monthly once you reach the $10 minimum threshold.`,
-        category: 'Getting Started',
-        tags: ['beginner', 'setup', 'basics'],
+        category: "Getting Started",
+        tags: ["beginner", "setup", "basics"],
         isPublished: true,
       },
       {
-        title: 'How to Distribute Music to Streaming Platforms',
+        title: "How to Distribute Music to Streaming Platforms",
         content: `# How to Distribute Music to Streaming Platforms
 
 Max Booster makes music distribution simple and straightforward.
@@ -233,12 +245,12 @@ Max Booster makes music distribution simple and straightforward.
 
 ## Timeline
 Most releases go live within 1-3 business days. Submit at least 2 weeks before your desired release date for best results.`,
-        category: 'Distribution',
-        tags: ['distribution', 'spotify', 'apple music', 'streaming'],
+        category: "Distribution",
+        tags: ["distribution", "spotify", "apple music", "streaming"],
         isPublished: true,
       },
       {
-        title: 'Understanding Royalties and Payments',
+        title: "Understanding Royalties and Payments",
         content: `# Understanding Royalties and Payments
 
 Learn how royalties work and when you'll get paid.
@@ -262,12 +274,12 @@ View real-time earnings on the Royalties page:
 - Earnings per song
 - Earnings per territory
 - Historical data and trends`,
-        category: 'Royalties',
-        tags: ['royalties', 'payments', 'earnings', 'money'],
+        category: "Royalties",
+        tags: ["royalties", "payments", "earnings", "money"],
         isPublished: true,
       },
       {
-        title: 'Using AI Music Tools',
+        title: "Using AI Music Tools",
         content: `# Using AI Music Tools
 
 Max Booster provides powerful AI tools to enhance your music production.
@@ -292,12 +304,12 @@ Create social media content:
 - Hashtag suggestions
 - Release announcements
 - Engagement-optimized content`,
-        category: 'AI Tools',
-        tags: ['ai', 'mixing', 'mastering', 'content generation'],
+        category: "AI Tools",
+        tags: ["ai", "mixing", "mastering", "content generation"],
         isPublished: true,
       },
       {
-        title: 'Troubleshooting Common Issues',
+        title: "Troubleshooting Common Issues",
         content: `# Troubleshooting Common Issues
 
 Solutions to frequently encountered problems.
@@ -333,14 +345,14 @@ Solutions to frequently encountered problems.
 - Check email for verification link
 - Clear browser cache and cookies
 - Contact support if issue persists`,
-        category: 'Troubleshooting',
-        tags: ['troubleshooting', 'help', 'issues', 'problems'],
+        category: "Troubleshooting",
+        tags: ["troubleshooting", "help", "issues", "problems"],
         isPublished: true,
       },
     ];
 
     await db.insert(knowledgeBaseArticles).values(defaultArticles);
-    logger.info('✅ Seeded default knowledge base articles');
+    logger.info("✅ Seeded default knowledge base articles");
   }
 }
 

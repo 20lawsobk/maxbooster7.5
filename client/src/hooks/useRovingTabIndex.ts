@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from "react";
 
-export type RovingOrientation = 'horizontal' | 'vertical' | 'both';
+export type RovingOrientation = "horizontal" | "vertical" | "both";
 
 export interface UseRovingTabIndexOptions {
   orientation?: RovingOrientation;
@@ -16,7 +16,7 @@ export interface RovingTabIndexItem {
   tabIndex: number;
   onKeyDown: (event: React.KeyboardEvent) => void;
   onFocus: () => void;
-  'data-active': boolean;
+  "data-active": boolean;
 }
 
 export interface UseRovingTabIndexResult {
@@ -30,10 +30,10 @@ export interface UseRovingTabIndexResult {
 
 export function useRovingTabIndex(
   itemCount: number,
-  options: UseRovingTabIndexOptions = {}
+  options: UseRovingTabIndexOptions = {},
 ): UseRovingTabIndexResult {
   const {
-    orientation = 'horizontal',
+    orientation = "horizontal",
     loop = true,
     defaultActiveIndex = 0,
     onActiveChange,
@@ -42,29 +42,31 @@ export function useRovingTabIndex(
   } = options;
 
   const [activeIndex, setActiveIndexState] = useState(
-    defaultActiveIndex >= 0 && defaultActiveIndex < itemCount ? defaultActiveIndex : 0
+    defaultActiveIndex >= 0 && defaultActiveIndex < itemCount
+      ? defaultActiveIndex
+      : 0,
   );
-  
+
   const itemsRef = useRef<Map<number, HTMLElement>>(new Map());
   const isInitializedRef = useRef(false);
 
   const setActiveIndex = useCallback(
     (index: number) => {
       if (!enabled) return;
-      
+
       const clampedIndex = Math.max(0, Math.min(index, itemCount - 1));
-      
+
       if (clampedIndex !== activeIndex) {
         setActiveIndexState(clampedIndex);
         onActiveChange?.(clampedIndex);
       }
-      
+
       const element = itemsRef.current.get(clampedIndex);
       if (element) {
         element.focus();
       }
     },
-    [enabled, itemCount, activeIndex, onActiveChange]
+    [enabled, itemCount, activeIndex, onActiveChange],
   );
 
   const focusActive = useCallback(() => {
@@ -98,7 +100,7 @@ export function useRovingTabIndex(
 
       return nextIndex;
     },
-    [loop, itemCount]
+    [loop, itemCount],
   );
 
   const handleKeyDown = useCallback(
@@ -108,39 +110,40 @@ export function useRovingTabIndex(
       const { key } = event;
       let nextIndex: number | null = null;
 
-      const isHorizontal = orientation === 'horizontal' || orientation === 'both';
-      const isVertical = orientation === 'vertical' || orientation === 'both';
+      const isHorizontal =
+        orientation === "horizontal" || orientation === "both";
+      const isVertical = orientation === "vertical" || orientation === "both";
 
       switch (key) {
-        case 'ArrowRight':
+        case "ArrowRight":
           if (isHorizontal) {
             nextIndex = getNextIndex(index, 1);
           }
           break;
 
-        case 'ArrowLeft':
+        case "ArrowLeft":
           if (isHorizontal) {
             nextIndex = getNextIndex(index, -1);
           }
           break;
 
-        case 'ArrowDown':
+        case "ArrowDown":
           if (isVertical) {
             nextIndex = getNextIndex(index, 1);
           }
           break;
 
-        case 'ArrowUp':
+        case "ArrowUp":
           if (isVertical) {
             nextIndex = getNextIndex(index, -1);
           }
           break;
 
-        case 'Home':
+        case "Home":
           nextIndex = 0;
           break;
 
-        case 'End':
+        case "End":
           nextIndex = itemCount - 1;
           break;
       }
@@ -150,7 +153,7 @@ export function useRovingTabIndex(
         setActiveIndex(nextIndex);
       }
     },
-    [enabled, orientation, itemCount, getNextIndex, setActiveIndex]
+    [enabled, orientation, itemCount, getNextIndex, setActiveIndex],
   );
 
   const handleFocus = useCallback(
@@ -160,7 +163,7 @@ export function useRovingTabIndex(
         onActiveChange?.(index);
       }
     },
-    [enabled, activeIndex, onActiveChange]
+    [enabled, activeIndex, onActiveChange],
   );
 
   const registerItem = useCallback(
@@ -171,7 +174,7 @@ export function useRovingTabIndex(
         itemsRef.current.delete(index);
       }
     },
-    []
+    [],
   );
 
   const getItemProps = useCallback(
@@ -180,9 +183,9 @@ export function useRovingTabIndex(
       tabIndex: index === activeIndex ? 0 : -1,
       onKeyDown: handleKeyDown(index),
       onFocus: handleFocus(index),
-      'data-active': index === activeIndex,
+      "data-active": index === activeIndex,
     }),
-    [activeIndex, registerItem, handleKeyDown, handleFocus]
+    [activeIndex, registerItem, handleKeyDown, handleFocus],
   );
 
   useEffect(() => {
@@ -211,7 +214,9 @@ export function useRovingTabIndex(
   };
 }
 
-export function useRovingTabIndexGroup<T extends HTMLElement = HTMLDivElement>() {
+export function useRovingTabIndexGroup<
+  T extends HTMLElement = HTMLDivElement,
+>() {
   const groupRef = useRef<T>(null);
   const [items, setItems] = useState<HTMLElement[]>([]);
 
@@ -222,8 +227,8 @@ export function useRovingTabIndexGroup<T extends HTMLElement = HTMLDivElement>()
       if (groupRef.current) {
         const focusableItems = Array.from(
           groupRef.current.querySelectorAll<HTMLElement>(
-            'button:not([disabled]), [role="tab"], [role="menuitem"], [role="option"]'
-          )
+            'button:not([disabled]), [role="tab"], [role="menuitem"], [role="option"]',
+          ),
         );
         setItems(focusableItems);
       }

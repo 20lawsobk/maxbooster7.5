@@ -1,21 +1,21 @@
 /**
  * Advertising Rule Engine - Personal Ad Network Optimizer
- * 
+ *
  * ZERO AD SPEND PHILOSOPHY:
  * This engine replicates the results of paid advertising WITHOUT actual ad spend.
  * Instead of buying ads, we use the artist's connected social media accounts as
  * "Personal Ad Networks" - organic distribution channels optimized for maximum reach.
- * 
+ *
  * The "budget" concepts here represent TIME/EFFORT investment, not money spent.
  * The "reach" metrics represent organic impressions through strategic posting.
- * 
+ *
  * Key Principles:
  * - Connected accounts become organic ad distribution channels
  * - AI optimizes content for each platform's algorithm
  * - Posts are strategically timed and formatted for maximum organic reach
  * - The artist's own following becomes their advertising audience
  * - No actual money is spent on ads - all reach is organic
- * 
+ *
  * Works with learning components for optimization while enforcing hard constraints.
  */
 
@@ -40,16 +40,21 @@ export interface TargetingConstraints {
 
 export interface ComplianceRule {
   id: string;
-  type: 'budget' | 'targeting' | 'creative' | 'timing';
+  type: "budget" | "targeting" | "creative" | "timing";
   description: string;
   validator: (context: AdContext) => boolean;
-  severity: 'block' | 'warn' | 'info';
+  severity: "block" | "warn" | "info";
   remediation?: string;
 }
 
 export interface AdContext {
   platform: string;
-  campaignType: 'awareness' | 'traffic' | 'engagement' | 'conversions' | 'app_installs';
+  campaignType:
+    | "awareness"
+    | "traffic"
+    | "engagement"
+    | "conversions"
+    | "app_installs";
   objective: string;
   budget: number;
   dailySpend: number;
@@ -78,14 +83,21 @@ export interface BudgetAllocationRule {
 
 export interface AdRuleEvaluationResult {
   allowed: boolean;
-  violations: Array<{ ruleId: string; message: string; severity: 'block' | 'warn' | 'info' }>;
+  violations: Array<{
+    ruleId: string;
+    message: string;
+    severity: "block" | "warn" | "info";
+  }>;
   recommendations: string[];
   adjustedBudget?: number;
   adjustedBid?: number;
-  paceRecommendation?: 'accelerate' | 'maintain' | 'slow_down' | 'pause';
+  paceRecommendation?: "accelerate" | "maintain" | "slow_down" | "pause";
 }
 
-export const PLATFORM_AD_LIMITS: Record<string, { minDailyBudget: number; maxAdsPerCampaign: number; maxCampaigns: number }> = {
+export const PLATFORM_AD_LIMITS: Record<
+  string,
+  { minDailyBudget: number; maxAdsPerCampaign: number; maxCampaigns: number }
+> = {
   facebook: { minDailyBudget: 1, maxAdsPerCampaign: 50, maxCampaigns: 5000 },
   instagram: { minDailyBudget: 1, maxAdsPerCampaign: 50, maxCampaigns: 5000 },
   twitter: { minDailyBudget: 1, maxAdsPerCampaign: 100, maxCampaigns: 2500 },
@@ -98,25 +110,25 @@ export const PLATFORM_AD_LIMITS: Record<string, { minDailyBudget: number; maxAds
 export const MUSIC_CAMPAIGN_BENCHMARKS = {
   streaming: {
     avgCPC: { low: 0.15, medium: 0.35, high: 0.75 },
-    avgCPM: { low: 3.50, medium: 8.00, high: 15.00 },
+    avgCPM: { low: 3.5, medium: 8.0, high: 15.0 },
     avgConversionRate: { low: 0.02, medium: 0.05, high: 0.12 },
     recommendedDailyBudget: { min: 20, optimal: 100, max: 500 },
   },
   ticketSales: {
-    avgCPC: { low: 0.50, medium: 1.25, high: 3.00 },
-    avgCPM: { low: 8.00, medium: 15.00, high: 35.00 },
+    avgCPC: { low: 0.5, medium: 1.25, high: 3.0 },
+    avgCPM: { low: 8.0, medium: 15.0, high: 35.0 },
     avgConversionRate: { low: 0.005, medium: 0.02, high: 0.05 },
     recommendedDailyBudget: { min: 50, optimal: 250, max: 2000 },
   },
   merchSales: {
-    avgCPC: { low: 0.40, medium: 1.00, high: 2.50 },
-    avgCPM: { low: 6.00, medium: 12.00, high: 28.00 },
+    avgCPC: { low: 0.4, medium: 1.0, high: 2.5 },
+    avgCPM: { low: 6.0, medium: 12.0, high: 28.0 },
     avgConversionRate: { low: 0.008, medium: 0.025, high: 0.06 },
     recommendedDailyBudget: { min: 30, optimal: 150, max: 1000 },
   },
   awareness: {
     avgCPC: { low: 0.05, medium: 0.15, high: 0.35 },
-    avgCPM: { low: 1.50, medium: 4.00, high: 10.00 },
+    avgCPM: { low: 1.5, medium: 4.0, high: 10.0 },
     avgConversionRate: { low: 0.01, medium: 0.03, high: 0.07 },
     recommendedDailyBudget: { min: 10, optimal: 50, max: 300 },
   },
@@ -138,126 +150,138 @@ export const DEFAULT_TARGETING_CONSTRAINTS: TargetingConstraints = {
   blockedGeos: [],
   allowedPlacements: [],
   blockedPlacements: [],
-  brandSafetyKeywords: ['violence', 'hate', 'drugs', 'adult', 'gambling'],
+  brandSafetyKeywords: ["violence", "hate", "drugs", "adult", "gambling"],
 };
 
 export const DEFAULT_COMPLIANCE_RULES: ComplianceRule[] = [
   {
-    id: 'daily_budget_limit',
-    type: 'budget',
-    description: 'Daily budget limit check',
-    validator: (ctx) => ctx.dailySpend + ctx.budget <= DEFAULT_BUDGET_CONSTRAINTS.dailyLimit,
-    severity: 'block',
-    remediation: 'Reduce budget or wait for daily limit reset',
+    id: "daily_budget_limit",
+    type: "budget",
+    description: "Daily budget limit check",
+    validator: (ctx) =>
+      ctx.dailySpend + ctx.budget <= DEFAULT_BUDGET_CONSTRAINTS.dailyLimit,
+    severity: "block",
+    remediation: "Reduce budget or wait for daily limit reset",
   },
   {
-    id: 'weekly_budget_limit',
-    type: 'budget',
-    description: 'Weekly budget limit check',
-    validator: (ctx) => ctx.weeklySpend + ctx.budget <= DEFAULT_BUDGET_CONSTRAINTS.weeklyLimit,
-    severity: 'warn',
-    remediation: 'Consider reducing weekly spend or increasing budget limits',
+    id: "weekly_budget_limit",
+    type: "budget",
+    description: "Weekly budget limit check",
+    validator: (ctx) =>
+      ctx.weeklySpend + ctx.budget <= DEFAULT_BUDGET_CONSTRAINTS.weeklyLimit,
+    severity: "warn",
+    remediation: "Consider reducing weekly spend or increasing budget limits",
   },
   {
-    id: 'monthly_budget_limit',
-    type: 'budget',
-    description: 'Monthly budget limit check',
-    validator: (ctx) => ctx.monthlySpend + ctx.budget <= DEFAULT_BUDGET_CONSTRAINTS.monthlyLimit,
-    severity: 'warn',
-    remediation: 'Review monthly budget allocation',
+    id: "monthly_budget_limit",
+    type: "budget",
+    description: "Monthly budget limit check",
+    validator: (ctx) =>
+      ctx.monthlySpend + ctx.budget <= DEFAULT_BUDGET_CONSTRAINTS.monthlyLimit,
+    severity: "warn",
+    remediation: "Review monthly budget allocation",
   },
   {
-    id: 'bid_range',
-    type: 'budget',
-    description: 'Bid amount within acceptable range',
-    validator: (ctx) => 
-      ctx.bidAmount >= DEFAULT_BUDGET_CONSTRAINTS.minBidAmount && 
+    id: "bid_range",
+    type: "budget",
+    description: "Bid amount within acceptable range",
+    validator: (ctx) =>
+      ctx.bidAmount >= DEFAULT_BUDGET_CONSTRAINTS.minBidAmount &&
       ctx.bidAmount <= DEFAULT_BUDGET_CONSTRAINTS.maxBidAmount,
-    severity: 'block',
-    remediation: 'Adjust bid amount to be within acceptable range',
+    severity: "block",
+    remediation: "Adjust bid amount to be within acceptable range",
   },
   {
-    id: 'age_targeting',
-    type: 'targeting',
-    description: 'Age targeting compliance',
-    validator: (ctx) => 
-      ctx.targetAgeMin >= DEFAULT_TARGETING_CONSTRAINTS.minAge && 
+    id: "age_targeting",
+    type: "targeting",
+    description: "Age targeting compliance",
+    validator: (ctx) =>
+      ctx.targetAgeMin >= DEFAULT_TARGETING_CONSTRAINTS.minAge &&
       ctx.targetAgeMax <= DEFAULT_TARGETING_CONSTRAINTS.maxAge,
-    severity: 'block',
-    remediation: 'Adjust age targeting to comply with platform policies',
+    severity: "block",
+    remediation: "Adjust age targeting to comply with platform policies",
   },
   {
-    id: 'brand_safety',
-    type: 'creative',
-    description: 'Brand safety keyword check',
+    id: "brand_safety",
+    type: "creative",
+    description: "Brand safety keyword check",
     validator: (ctx) => {
       const text = ctx.creativeText.toLowerCase();
-      return !DEFAULT_TARGETING_CONSTRAINTS.brandSafetyKeywords.some(kw => text.includes(kw));
+      return !DEFAULT_TARGETING_CONSTRAINTS.brandSafetyKeywords.some((kw) =>
+        text.includes(kw),
+      );
     },
-    severity: 'block',
-    remediation: 'Remove or replace flagged content',
+    severity: "block",
+    remediation: "Remove or replace flagged content",
   },
   {
-    id: 'audience_saturation',
-    type: 'targeting',
-    description: 'Audience saturation check',
+    id: "audience_saturation",
+    type: "targeting",
+    description: "Audience saturation check",
     validator: (ctx) => ctx.audienceSaturation < 0.8,
-    severity: 'warn',
-    remediation: 'Expand targeting or reduce frequency to avoid audience fatigue',
+    severity: "warn",
+    remediation:
+      "Expand targeting or reduce frequency to avoid audience fatigue",
   },
   {
-    id: 'organic_synergy',
-    type: 'timing',
-    description: 'Organic engagement synergy check',
+    id: "organic_synergy",
+    type: "timing",
+    description: "Organic engagement synergy check",
     validator: (ctx) => !(ctx.organicEngagementRate > 0.7 && ctx.budget > 100),
-    severity: 'info',
-    remediation: 'Consider reducing paid spend when organic is performing well',
+    severity: "info",
+    remediation: "Consider reducing paid spend when organic is performing well",
   },
 ];
 
 export const DEFAULT_BUDGET_ALLOCATION_RULES: BudgetAllocationRule[] = [
   {
-    id: 'high_competition',
-    name: 'High Competition Adjustment',
+    id: "high_competition",
+    name: "High Competition Adjustment",
     condition: (ctx) => ctx.competitorActivityLevel > 0.7,
     adjustment: 1.2,
-    reason: 'Increase budget due to high competition',
+    reason: "Increase budget due to high competition",
   },
   {
-    id: 'low_competition',
-    name: 'Low Competition Savings',
+    id: "low_competition",
+    name: "Low Competition Savings",
     condition: (ctx) => ctx.competitorActivityLevel < 0.3,
     adjustment: 0.8,
-    reason: 'Reduce budget due to low competition',
+    reason: "Reduce budget due to low competition",
   },
   {
-    id: 'high_organic',
-    name: 'High Organic Performance',
+    id: "high_organic",
+    name: "High Organic Performance",
     condition: (ctx) => ctx.organicEngagementRate > 0.6,
     adjustment: 0.7,
-    reason: 'Reduce paid spend when organic is strong',
+    reason: "Reduce paid spend when organic is strong",
   },
   {
-    id: 'retargeting_efficiency',
-    name: 'Retargeting Efficiency',
+    id: "retargeting_efficiency",
+    name: "Retargeting Efficiency",
     condition: (ctx) => ctx.isRetargeting,
     adjustment: 1.1,
-    reason: 'Increase budget for efficient retargeting',
+    reason: "Increase budget for efficient retargeting",
   },
   {
-    id: 'saturation_reduction',
-    name: 'Saturation Reduction',
+    id: "saturation_reduction",
+    name: "Saturation Reduction",
     condition: (ctx) => ctx.audienceSaturation > 0.6,
     adjustment: 0.6,
-    reason: 'Reduce budget to prevent audience fatigue',
+    reason: "Reduce budget to prevent audience fatigue",
   },
 ];
 
 export class AdvertisingRuleEngine {
   private complianceRules: ComplianceRule[] = [...DEFAULT_COMPLIANCE_RULES];
-  private budgetAllocationRules: BudgetAllocationRule[] = [...DEFAULT_BUDGET_ALLOCATION_RULES];
-  private budgetConstraints: BudgetConstraints = { ...DEFAULT_BUDGET_CONSTRAINTS };
-  private targetingConstraints: TargetingConstraints = { ...DEFAULT_TARGETING_CONSTRAINTS };
+  private budgetAllocationRules: BudgetAllocationRule[] = [
+    ...DEFAULT_BUDGET_ALLOCATION_RULES,
+  ];
+  private budgetConstraints: BudgetConstraints = {
+    ...DEFAULT_BUDGET_CONSTRAINTS,
+  };
+  private targetingConstraints: TargetingConstraints = {
+    ...DEFAULT_TARGETING_CONSTRAINTS,
+  };
 
   constructor() {}
 
@@ -265,12 +289,17 @@ export class AdvertisingRuleEngine {
     this.budgetConstraints = { ...this.budgetConstraints, ...constraints };
   }
 
-  public setTargetingConstraints(constraints: Partial<TargetingConstraints>): void {
-    this.targetingConstraints = { ...this.targetingConstraints, ...constraints };
+  public setTargetingConstraints(
+    constraints: Partial<TargetingConstraints>,
+  ): void {
+    this.targetingConstraints = {
+      ...this.targetingConstraints,
+      ...constraints,
+    };
   }
 
   public addComplianceRule(rule: ComplianceRule): void {
-    const existingIdx = this.complianceRules.findIndex(r => r.id === rule.id);
+    const existingIdx = this.complianceRules.findIndex((r) => r.id === rule.id);
     if (existingIdx >= 0) {
       this.complianceRules[existingIdx] = rule;
     } else {
@@ -279,7 +308,9 @@ export class AdvertisingRuleEngine {
   }
 
   public addBudgetAllocationRule(rule: BudgetAllocationRule): void {
-    const existingIdx = this.budgetAllocationRules.findIndex(r => r.id === rule.id);
+    const existingIdx = this.budgetAllocationRules.findIndex(
+      (r) => r.id === rule.id,
+    );
     if (existingIdx >= 0) {
       this.budgetAllocationRules[existingIdx] = rule;
     } else {
@@ -288,7 +319,7 @@ export class AdvertisingRuleEngine {
   }
 
   public evaluateAdRequest(context: AdContext): AdRuleEvaluationResult {
-    const violations: AdRuleEvaluationResult['violations'] = [];
+    const violations: AdRuleEvaluationResult["violations"] = [];
     const recommendations: string[] = [];
     let adjustedBudget = context.budget;
     let adjustedBid = context.bidAmount;
@@ -316,17 +347,20 @@ export class AdvertisingRuleEngine {
 
     adjustedBudget = Math.max(
       PLATFORM_AD_LIMITS[context.platform]?.minDailyBudget || 1,
-      Math.min(this.budgetConstraints.dailyLimit - context.dailySpend, adjustedBudget)
+      Math.min(
+        this.budgetConstraints.dailyLimit - context.dailySpend,
+        adjustedBudget,
+      ),
     );
 
     adjustedBid = Math.max(
       this.budgetConstraints.minBidAmount,
-      Math.min(this.budgetConstraints.maxBidAmount, adjustedBid)
+      Math.min(this.budgetConstraints.maxBidAmount, adjustedBid),
     );
 
     const paceRecommendation = this.calculatePaceRecommendation(context);
 
-    const hasBlockingViolation = violations.some(v => v.severity === 'block');
+    const hasBlockingViolation = violations.some((v) => v.severity === "block");
 
     return {
       allowed: !hasBlockingViolation,
@@ -338,32 +372,38 @@ export class AdvertisingRuleEngine {
     };
   }
 
-  private calculatePaceRecommendation(context: AdContext): 'accelerate' | 'maintain' | 'slow_down' | 'pause' {
-    const dailyPaceRatio = context.dailySpend / this.budgetConstraints.dailyLimit;
-    const weeklyPaceRatio = context.weeklySpend / this.budgetConstraints.weeklyLimit;
-    
+  private calculatePaceRecommendation(
+    context: AdContext,
+  ): "accelerate" | "maintain" | "slow_down" | "pause" {
+    const dailyPaceRatio =
+      context.dailySpend / this.budgetConstraints.dailyLimit;
+    const weeklyPaceRatio =
+      context.weeklySpend / this.budgetConstraints.weeklyLimit;
+
     if (context.audienceSaturation > 0.85) {
-      return 'pause';
+      return "pause";
     }
-    
+
     if (dailyPaceRatio > 0.9 || weeklyPaceRatio > 0.9) {
-      return 'slow_down';
+      return "slow_down";
     }
-    
+
     if (dailyPaceRatio < 0.3 && context.organicEngagementRate < 0.5) {
-      return 'accelerate';
+      return "accelerate";
     }
-    
-    return 'maintain';
+
+    return "maintain";
   }
 
   public getOptimalBidStrategy(
     platform: string,
     objective: string,
-    competitionLevel: number
+    competitionLevel: number,
   ): { strategy: string; suggestedBid: number; reasoning: string } {
-    const benchmarks = MUSIC_CAMPAIGN_BENCHMARKS[objective as keyof typeof MUSIC_CAMPAIGN_BENCHMARKS] 
-      || MUSIC_CAMPAIGN_BENCHMARKS.awareness;
+    const benchmarks =
+      MUSIC_CAMPAIGN_BENCHMARKS[
+        objective as keyof typeof MUSIC_CAMPAIGN_BENCHMARKS
+      ] || MUSIC_CAMPAIGN_BENCHMARKS.awareness;
 
     let suggestedBid: number;
     let strategy: string;
@@ -371,16 +411,17 @@ export class AdvertisingRuleEngine {
 
     if (competitionLevel > 0.7) {
       suggestedBid = benchmarks.avgCPC.high;
-      strategy = 'aggressive';
-      reasoning = 'High competition requires aggressive bidding to maintain visibility';
+      strategy = "aggressive";
+      reasoning =
+        "High competition requires aggressive bidding to maintain visibility";
     } else if (competitionLevel > 0.4) {
       suggestedBid = benchmarks.avgCPC.medium;
-      strategy = 'balanced';
-      reasoning = 'Moderate competition allows for balanced bidding';
+      strategy = "balanced";
+      reasoning = "Moderate competition allows for balanced bidding";
     } else {
       suggestedBid = benchmarks.avgCPC.low;
-      strategy = 'conservative';
-      reasoning = 'Low competition enables cost-efficient conservative bidding';
+      strategy = "conservative";
+      reasoning = "Low competition enables cost-efficient conservative bidding";
     }
 
     const platformMultipliers: Record<string, number> = {
@@ -404,33 +445,39 @@ export class AdvertisingRuleEngine {
   public calculateBudgetDistribution(
     totalBudget: number,
     campaignDuration: number,
-    releaseDate?: Date
+    releaseDate?: Date,
   ): Array<{ day: number; budgetPercentage: number; reasoning: string }> {
-    const distribution: Array<{ day: number; budgetPercentage: number; reasoning: string }> = [];
-    
+    const distribution: Array<{
+      day: number;
+      budgetPercentage: number;
+      reasoning: string;
+    }> = [];
+
     if (releaseDate) {
       const today = new Date();
-      const daysUntilRelease = Math.ceil((releaseDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-      
+      const daysUntilRelease = Math.ceil(
+        (releaseDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24),
+      );
+
       for (let day = 1; day <= campaignDuration; day++) {
         let percentage: number;
         let reasoning: string;
 
         if (day <= daysUntilRelease - 3) {
           percentage = 0.05;
-          reasoning = 'Pre-release awareness building';
+          reasoning = "Pre-release awareness building";
         } else if (day <= daysUntilRelease) {
-          percentage = 0.10;
-          reasoning = 'Pre-release hype building';
+          percentage = 0.1;
+          reasoning = "Pre-release hype building";
         } else if (day === daysUntilRelease + 1) {
-          percentage = 0.20;
-          reasoning = 'Release day maximum push';
+          percentage = 0.2;
+          reasoning = "Release day maximum push";
         } else if (day <= daysUntilRelease + 7) {
           percentage = 0.12;
-          reasoning = 'First week momentum';
+          reasoning = "First week momentum";
         } else {
           percentage = 0.05;
-          reasoning = 'Sustaining period';
+          reasoning = "Sustaining period";
         }
 
         distribution.push({ day, budgetPercentage: percentage, reasoning });
@@ -441,83 +488,93 @@ export class AdvertisingRuleEngine {
         distribution.push({
           day,
           budgetPercentage: basePercentage,
-          reasoning: 'Even distribution for evergreen campaign',
+          reasoning: "Even distribution for evergreen campaign",
         });
       }
     }
 
-    const totalPercentage = distribution.reduce((sum, d) => sum + d.budgetPercentage, 0);
-    return distribution.map(d => ({
+    const totalPercentage = distribution.reduce(
+      (sum, d) => sum + d.budgetPercentage,
+      0,
+    );
+    return distribution.map((d) => ({
       ...d,
-      budgetPercentage: Math.round((d.budgetPercentage / totalPercentage) * 10000) / 10000,
+      budgetPercentage:
+        Math.round((d.budgetPercentage / totalPercentage) * 10000) / 10000,
     }));
   }
 
   public shouldPauseForOrganicPerformance(
     organicEngagementRate: number,
     currentAdSpend: number,
-    expectedReturn: number
+    expectedReturn: number,
   ): { shouldPause: boolean; reason: string; recommendation: string } {
     const effectiveROI = expectedReturn / currentAdSpend;
     const organicThreshold = 0.65;
     const roiThreshold = 1.5;
 
-    if (organicEngagementRate > organicThreshold && effectiveROI < roiThreshold) {
+    if (
+      organicEngagementRate > organicThreshold &&
+      effectiveROI < roiThreshold
+    ) {
       return {
         shouldPause: true,
         reason: `Organic engagement (${(organicEngagementRate * 100).toFixed(0)}%) is high while ad ROI (${effectiveROI.toFixed(2)}x) is below threshold`,
-        recommendation: 'Pause paid campaigns and let organic momentum continue. Resume when organic declines.',
+        recommendation:
+          "Pause paid campaigns and let organic momentum continue. Resume when organic declines.",
       };
     }
 
     if (organicEngagementRate > 0.5 && effectiveROI < 1.2) {
       return {
         shouldPause: false,
-        reason: 'Moderate organic performance with low ROI',
-        recommendation: 'Reduce ad spend by 30% and monitor for synergy effects.',
+        reason: "Moderate organic performance with low ROI",
+        recommendation:
+          "Reduce ad spend by 30% and monitor for synergy effects.",
       };
     }
 
     return {
       shouldPause: false,
-      reason: 'Ad performance is within acceptable parameters',
-      recommendation: 'Continue current strategy with regular optimization.',
+      reason: "Ad performance is within acceptable parameters",
+      recommendation: "Continue current strategy with regular optimization.",
     };
   }
 
   public getAudienceExpansionRecommendation(
     currentAudienceSize: number,
     saturationLevel: number,
-    conversionRate: number
+    conversionRate: number,
   ): { shouldExpand: boolean; expansionFactor: number; strategy: string } {
     if (saturationLevel > 0.75 && conversionRate > 0.03) {
       return {
         shouldExpand: true,
         expansionFactor: 2.0,
-        strategy: 'Create lookalike audience from high-value converters',
+        strategy: "Create lookalike audience from high-value converters",
       };
     }
 
-    if (saturationLevel > 0.60 && conversionRate > 0.02) {
+    if (saturationLevel > 0.6 && conversionRate > 0.02) {
       return {
         shouldExpand: true,
         expansionFactor: 1.5,
-        strategy: 'Expand to broader interest targeting',
+        strategy: "Expand to broader interest targeting",
       };
     }
 
-    if (saturationLevel < 0.40 && conversionRate < 0.01) {
+    if (saturationLevel < 0.4 && conversionRate < 0.01) {
       return {
         shouldExpand: false,
         expansionFactor: 0.7,
-        strategy: 'Narrow targeting to improve conversion rate before expanding',
+        strategy:
+          "Narrow targeting to improve conversion rate before expanding",
       };
     }
 
     return {
       shouldExpand: false,
       expansionFactor: 1.0,
-      strategy: 'Maintain current audience targeting',
+      strategy: "Maintain current audience targeting",
     };
   }
 }

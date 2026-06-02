@@ -18,17 +18,26 @@
  *   stopDomainVerificationWorker()   — clears the interval (used in tests / graceful shutdown)
  */
 
-import { pool } from '../db.js';
-import { verifyStorefrontDomain, runDomainHealthSweep } from '../services/storefrontDnsService.js';
-import { logger } from '../logger.js';
-import { pMap } from '../lib/concurrencyPool.js';
+import { pool } from "../db.js";
+import {
+  verifyStorefrontDomain,
+  runDomainHealthSweep,
+} from "../services/storefrontDnsService.js";
+import { logger } from "../logger.js";
+import { pMap } from "../lib/concurrencyPool.js";
 
-const POLL_INTERVAL_MS    = parseInt(process.env.DOMAIN_VERIFY_INTERVAL_MS ?? '60000', 10);
-const BATCH_SIZE          = 20;   // max domains fetched per tick
-const VERIFY_CONCURRENCY  = parseInt(process.env.DOMAIN_VERIFY_CONCURRENCY ?? '5', 10); // parallel DoH checks
-const MAX_FAILURE_BACKOFF = 60;   // after N failures, back off to hourly retry
-const BACKOFF_MODULO      = 60;   // tick count modulo for backed-off domains (1/hr at 1/min poll)
-const HEALTH_SWEEP_TICKS  = 12 * 60; // 12-hour cadence in ticks
+const POLL_INTERVAL_MS = parseInt(
+  process.env.DOMAIN_VERIFY_INTERVAL_MS ?? "60000",
+  10,
+);
+const BATCH_SIZE = 20; // max domains fetched per tick
+const VERIFY_CONCURRENCY = parseInt(
+  process.env.DOMAIN_VERIFY_CONCURRENCY ?? "5",
+  10,
+); // parallel DoH checks
+const MAX_FAILURE_BACKOFF = 60; // after N failures, back off to hourly retry
+const BACKOFF_MODULO = 60; // tick count modulo for backed-off domains (1/hr at 1/min poll)
+const HEALTH_SWEEP_TICKS = 12 * 60; // 12-hour cadence in ticks
 
 let intervalHandle: ReturnType<typeof setInterval> | null = null;
 let tickCount = 0;
@@ -46,9 +55,17 @@ async function runVerificationTick(): Promise<void> {
   tickCount++;
 
   // ── Pending domain checks ────────────────────────────────────────────────
-  let rows: Array<{ id: string; domain: string; verification_failures: number }> = [];
+  let rows: Array<{
+    id: string;
+    domain: string;
+    verification_failures: number;
+  }> = [];
   try {
-    const result = await pool.query<{ id: string; domain: string; verification_failures: number }>(
+    const result = await pool.query<{
+      id: string;
+      domain: string;
+      verification_failures: number;
+    }>(
       `SELECT id, domain, COALESCE(verification_failures, 0) AS verification_failures
        FROM storefront_domains
        WHERE status IN ('pending', 'verification_failed')
@@ -59,16 +76,23 @@ async function runVerificationTick(): Promise<void> {
     );
     rows = result.rows;
   } catch (err) {
-    logger.warn({ err }, '[domainVerify] failed to query pending domains');
+    logger.warn({ err }, "[domainVerify] failed to query pending domains");
     return;
   }
 
-  const eligible = rows.filter(r => shouldCheckDomain(r.verification_failures));
+  const eligible = rows.filter((r) =>
+    shouldCheckDomain(r.verification_failures),
+  );
 
   if (eligible.length > 0) {
     logger.debug(
-      { total: rows.length, eligible: eligible.length, concurrency: VERIFY_CONCURRENCY, tick: tickCount },
-      '[domainVerify] checking pending domains (parallel)',
+      {
+        total: rows.length,
+        eligible: eligible.length,
+        concurrency: VERIFY_CONCURRENCY,
+        tick: tickCount,
+      },
+      "[domainVerify] checking pending domains (parallel)",
     );
   }
 
@@ -80,10 +104,16 @@ async function runVerificationTick(): Promise<void> {
     eligible,
     async ({ id, domain }) => {
       const result = await verifyStorefrontDomain(id);
-      if (result === 'verified') {
-        logger.info({ domain }, '[domainVerify] ✅ domain verified and activated');
-      } else if (result === 'failed') {
-        logger.warn({ domain }, '[domainVerify] domain verification permanently failed');
+      if (result === "verified") {
+        logger.info(
+          { domain },
+          "[domainVerify] ✅ domain verified and activated",
+        );
+      } else if (result === "failed") {
+        logger.warn(
+          { domain },
+          "[domainVerify] domain verification permanently failed",
+        );
       }
     },
     VERIFY_CONCURRENCY,
@@ -93,9 +123,9 @@ async function runVerificationTick(): Promise<void> {
   if (tickCount % HEALTH_SWEEP_TICKS === 0) {
     try {
       const result = await runDomainHealthSweep();
-      logger.info(result, '[domainVerify] health sweep complete');
+      logger.info(result, "[domainVerify] health sweep complete");
     } catch (err) {
-      logger.warn({ err }, '[domainVerify] health sweep error (non-fatal)');
+      logger.warn({ err }, "[domainVerify] health sweep error (non-fatal)");
     }
   }
 }
@@ -104,22 +134,23 @@ export function startDomainVerificationWorker(): void {
   if (intervalHandle) return; // already running
 
   // Run once immediately so freshly-added domains don't wait a full minute
-  runVerificationTick().catch(err =>
-    logger.warn({ err }, '[domainVerify] initial tick error'),
+  runVerificationTick().catch((err) =>
+    logger.warn({ err }, "[domainVerify] initial tick error"),
   );
 
   intervalHandle = setInterval(() => {
-    runVerificationTick().catch(err =>
-      logger.warn({ err }, '[domainVerify] tick error'),
+    runVerificationTick().catch((err) =>
+      logger.warn({ err }, "[domainVerify] tick error"),
     );
   }, POLL_INTERVAL_MS);
 
   // Unref so the worker doesn't prevent clean process shutdown
-  if ((intervalHandle as Record<string, unknown>).unref) (intervalHandle as Record<string, unknown>).unref();
+  if ((intervalHandle as Record<string, unknown>).unref)
+    (intervalHandle as Record<string, unknown>).unref();
 
   logger.info(
     { intervalMs: POLL_INTERVAL_MS, batchSize: BATCH_SIZE },
-    '[domainVerify] worker started (multi-method DoH verification)',
+    "[domainVerify] worker started (multi-method DoH verification)",
   );
 }
 
@@ -127,7 +158,7 @@ export function stopDomainVerificationWorker(): void {
   if (intervalHandle) {
     clearInterval(intervalHandle);
     intervalHandle = null;
-    logger.info('[domainVerify] worker stopped');
+    logger.info("[domainVerify] worker stopped");
   }
 }
 

@@ -1,8 +1,8 @@
-import { db } from '../db';
-import { isrcRegistry, upcRegistry } from '@shared/schema';
-import { eq, and, sql, desc, like } from 'drizzle-orm';
-import { logger } from '../logger.js';
-import crypto from 'crypto';
+import { db } from "../db";
+import { isrcRegistry, upcRegistry } from "@shared/schema";
+import { eq, and, sql, desc, like } from "drizzle-orm";
+import { logger } from "../logger.js";
+import crypto from "crypto";
 
 export interface UPCValidationResult {
   valid: boolean;
@@ -30,37 +30,120 @@ export interface IdentifierGenerationOptions {
 }
 
 const VALID_COUNTRY_CODES = [
-  'US', 'GB', 'CA', 'AU', 'DE', 'FR', 'JP', 'IT', 'ES', 'NL', 'SE', 'NO', 'DK', 'FI',
-  'BE', 'CH', 'AT', 'PT', 'IE', 'NZ', 'BR', 'MX', 'AR', 'CL', 'CO', 'PE', 'VE',
-  'ZA', 'IN', 'KR', 'CN', 'TW', 'HK', 'SG', 'MY', 'TH', 'ID', 'PH', 'VN',
-  'PL', 'CZ', 'HU', 'RO', 'BG', 'GR', 'TR', 'RU', 'UA', 'IL', 'AE', 'EG', 'NG', 'KE'
+  "US",
+  "GB",
+  "CA",
+  "AU",
+  "DE",
+  "FR",
+  "JP",
+  "IT",
+  "ES",
+  "NL",
+  "SE",
+  "NO",
+  "DK",
+  "FI",
+  "BE",
+  "CH",
+  "AT",
+  "PT",
+  "IE",
+  "NZ",
+  "BR",
+  "MX",
+  "AR",
+  "CL",
+  "CO",
+  "PE",
+  "VE",
+  "ZA",
+  "IN",
+  "KR",
+  "CN",
+  "TW",
+  "HK",
+  "SG",
+  "MY",
+  "TH",
+  "ID",
+  "PH",
+  "VN",
+  "PL",
+  "CZ",
+  "HU",
+  "RO",
+  "BG",
+  "GR",
+  "TR",
+  "RU",
+  "UA",
+  "IL",
+  "AE",
+  "EG",
+  "NG",
+  "KE",
 ];
 
 const VALID_GENRES = [
-  'Pop', 'Rock', 'Hip-Hop/Rap', 'R&B/Soul', 'Electronic', 'Dance', 'Country',
-  'Jazz', 'Classical', 'Blues', 'Folk', 'Reggae', 'Latin', 'Metal', 'Punk',
-  'Alternative', 'Indie', 'World', 'Soundtrack', 'Children\'s Music', 'Spoken Word',
-  'Comedy', 'Gospel', 'Christian', 'New Age', 'Easy Listening', 'J-Pop', 'K-Pop',
-  'Afrobeats', 'Dancehall', 'House', 'Techno', 'Drum & Bass', 'Dubstep', 'Trap',
-  'Lo-Fi', 'Ambient', 'Experimental', 'Singer-Songwriter', 'Acoustic'
+  "Pop",
+  "Rock",
+  "Hip-Hop/Rap",
+  "R&B/Soul",
+  "Electronic",
+  "Dance",
+  "Country",
+  "Jazz",
+  "Classical",
+  "Blues",
+  "Folk",
+  "Reggae",
+  "Latin",
+  "Metal",
+  "Punk",
+  "Alternative",
+  "Indie",
+  "World",
+  "Soundtrack",
+  "Children's Music",
+  "Spoken Word",
+  "Comedy",
+  "Gospel",
+  "Christian",
+  "New Age",
+  "Easy Listening",
+  "J-Pop",
+  "K-Pop",
+  "Afrobeats",
+  "Dancehall",
+  "House",
+  "Techno",
+  "Drum & Bass",
+  "Dubstep",
+  "Trap",
+  "Lo-Fi",
+  "Ambient",
+  "Experimental",
+  "Singer-Songwriter",
+  "Acoustic",
 ];
 
 class IdentifierService {
-  private defaultRegistrantCode: string = 'MXB';
-  private defaultCountryCode: string = 'US';
+  private defaultRegistrantCode: string = "MXB";
+  private defaultCountryCode: string = "US";
 
   calculateUPCCheckDigit(digits: string): string {
     if (digits.length !== 11) {
-      throw new Error('UPC check digit calculation requires exactly 11 digits');
+      throw new Error("UPC check digit calculation requires exactly 11 digits");
     }
 
     let sum = 0;
     for (let i = 0; i < 11; i++) {
       const digit = parseInt(digits[i], 10);
       if (isNaN(digit)) {
-        throw new Error('Invalid digit in UPC');
+        throw new Error("Invalid digit in UPC");
       }
-      sum += (i % 2 === 0) ? digit * 3 : digit;
+      sum += i % 2 === 0 ? digit * 3 : digit;
     }
 
     const checkDigit = (10 - (sum % 10)) % 10;
@@ -68,39 +151,42 @@ class IdentifierService {
   }
 
   validateUPC(upc: string): UPCValidationResult {
-    const cleanUPC = upc.replace(/[-\s]/g, '');
+    const cleanUPC = upc.replace(/[-\s]/g, "");
 
     if (!/^\d{12}$/.test(cleanUPC)) {
       return {
         valid: false,
-        error: 'UPC must be exactly 12 digits'
+        error: "UPC must be exactly 12 digits",
       };
     }
 
     const providedCheckDigit = cleanUPC[11];
-    const calculatedCheckDigit = this.calculateUPCCheckDigit(cleanUPC.slice(0, 11));
+    const calculatedCheckDigit = this.calculateUPCCheckDigit(
+      cleanUPC.slice(0, 11),
+    );
 
     if (providedCheckDigit !== calculatedCheckDigit) {
       return {
         valid: false,
-        error: `Invalid check digit. Expected ${calculatedCheckDigit}, got ${providedCheckDigit}`
+        error: `Invalid check digit. Expected ${calculatedCheckDigit}, got ${providedCheckDigit}`,
       };
     }
 
     return {
       valid: true,
       formatted: cleanUPC,
-      checkDigit: calculatedCheckDigit
+      checkDigit: calculatedCheckDigit,
     };
   }
 
   async generateUPC(options: IdentifierGenerationOptions): Promise<string> {
     try {
-      const prefix = '619' + this.generateRandomDigits(8);
+      const prefix = "619" + this.generateRandomDigits(8);
       const checkDigit = this.calculateUPCCheckDigit(prefix);
       const upcCode = prefix + checkDigit;
 
-      const existing = await db.select()
+      const existing = await db
+        .select()
         .from(upcRegistry)
         .where(eq(upcRegistry.upc, upcCode))
         .limit(1);
@@ -111,26 +197,26 @@ class IdentifierService {
 
       await db.insert(upcRegistry).values({
         upc: upcCode,
-        releaseId: options.releaseId || 'pending',
+        releaseId: options.releaseId || "pending",
         artistId: options.userId,
-        title: options.metadata?.title || 'Generated UPC'
+        title: options.metadata?.title || "Generated UPC",
       });
 
       logger.info(`Generated UPC: ${upcCode} for user ${options.userId}`);
       return upcCode;
     } catch (error) {
-      logger.warn({ err: error }, 'Error generating UPC:');
-      throw new Error('Failed to generate UPC');
+      logger.warn({ err: error }, "Error generating UPC:");
+      throw new Error("Failed to generate UPC");
     }
   }
 
   validateISRC(isrc: string): ISRCValidationResult {
-    const cleanISRC = isrc.replace(/[-\s]/g, '').toUpperCase();
+    const cleanISRC = isrc.replace(/[-\s]/g, "").toUpperCase();
 
     if (cleanISRC.length !== 12) {
       return {
         valid: false,
-        error: 'ISRC must be exactly 12 characters (format: CC-XXX-YY-NNNNN)'
+        error: "ISRC must be exactly 12 characters (format: CC-XXX-YY-NNNNN)",
       };
     }
 
@@ -142,35 +228,35 @@ class IdentifierService {
     if (!/^[A-Z]{2}$/.test(countryCode)) {
       return {
         valid: false,
-        error: 'Country code must be 2 uppercase letters'
+        error: "Country code must be 2 uppercase letters",
       };
     }
 
     if (!VALID_COUNTRY_CODES.includes(countryCode)) {
       return {
         valid: false,
-        error: `Invalid country code: ${countryCode}. Must be a valid ISO 3166-1 alpha-2 code`
+        error: `Invalid country code: ${countryCode}. Must be a valid ISO 3166-1 alpha-2 code`,
       };
     }
 
     if (!/^[A-Z0-9]{3}$/.test(registrantCode)) {
       return {
         valid: false,
-        error: 'Registrant code must be 3 alphanumeric characters'
+        error: "Registrant code must be 3 alphanumeric characters",
       };
     }
 
     if (!/^\d{2}$/.test(year)) {
       return {
         valid: false,
-        error: 'Year must be 2 digits'
+        error: "Year must be 2 digits",
       };
     }
 
     if (!/^\d{5}$/.test(designation)) {
       return {
         valid: false,
-        error: 'Designation must be 5 digits'
+        error: "Designation must be 5 digits",
       };
     }
 
@@ -180,8 +266,8 @@ class IdentifierService {
         countryCode,
         registrantCode,
         year,
-        designation
-      }
+        designation,
+      },
     };
   }
 
@@ -189,15 +275,16 @@ class IdentifierService {
     countryCode: string = this.defaultCountryCode,
     registrantCode: string = this.defaultRegistrantCode,
     year?: number,
-    options?: IdentifierGenerationOptions
+    options?: IdentifierGenerationOptions,
   ): Promise<string> {
     try {
       const cc = countryCode.toUpperCase();
-      const rc = registrantCode.toUpperCase().padEnd(3, '0').slice(0, 3);
+      const rc = registrantCode.toUpperCase().padEnd(3, "0").slice(0, 3);
       const yr = (year || new Date().getFullYear()).toString().slice(-2);
 
       const prefix = `${cc}${rc}${yr}`;
-      const lastIsrc = await db.select()
+      const lastIsrc = await db
+        .select()
         .from(isrcRegistry)
         .where(like(isrcRegistry.isrc, `${prefix}%`))
         .orderBy(desc(isrcRegistry.isrc))
@@ -210,35 +297,39 @@ class IdentifierService {
       }
 
       if (nextDesignation > 99999) {
-        throw new Error('ISRC designation number exhausted for this registrant/year');
+        throw new Error(
+          "ISRC designation number exhausted for this registrant/year",
+        );
       }
 
-      const designation = nextDesignation.toString().padStart(5, '0');
+      const designation = nextDesignation.toString().padStart(5, "0");
       const isrcCode = `${cc}${rc}${yr}${designation}`;
 
       await db.insert(isrcRegistry).values({
         isrc: isrcCode,
-        trackId: options?.trackId || 'pending',
-        artistId: options?.userId || 'system',
-        title: options?.metadata?.title || 'Generated ISRC'
+        trackId: options?.trackId || "pending",
+        artistId: options?.userId || "system",
+        title: options?.metadata?.title || "Generated ISRC",
       });
 
-      logger.info(`Generated ISRC: ${this.formatISRC(isrcCode)} for user ${options?.userId || 'system'}`);
+      logger.info(
+        `Generated ISRC: ${this.formatISRC(isrcCode)} for user ${options?.userId || "system"}`,
+      );
       return isrcCode;
     } catch (error) {
-      logger.warn({ err: error }, 'Error generating ISRC:');
-      throw new Error('Failed to generate ISRC');
+      logger.warn({ err: error }, "Error generating ISRC:");
+      throw new Error("Failed to generate ISRC");
     }
   }
 
   formatISRC(isrc: string): string {
-    const clean = isrc.replace(/[-\s]/g, '').toUpperCase();
+    const clean = isrc.replace(/[-\s]/g, "").toUpperCase();
     if (clean.length !== 12) return isrc;
     return `${clean.slice(0, 2)}-${clean.slice(2, 5)}-${clean.slice(5, 7)}-${clean.slice(7, 12)}`;
   }
 
   formatUPC(upc: string): string {
-    const clean = upc.replace(/[-\s]/g, '');
+    const clean = upc.replace(/[-\s]/g, "");
     if (clean.length !== 12) return upc;
     return clean;
   }
@@ -247,30 +338,37 @@ class IdentifierService {
     count: number,
     countryCode: string = this.defaultCountryCode,
     registrantCode: string = this.defaultRegistrantCode,
-    options?: IdentifierGenerationOptions
+    options?: IdentifierGenerationOptions,
   ): Promise<string[]> {
     if (count < 1 || count > 100) {
-      throw new Error('Batch size must be between 1 and 100');
+      throw new Error("Batch size must be between 1 and 100");
     }
 
     const isrcs: string[] = [];
     const year = new Date().getFullYear();
 
     for (let i = 0; i < count; i++) {
-      const isrc = await this.generateISRC(countryCode, registrantCode, year, options);
+      const isrc = await this.generateISRC(
+        countryCode,
+        registrantCode,
+        year,
+        options,
+      );
       isrcs.push(isrc);
     }
 
-    logger.info(`Reserved batch of ${count} ISRCs for user ${options?.userId || 'system'}`);
+    logger.info(
+      `Reserved batch of ${count} ISRCs for user ${options?.userId || "system"}`,
+    );
     return isrcs;
   }
 
   async reserveUPCBatch(
     count: number,
-    options: IdentifierGenerationOptions
+    options: IdentifierGenerationOptions,
   ): Promise<string[]> {
     if (count < 1 || count > 50) {
-      throw new Error('Batch size must be between 1 and 50');
+      throw new Error("Batch size must be between 1 and 50");
     }
 
     const upcs: string[] = [];
@@ -297,9 +395,10 @@ class IdentifierService {
       status: string;
     };
   }> {
-    const cleanISRC = isrc.replace(/[-\s]/g, '').toUpperCase();
-    
-    const record = await db.select()
+    const cleanISRC = isrc.replace(/[-\s]/g, "").toUpperCase();
+
+    const record = await db
+      .select()
       .from(isrcRegistry)
       .where(eq(isrcRegistry.code, cleanISRC))
       .limit(1);
@@ -319,8 +418,8 @@ class IdentifierService {
         year: r.year,
         designation: r.designation,
         issuedAt: r.issuedAt,
-        status: r.status
-      }
+        status: r.status,
+      },
     };
   }
 
@@ -333,9 +432,10 @@ class IdentifierService {
       status: string;
     };
   }> {
-    const cleanUPC = upc.replace(/[-\s]/g, '');
-    
-    const record = await db.select()
+    const cleanUPC = upc.replace(/[-\s]/g, "");
+
+    const record = await db
+      .select()
       .from(upcRegistry)
       .where(eq(upcRegistry.code, cleanUPC))
       .limit(1);
@@ -351,18 +451,19 @@ class IdentifierService {
         userId: r.userId,
         releaseId: r.releaseId,
         issuedAt: r.issuedAt,
-        status: r.status
-      }
+        status: r.status,
+      },
     };
   }
 
   async assignISRCToTrack(isrc: string, trackId: string): Promise<boolean> {
-    const cleanISRC = isrc.replace(/[-\s]/g, '').toUpperCase();
-    
-    const result = await db.update(isrcRegistry)
+    const cleanISRC = isrc.replace(/[-\s]/g, "").toUpperCase();
+
+    const result = await db
+      .update(isrcRegistry)
       .set({
         trackId,
-        status: 'assigned'
+        status: "assigned",
       })
       .where(eq(isrcRegistry.code, cleanISRC));
 
@@ -370,56 +471,63 @@ class IdentifierService {
   }
 
   async assignUPCToRelease(upc: string, releaseId: string): Promise<boolean> {
-    const cleanUPC = upc.replace(/[-\s]/g, '');
-    
-    const result = await db.update(upcRegistry)
+    const cleanUPC = upc.replace(/[-\s]/g, "");
+
+    const result = await db
+      .update(upcRegistry)
       .set({
         releaseId,
-        status: 'assigned'
+        status: "assigned",
       })
       .where(eq(upcRegistry.code, cleanUPC));
 
     return true;
   }
 
-  async getUserISRCs(userId: string): Promise<Array<{
-    code: string;
-    formatted: string;
-    trackId: string | null;
-    status: string;
-    issuedAt: Date;
-  }>> {
-    const records = await db.select()
+  async getUserISRCs(userId: string): Promise<
+    Array<{
+      code: string;
+      formatted: string;
+      trackId: string | null;
+      status: string;
+      issuedAt: Date;
+    }>
+  > {
+    const records = await db
+      .select()
       .from(isrcRegistry)
       .where(eq(isrcRegistry.userId, userId))
       .orderBy(desc(isrcRegistry.issuedAt))
       .limit(500);
 
-    return records.map(r => ({
+    return records.map((r) => ({
       code: r.code,
       formatted: this.formatISRC(r.code),
       trackId: r.trackId,
       status: r.status,
-      issuedAt: r.issuedAt
+      issuedAt: r.issuedAt,
     }));
   }
 
-  async getUserUPCs(userId: string): Promise<Array<{
-    code: string;
-    releaseId: string | null;
-    status: string;
-    issuedAt: Date;
-  }>> {
-    const records = await db.select()
+  async getUserUPCs(userId: string): Promise<
+    Array<{
+      code: string;
+      releaseId: string | null;
+      status: string;
+      issuedAt: Date;
+    }>
+  > {
+    const records = await db
+      .select()
       .from(upcRegistry)
       .where(eq(upcRegistry.userId, userId))
       .orderBy(desc(upcRegistry.issuedAt));
 
-    return records.map(r => ({
+    return records.map((r) => ({
       code: r.code,
       releaseId: r.releaseId,
       status: r.status,
-      issuedAt: r.issuedAt
+      issuedAt: r.issuedAt,
     }));
   }
 
@@ -436,13 +544,11 @@ class IdentifierService {
   }
 
   isValidGenre(genre: string): boolean {
-    return VALID_GENRES.some(g => 
-      g.toLowerCase() === genre.toLowerCase()
-    );
+    return VALID_GENRES.some((g) => g.toLowerCase() === genre.toLowerCase());
   }
 
   private generateRandomDigits(length: number): string {
-    let result = '';
+    let result = "";
     for (let i = 0; i < length; i++) {
       result += crypto.randomInt(0, 10).toString();
     }

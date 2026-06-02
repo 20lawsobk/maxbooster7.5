@@ -4,16 +4,16 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { Label } from '@/components/ui/label';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
-import { Separator } from '@/components/ui/separator';
-import { useAudioDevices } from '@/hooks/useAudioDevices';
-import { useMIDIDevices } from '@/hooks/useMIDIDevices';
-import { Mic, Speaker, Music, RefreshCw, AlertCircle } from 'lucide-react';
-import { useState } from 'react';
+} from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
+import { useAudioDevices } from "@/hooks/useAudioDevices";
+import { useMIDIDevices } from "@/hooks/useMIDIDevices";
+import { Mic, Speaker, Music, RefreshCw, AlertCircle } from "lucide-react";
+import { useState } from "react";
 
 interface DeviceSelectorProps {
   onAudioInputChange?: (deviceId: string) => void;
@@ -62,7 +62,11 @@ export function DeviceSelector({
             </SelectTrigger>
             <SelectContent>
               {audioDevices.inputs.map((device) => (
-                <SelectItem key={device.deviceId} value={device.deviceId} className="text-xs">
+                <SelectItem
+                  key={device.deviceId}
+                  value={device.deviceId}
+                  className="text-xs"
+                >
                   {device.label}
                 </SelectItem>
               ))}
@@ -85,7 +89,11 @@ export function DeviceSelector({
                 </SelectTrigger>
                 <SelectContent>
                   {midiDevices.inputs.map((device) => (
-                    <SelectItem key={device.id} value={device.id} className="text-xs">
+                    <SelectItem
+                      key={device.id}
+                      value={device.id}
+                      className="text-xs"
+                    >
                       {device.name}
                     </SelectItem>
                   ))}
@@ -218,8 +226,8 @@ export function DeviceSelector({
 
         {!midiDevices.isSupported ? (
           <div className="text-xs text-gray-500 p-2 bg-gray-900/50 rounded border border-gray-800">
-            Web MIDI API is not supported in this browser. Try Chrome, Edge, or Opera for MIDI
-            controller support.
+            Web MIDI API is not supported in this browser. Try Chrome, Edge, or
+            Opera for MIDI controller support.
           </div>
         ) : midiDevices.error ? (
           <div className="flex items-center gap-2 text-xs text-red-500">
@@ -228,7 +236,8 @@ export function DeviceSelector({
           </div>
         ) : midiDevices.inputs.length === 0 ? (
           <div className="text-xs text-gray-500 p-2 bg-gray-900/50 rounded border border-gray-800">
-            No MIDI devices connected. Connect a MIDI controller and click Refresh.
+            No MIDI devices connected. Connect a MIDI controller and click
+            Refresh.
           </div>
         ) : (
           <Select
@@ -261,22 +270,32 @@ export function DeviceSelector({
         onClick={() => setShowDetails(!showDetails)}
         className="w-full text-xs"
       >
-        {showDetails ? 'Hide' : 'Show'} Device Details
+        {showDetails ? "Hide" : "Show"} Device Details
       </Button>
 
       {/* Status Info */}
       <div className="text-xs text-gray-500 space-y-1 pt-2 border-t border-gray-800">
         <div className="flex justify-between">
           <span>Audio Permission:</span>
-          <span className={audioDevices.permissionGranted ? 'text-green-500' : 'text-yellow-500'}>
-            {audioDevices.permissionGranted ? 'Granted' : 'Pending'}
+          <span
+            className={
+              audioDevices.permissionGranted
+                ? "text-green-500"
+                : "text-yellow-500"
+            }
+          >
+            {audioDevices.permissionGranted ? "Granted" : "Pending"}
           </span>
         </div>
         {midiDevices.isSupported && (
           <div className="flex justify-between">
             <span>MIDI Access:</span>
-            <span className={midiDevices.accessGranted ? 'text-green-500' : 'text-yellow-500'}>
-              {midiDevices.accessGranted ? 'Granted' : 'Pending'}
+            <span
+              className={
+                midiDevices.accessGranted ? "text-green-500" : "text-yellow-500"
+              }
+            >
+              {midiDevices.accessGranted ? "Granted" : "Pending"}
             </span>
           </div>
         )}

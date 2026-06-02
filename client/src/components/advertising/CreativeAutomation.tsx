@@ -1,26 +1,32 @@
-import { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
+import { useState } from "react";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { Switch } from '@/components/ui/switch';
-import { Slider } from '@/components/ui/slider';
+} from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
+import { Slider } from "@/components/ui/slider";
 import {
   ChartContainer,
   ChartTooltip,
   ChartTooltipContent,
-} from '@/components/ui/chart';
+} from "@/components/ui/chart";
 import {
   BarChart,
   Bar,
@@ -39,7 +45,7 @@ import {
   PolarGrid,
   PolarAngleAxis,
   PolarRadiusAxis,
-} from 'recharts';
+} from "recharts";
 import {
   Sparkles,
   Wand2,
@@ -80,7 +86,7 @@ import {
   RotateCcw,
   ThumbsUp,
   ThumbsDown,
-} from 'lucide-react';
+} from "lucide-react";
 
 interface CreativeVariant {
   id: string;
@@ -89,7 +95,7 @@ interface CreativeVariant {
   description: string;
   cta: string;
   imageUrl?: string;
-  status: 'draft' | 'testing' | 'winner' | 'loser' | 'paused' | 'pending';
+  status: "draft" | "testing" | "winner" | "loser" | "paused" | "pending";
   impressions: number;
   clicks: number;
   conversions: number;
@@ -105,7 +111,7 @@ interface CreativeVariant {
 interface ABTest {
   id: string;
   name: string;
-  status: 'draft' | 'running' | 'completed' | 'paused';
+  status: "draft" | "running" | "completed" | "paused";
   startDate: string;
   endDate?: string;
   variants: CreativeVariant[];
@@ -113,8 +119,8 @@ interface ABTest {
   statisticalSignificance: number;
   sampleSize: number;
   targetSampleSize: number;
-  testType: 'a/b' | 'multivariate' | 'sequential';
-  objective: 'ctr' | 'conversions' | 'revenue';
+  testType: "a/b" | "multivariate" | "sequential";
+  objective: "ctr" | "conversions" | "revenue";
   trafficAllocation: number;
 }
 
@@ -127,29 +133,37 @@ interface AIGenerationConfig {
   maxLength: number;
 }
 
+import { useQuery } from "@tanstack/react-query";
 
-import { useQuery } from '@tanstack/react-query';
-
-const COLORS = ['#3b82f6', '#22c55e', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4'];
+const COLORS = [
+  "#3b82f6",
+  "#22c55e",
+  "#f59e0b",
+  "#ef4444",
+  "#8b5cf6",
+  "#06b6d4",
+];
 
 export function CreativeAutomation() {
   const { data: abTestsData } = useQuery({
-    queryKey: ['/api/advertising/ab-tests'],
+    queryKey: ["/api/advertising/ab-tests"],
   });
-  
+
   const abTests: ABTest[] = abTestsData?.tests || [];
-  const variants: CreativeVariant[] = abTests.length > 0 ? abTests[0].variants : [];
-  
+  const variants: CreativeVariant[] =
+    abTests.length > 0 ? abTests[0].variants : [];
+
   const [activeTest, setActiveTest] = useState<ABTest | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [autoOptimize, setAutoOptimize] = useState(true);
   const [autoWinnerSelection, setAutoWinnerSelection] = useState(true);
   const [confidenceThreshold, setConfidenceThreshold] = useState(95);
-  const [selectedVariant, setSelectedVariant] = useState<CreativeVariant | null>(null);
+  const [selectedVariant, setSelectedVariant] =
+    useState<CreativeVariant | null>(null);
   const [aiConfig, setAiConfig] = useState<AIGenerationConfig>({
-    baseContent: '',
-    targetAudience: '',
-    tone: 'professional',
+    baseContent: "",
+    targetAudience: "",
+    tone: "professional",
     variantCount: 5,
     includeEmoji: false,
     maxLength: 150,
@@ -162,27 +176,27 @@ export function CreativeAutomation() {
     }, 3000);
   };
 
-  const getStatusBadge = (status: CreativeVariant['status']) => {
+  const getStatusBadge = (status: CreativeVariant["status"]) => {
     const styles = {
-      draft: 'bg-gray-500/10 text-gray-500 border-gray-500/20',
-      testing: 'bg-blue-500/10 text-blue-500 border-blue-500/20',
-      winner: 'bg-green-500/10 text-green-500 border-green-500/20',
-      loser: 'bg-red-500/10 text-red-500 border-red-500/20',
-      paused: 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20',
-      pending: 'bg-purple-500/10 text-purple-500 border-purple-500/20',
+      draft: "bg-gray-500/10 text-gray-500 border-gray-500/20",
+      testing: "bg-blue-500/10 text-blue-500 border-blue-500/20",
+      winner: "bg-green-500/10 text-green-500 border-green-500/20",
+      loser: "bg-red-500/10 text-red-500 border-red-500/20",
+      paused: "bg-yellow-500/10 text-yellow-500 border-yellow-500/20",
+      pending: "bg-purple-500/10 text-purple-500 border-purple-500/20",
     };
     return styles[status];
   };
 
-  const getStatusIcon = (status: CreativeVariant['status']) => {
+  const getStatusIcon = (status: CreativeVariant["status"]) => {
     switch (status) {
-      case 'winner':
+      case "winner":
         return <Trophy className="w-3 h-3" />;
-      case 'loser':
+      case "loser":
         return <ThumbsDown className="w-3 h-3" />;
-      case 'testing':
+      case "testing":
         return <FlaskConical className="w-3 h-3" />;
-      case 'paused':
+      case "paused":
         return <Pause className="w-3 h-3" />;
       default:
         return null;
@@ -190,30 +204,33 @@ export function CreativeAutomation() {
   };
 
   const getConfidenceColor = (confidence: number) => {
-    if (confidence >= 95) return 'text-green-500';
-    if (confidence >= 80) return 'text-yellow-500';
-    return 'text-red-500';
+    if (confidence >= 95) return "text-green-500";
+    if (confidence >= 80) return "text-yellow-500";
+    return "text-red-500";
   };
 
   const getAIScoreColor = (score: number) => {
-    if (score >= 80) return 'text-green-500 bg-green-500/10';
-    if (score >= 60) return 'text-yellow-500 bg-yellow-500/10';
-    return 'text-red-500 bg-red-500/10';
+    if (score >= 80) return "text-green-500 bg-green-500/10";
+    if (score >= 60) return "text-yellow-500 bg-yellow-500/10";
+    return "text-red-500 bg-red-500/10";
   };
 
   const chartConfig = {
-    variantA: { label: 'Variant A', color: '#3b82f6' },
-    variantB: { label: 'Variant B', color: '#22c55e' },
-    variantC: { label: 'Variant C', color: '#f59e0b' },
-    variantD: { label: 'Variant D', color: '#ef4444' },
-    confidence: { label: 'Confidence', color: '#8b5cf6' },
+    variantA: { label: "Variant A", color: "#3b82f6" },
+    variantB: { label: "Variant B", color: "#22c55e" },
+    variantC: { label: "Variant C", color: "#f59e0b" },
+    variantD: { label: "Variant D", color: "#ef4444" },
+    confidence: { label: "Confidence", color: "#8b5cf6" },
   };
 
   const totalImpressions = variants.reduce((acc, v) => acc + v.impressions, 0);
   const totalConversions = variants.reduce((acc, v) => acc + v.conversions, 0);
   const totalRevenue = variants.reduce((acc, v) => acc + v.revenue, 0);
-  const avgCTR = variants.length > 0 ? variants.reduce((acc, v) => acc + v.ctr, 0) / variants.length : 0;
-  
+  const avgCTR =
+    variants.length > 0
+      ? variants.reduce((acc, v) => acc + v.ctr, 0) / variants.length
+      : 0;
+
   if (abTests.length === 0) {
     return (
       <div className="space-y-6">
@@ -224,7 +241,8 @@ export function CreativeAutomation() {
               AI Creative Automation
             </h2>
             <p className="text-muted-foreground">
-              Automated variant generation, A/B testing, and winner selection powered by AI
+              Automated variant generation, A/B testing, and winner selection
+              powered by AI
             </p>
           </div>
         </div>
@@ -233,7 +251,10 @@ export function CreativeAutomation() {
             <FlaskConical className="w-8 h-8 text-muted-foreground" />
           </div>
           <h3 className="text-lg font-semibold mb-2">No A/B Tests Yet</h3>
-          <p className="text-muted-foreground mb-4">Create your first A/B test to start optimizing your ad creatives with AI.</p>
+          <p className="text-muted-foreground mb-4">
+            Create your first A/B test to start optimizing your ad creatives
+            with AI.
+          </p>
           <Button className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700">
             <Plus className="w-4 h-4 mr-2" />
             Create A/B Test
@@ -242,7 +263,7 @@ export function CreativeAutomation() {
       </div>
     );
   }
-  
+
   const currentTest = activeTest || abTests[0];
 
   return (
@@ -254,7 +275,8 @@ export function CreativeAutomation() {
             AI Creative Automation
           </h2>
           <p className="text-muted-foreground">
-            Automated variant generation, A/B testing, and winner selection powered by AI
+            Automated variant generation, A/B testing, and winner selection
+            powered by AI
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -289,7 +311,9 @@ export function CreativeAutomation() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Active Tests</p>
-                <p className="text-2xl font-bold">{abTests.filter(t => t.status === 'running').length}</p>
+                <p className="text-2xl font-bold">
+                  {abTests.filter((t) => t.status === "running").length}
+                </p>
               </div>
               <div className="w-10 h-10 rounded-full bg-blue-500/10 flex items-center justify-center">
                 <FlaskConical className="w-5 h-5 text-blue-500" />
@@ -332,7 +356,7 @@ export function CreativeAutomation() {
               <div>
                 <p className="text-sm text-muted-foreground">Winners Found</p>
                 <p className="text-2xl font-bold">
-                  {variants.filter((v) => v.status === 'winner').length}
+                  {variants.filter((v) => v.status === "winner").length}
                 </p>
               </div>
               <div className="w-10 h-10 rounded-full bg-yellow-500/10 flex items-center justify-center">
@@ -347,7 +371,9 @@ export function CreativeAutomation() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Total Revenue</p>
-                <p className="text-2xl font-bold">${(totalRevenue / 1000).toFixed(1)}K</p>
+                <p className="text-2xl font-bold">
+                  ${(totalRevenue / 1000).toFixed(1)}K
+                </p>
               </div>
               <div className="w-10 h-10 rounded-full bg-emerald-500/10 flex items-center justify-center">
                 <DollarSign className="w-5 h-5 text-emerald-500" />
@@ -376,22 +402,23 @@ export function CreativeAutomation() {
                     {currentTest.name}
                   </CardTitle>
                   <CardDescription>
-                    Started {new Date(currentTest.startDate).toLocaleDateString()} •{' '}
-                    {currentTest.sampleSize.toLocaleString()} /{' '}
+                    Started{" "}
+                    {new Date(currentTest.startDate).toLocaleDateString()} •{" "}
+                    {currentTest.sampleSize.toLocaleString()} /{" "}
                     {currentTest.targetSampleSize.toLocaleString()} samples
                   </CardDescription>
                 </div>
                 <div className="flex items-center gap-4">
                   <Badge
                     className={
-                      currentTest.status === 'running'
-                        ? 'bg-green-500/10 text-green-500'
-                        : currentTest.status === 'completed'
-                          ? 'bg-blue-500/10 text-blue-500'
-                          : 'bg-gray-500/10 text-gray-500'
+                      currentTest.status === "running"
+                        ? "bg-green-500/10 text-green-500"
+                        : currentTest.status === "completed"
+                          ? "bg-blue-500/10 text-blue-500"
+                          : "bg-gray-500/10 text-gray-500"
                     }
                   >
-                    {currentTest.status === 'running' ? (
+                    {currentTest.status === "running" ? (
                       <Play className="w-3 h-3 mr-1" />
                     ) : (
                       <CheckCircle className="w-3 h-3 mr-1" />
@@ -399,7 +426,9 @@ export function CreativeAutomation() {
                     {currentTest.status}
                   </Badge>
                   <div className="text-right">
-                    <p className="text-sm text-muted-foreground">Statistical Significance</p>
+                    <p className="text-sm text-muted-foreground">
+                      Statistical Significance
+                    </p>
                     <p
                       className={`text-lg font-bold ${getConfidenceColor(currentTest.statisticalSignificance)}`}
                     >
@@ -409,7 +438,9 @@ export function CreativeAutomation() {
                 </div>
               </div>
               <Progress
-                value={(currentTest.sampleSize / currentTest.targetSampleSize) * 100}
+                value={
+                  (currentTest.sampleSize / currentTest.targetSampleSize) * 100
+                }
                 className="mt-2"
               />
             </CardHeader>
@@ -419,11 +450,11 @@ export function CreativeAutomation() {
                   <div
                     key={variant.id}
                     className={`p-4 rounded-lg border transition-all ${
-                      variant.status === 'winner'
-                        ? 'border-green-500/50 bg-green-500/5 ring-2 ring-green-500/20'
-                        : variant.status === 'loser'
-                          ? 'border-red-500/30 bg-red-500/5 opacity-75'
-                          : 'border-border hover:border-primary/30'
+                      variant.status === "winner"
+                        ? "border-green-500/50 bg-green-500/5 ring-2 ring-green-500/20"
+                        : variant.status === "loser"
+                          ? "border-red-500/30 bg-red-500/5 opacity-75"
+                          : "border-border hover:border-primary/30"
                     }`}
                   >
                     <div className="flex items-start justify-between">
@@ -431,14 +462,16 @@ export function CreativeAutomation() {
                         <div className="flex items-center gap-2 mb-2">
                           <div
                             className="w-4 h-4 rounded-full"
-                            style={{ backgroundColor: COLORS[idx % COLORS.length] }}
+                            style={{
+                              backgroundColor: COLORS[idx % COLORS.length],
+                            }}
                           />
                           <h4 className="font-semibold">{variant.name}</h4>
                           <Badge className={getStatusBadge(variant.status)}>
                             {getStatusIcon(variant.status)}
                             <span className="ml-1">{variant.status}</span>
                           </Badge>
-                          {variant.status === 'winner' && (
+                          {variant.status === "winner" && (
                             <Badge className="bg-yellow-500/10 text-yellow-500 border-yellow-500/20">
                               <Crown className="w-3 h-3 mr-1" />
                               Champion
@@ -449,38 +482,62 @@ export function CreativeAutomation() {
                           <div>
                             <p className="flex items-center gap-2">
                               <Type className="w-4 h-4 text-muted-foreground" />
-                              <span className="text-muted-foreground">Headline:</span>
-                              <span className="font-medium">{variant.headline}</span>
+                              <span className="text-muted-foreground">
+                                Headline:
+                              </span>
+                              <span className="font-medium">
+                                {variant.headline}
+                              </span>
                             </p>
                             <p className="flex items-center gap-2 mt-1">
                               <MousePointerClick className="w-4 h-4 text-muted-foreground" />
-                              <span className="text-muted-foreground">CTA:</span>
+                              <span className="text-muted-foreground">
+                                CTA:
+                              </span>
                               <span className="font-medium">{variant.cta}</span>
                             </p>
                           </div>
-                          <p className="text-muted-foreground line-clamp-2">{variant.description}</p>
+                          <p className="text-muted-foreground line-clamp-2">
+                            {variant.description}
+                          </p>
                         </div>
                       </div>
                       <div className="flex items-center gap-6 ml-4">
                         <div className="text-center">
-                          <p className="text-2xl font-bold">{variant.ctr.toFixed(2)}%</p>
+                          <p className="text-2xl font-bold">
+                            {variant.ctr.toFixed(2)}%
+                          </p>
                           <p className="text-xs text-muted-foreground">CTR</p>
                         </div>
                         <div className="text-center">
-                          <p className="text-2xl font-bold">{variant.conversionRate.toFixed(2)}%</p>
-                          <p className="text-xs text-muted-foreground">Conv. Rate</p>
+                          <p className="text-2xl font-bold">
+                            {variant.conversionRate.toFixed(2)}%
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            Conv. Rate
+                          </p>
                         </div>
                         <div className="text-center">
-                          <p className={`text-2xl font-bold ${getConfidenceColor(variant.confidence)}`}>
+                          <p
+                            className={`text-2xl font-bold ${getConfidenceColor(variant.confidence)}`}
+                          >
                             {variant.confidence}%
                           </p>
-                          <p className="text-xs text-muted-foreground">Confidence</p>
+                          <p className="text-xs text-muted-foreground">
+                            Confidence
+                          </p>
                         </div>
                         <div className="text-center">
-                          <div className={`px-3 py-1 rounded-full ${getAIScoreColor(variant.aiScore)}`}>
-                            <p className="text-lg font-bold">{variant.aiScore}</p>
+                          <div
+                            className={`px-3 py-1 rounded-full ${getAIScoreColor(variant.aiScore)}`}
+                          >
+                            <p className="text-lg font-bold">
+                              {variant.aiScore}
+                            </p>
                           </div>
-                          <p className="text-xs text-muted-foreground mt-1">AI Score</p>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            AI Score
+                          </p>
                         </div>
                       </div>
                     </div>
@@ -499,8 +556,8 @@ export function CreativeAutomation() {
                           {variant.conversions.toLocaleString()} conversions
                         </span>
                         <span className="flex items-center gap-1">
-                          <DollarSign className="w-3 h-3" />
-                          ${variant.revenue.toLocaleString()} revenue
+                          <DollarSign className="w-3 h-3" />$
+                          {variant.revenue.toLocaleString()} revenue
                         </span>
                       </div>
                       <div className="flex gap-2">
@@ -508,14 +565,17 @@ export function CreativeAutomation() {
                           <Copy className="w-3 h-3 mr-1" />
                           Duplicate
                         </Button>
-                        {variant.status === 'testing' && (
+                        {variant.status === "testing" && (
                           <Button size="sm" variant="outline">
                             <Pause className="w-3 h-3 mr-1" />
                             Pause
                           </Button>
                         )}
-                        {variant.status === 'winner' && (
-                          <Button size="sm" className="bg-green-600 hover:bg-green-700">
+                        {variant.status === "winner" && (
+                          <Button
+                            size="sm"
+                            className="bg-green-600 hover:bg-green-700"
+                          >
                             <Rocket className="w-3 h-3 mr-1" />
                             Scale Winner
                           </Button>
@@ -547,7 +607,9 @@ export function CreativeAutomation() {
                   <Textarea
                     placeholder="Describe the core message or product you want to promote..."
                     value={aiConfig.baseContent}
-                    onChange={(e) => setAiConfig({ ...aiConfig, baseContent: e.target.value })}
+                    onChange={(e) =>
+                      setAiConfig({ ...aiConfig, baseContent: e.target.value })
+                    }
                     rows={3}
                   />
                 </div>
@@ -557,7 +619,12 @@ export function CreativeAutomation() {
                   <Input
                     placeholder="e.g., Independent musicians ages 18-35, music producers"
                     value={aiConfig.targetAudience}
-                    onChange={(e) => setAiConfig({ ...aiConfig, targetAudience: e.target.value })}
+                    onChange={(e) =>
+                      setAiConfig({
+                        ...aiConfig,
+                        targetAudience: e.target.value,
+                      })
+                    }
                   />
                 </div>
 
@@ -566,17 +633,23 @@ export function CreativeAutomation() {
                     <Label>Tone</Label>
                     <Select
                       value={aiConfig.tone}
-                      onValueChange={(value) => setAiConfig({ ...aiConfig, tone: value })}
+                      onValueChange={(value) =>
+                        setAiConfig({ ...aiConfig, tone: value })
+                      }
                     >
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="professional">Professional</SelectItem>
+                        <SelectItem value="professional">
+                          Professional
+                        </SelectItem>
                         <SelectItem value="casual">Casual</SelectItem>
                         <SelectItem value="urgent">Urgent</SelectItem>
                         <SelectItem value="playful">Playful</SelectItem>
-                        <SelectItem value="inspirational">Inspirational</SelectItem>
+                        <SelectItem value="inspirational">
+                          Inspirational
+                        </SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -584,7 +657,12 @@ export function CreativeAutomation() {
                     <Label>Number of Variants</Label>
                     <Select
                       value={aiConfig.variantCount.toString()}
-                      onValueChange={(value) => setAiConfig({ ...aiConfig, variantCount: parseInt(value) })}
+                      onValueChange={(value) =>
+                        setAiConfig({
+                          ...aiConfig,
+                          variantCount: parseInt(value),
+                        })
+                      }
                     >
                       <SelectTrigger>
                         <SelectValue />
@@ -605,20 +683,26 @@ export function CreativeAutomation() {
                   <div className="flex items-center gap-4">
                     <Slider
                       value={[aiConfig.maxLength]}
-                      onValueChange={(v) => setAiConfig({ ...aiConfig, maxLength: v[0] })}
+                      onValueChange={(v) =>
+                        setAiConfig({ ...aiConfig, maxLength: v[0] })
+                      }
                       min={50}
                       max={300}
                       step={10}
                       className="flex-1"
                     />
-                    <span className="text-sm font-medium w-16">{aiConfig.maxLength} chars</span>
+                    <span className="text-sm font-medium w-16">
+                      {aiConfig.maxLength} chars
+                    </span>
                   </div>
                 </div>
 
                 <div className="flex items-center gap-2">
                   <Switch
                     checked={aiConfig.includeEmoji}
-                    onCheckedChange={(checked) => setAiConfig({ ...aiConfig, includeEmoji: checked })}
+                    onCheckedChange={(checked) =>
+                      setAiConfig({ ...aiConfig, includeEmoji: checked })
+                    }
                     id="include-emoji"
                   />
                   <Label htmlFor="include-emoji">Include emojis in copy</Label>
@@ -659,37 +743,59 @@ export function CreativeAutomation() {
                   {isGenerating ? (
                     <div className="flex flex-col items-center justify-center py-12">
                       <RefreshCw className="w-12 h-12 text-purple-500 animate-spin mb-4" />
-                      <p className="text-muted-foreground">Generating AI variants...</p>
+                      <p className="text-muted-foreground">
+                        Generating AI variants...
+                      </p>
                       <p className="text-sm text-muted-foreground mt-1">
                         Analyzing target audience and optimizing copy
                       </p>
                     </div>
                   ) : (
                     <>
-                      {['Headline Focus', 'Social Proof', 'Urgency', 'Benefit-Led', 'Question-Based'].slice(0, aiConfig.variantCount > 5 ? 5 : aiConfig.variantCount).map((type, idx) => (
-                        <div key={idx} className="p-4 rounded-lg border border-dashed border-muted-foreground/30 hover:border-primary/50 transition-colors">
-                          <div className="flex items-center justify-between mb-2">
-                            <Badge variant="outline" className="text-xs">
-                              <Sparkles className="w-3 h-3 mr-1" />
-                              {type}
-                            </Badge>
-                            <span className="text-xs text-muted-foreground">AI Score: {75 + idx * 3}</span>
+                      {[
+                        "Headline Focus",
+                        "Social Proof",
+                        "Urgency",
+                        "Benefit-Led",
+                        "Question-Based",
+                      ]
+                        .slice(
+                          0,
+                          aiConfig.variantCount > 5 ? 5 : aiConfig.variantCount,
+                        )
+                        .map((type, idx) => (
+                          <div
+                            key={idx}
+                            className="p-4 rounded-lg border border-dashed border-muted-foreground/30 hover:border-primary/50 transition-colors"
+                          >
+                            <div className="flex items-center justify-between mb-2">
+                              <Badge variant="outline" className="text-xs">
+                                <Sparkles className="w-3 h-3 mr-1" />
+                                {type}
+                              </Badge>
+                              <span className="text-xs text-muted-foreground">
+                                AI Score: {75 + idx * 3}
+                              </span>
+                            </div>
+                            <p className="text-sm font-medium mb-1">
+                              {idx === 0 && "Stream Your Music to the World"}
+                              {idx === 1 &&
+                                "Join 500K+ Artists Already Distributing"}
+                              {idx === 2 &&
+                                "Limited Time: Unlimited Distribution Free"}
+                              {idx === 3 && "Earn More from Every Stream"}
+                              {idx === 4 &&
+                                "Ready to Go Global with Your Music?"}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              Predicted CTR: {(6.5 + idx * 0.3).toFixed(1)}%
+                            </p>
                           </div>
-                          <p className="text-sm font-medium mb-1">
-                            {idx === 0 && 'Stream Your Music to the World'}
-                            {idx === 1 && 'Join 500K+ Artists Already Distributing'}
-                            {idx === 2 && 'Limited Time: Unlimited Distribution Free'}
-                            {idx === 3 && 'Earn More from Every Stream'}
-                            {idx === 4 && 'Ready to Go Global with Your Music?'}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            Predicted CTR: {(6.5 + idx * 0.3).toFixed(1)}%
-                          </p>
-                        </div>
-                      ))}
+                        ))}
                       {aiConfig.variantCount > 5 && (
                         <p className="text-center text-sm text-muted-foreground">
-                          + {aiConfig.variantCount - 5} more variants will be generated
+                          + {aiConfig.variantCount - 5} more variants will be
+                          generated
                         </p>
                       )}
                     </>
@@ -726,7 +832,9 @@ export function CreativeAutomation() {
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="a/b">A/B Test</SelectItem>
-                        <SelectItem value="multivariate">Multivariate</SelectItem>
+                        <SelectItem value="multivariate">
+                          Multivariate
+                        </SelectItem>
                         <SelectItem value="sequential">Sequential</SelectItem>
                       </SelectContent>
                     </Select>
@@ -774,10 +882,13 @@ export function CreativeAutomation() {
                       step={1}
                       className="flex-1"
                     />
-                    <span className="text-sm font-medium w-12">{confidenceThreshold}%</span>
+                    <span className="text-sm font-medium w-12">
+                      {confidenceThreshold}%
+                    </span>
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    Higher thresholds require more data but provide more reliable results
+                    Higher thresholds require more data but provide more
+                    reliable results
                   </p>
                 </div>
 
@@ -795,9 +906,11 @@ export function CreativeAutomation() {
                         />
                         <div className="flex-1">
                           <p className="text-sm font-medium">{variant.name}</p>
-                          <p className="text-xs text-muted-foreground">{variant.headline}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {variant.headline}
+                          </p>
                         </div>
-                        <Switch defaultChecked={variant.status !== 'loser'} />
+                        <Switch defaultChecked={variant.status !== "loser"} />
                       </div>
                     ))}
                   </div>
@@ -827,24 +940,36 @@ export function CreativeAutomation() {
                 <div className="p-4 rounded-lg bg-muted/50">
                   <div className="text-center mb-4">
                     <p className="text-3xl font-bold text-green-500">~25,000</p>
-                    <p className="text-sm text-muted-foreground">samples per variant</p>
+                    <p className="text-sm text-muted-foreground">
+                      samples per variant
+                    </p>
                   </div>
                   <div className="space-y-2 text-sm">
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">Baseline Conv. Rate</span>
+                      <span className="text-muted-foreground">
+                        Baseline Conv. Rate
+                      </span>
                       <span className="font-medium">8%</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">Min Detectable Effect</span>
+                      <span className="text-muted-foreground">
+                        Min Detectable Effect
+                      </span>
                       <span className="font-medium">10%</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">Statistical Power</span>
+                      <span className="text-muted-foreground">
+                        Statistical Power
+                      </span>
                       <span className="font-medium">80%</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">Confidence Level</span>
-                      <span className="font-medium">{confidenceThreshold}%</span>
+                      <span className="text-muted-foreground">
+                        Confidence Level
+                      </span>
+                      <span className="font-medium">
+                        {confidenceThreshold}%
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -855,7 +980,9 @@ export function CreativeAutomation() {
                     <div>
                       <p className="text-sm font-medium">Estimated Duration</p>
                       <p className="text-xs text-muted-foreground">
-                        At current traffic levels, this test will reach statistical significance in approximately <span className="font-medium">7-10 days</span>
+                        At current traffic levels, this test will reach
+                        statistical significance in approximately{" "}
+                        <span className="font-medium">7-10 days</span>
                       </p>
                     </div>
                   </div>
@@ -880,14 +1007,41 @@ export function CreativeAutomation() {
               <CardContent>
                 <ChartContainer config={chartConfig} className="h-[300px]">
                   <LineChart data={performanceTrendData}>
-                    <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                    <CartesianGrid
+                      strokeDasharray="3 3"
+                      className="stroke-muted"
+                    />
                     <XAxis dataKey="day" className="text-xs" />
                     <YAxis className="text-xs" domain={[4, 9]} />
                     <ChartTooltip content={<ChartTooltipContent />} />
-                    <Line type="monotone" dataKey="variantA" stroke="#3b82f6" strokeWidth={2} dot={{ r: 3 }} />
-                    <Line type="monotone" dataKey="variantB" stroke="#22c55e" strokeWidth={2} dot={{ r: 3 }} />
-                    <Line type="monotone" dataKey="variantC" stroke="#f59e0b" strokeWidth={2} dot={{ r: 3 }} />
-                    <Line type="monotone" dataKey="variantD" stroke="#ef4444" strokeWidth={2} dot={{ r: 3 }} />
+                    <Line
+                      type="monotone"
+                      dataKey="variantA"
+                      stroke="#3b82f6"
+                      strokeWidth={2}
+                      dot={{ r: 3 }}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="variantB"
+                      stroke="#22c55e"
+                      strokeWidth={2}
+                      dot={{ r: 3 }}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="variantC"
+                      stroke="#f59e0b"
+                      strokeWidth={2}
+                      dot={{ r: 3 }}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="variantD"
+                      stroke="#ef4444"
+                      strokeWidth={2}
+                      dot={{ r: 3 }}
+                    />
                   </LineChart>
                 </ChartContainer>
               </CardContent>
@@ -906,14 +1060,38 @@ export function CreativeAutomation() {
               <CardContent>
                 <ChartContainer config={chartConfig} className="h-[300px]">
                   <ComposedChart data={confidenceHistoryData}>
-                    <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                    <CartesianGrid
+                      strokeDasharray="3 3"
+                      className="stroke-muted"
+                    />
                     <XAxis dataKey="hour" className="text-xs" />
                     <YAxis className="text-xs" domain={[40, 100]} />
                     <ChartTooltip content={<ChartTooltipContent />} />
-                    <Area type="monotone" dataKey="variantB" stroke="#22c55e" fill="#22c55e" fillOpacity={0.2} />
-                    <Line type="monotone" dataKey="variantA" stroke="#3b82f6" strokeWidth={2} />
-                    <Line type="monotone" dataKey="variantC" stroke="#f59e0b" strokeWidth={2} />
-                    <Line type="monotone" dataKey="variantD" stroke="#ef4444" strokeWidth={2} />
+                    <Area
+                      type="monotone"
+                      dataKey="variantB"
+                      stroke="#22c55e"
+                      fill="#22c55e"
+                      fillOpacity={0.2}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="variantA"
+                      stroke="#3b82f6"
+                      strokeWidth={2}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="variantC"
+                      stroke="#f59e0b"
+                      strokeWidth={2}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="variantD"
+                      stroke="#ef4444"
+                      strokeWidth={2}
+                    />
                   </ComposedChart>
                 </ChartContainer>
               </CardContent>
@@ -931,13 +1109,36 @@ export function CreativeAutomation() {
               </CardHeader>
               <CardContent>
                 <ChartContainer config={chartConfig} className="h-[300px]">
-                  <RadarChart data={elementPerformanceData} cx="50%" cy="50%" outerRadius="80%">
+                  <RadarChart
+                    data={elementPerformanceData}
+                    cx="50%"
+                    cy="50%"
+                    outerRadius="80%"
+                  >
                     <PolarGrid />
                     <PolarAngleAxis dataKey="element" className="text-xs" />
                     <PolarRadiusAxis angle={30} domain={[0, 100]} />
-                    <Radar name="Variant A" dataKey="variantA" stroke="#3b82f6" fill="#3b82f6" fillOpacity={0.2} />
-                    <Radar name="Variant B" dataKey="variantB" stroke="#22c55e" fill="#22c55e" fillOpacity={0.3} />
-                    <Radar name="Variant C" dataKey="variantC" stroke="#f59e0b" fill="#f59e0b" fillOpacity={0.2} />
+                    <Radar
+                      name="Variant A"
+                      dataKey="variantA"
+                      stroke="#3b82f6"
+                      fill="#3b82f6"
+                      fillOpacity={0.2}
+                    />
+                    <Radar
+                      name="Variant B"
+                      dataKey="variantB"
+                      stroke="#22c55e"
+                      fill="#22c55e"
+                      fillOpacity={0.3}
+                    />
+                    <Radar
+                      name="Variant C"
+                      dataKey="variantC"
+                      stroke="#f59e0b"
+                      fill="#f59e0b"
+                      fillOpacity={0.2}
+                    />
                     <ChartTooltip content={<ChartTooltipContent />} />
                   </RadarChart>
                 </ChartContainer>
@@ -957,14 +1158,38 @@ export function CreativeAutomation() {
               <CardContent>
                 <ChartContainer config={chartConfig} className="h-[300px]">
                   <BarChart data={conversionFunnelData} layout="vertical">
-                    <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                    <CartesianGrid
+                      strokeDasharray="3 3"
+                      className="stroke-muted"
+                    />
                     <XAxis type="number" className="text-xs" />
-                    <YAxis dataKey="stage" type="category" className="text-xs" width={100} />
+                    <YAxis
+                      dataKey="stage"
+                      type="category"
+                      className="text-xs"
+                      width={100}
+                    />
                     <ChartTooltip content={<ChartTooltipContent />} />
-                    <Bar dataKey="variantA" fill="#3b82f6" radius={[0, 4, 4, 0]} />
-                    <Bar dataKey="variantB" fill="#22c55e" radius={[0, 4, 4, 0]} />
-                    <Bar dataKey="variantC" fill="#f59e0b" radius={[0, 4, 4, 0]} />
-                    <Bar dataKey="variantD" fill="#ef4444" radius={[0, 4, 4, 0]} />
+                    <Bar
+                      dataKey="variantA"
+                      fill="#3b82f6"
+                      radius={[0, 4, 4, 0]}
+                    />
+                    <Bar
+                      dataKey="variantB"
+                      fill="#22c55e"
+                      radius={[0, 4, 4, 0]}
+                    />
+                    <Bar
+                      dataKey="variantC"
+                      fill="#f59e0b"
+                      radius={[0, 4, 4, 0]}
+                    />
+                    <Bar
+                      dataKey="variantD"
+                      fill="#ef4444"
+                      radius={[0, 4, 4, 0]}
+                    />
                   </BarChart>
                 </ChartContainer>
               </CardContent>
@@ -994,29 +1219,49 @@ export function CreativeAutomation() {
                         </div>
                         <div>
                           <div className="flex items-center gap-2 mb-1">
-                            <h3 className="text-xl font-bold">Variant B - Bold CTA</h3>
+                            <h3 className="text-xl font-bold">
+                              Variant B - Bold CTA
+                            </h3>
                             <Badge className="bg-green-500/10 text-green-500">
                               <Trophy className="w-3 h-3 mr-1" />
                               Winner
                             </Badge>
                           </div>
-                          <p className="text-muted-foreground mb-3">&quot;Your Music. Every Platform.&quot;</p>
+                          <p className="text-muted-foreground mb-3">
+                            &quot;Your Music. Every Platform.&quot;
+                          </p>
                           <div className="flex gap-6">
                             <div>
-                              <p className="text-2xl font-bold text-green-500">7.70%</p>
-                              <p className="text-xs text-muted-foreground">CTR</p>
+                              <p className="text-2xl font-bold text-green-500">
+                                7.70%
+                              </p>
+                              <p className="text-xs text-muted-foreground">
+                                CTR
+                              </p>
                             </div>
                             <div>
-                              <p className="text-2xl font-bold text-green-500">9.03%</p>
-                              <p className="text-xs text-muted-foreground">Conv. Rate</p>
+                              <p className="text-2xl font-bold text-green-500">
+                                9.03%
+                              </p>
+                              <p className="text-xs text-muted-foreground">
+                                Conv. Rate
+                              </p>
                             </div>
                             <div>
-                              <p className="text-2xl font-bold text-green-500">96%</p>
-                              <p className="text-xs text-muted-foreground">Confidence</p>
+                              <p className="text-2xl font-bold text-green-500">
+                                96%
+                              </p>
+                              <p className="text-xs text-muted-foreground">
+                                Confidence
+                              </p>
                             </div>
                             <div>
-                              <p className="text-2xl font-bold text-green-500">$15.6K</p>
-                              <p className="text-xs text-muted-foreground">Revenue</p>
+                              <p className="text-2xl font-bold text-green-500">
+                                $15.6K
+                              </p>
+                              <p className="text-xs text-muted-foreground">
+                                Revenue
+                              </p>
                             </div>
                           </div>
                         </div>
@@ -1055,7 +1300,9 @@ export function CreativeAutomation() {
                         </li>
                         <li className="flex items-center gap-2">
                           <CheckCircle className="w-4 h-4 text-green-500" />
-                          <span>Statistically significant (96% confidence)</span>
+                          <span>
+                            Statistically significant (96% confidence)
+                          </span>
                         </li>
                       </ul>
                     </div>
@@ -1068,11 +1315,15 @@ export function CreativeAutomation() {
                       <ul className="space-y-2 text-sm text-muted-foreground">
                         <li className="flex items-start gap-2">
                           <Lightbulb className="w-4 h-4 text-yellow-500 mt-0.5" />
-                          <span>Bold, action-oriented CTA drives 35% more clicks</span>
+                          <span>
+                            Bold, action-oriented CTA drives 35% more clicks
+                          </span>
                         </li>
                         <li className="flex items-start gap-2">
                           <Lightbulb className="w-4 h-4 text-yellow-500 mt-0.5" />
-                          <span>Shorter headline with periods creates urgency</span>
+                          <span>
+                            Shorter headline with periods creates urgency
+                          </span>
                         </li>
                         <li className="flex items-start gap-2">
                           <Lightbulb className="w-4 h-4 text-yellow-500 mt-0.5" />
@@ -1083,16 +1334,18 @@ export function CreativeAutomation() {
                   </div>
 
                   <div className="space-y-3">
-                    <h4 className="font-medium">All Variants Performance Comparison</h4>
+                    <h4 className="font-medium">
+                      All Variants Performance Comparison
+                    </h4>
                     {variants.map((variant, idx) => (
                       <div
                         key={variant.id}
                         className={`p-3 rounded-lg border ${
-                          variant.status === 'winner'
-                            ? 'border-green-500/50 bg-green-500/5'
-                            : variant.status === 'loser'
-                              ? 'border-red-500/30 bg-red-500/5'
-                              : 'border-border'
+                          variant.status === "winner"
+                            ? "border-green-500/50 bg-green-500/5"
+                            : variant.status === "loser"
+                              ? "border-red-500/30 bg-red-500/5"
+                              : "border-border"
                         }`}
                       >
                         <div className="flex items-center justify-between">
@@ -1109,28 +1362,40 @@ export function CreativeAutomation() {
                           </div>
                           <div className="flex items-center gap-6 text-sm">
                             <div className="text-center">
-                              <p className="font-bold">{variant.ctr.toFixed(2)}%</p>
-                              <p className="text-xs text-muted-foreground">CTR</p>
+                              <p className="font-bold">
+                                {variant.ctr.toFixed(2)}%
+                              </p>
+                              <p className="text-xs text-muted-foreground">
+                                CTR
+                              </p>
                             </div>
                             <div className="text-center">
-                              <p className="font-bold">{variant.conversionRate.toFixed(2)}%</p>
-                              <p className="text-xs text-muted-foreground">Conv.</p>
+                              <p className="font-bold">
+                                {variant.conversionRate.toFixed(2)}%
+                              </p>
+                              <p className="text-xs text-muted-foreground">
+                                Conv.
+                              </p>
                             </div>
                             <div className="text-center">
-                              <p className={`font-bold ${getConfidenceColor(variant.confidence)}`}>
+                              <p
+                                className={`font-bold ${getConfidenceColor(variant.confidence)}`}
+                              >
                                 {variant.confidence}%
                               </p>
-                              <p className="text-xs text-muted-foreground">Conf.</p>
+                              <p className="text-xs text-muted-foreground">
+                                Conf.
+                              </p>
                             </div>
                             <div className="w-32">
                               <Progress
                                 value={variant.conversionRate * 10}
                                 className={
-                                  variant.status === 'winner'
-                                    ? '[&>div]:bg-green-500'
-                                    : variant.status === 'loser'
-                                      ? '[&>div]:bg-red-500'
-                                      : ''
+                                  variant.status === "winner"
+                                    ? "[&>div]:bg-green-500"
+                                    : variant.status === "loser"
+                                      ? "[&>div]:bg-red-500"
+                                      : ""
                                 }
                               />
                             </div>
@@ -1158,7 +1423,10 @@ export function CreativeAutomation() {
                       Automatically declare winners when confidence is reached
                     </p>
                   </div>
-                  <Switch checked={autoWinnerSelection} onCheckedChange={setAutoWinnerSelection} />
+                  <Switch
+                    checked={autoWinnerSelection}
+                    onCheckedChange={setAutoWinnerSelection}
+                  />
                 </div>
 
                 <div className="flex items-center justify-between">
@@ -1178,7 +1446,10 @@ export function CreativeAutomation() {
                       Automatically shift traffic to winning variants
                     </p>
                   </div>
-                  <Switch checked={autoOptimize} onCheckedChange={setAutoOptimize} />
+                  <Switch
+                    checked={autoOptimize}
+                    onCheckedChange={setAutoOptimize}
+                  />
                 </div>
 
                 <div className="space-y-2">
@@ -1192,7 +1463,9 @@ export function CreativeAutomation() {
                       step={1}
                       className="flex-1"
                     />
-                    <span className="text-sm font-medium w-12">{confidenceThreshold}%</span>
+                    <span className="text-sm font-medium w-12">
+                      {confidenceThreshold}%
+                    </span>
                   </div>
                 </div>
 
@@ -1202,7 +1475,8 @@ export function CreativeAutomation() {
                     <div>
                       <p className="text-sm font-medium">Recommendation</p>
                       <p className="text-xs text-muted-foreground">
-                        Based on your traffic levels, a 95% confidence threshold is optimal for reliable results without over-testing.
+                        Based on your traffic levels, a 95% confidence threshold
+                        is optimal for reliable results without over-testing.
                       </p>
                     </div>
                   </div>

@@ -1,16 +1,16 @@
-import { randomBytes } from 'crypto';
+import { randomBytes } from "crypto";
 import { storage } from "../storage";
-import { db } from '../db.js';
-import { dspAnalytics, releases, royaltySplits } from '@shared/schema';
-import { eq, and, sql as drizzleSql } from 'drizzle-orm';
-import { notificationService } from './notificationService.js';
+import { db } from "../db.js";
+import { dspAnalytics, releases, royaltySplits } from "@shared/schema";
+import { eq, and, sql as drizzleSql } from "drizzle-orm";
+import { notificationService } from "./notificationService.js";
 
-import type { 
-  InsertRelease, 
-  Release, 
-  DistributionPackage, 
-  InsertDistributionPackage, 
-  DistributionTrack, 
+import type {
+  InsertRelease,
+  Release,
+  DistributionPackage,
+  InsertDistributionPackage,
+  DistributionTrack,
   InsertDistributionTrack,
   InsertDistributionSLAMetric,
   DistributionSLAMetric,
@@ -27,38 +27,37 @@ import type {
   InsertPreSaveCampaign,
   PreSaveCampaign,
   InsertPreSaveEntry,
-  PreSaveEntry
+  PreSaveEntry,
 } from "@shared/schema";
 import archiver from "archiver";
 import fs from "fs";
 import fsPromises from "fs/promises";
 import path from "path";
 import { createReadStream, createWriteStream } from "fs";
-import { storageService } from './storageService.js';
-import os from 'os';
-import { randomUUID } from 'crypto';
-import { labelGridService } from './labelgrid-service.js';
-import { logger } from '../logger.js';
+import { storageService } from "./storageService.js";
+import os from "os";
+import { randomUUID } from "crypto";
+import { labelGridService } from "./labelgrid-service.js";
+import { logger } from "../logger.js";
 
 const DEFAULT_SLA_TARGET_HOURS = 48;
 
 export interface DSPProvider {
   id: string;
   name: string;
-  type: 'streaming' | 'download' | 'social';
+  type: "streaming" | "download" | "social";
   isActive: boolean;
 }
 
 export interface DispatchStatus {
   provider: string;
-  status: 'pending' | 'processing' | 'live' | 'failed';
+  status: "pending" | "processing" | "live" | "failed";
   submittedAt?: Date;
   liveDate?: Date;
   errorMessage?: string;
 }
 
 export class DistributionService {
-
   /**
    * Create a new release
    */
@@ -87,10 +86,13 @@ export class DistributionService {
   /**
    * Get release by ID
    */
-  async getRelease(releaseId: string, userId: string): Promise<Release | undefined> {
+  async getRelease(
+    releaseId: string,
+    userId: string,
+  ): Promise<Release | undefined> {
     try {
       const releases = await storage.getUserReleases(userId);
-      return releases.find(r => r.id === releaseId);
+      return releases.find((r) => r.id === releaseId);
     } catch (error: unknown) {
       logger.warn("Error fetching release:", error);
       throw new Error("Failed to fetch release");
@@ -100,7 +102,11 @@ export class DistributionService {
   /**
    * Submit release to DSP providers via LabelGrid
    */
-  async submitToProvider(releaseId: string, providerId: string, userId: string): Promise<{
+  async submitToProvider(
+    releaseId: string,
+    providerId: string,
+    userId: string,
+  ): Promise<{
     success: boolean;
     dispatchId: string;
     estimatedLiveDate: Date;
@@ -119,11 +125,12 @@ export class DistributionService {
           const labelGridRelease = {
             title: release.title,
             artist: release.artist,
-            releaseDate: release.releaseDate?.toISOString() || new Date().toISOString(),
+            releaseDate:
+              release.releaseDate?.toISOString() || new Date().toISOString(),
             upc: release.upc || undefined,
             tracks: [],
-            artwork: release.coverArt || '',
-            genre: release.genre || 'General',
+            artwork: release.coverArt || "",
+            genre: release.genre || "General",
             platforms: [providerId], // Submit to specific platform
             label: release.label,
             copyrightYear: new Date().getFullYear(),
@@ -136,7 +143,9 @@ export class DistributionService {
           return {
             success: true,
             dispatchId: result.releaseId,
-            estimatedLiveDate: result.estimatedLiveDate ? new Date(result.estimatedLiveDate) : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+            estimatedLiveDate: result.estimatedLiveDate
+              ? new Date(result.estimatedLiveDate)
+              : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
           };
         } catch (error: unknown) {
           logger.warn("LabelGrid distribution failed:", error);
@@ -144,17 +153,19 @@ export class DistributionService {
         }
       } else {
         // DEVELOPMENT/DEMO MODE: Simulated distribution (no real API calls)
-        logger.warn('⚠️  LabelGrid API token not configured - using demo mode');
-        logger.warn('   Set LABELGRID_API_TOKEN in environment to enable real distribution');
+        logger.warn("⚠️  LabelGrid API token not configured - using demo mode");
+        logger.warn(
+          "   Set LABELGRID_API_TOKEN in environment to enable real distribution",
+        );
 
-        const dispatchId = `demo_dispatch_${randomBytes(8).toString('hex')}`;
+        const dispatchId = `demo_dispatch_${randomBytes(8).toString("hex")}`;
         const estimatedLiveDate = new Date(Date.now() + 24 * 60 * 60 * 1000);
 
         // Update release platforms
         const platforms = (release.platforms as Record<string, unknown>) || [];
         platforms.push({
           providerId,
-          status: 'processing',
+          status: "processing",
           dispatchId,
           submittedAt: new Date(),
           estimatedLiveDate,
@@ -177,7 +188,10 @@ export class DistributionService {
   /**
    * Track distribution dispatch status
    */
-  async trackDispatchStatus(releaseId: string, userId: string): Promise<DispatchStatus[]> {
+  async trackDispatchStatus(
+    releaseId: string,
+    userId: string,
+  ): Promise<DispatchStatus[]> {
     try {
       const release = await this.getRelease(releaseId, userId);
       if (!release) {
@@ -185,8 +199,8 @@ export class DistributionService {
       }
 
       const platforms = (release.platforms as unknown[]) || [];
-      
-      return platforms.map(p => ({
+
+      return platforms.map((p) => ({
         provider: p.providerId,
         status: p.status,
         submittedAt: p.submittedAt ? new Date(p.submittedAt) : undefined,
@@ -214,39 +228,47 @@ export class DistributionService {
       logger.info("DSP Webhook received:", payload);
 
       // Validate required fields before proceeding
-      const provider = String(payload.provider ?? '').trim();
-      const releaseId = String(payload.releaseId ?? '').trim();
-      const rawStatus = String(payload.status ?? '').trim();
-      const liveDate = payload.liveDate ? String(payload.liveDate).trim() : undefined;
-      const errorMessage = payload.errorMessage ? String(payload.errorMessage).trim() : undefined;
+      const provider = String(payload.provider ?? "").trim();
+      const releaseId = String(payload.releaseId ?? "").trim();
+      const rawStatus = String(payload.status ?? "").trim();
+      const liveDate = payload.liveDate
+        ? String(payload.liveDate).trim()
+        : undefined;
+      const errorMessage = payload.errorMessage
+        ? String(payload.errorMessage).trim()
+        : undefined;
 
       if (!provider || !releaseId || !rawStatus) {
-        logger.warn("DSP Webhook: missing required fields", { provider, releaseId, rawStatus });
+        logger.warn("DSP Webhook: missing required fields", {
+          provider,
+          releaseId,
+          rawStatus,
+        });
         return;
       }
 
       // Map DSP status strings to internal status values
       const STATUS_MAP: Record<string, string> = {
-        live:               'live',
-        delivered:          'live',
-        approved:           'live',
-        distributed:        'live',
-        released:           'live',
-        published:          'live',
-        rejected:           'rejected',
-        failed:             'rejected',
-        error:              'rejected',
-        refused:            'rejected',
-        takedown_requested: 'takedown',
-        taken_down:         'takedown',
-        removed:            'takedown',
-        processing:         'processing',
-        pending:            'processing',
-        submitted:          'processing',
-        queued:             'processing',
-        in_review:          'in_review',
-        under_review:       'in_review',
-        review:             'in_review',
+        live: "live",
+        delivered: "live",
+        approved: "live",
+        distributed: "live",
+        released: "live",
+        published: "live",
+        rejected: "rejected",
+        failed: "rejected",
+        error: "rejected",
+        refused: "rejected",
+        takedown_requested: "takedown",
+        taken_down: "takedown",
+        removed: "takedown",
+        processing: "processing",
+        pending: "processing",
+        submitted: "processing",
+        queued: "processing",
+        in_review: "in_review",
+        under_review: "in_review",
+        review: "in_review",
       };
       const internalStatus = STATUS_MAP[rawStatus.toLowerCase()] || rawStatus;
       const status = rawStatus; // keep original for metadata storage
@@ -257,7 +279,10 @@ export class DistributionService {
         const d = new Date(liveDate);
         parsedLiveDate = isNaN(d.getTime()) ? undefined : d;
         if (!parsedLiveDate) {
-          logger.warn("DSP Webhook: invalid liveDate value, ignoring", { liveDate, provider });
+          logger.warn("DSP Webhook: invalid liveDate value, ignoring", {
+            liveDate,
+            provider,
+          });
         }
       }
 
@@ -283,12 +308,35 @@ export class DistributionService {
       const release = updatedRows[0];
 
       // Build a meaningful notification for the artist
-      const NOTIF: Record<string, { title: string; body: string; type: string }> = {
-        live:      { title: '🎉 Your release is now live!',       body: `"${release.title}" is now streaming on ${provider}.`,                type: 'release' },
-        rejected:  { title: '⚠️ Release rejected by distributor', body: `"${release.title}" was rejected by ${provider}${errorMessage ? `: ${errorMessage}` : ''}. Please review and resubmit.`, type: 'system' },
-        takedown:  { title: '📥 Takedown processed',              body: `"${release.title}" has been taken down from ${provider}.`,           type: 'release' },
-        processing:{ title: '⏳ Release being processed',          body: `"${release.title}" is now in delivery queue on ${provider}.`,        type: 'release' },
-        in_review: { title: '🔍 Release under review',            body: `"${release.title}" is under review by ${provider}.`,                 type: 'release' },
+      const NOTIF: Record<
+        string,
+        { title: string; body: string; type: string }
+      > = {
+        live: {
+          title: "🎉 Your release is now live!",
+          body: `"${release.title}" is now streaming on ${provider}.`,
+          type: "release",
+        },
+        rejected: {
+          title: "⚠️ Release rejected by distributor",
+          body: `"${release.title}" was rejected by ${provider}${errorMessage ? `: ${errorMessage}` : ""}. Please review and resubmit.`,
+          type: "system",
+        },
+        takedown: {
+          title: "📥 Takedown processed",
+          body: `"${release.title}" has been taken down from ${provider}.`,
+          type: "release",
+        },
+        processing: {
+          title: "⏳ Release being processed",
+          body: `"${release.title}" is now in delivery queue on ${provider}.`,
+          type: "release",
+        },
+        in_review: {
+          title: "🔍 Release under review",
+          body: `"${release.title}" is under review by ${provider}.`,
+          type: "release",
+        },
       };
 
       const notifData = NOTIF[internalStatus];
@@ -298,11 +346,15 @@ export class DistributionService {
           notifData.type as Record<string, unknown>,
           notifData.title,
           notifData.body,
-          { releaseId, provider, status: internalStatus }
+          { releaseId, provider, status: internalStatus },
         );
       }
 
-      logger.info("DSP Webhook processed successfully", { releaseId, provider, internalStatus });
+      logger.info("DSP Webhook processed successfully", {
+        releaseId,
+        provider,
+        internalStatus,
+      });
     } catch (error: unknown) {
       logger.warn("Error handling DSP webhook:", error);
       throw new Error("Failed to handle DSP webhook");
@@ -314,16 +366,41 @@ export class DistributionService {
    */
   async getProviders(): Promise<DSPProvider[]> {
     return [
-      { id: 'spotify', name: 'Spotify', type: 'streaming', isActive: true },
-      { id: 'apple_music', name: 'Apple Music', type: 'streaming', isActive: true },
-      { id: 'youtube_music', name: 'YouTube Music', type: 'streaming', isActive: true },
-      { id: 'amazon_music', name: 'Amazon Music', type: 'streaming', isActive: true },
-      { id: 'deezer', name: 'Deezer', type: 'streaming', isActive: true },
-      { id: 'tidal', name: 'Tidal', type: 'streaming', isActive: true },
-      { id: 'soundcloud', name: 'SoundCloud', type: 'streaming', isActive: true },
-      { id: 'pandora', name: 'Pandora', type: 'streaming', isActive: true },
-      { id: 'tiktok', name: 'TikTok', type: 'social', isActive: true },
-      { id: 'instagram', name: 'Instagram/Facebook', type: 'social', isActive: true },
+      { id: "spotify", name: "Spotify", type: "streaming", isActive: true },
+      {
+        id: "apple_music",
+        name: "Apple Music",
+        type: "streaming",
+        isActive: true,
+      },
+      {
+        id: "youtube_music",
+        name: "YouTube Music",
+        type: "streaming",
+        isActive: true,
+      },
+      {
+        id: "amazon_music",
+        name: "Amazon Music",
+        type: "streaming",
+        isActive: true,
+      },
+      { id: "deezer", name: "Deezer", type: "streaming", isActive: true },
+      { id: "tidal", name: "Tidal", type: "streaming", isActive: true },
+      {
+        id: "soundcloud",
+        name: "SoundCloud",
+        type: "streaming",
+        isActive: true,
+      },
+      { id: "pandora", name: "Pandora", type: "streaming", isActive: true },
+      { id: "tiktok", name: "TikTok", type: "social", isActive: true },
+      {
+        id: "instagram",
+        name: "Instagram/Facebook",
+        type: "social",
+        isActive: true,
+      },
     ];
   }
 
@@ -338,24 +415,24 @@ export class DistributionService {
       }
 
       const platforms = [
-        'spotify',
-        'apple_music', 
-        'youtube_music',
-        'amazon_music',
-        'deezer',
-        'tidal'
+        "spotify",
+        "apple_music",
+        "youtube_music",
+        "amazon_music",
+        "deezer",
+        "tidal",
       ];
 
-      const distributionResults = platforms.map(platform => ({
+      const distributionResults = platforms.map((platform) => ({
         platform,
-        status: 'processing',
-        estimatedLiveDate: new Date(Date.now() + 24 * 60 * 60 * 1000)
+        status: "processing",
+        estimatedLiveDate: new Date(Date.now() + 24 * 60 * 60 * 1000),
       }));
 
       return {
         success: true,
         distributionId: `dist_${releaseId}`,
-        platforms: distributionResults
+        platforms: distributionResults,
       };
     } catch (error: unknown) {
       logger.warn("Distribution error:", error);
@@ -383,7 +460,10 @@ export class DistributionService {
       const totalStreams = rows.reduce((s, r) => s + Number(r.totalStreams), 0);
       const totalRevenue = rows.reduce((s, r) => s + Number(r.totalRevenue), 0);
 
-      const platforms: Record<string, { streams: number; revenue: number; saves: number; listeners: number }> = {};
+      const platforms: Record<
+        string,
+        { streams: number; revenue: number; saves: number; listeners: number }
+      > = {};
       for (const row of rows) {
         platforms[row.platform] = {
           streams: Number(row.totalStreams),
@@ -409,7 +489,7 @@ export class DistributionService {
         totalRevenue: Math.round(totalRevenue * 100) / 100,
         platforms,
         demographics: {},
-        timeline: timeline.map(t => ({
+        timeline: timeline.map((t) => ({
           date: t.date,
           streams: Number(t.streams),
           revenue: Math.round(Number(t.revenue) * 100) / 100,
@@ -424,20 +504,33 @@ export class DistributionService {
   /**
    * Setup royalty splits for collaborators
    */
-  async setupRoyaltySplit(releaseId: string, splits: Array<{ userId: string; percentage: number; role: string; name?: string; email?: string }>) {
+  async setupRoyaltySplit(
+    releaseId: string,
+    splits: Array<{
+      userId: string;
+      percentage: number;
+      role: string;
+      name?: string;
+      email?: string;
+    }>,
+  ) {
     try {
       const total = splits.reduce((sum, s) => sum + s.percentage, 0);
       if (Math.abs(total - 100) > 0.01) {
-        throw new Error(`Split percentages must total 100% (got ${total.toFixed(2)}%)`);
+        throw new Error(
+          `Split percentages must total 100% (got ${total.toFixed(2)}%)`,
+        );
       }
 
-      await db.delete(royaltySplits).where(eq(royaltySplits.releaseId, releaseId));
+      await db
+        .delete(royaltySplits)
+        .where(eq(royaltySplits.releaseId, releaseId));
 
-      const splitValues = splits.map(s => {
+      const splitValues = splits.map((s) => {
         if (!s.email) {
           logger.warn(
             `[Distribution] Royalty split collaborator ${s.userId} has no email — ` +
-            `payouts may not be deliverable. Ask the collaborator to update their profile.`
+              `payouts may not be deliverable. Ask the collaborator to update their profile.`,
           );
         }
         return {
@@ -447,11 +540,14 @@ export class DistributionService {
           collaboratorEmail: s.email || null,
           role: s.role,
           percentage: s.percentage,
-          status: 'active',
+          status: "active",
         };
       });
 
-      const inserted = await db.insert(royaltySplits).values(splitValues).returning();
+      const inserted = await db
+        .insert(royaltySplits)
+        .values(splitValues)
+        .returning();
 
       return { success: true, splitId: `split_${releaseId}`, splits: inserted };
     } catch (error: unknown) {
@@ -463,14 +559,14 @@ export class DistributionService {
   /**
    * Validate ISRC (International Standard Recording Code)
    * Format: CC-XXX-YY-NNNNN (e.g., US-S1Z-99-00001)
-   * 
-   * NOTE: This validates the dashed format. ISRC can also be represented as 12 continuous 
+   *
+   * NOTE: This validates the dashed format. ISRC can also be represented as 12 continuous
    * characters (CCXXXYYNNNNN). Some DSPs accept either format. Consider normalizing input
    * by stripping dashes before validation for broader compatibility.
    */
   validateISRC(isrc: string): boolean {
     // HARDENING: Accept both dashed and non-dashed formats
-    const normalizedIsrc = isrc.replace(/[-\s]/g, '').toUpperCase();
+    const normalizedIsrc = isrc.replace(/[-\s]/g, "").toUpperCase();
     if (normalizedIsrc.length !== 12) {
       return false;
     }
@@ -491,14 +587,16 @@ export class DistributionService {
   /**
    * Validate artwork dimensions and format
    */
-  async validateArtwork(artworkPath: string): Promise<{ valid: boolean; error?: string }> {
+  async validateArtwork(
+    artworkPath: string,
+  ): Promise<{ valid: boolean; error?: string }> {
     try {
       if (!fs.existsSync(artworkPath)) {
         return { valid: false, error: "Artwork file not found" };
       }
 
       const ext = path.extname(artworkPath).toLowerCase();
-      if (!['.jpg', '.jpeg', '.png'].includes(ext)) {
+      if (![".jpg", ".jpeg", ".png"].includes(ext)) {
         return { valid: false, error: "Artwork must be JPEG or PNG" };
       }
 
@@ -514,7 +612,9 @@ export class DistributionService {
   /**
    * Create distribution package from project data
    */
-  async createDistributionPackage(data: InsertDistributionPackage): Promise<DistributionPackage> {
+  async createDistributionPackage(
+    data: InsertDistributionPackage,
+  ): Promise<DistributionPackage> {
     try {
       // Validate UPC if provided
       if (data.upc && !this.validateUPC(data.upc)) {
@@ -532,7 +632,10 @@ export class DistributionService {
   /**
    * Generate DSP-compliant metadata JSON
    */
-  async generateMetadataJSON(packageId: string, artistProfileData?: Record<string, string | null>): Promise<unknown> {
+  async generateMetadataJSON(
+    packageId: string,
+    artistProfileData?: Record<string, string | null>,
+  ): Promise<unknown> {
     try {
       const pkg = await storage.getDistributionPackageById(packageId);
       if (!pkg) {
@@ -546,13 +649,13 @@ export class DistributionService {
         release: {
           upc: pkg.upc,
           title: pkg.albumTitle,
-          releaseDate: pkg.releaseDate?.toISOString().split('T')[0],
+          releaseDate: pkg.releaseDate?.toISOString().split("T")[0],
           label: pkg.label,
           artwork: pkg.artworkUrl,
           copyrightP: pkg.copyrightP,
           copyrightC: pkg.copyrightC,
         },
-        tracks: tracks.map(track => ({
+        tracks: tracks.map((track) => ({
           isrc: track.isrc,
           trackNumber: track.trackNumber,
           title: track.title,
@@ -577,7 +680,7 @@ export class DistributionService {
       // rather than creating a new one (DistroKid-style identity anchoring).
       if (artistProfileData) {
         metadata.artist_identifiers = {
-          is_new_artist: artistProfileData.isNewArtist === 'true',
+          is_new_artist: artistProfileData.isNewArtist === "true",
           spotify_artist_id: artistProfileData.spotifyArtistId ?? null,
           spotify_artist_uri: artistProfileData.spotifyArtistUri ?? null,
           apple_artist_id: artistProfileData.appleArtistId ?? null,
@@ -613,7 +716,7 @@ export class DistributionService {
         "Explicit Content",
       ];
 
-      const rows = tracks.map(track => [
+      const rows = tracks.map((track) => [
         track.trackNumber?.toString() || "",
         track.isrc || "",
         track.title || "",
@@ -625,7 +728,7 @@ export class DistributionService {
 
       const csvContent = [
         headers.join(","),
-        ...rows.map(row => row.map(cell => `"${cell}"`).join(",")),
+        ...rows.map((row) => row.map((cell) => `"${cell}"`).join(",")),
       ].join("\n");
 
       return csvContent;
@@ -639,8 +742,11 @@ export class DistributionService {
    * Package metadata, CSV, and artwork as ZIP file
    */
   async packageAsZIP(packageId: string): Promise<string> {
-    const tempZipPath = path.join(os.tmpdir(), `distribution_${randomUUID()}.zip`);
-    
+    const tempZipPath = path.join(
+      os.tmpdir(),
+      `distribution_${randomUUID()}.zip`,
+    );
+
     try {
       const pkg = await storage.getDistributionPackageById(packageId);
       if (!pkg) {
@@ -661,49 +767,61 @@ export class DistributionService {
         archive.pipe(output);
 
         // Add metadata.json
-        this.generateMetadataJSON(packageId).then((metadata) => {
-          archive.append(JSON.stringify(metadata, null, 2), { name: "metadata.json" });
+        this.generateMetadataJSON(packageId)
+          .then((metadata) => {
+            archive.append(JSON.stringify(metadata, null, 2), {
+              name: "metadata.json",
+            });
 
-          // Add tracks.csv
-          this.generateCSV(packageId).then((csv) => {
-            archive.append(csv, { name: "tracks.csv" });
+            // Add tracks.csv
+            this.generateCSV(packageId)
+              .then((csv) => {
+                archive.append(csv, { name: "tracks.csv" });
 
-            // Add artwork if available
-            if (pkg.artworkUrl) {
-              // Convert public URL path to filesystem path
-              // pkg.artworkUrl is like "/distribution/artwork/artwork_123.jpg"
-              const artworkFilePath = path.join(process.cwd(), "public", pkg.artworkUrl);
-              
-              if (fs.existsSync(artworkFilePath)) {
-                const artworkExt = path.extname(pkg.artworkUrl);
-                archive.file(artworkFilePath, { name: `artwork${artworkExt}` });
-              } else {
-                logger.warn(`Artwork file not found: ${artworkFilePath}`);
-              }
-            }
+                // Add artwork if available
+                if (pkg.artworkUrl) {
+                  // Convert public URL path to filesystem path
+                  // pkg.artworkUrl is like "/distribution/artwork/artwork_123.jpg"
+                  const artworkFilePath = path.join(
+                    process.cwd(),
+                    "public",
+                    pkg.artworkUrl,
+                  );
 
-            // Add README
-            const readme = `Distribution Package
+                  if (fs.existsSync(artworkFilePath)) {
+                    const artworkExt = path.extname(pkg.artworkUrl);
+                    archive.file(artworkFilePath, {
+                      name: `artwork${artworkExt}`,
+                    });
+                  } else {
+                    logger.warn(`Artwork file not found: ${artworkFilePath}`);
+                  }
+                }
+
+                // Add README
+                const readme = `Distribution Package
 =====================
 
 Package ID: ${packageId}
 Album: ${pkg.albumTitle}
 UPC: ${pkg.upc}
-Release Date: ${pkg.releaseDate?.toISOString().split('T')[0] || 'Not set'}
-Label: ${pkg.label || 'Not set'}
+Release Date: ${pkg.releaseDate?.toISOString().split("T")[0] || "Not set"}
+Label: ${pkg.label || "Not set"}
 
 Files Included:
 - metadata.json: DSP-compliant metadata
 - tracks.csv: Track listing
-${pkg.artworkUrl ? '- artwork: Album artwork' : ''}
+${pkg.artworkUrl ? "- artwork: Album artwork" : ""}
 
 Generated: ${new Date().toISOString()}
 `;
-            archive.append(readme, { name: "README.txt" });
+                archive.append(readme, { name: "README.txt" });
 
-            archive.finalize();
-          }).catch(reject);
-        }).catch(reject);
+                archive.finalize();
+              })
+              .catch(reject);
+          })
+          .catch(reject);
       });
 
       // Upload ZIP to storageService
@@ -711,13 +829,13 @@ Generated: ${new Date().toISOString()}
       const zipFilename = `distribution_${packageId}_${Date.now()}.zip`;
       const zipKey = await storageService.uploadFile(
         zipBuffer,
-        'exports',
+        "exports",
         zipFilename,
-        'application/zip'
+        "application/zip",
       );
 
       logger.info(`✅ Distribution package uploaded: ${zipKey}`);
-      
+
       return zipKey;
     } catch (error: unknown) {
       logger.warn("Error packaging ZIP:", error);
@@ -735,7 +853,9 @@ Generated: ${new Date().toISOString()}
   /**
    * Get distribution package by project ID
    */
-  async getDistributionPackageByProject(projectId: string): Promise<DistributionPackage | undefined> {
+  async getDistributionPackageByProject(
+    projectId: string,
+  ): Promise<DistributionPackage | undefined> {
     try {
       return await storage.getDistributionPackage(projectId);
     } catch (error: unknown) {
@@ -747,7 +867,10 @@ Generated: ${new Date().toISOString()}
   /**
    * Update distribution package
    */
-  async updateDistributionPackage(packageId: string, updates: Partial<DistributionPackage>): Promise<DistributionPackage> {
+  async updateDistributionPackage(
+    packageId: string,
+    updates: Partial<DistributionPackage>,
+  ): Promise<DistributionPackage> {
     try {
       // Validate UPC if being updated
       if (updates.upc && !this.validateUPC(updates.upc)) {
@@ -764,7 +887,9 @@ Generated: ${new Date().toISOString()}
   /**
    * Add track to distribution package
    */
-  async addPackageTrack(track: InsertDistributionTrack): Promise<DistributionTrack> {
+  async addPackageTrack(
+    track: InsertDistributionTrack,
+  ): Promise<DistributionTrack> {
     try {
       // Validate ISRC if provided
       if (track.isrc && !this.validateISRC(track.isrc)) {
@@ -808,12 +933,13 @@ Generated: ${new Date().toISOString()}
         try {
           const status = await labelGridService.getDeliveryStatus(releaseId);
           return {
-            status: status.status || 'pending',
-            platforms: status.platforms?.map((p: Record<string, unknown>) => ({
-              platform: p.platform,
-              status: p.status,
-              liveDate: p.liveDate ? new Date(p.liveDate) : undefined,
-            })) || [],
+            status: status.status || "pending",
+            platforms:
+              status.platforms?.map((p: Record<string, unknown>) => ({
+                platform: p.platform,
+                status: p.status,
+                liveDate: p.liveDate ? new Date(p.liveDate) : undefined,
+              })) || [],
             lastChecked: new Date(),
           };
         } catch (error: unknown) {
@@ -823,10 +949,10 @@ Generated: ${new Date().toISOString()}
 
       const currentPlatforms = (release.platforms as unknown[]) || [];
       return {
-        status: release.status || 'draft',
+        status: release.status || "draft",
         platforms: currentPlatforms.map((p: Record<string, unknown>) => ({
-          platform: typeof p === 'string' ? p : p.platform || p.name,
-          status: p.status || 'pending',
+          platform: typeof p === "string" ? p : p.platform || p.name,
+          status: p.status || "pending",
           liveDate: p.liveDate ? new Date(p.liveDate) : undefined,
         })),
         lastChecked: new Date(),
@@ -844,10 +970,15 @@ Generated: ${new Date().toISOString()}
   /**
    * Create SLA metric for distribution tracking
    */
-  async createSLAMetric(releaseId: string, platform: string): Promise<DistributionSLAMetric> {
+  async createSLAMetric(
+    releaseId: string,
+    platform: string,
+  ): Promise<DistributionSLAMetric> {
     try {
       const submittedAt = new Date();
-      const targetDeliveryAt = new Date(submittedAt.getTime() + DEFAULT_SLA_TARGET_HOURS * 60 * 60 * 1000);
+      const targetDeliveryAt = new Date(
+        submittedAt.getTime() + DEFAULT_SLA_TARGET_HOURS * 60 * 60 * 1000,
+      );
 
       const metric = await storage.createDistributionSLAMetric({
         releaseId,
@@ -855,11 +986,13 @@ Generated: ${new Date().toISOString()}
         submittedAt,
         targetDeliveryAt,
         slaTargetHours: DEFAULT_SLA_TARGET_HOURS,
-        status: 'pending',
-        deliveryPhase: 'queued',
+        status: "pending",
+        deliveryPhase: "queued",
       });
 
-      logger.info(`✅ SLA metric created for ${platform}: target ${DEFAULT_SLA_TARGET_HOURS}h delivery`);
+      logger.info(
+        `✅ SLA metric created for ${platform}: target ${DEFAULT_SLA_TARGET_HOURS}h delivery`,
+      );
       return metric;
     } catch (error: unknown) {
       logger.warn("Error creating SLA metric:", error);
@@ -870,7 +1003,10 @@ Generated: ${new Date().toISOString()}
   /**
    * Update SLA metric when delivery is confirmed
    */
-  async markDelivered(metricId: string, liveAt?: Date): Promise<DistributionSLAMetric> {
+  async markDelivered(
+    metricId: string,
+    liveAt?: Date,
+  ): Promise<DistributionSLAMetric> {
     try {
       const metric = await storage.getDistributionSLAMetric(metricId);
       if (!metric) {
@@ -878,19 +1014,24 @@ Generated: ${new Date().toISOString()}
       }
 
       const actualDeliveryAt = new Date();
-      const deliveryHours = (actualDeliveryAt.getTime() - metric.submittedAt.getTime()) / (1000 * 60 * 60);
-      const metSLA = deliveryHours <= (metric.slaTargetHours || DEFAULT_SLA_TARGET_HOURS);
+      const deliveryHours =
+        (actualDeliveryAt.getTime() - metric.submittedAt.getTime()) /
+        (1000 * 60 * 60);
+      const metSLA =
+        deliveryHours <= (metric.slaTargetHours || DEFAULT_SLA_TARGET_HOURS);
 
       const updated = await storage.updateDistributionSLAMetric(metricId, {
         actualDeliveryAt,
         liveAt: liveAt || actualDeliveryAt,
         actualDeliveryHours: deliveryHours,
         metSLA,
-        status: 'delivered',
-        deliveryPhase: 'live',
+        status: "delivered",
+        deliveryPhase: "live",
       });
 
-      logger.info(`✅ Delivery confirmed: ${deliveryHours.toFixed(1)}h (SLA ${metSLA ? 'MET' : 'MISSED'})`);
+      logger.info(
+        `✅ Delivery confirmed: ${deliveryHours.toFixed(1)}h (SLA ${metSLA ? "MET" : "MISSED"})`,
+      );
       return updated;
     } catch (error: unknown) {
       logger.warn("Error marking delivery:", error);
@@ -901,7 +1042,9 @@ Generated: ${new Date().toISOString()}
   /**
    * Get SLA metrics for a release
    */
-  async getReleaseSLAMetrics(releaseId: string): Promise<DistributionSLAMetric[]> {
+  async getReleaseSLAMetrics(
+    releaseId: string,
+  ): Promise<DistributionSLAMetric[]> {
     try {
       return await storage.getDistributionSLAMetricsByRelease(releaseId);
     } catch (error: unknown) {
@@ -913,7 +1056,10 @@ Generated: ${new Date().toISOString()}
   /**
    * Get SLA compliance report
    */
-  async getSLAComplianceReport(userId: string, days: number = 30): Promise<{
+  async getSLAComplianceReport(
+    userId: string,
+    days: number = 30,
+  ): Promise<{
     totalDeliveries: number;
     onTimeDeliveries: number;
     lateDeliveries: number;
@@ -923,15 +1069,22 @@ Generated: ${new Date().toISOString()}
   }> {
     try {
       const metrics = await storage.getSLAMetricsByUser(userId, days);
-      
-      const completed = metrics.filter(m => m.actualDeliveryAt);
-      const onTime = completed.filter(m => m.metSLA);
-      
-      const avgHours = completed.length > 0
-        ? completed.reduce((sum, m) => sum + (m.actualDeliveryHours || 0), 0) / completed.length
-        : 0;
 
-      const byPlatform: Record<string, { total: number; onTime: number; rate: number }> = {};
+      const completed = metrics.filter((m) => m.actualDeliveryAt);
+      const onTime = completed.filter((m) => m.metSLA);
+
+      const avgHours =
+        completed.length > 0
+          ? completed.reduce(
+              (sum, m) => sum + (m.actualDeliveryHours || 0),
+              0,
+            ) / completed.length
+          : 0;
+
+      const byPlatform: Record<
+        string,
+        { total: number; onTime: number; rate: number }
+      > = {};
       for (const m of completed) {
         if (!byPlatform[m.platform]) {
           byPlatform[m.platform] = { total: 0, onTime: 0, rate: 0 };
@@ -939,9 +1092,10 @@ Generated: ${new Date().toISOString()}
         byPlatform[m.platform].total++;
         if (m.metSLA) byPlatform[m.platform].onTime++;
       }
-      
+
       for (const platform of Object.keys(byPlatform)) {
-        byPlatform[platform].rate = (byPlatform[platform].onTime / byPlatform[platform].total) * 100;
+        byPlatform[platform].rate =
+          (byPlatform[platform].onTime / byPlatform[platform].total) * 100;
       }
 
       return {
@@ -949,7 +1103,8 @@ Generated: ${new Date().toISOString()}
         onTimeDeliveries: onTime.length,
         lateDeliveries: completed.length - onTime.length,
         averageDeliveryHours: Math.round(avgHours * 10) / 10,
-        complianceRate: completed.length > 0 ? (onTime.length / completed.length) * 100 : 100,
+        complianceRate:
+          completed.length > 0 ? (onTime.length / completed.length) * 100 : 100,
         byPlatform,
       };
     } catch (error: unknown) {
@@ -969,14 +1124,16 @@ Generated: ${new Date().toISOString()}
       }
 
       const updated = await storage.updateDistributionSLAMetric(metricId, {
-        status: 'pending',
-        deliveryPhase: 'retrying',
+        status: "pending",
+        deliveryPhase: "retrying",
         retryCount: (metric.retryCount || 0) + 1,
         lastRetryAt: new Date(),
         errorMessage: null,
       });
 
-      logger.info(`🔄 Retry initiated for ${metric.platform} (attempt ${updated.retryCount})`);
+      logger.info(
+        `🔄 Retry initiated for ${metric.platform} (attempt ${updated.retryCount})`,
+      );
       return updated;
     } catch (error: unknown) {
       logger.warn("Error retrying delivery:", error);
@@ -996,11 +1153,11 @@ Generated: ${new Date().toISOString()}
     trackId: string;
     userId: string;
     isrc: string;
-    registrationType?: 'sound_recording' | 'composition';
+    registrationType?: "sound_recording" | "composition";
     ownershipPercentage?: number;
     territories?: string[];
-    matchPolicy?: 'monetize' | 'track' | 'block';
-    claimPolicy?: 'monetize' | 'track' | 'block';
+    matchPolicy?: "monetize" | "track" | "block";
+    claimPolicy?: "monetize" | "track" | "block";
     allowUserUploads?: boolean;
     youtubeChannelId?: string;
   }): Promise<ContentIdRegistration> {
@@ -1010,18 +1167,20 @@ Generated: ${new Date().toISOString()}
         trackId: data.trackId,
         userId: data.userId,
         isrc: data.isrc,
-        registrationType: data.registrationType || 'sound_recording',
+        registrationType: data.registrationType || "sound_recording",
         ownershipPercentage: data.ownershipPercentage || 100,
-        territories: data.territories || ['WORLDWIDE'],
-        matchPolicy: data.matchPolicy || 'monetize',
-        claimPolicy: data.claimPolicy || 'monetize',
+        territories: data.territories || ["WORLDWIDE"],
+        matchPolicy: data.matchPolicy || "monetize",
+        claimPolicy: data.claimPolicy || "monetize",
         allowUserUploads: data.allowUserUploads || false,
         youtubeChannelId: data.youtubeChannelId,
-        status: 'pending',
+        status: "pending",
         submittedAt: new Date(),
       });
 
-      logger.info(`✅ Content ID registration submitted for ISRC: ${data.isrc}`);
+      logger.info(
+        `✅ Content ID registration submitted for ISRC: ${data.isrc}`,
+      );
       return registration;
     } catch (error: unknown) {
       logger.warn("Error registering Content ID:", error);
@@ -1032,7 +1191,9 @@ Generated: ${new Date().toISOString()}
   /**
    * Get Content ID registrations for a release
    */
-  async getContentIdRegistrations(releaseId: string): Promise<ContentIdRegistration[]> {
+  async getContentIdRegistrations(
+    releaseId: string,
+  ): Promise<ContentIdRegistration[]> {
     try {
       return await storage.getContentIdRegistrationsByRelease(releaseId);
     } catch (error: unknown) {
@@ -1044,13 +1205,16 @@ Generated: ${new Date().toISOString()}
   /**
    * Update Content ID registration status
    */
-  async updateContentIdStatus(registrationId: string, data: {
-    status?: string;
-    assetId?: string;
-    approvedAt?: Date;
-    activeAt?: Date;
-    errorMessage?: string;
-  }): Promise<ContentIdRegistration> {
+  async updateContentIdStatus(
+    registrationId: string,
+    data: {
+      status?: string;
+      assetId?: string;
+      approvedAt?: Date;
+      activeAt?: Date;
+      errorMessage?: string;
+    },
+  ): Promise<ContentIdRegistration> {
     try {
       return await storage.updateContentIdRegistration(registrationId, data);
     } catch (error: unknown) {
@@ -1065,12 +1229,18 @@ Generated: ${new Date().toISOString()}
   async getContentIdRevenue(userId: string): Promise<{
     totalClaims: number;
     totalRevenue: number;
-    byTrack: Array<{ trackId: string; isrc: string; claims: number; revenue: number }>;
+    byTrack: Array<{
+      trackId: string;
+      isrc: string;
+      claims: number;
+      revenue: number;
+    }>;
   }> {
     try {
-      const registrations = await storage.getContentIdRegistrationsByUser(userId);
-      
-      const byTrack = registrations.map(r => ({
+      const registrations =
+        await storage.getContentIdRegistrationsByUser(userId);
+
+      const byTrack = registrations.map((r) => ({
         trackId: r.trackId,
         isrc: r.isrc,
         claims: r.totalClaims || 0,
@@ -1078,8 +1248,14 @@ Generated: ${new Date().toISOString()}
       }));
 
       return {
-        totalClaims: registrations.reduce((sum, r) => sum + (r.totalClaims || 0), 0),
-        totalRevenue: registrations.reduce((sum, r) => sum + (r.totalRevenue || 0), 0),
+        totalClaims: registrations.reduce(
+          (sum, r) => sum + (r.totalClaims || 0),
+          0,
+        ),
+        totalRevenue: registrations.reduce(
+          (sum, r) => sum + (r.totalRevenue || 0),
+          0,
+        ),
         byTrack,
       };
     } catch (error: unknown) {
@@ -1109,7 +1285,10 @@ Generated: ${new Date().toISOString()}
   /**
    * Get sync license for a release/track
    */
-  async getSyncLicense(releaseId: string, trackId?: string): Promise<SyncLicense | undefined> {
+  async getSyncLicense(
+    releaseId: string,
+    trackId?: string,
+  ): Promise<SyncLicense | undefined> {
     try {
       return await storage.getSyncLicense(releaseId, trackId);
     } catch (error: unknown) {
@@ -1121,7 +1300,10 @@ Generated: ${new Date().toISOString()}
   /**
    * Update sync license settings
    */
-  async updateSyncLicense(licenseId: string, updates: Partial<InsertSyncLicense>): Promise<SyncLicense> {
+  async updateSyncLicense(
+    licenseId: string,
+    updates: Partial<InsertSyncLicense>,
+  ): Promise<SyncLicense> {
     try {
       return await storage.updateSyncLicense(licenseId, updates);
     } catch (error: unknown) {
@@ -1133,13 +1315,15 @@ Generated: ${new Date().toISOString()}
   /**
    * Submit sync license inquiry
    */
-  async submitSyncInquiry(data: InsertSyncLicenseInquiry): Promise<SyncLicenseInquiry> {
+  async submitSyncInquiry(
+    data: InsertSyncLicenseInquiry,
+  ): Promise<SyncLicenseInquiry> {
     try {
       const inquiry = await storage.createSyncLicenseInquiry(data);
-      
+
       // Update inquiry count on license
       await storage.incrementSyncLicenseInquiries(data.syncLicenseId);
-      
+
       logger.info(`📩 Sync inquiry received from ${data.inquirerEmail}`);
       return inquiry;
     } catch (error: unknown) {
@@ -1163,10 +1347,13 @@ Generated: ${new Date().toISOString()}
   /**
    * Respond to sync inquiry
    */
-  async respondToSyncInquiry(inquiryId: string, response: {
-    status: 'approved' | 'rejected' | 'negotiating';
-    responseNotes?: string;
-  }): Promise<SyncLicenseInquiry> {
+  async respondToSyncInquiry(
+    inquiryId: string,
+    response: {
+      status: "approved" | "rejected" | "negotiating";
+      responseNotes?: string;
+    },
+  ): Promise<SyncLicenseInquiry> {
     try {
       return await storage.updateSyncLicenseInquiry(inquiryId, {
         status: response.status,
@@ -1189,31 +1376,48 @@ Generated: ${new Date().toISOString()}
   async createRoyaltySplit(data: InsertRoyaltySplit): Promise<RoyaltySplit> {
     try {
       // Validate that total splits don't exceed 100%
-      const existingSplits = await storage.getRoyaltySplitsByRelease(data.releaseId, data.trackId);
-      const totalExisting = existingSplits.reduce((sum, s) => sum + s.percentage, 0);
-      
+      const existingSplits = await storage.getRoyaltySplitsByRelease(
+        data.releaseId,
+        data.trackId,
+      );
+      const totalExisting = existingSplits.reduce(
+        (sum, s) => sum + s.percentage,
+        0,
+      );
+
       if (totalExisting + data.percentage > 100) {
-        throw new Error(`Total splits cannot exceed 100%. Current: ${totalExisting}%, Adding: ${data.percentage}%`);
+        throw new Error(
+          `Total splits cannot exceed 100%. Current: ${totalExisting}%, Adding: ${data.percentage}%`,
+        );
       }
 
       const split = await storage.createRoyaltySplit({
         ...data,
-        status: 'pending',
+        status: "pending",
         inviteSentAt: new Date(),
       });
 
-      logger.info(`✅ Royalty split created: ${data.collaboratorName} (${data.percentage}%)`);
+      logger.info(
+        `✅ Royalty split created: ${data.collaboratorName} (${data.percentage}%)`,
+      );
       return split;
     } catch (error: unknown) {
       logger.warn("Error creating royalty split:", error);
-      throw new Error(error instanceof Error ? error.message : "Failed to create royalty split");
+      throw new Error(
+        error instanceof Error
+          ? error.message
+          : "Failed to create royalty split",
+      );
     }
   }
 
   /**
    * Get all royalty splits for a release
    */
-  async getRoyaltySplits(releaseId: string, trackId?: string): Promise<RoyaltySplit[]> {
+  async getRoyaltySplits(
+    releaseId: string,
+    trackId?: string,
+  ): Promise<RoyaltySplit[]> {
     try {
       return await storage.getRoyaltySplitsByRelease(releaseId, trackId);
     } catch (error: unknown) {
@@ -1225,42 +1429,58 @@ Generated: ${new Date().toISOString()}
   /**
    * Update royalty split
    */
-  async updateRoyaltySplit(splitId: string, updates: Partial<InsertRoyaltySplit>): Promise<RoyaltySplit> {
+  async updateRoyaltySplit(
+    splitId: string,
+    updates: Partial<InsertRoyaltySplit>,
+  ): Promise<RoyaltySplit> {
     try {
       if (updates.percentage !== undefined) {
         const split = await storage.getRoyaltySplit(splitId);
         if (!split) throw new Error("Split not found");
 
-        const otherSplits = await storage.getRoyaltySplitsByRelease(split.releaseId, split.trackId);
+        const otherSplits = await storage.getRoyaltySplitsByRelease(
+          split.releaseId,
+          split.trackId,
+        );
         const otherTotal = otherSplits
-          .filter(s => s.id !== splitId)
+          .filter((s) => s.id !== splitId)
           .reduce((sum, s) => sum + s.percentage, 0);
 
         if (otherTotal + updates.percentage > 100) {
-          throw new Error(`Total splits cannot exceed 100%. Others: ${otherTotal}%, New: ${updates.percentage}%`);
+          throw new Error(
+            `Total splits cannot exceed 100%. Others: ${otherTotal}%, New: ${updates.percentage}%`,
+          );
         }
       }
 
       return await storage.updateRoyaltySplit(splitId, updates);
     } catch (error: unknown) {
       logger.warn("Error updating royalty split:", error);
-      throw new Error(error instanceof Error ? error.message : "Failed to update royalty split");
+      throw new Error(
+        error instanceof Error
+          ? error.message
+          : "Failed to update royalty split",
+      );
     }
   }
 
   /**
    * Accept royalty split invite
    */
-  async acceptRoyaltySplit(splitId: string, userId: string, payoutDetails: {
-    payoutMethod: 'stripe' | 'paypal' | 'bank';
-    stripeAccountId?: string;
-    paypalEmail?: string;
-    bankDetails?: Record<string, any>;
-  }): Promise<RoyaltySplit> {
+  async acceptRoyaltySplit(
+    splitId: string,
+    userId: string,
+    payoutDetails: {
+      payoutMethod: "stripe" | "paypal" | "bank";
+      stripeAccountId?: string;
+      paypalEmail?: string;
+      bankDetails?: Record<string, any>;
+    },
+  ): Promise<RoyaltySplit> {
     try {
       return await storage.updateRoyaltySplit(splitId, {
         userId,
-        status: 'accepted',
+        status: "accepted",
         inviteAcceptedAt: new Date(),
         payoutMethod: payoutDetails.payoutMethod,
         stripeAccountId: payoutDetails.stripeAccountId,
@@ -1289,21 +1509,34 @@ Generated: ${new Date().toISOString()}
   /**
    * Calculate royalty distribution for earnings
    */
-  async calculateRoyaltyDistribution(releaseId: string, totalEarnings: number, periodStart: Date, periodEnd: Date): Promise<{
-    distributions: Array<{ splitId: string; collaboratorName: string; amount: number; percentage: number }>;
+  async calculateRoyaltyDistribution(
+    releaseId: string,
+    totalEarnings: number,
+    periodStart: Date,
+    periodEnd: Date,
+  ): Promise<{
+    distributions: Array<{
+      splitId: string;
+      collaboratorName: string;
+      amount: number;
+      percentage: number;
+    }>;
     totalDistributed: number;
   }> {
     try {
       const splits = await storage.getRoyaltySplitsByRelease(releaseId);
-      
-      const distributions = splits.map(split => ({
+
+      const distributions = splits.map((split) => ({
         splitId: split.id,
         collaboratorName: split.collaboratorName,
         percentage: split.percentage,
         amount: (totalEarnings * split.percentage) / 100,
       }));
 
-      const totalDistributed = distributions.reduce((sum, d) => sum + d.amount, 0);
+      const totalDistributed = distributions.reduce(
+        (sum, d) => sum + d.amount,
+        0,
+      );
 
       return { distributions, totalDistributed };
     } catch (error: unknown) {
@@ -1315,10 +1548,12 @@ Generated: ${new Date().toISOString()}
   /**
    * Record royalty transaction
    */
-  async recordRoyaltyTransaction(data: InsertRoyaltyTransaction): Promise<RoyaltyTransaction> {
+  async recordRoyaltyTransaction(
+    data: InsertRoyaltyTransaction,
+  ): Promise<RoyaltyTransaction> {
     try {
       const transaction = await storage.createRoyaltyTransaction(data);
-      
+
       // Update split totals
       const split = await storage.getRoyaltySplit(data.splitId);
       if (split) {
@@ -1354,14 +1589,18 @@ Generated: ${new Date().toISOString()}
   /**
    * Create pre-save campaign
    */
-  async createPreSaveCampaign(data: InsertPreSaveCampaign): Promise<PreSaveCampaign> {
+  async createPreSaveCampaign(
+    data: InsertPreSaveCampaign,
+  ): Promise<PreSaveCampaign> {
     try {
-      const slug = data.slug || `${data.name.toLowerCase().replace(/\s+/g, '-')}-${randomBytes(3).toString('hex')}`;
-      
+      const slug =
+        data.slug ||
+        `${data.name.toLowerCase().replace(/\s+/g, "-")}-${randomBytes(3).toString("hex")}`;
+
       const campaign = await storage.createPreSaveCampaign({
         ...data,
         slug,
-        status: 'active',
+        status: "active",
         totalSaves: 0,
         spotifySaves: 0,
         appleMusicSaves: 0,
@@ -1380,7 +1619,9 @@ Generated: ${new Date().toISOString()}
   /**
    * Get pre-save campaign by slug
    */
-  async getPreSaveCampaignBySlug(slug: string): Promise<PreSaveCampaign | undefined> {
+  async getPreSaveCampaignBySlug(
+    slug: string,
+  ): Promise<PreSaveCampaign | undefined> {
     try {
       return await storage.getPreSaveCampaignBySlug(slug);
     } catch (error: unknown) {
@@ -1407,7 +1648,7 @@ Generated: ${new Date().toISOString()}
   async recordPreSave(data: InsertPreSaveEntry): Promise<PreSaveEntry> {
     try {
       const entry = await storage.createPreSaveEntry(data);
-      
+
       // Update campaign counters
       const campaign = await storage.getPreSaveCampaign(data.campaignId);
       if (campaign) {
@@ -1415,11 +1656,11 @@ Generated: ${new Date().toISOString()}
           totalSaves: (campaign.totalSaves || 0) + 1,
         };
 
-        if (data.platform === 'spotify') {
+        if (data.platform === "spotify") {
           updates.spotifySaves = (campaign.spotifySaves || 0) + 1;
-        } else if (data.platform === 'apple_music') {
+        } else if (data.platform === "apple_music") {
           updates.appleMusicSaves = (campaign.appleMusicSaves || 0) + 1;
-        } else if (data.platform === 'deezer') {
+        } else if (data.platform === "deezer") {
           updates.deezerSaves = (campaign.deezerSaves || 0) + 1;
         }
 
@@ -1428,8 +1669,9 @@ Generated: ${new Date().toISOString()}
         }
 
         // Calculate conversion rate
-        const totalSaves = (updates.totalSaves || campaign.totalSaves || 0);
-        const pageViews = (campaign.metadata as Record<string, unknown>)?.pageViews || 1;
+        const totalSaves = updates.totalSaves || campaign.totalSaves || 0;
+        const pageViews =
+          (campaign.metadata as Record<string, unknown>)?.pageViews || 1;
         updates.conversionRate = (totalSaves / pageViews) * 100;
 
         await storage.updatePreSaveCampaign(data.campaignId, updates);
@@ -1482,16 +1724,16 @@ Generated: ${new Date().toISOString()}
 
       for (const entry of entries) {
         byPlatform[entry.platform] = (byPlatform[entry.platform] || 0) + 1;
-        
+
         if (entry.country) {
           byCountry[entry.country] = (byCountry[entry.country] || 0) + 1;
         }
-        
-        const source = entry.utmSource || 'direct';
+
+        const source = entry.utmSource || "direct";
         bySource[source] = (bySource[source] || 0) + 1;
 
         if (entry.createdAt) {
-          const date = entry.createdAt.toISOString().split('T')[0];
+          const date = entry.createdAt.toISOString().split("T")[0];
           byDate[date] = (byDate[date] || 0) + 1;
         }
       }
@@ -1518,7 +1760,10 @@ Generated: ${new Date().toISOString()}
   /**
    * Update pre-save campaign
    */
-  async updatePreSaveCampaign(campaignId: string, updates: Partial<InsertPreSaveCampaign>): Promise<PreSaveCampaign> {
+  async updatePreSaveCampaign(
+    campaignId: string,
+    updates: Partial<InsertPreSaveCampaign>,
+  ): Promise<PreSaveCampaign> {
     try {
       return await storage.updatePreSaveCampaign(campaignId, updates);
     } catch (error: unknown) {
@@ -1533,7 +1778,7 @@ Generated: ${new Date().toISOString()}
   async endPreSaveCampaign(campaignId: string): Promise<PreSaveCampaign> {
     try {
       return await storage.updatePreSaveCampaign(campaignId, {
-        status: 'completed',
+        status: "completed",
         endDate: new Date(),
       });
     } catch (error: unknown) {

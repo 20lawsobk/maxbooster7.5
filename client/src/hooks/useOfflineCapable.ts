@@ -1,8 +1,8 @@
-import { useMemo } from 'react';
-import { useLocation } from 'wouter';
-import { useOfflineStatus } from './useOfflineStatus';
+import { useMemo } from "react";
+import { useLocation } from "wouter";
+import { useOfflineStatus } from "./useOfflineStatus";
 
-export type FeatureCapability = 'full' | 'limited' | 'unavailable';
+export type FeatureCapability = "full" | "limited" | "unavailable";
 
 export interface OfflineCapabilities {
   projectEditing: FeatureCapability;
@@ -20,21 +20,21 @@ export interface OfflineCapabilities {
 }
 
 const OFFLINE_ROUTES: Record<string, FeatureCapability> = {
-  '/studio': 'limited',
-  '/projects': 'limited',
-  '/dashboard': 'limited',
-  '/settings': 'full',
+  "/studio": "limited",
+  "/projects": "limited",
+  "/dashboard": "limited",
+  "/settings": "full",
 };
 
 const ONLINE_ONLY_ROUTES = [
-  '/distribution',
-  '/social-media',
-  '/marketplace',
-  '/analytics',
-  '/advertising',
-  '/collaborations',
-  '/contracts',
-  '/royalties',
+  "/distribution",
+  "/social-media",
+  "/marketplace",
+  "/analytics",
+  "/advertising",
+  "/collaborations",
+  "/contracts",
+  "/royalties",
 ];
 
 export function useOfflineCapable(): {
@@ -52,45 +52,45 @@ export function useOfflineCapable(): {
   const capabilities = useMemo<OfflineCapabilities>(() => {
     if (!isOffline) {
       return {
-        projectEditing: 'full',
-        audioPlayback: 'full',
-        midiEditing: 'full',
-        mixing: 'full',
-        drafts: 'full',
-        cachedData: 'full',
-        aiFeatures: 'full',
-        distribution: 'full',
-        socialMedia: 'full',
-        marketplace: 'full',
-        analytics: 'full',
-        collaboration: 'full',
+        projectEditing: "full",
+        audioPlayback: "full",
+        midiEditing: "full",
+        mixing: "full",
+        drafts: "full",
+        cachedData: "full",
+        aiFeatures: "full",
+        distribution: "full",
+        socialMedia: "full",
+        marketplace: "full",
+        analytics: "full",
+        collaboration: "full",
       };
     }
 
     return {
-      projectEditing: 'limited',
-      audioPlayback: 'limited',
-      midiEditing: 'full',
-      mixing: 'limited',
-      drafts: 'full',
-      cachedData: 'limited',
-      aiFeatures: 'unavailable',
-      distribution: 'unavailable',
-      socialMedia: 'unavailable',
-      marketplace: 'unavailable',
-      analytics: 'limited',
-      collaboration: 'unavailable',
+      projectEditing: "limited",
+      audioPlayback: "limited",
+      midiEditing: "full",
+      mixing: "limited",
+      drafts: "full",
+      cachedData: "limited",
+      aiFeatures: "unavailable",
+      distribution: "unavailable",
+      socialMedia: "unavailable",
+      marketplace: "unavailable",
+      analytics: "limited",
+      collaboration: "unavailable",
     };
   }, [isOffline]);
 
   const routeCapability = useMemo<FeatureCapability>(() => {
-    if (!isOffline) return 'full';
+    if (!isOffline) return "full";
 
-    const normalizedPath = location.split('?')[0];
+    const normalizedPath = location.split("?")[0];
 
     for (const route of ONLINE_ONLY_ROUTES) {
       if (normalizedPath.startsWith(route)) {
-        return 'unavailable';
+        return "unavailable";
       }
     }
 
@@ -100,24 +100,24 @@ export function useOfflineCapable(): {
       }
     }
 
-    return 'limited';
+    return "limited";
   }, [isOffline, location]);
 
   const availableFeatures = useMemo(() => {
     return Object.entries(capabilities)
-      .filter(([, capability]) => capability !== 'unavailable')
+      .filter(([, capability]) => capability !== "unavailable")
       .map(([feature]) => feature);
   }, [capabilities]);
 
   const unavailableFeatures = useMemo(() => {
     return Object.entries(capabilities)
-      .filter(([, capability]) => capability === 'unavailable')
+      .filter(([, capability]) => capability === "unavailable")
       .map(([feature]) => feature);
   }, [capabilities]);
 
-  const isFullyCapable = routeCapability === 'full';
-  const isPartiallyCapable = routeCapability === 'limited';
-  const isUnavailable = routeCapability === 'unavailable';
+  const isFullyCapable = routeCapability === "full";
+  const isPartiallyCapable = routeCapability === "limited";
+  const isUnavailable = routeCapability === "unavailable";
 
   return {
     isFullyCapable,

@@ -1,37 +1,38 @@
-import React from 'react';
-import { useA11yReducedMotion } from './AccessibilityProvider';
-import { Button } from '@/components/ui/button';
-import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
-import { Move, Pause, Play } from 'lucide-react';
-import { announcePolite } from '@/lib/a11y/screenReader';
+import React from "react";
+import { useA11yReducedMotion } from "./AccessibilityProvider";
+import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { Move, Pause, Play } from "lucide-react";
+import { announcePolite } from "@/lib/a11y/screenReader";
 
 export interface ReducedMotionToggleProps {
-  variant?: 'button' | 'switch' | 'icon';
-  size?: 'sm' | 'default' | 'lg';
+  variant?: "button" | "switch" | "icon";
+  size?: "sm" | "default" | "lg";
   showLabel?: boolean;
   showSystemIndicator?: boolean;
   className?: string;
 }
 
 export function ReducedMotionToggle({
-  variant = 'switch',
-  size = 'default',
+  variant = "switch",
+  size = "default",
   showLabel = true,
   showSystemIndicator = true,
-  className = '',
+  className = "",
 }: ReducedMotionToggleProps) {
-  const { prefersReducedMotion, isSystemPreference, setReducedMotion } = useA11yReducedMotion();
+  const { prefersReducedMotion, isSystemPreference, setReducedMotion } =
+    useA11yReducedMotion();
 
   const handleToggle = () => {
     const newValue = !prefersReducedMotion;
     setReducedMotion(newValue);
-    announcePolite(`Reduced motion ${newValue ? 'enabled' : 'disabled'}`);
+    announcePolite(`Reduced motion ${newValue ? "enabled" : "disabled"}`);
   };
 
   const handleReset = () => {
     setReducedMotion(null);
-    announcePolite('Reduced motion set to system preference');
+    announcePolite("Reduced motion set to system preference");
   };
 
   const icon = prefersReducedMotion ? (
@@ -40,26 +41,26 @@ export function ReducedMotionToggle({
     <Play className="h-4 w-4" aria-hidden="true" />
   );
 
-  if (variant === 'icon') {
+  if (variant === "icon") {
     return (
       <Button
-        variant={prefersReducedMotion ? 'default' : 'outline'}
+        variant={prefersReducedMotion ? "default" : "outline"}
         size={size}
         onClick={handleToggle}
         className={className}
         aria-pressed={prefersReducedMotion}
-        aria-label={`Reduced motion is ${prefersReducedMotion ? 'enabled' : 'disabled'}. Click to ${prefersReducedMotion ? 'disable' : 'enable'}.`}
+        aria-label={`Reduced motion is ${prefersReducedMotion ? "enabled" : "disabled"}. Click to ${prefersReducedMotion ? "disable" : "enable"}.`}
       >
         {icon}
       </Button>
     );
   }
 
-  if (variant === 'button') {
+  if (variant === "button") {
     return (
       <div className={`flex items-center gap-2 ${className}`}>
         <Button
-          variant={prefersReducedMotion ? 'default' : 'outline'}
+          variant={prefersReducedMotion ? "default" : "outline"}
           size={size}
           onClick={handleToggle}
           aria-pressed={prefersReducedMotion}
@@ -68,7 +69,7 @@ export function ReducedMotionToggle({
           <Move className="h-4 w-4" aria-hidden="true" />
           {showLabel && (
             <span>
-              {prefersReducedMotion ? 'Motion Reduced' : 'Motion Enabled'}
+              {prefersReducedMotion ? "Motion Reduced" : "Motion Enabled"}
             </span>
           )}
         </Button>
@@ -111,7 +112,7 @@ export function ReducedMotionToggle({
         checked={prefersReducedMotion}
         onCheckedChange={(checked) => {
           setReducedMotion(checked);
-          announcePolite(`Reduced motion ${checked ? 'enabled' : 'disabled'}`);
+          announcePolite(`Reduced motion ${checked ? "enabled" : "disabled"}`);
         }}
         aria-describedby="reduced-motion-description"
       />
@@ -123,7 +124,9 @@ export interface ReducedMotionIndicatorProps {
   className?: string;
 }
 
-export function ReducedMotionIndicator({ className = '' }: ReducedMotionIndicatorProps) {
+export function ReducedMotionIndicator({
+  className = "",
+}: ReducedMotionIndicatorProps) {
   const { prefersReducedMotion, isSystemPreference } = useA11yReducedMotion();
 
   if (!prefersReducedMotion) return null;
@@ -137,7 +140,7 @@ export function ReducedMotionIndicator({ className = '' }: ReducedMotionIndicato
       <Move className="h-3 w-3" aria-hidden="true" />
       <span>
         Reduced Motion
-        {isSystemPreference && ' (System)'}
+        {isSystemPreference && " (System)"}
       </span>
     </div>
   );

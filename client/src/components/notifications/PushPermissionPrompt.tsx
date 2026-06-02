@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Bell, BellOff, Smartphone, AlertCircle } from 'lucide-react';
+import { useState } from "react";
+import { Bell, BellOff, Smartphone, AlertCircle } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -7,9 +7,9 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface PushPermissionPromptProps {
   open: boolean;
@@ -32,24 +32,26 @@ export function PushPermissionPrompt({
     setError(null);
 
     try {
-      if (!('Notification' in window)) {
-        setError('Push notifications are not supported in this browser.');
+      if (!("Notification" in window)) {
+        setError("Push notifications are not supported in this browser.");
         return;
       }
 
       const permission = await Notification.requestPermission();
 
-      if (permission === 'granted') {
+      if (permission === "granted") {
         onGranted();
         onOpenChange(false);
-      } else if (permission === 'denied') {
+      } else if (permission === "denied") {
         onDenied();
-        setError('Permission denied. You can enable notifications in your browser settings.');
+        setError(
+          "Permission denied. You can enable notifications in your browser settings.",
+        );
       } else {
-        setError('Permission request was dismissed. Please try again.');
+        setError("Permission request was dismissed. Please try again.");
       }
     } catch (err) {
-      setError('An error occurred while requesting permission.');
+      setError("An error occurred while requesting permission.");
     } finally {
       setIsRequesting(false);
     }
@@ -70,7 +72,8 @@ export function PushPermissionPrompt({
             Enable Push Notifications
           </DialogTitle>
           <DialogDescription className="text-center">
-            Stay updated with real-time notifications about your releases, earnings, and collaborations.
+            Stay updated with real-time notifications about your releases,
+            earnings, and collaborations.
           </DialogDescription>
         </DialogHeader>
 
@@ -82,7 +85,8 @@ export function PushPermissionPrompt({
             <div>
               <p className="font-medium text-sm">Instant updates</p>
               <p className="text-sm text-muted-foreground">
-                Get notified immediately when you receive payments or collaboration invites.
+                Get notified immediately when you receive payments or
+                collaboration invites.
               </p>
             </div>
           </div>
@@ -124,7 +128,7 @@ export function PushPermissionPrompt({
             className="w-full"
             data-testid="btn-enable-push"
           >
-            {isRequesting ? 'Requesting...' : 'Enable Notifications'}
+            {isRequesting ? "Requesting..." : "Enable Notifications"}
           </Button>
           <Button
             variant="ghost"

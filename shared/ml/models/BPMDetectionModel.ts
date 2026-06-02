@@ -1,29 +1,29 @@
 /**
  * Cross-Platform BPM/Tempo and Key Detection Model
- * 
+ *
  * Works on: Web (browser), Desktop (Electron), Mobile (React Native/Capacitor), Server (Node.js)
- * 
+ *
  * Architecture:
  * 1. Pure JavaScript core algorithm (works everywhere)
  * 2. Optional Essentia.js enhancement (browser only, auto-detected)
  * 3. Optimized FFT using typed arrays for performance
- * 
+ *
  * Algorithm: Onset detection + autocorrelation + pulse train correlation
  * Based on research by Simon Dixon (Beatroot) and Joe Sullivan
  */
 
-import type { AudioFeatures } from '../types.js';
+import type { AudioFeatures } from "../types.js";
 
 export interface BPMDetectionResult {
   bpm: number;
   confidence: number;
   candidates: Array<{ bpm: number; score: number }>;
-  method: 'pure-js' | 'essentia' | 'hybrid';
+  method: "pure-js" | "essentia" | "hybrid";
 }
 
 export interface KeyDetectionResult {
   key: string;
-  scale: 'major' | 'minor';
+  scale: "major" | "minor";
   confidence: number;
 }
 
@@ -44,22 +44,56 @@ const DEFAULT_CONFIG: Required<BPMDetectorConfig> = {
 interface EssentiaInstance {
   initialize(): Promise<void>;
   shutdown(): void;
-  RhythmExtractor2013(...args: unknown[]): { bpm: number; confidence: number; beats: number[] };
-  KeyExtractor(...args: unknown[]): { key: string; scale: string; strength: number };
+  RhythmExtractor2013(...args: unknown[]): {
+    bpm: number;
+    confidence: number;
+    beats: number[];
+  };
+  KeyExtractor(...args: unknown[]): {
+    key: string;
+    scale: string;
+    strength: number;
+  };
   OnsetDetection(...args: unknown[]): { onsets: Float32Array };
   MFCC(...args: unknown[]): { mfcc: Float32Array; bands: Float32Array };
 }
 
 const NOTE_FREQUENCIES = {
-  'C': 261.63, 'C#': 277.18, 'D': 293.66, 'D#': 311.13,
-  'E': 329.63, 'F': 349.23, 'F#': 369.99, 'G': 392.00,
-  'G#': 415.30, 'A': 440.00, 'A#': 466.16, 'B': 493.88,
+  C: 261.63,
+  "C#": 277.18,
+  D: 293.66,
+  "D#": 311.13,
+  E: 329.63,
+  F: 349.23,
+  "F#": 369.99,
+  G: 392.0,
+  "G#": 415.3,
+  A: 440.0,
+  "A#": 466.16,
+  B: 493.88,
 };
 
-const NOTE_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+const NOTE_NAMES = [
+  "C",
+  "C#",
+  "D",
+  "D#",
+  "E",
+  "F",
+  "F#",
+  "G",
+  "G#",
+  "A",
+  "A#",
+  "B",
+];
 
-const MAJOR_PROFILE = [6.35, 2.23, 3.48, 2.33, 4.38, 4.09, 2.52, 5.19, 2.39, 3.66, 2.29, 2.88];
-const MINOR_PROFILE = [6.33, 2.68, 3.52, 5.38, 2.60, 3.53, 2.54, 4.75, 3.98, 2.69, 3.34, 3.17];
+const MAJOR_PROFILE = [
+  6.35, 2.23, 3.48, 2.33, 4.38, 4.09, 2.52, 5.19, 2.39, 3.66, 2.29, 2.88,
+];
+const MINOR_PROFILE = [
+  6.33, 2.68, 3.52, 5.38, 2.6, 3.53, 2.54, 4.75, 3.98, 2.69, 3.34, 3.17,
+];
 
 export class BPMDetectionModel {
   private essentia: EssentiaInstance | null = null;
@@ -76,35 +110,44 @@ export class BPMDetectionModel {
 
     if (this.config.useEssentiaIfAvailable && this.isBrowserEnvironment()) {
       try {
-        const EssentiaModule = await import('essentia.js');
+        const EssentiaModule = await import("essentia.js");
         const Essentia = EssentiaModule.default || EssentiaModule;
-        this.essentia = new (Essentia as { EssentiaWASM: new () => EssentiaInstance }).EssentiaWASM();
+        this.essentia = new (
+          Essentia as { EssentiaWASM: new () => EssentiaInstance }
+        ).EssentiaWASM();
         await this.essentia.initialize();
         this.essentiaAvailable = true;
-        console.log('[BPMDetection] Essentia.js initialized - using enhanced detection');
+        console.log(
+          "[BPMDetection] Essentia.js initialized - using enhanced detection",
+        );
       } catch (error) {
-        console.log('[BPMDetection] Essentia.js not available, using pure JS algorithm');
+        console.log(
+          "[BPMDetection] Essentia.js not available, using pure JS algorithm",
+        );
         this.essentiaAvailable = false;
       }
     } else {
-      console.log('[BPMDetection] Using cross-platform pure JS algorithm');
+      console.log("[BPMDetection] Using cross-platform pure JS algorithm");
     }
 
     this.initialized = true;
   }
 
   private isBrowserEnvironment(): boolean {
-    return typeof window !== 'undefined' && typeof document !== 'undefined';
+    return typeof window !== "undefined" && typeof document !== "undefined";
   }
 
-  public detectBPM(audioBuffer: Float32Array, sampleRate?: number): BPMDetectionResult {
+  public detectBPM(
+    audioBuffer: Float32Array,
+    sampleRate?: number,
+  ): BPMDetectionResult {
     const sr = sampleRate || this.config.sampleRate;
 
     if (this.essentiaAvailable && this.essentia) {
       try {
         return this.detectBPMWithEssentia(audioBuffer, sr);
       } catch (error) {
-        console.warn('[BPMDetection] Essentia failed, falling back to pure JS');
+        console.warn("[BPMDetection] Essentia failed, falling back to pure JS");
         return this.detectBPMPureJS(audioBuffer, sr);
       }
     }
@@ -112,15 +155,18 @@ export class BPMDetectionModel {
     return this.detectBPMPureJS(audioBuffer, sr);
   }
 
-  private detectBPMWithEssentia(audioBuffer: Float32Array, sampleRate: number): BPMDetectionResult {
+  private detectBPMWithEssentia(
+    audioBuffer: Float32Array,
+    sampleRate: number,
+  ): BPMDetectionResult {
     if (!this.essentia) {
-      throw new Error('Essentia not initialized');
+      throw new Error("Essentia not initialized");
     }
 
     const beatTracker = this.essentia.RhythmExtractor2013(
       audioBuffer,
       sampleRate,
-      'degara',
+      "degara",
       true,
       256,
       0,
@@ -130,7 +176,7 @@ export class BPMDetectionModel {
       this.config.maxBPM,
       0.24,
       true,
-      false
+      false,
     );
 
     const candidates = this.findBPMCandidatesPureJS(audioBuffer, sampleRate);
@@ -140,11 +186,14 @@ export class BPMDetectionModel {
       bpm: Math.round(octaveChecked * 10) / 10,
       confidence: beatTracker.confidence,
       candidates,
-      method: 'essentia',
+      method: "essentia",
     };
   }
 
-  private detectBPMPureJS(audioBuffer: Float32Array, sampleRate: number): BPMDetectionResult {
+  private detectBPMPureJS(
+    audioBuffer: Float32Array,
+    sampleRate: number,
+  ): BPMDetectionResult {
     const onsetEnvelope = this.computeOnsetEnvelope(audioBuffer, sampleRate);
     const candidates = this.computeBPMFromOnsets(onsetEnvelope, sampleRate);
 
@@ -153,7 +202,7 @@ export class BPMDetectionModel {
         bpm: 120,
         confidence: 0,
         candidates: [],
-        method: 'pure-js',
+        method: "pure-js",
       };
     }
 
@@ -166,11 +215,14 @@ export class BPMDetectionModel {
       bpm: Math.round(octaveChecked * 10) / 10,
       confidence,
       candidates: candidates.slice(0, 5),
-      method: 'pure-js',
+      method: "pure-js",
     };
   }
 
-  private computeOnsetEnvelope(audioBuffer: Float32Array, sampleRate: number): Float32Array {
+  private computeOnsetEnvelope(
+    audioBuffer: Float32Array,
+    sampleRate: number,
+  ): Float32Array {
     const frameSize = 2048;
     const hopSize = 512;
     const numFrames = Math.floor((audioBuffer.length - frameSize) / hopSize);
@@ -185,7 +237,10 @@ export class BPMDetectionModel {
 
     for (let i = 0; i < numFrames; i++) {
       const start = i * hopSize;
-      const frame = this.applyWindow(audioBuffer.slice(start, start + frameSize), hannWindow);
+      const frame = this.applyWindow(
+        audioBuffer.slice(start, start + frameSize),
+        hannWindow,
+      );
       const spectrum = this.computeMagnitudeSpectrum(frame);
 
       if (prevSpectrum) {
@@ -208,31 +263,41 @@ export class BPMDetectionModel {
     return normalized;
   }
 
-  private computeBPMFromOnsets(onsetEnvelope: Float32Array, sampleRate: number): Array<{ bpm: number; score: number }> {
+  private computeBPMFromOnsets(
+    onsetEnvelope: Float32Array,
+    sampleRate: number,
+  ): Array<{ bpm: number; score: number }> {
     if (onsetEnvelope.length < 10) {
       return [];
     }
 
     const hopSize = 512;
     const autocorr = this.autocorrelation(onsetEnvelope);
-    const minLag = Math.floor((60 / this.config.maxBPM) * sampleRate / hopSize);
-    const maxLag = Math.floor((60 / this.config.minBPM) * sampleRate / hopSize);
+    const minLag = Math.floor(
+      ((60 / this.config.maxBPM) * sampleRate) / hopSize,
+    );
+    const maxLag = Math.floor(
+      ((60 / this.config.minBPM) * sampleRate) / hopSize,
+    );
 
     const peaks = this.findAutocorrelationPeaks(autocorr, minLag, maxLag);
 
     const candidates = peaks
-      .map(peak => {
+      .map((peak) => {
         const lagInSeconds = (peak.index * hopSize) / sampleRate;
         const bpm = 60 / lagInSeconds;
         return { bpm, score: peak.value };
       })
-      .filter(c => c.bpm >= this.config.minBPM && c.bpm <= this.config.maxBPM)
+      .filter((c) => c.bpm >= this.config.minBPM && c.bpm <= this.config.maxBPM)
       .sort((a, b) => b.score - a.score);
 
     return candidates;
   }
 
-  private findBPMCandidatesPureJS(audioBuffer: Float32Array, sampleRate: number): Array<{ bpm: number; score: number }> {
+  private findBPMCandidatesPureJS(
+    audioBuffer: Float32Array,
+    sampleRate: number,
+  ): Array<{ bpm: number; score: number }> {
     const onsetEnvelope = this.computeOnsetEnvelope(audioBuffer, sampleRate);
     return this.computeBPMFromOnsets(onsetEnvelope, sampleRate);
   }
@@ -276,7 +341,10 @@ export class BPMDetectionModel {
     return spectrum;
   }
 
-  private smoothEnvelope(envelope: Float32Array, kernelSize: number): Float32Array {
+  private smoothEnvelope(
+    envelope: Float32Array,
+    kernelSize: number,
+  ): Float32Array {
     const smoothed = new Float32Array(envelope.length);
     const halfKernel = Math.floor(kernelSize / 2);
 
@@ -331,7 +399,7 @@ export class BPMDetectionModel {
   private findAutocorrelationPeaks(
     autocorr: Float32Array,
     minLag: number,
-    maxLag: number
+    maxLag: number,
   ): Array<{ index: number; value: number }> {
     const peaks: Array<{ index: number; value: number }> = [];
     const effectiveMax = Math.min(maxLag, autocorr.length - 1);
@@ -349,13 +417,13 @@ export class BPMDetectionModel {
 
   private checkOctaveError(
     bpm: number,
-    candidates: Array<{ bpm: number; score: number }>
+    candidates: Array<{ bpm: number; score: number }>,
   ): number {
     const halfBPM = bpm / 2;
     const doubleBPM = bpm * 2;
 
     const findCandidate = (targetBPM: number) =>
-      candidates.find(c => Math.abs(c.bpm - targetBPM) < 5);
+      candidates.find((c) => Math.abs(c.bpm - targetBPM) < 5);
 
     const currentCandidate = findCandidate(bpm);
     const currentScore = currentCandidate?.score || 0;
@@ -379,7 +447,7 @@ export class BPMDetectionModel {
 
   private computeConfidence(
     candidates: Array<{ bpm: number; score: number }>,
-    selectedBPM: number
+    selectedBPM: number,
   ): number {
     if (candidates.length === 0) return 0;
     if (candidates.length === 1) return candidates[0].score;
@@ -390,17 +458,22 @@ export class BPMDetectionModel {
     const clarity = (topScore - secondScore) / (topScore + 0.001);
     const absolute = Math.min(topScore, 1);
 
-    return (clarity * 0.6 + absolute * 0.4);
+    return clarity * 0.6 + absolute * 0.4;
   }
 
-  public detectKey(audioBuffer: Float32Array, sampleRate?: number): KeyDetectionResult {
+  public detectKey(
+    audioBuffer: Float32Array,
+    sampleRate?: number,
+  ): KeyDetectionResult {
     const sr = sampleRate || this.config.sampleRate;
 
     if (this.essentiaAvailable && this.essentia) {
       try {
         return this.detectKeyWithEssentia(audioBuffer, sr);
       } catch (error) {
-        console.warn('[BPMDetection] Essentia key detection failed, using pure JS');
+        console.warn(
+          "[BPMDetection] Essentia key detection failed, using pure JS",
+        );
         return this.detectKeyPureJS(audioBuffer, sr);
       }
     }
@@ -408,9 +481,12 @@ export class BPMDetectionModel {
     return this.detectKeyPureJS(audioBuffer, sr);
   }
 
-  private detectKeyWithEssentia(audioBuffer: Float32Array, sampleRate: number): KeyDetectionResult {
+  private detectKeyWithEssentia(
+    audioBuffer: Float32Array,
+    sampleRate: number,
+  ): KeyDetectionResult {
     if (!this.essentia) {
-      throw new Error('Essentia not initialized');
+      throw new Error("Essentia not initialized");
     }
 
     const keyExtractor = this.essentia.KeyExtractor(
@@ -426,37 +502,48 @@ export class BPMDetectionModel {
       0.0001,
       440,
       false,
-      'bgate'
+      "bgate",
     );
 
     return {
       key: keyExtractor.key,
-      scale: keyExtractor.scale as 'major' | 'minor',
+      scale: keyExtractor.scale as "major" | "minor",
       confidence: Math.min(1, keyExtractor.strength),
     };
   }
 
-  private detectKeyPureJS(audioBuffer: Float32Array, sampleRate: number): KeyDetectionResult {
+  private detectKeyPureJS(
+    audioBuffer: Float32Array,
+    sampleRate: number,
+  ): KeyDetectionResult {
     const chromagram = this.computeChromagram(audioBuffer, sampleRate);
 
-    let bestKey = 'C';
-    let bestScale: 'major' | 'minor' = 'major';
+    let bestKey = "C";
+    let bestScale: "major" | "minor" = "major";
     let bestScore = -Infinity;
 
     for (let shift = 0; shift < 12; shift++) {
-      const majorScore = this.correlateWithProfile(chromagram, MAJOR_PROFILE, shift);
-      const minorScore = this.correlateWithProfile(chromagram, MINOR_PROFILE, shift);
+      const majorScore = this.correlateWithProfile(
+        chromagram,
+        MAJOR_PROFILE,
+        shift,
+      );
+      const minorScore = this.correlateWithProfile(
+        chromagram,
+        MINOR_PROFILE,
+        shift,
+      );
 
       if (majorScore > bestScore) {
         bestScore = majorScore;
         bestKey = NOTE_NAMES[shift];
-        bestScale = 'major';
+        bestScale = "major";
       }
 
       if (minorScore > bestScore) {
         bestScore = minorScore;
         bestKey = NOTE_NAMES[shift];
-        bestScale = 'minor';
+        bestScale = "minor";
       }
     }
 
@@ -469,7 +556,10 @@ export class BPMDetectionModel {
     };
   }
 
-  private computeChromagram(audioBuffer: Float32Array, sampleRate: number): Float32Array {
+  private computeChromagram(
+    audioBuffer: Float32Array,
+    sampleRate: number,
+  ): Float32Array {
     const frameSize = 4096;
     const hopSize = 2048;
     const numFrames = Math.floor((audioBuffer.length - frameSize) / hopSize);
@@ -483,7 +573,10 @@ export class BPMDetectionModel {
 
     for (let i = 0; i < numFrames; i++) {
       const start = i * hopSize;
-      const frame = this.applyWindow(audioBuffer.slice(start, start + frameSize), hannWindow);
+      const frame = this.applyWindow(
+        audioBuffer.slice(start, start + frameSize),
+        hannWindow,
+      );
       const spectrum = this.computeMagnitudeSpectrum(frame);
 
       for (let bin = 1; bin < spectrum.length; bin++) {
@@ -510,7 +603,11 @@ export class BPMDetectionModel {
     return Math.round(noteNum) % 12;
   }
 
-  private correlateWithProfile(chroma: Float32Array, profile: number[], shift: number): number {
+  private correlateWithProfile(
+    chroma: Float32Array,
+    profile: number[],
+    shift: number,
+  ): number {
     let sum = 0;
     let chromaSum = 0;
     let profileSum = 0;
@@ -526,7 +623,10 @@ export class BPMDetectionModel {
     return denom > 0 ? sum / denom : 0;
   }
 
-  public extractAudioFeatures(audioBuffer: Float32Array, sampleRate?: number): AudioFeatures {
+  public extractAudioFeatures(
+    audioBuffer: Float32Array,
+    sampleRate?: number,
+  ): AudioFeatures {
     const sr = sampleRate || this.config.sampleRate;
 
     const spectralCentroid = this.computeSpectralCentroid(audioBuffer);
@@ -635,15 +735,14 @@ export class BPMDetectionModel {
   }
 
   public getDetectionMethod(): string {
-    return this.essentiaAvailable ? 'essentia' : 'pure-js';
+    return this.essentiaAvailable ? "essentia" : "pure-js";
   }
 
   public dispose(): void {
     if (this.essentia) {
       try {
         this.essentia.shutdown();
-      } catch (e) {
-      }
+      } catch (e) {}
       this.essentia = null;
     }
     this.essentiaAvailable = false;
@@ -651,7 +750,9 @@ export class BPMDetectionModel {
   }
 }
 
-export const createBPMDetector = async (config?: BPMDetectorConfig): Promise<BPMDetectionModel> => {
+export const createBPMDetector = async (
+  config?: BPMDetectorConfig,
+): Promise<BPMDetectionModel> => {
   const detector = new BPMDetectionModel(config);
   await detector.initialize();
   return detector;

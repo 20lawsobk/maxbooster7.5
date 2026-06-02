@@ -1,26 +1,32 @@
-import { useState, useCallback, memo } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Separator } from '@/components/ui/separator';
+import { useState, useCallback, memo } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Separator } from "@/components/ui/separator";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
+} from "@/components/ui/select";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+} from "@/components/ui/dropdown-menu";
 import {
   Dialog,
   DialogContent,
@@ -28,7 +34,7 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter,
-} from '@/components/ui/dialog';
+} from "@/components/ui/dialog";
 import {
   Download,
   FileAudio,
@@ -51,14 +57,24 @@ import {
   HardDrive,
   Eye,
   AlertCircle,
-} from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { apiRequest } from '@/lib/queryClient';
-import { useToast } from '@/hooks/use-toast';
-import { format, formatDistanceToNow } from 'date-fns';
+} from "lucide-react";
+import { cn } from "@/lib/utils";
+import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
+import { format, formatDistanceToNow } from "date-fns";
 
-export type ExportHistoryStatus = 'completed' | 'failed' | 'expired' | 'processing';
-export type ExportHistoryType = 'audio' | 'stems' | 'analytics' | 'royalties' | 'contracts' | 'backup';
+export type ExportHistoryStatus =
+  | "completed"
+  | "failed"
+  | "expired"
+  | "processing";
+export type ExportHistoryType =
+  | "audio"
+  | "stems"
+  | "analytics"
+  | "royalties"
+  | "contracts"
+  | "backup";
 
 export interface ExportHistoryItem {
   id: string;
@@ -84,35 +100,84 @@ interface ExportHistoryProps {
   onShare?: (item: ExportHistoryItem) => void;
 }
 
-const TYPE_CONFIG: Record<ExportHistoryType, {
-  icon: React.ElementType;
-  color: string;
-  bgColor: string;
-  label: string;
-}> = {
-  audio: { icon: FileAudio, color: 'text-blue-400', bgColor: 'bg-blue-500/20', label: 'Audio' },
-  stems: { icon: Archive, color: 'text-purple-400', bgColor: 'bg-purple-500/20', label: 'Stems' },
-  analytics: { icon: FileSpreadsheet, color: 'text-green-400', bgColor: 'bg-green-500/20', label: 'Analytics' },
-  royalties: { icon: FileText, color: 'text-amber-400', bgColor: 'bg-amber-500/20', label: 'Royalties' },
-  contracts: { icon: FileText, color: 'text-cyan-400', bgColor: 'bg-cyan-500/20', label: 'Contracts' },
-  backup: { icon: HardDrive, color: 'text-pink-400', bgColor: 'bg-pink-500/20', label: 'Backup' },
+const TYPE_CONFIG: Record<
+  ExportHistoryType,
+  {
+    icon: React.ElementType;
+    color: string;
+    bgColor: string;
+    label: string;
+  }
+> = {
+  audio: {
+    icon: FileAudio,
+    color: "text-blue-400",
+    bgColor: "bg-blue-500/20",
+    label: "Audio",
+  },
+  stems: {
+    icon: Archive,
+    color: "text-purple-400",
+    bgColor: "bg-purple-500/20",
+    label: "Stems",
+  },
+  analytics: {
+    icon: FileSpreadsheet,
+    color: "text-green-400",
+    bgColor: "bg-green-500/20",
+    label: "Analytics",
+  },
+  royalties: {
+    icon: FileText,
+    color: "text-amber-400",
+    bgColor: "bg-amber-500/20",
+    label: "Royalties",
+  },
+  contracts: {
+    icon: FileText,
+    color: "text-cyan-400",
+    bgColor: "bg-cyan-500/20",
+    label: "Contracts",
+  },
+  backup: {
+    icon: HardDrive,
+    color: "text-pink-400",
+    bgColor: "bg-pink-500/20",
+    label: "Backup",
+  },
 };
 
-const STATUS_CONFIG: Record<ExportHistoryStatus, {
-  color: string;
-  bgColor: string;
-  label: string;
-}> = {
-  completed: { color: 'text-green-400', bgColor: 'bg-green-500/20', label: 'Completed' },
-  failed: { color: 'text-red-400', bgColor: 'bg-red-500/20', label: 'Failed' },
-  expired: { color: 'text-zinc-500', bgColor: 'bg-zinc-500/20', label: 'Expired' },
-  processing: { color: 'text-blue-400', bgColor: 'bg-blue-500/20', label: 'Processing' },
+const STATUS_CONFIG: Record<
+  ExportHistoryStatus,
+  {
+    color: string;
+    bgColor: string;
+    label: string;
+  }
+> = {
+  completed: {
+    color: "text-green-400",
+    bgColor: "bg-green-500/20",
+    label: "Completed",
+  },
+  failed: { color: "text-red-400", bgColor: "bg-red-500/20", label: "Failed" },
+  expired: {
+    color: "text-zinc-500",
+    bgColor: "bg-zinc-500/20",
+    label: "Expired",
+  },
+  processing: {
+    color: "text-blue-400",
+    bgColor: "bg-blue-500/20",
+    label: "Processing",
+  },
 };
 
 function formatFileSize(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-  if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  if (bytes < 1024 * 1024 * 1024)
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`;
 }
 
@@ -134,9 +199,11 @@ const ExportHistoryItemRow = memo(function ExportHistoryItemRow({
   const typeConfig = TYPE_CONFIG[item.type];
   const statusConfig = STATUS_CONFIG[item.status];
   const TypeIcon = typeConfig.icon;
-  
-  const isDownloadable = item.status === 'completed' && item.downloadUrl;
-  const isExpired = item.status === 'expired' || (item.expiresAt && new Date(item.expiresAt) < new Date());
+
+  const isDownloadable = item.status === "completed" && item.downloadUrl;
+  const isExpired =
+    item.status === "expired" ||
+    (item.expiresAt && new Date(item.expiresAt) < new Date());
 
   return (
     <motion.div
@@ -145,13 +212,20 @@ const ExportHistoryItemRow = memo(function ExportHistoryItemRow({
       exit={{ opacity: 0, x: -20 }}
       className={cn(
         "flex items-center gap-4 p-4 rounded-lg border transition-all",
-        item.status === 'completed' && "bg-zinc-900 border-zinc-800 hover:border-zinc-700",
-        item.status === 'failed' && "bg-red-950/20 border-red-900/30",
-        item.status === 'expired' && "bg-zinc-900/50 border-zinc-800 opacity-60",
-        item.status === 'processing' && "bg-blue-950/20 border-blue-900/30"
+        item.status === "completed" &&
+          "bg-zinc-900 border-zinc-800 hover:border-zinc-700",
+        item.status === "failed" && "bg-red-950/20 border-red-900/30",
+        item.status === "expired" &&
+          "bg-zinc-900/50 border-zinc-800 opacity-60",
+        item.status === "processing" && "bg-blue-950/20 border-blue-900/30",
       )}
     >
-      <div className={cn("w-12 h-12 rounded-lg flex items-center justify-center shrink-0", typeConfig.bgColor)}>
+      <div
+        className={cn(
+          "w-12 h-12 rounded-lg flex items-center justify-center shrink-0",
+          typeConfig.bgColor,
+        )}
+      >
         <TypeIcon className={cn("h-6 w-6", typeConfig.color)} />
       </div>
 
@@ -161,7 +235,14 @@ const ExportHistoryItemRow = memo(function ExportHistoryItemRow({
           <Badge variant="outline" className="text-[10px] uppercase shrink-0">
             {item.format}
           </Badge>
-          <Badge variant="secondary" className={cn("text-[10px] shrink-0", statusConfig.color, statusConfig.bgColor)}>
+          <Badge
+            variant="secondary"
+            className={cn(
+              "text-[10px] shrink-0",
+              statusConfig.color,
+              statusConfig.bgColor,
+            )}
+          >
             {statusConfig.label}
           </Badge>
         </div>
@@ -184,13 +265,11 @@ const ExportHistoryItemRow = memo(function ExportHistoryItemRow({
             </span>
           )}
           {item.projectName && (
-            <span className="truncate">
-              Project: {item.projectName}
-            </span>
+            <span className="truncate">Project: {item.projectName}</span>
           )}
         </div>
 
-        {item.status === 'failed' && item.error && (
+        {item.status === "failed" && item.error && (
           <div className="flex items-center gap-1 mt-1 text-xs text-red-400">
             <AlertCircle className="h-3 w-3" />
             {item.error}
@@ -200,7 +279,8 @@ const ExportHistoryItemRow = memo(function ExportHistoryItemRow({
         {isExpired && item.expiresAt && (
           <div className="flex items-center gap-1 mt-1 text-xs text-zinc-500">
             <Clock className="h-3 w-3" />
-            Expired {formatDistanceToNow(new Date(item.expiresAt), { addSuffix: true })}
+            Expired{" "}
+            {formatDistanceToNow(new Date(item.expiresAt), { addSuffix: true })}
           </div>
         )}
       </div>
@@ -217,7 +297,7 @@ const ExportHistoryItemRow = memo(function ExportHistoryItemRow({
           </Button>
         )}
 
-        {item.status === 'failed' && onReExport && (
+        {item.status === "failed" && onReExport && (
           <Button
             size="sm"
             variant="outline"
@@ -235,8 +315,14 @@ const ExportHistoryItemRow = memo(function ExportHistoryItemRow({
               <MoreVertical className="h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="bg-zinc-900 border-zinc-700">
-            <DropdownMenuItem onClick={() => onViewDetails(item)} className="gap-2">
+          <DropdownMenuContent
+            align="end"
+            className="bg-zinc-900 border-zinc-700"
+          >
+            <DropdownMenuItem
+              onClick={() => onViewDetails(item)}
+              className="gap-2"
+            >
               <Eye className="h-4 w-4" />
               View Details
             </DropdownMenuItem>
@@ -247,13 +333,19 @@ const ExportHistoryItemRow = memo(function ExportHistoryItemRow({
               </DropdownMenuItem>
             )}
             {onReExport && (
-              <DropdownMenuItem onClick={() => onReExport(item)} className="gap-2">
+              <DropdownMenuItem
+                onClick={() => onReExport(item)}
+                className="gap-2"
+              >
                 <RefreshCw className="h-4 w-4" />
                 Re-export
               </DropdownMenuItem>
             )}
             <DropdownMenuSeparator className="bg-zinc-700" />
-            <DropdownMenuItem onClick={() => onDelete(item.id)} className="gap-2 text-red-400">
+            <DropdownMenuItem
+              onClick={() => onDelete(item.id)}
+              className="gap-2 text-red-400"
+            >
               <Trash2 className="h-4 w-4" />
               Delete
             </DropdownMenuItem>
@@ -271,74 +363,87 @@ export function ExportHistory({
 }: ExportHistoryProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [searchQuery, setSearchQuery] = useState('');
-  const [typeFilter, setTypeFilter] = useState<ExportHistoryType | 'all'>('all');
-  const [statusFilter, setStatusFilter] = useState<ExportHistoryStatus | 'all'>('all');
-  const [selectedItem, setSelectedItem] = useState<ExportHistoryItem | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [typeFilter, setTypeFilter] = useState<ExportHistoryType | "all">(
+    "all",
+  );
+  const [statusFilter, setStatusFilter] = useState<ExportHistoryStatus | "all">(
+    "all",
+  );
+  const [selectedItem, setSelectedItem] = useState<ExportHistoryItem | null>(
+    null,
+  );
   const [showDetails, setShowDetails] = useState(false);
 
-  const { data: exportHistory = [], isLoading } = useQuery<ExportHistoryItem[]>({
-    queryKey: ['/api/export/history'],
-  });
+  const { data: exportHistory = [], isLoading } = useQuery<ExportHistoryItem[]>(
+    {
+      queryKey: ["/api/export/history"],
+    },
+  );
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      await apiRequest('DELETE', `/api/export/history/${id}`);
+      await apiRequest("DELETE", `/api/export/history/${id}`);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/export/history'] });
+      queryClient.invalidateQueries({ queryKey: ["/api/export/history"] });
       toast({
-        title: 'Export Deleted',
-        description: 'The export has been removed from history',
+        title: "Export Deleted",
+        description: "The export has been removed from history",
       });
     },
     onError: () => {
       toast({
-        variant: 'destructive',
-        title: 'Delete Failed',
-        description: 'Failed to delete export',
+        variant: "destructive",
+        title: "Delete Failed",
+        description: "Failed to delete export",
       });
     },
   });
 
-  const handleDownload = useCallback((item: ExportHistoryItem) => {
-    if (item.downloadUrl) {
-      const link = document.createElement('a');
-      link.href = item.downloadUrl;
-      link.download = `${item.name}.${item.format}`;
-      link.click();
-      
-      toast({
-        title: 'Download Started',
-        description: `Downloading ${item.name}`,
-      });
-    }
-  }, [toast]);
+  const handleDownload = useCallback(
+    (item: ExportHistoryItem) => {
+      if (item.downloadUrl) {
+        const link = document.createElement("a");
+        link.href = item.downloadUrl;
+        link.download = `${item.name}.${item.format}`;
+        link.click();
+
+        toast({
+          title: "Download Started",
+          description: `Downloading ${item.name}`,
+        });
+      }
+    },
+    [toast],
+  );
 
   const handleViewDetails = useCallback((item: ExportHistoryItem) => {
     setSelectedItem(item);
     setShowDetails(true);
   }, []);
 
-  const filteredHistory = exportHistory.filter(item => {
+  const filteredHistory = exportHistory.filter((item) => {
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
-      if (!item.name.toLowerCase().includes(query) && 
-          !item.projectName?.toLowerCase().includes(query)) {
+      if (
+        !item.name.toLowerCase().includes(query) &&
+        !item.projectName?.toLowerCase().includes(query)
+      ) {
         return false;
       }
     }
-    if (typeFilter !== 'all' && item.type !== typeFilter) return false;
-    if (statusFilter !== 'all' && item.status !== statusFilter) return false;
+    if (typeFilter !== "all" && item.type !== typeFilter) return false;
+    if (statusFilter !== "all" && item.status !== statusFilter) return false;
     return true;
   });
 
   const stats = {
     total: exportHistory.length,
-    completed: exportHistory.filter(e => e.status === 'completed').length,
-    failed: exportHistory.filter(e => e.status === 'failed').length,
+    completed: exportHistory.filter((e) => e.status === "completed").length,
+    failed: exportHistory.filter((e) => e.status === "failed").length,
     totalSize: exportHistory
-      .filter(e => e.fileSize)
+      .filter((e) => e.fileSize)
       .reduce((sum, e) => sum + (e.fileSize || 0), 0),
   };
 
@@ -353,7 +458,8 @@ export function ExportHistory({
                 Export History
               </CardTitle>
               <CardDescription className="mt-1">
-                {stats.completed} completed · {stats.failed} failed · {formatFileSize(stats.totalSize)} total
+                {stats.completed} completed · {stats.failed} failed ·{" "}
+                {formatFileSize(stats.totalSize)} total
               </CardDescription>
             </div>
           </div>
@@ -368,7 +474,12 @@ export function ExportHistory({
                 className="pl-9 bg-zinc-900 border-zinc-700"
               />
             </div>
-            <Select value={typeFilter} onValueChange={(v) => setTypeFilter(v as ExportHistoryType | 'all')}>
+            <Select
+              value={typeFilter}
+              onValueChange={(v) =>
+                setTypeFilter(v as ExportHistoryType | "all")
+              }
+            >
               <SelectTrigger className="w-36 bg-zinc-900 border-zinc-700">
                 <Filter className="h-4 w-4 mr-2" />
                 <SelectValue placeholder="Type" />
@@ -376,18 +487,27 @@ export function ExportHistory({
               <SelectContent className="bg-zinc-900 border-zinc-700">
                 <SelectItem value="all">All Types</SelectItem>
                 {Object.entries(TYPE_CONFIG).map(([key, config]) => (
-                  <SelectItem key={key} value={key}>{config.label}</SelectItem>
+                  <SelectItem key={key} value={key}>
+                    {config.label}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
-            <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as ExportHistoryStatus | 'all')}>
+            <Select
+              value={statusFilter}
+              onValueChange={(v) =>
+                setStatusFilter(v as ExportHistoryStatus | "all")
+              }
+            >
               <SelectTrigger className="w-36 bg-zinc-900 border-zinc-700">
                 <SelectValue placeholder="Status" />
               </SelectTrigger>
               <SelectContent className="bg-zinc-900 border-zinc-700">
                 <SelectItem value="all">All Status</SelectItem>
                 {Object.entries(STATUS_CONFIG).map(([key, config]) => (
-                  <SelectItem key={key} value={key}>{config.label}</SelectItem>
+                  <SelectItem key={key} value={key}>
+                    {config.label}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -406,16 +526,16 @@ export function ExportHistory({
               </div>
               <h3 className="font-medium text-zinc-400">No Export History</h3>
               <p className="text-sm text-zinc-600 mt-1">
-                {searchQuery || typeFilter !== 'all' || statusFilter !== 'all'
-                  ? 'No exports match your filters'
-                  : 'Your export history will appear here'}
+                {searchQuery || typeFilter !== "all" || statusFilter !== "all"
+                  ? "No exports match your filters"
+                  : "Your export history will appear here"}
               </p>
             </div>
           ) : (
             <ScrollArea className="h-[500px] pr-4">
               <AnimatePresence mode="popLayout">
                 <div className="space-y-3">
-                  {filteredHistory.map(item => (
+                  {filteredHistory.map((item) => (
                     <ExportHistoryItemRow
                       key={item.id}
                       item={item}
@@ -455,28 +575,42 @@ export function ExportHistory({
                 </div>
                 <div>
                   <label className="text-xs text-zinc-500">Type</label>
-                  <p className="font-medium">{TYPE_CONFIG[selectedItem.type].label}</p>
+                  <p className="font-medium">
+                    {TYPE_CONFIG[selectedItem.type].label}
+                  </p>
                 </div>
                 <div>
                   <label className="text-xs text-zinc-500">Status</label>
-                  <Badge variant="secondary" className={cn("mt-1", STATUS_CONFIG[selectedItem.status].color)}>
+                  <Badge
+                    variant="secondary"
+                    className={cn(
+                      "mt-1",
+                      STATUS_CONFIG[selectedItem.status].color,
+                    )}
+                  >
                     {STATUS_CONFIG[selectedItem.status].label}
                   </Badge>
                 </div>
                 <div>
                   <label className="text-xs text-zinc-500">Created</label>
-                  <p className="font-medium">{format(new Date(selectedItem.createdAt), 'PPpp')}</p>
+                  <p className="font-medium">
+                    {format(new Date(selectedItem.createdAt), "PPpp")}
+                  </p>
                 </div>
                 {selectedItem.completedAt && (
                   <div>
                     <label className="text-xs text-zinc-500">Completed</label>
-                    <p className="font-medium">{format(new Date(selectedItem.completedAt), 'PPpp')}</p>
+                    <p className="font-medium">
+                      {format(new Date(selectedItem.completedAt), "PPpp")}
+                    </p>
                   </div>
                 )}
                 {selectedItem.fileSize && (
                   <div>
                     <label className="text-xs text-zinc-500">File Size</label>
-                    <p className="font-medium">{formatFileSize(selectedItem.fileSize)}</p>
+                    <p className="font-medium">
+                      {formatFileSize(selectedItem.fileSize)}
+                    </p>
                   </div>
                 )}
                 <div>
@@ -486,7 +620,9 @@ export function ExportHistory({
                 {selectedItem.expiresAt && (
                   <div>
                     <label className="text-xs text-zinc-500">Expires</label>
-                    <p className="font-medium">{format(new Date(selectedItem.expiresAt), 'PPpp')}</p>
+                    <p className="font-medium">
+                      {format(new Date(selectedItem.expiresAt), "PPpp")}
+                    </p>
                   </div>
                 )}
                 {selectedItem.projectName && (
@@ -497,22 +633,30 @@ export function ExportHistory({
                 )}
               </div>
 
-              {selectedItem.settings && Object.keys(selectedItem.settings).length > 0 && (
-                <>
-                  <Separator className="bg-zinc-800" />
-                  <div>
-                    <label className="text-xs text-zinc-500 mb-2 block">Export Settings</label>
-                    <div className="bg-zinc-900 p-3 rounded-lg text-xs font-mono">
-                      {Object.entries(selectedItem.settings).map(([key, value]) => (
-                        <div key={key} className="flex justify-between py-0.5">
-                          <span className="text-zinc-500">{key}:</span>
-                          <span>{String(value)}</span>
-                        </div>
-                      ))}
+              {selectedItem.settings &&
+                Object.keys(selectedItem.settings).length > 0 && (
+                  <>
+                    <Separator className="bg-zinc-800" />
+                    <div>
+                      <label className="text-xs text-zinc-500 mb-2 block">
+                        Export Settings
+                      </label>
+                      <div className="bg-zinc-900 p-3 rounded-lg text-xs font-mono">
+                        {Object.entries(selectedItem.settings).map(
+                          ([key, value]) => (
+                            <div
+                              key={key}
+                              className="flex justify-between py-0.5"
+                            >
+                              <span className="text-zinc-500">{key}:</span>
+                              <span>{String(value)}</span>
+                            </div>
+                          ),
+                        )}
+                      </div>
                     </div>
-                  </div>
-                </>
-              )}
+                  </>
+                )}
 
               {selectedItem.error && (
                 <>
@@ -521,8 +665,12 @@ export function ExportHistory({
                     <div className="flex items-start gap-2">
                       <AlertCircle className="h-4 w-4 text-red-400 shrink-0 mt-0.5" />
                       <div>
-                        <p className="text-sm font-medium text-red-400">Error</p>
-                        <p className="text-xs text-red-300/80 mt-0.5">{selectedItem.error}</p>
+                        <p className="text-sm font-medium text-red-400">
+                          Error
+                        </p>
+                        <p className="text-xs text-red-300/80 mt-0.5">
+                          {selectedItem.error}
+                        </p>
                       </div>
                     </div>
                   </div>
@@ -532,15 +680,20 @@ export function ExportHistory({
           )}
 
           <DialogFooter>
-            <Button variant="outline" className="border-zinc-700" onClick={() => setShowDetails(false)}>
+            <Button
+              variant="outline"
+              className="border-zinc-700"
+              onClick={() => setShowDetails(false)}
+            >
               Close
             </Button>
-            {selectedItem?.status === 'completed' && selectedItem?.downloadUrl && (
-              <Button onClick={() => handleDownload(selectedItem)}>
-                <Download className="h-4 w-4 mr-2" />
-                Download
-              </Button>
-            )}
+            {selectedItem?.status === "completed" &&
+              selectedItem?.downloadUrl && (
+                <Button onClick={() => handleDownload(selectedItem)}>
+                  <Download className="h-4 w-4 mr-2" />
+                  Download
+                </Button>
+              )}
           </DialogFooter>
         </DialogContent>
       </Dialog>

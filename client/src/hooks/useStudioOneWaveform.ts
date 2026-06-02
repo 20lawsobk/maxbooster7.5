@@ -1,11 +1,11 @@
-import { useRef, useCallback, useEffect, useState } from 'react';
+import { useRef, useCallback, useEffect, useState } from "react";
 import {
   StudioOneWaveformEngine,
   ClipRenderData,
   TimelineRenderConfig,
   EngineStats,
   ProcessingChain,
-} from '@/lib/daw/StudioOneWaveformEngine';
+} from "@/lib/daw/StudioOneWaveformEngine";
 
 export interface UseStudioOneWaveformOptions {
   sampleRate?: number;
@@ -16,7 +16,9 @@ export interface UseStudioOneWaveformOptions {
   statsInterval?: number;
 }
 
-export function useStudioOneWaveform(options: UseStudioOneWaveformOptions = {}) {
+export function useStudioOneWaveform(
+  options: UseStudioOneWaveformOptions = {},
+) {
   const {
     sampleRate = 44100,
     bpm = 120,
@@ -34,29 +36,32 @@ export function useStudioOneWaveform(options: UseStudioOneWaveformOptions = {}) 
   const [currentZoom, setCurrentZoom] = useState(1);
   const [verticalScale, setVerticalScaleState] = useState(1);
 
-  const initializeEngine = useCallback((canvas: HTMLCanvasElement) => {
-    if (engineRef.current) {
-      engineRef.current.destroy();
-    }
+  const initializeEngine = useCallback(
+    (canvas: HTMLCanvasElement) => {
+      if (engineRef.current) {
+        engineRef.current.destroy();
+      }
 
-    const engine = new StudioOneWaveformEngine({
-      sampleRate,
-      bpm,
-      timeSignature,
-      renderConfig,
-    });
+      const engine = new StudioOneWaveformEngine({
+        sampleRate,
+        bpm,
+        timeSignature,
+        renderConfig,
+      });
 
-    engine.initialize(canvas);
-    engineRef.current = engine;
-    canvasRef.current = canvas;
-    setIsInitialized(true);
+      engine.initialize(canvas);
+      engineRef.current = engine;
+      canvasRef.current = canvas;
+      setIsInitialized(true);
 
-    if (autoStart) {
-      engine.start();
-    }
+      if (autoStart) {
+        engine.start();
+      }
 
-    return engine;
-  }, [sampleRate, bpm, timeSignature, renderConfig, autoStart]);
+      return engine;
+    },
+    [sampleRate, bpm, timeSignature, renderConfig, autoStart],
+  );
 
   useEffect(() => {
     if (!isInitialized) return;
@@ -79,16 +84,19 @@ export function useStudioOneWaveform(options: UseStudioOneWaveformOptions = {}) 
     };
   }, []);
 
-  const loadAudio = useCallback((sourceId: string, data: Float32Array | AudioBuffer) => {
-    const engine = engineRef.current;
-    if (!engine) return;
+  const loadAudio = useCallback(
+    (sourceId: string, data: Float32Array | AudioBuffer) => {
+      const engine = engineRef.current;
+      if (!engine) return;
 
-    if (data instanceof AudioBuffer) {
-      engine.loadAudioBuffer(sourceId, data);
-    } else {
-      engine.loadAudio(sourceId, data, sampleRate);
-    }
-  }, [sampleRate]);
+      if (data instanceof AudioBuffer) {
+        engine.loadAudioBuffer(sourceId, data);
+      } else {
+        engine.loadAudio(sourceId, data, sampleRate);
+      }
+    },
+    [sampleRate],
+  );
 
   const setClips = useCallback((clips: ClipRenderData[]) => {
     engineRef.current?.setClips(clips);
@@ -110,12 +118,12 @@ export function useStudioOneWaveform(options: UseStudioOneWaveformOptions = {}) 
 
   const zoomIn = useCallback((factor?: number) => {
     engineRef.current?.zoomIn(factor);
-    setCurrentZoom(prev => prev * (factor || 1.5));
+    setCurrentZoom((prev) => prev * (factor || 1.5));
   }, []);
 
   const zoomOut = useCallback((factor?: number) => {
     engineRef.current?.zoomOut(factor);
-    setCurrentZoom(prev => prev / (factor || 1.5));
+    setCurrentZoom((prev) => prev / (factor || 1.5));
   }, []);
 
   const setVerticalScale = useCallback((scale: number) => {
@@ -127,17 +135,26 @@ export function useStudioOneWaveform(options: UseStudioOneWaveformOptions = {}) 
     engineRef.current?.scrollTo(offset);
   }, []);
 
-  const registerProcessingChain = useCallback((sourceId: string, chain: ProcessingChain) => {
-    engineRef.current?.registerProcessingChain(sourceId, chain);
-  }, []);
+  const registerProcessingChain = useCallback(
+    (sourceId: string, chain: ProcessingChain) => {
+      engineRef.current?.registerProcessingChain(sourceId, chain);
+    },
+    [],
+  );
 
-  const renderToAudio = useCallback(async (sourceId: string, audioContext?: AudioContext) => {
-    return engineRef.current?.renderToAudio(sourceId, audioContext) ?? null;
-  }, []);
+  const renderToAudio = useCallback(
+    async (sourceId: string, audioContext?: AudioContext) => {
+      return engineRef.current?.renderToAudio(sourceId, audioContext) ?? null;
+    },
+    [],
+  );
 
-  const updateRenderConfig = useCallback((config: Partial<TimelineRenderConfig>) => {
-    engineRef.current?.updateRenderConfig(config);
-  }, []);
+  const updateRenderConfig = useCallback(
+    (config: Partial<TimelineRenderConfig>) => {
+      engineRef.current?.updateRenderConfig(config);
+    },
+    [],
+  );
 
   return {
     initializeEngine,

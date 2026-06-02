@@ -1,8 +1,8 @@
-import { useState, useCallback } from 'react';
-import { Check, X } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
+import { useState, useCallback } from "react";
+import { Check, X } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 interface Platform {
   id: string;
@@ -12,21 +12,21 @@ interface Platform {
 }
 
 const STREAMING_PLATFORMS: Platform[] = [
-  { id: 'spotify', name: 'Spotify', color: '#1DB954', icon: '🎵' },
-  { id: 'apple_music', name: 'Apple Music', color: '#FA2D48', icon: '🍎' },
-  { id: 'youtube_music', name: 'YouTube Music', color: '#FF0000', icon: '📺' },
-  { id: 'amazon_music', name: 'Amazon Music', color: '#FF9900', icon: '📦' },
-  { id: 'deezer', name: 'Deezer', color: '#00C7F2', icon: '🎧' },
-  { id: 'tidal', name: 'Tidal', color: '#000000', icon: '🌊' },
-  { id: 'pandora', name: 'Pandora', color: '#3668FF', icon: '📻' },
-  { id: 'soundcloud', name: 'SoundCloud', color: '#FF5500', icon: '☁️' },
+  { id: "spotify", name: "Spotify", color: "#1DB954", icon: "🎵" },
+  { id: "apple_music", name: "Apple Music", color: "#FA2D48", icon: "🍎" },
+  { id: "youtube_music", name: "YouTube Music", color: "#FF0000", icon: "📺" },
+  { id: "amazon_music", name: "Amazon Music", color: "#FF9900", icon: "📦" },
+  { id: "deezer", name: "Deezer", color: "#00C7F2", icon: "🎧" },
+  { id: "tidal", name: "Tidal", color: "#000000", icon: "🌊" },
+  { id: "pandora", name: "Pandora", color: "#3668FF", icon: "📻" },
+  { id: "soundcloud", name: "SoundCloud", color: "#FF5500", icon: "☁️" },
 ];
 
 interface PlatformFilterChipsProps {
   selectedPlatforms: string[];
   onChange: (platforms: string[]) => void;
   className?: string;
-  variant?: 'chips' | 'badges' | 'buttons';
+  variant?: "chips" | "badges" | "buttons";
   allowMultiple?: boolean;
   showSelectAll?: boolean;
   platforms?: Platform[];
@@ -36,27 +36,30 @@ export function PlatformFilterChips({
   selectedPlatforms,
   onChange,
   className,
-  variant = 'chips',
+  variant = "chips",
   allowMultiple = true,
   showSelectAll = true,
   platforms = STREAMING_PLATFORMS,
 }: PlatformFilterChipsProps) {
-  const handleToggle = useCallback((platformId: string) => {
-    if (allowMultiple) {
-      const newSelection = selectedPlatforms.includes(platformId)
-        ? selectedPlatforms.filter(id => id !== platformId)
-        : [...selectedPlatforms, platformId];
-      onChange(newSelection);
-    } else {
-      onChange([platformId]);
-    }
-  }, [selectedPlatforms, onChange, allowMultiple]);
+  const handleToggle = useCallback(
+    (platformId: string) => {
+      if (allowMultiple) {
+        const newSelection = selectedPlatforms.includes(platformId)
+          ? selectedPlatforms.filter((id) => id !== platformId)
+          : [...selectedPlatforms, platformId];
+        onChange(newSelection);
+      } else {
+        onChange([platformId]);
+      }
+    },
+    [selectedPlatforms, onChange, allowMultiple],
+  );
 
   const handleSelectAll = useCallback(() => {
     if (selectedPlatforms.length === platforms.length) {
       onChange([]);
     } else {
-      onChange(platforms.map(p => p.id));
+      onChange(platforms.map((p) => p.id));
     }
   }, [selectedPlatforms, onChange, platforms]);
 
@@ -67,7 +70,7 @@ export function PlatformFilterChips({
   const allSelected = selectedPlatforms.length === platforms.length;
   const noneSelected = selectedPlatforms.length === 0;
 
-  if (variant === 'buttons') {
+  if (variant === "buttons") {
     return (
       <div className={cn("flex items-center gap-2 flex-wrap", className)}>
         {showSelectAll && (
@@ -77,11 +80,12 @@ export function PlatformFilterChips({
             className="h-8"
             onClick={handleSelectAll}
           >
-            {allSelected || noneSelected ? 'All Platforms' : 'Select All'}
+            {allSelected || noneSelected ? "All Platforms" : "Select All"}
           </Button>
         )}
         {platforms.map((platform) => {
-          const isSelected = selectedPlatforms.includes(platform.id) || noneSelected;
+          const isSelected =
+            selectedPlatforms.includes(platform.id) || noneSelected;
           return (
             <Button
               key={platform.id}
@@ -89,18 +93,26 @@ export function PlatformFilterChips({
               size="sm"
               className={cn(
                 "h-8 gap-1.5",
-                isSelected && !noneSelected && "ring-2 ring-offset-1"
+                isSelected && !noneSelected && "ring-2 ring-offset-1",
               )}
               style={{
-                borderColor: isSelected && !noneSelected ? platform.color : undefined,
-                backgroundColor: isSelected && !noneSelected ? `${platform.color}15` : undefined,
+                borderColor:
+                  isSelected && !noneSelected ? platform.color : undefined,
+                backgroundColor:
+                  isSelected && !noneSelected
+                    ? `${platform.color}15`
+                    : undefined,
                 ringColor: platform.color,
               }}
               onClick={() => handleToggle(platform.id)}
             >
-              {platform.icon && <span className="text-sm">{platform.icon}</span>}
+              {platform.icon && (
+                <span className="text-sm">{platform.icon}</span>
+              )}
               <span>{platform.name}</span>
-              {isSelected && !noneSelected && <Check className="h-3 w-3 ml-1" />}
+              {isSelected && !noneSelected && (
+                <Check className="h-3 w-3 ml-1" />
+              )}
             </Button>
           );
         })}
@@ -119,7 +131,7 @@ export function PlatformFilterChips({
     );
   }
 
-  if (variant === 'badges') {
+  if (variant === "badges") {
     return (
       <div className={cn("flex items-center gap-1.5 flex-wrap", className)}>
         {showSelectAll && (
@@ -139,12 +151,12 @@ export function PlatformFilterChips({
               variant={isSelected ? "default" : "outline"}
               className={cn(
                 "cursor-pointer transition-all hover:scale-105",
-                isSelected && "text-white"
+                isSelected && "text-white",
               )}
               style={{
-                backgroundColor: isSelected ? platform.color : 'transparent',
+                backgroundColor: isSelected ? platform.color : "transparent",
                 borderColor: platform.color,
-                color: isSelected ? 'white' : platform.color,
+                color: isSelected ? "white" : platform.color,
               }}
               onClick={() => handleToggle(platform.id)}
             >
@@ -167,7 +179,7 @@ export function PlatformFilterChips({
             "border-2 hover:shadow-md",
             allSelected || noneSelected
               ? "bg-primary text-primary-foreground border-primary"
-              : "bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300"
+              : "bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300",
           )}
         >
           All
@@ -184,7 +196,7 @@ export function PlatformFilterChips({
               "border-2 hover:shadow-md hover:scale-105",
               isSelected
                 ? "text-white shadow-sm"
-                : "bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300"
+                : "bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300",
             )}
             style={{
               backgroundColor: isSelected ? platform.color : undefined,
@@ -222,7 +234,8 @@ export function PlatformSummaryChips({
   return (
     <div className={cn("flex items-center gap-2 flex-wrap", className)}>
       {platforms.map((platform) => {
-        const percentage = total > 0 ? ((platform.value / total) * 100).toFixed(1) : '0';
+        const percentage =
+          total > 0 ? ((platform.value / total) * 100).toFixed(1) : "0";
         return (
           <div
             key={platform.id}

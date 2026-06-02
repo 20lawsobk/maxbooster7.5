@@ -1,6 +1,6 @@
-import { useAuth } from './useAuth';
-import { useLocation } from 'wouter';
-import { useEffect } from 'react';
+import { useAuth } from "./useAuth";
+import { useLocation } from "wouter";
+import { useEffect } from "react";
 
 export function useRequireAuth() {
   const { user, isLoading } = useAuth();
@@ -8,7 +8,7 @@ export function useRequireAuth() {
 
   useEffect(() => {
     if (!isLoading && !user) {
-      navigate('/login');
+      navigate("/login");
     }
   }, [user, isLoading, navigate]);
 
@@ -21,25 +21,28 @@ export function useRequireSubscription() {
 
   useEffect(() => {
     if (isLoading) return;
-    
-    if (user?.role === 'admin') {
+
+    if (user?.role === "admin") {
       return;
     }
 
-    if ((user as Record<string, unknown>)?.isDemo || user?.email === 'demo@maxbooster.ai') {
-      return;
-    }
-    
-    if (!user) {
-      navigate('/login');
-      return;
-    }
-    
     if (
-      user.subscriptionStatus !== 'active' &&
-      user.subscriptionStatus !== 'trialing'
+      (user as Record<string, unknown>)?.isDemo ||
+      user?.email === "demo@maxbooster.ai"
     ) {
-      navigate('/pricing');
+      return;
+    }
+
+    if (!user) {
+      navigate("/login");
+      return;
+    }
+
+    if (
+      user.subscriptionStatus !== "active" &&
+      user.subscriptionStatus !== "trialing"
+    ) {
+      navigate("/pricing");
     }
   }, [user, isLoading, navigate]);
 
@@ -53,9 +56,9 @@ export function useRequireAdmin() {
   useEffect(() => {
     if (!isLoading) {
       if (!user) {
-        navigate('/login');
-      } else if (user.role !== 'admin') {
-        navigate('/dashboard');
+        navigate("/login");
+      } else if (user.role !== "admin") {
+        navigate("/dashboard");
       }
     }
   }, [user, isLoading, navigate]);
@@ -69,7 +72,7 @@ export function useRedirectIfAuthenticated() {
 
   useEffect(() => {
     if (!isLoading && user) {
-      navigate('/dashboard');
+      navigate("/dashboard");
     }
   }, [user, isLoading, navigate]);
 

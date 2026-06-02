@@ -1,13 +1,19 @@
-import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { AppLayout } from '@/components/layout/AppLayout';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { useRequireAdmin } from '@/hooks/useRequireAuth';
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { AppLayout } from "@/components/layout/AppLayout";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { useRequireAdmin } from "@/hooks/useRequireAuth";
 import {
   Shield,
   Activity,
@@ -25,12 +31,12 @@ import {
   Server,
   Users,
   Lock,
-} from 'lucide-react';
+} from "lucide-react";
 
 interface SecurityMetrics {
   systemHealth: {
     uptime: number;
-    status: 'healthy' | 'degraded' | 'critical';
+    status: "healthy" | "degraded" | "critical";
     errorRate: number;
     requestsPerMinute: number;
   };
@@ -51,8 +57,8 @@ interface BehavioralAlert {
   id: string;
   userId: string;
   username: string;
-  type: 'unusual_activity' | 'multiple_failed_logins';
-  severity: 'high' | 'medium' | 'low';
+  type: "unusual_activity" | "multiple_failed_logins";
+  severity: "high" | "medium" | "low";
   timestamp: string;
   description: string;
   resolved: boolean;
@@ -63,12 +69,12 @@ interface BehavioralAlertsResponse {
 }
 
 interface Anomaly {
-  type: 'traffic_spike' | 'auth_pattern';
+  type: "traffic_spike" | "auth_pattern";
   timestamp: string;
   metric: string;
   expectedValue: number;
   actualValue: number;
-  severity: 'high' | 'medium';
+  severity: "high" | "medium";
   description: string;
 }
 
@@ -78,10 +84,10 @@ interface AnomaliesResponse {
 
 interface Vulnerability {
   id: string;
-  severity: 'critical' | 'high' | 'medium' | 'low';
+  severity: "critical" | "high" | "medium" | "low";
   category: string;
   description: string;
-  status: 'open';
+  status: "open";
   detectedDate: string;
 }
 
@@ -108,12 +114,12 @@ export default function SecurityDashboard() {
     error: metricsError,
     refetch: refetchMetrics,
   } = useQuery<SecurityMetrics>({
-    queryKey: ['/api/security/metrics'],
+    queryKey: ["/api/security/metrics"],
     queryFn: async () => {
-      const response = await fetch('/api/security/metrics', {
-        credentials: 'include',
+      const response = await fetch("/api/security/metrics", {
+        credentials: "include",
       });
-      if (!response.ok) throw new Error('Failed to fetch security metrics');
+      if (!response.ok) throw new Error("Failed to fetch security metrics");
       return response.json();
     },
     refetchInterval: refreshInterval,
@@ -124,12 +130,12 @@ export default function SecurityDashboard() {
     isLoading: loadingAlerts,
     error: alertsError,
   } = useQuery<BehavioralAlertsResponse>({
-    queryKey: ['/api/security/behavioral-alerts'],
+    queryKey: ["/api/security/behavioral-alerts"],
     queryFn: async () => {
-      const response = await fetch('/api/security/behavioral-alerts', {
-        credentials: 'include',
+      const response = await fetch("/api/security/behavioral-alerts", {
+        credentials: "include",
       });
-      if (!response.ok) throw new Error('Failed to fetch behavioral alerts');
+      if (!response.ok) throw new Error("Failed to fetch behavioral alerts");
       return response.json();
     },
     refetchInterval: refreshInterval,
@@ -140,12 +146,12 @@ export default function SecurityDashboard() {
     isLoading: loadingAnomalies,
     error: anomaliesError,
   } = useQuery<AnomaliesResponse>({
-    queryKey: ['/api/security/anomaly-detection'],
+    queryKey: ["/api/security/anomaly-detection"],
     queryFn: async () => {
-      const response = await fetch('/api/security/anomaly-detection', {
-        credentials: 'include',
+      const response = await fetch("/api/security/anomaly-detection", {
+        credentials: "include",
       });
-      if (!response.ok) throw new Error('Failed to detect anomalies');
+      if (!response.ok) throw new Error("Failed to detect anomalies");
       return response.json();
     },
     refetchInterval: refreshInterval,
@@ -156,39 +162,39 @@ export default function SecurityDashboard() {
     isLoading: loadingPenTest,
     error: penTestError,
   } = useQuery<PenTestResponse>({
-    queryKey: ['/api/security/pentest-results'],
+    queryKey: ["/api/security/pentest-results"],
     queryFn: async () => {
-      const response = await fetch('/api/security/pentest-results', {
-        credentials: 'include',
+      const response = await fetch("/api/security/pentest-results", {
+        credentials: "include",
       });
-      if (!response.ok) throw new Error('Failed to fetch pentest results');
+      if (!response.ok) throw new Error("Failed to fetch pentest results");
       return response.json();
     },
   });
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'healthy':
-        return 'text-green-600 bg-green-50 border-green-200';
-      case 'degraded':
-      case 'warning':
-        return 'text-yellow-600 bg-yellow-50 border-yellow-200';
-      case 'critical':
-        return 'text-red-600 bg-red-50 border-red-200';
+      case "healthy":
+        return "text-green-600 bg-green-50 border-green-200";
+      case "degraded":
+      case "warning":
+        return "text-yellow-600 bg-yellow-50 border-yellow-200";
+      case "critical":
+        return "text-red-600 bg-red-50 border-red-200";
       default:
-        return 'text-gray-600 bg-gray-50 border-gray-200';
+        return "text-gray-600 bg-gray-50 border-gray-200";
     }
   };
 
   const getSeverityBadge = (severity: string) => {
     switch (severity) {
-      case 'critical':
-      case 'high':
-        return 'destructive';
-      case 'medium':
-        return 'default';
+      case "critical":
+      case "high":
+        return "destructive";
+      case "medium":
+        return "default";
       default:
-        return 'secondary';
+        return "secondary";
     }
   };
 
@@ -210,10 +216,10 @@ export default function SecurityDashboard() {
     const hours = Math.floor(diff / 3600000);
     const days = Math.floor(diff / 86400000);
 
-    if (days > 0) return `${days} day${days > 1 ? 's' : ''} ago`;
-    if (hours > 0) return `${hours} hour${hours > 1 ? 's' : ''} ago`;
-    if (minutes > 0) return `${minutes} minute${minutes > 1 ? 's' : ''} ago`;
-    return 'Just now';
+    if (days > 0) return `${days} day${days > 1 ? "s" : ""} ago`;
+    if (hours > 0) return `${hours} hour${hours > 1 ? "s" : ""} ago`;
+    if (minutes > 0) return `${minutes} minute${minutes > 1 ? "s" : ""} ago`;
+    return "Just now";
   };
 
   if (authLoading) {
@@ -227,10 +233,13 @@ export default function SecurityDashboard() {
     );
   }
 
-  if (!user || user.role !== 'admin') return null;
+  if (!user || user.role !== "admin") return null;
 
   return (
-    <AppLayout title="Security Dashboard" subtitle="Real-time security monitoring and threat intelligence">
+    <AppLayout
+      title="Security Dashboard"
+      subtitle="Real-time security monitoring and threat intelligence"
+    >
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
@@ -247,7 +256,11 @@ export default function SecurityDashboard() {
               <Activity className="w-3 h-3 mr-1 animate-pulse text-green-600" />
               Live Monitoring
             </Badge>
-            <Button variant="outline" size="sm" onClick={() => refetchMetrics()}>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => refetchMetrics()}
+            >
               <RefreshCw className="w-4 h-4 mr-1" />
               Refresh
             </Button>
@@ -257,14 +270,18 @@ export default function SecurityDashboard() {
         {metricsError ? (
           <Alert variant="destructive">
             <AlertTriangle className="h-4 w-4" />
-            <AlertDescription>Failed to load security metrics. Please try again.</AlertDescription>
+            <AlertDescription>
+              Failed to load security metrics. Please try again.
+            </AlertDescription>
           </Alert>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {loadingMetrics ? (
               <div className="col-span-full text-center py-12">
                 <Loader2 className="w-8 h-8 animate-spin mx-auto mb-2" />
-                <p className="text-sm text-muted-foreground">Fetching security metrics…</p>
+                <p className="text-sm text-muted-foreground">
+                  Fetching security metrics…
+                </p>
               </div>
             ) : (
               securityMetrics && (
@@ -278,9 +295,10 @@ export default function SecurityDashboard() {
                           <Server className="w-4 h-4" />
                           System Uptime
                         </h3>
-                        {securityMetrics.systemHealth.status === 'healthy' ? (
+                        {securityMetrics.systemHealth.status === "healthy" ? (
                           <CheckCircle2 className="w-4 h-4 text-green-600" />
-                        ) : securityMetrics.systemHealth.status === 'degraded' ? (
+                        ) : securityMetrics.systemHealth.status ===
+                          "degraded" ? (
                           <AlertTriangle className="w-4 h-4 text-yellow-600" />
                         ) : (
                           <XCircle className="w-4 h-4 text-red-600" />
@@ -326,7 +344,9 @@ export default function SecurityDashboard() {
                       </div>
                       <div className="flex items-baseline gap-1">
                         <p className="text-3xl font-bold">
-                          {securityMetrics.authentication.successRate.toFixed(1)}
+                          {securityMetrics.authentication.successRate.toFixed(
+                            1,
+                          )}
                         </p>
                         <p className="text-sm text-muted-foreground">%</p>
                       </div>
@@ -338,7 +358,7 @@ export default function SecurityDashboard() {
                   </Card>
 
                   <Card
-                    className={`border-l-4 ${securityMetrics.authentication.failedLogins > 10 ? 'border-l-yellow-500' : 'border-l-green-200'}`}
+                    className={`border-l-4 ${securityMetrics.authentication.failedLogins > 10 ? "border-l-yellow-500" : "border-l-green-200"}`}
                   >
                     <CardContent className="p-4">
                       <div className="flex items-start justify-between mb-2">
@@ -355,7 +375,9 @@ export default function SecurityDashboard() {
                         <p className="text-3xl font-bold">
                           {securityMetrics.authentication.failedLogins}
                         </p>
-                        <p className="text-sm text-muted-foreground">attempts</p>
+                        <p className="text-sm text-muted-foreground">
+                          attempts
+                        </p>
                       </div>
                     </CardContent>
                   </Card>
@@ -378,7 +400,7 @@ export default function SecurityDashboard() {
                   </Card>
 
                   <Card
-                    className={`border-l-4 ${securityMetrics.threats.suspiciousActivity > 5 ? 'border-l-red-500' : 'border-l-green-200'}`}
+                    className={`border-l-4 ${securityMetrics.threats.suspiciousActivity > 5 ? "border-l-red-500" : "border-l-green-200"}`}
                   >
                     <CardContent className="p-4">
                       <div className="flex items-start justify-between mb-2">
@@ -425,7 +447,9 @@ export default function SecurityDashboard() {
             <Card>
               <CardHeader>
                 <CardTitle>Behavioral Analytics Alerts</CardTitle>
-                <CardDescription>AI-detected unusual user behavior patterns</CardDescription>
+                <CardDescription>
+                  AI-detected unusual user behavior patterns
+                </CardDescription>
               </CardHeader>
               <CardContent>
                 {alertsError ? (
@@ -438,14 +462,18 @@ export default function SecurityDashboard() {
                 ) : loadingAlerts ? (
                   <div className="text-center py-12">
                     <Loader2 className="w-8 h-8 animate-spin mx-auto mb-2" />
-                    <p className="text-sm text-muted-foreground">Analyzing behavior...</p>
+                    <p className="text-sm text-muted-foreground">
+                      Analyzing behavior...
+                    </p>
                   </div>
-                ) : behavioralAlertsData && behavioralAlertsData.alerts.length === 0 ? (
+                ) : behavioralAlertsData &&
+                  behavioralAlertsData.alerts.length === 0 ? (
                   <div className="text-center py-12">
                     <CheckCircle2 className="w-12 h-12 mx-auto mb-4 text-green-500" />
                     <p className="text-lg font-semibold">No Security Alerts</p>
                     <p className="text-sm text-muted-foreground mt-1">
-                      System is operating normally with no unusual behavior detected
+                      System is operating normally with no unusual behavior
+                      detected
                     </p>
                   </div>
                 ) : (
@@ -453,17 +481,21 @@ export default function SecurityDashboard() {
                     {behavioralAlertsData?.alerts.map((alert) => (
                       <Alert
                         key={alert.id}
-                        variant={alert.severity === 'high' ? 'destructive' : 'default'}
+                        variant={
+                          alert.severity === "high" ? "destructive" : "default"
+                        }
                       >
                         <div className="space-y-3">
                           <div className="flex items-start justify-between">
                             <div className="flex-1">
                               <div className="flex items-center gap-2 mb-1">
-                                <Badge variant={getSeverityBadge(alert.severity)}>
+                                <Badge
+                                  variant={getSeverityBadge(alert.severity)}
+                                >
                                   {alert.severity}
                                 </Badge>
                                 <h4 className="font-semibold capitalize">
-                                  {alert.type.replace('_', ' ')}
+                                  {alert.type.replace("_", " ")}
                                 </h4>
                               </div>
                               <p className="text-sm text-muted-foreground">
@@ -509,7 +541,9 @@ export default function SecurityDashboard() {
             <Card>
               <CardHeader>
                 <CardTitle>Anomaly Detection</CardTitle>
-                <CardDescription>Real-time threat detection and pattern analysis</CardDescription>
+                <CardDescription>
+                  Real-time threat detection and pattern analysis
+                </CardDescription>
               </CardHeader>
               <CardContent>
                 {anomaliesError ? (
@@ -522,12 +556,16 @@ export default function SecurityDashboard() {
                 ) : loadingAnomalies ? (
                   <div className="text-center py-12">
                     <Loader2 className="w-8 h-8 animate-spin mx-auto mb-2" />
-                    <p className="text-sm text-muted-foreground">Scanning for anomalies...</p>
+                    <p className="text-sm text-muted-foreground">
+                      Scanning for anomalies...
+                    </p>
                   </div>
                 ) : anomaliesData && anomaliesData.anomalies.length === 0 ? (
                   <div className="text-center py-12">
                     <CheckCircle2 className="w-12 h-12 mx-auto mb-4 text-green-500" />
-                    <p className="text-lg font-semibold">No Anomalies Detected</p>
+                    <p className="text-lg font-semibold">
+                      No Anomalies Detected
+                    </p>
                     <p className="text-sm text-muted-foreground mt-1">
                       All system metrics are within normal parameters
                     </p>
@@ -537,7 +575,11 @@ export default function SecurityDashboard() {
                     {anomaliesData?.anomalies.map((anomaly, index) => (
                       <Alert
                         key={`${anomaly.type}-${index}`}
-                        variant={anomaly.severity === 'high' ? 'destructive' : 'default'}
+                        variant={
+                          anomaly.severity === "high"
+                            ? "destructive"
+                            : "default"
+                        }
                       >
                         <div className="space-y-3">
                           <div className="flex items-start justify-between">
@@ -545,9 +587,11 @@ export default function SecurityDashboard() {
                               <div className="flex items-center gap-2 mb-1">
                                 <AlertTriangle className="w-4 h-4" />
                                 <h4 className="font-semibold capitalize">
-                                  {anomaly.type.replace('_', ' ')}
+                                  {anomaly.type.replace("_", " ")}
                                 </h4>
-                                <Badge variant={getSeverityBadge(anomaly.severity)}>
+                                <Badge
+                                  variant={getSeverityBadge(anomaly.severity)}
+                                >
                                   {anomaly.severity}
                                 </Badge>
                               </div>
@@ -562,11 +606,17 @@ export default function SecurityDashboard() {
 
                           <div className="grid grid-cols-2 gap-3 text-sm bg-white/50 dark:bg-gray-800/50 p-3 rounded">
                             <div>
-                              <p className="text-xs font-medium mb-1">Metric:</p>
-                              <p className="font-mono text-xs">{anomaly.metric}</p>
+                              <p className="text-xs font-medium mb-1">
+                                Metric:
+                              </p>
+                              <p className="font-mono text-xs">
+                                {anomaly.metric}
+                              </p>
                             </div>
                             <div>
-                              <p className="text-xs font-medium mb-1">Expected vs Actual:</p>
+                              <p className="text-xs font-medium mb-1">
+                                Expected vs Actual:
+                              </p>
                               <p className="font-mono text-xs">
                                 {anomaly.expectedValue} → {anomaly.actualValue}
                               </p>
@@ -607,13 +657,16 @@ export default function SecurityDashboard() {
                   <Alert variant="destructive">
                     <AlertTriangle className="h-4 w-4" />
                     <AlertDescription>
-                      Failed to load security assessment results. Please try again.
+                      Failed to load security assessment results. Please try
+                      again.
                     </AlertDescription>
                   </Alert>
                 ) : loadingPenTest ? (
                   <div className="text-center py-12">
                     <Loader2 className="w-8 h-8 animate-spin mx-auto mb-2" />
-                    <p className="text-sm text-muted-foreground">Running security assessment…</p>
+                    <p className="text-sm text-muted-foreground">
+                      Running security assessment…
+                    </p>
                   </div>
                 ) : (
                   penTestData && (
@@ -621,7 +674,9 @@ export default function SecurityDashboard() {
                       <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
                         <Card className="border-l-4 border-l-red-500">
                           <CardContent className="p-3">
-                            <p className="text-xs text-muted-foreground">Critical</p>
+                            <p className="text-xs text-muted-foreground">
+                              Critical
+                            </p>
                             <p className="text-2xl font-bold text-red-600">
                               {penTestData.summary.critical}
                             </p>
@@ -629,7 +684,9 @@ export default function SecurityDashboard() {
                         </Card>
                         <Card className="border-l-4 border-l-orange-500">
                           <CardContent className="p-3">
-                            <p className="text-xs text-muted-foreground">High</p>
+                            <p className="text-xs text-muted-foreground">
+                              High
+                            </p>
                             <p className="text-2xl font-bold text-orange-600">
                               {penTestData.summary.high}
                             </p>
@@ -637,7 +694,9 @@ export default function SecurityDashboard() {
                         </Card>
                         <Card className="border-l-4 border-l-yellow-500">
                           <CardContent className="p-3">
-                            <p className="text-xs text-muted-foreground">Medium</p>
+                            <p className="text-xs text-muted-foreground">
+                              Medium
+                            </p>
                             <p className="text-2xl font-bold text-yellow-600">
                               {penTestData.summary.medium}
                             </p>
@@ -653,7 +712,9 @@ export default function SecurityDashboard() {
                         </Card>
                         <Card className="border-l-4 border-l-green-500">
                           <CardContent className="p-3">
-                            <p className="text-xs text-muted-foreground">Passed</p>
+                            <p className="text-xs text-muted-foreground">
+                              Passed
+                            </p>
                             <p className="text-2xl font-bold text-green-600">
                               {penTestData.summary.passed}
                             </p>
@@ -664,7 +725,9 @@ export default function SecurityDashboard() {
                       {penTestData.vulnerabilities.length === 0 ? (
                         <div className="text-center py-12">
                           <CheckCircle2 className="w-12 h-12 mx-auto mb-4 text-green-500" />
-                          <p className="text-lg font-semibold">No Vulnerabilities Detected</p>
+                          <p className="text-lg font-semibold">
+                            No Vulnerabilities Detected
+                          </p>
                           <p className="text-sm text-muted-foreground mt-1">
                             Your system passed all security checks
                           </p>
@@ -675,26 +738,36 @@ export default function SecurityDashboard() {
                             <Card
                               key={vuln.id}
                               className={`border-l-4 ${
-                                vuln.severity === 'critical'
-                                  ? 'border-l-red-500'
-                                  : vuln.severity === 'high'
-                                    ? 'border-l-orange-500'
-                                    : vuln.severity === 'medium'
-                                      ? 'border-l-yellow-500'
-                                      : 'border-l-blue-500'
+                                vuln.severity === "critical"
+                                  ? "border-l-red-500"
+                                  : vuln.severity === "high"
+                                    ? "border-l-orange-500"
+                                    : vuln.severity === "medium"
+                                      ? "border-l-yellow-500"
+                                      : "border-l-blue-500"
                               }`}
                             >
                               <CardContent className="p-4 space-y-3">
                                 <div className="flex items-start justify-between">
                                   <div className="flex-1">
                                     <div className="flex items-center gap-2 mb-1">
-                                      <Badge variant="outline">{vuln.category}</Badge>
-                                      <Badge variant={getSeverityBadge(vuln.severity)}>
+                                      <Badge variant="outline">
+                                        {vuln.category}
+                                      </Badge>
+                                      <Badge
+                                        variant={getSeverityBadge(
+                                          vuln.severity,
+                                        )}
+                                      >
                                         {vuln.severity}
                                       </Badge>
-                                      <Badge variant="outline">{vuln.status}</Badge>
+                                      <Badge variant="outline">
+                                        {vuln.status}
+                                      </Badge>
                                     </div>
-                                    <h4 className="font-semibold">{vuln.description}</h4>
+                                    <h4 className="font-semibold">
+                                      {vuln.description}
+                                    </h4>
                                   </div>
                                   <div className="text-right text-xs text-muted-foreground">
                                     {formatTimestamp(vuln.detectedDate)}
@@ -708,7 +781,9 @@ export default function SecurityDashboard() {
 
                       {penTestData.recommendations.length > 0 && (
                         <div className="mt-6">
-                          <h4 className="font-semibold mb-3">Recommendations</h4>
+                          <h4 className="font-semibold mb-3">
+                            Recommendations
+                          </h4>
                           <div className="space-y-2">
                             {penTestData.recommendations.map((rec, index) => (
                               <Alert

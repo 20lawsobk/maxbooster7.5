@@ -1,5 +1,5 @@
-import { useState, useCallback, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useState, useCallback, useRef } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Settings,
   Download,
@@ -12,20 +12,20 @@ import {
   AlertTriangle,
   X,
   ChevronRight,
-} from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Badge } from '@/components/ui/badge';
-import { Switch } from '@/components/ui/switch';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogDescription,
-} from '@/components/ui/dialog';
+} from "@/components/ui/dialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -36,18 +36,18 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from '@/components/ui/alert-dialog';
-import { useToast } from '@/hooks/use-toast';
-import { cn } from '@/lib/utils';
-import { useShortcuts } from '@/contexts/ShortcutContext';
-import { ShortcutHint } from '@/components/shortcuts/ShortcutHint';
-import { ShortcutCustomizer } from '@/components/shortcuts/ShortcutCustomizer';
-import { 
-  ShortcutDefinition, 
-  ShortcutModifier, 
+} from "@/components/ui/alert-dialog";
+import { useToast } from "@/hooks/use-toast";
+import { cn } from "@/lib/utils";
+import { useShortcuts } from "@/contexts/ShortcutContext";
+import { ShortcutHint } from "@/components/shortcuts/ShortcutHint";
+import { ShortcutCustomizer } from "@/components/shortcuts/ShortcutCustomizer";
+import {
+  ShortcutDefinition,
+  ShortcutModifier,
   ShortcutContext,
-  getPlatformModifiers 
-} from '@/lib/shortcuts/types';
+  getPlatformModifiers,
+} from "@/lib/shortcuts/types";
 
 interface ShortcutManagerProps {
   open: boolean;
@@ -55,54 +55,62 @@ interface ShortcutManagerProps {
 }
 
 const CONTEXT_LABELS: Record<ShortcutContext, string> = {
-  global: 'Global',
-  studio: 'Studio',
-  dashboard: 'Dashboard',
-  social: 'Social Media',
-  marketplace: 'Marketplace',
-  distribution: 'Distribution',
-  analytics: 'Analytics',
+  global: "Global",
+  studio: "Studio",
+  dashboard: "Dashboard",
+  social: "Social Media",
+  marketplace: "Marketplace",
+  distribution: "Distribution",
+  analytics: "Analytics",
 };
 
 export function ShortcutManager({ open, onOpenChange }: ShortcutManagerProps) {
   const { shortcutManager } = useShortcuts();
   const { toast } = useToast();
-  const [searchQuery, setSearchQuery] = useState('');
-  const [activeTab, setActiveTab] = useState<'view' | 'customize' | 'export'>('view');
+  const [searchQuery, setSearchQuery] = useState("");
+  const [activeTab, setActiveTab] = useState<"view" | "customize" | "export">(
+    "view",
+  );
   const [showCustomizer, setShowCustomizer] = useState(false);
-  const [selectedContext, setSelectedContext] = useState<ShortcutContext | 'all'>('all');
+  const [selectedContext, setSelectedContext] = useState<
+    ShortcutContext | "all"
+  >("all");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const shortcuts = shortcutManager?.getAllShortcuts() || [];
 
-  const filteredShortcuts = shortcuts.filter(s => {
-    const matchesSearch = 
+  const filteredShortcuts = shortcuts.filter((s) => {
+    const matchesSearch =
       s.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
       s.key.toLowerCase().includes(searchQuery.toLowerCase()) ||
       s.category.toLowerCase().includes(searchQuery.toLowerCase());
-    
-    const matchesContext = selectedContext === 'all' || 
-      s.context === selectedContext || 
-      s.context === 'global';
+
+    const matchesContext =
+      selectedContext === "all" ||
+      s.context === selectedContext ||
+      s.context === "global";
 
     return matchesSearch && matchesContext;
   });
 
-  const groupedShortcuts = filteredShortcuts.reduce((acc, shortcut) => {
-    const category = shortcut.category;
-    if (!acc[category]) acc[category] = [];
-    acc[category].push(shortcut);
-    return acc;
-  }, {} as Record<string, ShortcutDefinition[]>);
+  const groupedShortcuts = filteredShortcuts.reduce(
+    (acc, shortcut) => {
+      const category = shortcut.category;
+      if (!acc[category]) acc[category] = [];
+      acc[category].push(shortcut);
+      return acc;
+    },
+    {} as Record<string, ShortcutDefinition[]>,
+  );
 
   const handleExport = useCallback(() => {
     if (!shortcutManager) return;
 
     const shortcuts = shortcutManager.getAllShortcuts();
     const exportData = {
-      version: '1.0',
+      version: "1.0",
       exportedAt: new Date().toISOString(),
-      shortcuts: shortcuts.map(s => ({
+      shortcuts: shortcuts.map((s) => ({
         id: s.id,
         key: s.key,
         modifiers: s.modifiers,
@@ -110,73 +118,90 @@ export function ShortcutManager({ open, onOpenChange }: ShortcutManagerProps) {
       })),
     };
 
-    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+    const blob = new Blob([JSON.stringify(exportData, null, 2)], {
+      type: "application/json",
+    });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
+    const a = document.createElement("a");
     a.href = url;
-    a.download = `max-booster-shortcuts-${new Date().toISOString().split('T')[0]}.json`;
+    a.download = `max-booster-shortcuts-${new Date().toISOString().split("T")[0]}.json`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
 
     toast({
-      title: 'Shortcuts exported',
-      description: 'Your shortcuts have been exported successfully.',
+      title: "Shortcuts exported",
+      description: "Your shortcuts have been exported successfully.",
     });
   }, [shortcutManager, toast]);
 
-  const handleImport = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file || !shortcutManager) return;
+  const handleImport = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      const file = event.target.files?.[0];
+      if (!file || !shortcutManager) return;
 
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      try {
-        const data = JSON.parse(e.target?.result as string);
-        
-        if (!data.version || !data.shortcuts || !Array.isArray(data.shortcuts)) {
-          throw new Error('Invalid shortcut file format');
-        }
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const data = JSON.parse(e.target?.result as string);
 
-        let imported = 0;
-        data.shortcuts.forEach((config: { id: string; key: string; modifiers?: ShortcutModifier[]; enabled?: boolean }) => {
-          const existing = shortcutManager.getShortcut(config.id);
-          if (existing) {
-            shortcutManager.customize(config.id, {
-              key: config.key,
-              modifiers: config.modifiers,
-              enabled: config.enabled,
-            });
-            imported++;
+          if (
+            !data.version ||
+            !data.shortcuts ||
+            !Array.isArray(data.shortcuts)
+          ) {
+            throw new Error("Invalid shortcut file format");
           }
-        });
 
-        toast({
-          title: 'Shortcuts imported',
-          description: `Successfully imported ${imported} shortcuts.`,
-        });
-      } catch (error) {
-        toast({
-          title: 'Import failed',
-          description: 'The file could not be parsed. Please check the format.',
-          variant: 'destructive',
-        });
+          let imported = 0;
+          data.shortcuts.forEach(
+            (config: {
+              id: string;
+              key: string;
+              modifiers?: ShortcutModifier[];
+              enabled?: boolean;
+            }) => {
+              const existing = shortcutManager.getShortcut(config.id);
+              if (existing) {
+                shortcutManager.customize(config.id, {
+                  key: config.key,
+                  modifiers: config.modifiers,
+                  enabled: config.enabled,
+                });
+                imported++;
+              }
+            },
+          );
+
+          toast({
+            title: "Shortcuts imported",
+            description: `Successfully imported ${imported} shortcuts.`,
+          });
+        } catch (error) {
+          toast({
+            title: "Import failed",
+            description:
+              "The file could not be parsed. Please check the format.",
+            variant: "destructive",
+          });
+        }
+      };
+      reader.readAsText(file);
+
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
       }
-    };
-    reader.readAsText(file);
-    
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-    }
-  }, [shortcutManager, toast]);
+    },
+    [shortcutManager, toast],
+  );
 
   const handleResetAll = useCallback(() => {
     if (!shortcutManager) return;
     shortcutManager.resetAllShortcuts();
     toast({
-      title: 'Shortcuts reset',
-      description: 'All shortcuts have been reset to defaults.',
+      title: "Shortcuts reset",
+      description: "All shortcuts have been reset to defaults.",
     });
   }, [shortcutManager, toast]);
 
@@ -198,7 +223,11 @@ export function ShortcutManager({ open, onOpenChange }: ShortcutManagerProps) {
             </DialogDescription>
           </DialogHeader>
 
-          <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as typeof activeTab)} className="flex-1 flex flex-col">
+          <Tabs
+            value={activeTab}
+            onValueChange={(v) => setActiveTab(v as typeof activeTab)}
+            className="flex-1 flex flex-col"
+          >
             <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="view">View All</TabsTrigger>
               <TabsTrigger value="customize">Customize</TabsTrigger>
@@ -218,47 +247,67 @@ export function ShortcutManager({ open, onOpenChange }: ShortcutManagerProps) {
                 </div>
                 <select
                   value={selectedContext}
-                  onChange={(e) => setSelectedContext(e.target.value as ShortcutContext | 'all')}
+                  onChange={(e) =>
+                    setSelectedContext(
+                      e.target.value as ShortcutContext | "all",
+                    )
+                  }
                   className="h-10 px-3 rounded-md border border-zinc-800 bg-zinc-900 text-sm"
                 >
                   <option value="all">All Contexts</option>
                   {Object.entries(CONTEXT_LABELS).map(([value, label]) => (
-                    <option key={value} value={value}>{label}</option>
+                    <option key={value} value={value}>
+                      {label}
+                    </option>
                   ))}
                 </select>
               </div>
 
               <ScrollArea className="flex-1 -mx-6 px-6">
                 <div className="space-y-6">
-                  {Object.entries(groupedShortcuts).map(([category, categoryShortcuts]) => (
-                    <div key={category}>
-                      <div className="flex items-center gap-2 mb-2">
-                        <h3 className="font-medium text-zinc-300">{formatCategory(category)}</h3>
-                        <Badge variant="secondary" className="text-xs">{categoryShortcuts.length}</Badge>
-                      </div>
-                      <div className="space-y-1">
-                        {categoryShortcuts.map(shortcut => (
-                          <div
-                            key={shortcut.id}
-                            className="flex items-center justify-between p-2 rounded-lg hover:bg-zinc-800/50 transition-colors"
-                          >
-                            <div className="flex items-center gap-3">
-                              <span className="text-sm text-zinc-300">{shortcut.description}</span>
-                              {shortcut.context !== 'global' && (
-                                <Badge variant="outline" className="text-[10px]">
-                                  {CONTEXT_LABELS[shortcut.context]}
-                                </Badge>
-                              )}
+                  {Object.entries(groupedShortcuts).map(
+                    ([category, categoryShortcuts]) => (
+                      <div key={category}>
+                        <div className="flex items-center gap-2 mb-2">
+                          <h3 className="font-medium text-zinc-300">
+                            {formatCategory(category)}
+                          </h3>
+                          <Badge variant="secondary" className="text-xs">
+                            {categoryShortcuts.length}
+                          </Badge>
+                        </div>
+                        <div className="space-y-1">
+                          {categoryShortcuts.map((shortcut) => (
+                            <div
+                              key={shortcut.id}
+                              className="flex items-center justify-between p-2 rounded-lg hover:bg-zinc-800/50 transition-colors"
+                            >
+                              <div className="flex items-center gap-3">
+                                <span className="text-sm text-zinc-300">
+                                  {shortcut.description}
+                                </span>
+                                {shortcut.context !== "global" && (
+                                  <Badge
+                                    variant="outline"
+                                    className="text-[10px]"
+                                  >
+                                    {CONTEXT_LABELS[shortcut.context]}
+                                  </Badge>
+                                )}
+                              </div>
+                              <ShortcutHint
+                                shortcut={{
+                                  key: shortcut.key,
+                                  modifiers: shortcut.modifiers,
+                                }}
+                                size="sm"
+                              />
                             </div>
-                            <ShortcutHint
-                              shortcut={{ key: shortcut.key, modifiers: shortcut.modifiers }}
-                              size="sm"
-                            />
-                          </div>
-                        ))}
+                          ))}
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    ),
+                  )}
                   {Object.keys(groupedShortcuts).length === 0 && (
                     <div className="py-12 text-center text-zinc-500">
                       <Keyboard className="w-12 h-12 mx-auto mb-3 opacity-50" />
@@ -269,11 +318,16 @@ export function ShortcutManager({ open, onOpenChange }: ShortcutManagerProps) {
               </ScrollArea>
             </TabsContent>
 
-            <TabsContent value="customize" className="flex-1 flex flex-col mt-4">
+            <TabsContent
+              value="customize"
+              className="flex-1 flex flex-col mt-4"
+            >
               <div className="flex-1 flex items-center justify-center">
                 <div className="text-center">
                   <Settings className="w-12 h-12 mx-auto mb-4 text-zinc-500" />
-                  <h3 className="text-lg font-medium mb-2">Customize Shortcuts</h3>
+                  <h3 className="text-lg font-medium mb-2">
+                    Customize Shortcuts
+                  </h3>
                   <p className="text-sm text-zinc-500 mb-4">
                     Click below to open the shortcut customization panel
                   </p>
@@ -295,7 +349,8 @@ export function ShortcutManager({ open, onOpenChange }: ShortcutManagerProps) {
                     <div className="flex-1">
                       <h3 className="font-medium mb-1">Export Shortcuts</h3>
                       <p className="text-sm text-zinc-500 mb-3">
-                        Download your current shortcut configuration as a JSON file
+                        Download your current shortcut configuration as a JSON
+                        file
                       </p>
                       <Button variant="outline" onClick={handleExport}>
                         <FileJson className="w-4 h-4 mr-2" />
@@ -323,8 +378,8 @@ export function ShortcutManager({ open, onOpenChange }: ShortcutManagerProps) {
                         className="hidden"
                         id="shortcut-import"
                       />
-                      <Button 
-                        variant="outline" 
+                      <Button
+                        variant="outline"
                         onClick={() => fileInputRef.current?.click()}
                       >
                         <Upload className="w-4 h-4 mr-2" />
@@ -353,10 +408,13 @@ export function ShortcutManager({ open, onOpenChange }: ShortcutManagerProps) {
                         </AlertDialogTrigger>
                         <AlertDialogContent>
                           <AlertDialogHeader>
-                            <AlertDialogTitle>Reset all shortcuts?</AlertDialogTitle>
+                            <AlertDialogTitle>
+                              Reset all shortcuts?
+                            </AlertDialogTitle>
                             <AlertDialogDescription>
-                              This will reset all keyboard shortcuts to their default values. 
-                              You may want to export your current configuration first.
+                              This will reset all keyboard shortcuts to their
+                              default values. You may want to export your
+                              current configuration first.
                             </AlertDialogDescription>
                           </AlertDialogHeader>
                           <AlertDialogFooter>
@@ -376,14 +434,18 @@ export function ShortcutManager({ open, onOpenChange }: ShortcutManagerProps) {
 
           <div className="flex items-center justify-between pt-4 border-t border-zinc-800 text-xs text-zinc-500">
             <p>
-              Press <ShortcutHint shortcut="cmd+/" size="xs" /> to show shortcuts anytime
+              Press <ShortcutHint shortcut="cmd+/" size="xs" /> to show
+              shortcuts anytime
             </p>
             <Badge variant="outline">{shortcuts.length} shortcuts</Badge>
           </div>
         </DialogContent>
       </Dialog>
 
-      <ShortcutCustomizer open={showCustomizer} onOpenChange={setShowCustomizer} />
+      <ShortcutCustomizer
+        open={showCustomizer}
+        onOpenChange={setShowCustomizer}
+      />
     </>
   );
 }

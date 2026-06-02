@@ -1,9 +1,9 @@
-import { db } from '../db.js';
-import { auditLogs, type InsertAuditLog, type AuditLog } from '@shared/schema';
-import { eq, and, lt, desc, sql, gte } from 'drizzle-orm';
-import { logger } from '../logger.js';
-import cron from 'node-cron';
-import crypto from 'crypto';
+import { db } from "../db.js";
+import { auditLogs, type InsertAuditLog, type AuditLog } from "@shared/schema";
+import { eq, and, lt, desc, sql, gte } from "drizzle-orm";
+import { logger } from "../logger.js";
+import cron from "node-cron";
+import crypto from "crypto";
 
 export interface AuditLogEntry {
   userId?: string;
@@ -14,8 +14,8 @@ export interface AuditLogEntry {
   ipAddress?: string;
   userAgent?: string;
   details?: Record<string, any>;
-  result?: 'success' | 'failure' | 'error';
-  riskLevel?: 'low' | 'medium' | 'high' | 'critical';
+  result?: "success" | "failure" | "error";
+  riskLevel?: "low" | "medium" | "high" | "critical";
   requestId?: string;
   sessionId?: string;
   statusCode?: number;
@@ -49,19 +49,25 @@ export class AuditLoggerService {
   }
 
   public initialize(): void {
-    this.archivalCronJob = cron.schedule('0 3 * * *', async () => {
-      await this.archiveOldLogs();
-    }, {
-      timezone: 'UTC'
-    });
+    this.archivalCronJob = cron.schedule(
+      "0 3 * * *",
+      async () => {
+        await this.archiveOldLogs();
+      },
+      {
+        timezone: "UTC",
+      },
+    );
 
-    logger.info('✅ AuditLoggerService initialized - daily archival job at 3 AM UTC');
+    logger.info(
+      "✅ AuditLoggerService initialized - daily archival job at 3 AM UTC",
+    );
   }
 
   public stop(): void {
     if (this.archivalCronJob) {
       this.archivalCronJob.stop();
-      logger.info('🛑 AuditLoggerService stopped');
+      logger.info("🛑 AuditLoggerService stopped");
     }
   }
 
@@ -69,9 +75,9 @@ export class AuditLoggerService {
     const data = JSON.stringify({
       ...entry,
       timestamp: timestamp.toISOString(),
-      prevHash: this.lastHash
+      prevHash: this.lastHash,
     });
-    return crypto.createHash('sha256').update(data).digest('hex');
+    return crypto.createHash("sha256").update(data).digest("hex");
   }
 
   public async log(entry: AuditLogEntry): Promise<AuditLog | null> {
@@ -79,41 +85,44 @@ export class AuditLoggerService {
       const timestamp = new Date();
       const hash = this.generateHash(entry, timestamp);
       const prevHash = this.lastHash;
-      
-      const [auditLog] = await db.insert(auditLogs).values({
-        timestamp,
-        userId: entry.userId || null,
-        userEmail: entry.userEmail || null,
-        action: entry.action,
-        resourceType: entry.resourceType || null,
-        resourceId: entry.resourceId || null,
-        ipAddress: entry.ipAddress || null,
-        userAgent: entry.userAgent || null,
-        details: entry.details || null,
-        result: entry.result || 'success',
-        riskLevel: entry.riskLevel || 'low',
-        requestId: entry.requestId || null,
-        sessionId: entry.sessionId || null,
-        statusCode: entry.statusCode || 200,
-        hash,
-        prevHash,
-        archived: false,
-      }).returning();
+
+      const [auditLog] = await db
+        .insert(auditLogs)
+        .values({
+          timestamp,
+          userId: entry.userId || null,
+          userEmail: entry.userEmail || null,
+          action: entry.action,
+          resourceType: entry.resourceType || null,
+          resourceId: entry.resourceId || null,
+          ipAddress: entry.ipAddress || null,
+          userAgent: entry.userAgent || null,
+          details: entry.details || null,
+          result: entry.result || "success",
+          riskLevel: entry.riskLevel || "low",
+          requestId: entry.requestId || null,
+          sessionId: entry.sessionId || null,
+          statusCode: entry.statusCode || 200,
+          hash,
+          prevHash,
+          archived: false,
+        })
+        .returning();
 
       this.lastHash = hash;
 
-      if (entry.riskLevel === 'high' || entry.riskLevel === 'critical') {
+      if (entry.riskLevel === "high" || entry.riskLevel === "critical") {
         logger.warn(`🔒 High-risk audit event: ${entry.action}`, {
           userId: entry.userId,
           resourceType: entry.resourceType,
           resourceId: entry.resourceId,
-          riskLevel: entry.riskLevel
+          riskLevel: entry.riskLevel,
         });
       }
 
       return auditLog;
     } catch (error) {
-      logger.warn({ err: error }, '❌ Failed to persist audit log:');
+      logger.warn({ err: error }, "❌ Failed to persist audit log:");
       return null;
     }
   }
@@ -125,23 +134,23 @@ export class AuditLoggerService {
     userAgent: string,
     success: boolean,
     sessionId?: string,
-    details?: Record<string, any>
+    details?: Record<string, any>,
   ): Promise<void> {
     await this.log({
       userId,
       userEmail,
-      action: 'LOGIN',
-      resourceType: 'auth',
+      action: "LOGIN",
+      resourceType: "auth",
       resourceId: userId,
       ipAddress,
       userAgent,
-      result: success ? 'success' : 'failure',
-      riskLevel: success ? 'low' : 'medium',
+      result: success ? "success" : "failure",
+      riskLevel: success ? "low" : "medium",
       sessionId,
       details: {
         ...details,
-        attemptedEmail: userEmail
-      }
+        attemptedEmail: userEmail,
+      },
     });
   }
 
@@ -150,19 +159,19 @@ export class AuditLoggerService {
     userEmail: string,
     ipAddress: string,
     userAgent: string,
-    sessionId?: string
+    sessionId?: string,
   ): Promise<void> {
     await this.log({
       userId,
       userEmail,
-      action: 'LOGOUT',
-      resourceType: 'auth',
+      action: "LOGOUT",
+      resourceType: "auth",
       resourceId: userId,
       ipAddress,
       userAgent,
-      result: 'success',
-      riskLevel: 'low',
-      sessionId
+      result: "success",
+      riskLevel: "low",
+      sessionId,
     });
   }
 
@@ -173,20 +182,20 @@ export class AuditLoggerService {
     userAgent: string,
     success: boolean,
     sessionId?: string,
-    details?: Record<string, any>
+    details?: Record<string, any>,
   ): Promise<void> {
     await this.log({
       userId,
       userEmail,
-      action: 'REGISTER',
-      resourceType: 'auth',
+      action: "REGISTER",
+      resourceType: "auth",
       resourceId: userId,
       ipAddress,
       userAgent,
-      result: success ? 'success' : 'failure',
-      riskLevel: 'medium',
+      result: success ? "success" : "failure",
+      riskLevel: "medium",
       sessionId,
-      details
+      details,
     });
   }
 
@@ -198,25 +207,25 @@ export class AuditLoggerService {
     amount: number,
     success: boolean,
     sessionId?: string,
-    stripeSessionId?: string
+    stripeSessionId?: string,
   ): Promise<void> {
     await this.log({
       userId,
       userEmail,
-      action: 'PAYMENT',
-      resourceType: 'stripe',
+      action: "PAYMENT",
+      resourceType: "stripe",
       resourceId: stripeSessionId,
       ipAddress,
       userAgent,
-      result: success ? 'success' : 'failure',
-      riskLevel: 'high',
+      result: success ? "success" : "failure",
+      riskLevel: "high",
       sessionId,
       details: {
         amount,
-        currency: 'USD',
+        currency: "USD",
         stripeSessionId,
-        type: 'subscription'
-      }
+        type: "subscription",
+      },
     });
   }
 
@@ -228,23 +237,23 @@ export class AuditLoggerService {
     ipAddress: string,
     userAgent: string,
     sessionId?: string,
-    details?: Record<string, any>
+    details?: Record<string, any>,
   ): Promise<void> {
     await this.log({
       userId,
       userEmail,
       action: `ADMIN_${action.toUpperCase()}`,
-      resourceType: 'admin',
+      resourceType: "admin",
       resourceId: targetUserId,
       ipAddress,
       userAgent,
-      result: 'success',
-      riskLevel: 'critical',
+      result: "success",
+      riskLevel: "critical",
       sessionId,
       details: {
         ...details,
-        targetUserId
-      }
+        targetUserId,
+      },
     });
   }
 
@@ -256,24 +265,24 @@ export class AuditLoggerService {
     fileName: string,
     fileSize: number,
     success: boolean,
-    sessionId?: string
+    sessionId?: string,
   ): Promise<void> {
     await this.log({
       userId,
       userEmail,
-      action: 'FILE_UPLOAD',
-      resourceType: 'storage',
+      action: "FILE_UPLOAD",
+      resourceType: "storage",
       resourceId: fileName,
       ipAddress,
       userAgent,
-      result: success ? 'success' : 'failure',
-      riskLevel: 'medium',
+      result: success ? "success" : "failure",
+      riskLevel: "medium",
       sessionId,
       details: {
         fileName,
         fileSize,
-        type: 'audio'
-      }
+        type: "audio",
+      },
     });
   }
 
@@ -284,40 +293,40 @@ export class AuditLoggerService {
     ipAddress: string,
     userAgent: string,
     success: boolean,
-    sessionId?: string
+    sessionId?: string,
   ): Promise<void> {
     await this.log({
       userId,
       userEmail,
-      action: 'OAUTH_CONNECT',
-      resourceType: 'social_media',
+      action: "OAUTH_CONNECT",
+      resourceType: "social_media",
       resourceId: platform,
       ipAddress,
       userAgent,
-      result: success ? 'success' : 'failure',
-      riskLevel: 'medium',
+      result: success ? "success" : "failure",
+      riskLevel: "medium",
       sessionId,
-      details: { platform }
+      details: { platform },
     });
   }
 
   public async logSecurityEvent(
     event: string,
-    riskLevel: 'low' | 'medium' | 'high' | 'critical',
+    riskLevel: "low" | "medium" | "high" | "critical",
     ipAddress: string,
     userAgent: string,
     sessionId?: string,
-    details?: Record<string, any>
+    details?: Record<string, any>,
   ): Promise<void> {
     await this.log({
       action: `SECURITY_${event.toUpperCase()}`,
-      resourceType: 'security',
+      resourceType: "security",
       ipAddress,
       userAgent,
-      result: 'success',
+      result: "success",
       riskLevel,
       sessionId,
-      details
+      details,
     });
   }
 
@@ -325,19 +334,19 @@ export class AuditLoggerService {
     limitType: string,
     path: string,
     ipAddress: string,
-    userAgent: string
+    userAgent: string,
   ): Promise<void> {
     await this.log({
-      action: 'RATE_LIMIT_EXCEEDED',
-      resourceType: 'security',
+      action: "RATE_LIMIT_EXCEEDED",
+      resourceType: "security",
       ipAddress,
       userAgent,
-      result: 'failure',
-      riskLevel: 'medium',
+      result: "failure",
+      riskLevel: "medium",
       details: {
         limitType,
-        path
-      }
+        path,
+      },
     });
   }
 
@@ -347,23 +356,23 @@ export class AuditLoggerService {
     requestId: string,
     ipAddress: string,
     userAgent: string,
-    sessionId?: string
+    sessionId?: string,
   ): Promise<void> {
     await this.log({
       userId,
       userEmail,
-      action: 'DATA_EXPORT',
-      resourceType: 'privacy',
+      action: "DATA_EXPORT",
+      resourceType: "privacy",
       resourceId: requestId,
       ipAddress,
       userAgent,
-      result: 'success',
-      riskLevel: 'high',
+      result: "success",
+      riskLevel: "high",
       sessionId,
       details: {
         requestId,
-        gdprArticle: 'Article 15 - Right of Access'
-      }
+        gdprArticle: "Article 15 - Right of Access",
+      },
     });
   }
 
@@ -373,23 +382,23 @@ export class AuditLoggerService {
     requestId: string,
     ipAddress: string,
     userAgent: string,
-    sessionId?: string
+    sessionId?: string,
   ): Promise<void> {
     await this.log({
       userId,
       userEmail,
-      action: 'DATA_DELETE',
-      resourceType: 'privacy',
+      action: "DATA_DELETE",
+      resourceType: "privacy",
       resourceId: requestId,
       ipAddress,
       userAgent,
-      result: 'success',
-      riskLevel: 'critical',
+      result: "success",
+      riskLevel: "critical",
       sessionId,
       details: {
         requestId,
-        gdprArticle: 'Article 17 - Right to Erasure'
-      }
+        gdprArticle: "Article 17 - Right to Erasure",
+      },
     });
   }
 
@@ -400,23 +409,23 @@ export class AuditLoggerService {
     consentGiven: boolean,
     ipAddress: string,
     userAgent: string,
-    sessionId?: string
+    sessionId?: string,
   ): Promise<void> {
     await this.log({
       userId,
       userEmail,
-      action: 'CONSENT_UPDATE',
-      resourceType: 'privacy',
+      action: "CONSENT_UPDATE",
+      resourceType: "privacy",
       resourceId: consentType,
       ipAddress,
       userAgent,
-      result: 'success',
-      riskLevel: 'medium',
+      result: "success",
+      riskLevel: "medium",
       sessionId,
       details: {
         consentType,
-        consentGiven
-      }
+        consentGiven,
+      },
     });
   }
 
@@ -449,35 +458,41 @@ export class AuditLoggerService {
         conditions.push(eq(auditLogs.archived, false));
       }
 
-      const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+      const whereClause =
+        conditions.length > 0 ? and(...conditions) : undefined;
 
-      const logs = await db.select()
+      const logs = await db
+        .select()
         .from(auditLogs)
         .where(whereClause)
         .orderBy(desc(auditLogs.timestamp))
         .limit(options.limit || 100)
         .offset(options.offset || 0);
 
-      const [countResult] = await db.select({ count: sql<number>`count(*)::int` })
+      const [countResult] = await db
+        .select({ count: sql<number>`count(*)::int` })
         .from(auditLogs)
         .where(whereClause)
         .limit(1);
 
       return {
         logs,
-        total: countResult?.count || 0
+        total: countResult?.count || 0,
       };
     } catch (error) {
-      logger.warn({ err: error }, '❌ Failed to query audit logs:');
+      logger.warn({ err: error }, "❌ Failed to query audit logs:");
       throw error;
     }
   }
 
-  public async getUserAuditLogs(userId: string, limit: number = 100): Promise<AuditLog[]> {
+  public async getUserAuditLogs(
+    userId: string,
+    limit: number = 100,
+  ): Promise<AuditLog[]> {
     const result = await this.queryLogs({
       userId,
       limit,
-      includeArchived: false
+      includeArchived: false,
     });
     return result.logs;
   }
@@ -489,34 +504,39 @@ export class AuditLoggerService {
     const cutoffDate = new Date();
     cutoffDate.setDate(cutoffDate.getDate() - this.RETENTION_DAYS);
 
-    logger.info(`📦 Starting audit log archival for logs older than ${cutoffDate.toISOString()}`);
+    logger.info(
+      `📦 Starting audit log archival for logs older than ${cutoffDate.toISOString()}`,
+    );
 
     try {
-      const result = await db.update(auditLogs)
+      const result = await db
+        .update(auditLogs)
         .set({
           archived: true,
-          archivedAt: new Date()
+          archivedAt: new Date(),
         })
         .where(
           and(
             lt(auditLogs.timestamp, cutoffDate),
-            eq(auditLogs.archived, false)
-          )
+            eq(auditLogs.archived, false),
+          ),
         )
         .returning({ id: auditLogs.id });
 
       const archivedCount = result.length;
-      logger.info(`✅ Archived ${archivedCount} audit logs older than ${this.RETENTION_DAYS} days`);
+      logger.info(
+        `✅ Archived ${archivedCount} audit logs older than ${this.RETENTION_DAYS} days`,
+      );
 
       return {
         archived: archivedCount,
-        errors: 0
+        errors: 0,
       };
     } catch (error) {
-      logger.warn({ err: error }, '❌ Failed to archive audit logs:');
+      logger.warn({ err: error }, "❌ Failed to archive audit logs:");
       return {
         archived: 0,
-        errors: 1
+        errors: 1,
       };
     }
   }
@@ -526,20 +546,23 @@ export class AuditLoggerService {
     cutoffDate.setDate(cutoffDate.getDate() - olderThanDays);
 
     try {
-      const result = await db.delete(auditLogs)
+      const result = await db
+        .delete(auditLogs)
         .where(
           and(
             eq(auditLogs.archived, true),
-            lt(auditLogs.archivedAt, cutoffDate)
-          )
+            lt(auditLogs.archivedAt, cutoffDate),
+          ),
         )
         .returning({ id: auditLogs.id });
 
       const purgedCount = result.length;
-      logger.info(`🗑️ Purged ${purgedCount} archived audit logs older than ${olderThanDays} days`);
+      logger.info(
+        `🗑️ Purged ${purgedCount} archived audit logs older than ${olderThanDays} days`,
+      );
       return purgedCount;
     } catch (error) {
-      logger.warn({ err: error }, '❌ Failed to purge archived logs:');
+      logger.warn({ err: error }, "❌ Failed to purge archived logs:");
       throw error;
     }
   }
@@ -554,38 +577,44 @@ export class AuditLoggerService {
     newestLog: Date | null;
   }> {
     try {
-      const [totalResult] = await db.select({ count: sql<number>`count(*)::int` })
+      const [totalResult] = await db
+        .select({ count: sql<number>`count(*)::int` })
         .from(auditLogs)
         .limit(1);
 
-      const [archivedResult] = await db.select({ count: sql<number>`count(*)::int` })
+      const [archivedResult] = await db
+        .select({ count: sql<number>`count(*)::int` })
         .from(auditLogs)
         .where(eq(auditLogs.archived, true))
         .limit(1);
 
-      const riskLevelStats = await db.select({
-        riskLevel: auditLogs.riskLevel,
-        count: sql<number>`count(*)::int`
-      })
+      const riskLevelStats = await db
+        .select({
+          riskLevel: auditLogs.riskLevel,
+          count: sql<number>`count(*)::int`,
+        })
         .from(auditLogs)
         .groupBy(auditLogs.riskLevel);
 
-      const actionStats = await db.select({
-        action: auditLogs.action,
-        count: sql<number>`count(*)::int`
-      })
+      const actionStats = await db
+        .select({
+          action: auditLogs.action,
+          count: sql<number>`count(*)::int`,
+        })
         .from(auditLogs)
         .groupBy(auditLogs.action)
         .orderBy(desc(sql`count(*)`))
         .limit(20);
 
-      const [oldestActive] = await db.select({ timestamp: auditLogs.timestamp })
+      const [oldestActive] = await db
+        .select({ timestamp: auditLogs.timestamp })
         .from(auditLogs)
         .where(eq(auditLogs.archived, false))
         .orderBy(auditLogs.timestamp)
         .limit(1);
 
-      const [newestLog] = await db.select({ timestamp: auditLogs.timestamp })
+      const [newestLog] = await db
+        .select({ timestamp: auditLogs.timestamp })
         .from(auditLogs)
         .orderBy(desc(auditLogs.timestamp))
         .limit(1);
@@ -609,10 +638,10 @@ export class AuditLoggerService {
         logsByRiskLevel,
         logsByAction,
         oldestActiveLog: oldestActive?.timestamp || null,
-        newestLog: newestLog?.timestamp || null
+        newestLog: newestLog?.timestamp || null,
       };
     } catch (error) {
-      logger.warn({ err: error }, '❌ Failed to get audit log stats:');
+      logger.warn({ err: error }, "❌ Failed to get audit log stats:");
       throw error;
     }
   }

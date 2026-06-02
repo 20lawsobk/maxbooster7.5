@@ -1,34 +1,38 @@
-import { Moon, Sun, Monitor } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { useTheme } from '@/contexts/ThemeContext';
-import { cn } from '@/lib/utils';
+import { Moon, Sun, Monitor } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { useTheme } from "@/contexts/ThemeContext";
+import { cn } from "@/lib/utils";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+} from "@/components/ui/dropdown-menu";
 
 interface ThemeToggleProps {
-  variant?: 'default' | 'ghost' | 'outline';
-  size?: 'default' | 'sm' | 'lg' | 'icon';
+  variant?: "default" | "ghost" | "outline";
+  size?: "default" | "sm" | "lg" | "icon";
   showLabel?: boolean;
 }
 
-export function ThemeToggle({ 
-  variant = 'outline', 
-  size = 'icon',
-  showLabel = false 
+export function ThemeToggle({
+  variant = "outline",
+  size = "icon",
+  showLabel = false,
 }: ThemeToggleProps) {
   const { theme, resolvedTheme, setTheme } = useTheme();
-  
-  const currentIcon = theme === 'system' 
-    ? <Monitor className="h-4 w-4" />
-    : resolvedTheme === 'dark' 
-      ? <Moon className="h-4 w-4" /> 
-      : <Sun className="h-4 w-4" />;
-  
-  const currentLabel = theme === 'light' ? 'Light' : theme === 'dark' ? 'Dark' : 'System';
+
+  const currentIcon =
+    theme === "system" ? (
+      <Monitor className="h-4 w-4" />
+    ) : resolvedTheme === "dark" ? (
+      <Moon className="h-4 w-4" />
+    ) : (
+      <Sun className="h-4 w-4" />
+    );
+
+  const currentLabel =
+    theme === "light" ? "Light" : theme === "dark" ? "Dark" : "System";
 
   return (
     <DropdownMenu>
@@ -44,15 +48,24 @@ export function ThemeToggle({
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
-        <DropdownMenuItem onClick={() => setTheme('light')} className={cn(theme === 'light' && 'bg-accent')}>
+        <DropdownMenuItem
+          onClick={() => setTheme("light")}
+          className={cn(theme === "light" && "bg-accent")}
+        >
           <Sun className="mr-2 h-4 w-4" />
           Light
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => setTheme('dark')} className={cn(theme === 'dark' && 'bg-accent')}>
+        <DropdownMenuItem
+          onClick={() => setTheme("dark")}
+          className={cn(theme === "dark" && "bg-accent")}
+        >
           <Moon className="mr-2 h-4 w-4" />
           Dark
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => setTheme('system')} className={cn(theme === 'system' && 'bg-accent')}>
+        <DropdownMenuItem
+          onClick={() => setTheme("system")}
+          className={cn(theme === "system" && "bg-accent")}
+        >
           <Monitor className="mr-2 h-4 w-4" />
           System
         </DropdownMenuItem>

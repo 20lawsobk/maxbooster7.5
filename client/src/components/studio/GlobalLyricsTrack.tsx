@@ -1,8 +1,16 @@
-import { useRef, useState, useCallback } from 'react';
-import { useStudioStore, LyricLine } from '@/lib/studioStore';
-import { Plus, Trash2, AlignLeft, Music2, GripVertical, Maximize2, FileText } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { useRef, useState, useCallback } from "react";
+import { useStudioStore, LyricLine } from "@/lib/studioStore";
+import {
+  Plus,
+  Trash2,
+  AlignLeft,
+  Music2,
+  GripVertical,
+  Maximize2,
+  FileText,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
 interface GlobalLyricsTrackProps {
   duration: number;
@@ -12,7 +20,13 @@ interface GlobalLyricsTrackProps {
   onOpenLyricsPanel?: () => void;
 }
 
-export function GlobalLyricsTrack({ duration, zoom, onTimeChange, onOpenFullscreen, onOpenLyricsPanel }: GlobalLyricsTrackProps) {
+export function GlobalLyricsTrack({
+  duration,
+  zoom,
+  onTimeChange,
+  onOpenFullscreen,
+  onOpenLyricsPanel,
+}: GlobalLyricsTrackProps) {
   const {
     lyrics,
     lyricsTrackVisible,
@@ -25,18 +39,18 @@ export function GlobalLyricsTrack({ duration, zoom, onTimeChange, onOpenFullscre
   } = useStudioStore();
 
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [editText, setEditText] = useState('');
+  const [editText, setEditText] = useState("");
   const trackRef = useRef<HTMLDivElement>(null);
 
   const timeToPosition = useCallback(
     (time: number) => (time / duration) * 100,
-    [duration]
+    [duration],
   );
 
   const positionToTime = useCallback(
     (position: number, containerWidth: number) =>
       (position / containerWidth) * duration,
-    [duration]
+    [duration],
   );
 
   const handleTrackClick = useCallback(
@@ -47,7 +61,7 @@ export function GlobalLyricsTrack({ duration, zoom, onTimeChange, onOpenFullscre
       const time = positionToTime(clickX, rect.width);
 
       const clickedLyric = lyrics.find(
-        (l) => time >= l.startTime && time < l.endTime
+        (l) => time >= l.startTime && time < l.endTime,
       );
 
       if (clickedLyric) {
@@ -55,23 +69,23 @@ export function GlobalLyricsTrack({ duration, zoom, onTimeChange, onOpenFullscre
         if (onTimeChange) onTimeChange(clickedLyric.startTime);
       }
     },
-    [lyrics, positionToTime, selectLyric, editingId, onTimeChange]
+    [lyrics, positionToTime, selectLyric, editingId, onTimeChange],
   );
 
   const handleAddLyric = useCallback(() => {
     const newLyric: LyricLine = {
       id: `lyric-${Date.now()}`,
-      text: 'New lyric',
+      text: "New lyric",
       words: [
         {
           id: `word-${Date.now()}-0`,
-          text: 'New',
+          text: "New",
           startTime: currentTime,
           endTime: currentTime + 1,
         },
         {
           id: `word-${Date.now()}-1`,
-          text: 'lyric',
+          text: "lyric",
           startTime: currentTime + 1,
           endTime: currentTime + 2,
         },
@@ -83,13 +97,10 @@ export function GlobalLyricsTrack({ duration, zoom, onTimeChange, onOpenFullscre
     selectLyric(newLyric.id);
   }, [addLyric, selectLyric, currentTime]);
 
-  const handleDoubleClick = useCallback(
-    (lyric: LyricLine) => {
-      setEditingId(lyric.id);
-      setEditText(lyric.text || lyric.words.map((w) => w.text).join(' '));
-    },
-    []
-  );
+  const handleDoubleClick = useCallback((lyric: LyricLine) => {
+    setEditingId(lyric.id);
+    setEditText(lyric.text || lyric.words.map((w) => w.text).join(" "));
+  }, []);
 
   const handleEditSubmit = useCallback(() => {
     if (editingId && editText.trim()) {
@@ -110,7 +121,7 @@ export function GlobalLyricsTrack({ duration, zoom, onTimeChange, onOpenFullscre
       }
     }
     setEditingId(null);
-    setEditText('');
+    setEditText("");
   }, [editingId, editText, lyrics, updateLyric]);
 
   const handleDeleteLyric = useCallback(
@@ -118,22 +129,29 @@ export function GlobalLyricsTrack({ duration, zoom, onTimeChange, onOpenFullscre
       deleteLyric(id);
       if (selectedLyricId === id) selectLyric(null);
     },
-    [deleteLyric, selectedLyricId, selectLyric]
+    [deleteLyric, selectedLyricId, selectLyric],
   );
 
   return lyricsTrackVisible ? (
     <div
       className="h-12 border-b relative select-none"
       style={{
-        borderColor: 'var(--studio-border)',
-        backgroundColor: 'var(--studio-bg-deep)',
+        borderColor: "var(--studio-border)",
+        backgroundColor: "var(--studio-bg-deep)",
       }}
     >
-      <div className="absolute left-0 top-0 bottom-0 w-48 flex items-center gap-1 px-3 border-r z-10"
-        style={{ borderColor: 'var(--studio-border)', backgroundColor: 'var(--studio-bg-medium)' }}
+      <div
+        className="absolute left-0 top-0 bottom-0 w-48 flex items-center gap-1 px-3 border-r z-10"
+        style={{
+          borderColor: "var(--studio-border)",
+          backgroundColor: "var(--studio-bg-medium)",
+        }}
       >
-        <Music2 className="w-4 h-4" style={{ color: 'var(--studio-accent)' }} />
-        <span className="text-xs font-medium" style={{ color: 'var(--studio-text)' }}>
+        <Music2 className="w-4 h-4" style={{ color: "var(--studio-accent)" }} />
+        <span
+          className="text-xs font-medium"
+          style={{ color: "var(--studio-text)" }}
+        >
           Lyrics
         </span>
         <div className="ml-auto flex items-center gap-0.5">
@@ -175,7 +193,7 @@ export function GlobalLyricsTrack({ duration, zoom, onTimeChange, onOpenFullscre
         ref={trackRef}
         className="absolute left-48 right-0 top-0 bottom-0 overflow-hidden cursor-pointer"
         onClick={handleTrackClick}
-        style={{ backgroundColor: 'var(--studio-bg-deep)' }}
+        style={{ backgroundColor: "var(--studio-bg-deep)" }}
       >
         {lyrics.map((lyric) => {
           const left = timeToPosition(lyric.startTime);
@@ -191,16 +209,16 @@ export function GlobalLyricsTrack({ duration, zoom, onTimeChange, onOpenFullscre
               style={{
                 left: `${left}%`,
                 width: `${Math.max(width, 2)}%`,
-                minWidth: '60px',
+                minWidth: "60px",
                 backgroundColor: isCurrent
-                  ? 'var(--studio-accent)'
+                  ? "var(--studio-accent)"
                   : isSelected
-                  ? 'rgba(251, 191, 36, 0.3)'
-                  : 'var(--studio-surface)',
+                    ? "rgba(251, 191, 36, 0.3)"
+                    : "var(--studio-surface)",
                 border: isSelected
-                  ? '2px solid var(--studio-accent)'
-                  : '1px solid var(--studio-border)',
-                color: isCurrent ? '#000' : 'var(--studio-text)',
+                  ? "2px solid var(--studio-accent)"
+                  : "1px solid var(--studio-border)",
+                color: isCurrent ? "#000" : "var(--studio-text)",
               }}
               onClick={(e) => {
                 e.stopPropagation();
@@ -216,10 +234,10 @@ export function GlobalLyricsTrack({ duration, zoom, onTimeChange, onOpenFullscre
                   onChange={(e) => setEditText(e.target.value)}
                   onBlur={handleEditSubmit}
                   onKeyDown={(e) => {
-                    if (e.key === 'Enter') handleEditSubmit();
-                    if (e.key === 'Escape') {
+                    if (e.key === "Enter") handleEditSubmit();
+                    if (e.key === "Escape") {
                       setEditingId(null);
-                      setEditText('');
+                      setEditText("");
                     }
                   }}
                   className="h-6 text-xs px-1"
@@ -227,7 +245,7 @@ export function GlobalLyricsTrack({ duration, zoom, onTimeChange, onOpenFullscre
                 />
               ) : (
                 <span className="text-xs truncate flex-1">
-                  {lyric.text || lyric.words.map((w) => w.text).join(' ')}
+                  {lyric.text || lyric.words.map((w) => w.text).join(" ")}
                 </span>
               )}
               {isSelected && !editingId && (

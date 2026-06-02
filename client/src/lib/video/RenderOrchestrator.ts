@@ -1,4 +1,4 @@
-import { logger } from '../logger';
+import { logger } from "../logger";
 import type {
   VideoProject,
   LayerConfig,
@@ -11,23 +11,43 @@ import type {
   ImageConfig,
   ShapeConfig,
   ParticleConfig,
-} from '../../../../shared/video/VideoRendererEngine';
-import { DEFAULT_TRANSFORM, interpolateValue, interpolateColor, EASING_FUNCTIONS } from '../../../../shared/video/VideoRendererEngine';
-import { Scene, Layer, getEasingFunction, type EasingName } from './SceneGraph';
-import { AudioAnalyzer, generateMockAudioData, type AudioAnalysisData } from './AudioAnalyzer';
-import { TextAnimator, type TextStyle, type AnimationConfig as TextAnimationConfig } from './TextAnimator';
-import { LyricEngine } from './LyricEngine';
-import { SpectrumVisualizer } from './visualizers/SpectrumVisualizer';
-import { WaveformVisualizer } from './visualizers/WaveformVisualizer';
-import { CircularVisualizer } from './visualizers/CircularVisualizer';
-import { ParticleVisualizer } from './visualizers/ParticleVisualizer';
-import type { AudioReactiveBinding } from './TemplateCompiler';
+} from "../../../../shared/video/VideoRendererEngine";
+import {
+  DEFAULT_TRANSFORM,
+  interpolateValue,
+  interpolateColor,
+  EASING_FUNCTIONS,
+} from "../../../../shared/video/VideoRendererEngine";
+import { Scene, Layer, getEasingFunction, type EasingName } from "./SceneGraph";
+import {
+  AudioAnalyzer,
+  generateMockAudioData,
+  type AudioAnalysisData,
+} from "./AudioAnalyzer";
+import {
+  TextAnimator,
+  type TextStyle,
+  type AnimationConfig as TextAnimationConfig,
+} from "./TextAnimator";
+import { LyricEngine } from "./LyricEngine";
+import { SpectrumVisualizer } from "./visualizers/SpectrumVisualizer";
+import { WaveformVisualizer } from "./visualizers/WaveformVisualizer";
+import { CircularVisualizer } from "./visualizers/CircularVisualizer";
+import { ParticleVisualizer } from "./visualizers/ParticleVisualizer";
+import type { AudioReactiveBinding } from "./TemplateCompiler";
 import {
   getBrowserCapabilities,
   type BrowserCapabilities,
-} from './BrowserCapabilities';
+} from "./BrowserCapabilities";
 
-export type OrchestratorState = 'idle' | 'loading' | 'ready' | 'playing' | 'paused' | 'exporting' | 'error';
+export type OrchestratorState =
+  | "idle"
+  | "loading"
+  | "ready"
+  | "playing"
+  | "paused"
+  | "exporting"
+  | "error";
 
 export interface OrchestratorEvents {
   onStateChange?: (state: OrchestratorState) => void;
@@ -50,8 +70,12 @@ export interface OrchestratorOptions {
 }
 
 interface VisualizerInstance {
-  type: 'spectrum' | 'waveform' | 'circular' | 'particle';
-  instance: SpectrumVisualizer | WaveformVisualizer | CircularVisualizer | ParticleVisualizer;
+  type: "spectrum" | "waveform" | "circular" | "particle";
+  instance:
+    | SpectrumVisualizer
+    | WaveformVisualizer
+    | CircularVisualizer
+    | ParticleVisualizer;
   layerId: string;
 }
 
@@ -61,36 +85,36 @@ interface ImageCache {
 }
 
 export class RenderOrchestrator {
-  private state: OrchestratorState = 'idle';
+  private state: OrchestratorState = "idle";
   private project: VideoProject | null = null;
   private scene: Scene | null = null;
-  
+
   private canvas: HTMLCanvasElement | OffscreenCanvas;
   private ctx: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D;
   private width: number;
   private height: number;
   private fps: number;
-  
+
   private audioAnalyzer: AudioAnalyzer | null = null;
   private audioElement: HTMLAudioElement | null = null;
   private enableAudioAnalysis: boolean;
   private mockAudio: boolean;
-  
+
   private textAnimator: TextAnimator | null = null;
   private lyricEngine: LyricEngine | null = null;
   private visualizers: Map<string, VisualizerInstance> = new Map();
   private imageCache: Map<string, ImageCache> = new Map();
-  
+
   private currentTime: number = 0;
   private duration: number = 0;
   private isPlaying: boolean = false;
   private animationFrameId: number | null = null;
   private lastFrameTime: number = 0;
-  
+
   private audioReactiveBindings: AudioReactiveBinding[] = [];
   private events: OrchestratorEvents;
   private capabilities: BrowserCapabilities | null = null;
-  
+
   private exportMode: boolean = false;
   private exportFrameCallback: ((time: number) => void) | null = null;
 
@@ -103,62 +127,68 @@ export class RenderOrchestrator {
     this.audioElement = options.audioElement ?? null;
     this.events = options.events ?? {};
 
-    if (options.useOffscreen && typeof OffscreenCanvas !== 'undefined') {
+    if (options.useOffscreen && typeof OffscreenCanvas !== "undefined") {
       this.canvas = new OffscreenCanvas(this.width, this.height);
     } else {
-      this.canvas = document.createElement('canvas');
+      this.canvas = document.createElement("canvas");
       this.canvas.width = this.width;
       this.canvas.height = this.height;
     }
 
-    const ctx = this.canvas.getContext('2d', { alpha: true });
+    const ctx = this.canvas.getContext("2d", { alpha: true });
     if (!ctx) {
-      throw new Error('Failed to create 2D rendering context');
+      throw new Error("Failed to create 2D rendering context");
     }
     this.ctx = ctx;
 
     this.textAnimator = new TextAnimator(
       this.ctx as CanvasRenderingContext2D,
       this.width,
-      this.height
+      this.height,
     );
   }
 
   async initialize(): Promise<void> {
     this.capabilities = await getBrowserCapabilities();
-    
+
     if (this.enableAudioAnalysis) {
       this.audioAnalyzer = new AudioAnalyzer();
       await this.audioAnalyzer.initialize();
-      
+
       if (this.audioElement) {
         this.audioAnalyzer.connectAudioElement(this.audioElement);
       }
     }
   }
 
-  async loadProject(project: VideoProject, audioReactiveBindings: AudioReactiveBinding[] = []): Promise<void> {
-    this.setState('loading');
-    
+  async loadProject(
+    project: VideoProject,
+    audioReactiveBindings: AudioReactiveBinding[] = [],
+  ): Promise<void> {
+    this.setState("loading");
+
     try {
       this.project = project;
       this.audioReactiveBindings = audioReactiveBindings;
-      
+
       if (project.width !== this.width || project.height !== this.height) {
         this.resize(project.width, project.height);
       }
-      
+
       this.fps = project.fps;
       this.duration = project.duration;
       this.currentTime = 0;
 
-      this.scene = new Scene({
-        width: project.width,
-        height: project.height,
-        fps: project.fps,
-        duration: project.duration,
-        backgroundColor: project.backgroundColor,
-      }, project.id);
+      this.scene = new Scene(
+        {
+          width: project.width,
+          height: project.height,
+          fps: project.fps,
+          duration: project.duration,
+          backgroundColor: project.backgroundColor,
+        },
+        project.id,
+      );
 
       for (const layerConfig of project.layers) {
         const layer = new Layer(layerConfig);
@@ -172,7 +202,7 @@ export class RenderOrchestrator {
             keyframe.property,
             keyframe.time,
             keyframe.value as number | string | number[],
-            keyframe.easing as EasingName
+            keyframe.easing as EasingName,
           );
         }
       }
@@ -183,10 +213,10 @@ export class RenderOrchestrator {
         await this.loadAudio(project.audioUrl);
       }
 
-      this.setState('ready');
+      this.setState("ready");
       this.events.onLoadComplete?.();
     } catch (error) {
-      this.setState('error');
+      this.setState("error");
       this.events.onError?.(error as Error);
       throw error;
     }
@@ -199,9 +229,9 @@ export class RenderOrchestrator {
     const loadPromises: Promise<void>[] = [];
 
     for (const layer of layers) {
-      if (layer.type === 'visualizer') {
+      if (layer.type === "visualizer") {
         this.createVisualizer(layer);
-      } else if (layer.type === 'image') {
+      } else if (layer.type === "image") {
         const imageConfig = layer.config as ImageConfig;
         if (imageConfig.src) {
           loadPromises.push(this.loadImage(layer.id, imageConfig.src));
@@ -214,13 +244,13 @@ export class RenderOrchestrator {
 
   private createVisualizer(layer: LayerConfig): void {
     const config = layer.config as VisualizerConfig;
-    let instance: VisualizerInstance['instance'];
-    let type: VisualizerInstance['type'];
+    let instance: VisualizerInstance["instance"];
+    let type: VisualizerInstance["type"];
 
     switch (config.type) {
-      case 'spectrum':
-      case 'bars':
-        type = 'spectrum';
+      case "spectrum":
+      case "bars":
+        type = "spectrum";
         instance = new SpectrumVisualizer({
           barCount: config.barCount ?? 64,
           barWidth: config.barWidth ?? 8,
@@ -235,9 +265,9 @@ export class RenderOrchestrator {
         });
         break;
 
-      case 'waveform':
-      case 'oscilloscope':
-        type = 'waveform';
+      case "waveform":
+      case "oscilloscope":
+        type = "waveform";
         instance = new WaveformVisualizer({
           sampleCount: 256,
           color: config.color,
@@ -248,8 +278,8 @@ export class RenderOrchestrator {
         });
         break;
 
-      case 'circular':
-        type = 'circular';
+      case "circular":
+        type = "circular";
         instance = new CircularVisualizer({
           barCount: config.barCount ?? 64,
           innerRadius: config.radius ?? 100,
@@ -261,8 +291,8 @@ export class RenderOrchestrator {
         });
         break;
 
-      case 'particles':
-        type = 'particle';
+      case "particles":
+        type = "particle";
         instance = new ParticleVisualizer({
           maxParticles: 500,
           color: config.color,
@@ -281,40 +311,40 @@ export class RenderOrchestrator {
   private async loadImage(layerId: string, src: string): Promise<void> {
     return new Promise((resolve, reject) => {
       const img = new Image();
-      img.crossOrigin = 'anonymous';
-      
+      img.crossOrigin = "anonymous";
+
       img.onload = () => {
         this.imageCache.set(layerId, { image: img, loaded: true });
         resolve();
       };
-      
+
       img.onerror = () => {
         this.imageCache.set(layerId, { image: img, loaded: false });
         resolve();
       };
-      
+
       img.src = src;
     });
   }
 
   private async loadAudio(url: string): Promise<void> {
     if (!this.audioAnalyzer) return;
-    
+
     try {
       await this.audioAnalyzer.loadAudio(url);
     } catch (error) {
-      logger.warn('Failed to load audio for analysis:', error);
+      logger.warn("Failed to load audio for analysis:", error);
     }
   }
 
   play(): void {
-    if (this.state !== 'ready' && this.state !== 'paused') return;
-    
+    if (this.state !== "ready" && this.state !== "paused") return;
+
     this.isPlaying = true;
-    this.setState('playing');
+    this.setState("playing");
     this.lastFrameTime = performance.now();
     this.startRenderLoop();
-    
+
     if (this.audioElement) {
       this.audioElement.currentTime = this.currentTime;
       this.audioElement.play();
@@ -322,12 +352,12 @@ export class RenderOrchestrator {
   }
 
   pause(): void {
-    if (this.state !== 'playing') return;
-    
+    if (this.state !== "playing") return;
+
     this.isPlaying = false;
-    this.setState('paused');
+    this.setState("paused");
     this.stopRenderLoop();
-    
+
     if (this.audioElement) {
       this.audioElement.pause();
     }
@@ -340,17 +370,17 @@ export class RenderOrchestrator {
 
   seek(time: number): void {
     this.currentTime = Math.max(0, Math.min(time, this.duration));
-    
+
     if (this.scene) {
       this.scene.setTime(this.currentTime);
     }
-    
+
     if (this.audioElement) {
       this.audioElement.currentTime = this.currentTime;
     }
-    
+
     this.events.onTimeUpdate?.(this.currentTime);
-    
+
     if (!this.isPlaying) {
       this.renderFrame(this.currentTime);
     }
@@ -358,32 +388,32 @@ export class RenderOrchestrator {
 
   private startRenderLoop(): void {
     const frameInterval = 1000 / this.fps;
-    
+
     const loop = () => {
       if (!this.isPlaying) return;
-      
+
       const now = performance.now();
       const elapsed = now - this.lastFrameTime;
-      
+
       if (elapsed >= frameInterval) {
         this.currentTime += elapsed / 1000;
-        
+
         if (this.currentTime >= this.duration) {
           this.currentTime = 0;
           if (this.audioElement) {
             this.audioElement.currentTime = 0;
           }
         }
-        
+
         this.renderFrame(this.currentTime);
         this.lastFrameTime = now - (elapsed % frameInterval);
-        
+
         this.events.onTimeUpdate?.(this.currentTime);
       }
-      
+
       this.animationFrameId = requestAnimationFrame(loop);
     };
-    
+
     this.animationFrameId = requestAnimationFrame(loop);
   }
 
@@ -407,7 +437,8 @@ export class RenderOrchestrator {
 
     const audioData = this.getAudioData(time);
 
-    const activeLayers = this.scene.getActiveLayersAtTime(time)
+    const activeLayers = this.scene
+      .getActiveLayersAtTime(time)
       .sort((a, b) => a.zIndex - b.zIndex);
 
     for (const layer of activeLayers) {
@@ -429,13 +460,19 @@ export class RenderOrchestrator {
       return generateMockAudioData(time, 120);
     }
     if (!this.audioAnalyzer) {
-      console.warn('[RenderOrchestrator] No audio analyzer attached — falling back to synthetic audio data. Pass an audioElement or set mockAudio:true to suppress this warning.');
+      console.warn(
+        "[RenderOrchestrator] No audio analyzer attached — falling back to synthetic audio data. Pass an audioElement or set mockAudio:true to suppress this warning.",
+      );
       return generateMockAudioData(time, 120);
     }
     return this.audioAnalyzer.getAnalysisData();
   }
 
-  private renderLayer(layer: Layer, time: number, audioData: AudioAnalysisData): void {
+  private renderLayer(
+    layer: Layer,
+    time: number,
+    audioData: AudioAnalysisData,
+  ): void {
     const config = layer.toLayerConfig();
     const transform = layer.state.transform;
     const opacity = layer.state.opacity;
@@ -444,27 +481,27 @@ export class RenderOrchestrator {
 
     this.ctx.save();
     this.ctx.globalAlpha = opacity;
-    
+
     this.applyTransform(transform);
     this.applyAudioReactivity(layer.id, audioData);
 
     switch (config.type) {
-      case 'background':
+      case "background":
         this.renderBackground(config.config as BackgroundConfig);
         break;
-      case 'text':
+      case "text":
         this.renderText(config, time);
         break;
-      case 'image':
+      case "image":
         this.renderImage(config);
         break;
-      case 'shape':
+      case "shape":
         this.renderShape(config.config as ShapeConfig, transform);
         break;
-      case 'visualizer':
+      case "visualizer":
         this.renderVisualizer(layer.id, audioData, time);
         break;
-      case 'particle':
+      case "particle":
         this.renderParticles(config.config as ParticleConfig, time, audioData);
         break;
     }
@@ -475,43 +512,48 @@ export class RenderOrchestrator {
   private applyTransform(transform: TransformConfig): void {
     const anchorX = this.width * transform.anchorX;
     const anchorY = this.height * transform.anchorY;
-    
+
     this.ctx.translate(transform.x + anchorX, transform.y + anchorY);
     this.ctx.rotate(transform.rotation);
     this.ctx.scale(transform.scaleX, transform.scaleY);
     this.ctx.translate(-anchorX, -anchorY);
   }
 
-  private applyAudioReactivity(layerId: string, audioData: AudioAnalysisData): void {
-    const bindings = this.audioReactiveBindings.filter(b => b.layerId === layerId);
-    
+  private applyAudioReactivity(
+    layerId: string,
+    audioData: AudioAnalysisData,
+  ): void {
+    const bindings = this.audioReactiveBindings.filter(
+      (b) => b.layerId === layerId,
+    );
+
     for (const binding of bindings) {
       let value = 0;
       switch (binding.frequencyRange) {
-        case 'bass':
+        case "bass":
           value = audioData.bass;
           break;
-        case 'mid':
+        case "mid":
           value = audioData.mid;
           break;
-        case 'high':
+        case "high":
           value = audioData.treble;
           break;
-        case 'full':
+        case "full":
           value = audioData.average;
           break;
       }
-      
+
       const effect = value * binding.intensity;
-      
+
       switch (binding.property) {
-        case 'scale':
+        case "scale":
           this.ctx.scale(1 + effect * 0.1, 1 + effect * 0.1);
           break;
-        case 'opacity':
-          this.ctx.globalAlpha *= (1 - effect * 0.3);
+        case "opacity":
+          this.ctx.globalAlpha *= 1 - effect * 0.3;
           break;
-        case 'rotation':
+        case "rotation":
           this.ctx.rotate(effect * 0.1);
           break;
       }
@@ -520,24 +562,27 @@ export class RenderOrchestrator {
 
   private renderBackground(config: BackgroundConfig): void {
     switch (config.type) {
-      case 'solid':
-        this.ctx.fillStyle = config.color || '#000000';
+      case "solid":
+        this.ctx.fillStyle = config.color || "#000000";
         this.ctx.fillRect(0, 0, this.width, this.height);
         break;
-        
-      case 'gradient':
-        const gradient = this.createLinearGradient(config.colors || [], config.angle || 0);
+
+      case "gradient":
+        const gradient = this.createLinearGradient(
+          config.colors || [],
+          config.angle || 0,
+        );
         this.ctx.fillStyle = gradient;
         this.ctx.fillRect(0, 0, this.width, this.height);
         break;
-        
-      case 'radialGradient':
+
+      case "radialGradient":
         const radialGradient = this.createRadialGradient(config.colors || []);
         this.ctx.fillStyle = radialGradient;
         this.ctx.fillRect(0, 0, this.width, this.height);
         break;
-        
-      case 'image':
+
+      case "image":
         if (config.imageUrl) {
           const cached = this.imageCache.get(config.imageUrl);
           if (cached?.loaded) {
@@ -548,13 +593,16 @@ export class RenderOrchestrator {
     }
   }
 
-  private createLinearGradient(colors: string[], angle: number): CanvasGradient {
+  private createLinearGradient(
+    colors: string[],
+    angle: number,
+  ): CanvasGradient {
     const angleRad = (angle * Math.PI) / 180;
-    const x1 = this.width / 2 - Math.cos(angleRad) * this.width / 2;
-    const y1 = this.height / 2 - Math.sin(angleRad) * this.height / 2;
-    const x2 = this.width / 2 + Math.cos(angleRad) * this.width / 2;
-    const y2 = this.height / 2 + Math.sin(angleRad) * this.height / 2;
-    
+    const x1 = this.width / 2 - (Math.cos(angleRad) * this.width) / 2;
+    const y1 = this.height / 2 - (Math.sin(angleRad) * this.height) / 2;
+    const x2 = this.width / 2 + (Math.cos(angleRad) * this.width) / 2;
+    const y2 = this.height / 2 + (Math.sin(angleRad) * this.height) / 2;
+
     const gradient = this.ctx.createLinearGradient(x1, y1, x2, y2);
     colors.forEach((color, i) => {
       gradient.addColorStop(i / Math.max(1, colors.length - 1), color);
@@ -566,7 +614,7 @@ export class RenderOrchestrator {
     const cx = this.width / 2;
     const cy = this.height / 2;
     const radius = Math.max(this.width, this.height) / 2;
-    
+
     const gradient = this.ctx.createRadialGradient(cx, cy, 0, cx, cy, radius);
     colors.forEach((color, i) => {
       gradient.addColorStop(i / Math.max(1, colors.length - 1), color);
@@ -577,11 +625,11 @@ export class RenderOrchestrator {
   private renderText(config: LayerConfig, time: number): void {
     const textConfig = config.config as TextConfig;
     const transform = config.transform || DEFAULT_TRANSFORM;
-    
+
     const style: TextStyle = {
       font: textConfig.font,
       fontSize: textConfig.fontSize,
-      fontWeight: '600',
+      fontWeight: "600",
       color: textConfig.color,
       strokeColor: textConfig.strokeColor,
       strokeWidth: textConfig.strokeWidth,
@@ -599,7 +647,7 @@ export class RenderOrchestrator {
         textConfig.text,
         transform.x,
         transform.y,
-        style
+        style,
       );
     }
   }
@@ -607,47 +655,47 @@ export class RenderOrchestrator {
   private renderImage(config: LayerConfig): void {
     const imageConfig = config.config as ImageConfig;
     const transform = config.transform || DEFAULT_TRANSFORM;
-    
+
     const cached = this.imageCache.get(config.id);
     if (!cached?.loaded) return;
-    
+
     const img = cached.image;
     let drawWidth = imageConfig.width || img.width;
     let drawHeight = imageConfig.height || img.height;
-    
-    if (imageConfig.fit === 'contain') {
-      const scale = Math.min(
-        drawWidth / img.width,
-        drawHeight / img.height
-      );
+
+    if (imageConfig.fit === "contain") {
+      const scale = Math.min(drawWidth / img.width, drawHeight / img.height);
       drawWidth = img.width * scale;
       drawHeight = img.height * scale;
-    } else if (imageConfig.fit === 'cover') {
-      const scale = Math.max(
-        drawWidth / img.width,
-        drawHeight / img.height
-      );
+    } else if (imageConfig.fit === "cover") {
+      const scale = Math.max(drawWidth / img.width, drawHeight / img.height);
       drawWidth = img.width * scale;
       drawHeight = img.height * scale;
     }
-    
+
     const x = transform.x - drawWidth / 2;
     const y = transform.y - drawHeight / 2;
-    
+
     if (imageConfig.borderRadius) {
       this.ctx.save();
       this.roundRect(x, y, drawWidth, drawHeight, imageConfig.borderRadius);
       this.ctx.clip();
     }
-    
+
     this.ctx.drawImage(img, x, y, drawWidth, drawHeight);
-    
+
     if (imageConfig.borderRadius) {
       this.ctx.restore();
     }
   }
 
-  private roundRect(x: number, y: number, w: number, h: number, r: number): void {
+  private roundRect(
+    x: number,
+    y: number,
+    w: number,
+    h: number,
+    r: number,
+  ): void {
     this.ctx.beginPath();
     this.ctx.moveTo(x + r, y);
     this.ctx.lineTo(x + w - r, y);
@@ -664,11 +712,11 @@ export class RenderOrchestrator {
   private renderShape(config: ShapeConfig, transform: TransformConfig): void {
     const x = transform.x;
     const y = transform.y;
-    
+
     this.ctx.beginPath();
-    
+
     switch (config.type) {
-      case 'rectangle':
+      case "rectangle":
         const w = config.width || 100;
         const h = config.height || 100;
         if (config.cornerRadius) {
@@ -677,20 +725,20 @@ export class RenderOrchestrator {
           this.ctx.rect(x - w / 2, y - h / 2, w, h);
         }
         break;
-        
-      case 'circle':
+
+      case "circle":
         this.ctx.arc(x, y, config.radius || 50, 0, Math.PI * 2);
         break;
-        
-      case 'triangle':
+
+      case "triangle":
         const size = config.radius || 50;
         this.ctx.moveTo(x, y - size);
         this.ctx.lineTo(x + size * 0.866, y + size * 0.5);
         this.ctx.lineTo(x - size * 0.866, y + size * 0.5);
         this.ctx.closePath();
         break;
-        
-      case 'polygon':
+
+      case "polygon":
         const points = config.points || 6;
         const radius = config.radius || 50;
         for (let i = 0; i < points; i++) {
@@ -705,19 +753,19 @@ export class RenderOrchestrator {
         }
         this.ctx.closePath();
         break;
-        
-      case 'line':
+
+      case "line":
         const lineWidth = config.width || 100;
         this.ctx.moveTo(x - lineWidth / 2, y);
         this.ctx.lineTo(x + lineWidth / 2, y);
         break;
     }
-    
+
     if (config.fill) {
       this.ctx.fillStyle = config.fill;
       this.ctx.fill();
     }
-    
+
     if (config.stroke) {
       this.ctx.strokeStyle = config.stroke;
       this.ctx.lineWidth = config.strokeWidth || 1;
@@ -725,23 +773,31 @@ export class RenderOrchestrator {
     }
   }
 
-  private renderVisualizer(layerId: string, audioData: AudioAnalysisData, time: number): void {
+  private renderVisualizer(
+    layerId: string,
+    audioData: AudioAnalysisData,
+    time: number,
+  ): void {
     const visualizer = this.visualizers.get(layerId);
     if (!visualizer) return;
-    
+
     visualizer.instance.render(
       this.ctx as CanvasRenderingContext2D,
       audioData,
       this.width,
       this.height,
-      time
+      time,
     );
   }
 
-  private renderParticles(config: ParticleConfig, time: number, audioData: AudioAnalysisData): void {
+  private renderParticles(
+    config: ParticleConfig,
+    time: number,
+    audioData: AudioAnalysisData,
+  ): void {
     const particleVisualizer = new ParticleVisualizer({
       maxParticles: config.count,
-      color: typeof config.color === 'string' ? config.color : config.color[0],
+      color: typeof config.color === "string" ? config.color : config.color[0],
       size: config.size,
       speed: config.speed,
       shape: config.shape,
@@ -749,13 +805,13 @@ export class RenderOrchestrator {
       audioReactive: config.reactToAudio,
       audioSensitivity: config.audioSensitivity,
     });
-    
+
     particleVisualizer.render(
       this.ctx as CanvasRenderingContext2D,
       audioData,
       this.width,
       this.height,
-      time
+      time,
     );
   }
 
@@ -790,7 +846,7 @@ export class RenderOrchestrator {
   resize(width: number, height: number): void {
     this.width = width;
     this.height = height;
-    
+
     if (this.canvas instanceof HTMLCanvasElement) {
       this.canvas.width = width;
       this.canvas.height = height;
@@ -798,11 +854,11 @@ export class RenderOrchestrator {
       (this.canvas as OffscreenCanvas).width = width;
       (this.canvas as OffscreenCanvas).height = height;
     }
-    
+
     if (this.textAnimator) {
       this.textAnimator.updateDimensions(width, height);
     }
-    
+
     if (this.lyricEngine) {
       this.lyricEngine.updateDimensions(width, height);
     }
@@ -810,20 +866,23 @@ export class RenderOrchestrator {
 
   setAudioElement(audioElement: HTMLAudioElement): void {
     this.audioElement = audioElement;
-    
+
     if (this.audioAnalyzer && this.enableAudioAnalysis) {
       this.audioAnalyzer.connectAudioElement(audioElement);
     }
   }
 
-  setExportMode(enabled: boolean, frameCallback?: (time: number) => void): void {
+  setExportMode(
+    enabled: boolean,
+    frameCallback?: (time: number) => void,
+  ): void {
     this.exportMode = enabled;
     this.exportFrameCallback = frameCallback || null;
-    
+
     if (enabled) {
-      this.setState('exporting');
-    } else if (this.state === 'exporting') {
-      this.setState('ready');
+      this.setState("exporting");
+    } else if (this.state === "exporting") {
+      this.setState("ready");
     }
   }
 
@@ -835,12 +894,12 @@ export class RenderOrchestrator {
   getFrameRenderer(): (
     canvas: HTMLCanvasElement | OffscreenCanvas,
     frameNumber: number,
-    timestamp: number
+    timestamp: number,
   ) => void {
     return (canvas, frameNumber, timestamp) => {
       this.renderFrame(timestamp);
-      
-      const targetCtx = canvas.getContext('2d');
+
+      const targetCtx = canvas.getContext("2d");
       if (targetCtx) {
         targetCtx.drawImage(this.canvas as CanvasImageSource, 0, 0);
       }
@@ -854,27 +913,29 @@ export class RenderOrchestrator {
 
   dispose(): void {
     this.stopRenderLoop();
-    
+
     if (this.audioAnalyzer) {
       this.audioAnalyzer.dispose();
       this.audioAnalyzer = null;
     }
-    
+
     for (const visualizer of this.visualizers.values()) {
       visualizer.instance.dispose();
     }
     this.visualizers.clear();
-    
+
     this.imageCache.clear();
     this.scene = null;
     this.project = null;
     this.textAnimator = null;
     this.lyricEngine = null;
-    
-    this.setState('idle');
+
+    this.setState("idle");
   }
 }
 
-export function createOrchestrator(options: OrchestratorOptions = {}): RenderOrchestrator {
+export function createOrchestrator(
+  options: OrchestratorOptions = {},
+): RenderOrchestrator {
   return new RenderOrchestrator(options);
 }

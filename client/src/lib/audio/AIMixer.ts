@@ -1,8 +1,8 @@
-import { AIAnalyzer } from './AIAnalyzer';
-import { EQPlugin } from './plugins/EQPlugin';
-import { CompressorPlugin } from './plugins/CompressorPlugin';
-import { ReverbPlugin } from './plugins/ReverbPlugin';
-import { logger } from '@/lib/logger';
+import { AIAnalyzer } from "./AIAnalyzer";
+import { EQPlugin } from "./plugins/EQPlugin";
+import { CompressorPlugin } from "./plugins/CompressorPlugin";
+import { ReverbPlugin } from "./plugins/ReverbPlugin";
+import { logger } from "@/lib/logger";
 
 /**
  * AI Mixer - Intelligent automatic mixing
@@ -26,7 +26,7 @@ export class AIMixer {
    */
   addTrack(
     trackId: string,
-    source: AudioBufferSourceNode | MediaElementAudioSourceNode
+    source: AudioBufferSourceNode | MediaElementAudioSourceNode,
   ): TrackChannel {
     const channel = new TrackChannel(this.context, trackId);
     channel.connect(source, this.masterBus);
@@ -38,7 +38,7 @@ export class AIMixer {
    * Perform AI mixing on all tracks
    */
   async performAIMix(): Promise<MixResult> {
-    logger.info('[AI MIXER] Starting intelligent mix analysis...');
+    logger.info("[AI MIXER] Starting intelligent mix analysis...");
 
     const mixResult: MixResult = {
       success: true,
@@ -70,7 +70,7 @@ export class AIMixer {
     // Step 8: Final loudness optimization
     this.optimizeLoudness(mixResult);
 
-    logger.info('[AI MIXER] Mix complete!', mixResult);
+    logger.info("[AI MIXER] Mix complete!", mixResult);
     return mixResult;
   }
 
@@ -112,7 +112,9 @@ export class AIMixer {
   /**
    * Detect instrument types based on frequency content
    */
-  private detectInstruments(analysis: Map<string, TrackAnalysis>): Map<string, InstrumentType> {
+  private detectInstruments(
+    analysis: Map<string, TrackAnalysis>,
+  ): Map<string, InstrumentType> {
     const instruments = new Map<string, InstrumentType>();
 
     for (const [trackId, data] of analysis) {
@@ -120,21 +122,21 @@ export class AIMixer {
 
       // Simple frequency-based detection
       if (freq < 150) {
-        instruments.set(trackId, 'bass');
+        instruments.set(trackId, "bass");
       } else if (freq < 250) {
-        instruments.set(trackId, 'kick');
+        instruments.set(trackId, "kick");
       } else if (freq > 8000) {
-        instruments.set(trackId, 'hihat');
+        instruments.set(trackId, "hihat");
       } else if (freq > 2000 && freq < 8000) {
-        instruments.set(trackId, 'cymbal');
+        instruments.set(trackId, "cymbal");
       } else if (freq > 500 && freq < 2000) {
         if (data.dynamicRange > 15) {
-          instruments.set(trackId, 'vocal');
+          instruments.set(trackId, "vocal");
         } else {
-          instruments.set(trackId, 'synth');
+          instruments.set(trackId, "synth");
         }
       } else {
-        instruments.set(trackId, 'guitar');
+        instruments.set(trackId, "guitar");
       }
     }
 
@@ -144,7 +146,10 @@ export class AIMixer {
   /**
    * Apply gain staging to balance track levels
    */
-  private applyGainStaging(analysis: Map<string, TrackAnalysis>, result: MixResult): void {
+  private applyGainStaging(
+    analysis: Map<string, TrackAnalysis>,
+    result: MixResult,
+  ): void {
     // Target LUFS for different elements
     const targetLevels: Record<InstrumentType, number> = {
       kick: -12,
@@ -173,7 +178,7 @@ export class AIMixer {
 
       result.adjustments.push({
         trackId,
-        parameter: 'gain',
+        parameter: "gain",
         value: finalGain,
         reason: `Adjusted gain by ${finalGain.toFixed(1)}dB to reach target level`,
       });
@@ -186,7 +191,7 @@ export class AIMixer {
   private applyIntelligentEQ(
     analysis: Map<string, TrackAnalysis>,
     instruments: Map<string, InstrumentType>,
-    result: MixResult
+    result: MixResult,
   ): void {
     for (const [trackId, instrument] of instruments) {
       const channel = this.tracks.get(trackId);
@@ -195,52 +200,52 @@ export class AIMixer {
       const eq = channel.getEQ();
 
       switch (instrument) {
-        case 'kick':
+        case "kick":
           eq.setBand(1, 60, 4); // Boost low
           eq.setBand(3, 800, -3); // Cut mud
           eq.setBand(4, 3000, 2); // Add click
           result.adjustments.push({
             trackId,
-            parameter: 'eq',
-            value: 'kick-optimized',
-            reason: 'Applied kick drum EQ curve',
+            parameter: "eq",
+            value: "kick-optimized",
+            reason: "Applied kick drum EQ curve",
           });
           break;
 
-        case 'bass':
+        case "bass":
           eq.setBand(1, 80, 3); // Boost fundamental
           eq.setBand(2, 200, -2); // Remove boxiness
           eq.setBand(4, 2500, 2); // Add presence
           result.adjustments.push({
             trackId,
-            parameter: 'eq',
-            value: 'bass-optimized',
-            reason: 'Applied bass EQ curve',
+            parameter: "eq",
+            value: "bass-optimized",
+            reason: "Applied bass EQ curve",
           });
           break;
 
-        case 'vocal':
+        case "vocal":
           eq.setBand(0, 80); // High-pass at 80Hz
           eq.setBand(2, 250, -2); // Remove mud
           eq.setBand(4, 4000, 3); // Add presence
           eq.setBand(6, 12000, 2); // Add air
           result.adjustments.push({
             trackId,
-            parameter: 'eq',
-            value: 'vocal-optimized',
-            reason: 'Applied vocal EQ curve with presence boost',
+            parameter: "eq",
+            value: "vocal-optimized",
+            reason: "Applied vocal EQ curve with presence boost",
           });
           break;
 
-        case 'guitar':
+        case "guitar":
           eq.setBand(1, 100, -2); // Remove rumble
           eq.setBand(3, 800, 2); // Add body
           eq.setBand(5, 6000, 3); // Add bite
           result.adjustments.push({
             trackId,
-            parameter: 'eq',
-            value: 'guitar-optimized',
-            reason: 'Applied guitar EQ curve',
+            parameter: "eq",
+            value: "guitar-optimized",
+            reason: "Applied guitar EQ curve",
           });
           break;
 
@@ -259,7 +264,7 @@ export class AIMixer {
   private applyDynamicCompression(
     analysis: Map<string, TrackAnalysis>,
     instruments: Map<string, InstrumentType>,
-    result: MixResult
+    result: MixResult,
   ): void {
     for (const [trackId, data] of analysis) {
       const channel = this.tracks.get(trackId);
@@ -278,11 +283,11 @@ export class AIMixer {
 
         result.adjustments.push({
           trackId,
-          parameter: 'compression',
-          value: '4:1 @ -18dB',
-          reason: 'Applied compression to control dynamics',
+          parameter: "compression",
+          value: "4:1 @ -18dB",
+          reason: "Applied compression to control dynamics",
         });
-      } else if (instrument === 'vocal') {
+      } else if (instrument === "vocal") {
         // Vocal compression
         compressor.setThreshold(-12);
         compressor.setRatio(3);
@@ -292,11 +297,11 @@ export class AIMixer {
 
         result.adjustments.push({
           trackId,
-          parameter: 'compression',
-          value: '3:1 @ -12dB',
-          reason: 'Applied gentle vocal compression',
+          parameter: "compression",
+          value: "3:1 @ -12dB",
+          reason: "Applied gentle vocal compression",
         });
-      } else if (instrument === 'kick' || instrument === 'snare') {
+      } else if (instrument === "kick" || instrument === "snare") {
         // Drum compression
         compressor.setThreshold(-8);
         compressor.setRatio(6);
@@ -305,9 +310,9 @@ export class AIMixer {
 
         result.adjustments.push({
           trackId,
-          parameter: 'compression',
-          value: '6:1 @ -8dB',
-          reason: 'Applied punchy drum compression',
+          parameter: "compression",
+          value: "6:1 @ -8dB",
+          reason: "Applied punchy drum compression",
         });
       }
     }
@@ -316,9 +321,12 @@ export class AIMixer {
   /**
    * Apply stereo panning
    */
-  private applyStereoPanning(instruments: Map<string, InstrumentType>, result: MixResult): void {
+  private applyStereoPanning(
+    instruments: Map<string, InstrumentType>,
+    result: MixResult,
+  ): void {
     // Center important elements
-    const centerElements = ['kick', 'snare', 'bass', 'vocal'];
+    const centerElements = ["kick", "snare", "bass", "vocal"];
 
     let panPosition = -0.7; // Start from left
     const panIncrement = 1.4 / (instruments.size - centerElements.length);
@@ -331,7 +339,7 @@ export class AIMixer {
         channel.setPan(0);
         result.adjustments.push({
           trackId,
-          parameter: 'pan',
+          parameter: "pan",
           value: 0,
           reason: `Centered ${instrument} for focus`,
         });
@@ -339,7 +347,7 @@ export class AIMixer {
         channel.setPan(panPosition);
         result.adjustments.push({
           trackId,
-          parameter: 'pan',
+          parameter: "pan",
           value: panPosition,
           reason: `Panned ${instrument} for stereo width`,
         });
@@ -351,7 +359,10 @@ export class AIMixer {
   /**
    * Apply spatial effects (reverb)
    */
-  private applySpatialEffects(instruments: Map<string, InstrumentType>, result: MixResult): void {
+  private applySpatialEffects(
+    instruments: Map<string, InstrumentType>,
+    result: MixResult,
+  ): void {
     for (const [trackId, instrument] of instruments) {
       const channel = this.tracks.get(trackId);
       if (!channel) continue;
@@ -360,44 +371,44 @@ export class AIMixer {
 
       // Apply reverb based on instrument
       switch (instrument) {
-        case 'vocal':
-          reverb.setReverbType('plate');
+        case "vocal":
+          reverb.setReverbType("plate");
           reverb.setMix(0.15);
           reverb.setDecay(0.4);
           result.adjustments.push({
             trackId,
-            parameter: 'reverb',
-            value: 'plate-15%',
-            reason: 'Added subtle vocal reverb',
+            parameter: "reverb",
+            value: "plate-15%",
+            reason: "Added subtle vocal reverb",
           });
           break;
 
-        case 'snare':
-          reverb.setReverbType('room');
+        case "snare":
+          reverb.setReverbType("room");
           reverb.setMix(0.2);
           reverb.setDecay(0.3);
           result.adjustments.push({
             trackId,
-            parameter: 'reverb',
-            value: 'room-20%',
-            reason: 'Added snare room ambience',
+            parameter: "reverb",
+            value: "room-20%",
+            reason: "Added snare room ambience",
           });
           break;
 
-        case 'guitar':
-          reverb.setReverbType('hall');
+        case "guitar":
+          reverb.setReverbType("hall");
           reverb.setMix(0.1);
           reverb.setDecay(0.5);
           result.adjustments.push({
             trackId,
-            parameter: 'reverb',
-            value: 'hall-10%',
-            reason: 'Added guitar space',
+            parameter: "reverb",
+            value: "hall-10%",
+            reason: "Added guitar space",
           });
           break;
 
-        case 'kick':
-        case 'bass':
+        case "kick":
+        case "bass":
           // No reverb on low frequency elements
           reverb.setMix(0);
           break;
@@ -421,19 +432,22 @@ export class AIMixer {
     const currentLUFS = -18; // Placeholder
 
     const adjustment = targetLUFS - currentLUFS;
-    this.masterBus.gain.setValueAtTime(Math.pow(10, adjustment / 20), this.context.currentTime);
+    this.masterBus.gain.setValueAtTime(
+      Math.pow(10, adjustment / 20),
+      this.context.currentTime,
+    );
 
     result.adjustments.push({
-      trackId: 'master',
-      parameter: 'loudness',
+      trackId: "master",
+      parameter: "loudness",
       value: adjustment,
       reason: `Adjusted master gain by ${adjustment}dB to reach -14 LUFS`,
     });
 
     result.recommendations.push(
-      'Mix optimized for streaming platforms (-14 LUFS)',
-      'Consider using a limiter on master bus for extra loudness',
-      'Check mix translation on different speakers'
+      "Mix optimized for streaming platforms (-14 LUFS)",
+      "Consider using a limiter on master bus for extra loudness",
+      "Check mix translation on different speakers",
     );
   }
 
@@ -549,15 +563,15 @@ class TrackChannel {
 
 // Type definitions
 type InstrumentType =
-  | 'kick'
-  | 'snare'
-  | 'bass'
-  | 'hihat'
-  | 'vocal'
-  | 'guitar'
-  | 'synth'
-  | 'cymbal'
-  | 'other';
+  | "kick"
+  | "snare"
+  | "bass"
+  | "hihat"
+  | "vocal"
+  | "guitar"
+  | "synth"
+  | "cymbal"
+  | "other";
 
 interface TrackAnalysis {
   trackId: string;

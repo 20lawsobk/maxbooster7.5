@@ -1,15 +1,15 @@
-import { db } from '../db.js';
-import { 
-  recoupmentAccounts, 
+import { db } from "../db.js";
+import {
+  recoupmentAccounts,
   royaltyStatements,
   users,
   releases,
   type RecoupmentAccount,
   type InsertRecoupmentAccount,
-} from '@shared/schema';
-import { eq, and, desc, sql, isNull, or } from 'drizzle-orm';
-import { logger } from '../logger.js';
-import crypto from 'crypto';
+} from "@shared/schema";
+import { eq, and, desc, sql, isNull, or } from "drizzle-orm";
+import { logger } from "../logger.js";
+import crypto from "crypto";
 
 export interface AdvanceInput {
   userId: string;
@@ -33,7 +33,7 @@ export interface RecoupmentTransaction {
   id: string;
   date: string;
   amount: number;
-  type: 'advance' | 'recoupment' | 'adjustment';
+  type: "advance" | "recoupment" | "adjustment";
   statementId?: string;
   notes?: string;
 }
@@ -63,13 +63,19 @@ export interface CrossCollateralGroup {
   totalRecouped: number;
 }
 
-export type RecoupmentMode = 'waterfall' | 'pro_rata' | 'oldest_first';
-export type RecoupmentStatus = 'active' | 'recouped' | 'written_off' | 'paused';
+export type RecoupmentMode = "waterfall" | "pro_rata" | "oldest_first";
+export type RecoupmentStatus = "active" | "recouped" | "written_off" | "paused";
 
 export interface RecoupmentNotification {
   accountId: string;
   userId: string;
-  type: 'milestone_25' | 'milestone_50' | 'milestone_75' | 'milestone_90' | 'fully_recouped' | 'approaching_payoff';
+  type:
+    | "milestone_25"
+    | "milestone_50"
+    | "milestone_75"
+    | "milestone_90"
+    | "fully_recouped"
+    | "approaching_payoff";
   triggeredAt: Date;
   notificationSent: boolean;
   message: string;
@@ -78,7 +84,11 @@ export interface RecoupmentNotification {
 export interface PostRecoupmentSplitChange {
   accountId: string;
   originalSplits: { participantId: string; percentage: number; role: string }[];
-  postRecoupmentSplits: { participantId: string; percentage: number; role: string }[];
+  postRecoupmentSplits: {
+    participantId: string;
+    percentage: number;
+    role: string;
+  }[];
   effectiveDate: Date;
   reason: string;
 }
@@ -99,42 +109,46 @@ export interface RecoupmentMilestone {
 export class RecoupmentService {
   private milestoneThresholds = [25, 50, 75, 90, 100];
 
-  private checkMilestones(account: RecoupmentAccount): RecoupmentNotification[] {
+  private checkMilestones(
+    account: RecoupmentAccount,
+  ): RecoupmentNotification[] {
     const notifications: RecoupmentNotification[] = [];
     const advanceAmount = Number(account.advanceAmount);
     const recoupedAmount = Number(account.recoupedAmount);
     const percentageRecouped = (recoupedAmount / advanceAmount) * 100;
-    
+
     for (const threshold of this.milestoneThresholds) {
       if (percentageRecouped >= threshold) {
-        const type = threshold === 100 
-          ? 'fully_recouped' 
-          : `milestone_${threshold}` as RecoupmentNotification['type'];
-        
+        const type =
+          threshold === 100
+            ? "fully_recouped"
+            : (`milestone_${threshold}` as RecoupmentNotification["type"]);
+
         notifications.push({
           accountId: account.id,
           userId: account.userId,
           type,
           triggeredAt: new Date(),
           notificationSent: false,
-          message: threshold === 100 
-            ? `Congratulations! Your advance for "${account.accountName}" has been fully recouped.`
-            : `Your advance for "${account.accountName}" is ${threshold}% recouped.`,
+          message:
+            threshold === 100
+              ? `Congratulations! Your advance for "${account.accountName}" has been fully recouped.`
+              : `Your advance for "${account.accountName}" is ${threshold}% recouped.`,
         });
       }
     }
-    
+
     return notifications;
   }
   async createAdvance(input: AdvanceInput): Promise<RecoupmentAccount> {
     const transactionId = crypto.randomUUID();
-    
+
     const insertData: InsertRecoupmentAccount = {
       userId: input.userId,
       releaseId: input.releaseId,
       accountName: input.accountName,
       advanceAmount: String(input.advanceAmount),
-      recoupedAmount: '0',
+      recoupedAmount: "0",
       remainingBalance: String(input.advanceAmount),
       recoupmentRate: String(input.recoupmentRate || 100),
       priority: input.priority || 1,
@@ -142,15 +156,17 @@ export class RecoupmentService {
       crossCollateralized: input.crossCollateralized || false,
       crossCollateralGroupId: input.crossCollateralGroupId,
       effectiveDate: new Date(),
-      currency: input.currency || 'USD',
+      currency: input.currency || "USD",
       terms: input.terms,
-      transactions: [{
-        id: transactionId,
-        date: new Date().toISOString(),
-        amount: input.advanceAmount,
-        type: 'advance' as const,
-        notes: 'Initial advance disbursement',
-      }],
+      transactions: [
+        {
+          id: transactionId,
+          date: new Date().toISOString(),
+          amount: input.advanceAmount,
+          type: "advance" as const,
+          notes: "Initial advance disbursement",
+        },
+      ],
     };
 
     const [account] = await db
@@ -158,15 +174,23 @@ export class RecoupmentService {
       .values(insertData)
       .returning();
 
-    logger.info(`Created recoupment account ${account.id} for user ${input.userId} with advance of ${input.advanceAmount}`);
+    logger.info(
+      `Created recoupment account ${account.id} for user ${input.userId} with advance of ${input.advanceAmount}`,
+    );
 
     return account;
   }
 
-  async getAccountsByUser(userId: string, includeInactive = false): Promise<RecoupmentAccount[]> {
+  async getAccountsByUser(
+    userId: string,
+    includeInactive = false,
+  ): Promise<RecoupmentAccount[]> {
     const whereClause = includeInactive
       ? eq(recoupmentAccounts.userId, userId)
-      : and(eq(recoupmentAccounts.userId, userId), eq(recoupmentAccounts.isActive, true));
+      : and(
+          eq(recoupmentAccounts.userId, userId),
+          eq(recoupmentAccounts.isActive, true),
+        );
 
     return await db
       .select()
@@ -197,7 +221,7 @@ export class RecoupmentService {
   async processRecoupment(
     userId: string,
     grossAmount: number,
-    statementId?: string
+    statementId?: string,
   ): Promise<WaterfallResult> {
     const activeAccounts = await db
       .select()
@@ -205,8 +229,8 @@ export class RecoupmentService {
       .where(
         and(
           eq(recoupmentAccounts.userId, userId),
-          eq(recoupmentAccounts.isActive, true)
-        )
+          eq(recoupmentAccounts.isActive, true),
+        ),
       )
       .orderBy(recoupmentAccounts.priority);
 
@@ -217,9 +241,13 @@ export class RecoupmentService {
     for (const account of activeAccounts) {
       if (remainingAmount <= 0) break;
 
-      const result = await this.recoupFromAccount(account, remainingAmount, statementId);
+      const result = await this.recoupFromAccount(
+        account,
+        remainingAmount,
+        statementId,
+      );
       results.push(result);
-      
+
       totalRecouped += result.amountApplied;
       remainingAmount = result.remainingEarnings;
     }
@@ -232,7 +260,9 @@ export class RecoupmentService {
     };
   }
 
-  async processProRataRecoupment(input: ProRataRecoupmentInput): Promise<WaterfallResult & { notifications: RecoupmentNotification[] }> {
+  async processProRataRecoupment(
+    input: ProRataRecoupmentInput,
+  ): Promise<WaterfallResult & { notifications: RecoupmentNotification[] }> {
     const accounts: RecoupmentAccount[] = [];
     for (const accountInput of input.accounts) {
       const account = await this.getAccountById(accountInput.accountId);
@@ -255,41 +285,59 @@ export class RecoupmentService {
     const notifications: RecoupmentNotification[] = [];
     let totalRecouped = 0;
 
-    if (input.mode === 'pro_rata') {
-      const totalBalance = accounts.reduce((sum, acc) => sum + Number(acc.remainingBalance), 0);
-      
+    if (input.mode === "pro_rata") {
+      const totalBalance = accounts.reduce(
+        (sum, acc) => sum + Number(acc.remainingBalance),
+        0,
+      );
+
       for (const account of accounts) {
-        const weight = input.accounts.find(a => a.accountId === account.id)?.weight;
+        const weight = input.accounts.find(
+          (a) => a.accountId === account.id,
+        )?.weight;
         let shareRatio: number;
-        
+
         if (weight !== undefined) {
-          const totalWeight = input.accounts.reduce((sum, a) => sum + (a.weight || 1), 0);
+          const totalWeight = input.accounts.reduce(
+            (sum, a) => sum + (a.weight || 1),
+            0,
+          );
           shareRatio = weight / totalWeight;
         } else {
           shareRatio = Number(account.remainingBalance) / totalBalance;
         }
-        
+
         const allocatedAmount = input.totalAmount * shareRatio;
-        const result = await this.recoupFromAccount(account, allocatedAmount, input.statementId);
+        const result = await this.recoupFromAccount(
+          account,
+          allocatedAmount,
+          input.statementId,
+        );
         results.push(result);
         totalRecouped += result.amountApplied;
-        
+
         const milestoneNotifications = this.checkMilestones(account);
         notifications.push(...milestoneNotifications);
       }
-    } else if (input.mode === 'oldest_first') {
-      const sortedAccounts = accounts.sort((a, b) => 
-        new Date(a.effectiveDate).getTime() - new Date(b.effectiveDate).getTime()
+    } else if (input.mode === "oldest_first") {
+      const sortedAccounts = accounts.sort(
+        (a, b) =>
+          new Date(a.effectiveDate).getTime() -
+          new Date(b.effectiveDate).getTime(),
       );
-      
+
       let remainingAmount = input.totalAmount;
       for (const account of sortedAccounts) {
         if (remainingAmount <= 0) break;
-        const result = await this.recoupFromAccount(account, remainingAmount, input.statementId);
+        const result = await this.recoupFromAccount(
+          account,
+          remainingAmount,
+          input.statementId,
+        );
         results.push(result);
         totalRecouped += result.amountApplied;
         remainingAmount = result.remainingEarnings;
-        
+
         const milestoneNotifications = this.checkMilestones(account);
         notifications.push(...milestoneNotifications);
       }
@@ -297,11 +345,15 @@ export class RecoupmentService {
       let remainingAmount = input.totalAmount;
       for (const account of accounts) {
         if (remainingAmount <= 0) break;
-        const result = await this.recoupFromAccount(account, remainingAmount, input.statementId);
+        const result = await this.recoupFromAccount(
+          account,
+          remainingAmount,
+          input.statementId,
+        );
         results.push(result);
         totalRecouped += result.amountApplied;
         remainingAmount = result.remainingEarnings;
-        
+
         const milestoneNotifications = this.checkMilestones(account);
         notifications.push(...milestoneNotifications);
       }
@@ -327,9 +379,12 @@ export class RecoupmentService {
 
     const advanceAmount = Number(account.advanceAmount);
     const recoupedAmount = Number(account.recoupedAmount);
-    const percentageRecouped = advanceAmount > 0 ? (recoupedAmount / advanceAmount) * 100 : 0;
-    
-    const milestonesReached = this.milestoneThresholds.filter(threshold => percentageRecouped >= threshold);
+    const percentageRecouped =
+      advanceAmount > 0 ? (recoupedAmount / advanceAmount) * 100 : 0;
+
+    const milestonesReached = this.milestoneThresholds.filter(
+      (threshold) => percentageRecouped >= threshold,
+    );
 
     return {
       account,
@@ -340,16 +395,25 @@ export class RecoupmentService {
 
   async setPostRecoupmentSplits(
     accountId: string,
-    postRecoupmentSplits: { participantId: string; percentage: number; role: string }[]
+    postRecoupmentSplits: {
+      participantId: string;
+      percentage: number;
+      role: string;
+    }[],
   ): Promise<RecoupmentAccount> {
     const account = await this.getAccountById(accountId);
     if (!account) {
       throw new Error(`Recoupment account ${accountId} not found`);
     }
 
-    const totalPercentage = postRecoupmentSplits.reduce((sum, split) => sum + split.percentage, 0);
+    const totalPercentage = postRecoupmentSplits.reduce(
+      (sum, split) => sum + split.percentage,
+      0,
+    );
     if (Math.abs(totalPercentage - 100) > 0.01) {
-      throw new Error(`Post-recoupment splits must total 100%, got ${totalPercentage}%`);
+      throw new Error(
+        `Post-recoupment splits must total 100%, got ${totalPercentage}%`,
+      );
     }
 
     const currentTerms = (account.terms as Record<string, unknown>) || {};
@@ -371,7 +435,10 @@ export class RecoupmentService {
     return updated;
   }
 
-  async writeOffAccount(accountId: string, reason: string): Promise<RecoupmentAccount> {
+  async writeOffAccount(
+    accountId: string,
+    reason: string,
+  ): Promise<RecoupmentAccount> {
     const account = await this.getAccountById(accountId);
     if (!account) {
       throw new Error(`Recoupment account ${accountId} not found`);
@@ -382,17 +449,18 @@ export class RecoupmentService {
       id: transactionId,
       date: new Date().toISOString(),
       amount: Number(account.remainingBalance),
-      type: 'adjustment',
+      type: "adjustment",
       notes: `Write-off: ${reason}`,
     };
 
-    const existingTransactions = (account.transactions as RecoupmentTransaction[]) || [];
+    const existingTransactions =
+      (account.transactions as RecoupmentTransaction[]) || [];
     const updatedTransactions = [...existingTransactions, writeOffTransaction];
 
     const [updated] = await db
       .update(recoupmentAccounts)
       .set({
-        remainingBalance: '0',
+        remainingBalance: "0",
         isActive: false,
         fullyRecoupedAt: new Date(),
         transactions: updatedTransactions,
@@ -408,7 +476,7 @@ export class RecoupmentService {
   private async recoupFromAccount(
     account: RecoupmentAccount,
     availableAmount: number,
-    statementId?: string
+    statementId?: string,
   ): Promise<RecoupmentResult> {
     const balance = Number(account.remainingBalance);
     if (balance <= 0) {
@@ -426,7 +494,7 @@ export class RecoupmentService {
     const recoupmentRate = Number(account.recoupmentRate) / 100;
     const maxRecoupable = availableAmount * recoupmentRate;
     const amountToRecoup = Math.min(maxRecoupable, balance);
-    
+
     const newBalance = balance - amountToRecoup;
     const isFullyRecouped = newBalance <= 0;
 
@@ -435,12 +503,13 @@ export class RecoupmentService {
       id: transactionId,
       date: new Date().toISOString(),
       amount: amountToRecoup,
-      type: 'recoupment',
+      type: "recoupment",
       statementId,
       notes: `Automatic recoupment from earnings`,
     };
 
-    const existingTransactions = (account.transactions as RecoupmentTransaction[]) || [];
+    const existingTransactions =
+      (account.transactions as RecoupmentTransaction[]) || [];
     const updatedTransactions = [...existingTransactions, newTransaction];
 
     await db
@@ -455,7 +524,9 @@ export class RecoupmentService {
       })
       .where(eq(recoupmentAccounts.id, account.id));
 
-    logger.info(`Recouped ${amountToRecoup} from account ${account.id}, new balance: ${newBalance}`);
+    logger.info(
+      `Recouped ${amountToRecoup} from account ${account.id}, new balance: ${newBalance}`,
+    );
 
     return {
       accountId: account.id,
@@ -468,15 +539,18 @@ export class RecoupmentService {
     };
   }
 
-  async processCrossCollateralGroup(groupId: string, amount: number): Promise<WaterfallResult> {
+  async processCrossCollateralGroup(
+    groupId: string,
+    amount: number,
+  ): Promise<WaterfallResult> {
     const groupAccounts = await db
       .select()
       .from(recoupmentAccounts)
       .where(
         and(
           eq(recoupmentAccounts.crossCollateralGroupId, groupId),
-          eq(recoupmentAccounts.isActive, true)
-        )
+          eq(recoupmentAccounts.isActive, true),
+        ),
       )
       .orderBy(recoupmentAccounts.priority);
 
@@ -495,7 +569,7 @@ export class RecoupmentService {
 
     const totalBalance = groupAccounts.reduce(
       (sum, acc) => sum + Number(acc.remainingBalance),
-      0
+      0,
     );
 
     for (const account of groupAccounts) {
@@ -506,7 +580,7 @@ export class RecoupmentService {
 
       const result = await this.recoupFromAccount(account, allocatedAmount);
       results.push(result);
-      
+
       totalRecouped += result.amountApplied;
       remainingAmount -= result.amountApplied;
     }
@@ -522,7 +596,7 @@ export class RecoupmentService {
   async adjustBalance(
     accountId: string,
     adjustment: number,
-    reason: string
+    reason: string,
   ): Promise<RecoupmentAccount> {
     const account = await this.getAccountById(accountId);
     if (!account) {
@@ -537,15 +611,19 @@ export class RecoupmentService {
       id: transactionId,
       date: new Date().toISOString(),
       amount: Math.abs(adjustment),
-      type: 'adjustment',
+      type: "adjustment",
       notes: reason,
     };
 
-    const existingTransactions = (account.transactions as RecoupmentTransaction[]) || [];
+    const existingTransactions =
+      (account.transactions as RecoupmentTransaction[]) || [];
     const updatedTransactions = [...existingTransactions, newTransaction];
 
     const isActive = newBalance > 0;
-    const fullyRecoupedAt = newBalance <= 0 && currentBalance > 0 ? new Date() : account.fullyRecoupedAt;
+    const fullyRecoupedAt =
+      newBalance <= 0 && currentBalance > 0
+        ? new Date()
+        : account.fullyRecoupedAt;
 
     const [updated] = await db
       .update(recoupmentAccounts)
@@ -559,12 +637,16 @@ export class RecoupmentService {
       .where(eq(recoupmentAccounts.id, accountId))
       .returning();
 
-    logger.info(`Adjusted account ${accountId} by ${adjustment}, new balance: ${newBalance}, reason: ${reason}`);
+    logger.info(
+      `Adjusted account ${accountId} by ${adjustment}, new balance: ${newBalance}, reason: ${reason}`,
+    );
 
     return updated;
   }
 
-  async getCrossCollateralGroup(groupId: string): Promise<CrossCollateralGroup> {
+  async getCrossCollateralGroup(
+    groupId: string,
+  ): Promise<CrossCollateralGroup> {
     const accounts = await db
       .select()
       .from(recoupmentAccounts)
@@ -572,15 +654,15 @@ export class RecoupmentService {
 
     const totalBalance = accounts.reduce(
       (sum, acc) => sum + Number(acc.remainingBalance),
-      0
+      0,
     );
     const totalAdvanced = accounts.reduce(
       (sum, acc) => sum + Number(acc.advanceAmount),
-      0
+      0,
     );
     const totalRecouped = accounts.reduce(
       (sum, acc) => sum + Number(acc.recoupedAmount),
-      0
+      0,
     );
 
     return {
@@ -592,9 +674,7 @@ export class RecoupmentService {
     };
   }
 
-  async createCrossCollateralGroup(
-    accountIds: string[]
-  ): Promise<string> {
+  async createCrossCollateralGroup(accountIds: string[]): Promise<string> {
     const groupId = crypto.randomUUID();
 
     await db
@@ -606,7 +686,9 @@ export class RecoupmentService {
       })
       .where(sql`${recoupmentAccounts.id} IN ${accountIds}`);
 
-    logger.info(`Created cross-collateral group ${groupId} with ${accountIds.length} accounts`);
+    logger.info(
+      `Created cross-collateral group ${groupId} with ${accountIds.length} accounts`,
+    );
 
     return groupId;
   }
@@ -618,10 +700,10 @@ export class RecoupmentService {
     averageMonthlyRecoupment: number;
   }> {
     const accounts = await this.getAccountsByUser(userId, false);
-    
+
     const totalBalance = accounts.reduce(
       (sum, acc) => sum + Number(acc.remainingBalance),
-      0
+      0,
     );
 
     const paidStatements = await db
@@ -630,8 +712,8 @@ export class RecoupmentService {
       .where(
         and(
           eq(royaltyStatements.userId, userId),
-          eq(royaltyStatements.status, 'paid')
-        )
+          eq(royaltyStatements.status, "paid"),
+        ),
       )
       .orderBy(desc(royaltyStatements.paidAt))
       .limit(6);
@@ -640,7 +722,7 @@ export class RecoupmentService {
     if (paidStatements.length > 0) {
       const totalRecoupment = paidStatements.reduce(
         (sum, stmt) => sum + Number(stmt.recoupmentDeductions),
-        0
+        0,
       );
       averageMonthlyRecoupment = totalRecoupment / paidStatements.length;
     }
@@ -649,7 +731,9 @@ export class RecoupmentService {
     if (averageMonthlyRecoupment > 0 && totalBalance > 0) {
       const monthsToPayoff = Math.ceil(totalBalance / averageMonthlyRecoupment);
       projectedPayoffDate = new Date();
-      projectedPayoffDate.setMonth(projectedPayoffDate.getMonth() + monthsToPayoff);
+      projectedPayoffDate.setMonth(
+        projectedPayoffDate.getMonth() + monthsToPayoff,
+      );
     }
 
     return {
@@ -661,7 +745,7 @@ export class RecoupmentService {
   }
 
   async getAccountTransactionHistory(
-    accountId: string
+    accountId: string,
   ): Promise<RecoupmentTransaction[]> {
     const account = await this.getAccountById(accountId);
     if (!account) {
@@ -671,7 +755,10 @@ export class RecoupmentService {
     return (account.transactions as RecoupmentTransaction[]) || [];
   }
 
-  async deactivateAccount(accountId: string, reason: string): Promise<RecoupmentAccount> {
+  async deactivateAccount(
+    accountId: string,
+    reason: string,
+  ): Promise<RecoupmentAccount> {
     const [updated] = await db
       .update(recoupmentAccounts)
       .set({
@@ -681,7 +768,9 @@ export class RecoupmentService {
       .where(eq(recoupmentAccounts.id, accountId))
       .returning();
 
-    logger.info(`Deactivated recoupment account ${accountId}, reason: ${reason}`);
+    logger.info(
+      `Deactivated recoupment account ${accountId}, reason: ${reason}`,
+    );
 
     return updated;
   }

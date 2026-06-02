@@ -1,6 +1,6 @@
-import { useMemo, useState } from 'react';
-import { useLocation } from 'wouter';
-import { motion } from 'framer-motion';
+import { useMemo, useState } from "react";
+import { useLocation } from "wouter";
+import { motion } from "framer-motion";
 import {
   Music,
   BarChart3,
@@ -11,15 +11,19 @@ import {
   Settings,
   ChevronDown,
   ChevronRight,
-} from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { cn } from '@/lib/utils';
-import { useShortcuts } from '@/contexts/ShortcutContext';
-import { ShortcutHint } from '@/components/shortcuts/ShortcutHint';
-import { ShortcutContext, ShortcutDefinition } from '@/lib/shortcuts/types';
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
+import { cn } from "@/lib/utils";
+import { useShortcuts } from "@/contexts/ShortcutContext";
+import { ShortcutHint } from "@/components/shortcuts/ShortcutHint";
+import { ShortcutContext, ShortcutDefinition } from "@/lib/shortcuts/types";
 
 interface ModuleShortcutsProps {
   className?: string;
@@ -31,27 +35,39 @@ const MODULE_CONFIG: Record<
   ShortcutContext,
   { name: string; icon: React.ElementType; color: string }
 > = {
-  global: { name: 'Global', icon: Keyboard, color: 'text-zinc-400' },
-  studio: { name: 'Studio', icon: Music, color: 'text-purple-400' },
-  analytics: { name: 'Analytics', icon: BarChart3, color: 'text-blue-400' },
-  social: { name: 'Social', icon: Share2, color: 'text-pink-400' },
-  distribution: { name: 'Distribution', icon: Disc, color: 'text-orange-400' },
-  marketplace: { name: 'Marketplace', icon: ShoppingBag, color: 'text-green-400' },
-  dashboard: { name: 'Dashboard', icon: Settings, color: 'text-amber-400' },
+  global: { name: "Global", icon: Keyboard, color: "text-zinc-400" },
+  studio: { name: "Studio", icon: Music, color: "text-purple-400" },
+  analytics: { name: "Analytics", icon: BarChart3, color: "text-blue-400" },
+  social: { name: "Social", icon: Share2, color: "text-pink-400" },
+  distribution: { name: "Distribution", icon: Disc, color: "text-orange-400" },
+  marketplace: {
+    name: "Marketplace",
+    icon: ShoppingBag,
+    color: "text-green-400",
+  },
+  dashboard: { name: "Dashboard", icon: Settings, color: "text-amber-400" },
 };
 
 export function ModuleShortcuts({
   className,
   defaultExpanded = true,
-  showModules = ['global', 'studio', 'analytics', 'social', 'distribution', 'marketplace'],
+  showModules = [
+    "global",
+    "studio",
+    "analytics",
+    "social",
+    "distribution",
+    "marketplace",
+  ],
 }: ModuleShortcutsProps) {
   const { shortcutManager, currentContext } = useShortcuts();
   const [expandedModules, setExpandedModules] = useState<Set<ShortcutContext>>(
-    new Set(defaultExpanded ? showModules : [currentContext])
+    new Set(defaultExpanded ? showModules : [currentContext]),
   );
 
   const groupedShortcuts = useMemo(() => {
-    if (!shortcutManager) return new Map<ShortcutContext, ShortcutDefinition[]>();
+    if (!shortcutManager)
+      return new Map<ShortcutContext, ShortcutDefinition[]>();
 
     const groups = new Map<ShortcutContext, ShortcutDefinition[]>();
     const allShortcuts = shortcutManager.getAllShortcuts();
@@ -81,7 +97,7 @@ export function ModuleShortcuts({
   };
 
   return (
-    <div className={cn('space-y-2', className)}>
+    <div className={cn("space-y-2", className)}>
       {showModules.map((module) => {
         const config = MODULE_CONFIG[module];
         const shortcuts = groupedShortcuts.get(module) || [];
@@ -98,20 +114,22 @@ export function ModuleShortcuts({
             <CollapsibleTrigger asChild>
               <button
                 className={cn(
-                  'w-full flex items-center justify-between p-3 rounded-lg transition-colors',
+                  "w-full flex items-center justify-between p-3 rounded-lg transition-colors",
                   isCurrentContext
-                    ? 'bg-amber-600/20 border border-amber-600/30'
-                    : 'bg-zinc-900 hover:bg-zinc-800 border border-zinc-800'
+                    ? "bg-amber-600/20 border border-amber-600/30"
+                    : "bg-zinc-900 hover:bg-zinc-800 border border-zinc-800",
                 )}
               >
                 <div className="flex items-center gap-3">
-                  <Icon className={cn('w-4 h-4', config.color)} />
+                  <Icon className={cn("w-4 h-4", config.color)} />
                   <span className="font-medium text-sm">{config.name}</span>
                   <Badge variant="secondary" className="text-xs">
                     {shortcuts.length}
                   </Badge>
                   {isCurrentContext && (
-                    <Badge className="bg-amber-600 text-white text-[10px]">Active</Badge>
+                    <Badge className="bg-amber-600 text-white text-[10px]">
+                      Active
+                    </Badge>
                   )}
                 </div>
                 {isExpanded ? (
@@ -154,7 +172,9 @@ function ModuleShortcutsList({ shortcuts }: ModuleShortcutsListProps) {
 
   if (shortcuts.length === 0) {
     return (
-      <div className="py-2 text-sm text-zinc-500">No shortcuts for this module</div>
+      <div className="py-2 text-sm text-zinc-500">
+        No shortcuts for this module
+      </div>
     );
   }
 
@@ -170,15 +190,18 @@ function ModuleShortcutsList({ shortcuts }: ModuleShortcutsListProps) {
               <div
                 key={shortcut.id}
                 className={cn(
-                  'flex items-center justify-between py-1.5 px-2 rounded text-sm',
+                  "flex items-center justify-between py-1.5 px-2 rounded text-sm",
                   shortcut.enabled === false
-                    ? 'opacity-50 line-through'
-                    : 'hover:bg-zinc-800/50'
+                    ? "opacity-50 line-through"
+                    : "hover:bg-zinc-800/50",
                 )}
               >
                 <span className="text-zinc-300">{shortcut.description}</span>
                 <ShortcutHint
-                  shortcut={{ key: shortcut.key, modifiers: shortcut.modifiers }}
+                  shortcut={{
+                    key: shortcut.key,
+                    modifiers: shortcut.modifiers,
+                  }}
                   size="xs"
                 />
               </div>
@@ -195,7 +218,10 @@ interface ModuleShortcutsPanelProps {
   onClose: () => void;
 }
 
-export function ModuleShortcutsPanel({ isOpen, onClose }: ModuleShortcutsPanelProps) {
+export function ModuleShortcutsPanel({
+  isOpen,
+  onClose,
+}: ModuleShortcutsPanelProps) {
   const { open: openCustomizer } = useShortcuts();
 
   if (!isOpen) return null;
@@ -224,7 +250,14 @@ export function ModuleShortcutsPanel({ isOpen, onClose }: ModuleShortcutsPanelPr
       </ScrollArea>
 
       <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-zinc-800 bg-zinc-950">
-        <Button variant="outline" className="w-full" onClick={() => { openCustomizer(); onClose(); }}>
+        <Button
+          variant="outline"
+          className="w-full"
+          onClick={() => {
+            openCustomizer();
+            onClose();
+          }}
+        >
           <Settings className="w-4 h-4 mr-2" />
           Customize Shortcuts
         </Button>

@@ -1,5 +1,5 @@
-import { useEffect, useCallback } from 'react';
-import { useUndo } from '@/contexts/UndoContext';
+import { useEffect, useCallback } from "react";
+import { useUndo } from "@/contexts/UndoContext";
 
 export interface UndoKeyboardHandlerProps {
   enabled?: boolean;
@@ -23,12 +23,12 @@ export function UndoKeyboardHandler({
 
   const isInputElement = useCallback((target: EventTarget | null): boolean => {
     if (!target || !(target instanceof HTMLElement)) return false;
-    
+
     return (
-      target.tagName === 'INPUT' ||
-      target.tagName === 'TEXTAREA' ||
+      target.tagName === "INPUT" ||
+      target.tagName === "TEXTAREA" ||
       target.isContentEditable ||
-      target.closest('[data-undo-exclude]') !== null
+      target.closest("[data-undo-exclude]") !== null
     );
   }, []);
 
@@ -39,7 +39,7 @@ export function UndoKeyboardHandler({
 
       const isMetaKey = e.ctrlKey || e.metaKey;
 
-      if (isMetaKey && e.key === 'z' && !e.shiftKey) {
+      if (isMetaKey && e.key === "z" && !e.shiftKey) {
         e.preventDefault();
         if (canUndo) {
           onUndo?.();
@@ -48,7 +48,10 @@ export function UndoKeyboardHandler({
         return;
       }
 
-      if ((isMetaKey && e.key === 'z' && e.shiftKey) || (isMetaKey && e.key === 'y')) {
+      if (
+        (isMetaKey && e.key === "z" && e.shiftKey) ||
+        (isMetaKey && e.key === "y")
+      ) {
         e.preventDefault();
         if (canRedo) {
           onRedo?.();
@@ -59,13 +62,15 @@ export function UndoKeyboardHandler({
 
       if (customShortcuts?.undo) {
         const isUndoShortcut = customShortcuts.undo.some((shortcut) => {
-          const keys = shortcut.toLowerCase().split('+');
-          const needsCtrl = keys.includes('ctrl');
-          const needsMeta = keys.includes('meta') || keys.includes('cmd');
-          const needsShift = keys.includes('shift');
-          const needsAlt = keys.includes('alt');
-          const keyChar = keys.find((k) => !['ctrl', 'meta', 'cmd', 'shift', 'alt'].includes(k));
-          
+          const keys = shortcut.toLowerCase().split("+");
+          const needsCtrl = keys.includes("ctrl");
+          const needsMeta = keys.includes("meta") || keys.includes("cmd");
+          const needsShift = keys.includes("shift");
+          const needsAlt = keys.includes("alt");
+          const keyChar = keys.find(
+            (k) => !["ctrl", "meta", "cmd", "shift", "alt"].includes(k),
+          );
+
           return (
             ((needsCtrl && e.ctrlKey) || (needsMeta && e.metaKey)) &&
             needsShift === e.shiftKey &&
@@ -84,13 +89,15 @@ export function UndoKeyboardHandler({
 
       if (customShortcuts?.redo) {
         const isRedoShortcut = customShortcuts.redo.some((shortcut) => {
-          const keys = shortcut.toLowerCase().split('+');
-          const needsCtrl = keys.includes('ctrl');
-          const needsMeta = keys.includes('meta') || keys.includes('cmd');
-          const needsShift = keys.includes('shift');
-          const needsAlt = keys.includes('alt');
-          const keyChar = keys.find((k) => !['ctrl', 'meta', 'cmd', 'shift', 'alt'].includes(k));
-          
+          const keys = shortcut.toLowerCase().split("+");
+          const needsCtrl = keys.includes("ctrl");
+          const needsMeta = keys.includes("meta") || keys.includes("cmd");
+          const needsShift = keys.includes("shift");
+          const needsAlt = keys.includes("alt");
+          const keyChar = keys.find(
+            (k) => !["ctrl", "meta", "cmd", "shift", "alt"].includes(k),
+          );
+
           return (
             ((needsCtrl && e.ctrlKey) || (needsMeta && e.metaKey)) &&
             needsShift === e.shiftKey &&
@@ -107,18 +114,31 @@ export function UndoKeyboardHandler({
         }
       }
     },
-    [enabled, excludeInputs, isInputElement, undo, redo, canUndo, canRedo, onUndo, onRedo, customShortcuts]
+    [
+      enabled,
+      excludeInputs,
+      isInputElement,
+      undo,
+      redo,
+      canUndo,
+      canRedo,
+      onUndo,
+      onRedo,
+      customShortcuts,
+    ],
   );
 
   useEffect(() => {
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
   }, [handleKeyDown]);
 
   return null;
 }
 
-export function useUndoKeyboardShortcuts(options: Omit<UndoKeyboardHandlerProps, 'children'> = {}) {
+export function useUndoKeyboardShortcuts(
+  options: Omit<UndoKeyboardHandlerProps, "children"> = {},
+) {
   const { undo, redo, canUndo, canRedo } = useUndo();
   const {
     enabled = true,
@@ -130,12 +150,12 @@ export function useUndoKeyboardShortcuts(options: Omit<UndoKeyboardHandlerProps,
 
   const isInputElement = useCallback((target: EventTarget | null): boolean => {
     if (!target || !(target instanceof HTMLElement)) return false;
-    
+
     return (
-      target.tagName === 'INPUT' ||
-      target.tagName === 'TEXTAREA' ||
+      target.tagName === "INPUT" ||
+      target.tagName === "TEXTAREA" ||
       target.isContentEditable ||
-      target.closest('[data-undo-exclude]') !== null
+      target.closest("[data-undo-exclude]") !== null
     );
   }, []);
 
@@ -146,7 +166,7 @@ export function useUndoKeyboardShortcuts(options: Omit<UndoKeyboardHandlerProps,
 
       const isMetaKey = e.ctrlKey || e.metaKey;
 
-      if (isMetaKey && e.key === 'z' && !e.shiftKey) {
+      if (isMetaKey && e.key === "z" && !e.shiftKey) {
         e.preventDefault();
         if (canUndo) {
           onUndo?.();
@@ -155,7 +175,10 @@ export function useUndoKeyboardShortcuts(options: Omit<UndoKeyboardHandlerProps,
         return;
       }
 
-      if ((isMetaKey && e.key === 'z' && e.shiftKey) || (isMetaKey && e.key === 'y')) {
+      if (
+        (isMetaKey && e.key === "z" && e.shiftKey) ||
+        (isMetaKey && e.key === "y")
+      ) {
         e.preventDefault();
         if (canRedo) {
           onRedo?.();
@@ -165,9 +188,19 @@ export function useUndoKeyboardShortcuts(options: Omit<UndoKeyboardHandlerProps,
       }
     };
 
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [enabled, excludeInputs, isInputElement, undo, redo, canUndo, canRedo, onUndo, onRedo]);
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [
+    enabled,
+    excludeInputs,
+    isInputElement,
+    undo,
+    redo,
+    canUndo,
+    canRedo,
+    onUndo,
+    onRedo,
+  ]);
 
   return { undo, redo, canUndo, canRedo };
 }

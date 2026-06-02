@@ -1,10 +1,10 @@
-import { useState, useEffect } from 'react';
-import { logger } from '@/lib/logger';
-import { FileText, X, RotateCcw, Trash2 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
-import { draftStorage, Draft } from '@/lib/offline';
-import { formatDistanceToNow } from 'date-fns';
+import { useState, useEffect } from "react";
+import { logger } from "@/lib/logger";
+import { FileText, X, RotateCcw, Trash2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+import { draftStorage, Draft } from "@/lib/offline";
+import { formatDistanceToNow } from "date-fns";
 
 interface DraftRecoveryPromptProps {
   formId: string;
@@ -42,7 +42,7 @@ export function DraftRecoveryPrompt({
           }, 500);
         }
       } catch (error) {
-        logger.error('[DraftRecoveryPrompt] Failed to check for draft:', error);
+        logger.error("[DraftRecoveryPrompt] Failed to check for draft:", error);
       }
     };
 
@@ -63,27 +63,29 @@ export function DraftRecoveryPrompt({
       await draftStorage.deleteDraft(formId);
       onDiscard?.();
     } catch (error) {
-      logger.error('[DraftRecoveryPrompt] Failed to discard draft:', error);
+      logger.error("[DraftRecoveryPrompt] Failed to discard draft:", error);
     }
     await handleDismiss();
   };
 
   const handleDismiss = async () => {
     setIsAnimating(false);
-    await new Promise(resolve => setTimeout(resolve, 300));
+    await new Promise((resolve) => setTimeout(resolve, 300));
     setIsVisible(false);
     setDraft(null);
   };
 
   const getPreviewText = (): string => {
-    if (!draft?.data) return '';
+    if (!draft?.data) return "";
     const data = draft.data as Record<string, unknown>;
-    if (typeof data === 'object') {
-      const values = Object.values(data).filter(v => typeof v === 'string' && v.length > 0);
-      const preview = values.join(' ').substring(0, 100);
-      return preview + (preview.length >= 100 ? '...' : '');
+    if (typeof data === "object") {
+      const values = Object.values(data).filter(
+        (v) => typeof v === "string" && v.length > 0,
+      );
+      const preview = values.join(" ").substring(0, 100);
+      return preview + (preview.length >= 100 ? "..." : "");
     }
-    return '';
+    return "";
   };
 
   if (!isVisible || !draft) return null;
@@ -91,15 +93,15 @@ export function DraftRecoveryPrompt({
   return (
     <div
       className={cn(
-        'fixed bottom-4 left-4 right-4 sm:left-auto sm:right-4 sm:w-96 z-50',
-        'transition-all duration-300 ease-out',
-        isAnimating ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0',
-        className
+        "fixed bottom-4 left-4 right-4 sm:left-auto sm:right-4 sm:w-96 z-50",
+        "transition-all duration-300 ease-out",
+        isAnimating ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0",
+        className,
       )}
     >
       <div className="relative overflow-hidden rounded-xl border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/50 shadow-lg">
         <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 to-purple-500/5" />
-        
+
         <div className="relative p-4">
           <button
             onClick={handleDismiss}
@@ -119,9 +121,10 @@ export function DraftRecoveryPrompt({
                 Unsaved Draft Found
               </h4>
               <p className="text-blue-700 dark:text-blue-300 text-xs mt-0.5">
-                Saved {formatDistanceToNow(draft.updatedAt, { addSuffix: true })}
+                Saved{" "}
+                {formatDistanceToNow(draft.updatedAt, { addSuffix: true })}
               </p>
-              
+
               {showDetails && getPreviewText() && (
                 <p className="text-blue-600 dark:text-blue-400 text-xs mt-2 line-clamp-2 italic">
                   "{getPreviewText()}"

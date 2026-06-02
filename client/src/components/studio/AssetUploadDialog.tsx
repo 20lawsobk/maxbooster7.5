@@ -1,31 +1,35 @@
-import { useState } from 'react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { uploadWithProgress } from '@/lib/queryClient';
+import { useState } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { uploadWithProgress } from "@/lib/queryClient";
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Progress } from '@/components/ui/progress';
-import { Upload, FileAudio, AlertCircle, CheckCircle2 } from 'lucide-react';
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Progress } from "@/components/ui/progress";
+import { Upload, FileAudio, AlertCircle, CheckCircle2 } from "lucide-react";
 
 interface AssetUploadDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  assetType: 'sample' | 'plugin';
+  assetType: "sample" | "plugin";
 }
 
-export function AssetUploadDialog({ open, onOpenChange, assetType }: AssetUploadDialogProps) {
+export function AssetUploadDialog({
+  open,
+  onOpenChange,
+  assetType,
+}: AssetUploadDialogProps) {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [name, setName] = useState('');
-  const [description, setDescription] = useState('');
-  const [tags, setTags] = useState('');
+  const [name, setName] = useState("");
+  const [description, setDescription] = useState("");
+  const [tags, setTags] = useState("");
   const [uploadProgress, setUploadProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
 
@@ -33,13 +37,13 @@ export function AssetUploadDialog({ open, onOpenChange, assetType }: AssetUpload
 
   const uploadMutation = useMutation({
     mutationFn: async (formData: FormData) => {
-      return uploadWithProgress('/api/assets/upload', formData, {
+      return uploadWithProgress("/api/assets/upload", formData, {
         onProgress: (percent) => setUploadProgress(percent),
         timeout: 300000, // 5 minutes
       });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/assets'] });
+      queryClient.invalidateQueries({ queryKey: ["/api/assets"] });
       handleClose();
     },
     onError: (error: Error) => {
@@ -59,21 +63,21 @@ export function AssetUploadDialog({ open, onOpenChange, assetType }: AssetUpload
 
   const handleUpload = () => {
     if (!selectedFile) {
-      setError('Please select a file');
+      setError("Please select a file");
       return;
     }
 
     const formData = new FormData();
-    formData.append('assetFile', selectedFile);
-    formData.append('name', name || selectedFile.name);
-    formData.append('assetType', assetType);
+    formData.append("assetFile", selectedFile);
+    formData.append("name", name || selectedFile.name);
+    formData.append("assetType", assetType);
 
     if (description) {
-      formData.append('description', description);
+      formData.append("description", description);
     }
 
     if (tags) {
-      formData.append('tags', tags);
+      formData.append("tags", tags);
     }
 
     uploadMutation.mutate(formData);
@@ -81,26 +85,30 @@ export function AssetUploadDialog({ open, onOpenChange, assetType }: AssetUpload
 
   const handleClose = () => {
     setSelectedFile(null);
-    setName('');
-    setDescription('');
-    setTags('');
+    setName("");
+    setDescription("");
+    setTags("");
     setUploadProgress(0);
     setError(null);
     onOpenChange(false);
   };
 
-  const fileTypes = assetType === 'sample' ? 'WAV, MP3, FLAC, AIFF, OGG' : 'JSON, ZIP';
+  const fileTypes =
+    assetType === "sample" ? "WAV, MP3, FLAC, AIFF, OGG" : "JSON, ZIP";
 
-  const maxSize = '500MB';
+  const maxSize = "500MB";
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Upload {assetType === 'sample' ? 'Sample' : 'Plugin'}</DialogTitle>
+          <DialogTitle>
+            Upload {assetType === "sample" ? "Sample" : "Plugin"}
+          </DialogTitle>
           <DialogDescription>
-            Upload your {assetType === 'sample' ? 'audio samples' : 'plugin files'} to use in your
-            projects.
+            Upload your{" "}
+            {assetType === "sample" ? "audio samples" : "plugin files"} to use
+            in your projects.
             <br />
             Supported formats: {fileTypes} (Max: {maxSize})
           </DialogDescription>
@@ -114,7 +122,11 @@ export function AssetUploadDialog({ open, onOpenChange, assetType }: AssetUpload
               <Input
                 id="file"
                 type="file"
-                accept={assetType === 'sample' ? '.wav,.mp3,.flac,.aiff,.aif,.ogg' : '.json,.zip'}
+                accept={
+                  assetType === "sample"
+                    ? ".wav,.mp3,.flac,.aiff,.aif,.ogg"
+                    : ".json,.zip"
+                }
                 onChange={handleFileChange}
                 className="flex-1"
               />
@@ -196,7 +208,10 @@ export function AssetUploadDialog({ open, onOpenChange, assetType }: AssetUpload
           <Button variant="outline" onClick={handleClose}>
             Cancel
           </Button>
-          <Button onClick={handleUpload} disabled={!selectedFile || uploadMutation.isPending}>
+          <Button
+            onClick={handleUpload}
+            disabled={!selectedFile || uploadMutation.isPending}
+          >
             <Upload className="h-4 w-4 mr-2" />
             Upload
           </Button>

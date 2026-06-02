@@ -13,7 +13,7 @@ export {
   type CaptionResult,
   type MarkovTransition,
   type NGramModel,
-} from './ContentGenerator.js';
+} from "./ContentGenerator.js";
 
 export {
   SentimentAnalyzer,
@@ -25,4 +25,4 @@ export {
   type EmotionResult,
   type ToxicityResult,
   type FullAnalysisResult,
-} from './SentimentAnalyzer.js';
+} from "./SentimentAnalyzer.js";

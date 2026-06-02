@@ -1,11 +1,11 @@
-import crypto from 'crypto';
-import { parse } from 'csv-parse/sync';
-import { storage } from '../storage.js';
-import type { InsertRevenueEvent } from '@shared/schema';
-import { queueService } from './queueService.js';
-import type { CSVImportJobData, CSVImportResult } from './queueService.js';
-import { storageService } from './storageService.js';
-import { logger } from '../logger.js';
+import crypto from "crypto";
+import { parse } from "csv-parse/sync";
+import { storage } from "../storage.js";
+import type { InsertRevenueEvent } from "@shared/schema";
+import { queueService } from "./queueService.js";
+import type { CSVImportJobData, CSVImportResult } from "./queueService.js";
+import { storageService } from "./storageService.js";
+import { logger } from "../logger.js";
 
 export interface JobResponse {
   jobId: string;
@@ -22,7 +22,10 @@ export class RoyaltiesCSVImportService {
     });
   }
 
-  mapColumns(row: unknown, mapping: Record<string, string>): Partial<InsertRevenueEvent> {
+  mapColumns(
+    row: unknown,
+    mapping: Record<string, string>,
+  ): Partial<InsertRevenueEvent> {
     const mapped: Record<string, unknown> = {};
     for (const [schemaField, csvColumn] of Object.entries(mapping)) {
       mapped[schemaField] = row[csvColumn];
@@ -30,22 +33,29 @@ export class RoyaltiesCSVImportService {
     return mapped;
   }
 
-  validateRow(row: Partial<InsertRevenueEvent>): { valid: boolean; errors: string[] } {
+  validateRow(row: Partial<InsertRevenueEvent>): {
+    valid: boolean;
+    errors: string[];
+  } {
     const errors: string[] = [];
 
-    if (!row.projectId) errors.push('Missing projectId');
-    if (!row.source) errors.push('Missing source');
-    if (!row.amount || isNaN(Number(row.amount))) errors.push('Invalid amount');
-    if (!row.occurredAt) errors.push('Missing occurredAt');
+    if (!row.projectId) errors.push("Missing projectId");
+    if (!row.source) errors.push("Missing source");
+    if (!row.amount || isNaN(Number(row.amount))) errors.push("Invalid amount");
+    if (!row.occurredAt) errors.push("Missing occurredAt");
 
     return { valid: errors.length === 0, errors };
   }
 
   calculateFileHash(buffer: Buffer): string {
-    return crypto.createHash('sha256').update(buffer).digest('hex');
+    return crypto.createHash("sha256").update(buffer).digest("hex");
   }
 
-  async dryRunImport(buffer: Buffer, mapping: Record<string, string>, userId: string) {
+  async dryRunImport(
+    buffer: Buffer,
+    mapping: Record<string, string>,
+    userId: string,
+  ) {
     const fileHash = this.calculateFileHash(buffer);
     const existing = await storage.checkFileHash(fileHash);
 
@@ -88,25 +98,25 @@ export class RoyaltiesCSVImportService {
     buffer: Buffer,
     mapping: Record<string, string>,
     userId: string,
-    filename: string
+    filename: string,
   ): Promise<JobResponse> {
     // Upload CSV to storage for worker processing
     const storageKey = await storageService.uploadFile(
       buffer,
-      'csv-imports',
+      "csv-imports",
       `${userId}_${filename}`,
-      'text/csv'
+      "text/csv",
     );
 
     const job = await queueService.addCSVImportJob({
       userId,
       storageKey,
-      type: 'royalties',
+      type: "royalties",
     });
 
     return {
       jobId: job.id!,
-      status: 'processing',
+      status: "processing",
       statusUrl: `/api/jobs/csv/${job.id}`,
     };
   }
@@ -120,10 +130,10 @@ export class RoyaltiesCSVImportService {
 
       // Extract mapping from storage key or use default
       const mapping: Record<string, string> = {
-        projectId: 'projectId',
-        source: 'source',
-        amount: 'amount',
-        occurredAt: 'occurredAt',
+        projectId: "projectId",
+        source: "source",
+        amount: "amount",
+        occurredAt: "occurredAt",
       };
 
       const fileHash = this.calculateFileHash(buffer);
@@ -131,12 +141,12 @@ export class RoyaltiesCSVImportService {
 
       const importRecord = await storage.createImportHistory({
         userId: data.userId,
-        filename: data.storageKey.split('/').pop() || 'unknown.csv',
+        filename: data.storageKey.split("/").pop() || "unknown.csv",
         fileHash,
         rowsProcessed: rows.length,
         rowsSucceeded: 0,
         rowsFailed: 0,
-        status: 'processing',
+        status: "processing",
       });
 
       const events: InsertRevenueEvent[] = [];
@@ -146,7 +156,7 @@ export class RoyaltiesCSVImportService {
         const row = rows[i];
         const mapped = this.mapColumns(row, mapping);
 
-        if (mapped.occurredAt && typeof mapped.occurredAt === 'string') {
+        if (mapped.occurredAt && typeof mapped.occurredAt === "string") {
           mapped.occurredAt = new Date(mapped.occurredAt);
         }
 
@@ -163,13 +173,13 @@ export class RoyaltiesCSVImportService {
       await storage.createImportHistory({
         id: importRecord.id,
         userId: data.userId,
-        filename: data.storageKey.split('/').pop() || 'unknown.csv',
+        filename: data.storageKey.split("/").pop() || "unknown.csv",
         fileHash,
         rowsProcessed: rows.length,
         rowsSucceeded: result.succeeded,
         rowsFailed: result.failed,
         errors: errors.length > 0 ? errors : null,
-        status: 'completed',
+        status: "completed",
         completedAt: new Date(),
       });
 
@@ -181,14 +191,14 @@ export class RoyaltiesCSVImportService {
         duration,
       };
     } catch (error: unknown) {
-      logger.warn({ err: error }, 'Error processing CSV import:');
+      logger.warn({ err: error }, "Error processing CSV import:");
       throw error;
     } finally {
       // Clean up CSV file from storage
       try {
         await storageService.deleteFile(data.storageKey);
       } catch (error: unknown) {
-        logger.warn({ err: error }, 'Failed to clean up CSV file:');
+        logger.warn({ err: error }, "Failed to clean up CSV file:");
       }
     }
   }
@@ -197,7 +207,7 @@ export class RoyaltiesCSVImportService {
     buffer: Buffer,
     mapping: Record<string, string>,
     userId: string,
-    filename: string
+    filename: string,
   ) {
     const fileHash = this.calculateFileHash(buffer);
     const rows = this.parseCSV(buffer);
@@ -209,7 +219,7 @@ export class RoyaltiesCSVImportService {
       rowsProcessed: rows.length,
       rowsSucceeded: 0,
       rowsFailed: 0,
-      status: 'processing',
+      status: "processing",
     });
 
     const events: InsertRevenueEvent[] = [];
@@ -219,7 +229,7 @@ export class RoyaltiesCSVImportService {
       const row = rows[i];
       const mapped = this.mapColumns(row, mapping);
 
-      if (mapped.occurredAt && typeof mapped.occurredAt === 'string') {
+      if (mapped.occurredAt && typeof mapped.occurredAt === "string") {
         mapped.occurredAt = new Date(mapped.occurredAt);
       }
 
@@ -242,7 +252,7 @@ export class RoyaltiesCSVImportService {
       rowsSucceeded: result.succeeded,
       rowsFailed: result.failed,
       errors: errors.length > 0 ? errors : null,
-      status: 'completed',
+      status: "completed",
       completedAt: new Date(),
     });
 

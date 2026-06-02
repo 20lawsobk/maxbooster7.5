@@ -1,17 +1,17 @@
-import { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
+import { useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
+} from "@/components/ui/select";
 import {
   Dialog,
   DialogContent,
@@ -19,7 +19,7 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter,
-} from '@/components/ui/dialog';
+} from "@/components/ui/dialog";
 import {
   AlertTriangle,
   CheckCircle,
@@ -32,11 +32,21 @@ import {
   Loader2,
   Scale,
   Shield,
-} from 'lucide-react';
-import { Progress } from '@/components/ui/progress';
+} from "lucide-react";
+import { Progress } from "@/components/ui/progress";
 
-export type DisputeType = 'earnings_mismatch' | 'split_dispute' | 'payout_issue' | 'statement_error' | 'other';
-export type DisputeStatus = 'open' | 'under_review' | 'pending_evidence' | 'resolved' | 'closed';
+export type DisputeType =
+  | "earnings_mismatch"
+  | "split_dispute"
+  | "payout_issue"
+  | "statement_error"
+  | "other";
+export type DisputeStatus =
+  | "open"
+  | "under_review"
+  | "pending_evidence"
+  | "resolved"
+  | "closed";
 
 export interface Dispute {
   id: string;
@@ -49,14 +59,14 @@ export interface Dispute {
   createdAt: Date;
   updatedAt: Date;
   resolution?: string;
-  outcome?: 'approved' | 'denied' | 'partial';
+  outcome?: "approved" | "denied" | "partial";
   evidenceCount: number;
   messages: DisputeMessage[];
 }
 
 export interface DisputeMessage {
   id: string;
-  sender: 'user' | 'support';
+  sender: "user" | "support";
   content: string;
   timestamp: Date;
   attachments?: string[];
@@ -72,30 +82,36 @@ interface DisputeTrackerProps {
     amount?: number;
     period?: string;
   }) => Promise<void>;
-  onSubmitEvidence: (disputeId: string, evidence: { description: string; files?: File[] }) => Promise<void>;
+  onSubmitEvidence: (
+    disputeId: string,
+    evidence: { description: string; files?: File[] },
+  ) => Promise<void>;
   onSendMessage: (disputeId: string, message: string) => Promise<void>;
 }
 
-const DISPUTE_TYPES: Record<DisputeType, { label: string; description: string }> = {
+const DISPUTE_TYPES: Record<
+  DisputeType,
+  { label: string; description: string }
+> = {
   earnings_mismatch: {
-    label: 'Earnings Mismatch',
-    description: 'Reported earnings dont match expected values',
+    label: "Earnings Mismatch",
+    description: "Reported earnings dont match expected values",
   },
   split_dispute: {
-    label: 'Split Dispute',
-    description: 'Disagreement about royalty split percentages',
+    label: "Split Dispute",
+    description: "Disagreement about royalty split percentages",
   },
   payout_issue: {
-    label: 'Payout Issue',
-    description: 'Problems with payout processing or amounts',
+    label: "Payout Issue",
+    description: "Problems with payout processing or amounts",
   },
   statement_error: {
-    label: 'Statement Error',
-    description: 'Incorrect information on royalty statements',
+    label: "Statement Error",
+    description: "Incorrect information on royalty statements",
   },
   other: {
-    label: 'Other',
-    description: 'Other royalty-related issues',
+    label: "Other",
+    description: "Other royalty-related issues",
   },
 };
 
@@ -112,46 +128,49 @@ export function DisputeTracker({
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [newDispute, setNewDispute] = useState({
-    type: '' as DisputeType,
-    subject: '',
-    description: '',
-    amount: '',
-    period: '',
+    type: "" as DisputeType,
+    subject: "",
+    description: "",
+    amount: "",
+    period: "",
   });
 
   const [newEvidence, setNewEvidence] = useState({
-    description: '',
+    description: "",
     files: [] as File[],
   });
 
-  const [newMessage, setNewMessage] = useState('');
+  const [newMessage, setNewMessage] = useState("");
 
   const getStatusBadge = (status: DisputeStatus) => {
-    const badges: Record<DisputeStatus, { className: string; icon: React.ReactNode; label: string }> = {
+    const badges: Record<
+      DisputeStatus,
+      { className: string; icon: React.ReactNode; label: string }
+    > = {
       open: {
-        className: 'bg-blue-500/20 text-blue-500',
+        className: "bg-blue-500/20 text-blue-500",
         icon: <AlertTriangle className="w-3 h-3" />,
-        label: 'Open',
+        label: "Open",
       },
       under_review: {
-        className: 'bg-amber-500/20 text-amber-500',
+        className: "bg-amber-500/20 text-amber-500",
         icon: <Clock className="w-3 h-3" />,
-        label: 'Under Review',
+        label: "Under Review",
       },
       pending_evidence: {
-        className: 'bg-purple-500/20 text-purple-500',
+        className: "bg-purple-500/20 text-purple-500",
         icon: <FileText className="w-3 h-3" />,
-        label: 'Pending Evidence',
+        label: "Pending Evidence",
       },
       resolved: {
-        className: 'bg-green-500/20 text-green-500',
+        className: "bg-green-500/20 text-green-500",
         icon: <CheckCircle className="w-3 h-3" />,
-        label: 'Resolved',
+        label: "Resolved",
       },
       closed: {
-        className: 'bg-muted text-muted-foreground',
+        className: "bg-muted text-muted-foreground",
         icon: <XCircle className="w-3 h-3" />,
-        label: 'Closed',
+        label: "Closed",
       },
     };
 
@@ -167,22 +186,31 @@ export function DisputeTracker({
   const getOutcomeBadge = (outcome?: string) => {
     if (!outcome) return null;
     const badges: Record<string, { className: string; label: string }> = {
-      approved: { className: 'bg-green-500/20 text-green-500', label: 'Approved' },
-      denied: { className: 'bg-red-500/20 text-red-500', label: 'Denied' },
-      partial: { className: 'bg-amber-500/20 text-amber-500', label: 'Partially Approved' },
+      approved: {
+        className: "bg-green-500/20 text-green-500",
+        label: "Approved",
+      },
+      denied: { className: "bg-red-500/20 text-red-500", label: "Denied" },
+      partial: {
+        className: "bg-amber-500/20 text-amber-500",
+        label: "Partially Approved",
+      },
     };
     const config = badges[outcome] || badges.denied;
     return <Badge className={config.className}>{config.label}</Badge>;
   };
 
   const getStatusProgress = (status: DisputeStatus) => {
-    const steps = ['open', 'under_review', 'resolved'];
-    const currentIndex = steps.indexOf(status === 'pending_evidence' ? 'under_review' : status);
+    const steps = ["open", "under_review", "resolved"];
+    const currentIndex = steps.indexOf(
+      status === "pending_evidence" ? "under_review" : status,
+    );
     return ((currentIndex + 1) / steps.length) * 100;
   };
 
   const handleFileDispute = async () => {
-    if (!newDispute.type || !newDispute.subject || !newDispute.description) return;
+    if (!newDispute.type || !newDispute.subject || !newDispute.description)
+      return;
 
     setIsSubmitting(true);
     try {
@@ -194,7 +222,13 @@ export function DisputeTracker({
         period: newDispute.period || undefined,
       });
       setIsFileDisputeOpen(false);
-      setNewDispute({ type: '' as DisputeType, subject: '', description: '', amount: '', period: '' });
+      setNewDispute({
+        type: "" as DisputeType,
+        subject: "",
+        description: "",
+        amount: "",
+        period: "",
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -207,7 +241,7 @@ export function DisputeTracker({
     try {
       await onSubmitEvidence(selectedDispute.id, newEvidence);
       setIsEvidenceDialogOpen(false);
-      setNewEvidence({ description: '', files: [] });
+      setNewEvidence({ description: "", files: [] });
     } finally {
       setIsSubmitting(false);
     }
@@ -219,17 +253,17 @@ export function DisputeTracker({
     setIsSubmitting(true);
     try {
       await onSendMessage(selectedDispute.id, newMessage);
-      setNewMessage('');
+      setNewMessage("");
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const formatDate = (date: Date) => {
-    return new Date(date).toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
+    return new Date(date).toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
     });
   };
 
@@ -252,7 +286,10 @@ export function DisputeTracker({
               <Scale className="w-5 h-5" />
               Dispute Center
             </CardTitle>
-            <Button onClick={() => setIsFileDisputeOpen(true)} data-testid="button-file-dispute">
+            <Button
+              onClick={() => setIsFileDisputeOpen(true)}
+              data-testid="button-file-dispute"
+            >
               <AlertTriangle className="w-4 h-4 mr-2" />
               File Dispute
             </Button>
@@ -260,7 +297,10 @@ export function DisputeTracker({
         </CardHeader>
         <CardContent className="space-y-4">
           {disputes.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-12 text-muted-foreground" data-testid="no-disputes">
+            <div
+              className="flex flex-col items-center justify-center py-12 text-muted-foreground"
+              data-testid="no-disputes"
+            >
               <Shield className="w-12 h-12 mb-4 opacity-50" />
               <p>No disputes filed</p>
               <p className="text-sm">All your royalties are in order</p>
@@ -309,11 +349,15 @@ export function DisputeTracker({
                     <ChevronRight className="w-5 h-5 text-muted-foreground" />
                   </div>
 
-                  {dispute.status !== 'closed' && dispute.status !== 'resolved' && (
-                    <div className="mt-3 pt-3 border-t">
-                      <Progress value={getStatusProgress(dispute.status)} className="h-1" />
-                    </div>
-                  )}
+                  {dispute.status !== "closed" &&
+                    dispute.status !== "resolved" && (
+                      <div className="mt-3 pt-3 border-t">
+                        <Progress
+                          value={getStatusProgress(dispute.status)}
+                          className="h-1"
+                        />
+                      </div>
+                    )}
                 </div>
               ))}
             </div>
@@ -326,7 +370,8 @@ export function DisputeTracker({
           <DialogHeader>
             <DialogTitle>File a Dispute</DialogTitle>
             <DialogDescription>
-              Submit a dispute regarding your royalties. Well review and respond within 5 business days.
+              Submit a dispute regarding your royalties. Well review and respond
+              within 5 business days.
             </DialogDescription>
           </DialogHeader>
 
@@ -343,14 +388,18 @@ export function DisputeTracker({
                   <SelectValue placeholder="Select type" />
                 </SelectTrigger>
                 <SelectContent>
-                  {Object.entries(DISPUTE_TYPES).map(([key, { label, description }]) => (
-                    <SelectItem key={key} value={key}>
-                      <div>
-                        <p>{label}</p>
-                        <p className="text-xs text-muted-foreground">{description}</p>
-                      </div>
-                    </SelectItem>
-                  ))}
+                  {Object.entries(DISPUTE_TYPES).map(
+                    ([key, { label, description }]) => (
+                      <SelectItem key={key} value={key}>
+                        <div>
+                          <p>{label}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {description}
+                          </p>
+                        </div>
+                      </SelectItem>
+                    ),
+                  )}
                 </SelectContent>
               </Select>
             </div>
@@ -361,7 +410,9 @@ export function DisputeTracker({
                 id="subject"
                 placeholder="Brief description of the issue"
                 value={newDispute.subject}
-                onChange={(e) => setNewDispute({ ...newDispute, subject: e.target.value })}
+                onChange={(e) =>
+                  setNewDispute({ ...newDispute, subject: e.target.value })
+                }
                 data-testid="input-dispute-subject"
               />
             </div>
@@ -373,7 +424,9 @@ export function DisputeTracker({
                 placeholder="Provide details about your dispute..."
                 rows={4}
                 value={newDispute.description}
-                onChange={(e) => setNewDispute({ ...newDispute, description: e.target.value })}
+                onChange={(e) =>
+                  setNewDispute({ ...newDispute, description: e.target.value })
+                }
                 data-testid="input-dispute-description"
               />
             </div>
@@ -387,7 +440,9 @@ export function DisputeTracker({
                   step="0.01"
                   placeholder="0.00"
                   value={newDispute.amount}
-                  onChange={(e) => setNewDispute({ ...newDispute, amount: e.target.value })}
+                  onChange={(e) =>
+                    setNewDispute({ ...newDispute, amount: e.target.value })
+                  }
                 />
               </div>
               <div className="space-y-2">
@@ -396,19 +451,29 @@ export function DisputeTracker({
                   id="period"
                   placeholder="e.g., January 2026"
                   value={newDispute.period}
-                  onChange={(e) => setNewDispute({ ...newDispute, period: e.target.value })}
+                  onChange={(e) =>
+                    setNewDispute({ ...newDispute, period: e.target.value })
+                  }
                 />
               </div>
             </div>
           </div>
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsFileDisputeOpen(false)}>
+            <Button
+              variant="outline"
+              onClick={() => setIsFileDisputeOpen(false)}
+            >
               Cancel
             </Button>
             <Button
               onClick={handleFileDispute}
-              disabled={!newDispute.type || !newDispute.subject || !newDispute.description || isSubmitting}
+              disabled={
+                !newDispute.type ||
+                !newDispute.subject ||
+                !newDispute.description ||
+                isSubmitting
+              }
               data-testid="button-submit-dispute"
             >
               {isSubmitting ? (
@@ -417,15 +482,21 @@ export function DisputeTracker({
                   Submitting...
                 </>
               ) : (
-                'Submit Dispute'
+                "Submit Dispute"
               )}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      <Dialog open={!!selectedDispute} onOpenChange={() => setSelectedDispute(null)}>
-        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto" data-testid="dialog-dispute-details">
+      <Dialog
+        open={!!selectedDispute}
+        onOpenChange={() => setSelectedDispute(null)}
+      >
+        <DialogContent
+          className="max-w-2xl max-h-[80vh] overflow-y-auto"
+          data-testid="dialog-dispute-details"
+        >
           {selectedDispute && (
             <>
               <DialogHeader>
@@ -435,7 +506,8 @@ export function DisputeTracker({
                 </div>
                 <DialogTitle>{selectedDispute.subject}</DialogTitle>
                 <DialogDescription>
-                  Filed on {formatDate(selectedDispute.createdAt)} | {DISPUTE_TYPES[selectedDispute.type].label}
+                  Filed on {formatDate(selectedDispute.createdAt)} |{" "}
+                  {DISPUTE_TYPES[selectedDispute.type].label}
                 </DialogDescription>
               </DialogHeader>
 
@@ -444,7 +516,8 @@ export function DisputeTracker({
                   <p className="text-sm">{selectedDispute.description}</p>
                   {selectedDispute.amount && (
                     <p className="mt-2 text-sm">
-                      <strong>Disputed Amount:</strong> ${selectedDispute.amount.toFixed(2)}
+                      <strong>Disputed Amount:</strong> $
+                      {selectedDispute.amount.toFixed(2)}
                     </p>
                   )}
                   {selectedDispute.period && (
@@ -456,7 +529,9 @@ export function DisputeTracker({
 
                 {selectedDispute.resolution && (
                   <div className="p-4 rounded-lg bg-green-500/10 border border-green-500/20">
-                    <p className="font-medium text-green-500 mb-1">Resolution</p>
+                    <p className="font-medium text-green-500 mb-1">
+                      Resolution
+                    </p>
                     <p className="text-sm">{selectedDispute.resolution}</p>
                   </div>
                 )}
@@ -468,7 +543,9 @@ export function DisputeTracker({
                       <div
                         key={msg.id}
                         className={`p-3 rounded-lg ${
-                          msg.sender === 'user' ? 'bg-primary/10 ml-8' : 'bg-muted/30 mr-8'
+                          msg.sender === "user"
+                            ? "bg-primary/10 ml-8"
+                            : "bg-muted/30 mr-8"
                         }`}
                       >
                         <p className="text-sm">{msg.content}</p>
@@ -480,42 +557,46 @@ export function DisputeTracker({
                   </div>
                 )}
 
-                {selectedDispute.status !== 'resolved' && selectedDispute.status !== 'closed' && (
-                  <div className="space-y-3 pt-4 border-t">
-                    <div className="flex gap-2">
-                      <Textarea
-                        placeholder="Type a message..."
-                        value={newMessage}
-                        onChange={(e) => setNewMessage(e.target.value)}
-                        rows={2}
-                        className="flex-1"
-                      />
-                      <div className="flex flex-col gap-2">
-                        <Button
-                          size="sm"
-                          onClick={handleSendMessage}
-                          disabled={!newMessage.trim() || isSubmitting}
-                        >
-                          <MessageSquare className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => setIsEvidenceDialogOpen(true)}
-                        >
-                          <Upload className="w-4 h-4" />
-                        </Button>
+                {selectedDispute.status !== "resolved" &&
+                  selectedDispute.status !== "closed" && (
+                    <div className="space-y-3 pt-4 border-t">
+                      <div className="flex gap-2">
+                        <Textarea
+                          placeholder="Type a message..."
+                          value={newMessage}
+                          onChange={(e) => setNewMessage(e.target.value)}
+                          rows={2}
+                          className="flex-1"
+                        />
+                        <div className="flex flex-col gap-2">
+                          <Button
+                            size="sm"
+                            onClick={handleSendMessage}
+                            disabled={!newMessage.trim() || isSubmitting}
+                          >
+                            <MessageSquare className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => setIsEvidenceDialogOpen(true)}
+                          >
+                            <Upload className="w-4 h-4" />
+                          </Button>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                )}
+                  )}
               </div>
             </>
           )}
         </DialogContent>
       </Dialog>
 
-      <Dialog open={isEvidenceDialogOpen} onOpenChange={setIsEvidenceDialogOpen}>
+      <Dialog
+        open={isEvidenceDialogOpen}
+        onOpenChange={setIsEvidenceDialogOpen}
+      >
         <DialogContent data-testid="dialog-submit-evidence">
           <DialogHeader>
             <DialogTitle>Submit Evidence</DialogTitle>
@@ -532,7 +613,12 @@ export function DisputeTracker({
                 placeholder="Describe the evidence you're submitting..."
                 rows={3}
                 value={newEvidence.description}
-                onChange={(e) => setNewEvidence({ ...newEvidence, description: e.target.value })}
+                onChange={(e) =>
+                  setNewEvidence({
+                    ...newEvidence,
+                    description: e.target.value,
+                  })
+                }
                 data-testid="input-evidence-description"
               />
             </div>
@@ -567,7 +653,10 @@ export function DisputeTracker({
           </div>
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsEvidenceDialogOpen(false)}>
+            <Button
+              variant="outline"
+              onClick={() => setIsEvidenceDialogOpen(false)}
+            >
               Cancel
             </Button>
             <Button
@@ -581,7 +670,7 @@ export function DisputeTracker({
                   Submitting...
                 </>
               ) : (
-                'Submit Evidence'
+                "Submit Evidence"
               )}
             </Button>
           </DialogFooter>

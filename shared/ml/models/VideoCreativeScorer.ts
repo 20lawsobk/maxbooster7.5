@@ -15,9 +15,9 @@
  * Output  (3 values):   watch_time_score, hook_strength, conversion_score
  */
 
-import * as tf from '@tensorflow/tfjs';
-import { BaseModel } from './BaseModel.js';
-import { PLATFORM_IDX, GOAL_IDX, TONE_IDX } from './CreativePlannerModel.js';
+import * as tf from "@tensorflow/tfjs";
+import { BaseModel } from "./BaseModel.js";
+import { PLATFORM_IDX, GOAL_IDX, TONE_IDX } from "./CreativePlannerModel.js";
 
 export interface CreativeScorerInput {
   platform: string;
@@ -66,9 +66,9 @@ export function extractScorerFeatures(input: CreativeScorerInput): number[] {
 export class VideoCreativeScorer extends BaseModel {
   constructor() {
     super({
-      name: 'VideoCreativeScorer',
-      version: '1.0.0',
-      type: 'regression',
+      name: "VideoCreativeScorer",
+      version: "1.0.0",
+      type: "regression",
       inputShape: [14],
       outputShape: [3],
     });
@@ -76,16 +76,28 @@ export class VideoCreativeScorer extends BaseModel {
 
   protected buildModel(): tf.LayersModel {
     const input = tf.input({ shape: [14] });
-    let x = tf.layers.dense({ units: 128, activation: 'relu', kernelInitializer: 'heNormal' }).apply(input) as tf.SymbolicTensor;
+    let x = tf.layers
+      .dense({ units: 128, activation: "relu", kernelInitializer: "heNormal" })
+      .apply(input) as tf.SymbolicTensor;
     x = tf.layers.batchNormalization().apply(x) as tf.SymbolicTensor;
     x = tf.layers.dropout({ rate: 0.25 }).apply(x) as tf.SymbolicTensor;
-    x = tf.layers.dense({ units: 64, activation: 'relu', kernelInitializer: 'heNormal' }).apply(x) as tf.SymbolicTensor;
+    x = tf.layers
+      .dense({ units: 64, activation: "relu", kernelInitializer: "heNormal" })
+      .apply(x) as tf.SymbolicTensor;
     x = tf.layers.batchNormalization().apply(x) as tf.SymbolicTensor;
     x = tf.layers.dropout({ rate: 0.15 }).apply(x) as tf.SymbolicTensor;
-    x = tf.layers.dense({ units: 32, activation: 'relu' }).apply(x) as tf.SymbolicTensor;
-    const output = tf.layers.dense({ units: 3, activation: 'sigmoid' }).apply(x) as tf.SymbolicTensor;
+    x = tf.layers
+      .dense({ units: 32, activation: "relu" })
+      .apply(x) as tf.SymbolicTensor;
+    const output = tf.layers
+      .dense({ units: 3, activation: "sigmoid" })
+      .apply(x) as tf.SymbolicTensor;
     const model = tf.model({ inputs: input, outputs: output });
-    model.compile({ optimizer: tf.train.adam(0.0005), loss: 'meanSquaredError', metrics: ['mae'] });
+    model.compile({
+      optimizer: tf.train.adam(0.0005),
+      loss: "meanSquaredError",
+      metrics: ["mae"],
+    });
     return model;
   }
 
@@ -103,14 +115,19 @@ export class VideoCreativeScorer extends BaseModel {
     };
   }
 
-  public async scoreCreative(input: CreativeScorerInput): Promise<CreativeScorerOutput> {
+  public async scoreCreative(
+    input: CreativeScorerInput,
+  ): Promise<CreativeScorerOutput> {
     if (!this.model) await this.initialize();
     const features = extractScorerFeatures(input);
     const result = await this.predict(features);
     return result.prediction as CreativeScorerOutput;
   }
 
-  public static makeSyntheticSamples(count: number): { inputs: number[][]; labels: number[][] } {
+  public static makeSyntheticSamples(count: number): {
+    inputs: number[][];
+    labels: number[][];
+  } {
     const platforms = Object.keys(PLATFORM_IDX);
     const goals = Object.keys(GOAL_IDX);
     const tones = Object.keys(TONE_IDX);
@@ -134,20 +151,38 @@ export class VideoCreativeScorer extends BaseModel {
       const moodEnergy = Math.random();
       const scriptLength = 50 + Math.floor(Math.random() * 450);
 
-      inputs.push(extractScorerFeatures({
-        platform, goal, tone, bpm, energyMean, hookWordCount, hasQuestionHook,
-        hasStatementHook, beatCount, visualDiversity, hasCTA, genreEnergy, moodEnergy, scriptLength,
-      }));
+      inputs.push(
+        extractScorerFeatures({
+          platform,
+          goal,
+          tone,
+          bpm,
+          energyMean,
+          hookWordCount,
+          hasQuestionHook,
+          hasStatementHook,
+          beatCount,
+          visualDiversity,
+          hasCTA,
+          genreEnergy,
+          moodEnergy,
+          scriptLength,
+        }),
+      );
 
       // Label heuristics
-      const isHighEnergy = tone === 'high_energy' || tone === 'hype';
-      const isConversion = goal === 'conversion' || goal === 'launch';
-      const hookBonus = (hasQuestionHook ? 0.1 : 0) + (hasStatementHook ? 0.05 : 0);
+      const isHighEnergy = tone === "high_energy" || tone === "hype";
+      const isConversion = goal === "conversion" || goal === "launch";
+      const hookBonus =
+        (hasQuestionHook ? 0.1 : 0) + (hasStatementHook ? 0.05 : 0);
       const ctaBonus = hasCTA ? 0.15 : 0;
 
-      const watchTime = 0.4 + (energyMean * 0.2) + (isHighEnergy ? 0.1 : 0) + Math.random() * 0.2;
-      const hook = 0.4 + hookBonus + (isHighEnergy ? 0.15 : 0) + Math.random() * 0.25;
-      const conversion = 0.3 + ctaBonus + (isConversion ? 0.2 : 0) + Math.random() * 0.25;
+      const watchTime =
+        0.4 + energyMean * 0.2 + (isHighEnergy ? 0.1 : 0) + Math.random() * 0.2;
+      const hook =
+        0.4 + hookBonus + (isHighEnergy ? 0.15 : 0) + Math.random() * 0.25;
+      const conversion =
+        0.3 + ctaBonus + (isConversion ? 0.2 : 0) + Math.random() * 0.25;
 
       labels.push([
         Math.min(1, watchTime),

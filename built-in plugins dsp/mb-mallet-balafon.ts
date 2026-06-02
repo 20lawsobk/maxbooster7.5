@@ -1,5 +1,60 @@
-import type { PluginDefinition } from '../server/services/pluginHostService';
+import type { PluginDefinition } from "../server/services/pluginHostService";
 
-const MbMalletBalafonPlugin: PluginDefinition = { id: 'mb-mallet-balafon', slug: 'mb-mallet-balafon', name: 'MB Balafon', category: 'instrument', type: 'mallet' as any, version: '1.0.0', description: 'West African wooden xylophone with gourd resonators', author: 'Max Booster', grade: 'A', oscillators: [{ type: 'sine', detune: 0, gain: 0.5 }, { type: 'triangle', detune: 0, gain: 0.3 }, { type: 'sine', detune: 2400, gain: 0.2 }], envelope: { attack: 0.001, decay: 0.7, sustain: 0.05, release: 0.4 }, parameters: [{ id: 'buzz', name: 'Buzz', type: 'float', defaultValue: 0.4, minValue: 0, maxValue: 1, automatable: true }, { id: 'warmth', name: 'Warmth', type: 'float', defaultValue: 0.6, minValue: 0, maxValue: 1, automatable: true }, { id: 'resonance', name: 'Gourd Resonance', type: 'float', defaultValue: 0.5, minValue: 0, maxValue: 1, automatable: true }, { id: 'volume', name: 'Volume', type: 'float', defaultValue: 0.8, minValue: 0, maxValue: 1, automatable: true }], defaultPreset: { buzz: 0.4, warmth: 0.6, resonance: 0.5, volume: 0.8 } };
+const MbMalletBalafonPlugin: PluginDefinition = {
+  id: "mb-mallet-balafon",
+  slug: "mb-mallet-balafon",
+  name: "MB Balafon",
+  category: "instrument",
+  type: "mallet" as any,
+  version: "1.0.0",
+  description: "West African wooden xylophone with gourd resonators",
+  author: "Max Booster",
+  grade: "A",
+  oscillators: [
+    { type: "sine", detune: 0, gain: 0.5 },
+    { type: "triangle", detune: 0, gain: 0.3 },
+    { type: "sine", detune: 2400, gain: 0.2 },
+  ],
+  envelope: { attack: 0.001, decay: 0.7, sustain: 0.05, release: 0.4 },
+  parameters: [
+    {
+      id: "buzz",
+      name: "Buzz",
+      type: "float",
+      defaultValue: 0.4,
+      minValue: 0,
+      maxValue: 1,
+      automatable: true,
+    },
+    {
+      id: "warmth",
+      name: "Warmth",
+      type: "float",
+      defaultValue: 0.6,
+      minValue: 0,
+      maxValue: 1,
+      automatable: true,
+    },
+    {
+      id: "resonance",
+      name: "Gourd Resonance",
+      type: "float",
+      defaultValue: 0.5,
+      minValue: 0,
+      maxValue: 1,
+      automatable: true,
+    },
+    {
+      id: "volume",
+      name: "Volume",
+      type: "float",
+      defaultValue: 0.8,
+      minValue: 0,
+      maxValue: 1,
+      automatable: true,
+    },
+  ],
+  defaultPreset: { buzz: 0.4, warmth: 0.6, resonance: 0.5, volume: 0.8 },
+};
 
 export default MbMalletBalafonPlugin;

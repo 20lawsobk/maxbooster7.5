@@ -11,6 +11,7 @@ The runtime connection pool resolves `config.database.url = env.NEON_DATABASE_UR
 **self-managed Neon database** (host `ep-nameless-mouse-…/neondb`).
 
 Replit's **managed** `DATABASE_URL` is a **different, separate** database. Critically:
+
 - `executeSql({ environment: "development" | "production" })` queries the **managed** DB.
 - The Publish flow's dev→prod schema diff operates on the **managed** DB.
 - So "does the table exist in prod?" checks via `executeSql` and "re-publish to create the
@@ -22,6 +23,7 @@ DB the app never reads. This exact mismatch caused the Beat Loop "Data Load Erro
 `beat_money_loop_state` existed in the managed DB but was absent from the app's NEON_DATABASE_URL DB.
 
 **How to apply — for ANY schema/data work or table-existence check in this repo:**
+
 1. Target `NEON_DATABASE_URL`, not the managed `DATABASE_URL`.
 2. To inspect/modify the real app DB from the code-execution sandbox: read the value with
    `viewEnvVars({ type: 'env', environment: 'shared', keys: ['NEON_DATABASE_URL'] })`

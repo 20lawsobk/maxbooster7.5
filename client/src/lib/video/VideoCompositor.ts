@@ -1,6 +1,12 @@
-import type { LayerConfig, TransformConfig } from '../../../../shared/video/VideoRendererEngine';
-import { DEFAULT_TRANSFORM, interpolateValue } from '../../../../shared/video/VideoRendererEngine';
-import type { BlendMode } from './WebGLRenderer';
+import type {
+  LayerConfig,
+  TransformConfig,
+} from "../../../../shared/video/VideoRendererEngine";
+import {
+  DEFAULT_TRANSFORM,
+  interpolateValue,
+} from "../../../../shared/video/VideoRendererEngine";
+import type { BlendMode } from "./WebGLRenderer";
 
 export interface CompositorOptions {
   width: number;
@@ -28,19 +34,19 @@ export interface PostProcessEffect {
 }
 
 export type PostProcessEffectType =
-  | 'blur'
-  | 'brightness'
-  | 'contrast'
-  | 'saturate'
-  | 'grayscale'
-  | 'sepia'
-  | 'invert'
-  | 'hueRotate'
-  | 'dropShadow'
-  | 'colorMatrix'
-  | 'vignette'
-  | 'grain'
-  | 'chromaKey';
+  | "blur"
+  | "brightness"
+  | "contrast"
+  | "saturate"
+  | "grayscale"
+  | "sepia"
+  | "invert"
+  | "hueRotate"
+  | "dropShadow"
+  | "colorMatrix"
+  | "vignette"
+  | "grain"
+  | "chromaKey";
 
 export interface FrameTimingConfig {
   fps: number;
@@ -59,20 +65,20 @@ export class CompositorError extends Error {
   constructor(
     message: string,
     public readonly code: CompositorErrorCode,
-    public readonly details?: unknown
+    public readonly details?: unknown,
   ) {
     super(message);
-    this.name = 'CompositorError';
+    this.name = "CompositorError";
   }
 }
 
 export type CompositorErrorCode =
-  | 'CANVAS_CREATION_FAILED'
-  | 'CONTEXT_LOST'
-  | 'INVALID_LAYER'
-  | 'BUFFER_OVERFLOW'
-  | 'EFFECT_FAILED'
-  | 'ABORTED';
+  | "CANVAS_CREATION_FAILED"
+  | "CONTEXT_LOST"
+  | "INVALID_LAYER"
+  | "BUFFER_OVERFLOW"
+  | "EFFECT_FAILED"
+  | "ABORTED";
 
 interface BufferEntry {
   canvas: OffscreenCanvas | HTMLCanvasElement;
@@ -107,23 +113,23 @@ export class VideoCompositor {
     this.maxBuffers = options.maxBuffers ?? 8;
     this.enableAntialiasing = options.enableAntialiasing ?? true;
 
-    if (this.useOffscreen && typeof OffscreenCanvas !== 'undefined') {
+    if (this.useOffscreen && typeof OffscreenCanvas !== "undefined") {
       this.mainCanvas = new OffscreenCanvas(this.width, this.height);
     } else {
-      this.mainCanvas = document.createElement('canvas');
+      this.mainCanvas = document.createElement("canvas");
       this.mainCanvas.width = this.width;
       this.mainCanvas.height = this.height;
     }
 
-    const ctx = this.mainCanvas.getContext('2d', {
+    const ctx = this.mainCanvas.getContext("2d", {
       alpha: true,
       willReadFrequently: false,
     });
 
     if (!ctx) {
       throw new CompositorError(
-        'Failed to create 2D canvas context',
-        'CANVAS_CREATION_FAILED'
+        "Failed to create 2D canvas context",
+        "CANVAS_CREATION_FAILED",
       );
     }
 
@@ -131,9 +137,11 @@ export class VideoCompositor {
     this.setupContext(this.mainCtx);
   }
 
-  private setupContext(ctx: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D): void {
+  private setupContext(
+    ctx: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D,
+  ): void {
     ctx.imageSmoothingEnabled = this.enableAntialiasing;
-    ctx.imageSmoothingQuality = 'high';
+    ctx.imageSmoothingQuality = "high";
   }
 
   private acquireBuffer(): BufferEntry {
@@ -149,22 +157,26 @@ export class VideoCompositor {
     if (this.bufferPool.length >= this.maxBuffers) {
       throw new CompositorError(
         `Buffer pool exhausted (max: ${this.maxBuffers})`,
-        'BUFFER_OVERFLOW'
+        "BUFFER_OVERFLOW",
       );
     }
 
-    const canvas = this.useOffscreen && typeof OffscreenCanvas !== 'undefined'
-      ? new OffscreenCanvas(this.width, this.height)
-      : (() => {
-          const c = document.createElement('canvas');
-          c.width = this.width;
-          c.height = this.height;
-          return c;
-        })();
+    const canvas =
+      this.useOffscreen && typeof OffscreenCanvas !== "undefined"
+        ? new OffscreenCanvas(this.width, this.height)
+        : (() => {
+            const c = document.createElement("canvas");
+            c.width = this.width;
+            c.height = this.height;
+            return c;
+          })();
 
-    const ctx = canvas.getContext('2d', { alpha: true });
+    const ctx = canvas.getContext("2d", { alpha: true });
     if (!ctx) {
-      throw new CompositorError('Failed to create buffer context', 'CANVAS_CREATION_FAILED');
+      throw new CompositorError(
+        "Failed to create buffer context",
+        "CANVAS_CREATION_FAILED",
+      );
     }
 
     this.setupContext(ctx);
@@ -190,12 +202,12 @@ export class VideoCompositor {
   async compositeFrame(
     layers: CompositeLayer[],
     backgroundColor?: string,
-    signal?: AbortSignal
+    signal?: AbortSignal,
   ): Promise<ImageData> {
     const startTime = performance.now();
 
     if (signal?.aborted || this.aborted) {
-      throw new CompositorError('Composition aborted', 'ABORTED');
+      throw new CompositorError("Composition aborted", "ABORTED");
     }
 
     this.mainCtx.clearRect(0, 0, this.width, this.height);
@@ -211,7 +223,7 @@ export class VideoCompositor {
 
     for (const layer of sortedLayers) {
       if (signal?.aborted || this.aborted) {
-        throw new CompositorError('Composition aborted', 'ABORTED');
+        throw new CompositorError("Composition aborted", "ABORTED");
       }
 
       await this.renderLayer(layer);
@@ -233,7 +245,8 @@ export class VideoCompositor {
     this.mainCtx.save();
 
     this.mainCtx.globalAlpha = opacity;
-    this.mainCtx.globalCompositeOperation = this.blendModeToCompositeOp(blendMode);
+    this.mainCtx.globalCompositeOperation =
+      this.blendModeToCompositeOp(blendMode);
 
     const centerX = this.width * transform.anchorX;
     const centerY = this.height * transform.anchorY;
@@ -250,37 +263,49 @@ export class VideoCompositor {
       source = canvas;
     }
 
-    const sourceWidth = 'width' in source ? source.width : this.width;
-    const sourceHeight = 'height' in source ? source.height : this.height;
+    const sourceWidth = "width" in source ? source.width : this.width;
+    const sourceHeight = "height" in source ? source.height : this.height;
 
-    this.mainCtx.drawImage(source, 0, 0, sourceWidth, sourceHeight, 0, 0, this.width, this.height);
+    this.mainCtx.drawImage(
+      source,
+      0,
+      0,
+      sourceWidth,
+      sourceHeight,
+      0,
+      0,
+      this.width,
+      this.height,
+    );
 
     this.mainCtx.restore();
   }
 
-  private blendModeToCompositeOp(blendMode: BlendMode): GlobalCompositeOperation {
+  private blendModeToCompositeOp(
+    blendMode: BlendMode,
+  ): GlobalCompositeOperation {
     const mapping: Record<BlendMode, GlobalCompositeOperation> = {
-      normal: 'source-over',
-      multiply: 'multiply',
-      screen: 'screen',
-      overlay: 'overlay',
-      darken: 'darken',
-      lighten: 'lighten',
-      colorDodge: 'color-dodge',
-      colorBurn: 'color-burn',
-      hardLight: 'hard-light',
-      softLight: 'soft-light',
-      difference: 'difference',
-      exclusion: 'exclusion',
-      hue: 'hue',
-      saturation: 'saturation',
-      color: 'color',
-      luminosity: 'luminosity',
-      add: 'lighter',
-      subtract: 'difference',
+      normal: "source-over",
+      multiply: "multiply",
+      screen: "screen",
+      overlay: "overlay",
+      darken: "darken",
+      lighten: "lighten",
+      colorDodge: "color-dodge",
+      colorBurn: "color-burn",
+      hardLight: "hard-light",
+      softLight: "soft-light",
+      difference: "difference",
+      exclusion: "exclusion",
+      hue: "hue",
+      saturation: "saturation",
+      color: "color",
+      luminosity: "luminosity",
+      add: "lighter",
+      subtract: "difference",
     };
 
-    return mapping[blendMode] ?? 'source-over';
+    return mapping[blendMode] ?? "source-over";
   }
 
   addEffect(effect: PostProcessEffect): void {
@@ -298,7 +323,10 @@ export class VideoCompositor {
     }
   }
 
-  updateEffectParams(effectId: string, params: Partial<Record<string, number | string | boolean>>): void {
+  updateEffectParams(
+    effectId: string,
+    params: Partial<Record<string, number | string | boolean>>,
+  ): void {
     const effect = this.effects.get(effectId);
     if (effect) {
       effect.params = { ...effect.params, ...params };
@@ -306,7 +334,9 @@ export class VideoCompositor {
   }
 
   private async applyEffects(): Promise<void> {
-    const enabledEffects = Array.from(this.effects.values()).filter((e) => e.enabled);
+    const enabledEffects = Array.from(this.effects.values()).filter(
+      (e) => e.enabled,
+    );
     if (enabledEffects.length === 0) return;
 
     const filters: string[] = [];
@@ -321,7 +351,7 @@ export class VideoCompositor {
     if (filters.length > 0) {
       const buffer = this.acquireBuffer();
       try {
-        buffer.ctx.filter = filters.join(' ');
+        buffer.ctx.filter = filters.join(" ");
         buffer.ctx.drawImage(this.mainCanvas, 0, 0);
 
         this.mainCtx.clearRect(0, 0, this.width, this.height);
@@ -332,11 +362,11 @@ export class VideoCompositor {
     }
 
     for (const effect of enabledEffects) {
-      if (effect.type === 'vignette') {
+      if (effect.type === "vignette") {
         this.applyVignette(effect.params);
-      } else if (effect.type === 'grain') {
+      } else if (effect.type === "grain") {
         await this.applyGrain(effect.params);
-      } else if (effect.type === 'chromaKey') {
+      } else if (effect.type === "chromaKey") {
         this.applyChromaKey(effect.params);
       }
     }
@@ -346,30 +376,32 @@ export class VideoCompositor {
     const { type, params } = effect;
 
     switch (type) {
-      case 'blur':
+      case "blur":
         return `blur(${params.radius ?? 5}px)`;
-      case 'brightness':
+      case "brightness":
         return `brightness(${params.amount ?? 1})`;
-      case 'contrast':
+      case "contrast":
         return `contrast(${params.amount ?? 1})`;
-      case 'saturate':
+      case "saturate":
         return `saturate(${params.amount ?? 1})`;
-      case 'grayscale':
+      case "grayscale":
         return `grayscale(${params.amount ?? 1})`;
-      case 'sepia':
+      case "sepia":
         return `sepia(${params.amount ?? 1})`;
-      case 'invert':
+      case "invert":
         return `invert(${params.amount ?? 1})`;
-      case 'hueRotate':
+      case "hueRotate":
         return `hue-rotate(${params.degrees ?? 0}deg)`;
-      case 'dropShadow':
-        return `drop-shadow(${params.offsetX ?? 0}px ${params.offsetY ?? 0}px ${params.blur ?? 5}px ${params.color ?? '#000000'})`;
+      case "dropShadow":
+        return `drop-shadow(${params.offsetX ?? 0}px ${params.offsetY ?? 0}px ${params.blur ?? 5}px ${params.color ?? "#000000"})`;
       default:
         return null;
     }
   }
 
-  private applyVignette(params: Record<string, number | string | boolean>): void {
+  private applyVignette(
+    params: Record<string, number | string | boolean>,
+  ): void {
     const intensity = (params.intensity as number) ?? 0.5;
     const size = (params.size as number) ?? 0.5;
 
@@ -379,17 +411,19 @@ export class VideoCompositor {
       this.width * size * 0.3,
       this.width / 2,
       this.height / 2,
-      this.width * size
+      this.width * size,
     );
 
-    gradient.addColorStop(0, 'rgba(0,0,0,0)');
+    gradient.addColorStop(0, "rgba(0,0,0,0)");
     gradient.addColorStop(1, `rgba(0,0,0,${intensity})`);
 
     this.mainCtx.fillStyle = gradient;
     this.mainCtx.fillRect(0, 0, this.width, this.height);
   }
 
-  private async applyGrain(params: Record<string, number | string | boolean>): Promise<void> {
+  private async applyGrain(
+    params: Record<string, number | string | boolean>,
+  ): Promise<void> {
     const intensity = (params.intensity as number) ?? 0.1;
     const size = (params.size as number) ?? 1;
 
@@ -406,8 +440,10 @@ export class VideoCompositor {
     this.mainCtx.putImageData(imageData, 0, 0);
   }
 
-  private applyChromaKey(params: Record<string, number | string | boolean>): void {
-    const keyColor = (params.color as string) ?? '#00ff00';
+  private applyChromaKey(
+    params: Record<string, number | string | boolean>,
+  ): void {
+    const keyColor = (params.color as string) ?? "#00ff00";
     const tolerance = (params.tolerance as number) ?? 0.3;
 
     const imageData = this.mainCtx.getImageData(0, 0, this.width, this.height);
@@ -425,7 +461,7 @@ export class VideoCompositor {
       const b = data[i + 2];
 
       const dist = Math.sqrt(
-        Math.pow(r - keyR, 2) + Math.pow(g - keyG, 2) + Math.pow(b - keyB, 2)
+        Math.pow(r - keyR, 2) + Math.pow(g - keyG, 2) + Math.pow(b - keyB, 2),
       );
 
       if (dist < maxDist) {
@@ -441,7 +477,7 @@ export class VideoCompositor {
     timestamp: number,
     timing: FrameTimingConfig,
     layers: CompositeLayer[],
-    backgroundColor?: string
+    backgroundColor?: string,
   ): Promise<ImageData> {
     const frameNumber = Math.floor(timestamp * timing.fps);
     const normalizedTime = timestamp / timing.duration;
@@ -451,22 +487,29 @@ export class VideoCompositor {
 
   async renderSequence(
     timing: FrameTimingConfig,
-    layerProvider: (frameNumber: number, timestamp: number) => CompositeLayer[] | Promise<CompositeLayer[]>,
+    layerProvider: (
+      frameNumber: number,
+      timestamp: number,
+    ) => CompositeLayer[] | Promise<CompositeLayer[]>,
     onFrame?: (imageData: ImageData, frameNumber: number) => void,
     signal?: AbortSignal,
-    backgroundColor?: string
+    backgroundColor?: string,
   ): Promise<ImageData[]> {
     const frames: ImageData[] = [];
     const totalFrames = Math.ceil(timing.duration * timing.fps);
 
     for (let frame = 0; frame < totalFrames; frame++) {
       if (signal?.aborted || this.aborted) {
-        throw new CompositorError('Sequence rendering aborted', 'ABORTED');
+        throw new CompositorError("Sequence rendering aborted", "ABORTED");
       }
 
       const timestamp = frame / timing.fps;
       const layers = await layerProvider(frame, timestamp);
-      const imageData = await this.compositeFrame(layers, backgroundColor, signal);
+      const imageData = await this.compositeFrame(
+        layers,
+        backgroundColor,
+        signal,
+      );
 
       frames.push(imageData);
 
@@ -554,15 +597,19 @@ export class VideoCompositor {
 
   static createLayer(
     id: string,
-    canvas: HTMLCanvasElement | OffscreenCanvas | ImageBitmap | HTMLImageElement,
-    options?: Partial<Omit<CompositeLayer, 'id' | 'canvas'>>
+    canvas:
+      | HTMLCanvasElement
+      | OffscreenCanvas
+      | ImageBitmap
+      | HTMLImageElement,
+    options?: Partial<Omit<CompositeLayer, "id" | "canvas">>,
   ): CompositeLayer {
     return {
       id,
       canvas,
       transform: options?.transform ?? { ...DEFAULT_TRANSFORM },
       opacity: options?.opacity ?? 1,
-      blendMode: options?.blendMode ?? 'normal',
+      blendMode: options?.blendMode ?? "normal",
       visible: options?.visible ?? true,
       zIndex: options?.zIndex ?? 0,
     };
@@ -571,7 +618,7 @@ export class VideoCompositor {
   static createEffect(
     id: string,
     type: PostProcessEffectType,
-    params?: Record<string, number | string | boolean>
+    params?: Record<string, number | string | boolean>,
   ): PostProcessEffect {
     return {
       id,
@@ -585,7 +632,7 @@ export class VideoCompositor {
 export function interpolateTransform(
   from: TransformConfig,
   to: TransformConfig,
-  progress: number
+  progress: number,
 ): TransformConfig {
   return {
     x: interpolateValue(from.x, to.x, progress),

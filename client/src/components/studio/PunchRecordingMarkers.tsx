@@ -1,11 +1,11 @@
-import { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Card } from '@/components/ui/card';
-import { Switch } from '@/components/ui/switch';
-import { Badge } from '@/components/ui/badge';
-import { Scissors, Play, Square } from 'lucide-react';
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Card } from "@/components/ui/card";
+import { Switch } from "@/components/ui/switch";
+import { Badge } from "@/components/ui/badge";
+import { Scissors, Play, Square } from "lucide-react";
 
 interface PunchRecordingMarkersProps {
   enabled: boolean;
@@ -36,15 +36,15 @@ export function PunchRecordingMarkers({
     const mins = Math.floor(seconds / 60);
     const secs = Math.floor(seconds % 60);
     const ms = Math.floor((seconds % 1) * 100);
-    return `${mins}:${secs.toString().padStart(2, '0')}.${ms.toString().padStart(2, '0')}`;
+    return `${mins}:${secs.toString().padStart(2, "0")}.${ms.toString().padStart(2, "0")}`;
   };
 
   const parseTime = (timeStr: string): number => {
-    const parts = timeStr.split(':');
+    const parts = timeStr.split(":");
     if (parts.length !== 2) return 0;
 
     const [mins, secsMs] = parts;
-    const [secs, ms = '0'] = secsMs.split('.');
+    const [secs, ms = "0"] = secsMs.split(".");
 
     return parseInt(mins) * 60 + parseInt(secs) + parseInt(ms) / 100;
   };
@@ -53,7 +53,7 @@ export function PunchRecordingMarkers({
     return (
       <div className="flex items-center gap-2">
         <Button
-          variant={enabled ? 'default' : 'outline'}
+          variant={enabled ? "default" : "outline"}
           size="sm"
           onClick={() => onEnabledChange(!enabled)}
           className="h-7 w-7 p-0"
@@ -67,14 +67,14 @@ export function PunchRecordingMarkers({
             <div className="flex items-center gap-1 text-xs">
               <span className="text-gray-500">In:</span>
               <Badge variant="outline" className="text-xs font-mono">
-                {punchIn !== null ? formatTime(punchIn) : '--:--'}
+                {punchIn !== null ? formatTime(punchIn) : "--:--"}
               </Badge>
             </div>
 
             <div className="flex items-center gap-1 text-xs">
               <span className="text-gray-500">Out:</span>
               <Badge variant="outline" className="text-xs font-mono">
-                {punchOut !== null ? formatTime(punchOut) : '--:--'}
+                {punchOut !== null ? formatTime(punchOut) : "--:--"}
               </Badge>
             </div>
           </>
@@ -101,22 +101,27 @@ export function PunchRecordingMarkers({
       {enabled && (
         <div className="space-y-3">
           <div className="text-xs text-gray-500 p-2 bg-gray-900/50 rounded border border-gray-800">
-            Punch recording automatically starts/stops recording at specific timeline positions.
-            Useful for overdubbing specific sections.
+            Punch recording automatically starts/stops recording at specific
+            timeline positions. Useful for overdubbing specific sections.
           </div>
 
           {/* Punch In */}
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <Label className="text-xs">Punch In</Label>
-              <Button variant="outline" size="sm" onClick={onSetPunchIn} className="h-7 text-xs">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={onSetPunchIn}
+                className="h-7 text-xs"
+              >
                 Set at {formatTime(currentTime)}
               </Button>
             </div>
 
             <div className="flex items-center gap-2">
               <Input
-                value={punchIn !== null ? formatTime(punchIn) : ''}
+                value={punchIn !== null ? formatTime(punchIn) : ""}
                 onChange={(e) => {
                   const time = parseTime(e.target.value);
                   onPunchInChange(time);
@@ -141,14 +146,19 @@ export function PunchRecordingMarkers({
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <Label className="text-xs">Punch Out</Label>
-              <Button variant="outline" size="sm" onClick={onSetPunchOut} className="h-7 text-xs">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={onSetPunchOut}
+                className="h-7 text-xs"
+              >
                 Set at {formatTime(currentTime)}
               </Button>
             </div>
 
             <div className="flex items-center gap-2">
               <Input
-                value={punchOut !== null ? formatTime(punchOut) : ''}
+                value={punchOut !== null ? formatTime(punchOut) : ""}
                 onChange={(e) => {
                   const time = parseTime(e.target.value);
                   onPunchOutChange(time);
@@ -172,7 +182,9 @@ export function PunchRecordingMarkers({
           {/* Visual Indicator */}
           {punchIn !== null && punchOut !== null && (
             <div className="space-y-2 p-3 bg-orange-500/10 border border-orange-500/20 rounded">
-              <div className="text-xs font-medium text-orange-300">Punch Range</div>
+              <div className="text-xs font-medium text-orange-300">
+                Punch Range
+              </div>
               <div className="flex items-center justify-between text-xs">
                 <div className="flex items-center gap-2">
                   <Play className="h-3 w-3 text-green-500" />

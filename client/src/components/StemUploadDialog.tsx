@@ -1,26 +1,26 @@
-import { useState } from 'react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { uploadWithProgress } from '@/lib/queryClient';
+import { useState } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { uploadWithProgress } from "@/lib/queryClient";
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { Progress } from '@/components/ui/progress';
-import { Upload, FileAudio, AlertCircle, CheckCircle2 } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
+} from "@/components/ui/select";
+import { Progress } from "@/components/ui/progress";
+import { Upload, FileAudio, AlertCircle, CheckCircle2 } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 interface StemUploadDialogProps {
   open: boolean;
@@ -29,19 +29,23 @@ interface StemUploadDialogProps {
 }
 
 const STEM_TYPES = [
-  { value: 'drums', label: 'Drums' },
-  { value: 'bass', label: 'Bass' },
-  { value: 'melody', label: 'Melody' },
-  { value: 'vocals', label: 'Vocals' },
-  { value: 'fx', label: 'FX/Effects' },
-  { value: 'other', label: 'Other' },
+  { value: "drums", label: "Drums" },
+  { value: "bass", label: "Bass" },
+  { value: "melody", label: "Melody" },
+  { value: "vocals", label: "Vocals" },
+  { value: "fx", label: "FX/Effects" },
+  { value: "other", label: "Other" },
 ];
 
-export function StemUploadDialog({ open, onOpenChange, listingId }: StemUploadDialogProps) {
+export function StemUploadDialog({
+  open,
+  onOpenChange,
+  listingId,
+}: StemUploadDialogProps) {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [stemName, setStemName] = useState('');
-  const [stemType, setStemType] = useState('');
-  const [price, setPrice] = useState('');
+  const [stemName, setStemName] = useState("");
+  const [stemType, setStemType] = useState("");
+  const [price, setPrice] = useState("");
   const [uploadProgress, setUploadProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
 
@@ -50,17 +54,25 @@ export function StemUploadDialog({ open, onOpenChange, listingId }: StemUploadDi
 
   const uploadMutation = useMutation({
     mutationFn: async (formData: FormData) => {
-      return uploadWithProgress(`/api/marketplace/listings/${listingId}/stems`, formData, {
-        onProgress: (percent) => setUploadProgress(percent),
-        timeout: 300000, // 5 minutes
-      });
+      return uploadWithProgress(
+        `/api/marketplace/listings/${listingId}/stems`,
+        formData,
+        {
+          onProgress: (percent) => setUploadProgress(percent),
+          timeout: 300000, // 5 minutes
+        },
+      );
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [`/api/marketplace/listings/${listingId}/stems`] });
-      queryClient.invalidateQueries({ queryKey: ['/api/marketplace/my-stems'] });
+      queryClient.invalidateQueries({
+        queryKey: [`/api/marketplace/listings/${listingId}/stems`],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/marketplace/my-stems"],
+      });
       toast({
-        title: 'Stem Uploaded!',
-        description: 'Your stem has been uploaded successfully.',
+        title: "Stem Uploaded!",
+        description: "Your stem has been uploaded successfully.",
       });
       handleClose();
     },
@@ -68,9 +80,9 @@ export function StemUploadDialog({ open, onOpenChange, listingId }: StemUploadDi
       setError(error.message);
       setUploadProgress(0);
       toast({
-        title: 'Upload Failed',
+        title: "Upload Failed",
         description: error.message,
-        variant: 'destructive',
+        variant: "destructive",
       });
     },
   });
@@ -80,7 +92,7 @@ export function StemUploadDialog({ open, onOpenChange, listingId }: StemUploadDi
     if (file) {
       setSelectedFile(file);
       if (!stemName) {
-        setStemName(file.name.replace(/\.[^/.]+$/, ''));
+        setStemName(file.name.replace(/\.[^/.]+$/, ""));
       }
       setError(null);
     }
@@ -88,27 +100,27 @@ export function StemUploadDialog({ open, onOpenChange, listingId }: StemUploadDi
 
   const handleUpload = () => {
     if (!selectedFile) {
-      setError('Please select a file');
+      setError("Please select a file");
       return;
     }
 
     if (!stemName.trim()) {
-      setError('Please enter a stem name');
+      setError("Please enter a stem name");
       return;
     }
 
     if (!stemType) {
-      setError('Please select a stem type');
+      setError("Please select a stem type");
       return;
     }
 
     const formData = new FormData();
-    formData.append('stemFile', selectedFile);
-    formData.append('stemName', stemName);
-    formData.append('stemType', stemType);
+    formData.append("stemFile", selectedFile);
+    formData.append("stemName", stemName);
+    formData.append("stemType", stemType);
 
     if (price) {
-      formData.append('price', price);
+      formData.append("price", price);
     }
 
     uploadMutation.mutate(formData);
@@ -116,9 +128,9 @@ export function StemUploadDialog({ open, onOpenChange, listingId }: StemUploadDi
 
   const handleClose = () => {
     setSelectedFile(null);
-    setStemName('');
-    setStemType('');
-    setPrice('');
+    setStemName("");
+    setStemType("");
+    setPrice("");
     setUploadProgress(0);
     setError(null);
     onOpenChange(false);
@@ -152,7 +164,8 @@ export function StemUploadDialog({ open, onOpenChange, listingId }: StemUploadDi
               <div className="mt-2 flex items-center gap-2 text-sm text-green-600">
                 <CheckCircle2 className="h-4 w-4" />
                 <span>
-                  {selectedFile.name} ({(selectedFile.size / (1024 * 1024)).toFixed(2)} MB)
+                  {selectedFile.name} (
+                  {(selectedFile.size / (1024 * 1024)).toFixed(2)} MB)
                 </span>
               </div>
             )}
@@ -238,7 +251,7 @@ export function StemUploadDialog({ open, onOpenChange, listingId }: StemUploadDi
               className="flex-1"
             >
               <Upload className="mr-2 h-4 w-4" />
-              {uploadMutation.isPending ? 'Uploading...' : 'Upload Stem'}
+              {uploadMutation.isPending ? "Uploading..." : "Upload Stem"}
             </Button>
           </div>
         </div>

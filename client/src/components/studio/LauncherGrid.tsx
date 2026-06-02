@@ -1,14 +1,28 @@
-import { useState, useCallback } from 'react';
-import { Play, Square, Plus, Music, Disc, Layers, ChevronDown, MoreHorizontal } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { studioOneTheme } from '@/lib/studioOneTheme';
+import { useState, useCallback } from "react";
+import {
+  Play,
+  Square,
+  Plus,
+  Music,
+  Disc,
+  Layers,
+  ChevronDown,
+  MoreHorizontal,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { studioOneTheme } from "@/lib/studioOneTheme";
 
 interface LauncherClip {
   id: string;
   name: string;
-  type: 'audio' | 'midi';
+  type: "audio" | "midi";
   color: string;
   duration: number;
   isPlaying: boolean;
@@ -60,7 +74,10 @@ function ClipCell({
           border: `1px dashed ${studioOneTheme.colors.border.subtle}`,
         }}
       >
-        <Plus className="h-4 w-4" style={{ color: studioOneTheme.colors.text.muted }} />
+        <Plus
+          className="h-4 w-4"
+          style={{ color: studioOneTheme.colors.text.muted }}
+        />
       </button>
     );
   }
@@ -70,11 +87,11 @@ function ClipCell({
       onClick={onClick}
       className="w-full h-full rounded transition-all relative overflow-hidden group"
       style={{
-        background: clip.isPlaying 
+        background: clip.isPlaying
           ? `linear-gradient(180deg, ${clip.color}60 0%, ${clip.color}30 100%)`
           : `linear-gradient(180deg, ${clip.color}30 0%, ${clip.color}15 100%)`,
-        border: `1px solid ${clip.isPlaying ? clip.color : clip.color + '60'}`,
-        boxShadow: clip.isPlaying ? `0 0 10px ${clip.color}50` : 'none',
+        border: `1px solid ${clip.isPlaying ? clip.color : clip.color + "60"}`,
+        boxShadow: clip.isPlaying ? `0 0 10px ${clip.color}50` : "none",
       }}
     >
       {/* Playing indicator */}
@@ -83,7 +100,7 @@ function ClipCell({
           <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
         </div>
       )}
-      
+
       {/* Queued indicator */}
       {clip.isQueued && !clip.isPlaying && (
         <div className="absolute top-1 right-1">
@@ -93,17 +110,18 @@ function ClipCell({
 
       {/* Clip info */}
       <div className="flex flex-col items-start justify-end h-full p-1.5">
-        <span 
+        <span
           className="text-[9px] font-medium truncate w-full"
           style={{ color: studioOneTheme.colors.text.primary }}
         >
           {clip.name}
         </span>
-        <span 
+        <span
           className="text-[8px]"
           style={{ color: studioOneTheme.colors.text.muted }}
         >
-          {clip.type === 'audio' ? '♪' : '♬'} {(clip.duration / 1000).toFixed(1)}s
+          {clip.type === "audio" ? "♪" : "♬"}{" "}
+          {(clip.duration / 1000).toFixed(1)}s
         </span>
       </div>
 
@@ -135,28 +153,31 @@ export function LauncherGrid({
   const HEADER_HEIGHT = 40;
 
   return (
-    <div 
+    <div
       className="flex flex-col h-full"
       style={{ background: studioOneTheme.colors.bg.primary }}
     >
       {/* Track Headers */}
-      <div 
+      <div
         className="flex border-b shrink-0"
-        style={{ 
+        style={{
           borderColor: studioOneTheme.colors.border.primary,
           height: HEADER_HEIGHT,
         }}
       >
         {/* Scene column header */}
-        <div 
+        <div
           className="flex items-center justify-center shrink-0 border-r"
-          style={{ 
+          style={{
             width: SCENE_COLUMN_WIDTH,
             background: studioOneTheme.colors.bg.secondary,
             borderColor: studioOneTheme.colors.border.primary,
           }}
         >
-          <Layers className="h-4 w-4" style={{ color: studioOneTheme.colors.text.muted }} />
+          <Layers
+            className="h-4 w-4"
+            style={{ color: studioOneTheme.colors.text.muted }}
+          />
         </div>
 
         {/* Track headers */}
@@ -173,7 +194,7 @@ export function LauncherGrid({
                   borderBottom: `2px solid ${track.color}`,
                 }}
               >
-                <span 
+                <span
                   className="text-[10px] font-medium truncate w-full text-center"
                   style={{ color: studioOneTheme.colors.text.primary }}
                 >
@@ -188,9 +209,9 @@ export function LauncherGrid({
         </ScrollArea>
 
         {/* Stop all button */}
-        <div 
+        <div
           className="flex items-center justify-center shrink-0 border-l"
-          style={{ 
+          style={{
             width: 50,
             background: studioOneTheme.colors.bg.secondary,
             borderColor: studioOneTheme.colors.border.primary,
@@ -211,18 +232,18 @@ export function LauncherGrid({
       <ScrollArea className="flex-1">
         <div className="flex flex-col">
           {scenes.map((scene, sceneIndex) => (
-            <div 
+            <div
               key={scene.id}
               className="flex border-b"
-              style={{ 
+              style={{
                 height: CELL_HEIGHT,
                 borderColor: studioOneTheme.colors.border.subtle,
               }}
             >
               {/* Scene trigger */}
-              <div 
+              <div
                 className="flex items-center shrink-0 border-r px-1 group"
-                style={{ 
+                style={{
                   width: SCENE_COLUMN_WIDTH,
                   background: studioOneTheme.colors.bg.secondary,
                   borderColor: studioOneTheme.colors.border.primary,
@@ -234,9 +255,12 @@ export function LauncherGrid({
                   onClick={() => onSceneTrigger(scene.id)}
                   className="h-6 w-6 p-0"
                 >
-                  <Play className="h-3 w-3" style={{ color: studioOneTheme.colors.accent.green }} />
+                  <Play
+                    className="h-3 w-3"
+                    style={{ color: studioOneTheme.colors.accent.green }}
+                  />
                 </Button>
-                <span 
+                <span
                   className="text-[9px] font-medium truncate flex-1"
                   style={{ color: studioOneTheme.colors.text.secondary }}
                 >
@@ -245,7 +269,10 @@ export function LauncherGrid({
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <button className="opacity-0 group-hover:opacity-100 transition-opacity">
-                      <MoreHorizontal className="h-3 w-3" style={{ color: studioOneTheme.colors.text.muted }} />
+                      <MoreHorizontal
+                        className="h-3 w-3"
+                        style={{ color: studioOneTheme.colors.text.muted }}
+                      />
                     </button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent>
@@ -275,9 +302,9 @@ export function LauncherGrid({
               </div>
 
               {/* Scene stop */}
-              <div 
+              <div
                 className="flex items-center justify-center shrink-0 border-l"
-                style={{ 
+                style={{
                   width: 50,
                   borderColor: studioOneTheme.colors.border.primary,
                 }}
@@ -288,20 +315,29 @@ export function LauncherGrid({
                   onClick={() => onSceneStop(scene.id)}
                   className="h-6 w-6 p-0"
                 >
-                  <Square className="h-3 w-3" style={{ color: studioOneTheme.colors.text.muted }} />
+                  <Square
+                    className="h-3 w-3"
+                    style={{ color: studioOneTheme.colors.text.muted }}
+                  />
                 </Button>
               </div>
             </div>
           ))}
 
           {/* Add scene row */}
-          <div 
+          <div
             className="flex items-center justify-center py-2 border-b cursor-pointer hover:bg-white/5"
             style={{ borderColor: studioOneTheme.colors.border.subtle }}
             onClick={onAddScene}
           >
-            <Plus className="h-4 w-4 mr-2" style={{ color: studioOneTheme.colors.text.muted }} />
-            <span className="text-[10px]" style={{ color: studioOneTheme.colors.text.muted }}>
+            <Plus
+              className="h-4 w-4 mr-2"
+              style={{ color: studioOneTheme.colors.text.muted }}
+            />
+            <span
+              className="text-[10px]"
+              style={{ color: studioOneTheme.colors.text.muted }}
+            >
               Add Scene
             </span>
           </div>

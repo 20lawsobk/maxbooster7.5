@@ -1,11 +1,14 @@
-import React, { useMemo } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Skeleton } from '@/components/ui/skeleton';
-import { usePersonalizedLayout, WidgetConfig } from '@/hooks/usePersonalizedLayout';
-import { SmartActionBar } from './SmartActionBar';
+import React, { useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
+import {
+  usePersonalizedLayout,
+  WidgetConfig,
+} from "@/hooks/usePersonalizedLayout";
+import { SmartActionBar } from "./SmartActionBar";
 import {
   Music,
   DollarSign,
@@ -21,30 +24,42 @@ import {
   MessageSquare,
   Settings,
   GripVertical,
-} from 'lucide-react';
+} from "lucide-react";
 
 interface PersonalizedDashboardProps {
   userId?: string;
   onNavigate?: (path: string) => void;
 }
 
-const widgetComponents: Record<string, React.FC<{ size: 'small' | 'medium' | 'large' }>> = {
+const widgetComponents: Record<
+  string,
+  React.FC<{ size: "small" | "medium" | "large" }>
+> = {
   streams: StreamsWidget,
   revenue: RevenueWidget,
-  'social-reach': SocialReachWidget,
-  'next-release': NextReleaseWidget,
-  'ai-coach': AICoachWidget,
-  'quick-actions': QuickActionsWidget,
-  'recent-activity': RecentActivityWidget,
-  'analytics-chart': AnalyticsChartWidget,
+  "social-reach": SocialReachWidget,
+  "next-release": NextReleaseWidget,
+  "ai-coach": AICoachWidget,
+  "quick-actions": QuickActionsWidget,
+  "recent-activity": RecentActivityWidget,
+  "analytics-chart": AnalyticsChartWidget,
   collaborations: CollaborationsWidget,
   notifications: NotificationsWidget,
   achievements: AchievementsWidget,
   goals: GoalsWidget,
 };
 
-export function PersonalizedDashboard({ userId, onNavigate }: PersonalizedDashboardProps) {
-  const { layout, isLoading, visibleWidgets, updateWidgetPosition, toggleWidgetVisibility } = usePersonalizedLayout();
+export function PersonalizedDashboard({
+  userId,
+  onNavigate,
+}: PersonalizedDashboardProps) {
+  const {
+    layout,
+    isLoading,
+    visibleWidgets,
+    updateWidgetPosition,
+    toggleWidgetVisibility,
+  } = usePersonalizedLayout();
 
   if (isLoading) {
     return (
@@ -60,9 +75,9 @@ export function PersonalizedDashboard({ userId, onNavigate }: PersonalizedDashbo
   }
 
   const sortedWidgets = visibleWidgets.sort((a, b) => a.position - b.position);
-  const largeWidgets = sortedWidgets.filter(w => w.size === 'large');
-  const mediumWidgets = sortedWidgets.filter(w => w.size === 'medium');
-  const smallWidgets = sortedWidgets.filter(w => w.size === 'small');
+  const largeWidgets = sortedWidgets.filter((w) => w.size === "large");
+  const mediumWidgets = sortedWidgets.filter((w) => w.size === "medium");
+  const smallWidgets = sortedWidgets.filter((w) => w.size === "small");
 
   return (
     <div className="space-y-6">
@@ -70,7 +85,7 @@ export function PersonalizedDashboard({ userId, onNavigate }: PersonalizedDashbo
 
       {largeWidgets.length > 0 && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          {largeWidgets.map(widget => {
+          {largeWidgets.map((widget) => {
             const WidgetComponent = widgetComponents[widget.id];
             return WidgetComponent ? (
               <WidgetWrapper key={widget.id} widget={widget}>
@@ -83,7 +98,7 @@ export function PersonalizedDashboard({ userId, onNavigate }: PersonalizedDashbo
 
       {mediumWidgets.length > 0 && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {mediumWidgets.map(widget => {
+          {mediumWidgets.map((widget) => {
             const WidgetComponent = widgetComponents[widget.id];
             return WidgetComponent ? (
               <WidgetWrapper key={widget.id} widget={widget}>
@@ -96,7 +111,7 @@ export function PersonalizedDashboard({ userId, onNavigate }: PersonalizedDashbo
 
       {smallWidgets.length > 0 && (
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-          {smallWidgets.map(widget => {
+          {smallWidgets.map((widget) => {
             const WidgetComponent = widgetComponents[widget.id];
             return WidgetComponent ? (
               <WidgetWrapper key={widget.id} widget={widget}>
@@ -110,7 +125,13 @@ export function PersonalizedDashboard({ userId, onNavigate }: PersonalizedDashbo
   );
 }
 
-function WidgetWrapper({ widget, children }: { widget: WidgetConfig; children: React.ReactNode }) {
+function WidgetWrapper({
+  widget,
+  children,
+}: {
+  widget: WidgetConfig;
+  children: React.ReactNode;
+}) {
   return (
     <div className="relative group">
       <div className="absolute -top-2 -right-2 opacity-0 group-hover:opacity-100 transition-opacity z-10">
@@ -123,9 +144,9 @@ function WidgetWrapper({ widget, children }: { widget: WidgetConfig; children: R
   );
 }
 
-function StreamsWidget({ size }: { size: 'small' | 'medium' | 'large' }) {
+function StreamsWidget({ size }: { size: "small" | "medium" | "large" }) {
   const { data: analytics } = useQuery({
-    queryKey: ['/api/analytics/dashboard'],
+    queryKey: ["/api/analytics/dashboard"],
     staleTime: 5 * 60 * 1000,
   });
 
@@ -133,26 +154,29 @@ function StreamsWidget({ size }: { size: 'small' | 'medium' | 'large' }) {
   const growth = (analytics as Record<string, unknown>)?.streamGrowth || 0;
 
   return (
-    <Card className={size === 'small' ? 'p-3' : ''}>
-      <CardHeader className={size === 'small' ? 'p-2' : ''}>
+    <Card className={size === "small" ? "p-3" : ""}>
+      <CardHeader className={size === "small" ? "p-2" : ""}>
         <CardTitle className="flex items-center gap-2 text-sm">
           <Music className="h-4 w-4 text-blue-500" />
           Total Streams
         </CardTitle>
       </CardHeader>
-      <CardContent className={size === 'small' ? 'p-2 pt-0' : ''}>
+      <CardContent className={size === "small" ? "p-2 pt-0" : ""}>
         <div className="text-2xl font-bold">{streams.toLocaleString()}</div>
-        <div className={`text-sm ${growth >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-          {growth >= 0 ? '+' : ''}{growth}% this month
+        <div
+          className={`text-sm ${growth >= 0 ? "text-green-500" : "text-red-500"}`}
+        >
+          {growth >= 0 ? "+" : ""}
+          {growth}% this month
         </div>
       </CardContent>
     </Card>
   );
 }
 
-function RevenueWidget({ size }: { size: 'small' | 'medium' | 'large' }) {
+function RevenueWidget({ size }: { size: "small" | "medium" | "large" }) {
   const { data: analytics } = useQuery({
-    queryKey: ['/api/analytics/dashboard'],
+    queryKey: ["/api/analytics/dashboard"],
     staleTime: 5 * 60 * 1000,
   });
 
@@ -160,26 +184,29 @@ function RevenueWidget({ size }: { size: 'small' | 'medium' | 'large' }) {
   const growth = (analytics as Record<string, unknown>)?.revenueGrowth || 0;
 
   return (
-    <Card className={size === 'small' ? 'p-3' : ''}>
-      <CardHeader className={size === 'small' ? 'p-2' : ''}>
+    <Card className={size === "small" ? "p-3" : ""}>
+      <CardHeader className={size === "small" ? "p-2" : ""}>
         <CardTitle className="flex items-center gap-2 text-sm">
           <DollarSign className="h-4 w-4 text-green-500" />
           Revenue
         </CardTitle>
       </CardHeader>
-      <CardContent className={size === 'small' ? 'p-2 pt-0' : ''}>
+      <CardContent className={size === "small" ? "p-2 pt-0" : ""}>
         <div className="text-2xl font-bold">${revenue.toLocaleString()}</div>
-        <div className={`text-sm ${growth >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-          {growth >= 0 ? '+' : ''}{growth}% this month
+        <div
+          className={`text-sm ${growth >= 0 ? "text-green-500" : "text-red-500"}`}
+        >
+          {growth >= 0 ? "+" : ""}
+          {growth}% this month
         </div>
       </CardContent>
     </Card>
   );
 }
 
-function SocialReachWidget({ size }: { size: 'small' | 'medium' | 'large' }) {
+function SocialReachWidget({ size }: { size: "small" | "medium" | "large" }) {
   const { data: analytics } = useQuery({
-    queryKey: ['/api/analytics/dashboard'],
+    queryKey: ["/api/analytics/dashboard"],
     staleTime: 5 * 60 * 1000,
   });
 
@@ -187,40 +214,43 @@ function SocialReachWidget({ size }: { size: 'small' | 'medium' | 'large' }) {
   const growth = (analytics as Record<string, unknown>)?.socialGrowth || 0;
 
   return (
-    <Card className={size === 'small' ? 'p-3' : ''}>
-      <CardHeader className={size === 'small' ? 'p-2' : ''}>
+    <Card className={size === "small" ? "p-3" : ""}>
+      <CardHeader className={size === "small" ? "p-2" : ""}>
         <CardTitle className="flex items-center gap-2 text-sm">
           <Users className="h-4 w-4 text-purple-500" />
           Social Reach
         </CardTitle>
       </CardHeader>
-      <CardContent className={size === 'small' ? 'p-2 pt-0' : ''}>
+      <CardContent className={size === "small" ? "p-2 pt-0" : ""}>
         <div className="text-2xl font-bold">{reach.toLocaleString()}</div>
-        <div className={`text-sm ${growth >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-          {growth >= 0 ? '+' : ''}{growth}% this month
+        <div
+          className={`text-sm ${growth >= 0 ? "text-green-500" : "text-red-500"}`}
+        >
+          {growth >= 0 ? "+" : ""}
+          {growth}% this month
         </div>
       </CardContent>
     </Card>
   );
 }
 
-function NextReleaseWidget({ size }: { size: 'small' | 'medium' | 'large' }) {
+function NextReleaseWidget({ size }: { size: "small" | "medium" | "large" }) {
   const { data: releases } = useQuery({
-    queryKey: ['/api/releases/upcoming'],
+    queryKey: ["/api/releases/upcoming"],
     staleTime: 5 * 60 * 1000,
   });
 
   const nextRelease = (releases as Record<string, unknown>)?.[0];
 
   return (
-    <Card className={size === 'small' ? 'p-3' : ''}>
-      <CardHeader className={size === 'small' ? 'p-2' : ''}>
+    <Card className={size === "small" ? "p-3" : ""}>
+      <CardHeader className={size === "small" ? "p-2" : ""}>
         <CardTitle className="flex items-center gap-2 text-sm">
           <Calendar className="h-4 w-4 text-orange-500" />
           Next Release
         </CardTitle>
       </CardHeader>
-      <CardContent className={size === 'small' ? 'p-2 pt-0' : ''}>
+      <CardContent className={size === "small" ? "p-2 pt-0" : ""}>
         {nextRelease ? (
           <>
             <div className="font-semibold truncate">{nextRelease.title}</div>
@@ -229,20 +259,23 @@ function NextReleaseWidget({ size }: { size: 'small' | 'medium' | 'large' }) {
             </div>
           </>
         ) : (
-          <div className="text-sm text-muted-foreground">No upcoming releases</div>
+          <div className="text-sm text-muted-foreground">
+            No upcoming releases
+          </div>
         )}
       </CardContent>
     </Card>
   );
 }
 
-function AICoachWidget({ size }: { size: 'small' | 'medium' | 'large' }) {
+function AICoachWidget({ size }: { size: "small" | "medium" | "large" }) {
   const { data: insights } = useQuery({
-    queryKey: ['/api/ai/insights'],
+    queryKey: ["/api/ai/insights"],
     staleTime: 10 * 60 * 1000,
   });
 
-  const topInsight = (insights as Record<string, unknown>)?.recommendations?.[0];
+  const topInsight = (insights as Record<string, unknown>)
+    ?.recommendations?.[0];
 
   return (
     <Card className="border-blue-200 dark:border-blue-800 bg-gradient-to-br from-blue-50 to-purple-50 dark:from-blue-950 dark:to-purple-950">
@@ -270,11 +303,11 @@ function AICoachWidget({ size }: { size: 'small' | 'medium' | 'large' }) {
   );
 }
 
-function QuickActionsWidget({ size }: { size: 'small' | 'medium' | 'large' }) {
+function QuickActionsWidget({ size }: { size: "small" | "medium" | "large" }) {
   const actions = [
-    { label: 'Upload Track', icon: Upload, path: '/studio' },
-    { label: 'View Analytics', icon: BarChart3, path: '/analytics' },
-    { label: 'Create Post', icon: MessageSquare, path: '/social' },
+    { label: "Upload Track", icon: Upload, path: "/studio" },
+    { label: "View Analytics", icon: BarChart3, path: "/analytics" },
+    { label: "Create Post", icon: MessageSquare, path: "/social" },
   ];
 
   return (
@@ -287,7 +320,7 @@ function QuickActionsWidget({ size }: { size: 'small' | 'medium' | 'large' }) {
       </CardHeader>
       <CardContent>
         <div className="flex flex-wrap gap-2">
-          {actions.map(action => (
+          {actions.map((action) => (
             <Button key={action.label} variant="outline" size="sm">
               <action.icon className="h-4 w-4 mr-1" />
               {action.label}
@@ -299,7 +332,11 @@ function QuickActionsWidget({ size }: { size: 'small' | 'medium' | 'large' }) {
   );
 }
 
-function RecentActivityWidget({ size }: { size: 'small' | 'medium' | 'large' }) {
+function RecentActivityWidget({
+  size,
+}: {
+  size: "small" | "medium" | "large";
+}) {
   return (
     <Card>
       <CardHeader>
@@ -324,7 +361,11 @@ function RecentActivityWidget({ size }: { size: 'small' | 'medium' | 'large' }) 
   );
 }
 
-function AnalyticsChartWidget({ size }: { size: 'small' | 'medium' | 'large' }) {
+function AnalyticsChartWidget({
+  size,
+}: {
+  size: "small" | "medium" | "large";
+}) {
   return (
     <Card>
       <CardHeader>
@@ -342,7 +383,11 @@ function AnalyticsChartWidget({ size }: { size: 'small' | 'medium' | 'large' }) 
   );
 }
 
-function CollaborationsWidget({ size }: { size: 'small' | 'medium' | 'large' }) {
+function CollaborationsWidget({
+  size,
+}: {
+  size: "small" | "medium" | "large";
+}) {
   return (
     <Card>
       <CardHeader>
@@ -360,14 +405,16 @@ function CollaborationsWidget({ size }: { size: 'small' | 'medium' | 'large' }) 
   );
 }
 
-function NotificationsWidget({ size }: { size: 'small' | 'medium' | 'large' }) {
+function NotificationsWidget({ size }: { size: "small" | "medium" | "large" }) {
   return (
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-sm">
           <Bell className="h-4 w-4 text-red-500" />
           Notifications
-          <Badge variant="destructive" className="ml-auto">3</Badge>
+          <Badge variant="destructive" className="ml-auto">
+            3
+          </Badge>
         </CardTitle>
       </CardHeader>
       <CardContent>
@@ -377,7 +424,7 @@ function NotificationsWidget({ size }: { size: 'small' | 'medium' | 'large' }) {
   );
 }
 
-function AchievementsWidget({ size }: { size: 'small' | 'medium' | 'large' }) {
+function AchievementsWidget({ size }: { size: "small" | "medium" | "large" }) {
   return (
     <Card>
       <CardHeader>
@@ -394,7 +441,7 @@ function AchievementsWidget({ size }: { size: 'small' | 'medium' | 'large' }) {
   );
 }
 
-function GoalsWidget({ size }: { size: 'small' | 'medium' | 'large' }) {
+function GoalsWidget({ size }: { size: "small" | "medium" | "large" }) {
   return (
     <Card>
       <CardHeader>

@@ -4,7 +4,7 @@
  * Pattern-based learning from successful historical content
  */
 
-import type { ContentPattern, BrandVoiceProfile } from '../types.js';
+import type { ContentPattern, BrandVoiceProfile } from "../types.js";
 
 export interface NGram {
   tokens: string[];
@@ -25,20 +25,22 @@ export class ContentPatternLearner {
 
   constructor() {}
 
-  public learnPatterns(posts: Array<{ text: string; engagement: number }>): ContentPattern[] {
+  public learnPatterns(
+    posts: Array<{ text: string; engagement: number }>,
+  ): ContentPattern[] {
     this.buildNGrams(posts);
-    this.calculateTFIDF(posts.map(p => p.text));
-    this.buildMarkovChain(posts.map(p => p.text));
+    this.calculateTFIDF(posts.map((p) => p.text));
+    this.buildMarkovChain(posts.map((p) => p.text));
 
     const patterns: ContentPattern[] = [];
 
     for (const n of [1, 2, 3]) {
       const ngrams = this.ngramCache.get(n) || [];
-      
+
       for (const ngram of ngrams.slice(0, 50)) {
         if (ngram.frequency >= 3 && ngram.avgPerformance > 0) {
           patterns.push({
-            pattern: ngram.tokens.join(' '),
+            pattern: ngram.tokens.join(" "),
             frequency: ngram.frequency,
             performance: ngram.avgPerformance,
             examples: [],
@@ -51,43 +53,45 @@ export class ContentPatternLearner {
   }
 
   public analyzeBrandVoice(posts: string[]): BrandVoiceProfile {
-    const allTokens = posts.flatMap(p => this.tokenize(p));
-    const sentences = posts.flatMap(p => this.splitSentences(p));
+    const allTokens = posts.flatMap((p) => this.tokenize(p));
+    const sentences = posts.flatMap((p) => this.splitSentences(p));
 
-    const emojiCount = allTokens.filter(t => /\p{Emoji}/u.test(t)).length;
-    const hashtagCount = allTokens.filter(t => t.startsWith('#')).length;
+    const emojiCount = allTokens.filter((t) => /\p{Emoji}/u.test(t)).length;
+    const hashtagCount = allTokens.filter((t) => t.startsWith("#")).length;
 
     const avgSentenceLength =
-      sentences.reduce((sum, s) => sum + s.split(' ').length, 0) / sentences.length;
+      sentences.reduce((sum, s) => sum + s.split(" ").length, 0) /
+      sentences.length;
 
-    const complexWords = allTokens.filter(t => t.length > 10).length;
+    const complexWords = allTokens.filter((t) => t.length > 10).length;
     const vocabularyComplexity =
       complexWords / allTokens.length > 0.2
-        ? 'advanced'
+        ? "advanced"
         : complexWords / allTokens.length > 0.1
-        ? 'moderate'
-        : 'simple';
+          ? "moderate"
+          : "simple";
 
     const emojiRatio = emojiCount / posts.length;
     const emojiUsage =
       emojiRatio > 3
-        ? 'heavy'
+        ? "heavy"
         : emojiRatio > 1.5
-        ? 'moderate'
-        : emojiRatio > 0.5
-        ? 'light'
-        : 'none';
+          ? "moderate"
+          : emojiRatio > 0.5
+            ? "light"
+            : "none";
 
     const hashtagRatio = hashtagCount / posts.length;
 
-    const isFormal = avgSentenceLength > 15 && vocabularyComplexity === 'advanced';
-    const isCasual = avgSentenceLength < 12 && emojiUsage !== 'none';
+    const isFormal =
+      avgSentenceLength > 15 && vocabularyComplexity === "advanced";
+    const isCasual = avgSentenceLength < 12 && emojiUsage !== "none";
 
-    const tone: 'formal' | 'casual' | 'mixed' = isFormal
-      ? 'formal'
+    const tone: "formal" | "casual" | "mixed" = isFormal
+      ? "formal"
       : isCasual
-      ? 'casual'
-      : 'mixed';
+        ? "casual"
+        : "mixed";
 
     const bigramCounts = new Map<string, number>();
     for (const post of posts) {
@@ -104,7 +108,8 @@ export class ContentPatternLearner {
       .slice(0, 10)
       .map(([phrase]) => phrase);
 
-    const confidenceScore = posts.length >= 20 ? 0.9 : posts.length >= 10 ? 0.7 : 0.5;
+    const confidenceScore =
+      posts.length >= 20 ? 0.9 : posts.length >= 10 ? 0.7 : 0.5;
 
     this.brandVoice = {
       tone,
@@ -122,11 +127,13 @@ export class ContentPatternLearner {
   public generateContent(
     topic: string,
     targetVoice?: BrandVoiceProfile,
-    count: number = 5
+    count: number = 5,
   ): string[] {
     const voice = targetVoice || this.brandVoice;
     if (!voice) {
-      throw new Error('Brand voice not analyzed. Call analyzeBrandVoice() first.');
+      throw new Error(
+        "Brand voice not analyzed. Call analyzeBrandVoice() first.",
+      );
     }
 
     const generated: string[] = [];
@@ -142,18 +149,26 @@ export class ContentPatternLearner {
     return generated;
   }
 
-  private buildNGrams(posts: Array<{ text: string; engagement: number }>): void {
+  private buildNGrams(
+    posts: Array<{ text: string; engagement: number }>,
+  ): void {
     for (const n of [1, 2, 3]) {
-      const ngramMap = new Map<string, { count: number; totalEngagement: number }>();
+      const ngramMap = new Map<
+        string,
+        { count: number; totalEngagement: number }
+      >();
 
       for (const post of posts) {
         const tokens = this.tokenize(post.text);
 
         for (let i = 0; i <= tokens.length - n; i++) {
           const ngram = tokens.slice(i, i + n);
-          const key = ngram.join('_');
+          const key = ngram.join("_");
 
-          const existing = ngramMap.get(key) || { count: 0, totalEngagement: 0 };
+          const existing = ngramMap.get(key) || {
+            count: 0,
+            totalEngagement: 0,
+          };
           ngramMap.set(key, {
             count: existing.count + 1,
             totalEngagement: existing.totalEngagement + post.engagement,
@@ -161,11 +176,13 @@ export class ContentPatternLearner {
         }
       }
 
-      const ngrams: NGram[] = Array.from(ngramMap.entries()).map(([key, data]) => ({
-        tokens: key.split('_'),
-        frequency: data.count,
-        avgPerformance: data.totalEngagement / data.count,
-      }));
+      const ngrams: NGram[] = Array.from(ngramMap.entries()).map(
+        ([key, data]) => ({
+          tokens: key.split("_"),
+          frequency: data.count,
+          avgPerformance: data.totalEngagement / data.count,
+        }),
+      );
 
       ngrams.sort((a, b) => b.frequency - a.frequency);
       this.ngramCache.set(n, ngrams);
@@ -180,7 +197,7 @@ export class ContentPatternLearner {
       const tokens = this.tokenize(doc);
       const uniqueTokens = new Set(tokens);
 
-      tokens.forEach(token => {
+      tokens.forEach((token) => {
         if (!termFrequency.has(token)) {
           termFrequency.set(token, new Map());
         }
@@ -188,7 +205,7 @@ export class ContentPatternLearner {
         docMap.set(docIdx, (docMap.get(docIdx) || 0) + 1);
       });
 
-      uniqueTokens.forEach(token => {
+      uniqueTokens.forEach((token) => {
         documentFrequency.set(token, (documentFrequency.get(token) || 0) + 1);
       });
     });
@@ -217,7 +234,7 @@ export class ContentPatternLearner {
       const tokens = this.tokenize(text);
 
       for (let i = 0; i < tokens.length - order; i++) {
-        const state = tokens.slice(i, i + order).join(' ');
+        const state = tokens.slice(i, i + order).join(" ");
         const next = tokens[i + order];
 
         if (!transitions.has(state)) {
@@ -240,7 +257,7 @@ export class ContentPatternLearner {
     const { transitions, order } = this.markovChain;
     const seedTokens = this.tokenize(seed);
 
-    let currentState = seedTokens.slice(-order).join(' ');
+    let currentState = seedTokens.slice(-order).join(" ");
     let generatedTokens = [...seedTokens];
 
     const maxLength = voice.avgSentenceLength * 2;
@@ -252,17 +269,20 @@ export class ContentPatternLearner {
       const next = this.weightedRandomChoice(possibleNext);
       generatedTokens.push(next);
 
-      currentState = generatedTokens.slice(-order).join(' ');
+      currentState = generatedTokens.slice(-order).join(" ");
 
-      if (next.endsWith('.') || next.endsWith('!') || next.endsWith('?')) {
+      if (next.endsWith(".") || next.endsWith("!") || next.endsWith("?")) {
         break;
       }
     }
 
-    return generatedTokens.join(' ');
+    return generatedTokens.join(" ");
   }
 
-  private generateTemplateBasedContent(topic: string, voice: BrandVoiceProfile): string {
+  private generateTemplateBasedContent(
+    topic: string,
+    voice: BrandVoiceProfile,
+  ): string {
     const templates = [
       `Check out our latest ${topic}! 🎵`,
       `New ${topic} just dropped 🔥`,
@@ -279,21 +299,23 @@ export class ContentPatternLearner {
   private adjustToVoice(content: string, voice: BrandVoiceProfile): string {
     let adjusted = content;
 
-    if (voice.emojiUsage === 'none') {
-      adjusted = adjusted.replace(/[\p{Emoji}]/gu, '').trim();
-    } else if (voice.emojiUsage === 'heavy' && !content.match(/[\p{Emoji}]/u)) {
-      adjusted += ' 🎵✨';
+    if (voice.emojiUsage === "none") {
+      adjusted = adjusted.replace(/[\p{Emoji}]/gu, "").trim();
+    } else if (voice.emojiUsage === "heavy" && !content.match(/[\p{Emoji}]/u)) {
+      adjusted += " 🎵✨";
     }
 
-    if (voice.tone === 'formal') {
-      adjusted = adjusted.replace(/!/g, '.').replace(/awesome|cool|amazing/gi, 'excellent');
+    if (voice.tone === "formal") {
+      adjusted = adjusted
+        .replace(/!/g, ".")
+        .replace(/awesome|cool|amazing/gi, "excellent");
     }
 
     const currentHashtags = (adjusted.match(/#\w+/g) || []).length;
     const targetHashtags = Math.round(voice.hashtagFrequency);
 
     if (currentHashtags < targetHashtags && voice.commonPhrases.length > 0) {
-      const phrase = voice.commonPhrases[0].replace(/\s/g, '');
+      const phrase = voice.commonPhrases[0].replace(/\s/g, "");
       adjusted += ` #${phrase}`;
     }
 
@@ -303,17 +325,20 @@ export class ContentPatternLearner {
   private tokenize(text: string): string[] {
     return text
       .toLowerCase()
-      .replace(/[^\w\s#@]/g, ' ')
+      .replace(/[^\w\s#@]/g, " ")
       .split(/\s+/)
-      .filter(t => t.length > 0);
+      .filter((t) => t.length > 0);
   }
 
   private splitSentences(text: string): string[] {
-    return text.split(/[.!?]+/).filter(s => s.trim().length > 0);
+    return text.split(/[.!?]+/).filter((s) => s.trim().length > 0);
   }
 
   private weightedRandomChoice(options: Map<string, number>): string {
-    const total = Array.from(options.values()).reduce((sum, val) => sum + val, 0);
+    const total = Array.from(options.values()).reduce(
+      (sum, val) => sum + val,
+      0,
+    );
     let random = Math.random() * total;
 
     for (const [key, weight] of options.entries()) {
@@ -326,7 +351,9 @@ export class ContentPatternLearner {
     return Array.from(options.keys())[0];
   }
 
-  public getTopKeywords(count: number = 10): Array<{ word: string; score: number }> {
+  public getTopKeywords(
+    count: number = 10,
+  ): Array<{ word: string; score: number }> {
     return Array.from(this.tfidfScores.entries())
       .sort((a, b) => b[1] - a[1])
       .slice(0, count)
@@ -335,7 +362,7 @@ export class ContentPatternLearner {
 
   public getCommonBigrams(count: number = 10): string[] {
     const bigrams = this.ngramCache.get(2) || [];
-    return bigrams.slice(0, count).map(bg => bg.tokens.join(' '));
+    return bigrams.slice(0, count).map((bg) => bg.tokens.join(" "));
   }
 
   public getBrandVoice(): BrandVoiceProfile | null {

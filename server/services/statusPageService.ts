@@ -1,4 +1,4 @@
-import { db } from '../db.js';
+import { db } from "../db.js";
 import {
   statusPageServices,
   statusPageIncidents,
@@ -14,15 +14,24 @@ import {
   type InsertStatusPageIncident,
   type InsertStatusPageIncidentUpdate,
   type InsertStatusPageSubscriber,
-} from '@shared/schema';
-import { eq, and, desc, gte, lte, sql, isNull, or } from 'drizzle-orm';
-import { logger } from '../logger.js';
-import crypto from 'crypto';
-import { emailService } from './emailService.js';
+} from "@shared/schema";
+import { eq, and, desc, gte, lte, sql, isNull, or } from "drizzle-orm";
+import { logger } from "../logger.js";
+import crypto from "crypto";
+import { emailService } from "./emailService.js";
 
-export type ServiceStatus = 'operational' | 'degraded_performance' | 'partial_outage' | 'major_outage' | 'maintenance';
-export type IncidentImpact = 'none' | 'minor' | 'major' | 'critical';
-export type IncidentStatus = 'investigating' | 'identified' | 'monitoring' | 'resolved';
+export type ServiceStatus =
+  | "operational"
+  | "degraded_performance"
+  | "partial_outage"
+  | "major_outage"
+  | "maintenance";
+export type IncidentImpact = "none" | "minor" | "major" | "critical";
+export type IncidentStatus =
+  | "investigating"
+  | "identified"
+  | "monitoring"
+  | "resolved";
 
 export interface ServiceStatusSummary {
   services: StatusPageService[];
@@ -83,7 +92,9 @@ const STATUS_PRIORITY: Record<ServiceStatus, number> = {
 };
 
 export class StatusPageService {
-  async createService(service: InsertStatusPageService): Promise<StatusPageService> {
+  async createService(
+    service: InsertStatusPageService,
+  ): Promise<StatusPageService> {
     const [created] = await db
       .insert(statusPageServices)
       .values({
@@ -97,7 +108,10 @@ export class StatusPageService {
     return created;
   }
 
-  async updateService(serviceId: string, updates: Partial<InsertStatusPageService>): Promise<StatusPageService> {
+  async updateService(
+    serviceId: string,
+    updates: Partial<InsertStatusPageService>,
+  ): Promise<StatusPageService> {
     const [updated] = await db
       .update(statusPageServices)
       .set({
@@ -112,7 +126,10 @@ export class StatusPageService {
     return updated;
   }
 
-  async updateServiceStatus(serviceId: string, status: ServiceStatus): Promise<StatusPageService> {
+  async updateServiceStatus(
+    serviceId: string,
+    status: ServiceStatus,
+  ): Promise<StatusPageService> {
     const [updated] = await db
       .update(statusPageServices)
       .set({
@@ -125,7 +142,7 @@ export class StatusPageService {
 
     logger.info(`Service ${serviceId} status updated to ${status}`);
 
-    await this.recordUptimeMetric(serviceId, status === 'operational');
+    await this.recordUptimeMetric(serviceId, status === "operational");
 
     return updated;
   }
@@ -150,14 +167,21 @@ export class StatusPageService {
     return service || null;
   }
 
-  async getAllServices(publicOnly: boolean = true): Promise<StatusPageService[]> {
+  async getAllServices(
+    publicOnly: boolean = true,
+  ): Promise<StatusPageService[]> {
     let query = db.select().from(statusPageServices);
-    
+
     if (publicOnly) {
-      query = query.where(eq(statusPageServices.isPublic, true)) as typeof query;
+      query = query.where(
+        eq(statusPageServices.isPublic, true),
+      ) as typeof query;
     }
 
-    return query.orderBy(statusPageServices.displayOrder, statusPageServices.name);
+    return query.orderBy(
+      statusPageServices.displayOrder,
+      statusPageServices.name,
+    );
   }
 
   async getStatusSummary(): Promise<ServiceStatusSummary> {
@@ -175,13 +199,15 @@ export class StatusPageService {
     };
   }
 
-  async createIncident(request: CreateIncidentRequest): Promise<IncidentWithUpdates> {
+  async createIncident(
+    request: CreateIncidentRequest,
+  ): Promise<IncidentWithUpdates> {
     const [incident] = await db
       .insert(statusPageIncidents)
       .values({
         title: request.title,
-        status: request.status || 'investigating',
-        impact: request.impact || 'minor',
+        status: request.status || "investigating",
+        impact: request.impact || "minor",
         message: request.message,
         isScheduled: request.isScheduled || false,
         scheduledFor: request.scheduledFor,
@@ -197,31 +223,40 @@ export class StatusPageService {
         serviceId,
       });
 
-      const impactStatus = this.impactToServiceStatus(request.impact || 'minor');
+      const impactStatus = this.impactToServiceStatus(
+        request.impact || "minor",
+      );
       await this.updateServiceStatus(serviceId, impactStatus);
     }
 
     await db.insert(statusPageIncidentUpdates).values({
       incidentId: incident.id,
-      status: request.status || 'investigating',
+      status: request.status || "investigating",
       message: request.message,
       createdBy: request.createdBy,
     });
 
     logger.info(`Incident created: ${incident.id} - ${incident.title}`);
 
-    await this.notifySubscribers(incident, 'new');
+    await this.notifySubscribers(incident, "new");
 
-    return this.getIncidentWithDetails(incident.id) as Promise<IncidentWithUpdates>;
+    return this.getIncidentWithDetails(
+      incident.id,
+    ) as Promise<IncidentWithUpdates>;
   }
 
-  async updateIncident(incidentId: string, request: UpdateIncidentRequest): Promise<IncidentWithUpdates> {
+  async updateIncident(
+    incidentId: string,
+    request: UpdateIncidentRequest,
+  ): Promise<IncidentWithUpdates> {
     const incident = await this.getIncident(incidentId);
     if (!incident) {
-      throw new Error('Incident not found');
+      throw new Error("Incident not found");
     }
 
-    const newStatus = request.resolve ? 'resolved' : (request.status || incident.status);
+    const newStatus = request.resolve
+      ? "resolved"
+      : request.status || incident.status;
 
     const [updated] = await db
       .update(statusPageIncidents)
@@ -244,15 +279,20 @@ export class StatusPageService {
     if (request.resolve) {
       const affectedServiceIds = await this.getAffectedServiceIds(incidentId);
       for (const serviceId of affectedServiceIds) {
-        await this.updateServiceStatus(serviceId, 'operational');
+        await this.updateServiceStatus(serviceId, "operational");
       }
     }
 
     logger.info(`Incident ${incidentId} updated to ${newStatus}`);
 
-    await this.notifySubscribers(updated, request.resolve ? 'resolved' : 'update');
+    await this.notifySubscribers(
+      updated,
+      request.resolve ? "resolved" : "update",
+    );
 
-    return this.getIncidentWithDetails(incidentId) as Promise<IncidentWithUpdates>;
+    return this.getIncidentWithDetails(
+      incidentId,
+    ) as Promise<IncidentWithUpdates>;
   }
 
   async getIncident(incidentId: string): Promise<StatusPageIncident | null> {
@@ -265,7 +305,9 @@ export class StatusPageService {
     return incident || null;
   }
 
-  async getIncidentWithDetails(incidentId: string): Promise<IncidentWithUpdates | null> {
+  async getIncidentWithDetails(
+    incidentId: string,
+  ): Promise<IncidentWithUpdates | null> {
     const incident = await this.getIncident(incidentId);
     if (!incident) return null;
 
@@ -301,11 +343,11 @@ export class StatusPageService {
         and(
           isNull(statusPageIncidents.resolvedAt),
           or(
-            eq(statusPageIncidents.status, 'investigating'),
-            eq(statusPageIncidents.status, 'identified'),
-            eq(statusPageIncidents.status, 'monitoring')
-          )
-        )
+            eq(statusPageIncidents.status, "investigating"),
+            eq(statusPageIncidents.status, "identified"),
+            eq(statusPageIncidents.status, "monitoring"),
+          ),
+        ),
       )
       .orderBy(desc(statusPageIncidents.startedAt));
   }
@@ -327,10 +369,13 @@ export class StatusPageService {
       .orderBy(desc(statusPageIncidents.startedAt));
   }
 
-  async getUptimeHistory(serviceId: string, days: number = 90): Promise<UptimeHistory> {
+  async getUptimeHistory(
+    serviceId: string,
+    days: number = 90,
+  ): Promise<UptimeHistory> {
     const service = await this.getService(serviceId);
     if (!service) {
-      throw new Error('Service not found');
+      throw new Error("Service not found");
     }
 
     const since = new Date();
@@ -342,23 +387,29 @@ export class StatusPageService {
       .where(
         and(
           eq(statusPageUptimeMetrics.serviceId, serviceId),
-          gte(statusPageUptimeMetrics.date, since)
-        )
+          gte(statusPageUptimeMetrics.date, since),
+        ),
       )
       .orderBy(desc(statusPageUptimeMetrics.date));
 
-    const dailyUptime = metrics.map(m => ({
-      date: m.date.toISOString().split('T')[0],
+    const dailyUptime = metrics.map((m) => ({
+      date: m.date.toISOString().split("T")[0],
       uptimePercentage: Number(m.uptimePercentage),
     }));
 
-    const totalUptime = metrics.reduce((sum, m) => sum + Number(m.uptimePercentage), 0);
-    const averageUptime = metrics.length > 0 ? totalUptime / metrics.length : 100;
+    const totalUptime = metrics.reduce(
+      (sum, m) => sum + Number(m.uptimePercentage),
+      0,
+    );
+    const averageUptime =
+      metrics.length > 0 ? totalUptime / metrics.length : 100;
 
     const last30Days = metrics.slice(0, 30);
-    const last30DaysUptime = last30Days.length > 0
-      ? last30Days.reduce((sum, m) => sum + Number(m.uptimePercentage), 0) / last30Days.length
-      : 100;
+    const last30DaysUptime =
+      last30Days.length > 0
+        ? last30Days.reduce((sum, m) => sum + Number(m.uptimePercentage), 0) /
+          last30Days.length
+        : 100;
 
     return {
       serviceId,
@@ -377,11 +428,11 @@ export class StatusPageService {
       .where(eq(statusPageSubscribers.email, request.email));
 
     if (existing.length > 0) {
-      throw new Error('Email already subscribed');
+      throw new Error("Email already subscribed");
     }
 
-    const verificationToken = crypto.randomBytes(32).toString('hex');
-    const unsubscribeToken = crypto.randomBytes(32).toString('hex');
+    const verificationToken = crypto.randomBytes(32).toString("hex");
+    const unsubscribeToken = crypto.randomBytes(32).toString("hex");
 
     const [subscriber] = await db
       .insert(statusPageSubscribers)
@@ -401,7 +452,9 @@ export class StatusPageService {
       await this.sendVerificationEmail(subscriber);
     }
 
-    logger.info(`Status page subscriber added: ${subscriber.id} - ${subscriber.email}`);
+    logger.info(
+      `Status page subscriber added: ${subscriber.id} - ${subscriber.email}`,
+    );
 
     return subscriber;
   }
@@ -414,7 +467,7 @@ export class StatusPageService {
       .limit(1);
 
     if (!subscriber) {
-      throw new Error('Invalid verification token');
+      throw new Error("Invalid verification token");
     }
 
     const [updated] = await db
@@ -447,7 +500,10 @@ export class StatusPageService {
       .where(eq(statusPageSubscribers.isVerified, true));
   }
 
-  private async recordUptimeMetric(serviceId: string, isUp: boolean): Promise<void> {
+  private async recordUptimeMetric(
+    serviceId: string,
+    isUp: boolean,
+  ): Promise<void> {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
@@ -457,8 +513,8 @@ export class StatusPageService {
       .where(
         and(
           eq(statusPageUptimeMetrics.serviceId, serviceId),
-          eq(statusPageUptimeMetrics.date, today)
-        )
+          eq(statusPageUptimeMetrics.date, today),
+        ),
       );
 
     if (existing.length > 0) {
@@ -481,7 +537,7 @@ export class StatusPageService {
         date: today,
         totalChecks: 1,
         successfulChecks: isUp ? 1 : 0,
-        uptimePercentage: isUp ? '100.00' : '0.00',
+        uptimePercentage: isUp ? "100.00" : "0.00",
       });
     }
   }
@@ -492,13 +548,13 @@ export class StatusPageService {
       .from(statusPageIncidentServices)
       .where(eq(statusPageIncidentServices.incidentId, incidentId));
 
-    return links.map(l => l.serviceId);
+    return links.map((l) => l.serviceId);
   }
 
   private calculateOverallStatus(services: StatusPageService[]): ServiceStatus {
-    if (services.length === 0) return 'operational';
+    if (services.length === 0) return "operational";
 
-    let worstStatus: ServiceStatus = 'operational';
+    let worstStatus: ServiceStatus = "operational";
     let worstPriority = 0;
 
     for (const service of services) {
@@ -514,41 +570,45 @@ export class StatusPageService {
 
   private impactToServiceStatus(impact: IncidentImpact): ServiceStatus {
     switch (impact) {
-      case 'none':
-        return 'operational';
-      case 'minor':
-        return 'degraded_performance';
-      case 'major':
-        return 'partial_outage';
-      case 'critical':
-        return 'major_outage';
+      case "none":
+        return "operational";
+      case "minor":
+        return "degraded_performance";
+      case "major":
+        return "partial_outage";
+      case "critical":
+        return "major_outage";
       default:
-        return 'degraded_performance';
+        return "degraded_performance";
     }
   }
 
   private generateSlug(name: string): string {
     return name
       .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/^-|-$/g, '');
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-|-$/g, "");
   }
 
-  private async notifySubscribers(incident: StatusPageIncident, type: 'new' | 'update' | 'resolved'): Promise<void> {
+  private async notifySubscribers(
+    incident: StatusPageIncident,
+    type: "new" | "update" | "resolved",
+  ): Promise<void> {
     const subscribers = await this.getSubscribers();
-    
-    const relevantSubscribers = subscribers.filter(s => {
+
+    const relevantSubscribers = subscribers.filter((s) => {
       if (incident.isScheduled) return s.notifyMaintenance;
       return s.notifyIncidents;
     });
 
-    const subject = type === 'new'
-      ? `[Incident] ${incident.title}`
-      : type === 'resolved'
-        ? `[Resolved] ${incident.title}`
-        : `[Update] ${incident.title}`;
+    const subject =
+      type === "new"
+        ? `[Incident] ${incident.title}`
+        : type === "resolved"
+          ? `[Resolved] ${incident.title}`
+          : `[Update] ${incident.title}`;
 
-    const statusLabel = type === 'resolved' ? 'Resolved' : incident.status;
+    const statusLabel = type === "resolved" ? "Resolved" : incident.status;
 
     for (const subscriber of relevantSubscribers) {
       try {
@@ -567,18 +627,25 @@ export class StatusPageService {
           `,
         });
       } catch (error) {
-        logger.warn({ err: error }, `Failed to notify subscriber ${subscriber.email}:`);
+        logger.warn(
+          { err: error },
+          `Failed to notify subscriber ${subscriber.email}:`,
+        );
       }
     }
 
-    logger.info(`Notified ${relevantSubscribers.length} subscribers about incident ${incident.id}`);
+    logger.info(
+      `Notified ${relevantSubscribers.length} subscribers about incident ${incident.id}`,
+    );
   }
 
-  private async sendVerificationEmail(subscriber: StatusPageSubscriber): Promise<void> {
+  private async sendVerificationEmail(
+    subscriber: StatusPageSubscriber,
+  ): Promise<void> {
     try {
       await emailService.sendEmail({
         to: subscriber.email,
-        subject: 'Verify your status page subscription',
+        subject: "Verify your status page subscription",
         html: `
           <h2>Confirm your subscription</h2>
           <p>Please click the link below to verify your email and start receiving status updates:</p>
@@ -586,7 +653,10 @@ export class StatusPageService {
         `,
       });
     } catch (error) {
-      logger.warn({ err: error }, `Failed to send verification email to ${subscriber.email}:`);
+      logger.warn(
+        { err: error },
+        `Failed to send verification email to ${subscriber.email}:`,
+      );
     }
   }
 
@@ -595,14 +665,46 @@ export class StatusPageService {
     if (existingServices.length > 0) return;
 
     const defaultServices = [
-      { name: 'Web Application', category: 'Core', description: 'Main web application and user interface' },
-      { name: 'API', category: 'Core', description: 'REST API and backend services' },
-      { name: 'Music Distribution', category: 'Services', description: 'Music distribution to streaming platforms' },
-      { name: 'Audio Processing', category: 'Services', description: 'Audio conversion and processing pipeline' },
-      { name: 'Payment Processing', category: 'Services', description: 'Payment and payout processing' },
-      { name: 'Analytics', category: 'Services', description: 'Analytics data collection and reporting' },
-      { name: 'Email Delivery', category: 'Infrastructure', description: 'Email notification delivery' },
-      { name: 'File Storage', category: 'Infrastructure', description: 'File upload and storage service' },
+      {
+        name: "Web Application",
+        category: "Core",
+        description: "Main web application and user interface",
+      },
+      {
+        name: "API",
+        category: "Core",
+        description: "REST API and backend services",
+      },
+      {
+        name: "Music Distribution",
+        category: "Services",
+        description: "Music distribution to streaming platforms",
+      },
+      {
+        name: "Audio Processing",
+        category: "Services",
+        description: "Audio conversion and processing pipeline",
+      },
+      {
+        name: "Payment Processing",
+        category: "Services",
+        description: "Payment and payout processing",
+      },
+      {
+        name: "Analytics",
+        category: "Services",
+        description: "Analytics data collection and reporting",
+      },
+      {
+        name: "Email Delivery",
+        category: "Infrastructure",
+        description: "Email notification delivery",
+      },
+      {
+        name: "File Storage",
+        category: "Infrastructure",
+        description: "File upload and storage service",
+      },
     ];
 
     for (let i = 0; i < defaultServices.length; i++) {
@@ -613,7 +715,7 @@ export class StatusPageService {
       });
     }
 
-    logger.info('Default status page services initialized');
+    logger.info("Default status page services initialized");
   }
 }
 

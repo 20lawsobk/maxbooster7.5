@@ -1,7 +1,11 @@
-import { useCallback, useRef, useEffect } from 'react';
-import { ScreenReaderAnnouncer, announcePolite, announceAssertive } from '@/lib/a11y/screenReader';
+import { useCallback, useRef, useEffect } from "react";
+import {
+  ScreenReaderAnnouncer,
+  announcePolite,
+  announceAssertive,
+} from "@/lib/a11y/screenReader";
 
-export type AnnouncementPriority = 'polite' | 'assertive';
+export type AnnouncementPriority = "polite" | "assertive";
 
 export interface UseScreenReaderAnnouncerOptions {
   debounceMs?: number;
@@ -12,18 +16,29 @@ export interface ScreenReaderAnnouncerResult {
   announce: (message: string, priority?: AnnouncementPriority) => void;
   announcePolite: (message: string) => void;
   announceAssertive: (message: string) => void;
-  announceWithDelay: (message: string, delayMs: number, priority?: AnnouncementPriority) => void;
-  announceList: (items: string[], separator?: string, priority?: AnnouncementPriority) => void;
+  announceWithDelay: (
+    message: string,
+    delayMs: number,
+    priority?: AnnouncementPriority,
+  ) => void;
+  announceList: (
+    items: string[],
+    separator?: string,
+    priority?: AnnouncementPriority,
+  ) => void;
   announceProgress: (current: number, total: number, context?: string) => void;
-  announceStatus: (status: 'loading' | 'success' | 'error' | 'warning', message?: string) => void;
+  announceStatus: (
+    status: "loading" | "success" | "error" | "warning",
+    message?: string,
+  ) => void;
   clear: () => void;
 }
 
 export function useScreenReaderAnnouncer(
-  options: UseScreenReaderAnnouncerOptions = {}
+  options: UseScreenReaderAnnouncerOptions = {},
 ): ScreenReaderAnnouncerResult {
   const { debounceMs = 100, clearOnUnmount = true } = options;
-  
+
   const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const delayTimersRef = useRef<Set<ReturnType<typeof setTimeout>>>(new Set());
 
@@ -33,18 +48,18 @@ export function useScreenReaderAnnouncer(
         const announcer = ScreenReaderAnnouncer.getInstance();
         announcer.clear();
       }
-      
+
       if (debounceTimerRef.current) {
         clearTimeout(debounceTimerRef.current);
       }
-      
-      delayTimersRef.current.forEach(timer => clearTimeout(timer));
+
+      delayTimersRef.current.forEach((timer) => clearTimeout(timer));
       delayTimersRef.current.clear();
     };
   }, [clearOnUnmount]);
 
   const announce = useCallback(
-    (message: string, priority: AnnouncementPriority = 'polite') => {
+    (message: string, priority: AnnouncementPriority = "polite") => {
       if (!message.trim()) return;
 
       if (debounceTimerRef.current) {
@@ -52,14 +67,14 @@ export function useScreenReaderAnnouncer(
       }
 
       debounceTimerRef.current = setTimeout(() => {
-        if (priority === 'assertive') {
+        if (priority === "assertive") {
           announceAssertive(message);
         } else {
           announcePolite(message);
         }
       }, debounceMs);
     },
-    [debounceMs]
+    [debounceMs],
   );
 
   const announceWithPolite = useCallback((message: string) => {
@@ -71,29 +86,37 @@ export function useScreenReaderAnnouncer(
   }, []);
 
   const announceWithDelay = useCallback(
-    (message: string, delayMs: number, priority: AnnouncementPriority = 'polite') => {
+    (
+      message: string,
+      delayMs: number,
+      priority: AnnouncementPriority = "polite",
+    ) => {
       const timer = setTimeout(() => {
-        if (priority === 'assertive') {
+        if (priority === "assertive") {
           announceAssertive(message);
         } else {
           announcePolite(message);
         }
         delayTimersRef.current.delete(timer);
       }, delayMs);
-      
+
       delayTimersRef.current.add(timer);
     },
-    []
+    [],
   );
 
   const announceList = useCallback(
-    (items: string[], separator = ', ', priority: AnnouncementPriority = 'polite') => {
+    (
+      items: string[],
+      separator = ", ",
+      priority: AnnouncementPriority = "polite",
+    ) => {
       if (items.length === 0) return;
-      
+
       const message = items.join(separator);
       announce(message, priority);
     },
-    [announce]
+    [announce],
   );
 
   const announceProgress = useCallback(
@@ -102,43 +125,44 @@ export function useScreenReaderAnnouncer(
       const message = context
         ? `${context}: ${percentage}% complete, ${current} of ${total}`
         : `Progress: ${percentage}% complete, ${current} of ${total}`;
-      
+
       announcePolite(message);
     },
-    []
+    [],
   );
 
   const announceStatus = useCallback(
-    (status: 'loading' | 'success' | 'error' | 'warning', message?: string) => {
+    (status: "loading" | "success" | "error" | "warning", message?: string) => {
       const statusMessages: Record<string, string> = {
-        loading: message || 'Loading, please wait',
-        success: message || 'Operation completed successfully',
-        error: message || 'An error occurred',
-        warning: message || 'Warning',
+        loading: message || "Loading, please wait",
+        success: message || "Operation completed successfully",
+        error: message || "An error occurred",
+        warning: message || "Warning",
       };
 
-      const priority: AnnouncementPriority = status === 'error' ? 'assertive' : 'polite';
-      const fullMessage = statusMessages[status] || message || '';
+      const priority: AnnouncementPriority =
+        status === "error" ? "assertive" : "polite";
+      const fullMessage = statusMessages[status] || message || "";
 
-      if (status === 'error') {
+      if (status === "error") {
         announceAssertive(fullMessage);
       } else {
         announcePolite(fullMessage);
       }
     },
-    []
+    [],
   );
 
   const clear = useCallback(() => {
     const announcer = ScreenReaderAnnouncer.getInstance();
     announcer.clear();
-    
+
     if (debounceTimerRef.current) {
       clearTimeout(debounceTimerRef.current);
       debounceTimerRef.current = null;
     }
-    
-    delayTimersRef.current.forEach(timer => clearTimeout(timer));
+
+    delayTimersRef.current.forEach((timer) => clearTimeout(timer));
     delayTimersRef.current.clear();
   }, []);
 

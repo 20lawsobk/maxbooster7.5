@@ -2,7 +2,7 @@ export interface TempoEvent {
   id: string;
   time: number;
   tempo: number;
-  curve: 'instant' | 'linear' | 'exponential';
+  curve: "instant" | "linear" | "exponential";
 }
 
 export interface TimeSignatureEvent {
@@ -46,10 +46,17 @@ export interface TimePosition {
   musical: MusicalPosition;
 }
 
-export type TransportEventType = 
-  | 'play' | 'pause' | 'stop' | 'record' 
-  | 'position-change' | 'tempo-change' | 'loop-change'
-  | 'preroll-start' | 'preroll-end' | 'count-in-beat';
+export type TransportEventType =
+  | "play"
+  | "pause"
+  | "stop"
+  | "record"
+  | "position-change"
+  | "tempo-change"
+  | "loop-change"
+  | "preroll-start"
+  | "preroll-end"
+  | "count-in-beat";
 
 export interface TransportEvent {
   type: TransportEventType;
@@ -63,7 +70,8 @@ const TICKS_PER_BEAT = 960;
 
 export class TransportEngine {
   private state: TransportEngineState;
-  private listeners: Map<TransportEventType | '*', Set<TransportListener>> = new Map();
+  private listeners: Map<TransportEventType | "*", Set<TransportListener>> =
+    new Map();
   private animationFrameId: number | null = null;
   private lastTickTime: number = 0;
   private audioContext: AudioContext | null = null;
@@ -78,8 +86,8 @@ export class TransportEngine {
       isLooping: false,
       loopStartSample: 0,
       loopEndSample: sampleRate * 16,
-      tempoMap: [{ id: 'initial', time: 0, tempo: 120, curve: 'instant' }],
-      timeSignatures: [{ id: 'initial', bar: 1, numerator: 4, denominator: 4 }],
+      tempoMap: [{ id: "initial", time: 0, tempo: 120, curve: "instant" }],
+      timeSignatures: [{ id: "initial", bar: 1, numerator: 4, denominator: 4 }],
       prerollEnabled: false,
       prerollBars: 1,
       countInEnabled: false,
@@ -130,7 +138,7 @@ export class TransportEngine {
 
     const fullBars = Math.floor(totalBeats / beatsPerBar);
     currentBar = fullBars + 1;
-    const remainingBeats = totalBeats - (fullBars * beatsPerBar);
+    const remainingBeats = totalBeats - fullBars * beatsPerBar;
     currentBeat = Math.floor(remainingBeats) + 1;
     const tick = Math.round((remainingBeats % 1) * TICKS_PER_BEAT);
 
@@ -140,7 +148,10 @@ export class TransportEngine {
   musicalToSeconds(position: MusicalPosition): number {
     const ts = this.getTimeSignatureAtBar(position.bar);
     const beatsPerBar = ts.numerator;
-    const totalBeats = (position.bar - 1) * beatsPerBar + (position.beat - 1) + position.tick / TICKS_PER_BEAT;
+    const totalBeats =
+      (position.bar - 1) * beatsPerBar +
+      (position.beat - 1) +
+      position.tick / TICKS_PER_BEAT;
     const tempo = this.getTempoAtBar(position.bar);
     return totalBeats * (60 / tempo);
   }
@@ -179,37 +190,46 @@ export class TransportEngine {
   }
 
   getTotalLatencySamples(): number {
-    return this.state.inputLatencySamples + 
-           this.state.outputLatencySamples + 
-           this.state.pluginLatencySamples;
+    return (
+      this.state.inputLatencySamples +
+      this.state.outputLatencySamples +
+      this.state.pluginLatencySamples
+    );
   }
 
   getCompensatedPosition(): number {
-    return Math.max(0, this.state.currentSample - this.getTotalLatencySamples());
+    return Math.max(
+      0,
+      this.state.currentSample - this.getTotalLatencySamples(),
+    );
   }
 
   setPluginLatency(samples: number): void {
     this.state.pluginLatencySamples = samples;
   }
 
-  addTempoEvent(event: Omit<TempoEvent, 'id'>): string {
+  addTempoEvent(event: Omit<TempoEvent, "id">): string {
     const id = `tempo_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     const newEvent = { ...event, id };
     this.state.tempoMap.push(newEvent);
     this.state.tempoMap.sort((a, b) => a.time - b.time);
-    this.emit({ type: 'tempo-change', time: performance.now(), data: newEvent });
+    this.emit({
+      type: "tempo-change",
+      time: performance.now(),
+      data: newEvent,
+    });
     return id;
   }
 
   removeTempoEvent(id: string): void {
-    const index = this.state.tempoMap.findIndex(e => e.id === id);
+    const index = this.state.tempoMap.findIndex((e) => e.id === id);
     if (index > 0) {
       this.state.tempoMap.splice(index, 1);
-      this.emit({ type: 'tempo-change', time: performance.now() });
+      this.emit({ type: "tempo-change", time: performance.now() });
     }
   }
 
-  addTimeSignature(event: Omit<TimeSignatureEvent, 'id'>): string {
+  addTimeSignature(event: Omit<TimeSignatureEvent, "id">): string {
     const id = `ts_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     const newEvent = { ...event, id };
     this.state.timeSignatures.push(newEvent);
@@ -238,8 +258,12 @@ export class TransportEngine {
     const beatDuration = 60000 / tempo;
 
     for (let i = 0; i < this.state.countInBars * ts.numerator; i++) {
-      this.emit({ type: 'count-in-beat', time: performance.now(), data: { beat: i + 1 } });
-      await new Promise(resolve => setTimeout(resolve, beatDuration));
+      this.emit({
+        type: "count-in-beat",
+        time: performance.now(),
+        data: { beat: i + 1 },
+      });
+      await new Promise((resolve) => setTimeout(resolve, beatDuration));
     }
   }
 
@@ -250,22 +274,25 @@ export class TransportEngine {
     const prerollBeats = this.state.prerollBars * beatsPerBar;
     const prerollSeconds = prerollBeats * (60 / tempo);
     const prerollSamples = Math.round(prerollSeconds * this.state.sampleRate);
-    
-    this.state.currentSample = Math.max(0, this.state.currentSample - prerollSamples);
-    this.emit({ type: 'preroll-start', time: performance.now() });
+
+    this.state.currentSample = Math.max(
+      0,
+      this.state.currentSample - prerollSamples,
+    );
+    this.emit({ type: "preroll-start", time: performance.now() });
   }
 
   private startPlayback(): void {
     this.state.isPlaying = true;
     this.lastTickTime = performance.now();
-    this.emit({ type: 'play', time: performance.now() });
+    this.emit({ type: "play", time: performance.now() });
     this.startAnimationLoop();
   }
 
   pause(): void {
     this.state.isPlaying = false;
     this.stopAnimationLoop();
-    this.emit({ type: 'pause', time: performance.now() });
+    this.emit({ type: "pause", time: performance.now() });
   }
 
   stop(): void {
@@ -273,19 +300,27 @@ export class TransportEngine {
     this.state.isRecording = false;
     this.state.currentSample = 0;
     this.stopAnimationLoop();
-    this.emit({ type: 'stop', time: performance.now() });
-    this.emit({ type: 'position-change', time: performance.now(), data: this.getCurrentPosition() });
+    this.emit({ type: "stop", time: performance.now() });
+    this.emit({
+      type: "position-change",
+      time: performance.now(),
+      data: this.getCurrentPosition(),
+    });
   }
 
   record(): void {
     this.state.isRecording = true;
-    this.emit({ type: 'record', time: performance.now() });
+    this.emit({ type: "record", time: performance.now() });
     this.play();
   }
 
   setPosition(samples: number): void {
     this.state.currentSample = Math.max(0, samples);
-    this.emit({ type: 'position-change', time: performance.now(), data: this.getCurrentPosition() });
+    this.emit({
+      type: "position-change",
+      time: performance.now(),
+      data: this.getCurrentPosition(),
+    });
   }
 
   setPositionBars(bar: number, beat: number = 1, tick: number = 0): void {
@@ -297,11 +332,15 @@ export class TransportEngine {
     this.state.isLooping = enabled;
     if (startSamples !== undefined) this.state.loopStartSample = startSamples;
     if (endSamples !== undefined) this.state.loopEndSample = endSamples;
-    this.emit({ type: 'loop-change', time: performance.now(), data: {
-      enabled: this.state.isLooping,
-      start: this.state.loopStartSample,
-      end: this.state.loopEndSample
-    }});
+    this.emit({
+      type: "loop-change",
+      time: performance.now(),
+      data: {
+        enabled: this.state.isLooping,
+        start: this.state.loopStartSample,
+        end: this.state.loopEndSample,
+      },
+    });
   }
 
   setTempo(tempo: number): void {
@@ -309,7 +348,11 @@ export class TransportEngine {
     if (this.state.tempoMap.length > 0) {
       this.state.tempoMap[0].tempo = tempo;
     }
-    this.emit({ type: 'tempo-change', time: performance.now(), data: { tempo } });
+    this.emit({
+      type: "tempo-change",
+      time: performance.now(),
+      data: { tempo },
+    });
   }
 
   private startAnimationLoop(): void {
@@ -320,17 +363,26 @@ export class TransportEngine {
       const deltaMs = now - this.lastTickTime;
       this.lastTickTime = now;
 
-      const tempo = this.getTempoAtTime(this.state.currentSample / this.state.sampleRate);
+      const tempo = this.getTempoAtTime(
+        this.state.currentSample / this.state.sampleRate,
+      );
       const samplesPerMs = this.state.sampleRate / 1000;
       const deltaSamples = Math.round(deltaMs * samplesPerMs);
 
       this.state.currentSample += deltaSamples;
 
-      if (this.state.isLooping && this.state.currentSample >= this.state.loopEndSample) {
+      if (
+        this.state.isLooping &&
+        this.state.currentSample >= this.state.loopEndSample
+      ) {
         this.state.currentSample = this.state.loopStartSample;
       }
 
-      this.emit({ type: 'position-change', time: now, data: this.getCurrentPosition() });
+      this.emit({
+        type: "position-change",
+        time: now,
+        data: this.getCurrentPosition(),
+      });
       this.animationFrameId = requestAnimationFrame(tick);
     };
 
@@ -344,7 +396,7 @@ export class TransportEngine {
     }
   }
 
-  on(type: TransportEventType | '*', listener: TransportListener): () => void {
+  on(type: TransportEventType | "*", listener: TransportListener): () => void {
     if (!this.listeners.has(type)) {
       this.listeners.set(type, new Set());
     }
@@ -352,13 +404,13 @@ export class TransportEngine {
     return () => this.off(type, listener);
   }
 
-  off(type: TransportEventType | '*', listener: TransportListener): void {
+  off(type: TransportEventType | "*", listener: TransportListener): void {
     this.listeners.get(type)?.delete(listener);
   }
 
   private emit(event: TransportEvent): void {
-    this.listeners.get(event.type)?.forEach(l => l(event));
-    this.listeners.get('*')?.forEach(l => l(event));
+    this.listeners.get(event.type)?.forEach((l) => l(event));
+    this.listeners.get("*")?.forEach((l) => l(event));
   }
 
   dispose(): void {

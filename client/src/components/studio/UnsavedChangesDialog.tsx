@@ -7,9 +7,9 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
-import { Button } from '@/components/ui/button';
-import { Save, Trash2, X } from 'lucide-react';
+} from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
+import { Save, Trash2, X } from "lucide-react";
 
 interface UnsavedChangesDialogProps {
   open: boolean;
@@ -27,7 +27,7 @@ export function UnsavedChangesDialog({
   onSave,
   onDiscard,
   onCancel,
-  projectName = 'this project',
+  projectName = "this project",
   isSaving = false,
 }: UnsavedChangesDialogProps) {
   const handleSave = async () => {
@@ -54,7 +54,8 @@ export function UnsavedChangesDialog({
             Unsaved Changes
           </AlertDialogTitle>
           <AlertDialogDescription className="text-gray-400">
-            You have unsaved changes in "{projectName}". Would you like to save before continuing?
+            You have unsaved changes in "{projectName}". Would you like to save
+            before continuing?
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter className="flex-col sm:flex-row gap-2">
@@ -82,7 +83,7 @@ export function UnsavedChangesDialog({
             className="bg-emerald-600 hover:bg-emerald-700 text-white"
           >
             <Save className="h-4 w-4 mr-2" />
-            {isSaving ? 'Saving...' : 'Save Changes'}
+            {isSaving ? "Saving..." : "Save Changes"}
           </Button>
         </AlertDialogFooter>
       </AlertDialogContent>

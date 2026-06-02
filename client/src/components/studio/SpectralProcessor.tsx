@@ -1,5 +1,5 @@
-import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
-import { motion } from 'framer-motion';
+import { useState, useCallback, useRef, useEffect, useMemo } from "react";
+import { motion } from "framer-motion";
 import {
   Waves,
   Zap,
@@ -18,23 +18,23 @@ import {
   Move,
   ZoomIn,
   ZoomOut,
-} from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Slider } from '@/components/ui/slider';
-import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
-import { Badge } from '@/components/ui/badge';
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Slider } from "@/components/ui/slider";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import { Badge } from "@/components/ui/badge";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Separator } from '@/components/ui/separator';
-import { Knob } from './Knob';
+} from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Separator } from "@/components/ui/separator";
+import { Knob } from "./Knob";
 
 export interface SpectralBand {
   id: string;
@@ -48,11 +48,11 @@ export interface SpectralBand {
 
 export interface SpectralProcessorConfig {
   fftSize: 512 | 1024 | 2048 | 4096 | 8192 | 16384;
-  windowType: 'hanning' | 'hamming' | 'blackman' | 'kaiser';
+  windowType: "hanning" | "hamming" | "blackman" | "kaiser";
   overlap: number;
   hopSize: number;
   useGPU: boolean;
-  gpuBackend: 'webgl' | 'webgpu' | 'cpu';
+  gpuBackend: "webgl" | "webgpu" | "cpu";
 }
 
 interface SpectralProcessorProps {
@@ -63,17 +63,17 @@ interface SpectralProcessorProps {
   className?: string;
 }
 
-type EditTool = 'brush' | 'eraser' | 'select' | 'move';
+type EditTool = "brush" | "eraser" | "select" | "move";
 
 const FFT_SIZES = [512, 1024, 2048, 4096, 8192, 16384] as const;
-const WINDOW_TYPES = ['hanning', 'hamming', 'blackman', 'kaiser'] as const;
+const WINDOW_TYPES = ["hanning", "hamming", "blackman", "kaiser"] as const;
 
 export function SpectralProcessor({
   trackId,
   audioBuffer,
   onProcessComplete,
   onBandSelect,
-  className = '',
+  className = "",
 }: SpectralProcessorProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const spectrogramRef = useRef<ImageData | null>(null);
@@ -82,18 +82,21 @@ export function SpectralProcessor({
 
   const [config, setConfig] = useState<SpectralProcessorConfig>({
     fftSize: 2048,
-    windowType: 'hanning',
+    windowType: "hanning",
     overlap: 0.75,
     hopSize: 512,
     useGPU: true,
-    gpuBackend: 'webgl',
+    gpuBackend: "webgl",
   });
 
   const [isProcessing, setIsProcessing] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
-  const [gpuAvailable, setGpuAvailable] = useState({ webgl: false, webgpu: false });
+  const [gpuAvailable, setGpuAvailable] = useState({
+    webgl: false,
+    webgpu: false,
+  });
   const [selectedBands, setSelectedBands] = useState<SpectralBand[]>([]);
-  const [editTool, setEditTool] = useState<EditTool>('brush');
+  const [editTool, setEditTool] = useState<EditTool>("brush");
   const [brushSize, setBrushSize] = useState(20);
   const [brushIntensity, setBrushIntensity] = useState(0.5);
   const [isLocked, setIsLocked] = useState(false);
@@ -111,12 +114,16 @@ export function SpectralProcessor({
 
   useEffect(() => {
     const checkGPUSupport = async () => {
-      const webglAvailable = !!document.createElement('canvas').getContext('webgl2');
+      const webglAvailable = !!document
+        .createElement("canvas")
+        .getContext("webgl2");
       let webgpuAvailable = false;
-      
-      if ('gpu' in navigator) {
+
+      if ("gpu" in navigator) {
         try {
-          const adapter = await (navigator as Record<string, unknown>).gpu?.requestAdapter();
+          const adapter = await (
+            navigator as Record<string, unknown>
+          ).gpu?.requestAdapter();
           webgpuAvailable = !!adapter;
         } catch {
           webgpuAvailable = false;
@@ -124,13 +131,13 @@ export function SpectralProcessor({
       }
 
       setGpuAvailable({ webgl: webglAvailable, webgpu: webgpuAvailable });
-      
+
       if (webgpuAvailable) {
-        setConfig(prev => ({ ...prev, gpuBackend: 'webgpu' }));
+        setConfig((prev) => ({ ...prev, gpuBackend: "webgpu" }));
       } else if (webglAvailable) {
-        setConfig(prev => ({ ...prev, gpuBackend: 'webgl' }));
+        setConfig((prev) => ({ ...prev, gpuBackend: "webgl" }));
       } else {
-        setConfig(prev => ({ ...prev, useGPU: false, gpuBackend: 'cpu' }));
+        setConfig((prev) => ({ ...prev, useGPU: false, gpuBackend: "cpu" }));
       }
     };
 
@@ -139,61 +146,64 @@ export function SpectralProcessor({
 
   useEffect(() => {
     if (!canvasRef.current || !audioBuffer) return;
-    
+
     const canvas = canvasRef.current;
-    const ctx = canvas.getContext('2d');
+    const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
     generateSpectrogram(audioBuffer, ctx, canvas.width, canvas.height);
   }, [audioBuffer, config.fftSize, config.windowType]);
 
-  const generateSpectrogram = useCallback(async (
-    buffer: AudioBuffer,
-    ctx: CanvasRenderingContext2D,
-    width: number,
-    height: number
-  ) => {
-    setIsProcessing(true);
+  const generateSpectrogram = useCallback(
+    async (
+      buffer: AudioBuffer,
+      ctx: CanvasRenderingContext2D,
+      width: number,
+      height: number,
+    ) => {
+      setIsProcessing(true);
 
-    const channelData = buffer.getChannelData(0);
-    const sampleRate = buffer.sampleRate;
-    const fftSize = config.fftSize;
-    const hopSize = Math.floor(fftSize * (1 - config.overlap));
-    const numFrames = Math.floor((channelData.length - fftSize) / hopSize);
+      const channelData = buffer.getChannelData(0);
+      const sampleRate = buffer.sampleRate;
+      const fftSize = config.fftSize;
+      const hopSize = Math.floor(fftSize * (1 - config.overlap));
+      const numFrames = Math.floor((channelData.length - fftSize) / hopSize);
 
-    ctx.fillStyle = '#0a0a1a';
-    ctx.fillRect(0, 0, width, height);
+      ctx.fillStyle = "#0a0a1a";
+      ctx.fillRect(0, 0, width, height);
 
-    const imageData = ctx.createImageData(width, height);
-    const colormap = generateColormap();
+      const imageData = ctx.createImageData(width, height);
+      const colormap = generateColormap();
 
-    for (let frame = 0; frame < numFrames; frame++) {
-      const startIdx = frame * hopSize;
-      const frameData = channelData.slice(startIdx, startIdx + fftSize);
-      const windowedData = applyWindow(frameData, config.windowType);
-      const spectrum = computeFFT(windowedData);
+      for (let frame = 0; frame < numFrames; frame++) {
+        const startIdx = frame * hopSize;
+        const frameData = channelData.slice(startIdx, startIdx + fftSize);
+        const windowedData = applyWindow(frameData, config.windowType);
+        const spectrum = computeFFT(windowedData);
 
-      const x = Math.floor((frame / numFrames) * width);
-      
-      for (let bin = 0; bin < fftSize / 2; bin++) {
-        const magnitude = Math.log10(spectrum[bin] + 1e-10);
-        const normalized = Math.max(0, Math.min(1, (magnitude + 4) / 4));
-        const y = height - 1 - Math.floor((bin / (fftSize / 2)) * height);
-        
-        const colorIdx = Math.floor(normalized * 255) * 4;
-        const pixelIdx = (y * width + x) * 4;
-        
-        imageData.data[pixelIdx] = colormap[colorIdx];
-        imageData.data[pixelIdx + 1] = colormap[colorIdx + 1];
-        imageData.data[pixelIdx + 2] = colormap[colorIdx + 2];
-        imageData.data[pixelIdx + 3] = 255;
+        const x = Math.floor((frame / numFrames) * width);
+
+        for (let bin = 0; bin < fftSize / 2; bin++) {
+          const magnitude = Math.log10(spectrum[bin] + 1e-10);
+          const normalized = Math.max(0, Math.min(1, (magnitude + 4) / 4));
+          const y = height - 1 - Math.floor((bin / (fftSize / 2)) * height);
+
+          const colorIdx = Math.floor(normalized * 255) * 4;
+          const pixelIdx = (y * width + x) * 4;
+
+          imageData.data[pixelIdx] = colormap[colorIdx];
+          imageData.data[pixelIdx + 1] = colormap[colorIdx + 1];
+          imageData.data[pixelIdx + 2] = colormap[colorIdx + 2];
+          imageData.data[pixelIdx + 3] = 255;
+        }
       }
-    }
 
-    ctx.putImageData(imageData, 0, 0);
-    spectrogramRef.current = imageData;
-    setIsProcessing(false);
-  }, [config.fftSize, config.overlap, config.windowType]);
+      ctx.putImageData(imageData, 0, 0);
+      spectrogramRef.current = imageData;
+      setIsProcessing(false);
+    },
+    [config.fftSize, config.overlap, config.windowType],
+  );
 
   const generateColormap = (): Uint8Array => {
     const colormap = new Uint8Array(256 * 4);
@@ -221,27 +231,34 @@ export function SpectralProcessor({
     return colormap;
   };
 
-  const applyWindow = (data: Float32Array, windowType: string): Float32Array => {
+  const applyWindow = (
+    data: Float32Array,
+    windowType: string,
+  ): Float32Array => {
     const windowed = new Float32Array(data.length);
     const N = data.length;
-    
+
     for (let i = 0; i < N; i++) {
       let windowValue = 1;
       switch (windowType) {
-        case 'hanning':
-          windowValue = 0.5 * (1 - Math.cos(2 * Math.PI * i / (N - 1)));
+        case "hanning":
+          windowValue = 0.5 * (1 - Math.cos((2 * Math.PI * i) / (N - 1)));
           break;
-        case 'hamming':
-          windowValue = 0.54 - 0.46 * Math.cos(2 * Math.PI * i / (N - 1));
+        case "hamming":
+          windowValue = 0.54 - 0.46 * Math.cos((2 * Math.PI * i) / (N - 1));
           break;
-        case 'blackman':
-          windowValue = 0.42 - 0.5 * Math.cos(2 * Math.PI * i / (N - 1)) 
-                       + 0.08 * Math.cos(4 * Math.PI * i / (N - 1));
+        case "blackman":
+          windowValue =
+            0.42 -
+            0.5 * Math.cos((2 * Math.PI * i) / (N - 1)) +
+            0.08 * Math.cos((4 * Math.PI * i) / (N - 1));
           break;
-        case 'kaiser':
+        case "kaiser":
           const alpha = 3;
-          const x = 2 * i / (N - 1) - 1;
-          windowValue = besselI0(Math.PI * alpha * Math.sqrt(1 - x * x)) / besselI0(Math.PI * alpha);
+          const x = (2 * i) / (N - 1) - 1;
+          windowValue =
+            besselI0(Math.PI * alpha * Math.sqrt(1 - x * x)) /
+            besselI0(Math.PI * alpha);
           break;
       }
       windowed[i] = data[i] * windowValue;
@@ -276,7 +293,7 @@ export function SpectralProcessor({
 
     for (let size = 2; size <= N; size *= 2) {
       const halfSize = size / 2;
-      const angle = -2 * Math.PI / size;
+      const angle = (-2 * Math.PI) / size;
       for (let i = 0; i < N; i += size) {
         for (let j = 0; j < halfSize; j++) {
           const cos = Math.cos(angle * j);
@@ -311,30 +328,31 @@ export function SpectralProcessor({
 
   const processSpectralEdit = useCallback(async () => {
     if (!audioBuffer || selectedBands.length === 0) return;
-    
+
     setIsProcessing(true);
-    
+
     const offlineCtx = new OfflineAudioContext(
       audioBuffer.numberOfChannels,
       audioBuffer.length,
-      audioBuffer.sampleRate
+      audioBuffer.sampleRate,
     );
 
     const source = offlineCtx.createBufferSource();
     source.buffer = audioBuffer;
 
     const filters: BiquadFilterNode[] = [];
-    selectedBands.forEach(band => {
+    selectedBands.forEach((band) => {
       const filter = offlineCtx.createBiquadFilter();
-      filter.type = 'peaking';
+      filter.type = "peaking";
       filter.frequency.value = (band.startFreq + band.endFreq) / 2;
-      filter.Q.value = (band.endFreq - band.startFreq) / ((band.startFreq + band.endFreq) / 2);
+      filter.Q.value =
+        (band.endFreq - band.startFreq) / ((band.startFreq + band.endFreq) / 2);
       filter.gain.value = band.gain;
       filters.push(filter);
     });
 
     let lastNode: AudioNode = source;
-    filters.forEach(filter => {
+    filters.forEach((filter) => {
       lastNode.connect(filter);
       lastNode = filter;
     });
@@ -342,68 +360,84 @@ export function SpectralProcessor({
 
     source.start();
     const processedBuffer = await offlineCtx.startRendering();
-    
+
     setIsProcessing(false);
     onProcessComplete?.(processedBuffer);
   }, [audioBuffer, selectedBands, onProcessComplete]);
 
-  const handleCanvasClick = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
-    if (isLocked || !canvasRef.current) return;
-    
-    const canvas = canvasRef.current;
-    const rect = canvas.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
+  const handleCanvasClick = useCallback(
+    (e: React.MouseEvent<HTMLCanvasElement>) => {
+      if (isLocked || !canvasRef.current) return;
 
-    const timeRatio = x / canvas.width;
-    const freqRatio = 1 - (y / canvas.height);
-    const maxFreq = audioBuffer?.sampleRate ? audioBuffer.sampleRate / 2 : 22050;
-    const freq = freqRatio * maxFreq;
-    const time = audioBuffer ? timeRatio * audioBuffer.duration : 0;
+      const canvas = canvasRef.current;
+      const rect = canvas.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
 
-    if (editTool === 'brush' || editTool === 'select') {
-      const bandWidth = brushSize * maxFreq / canvas.height;
-      const newBand: SpectralBand = {
-        id: `band-${Date.now()}`,
-        startFreq: Math.max(0, freq - bandWidth / 2),
-        endFreq: Math.min(maxFreq, freq + bandWidth / 2),
-        startTime: Math.max(0, time - 0.1),
-        endTime: Math.min(audioBuffer?.duration || 0, time + 0.1),
-        gain: brushIntensity * 12 - 6,
-        selected: true,
-      };
+      const timeRatio = x / canvas.width;
+      const freqRatio = 1 - y / canvas.height;
+      const maxFreq = audioBuffer?.sampleRate
+        ? audioBuffer.sampleRate / 2
+        : 22050;
+      const freq = freqRatio * maxFreq;
+      const time = audioBuffer ? timeRatio * audioBuffer.duration : 0;
 
-      setSelectedBands(prev => [...prev, newBand]);
-      onBandSelect?.([...selectedBands, newBand]);
-    }
-  }, [isLocked, audioBuffer, editTool, brushSize, brushIntensity, selectedBands, onBandSelect]);
+      if (editTool === "brush" || editTool === "select") {
+        const bandWidth = (brushSize * maxFreq) / canvas.height;
+        const newBand: SpectralBand = {
+          id: `band-${Date.now()}`,
+          startFreq: Math.max(0, freq - bandWidth / 2),
+          endFreq: Math.min(maxFreq, freq + bandWidth / 2),
+          startTime: Math.max(0, time - 0.1),
+          endTime: Math.min(audioBuffer?.duration || 0, time + 0.1),
+          gain: brushIntensity * 12 - 6,
+          selected: true,
+        };
+
+        setSelectedBands((prev) => [...prev, newBand]);
+        onBandSelect?.([...selectedBands, newBand]);
+      }
+    },
+    [
+      isLocked,
+      audioBuffer,
+      editTool,
+      brushSize,
+      brushIntensity,
+      selectedBands,
+      onBandSelect,
+    ],
+  );
 
   const gpuStatus = useMemo(() => {
-    if (!config.useGPU) return { label: 'CPU', color: 'text-gray-400' };
-    if (config.gpuBackend === 'webgpu' && gpuAvailable.webgpu) {
-      return { label: 'WebGPU', color: 'text-green-400' };
+    if (!config.useGPU) return { label: "CPU", color: "text-gray-400" };
+    if (config.gpuBackend === "webgpu" && gpuAvailable.webgpu) {
+      return { label: "WebGPU", color: "text-green-400" };
     }
-    if (config.gpuBackend === 'webgl' && gpuAvailable.webgl) {
-      return { label: 'WebGL', color: 'text-blue-400' };
+    if (config.gpuBackend === "webgl" && gpuAvailable.webgl) {
+      return { label: "WebGL", color: "text-blue-400" };
     }
-    return { label: 'Fallback CPU', color: 'text-yellow-400' };
+    return { label: "Fallback CPU", color: "text-yellow-400" };
   }, [config.useGPU, config.gpuBackend, gpuAvailable]);
 
   return (
     <div
       className={`rounded-lg border ${className}`}
       style={{
-        background: 'var(--studio-bg-medium)',
-        borderColor: 'var(--studio-border)',
+        background: "var(--studio-bg-medium)",
+        borderColor: "var(--studio-border)",
       }}
     >
       <div
         className="h-10 px-3 flex items-center justify-between border-b"
-        style={{ borderColor: 'var(--studio-border)' }}
+        style={{ borderColor: "var(--studio-border)" }}
       >
         <div className="flex items-center gap-2">
           <Waves className="h-4 w-4 text-purple-400" />
-          <span className="text-sm font-semibold" style={{ color: 'var(--studio-text)' }}>
+          <span
+            className="text-sm font-semibold"
+            style={{ color: "var(--studio-text)" }}
+          >
             Spectral Processor
           </span>
           <Badge variant="outline" className={`text-[9px] ${gpuStatus.color}`}>
@@ -433,31 +467,35 @@ export function SpectralProcessor({
         </div>
       </div>
 
-      <div className={`${isExpanded ? 'h-[500px]' : 'h-64'} transition-all duration-200`}>
+      <div
+        className={`${isExpanded ? "h-[500px]" : "h-64"} transition-all duration-200`}
+      >
         <div className="flex h-full">
-          <div className="w-10 border-r flex flex-col items-center gap-1 py-2"
-               style={{ borderColor: 'var(--studio-border)' }}>
+          <div
+            className="w-10 border-r flex flex-col items-center gap-1 py-2"
+            style={{ borderColor: "var(--studio-border)" }}
+          >
             <Button
               size="icon"
-              variant={editTool === 'brush' ? 'secondary' : 'ghost'}
+              variant={editTool === "brush" ? "secondary" : "ghost"}
               className="h-7 w-7"
-              onClick={() => setEditTool('brush')}
+              onClick={() => setEditTool("brush")}
             >
               <Brush className="h-3.5 w-3.5" />
             </Button>
             <Button
               size="icon"
-              variant={editTool === 'eraser' ? 'secondary' : 'ghost'}
+              variant={editTool === "eraser" ? "secondary" : "ghost"}
               className="h-7 w-7"
-              onClick={() => setEditTool('eraser')}
+              onClick={() => setEditTool("eraser")}
             >
               <Eraser className="h-3.5 w-3.5" />
             </Button>
             <Button
               size="icon"
-              variant={editTool === 'select' ? 'secondary' : 'ghost'}
+              variant={editTool === "select" ? "secondary" : "ghost"}
               className="h-7 w-7"
-              onClick={() => setEditTool('select')}
+              onClick={() => setEditTool("select")}
             >
               <Move className="h-3.5 w-3.5" />
             </Button>
@@ -466,7 +504,7 @@ export function SpectralProcessor({
               size="icon"
               variant="ghost"
               className="h-7 w-7"
-              onClick={() => setZoom(z => Math.min(4, z * 1.5))}
+              onClick={() => setZoom((z) => Math.min(4, z * 1.5))}
             >
               <ZoomIn className="h-3.5 w-3.5" />
             </Button>
@@ -474,14 +512,14 @@ export function SpectralProcessor({
               size="icon"
               variant="ghost"
               className="h-7 w-7"
-              onClick={() => setZoom(z => Math.max(0.5, z / 1.5))}
+              onClick={() => setZoom((z) => Math.max(0.5, z / 1.5))}
             >
               <ZoomOut className="h-3.5 w-3.5" />
             </Button>
             <div className="flex-1" />
             <Button
               size="icon"
-              variant={isLocked ? 'secondary' : 'ghost'}
+              variant={isLocked ? "secondary" : "ghost"}
               className="h-7 w-7"
               onClick={() => setIsLocked(!isLocked)}
             >
@@ -501,12 +539,12 @@ export function SpectralProcessor({
                 height={300}
                 className="w-full h-full cursor-crosshair"
                 onClick={handleCanvasClick}
-                style={{ 
+                style={{
                   transform: `scale(${zoom})`,
-                  transformOrigin: 'center',
+                  transformOrigin: "center",
                 }}
               />
-              
+
               {selectedBands.length > 0 && (
                 <div className="absolute top-2 left-2 flex gap-1">
                   <Badge variant="secondary" className="text-[9px]">
@@ -514,37 +552,48 @@ export function SpectralProcessor({
                   </Badge>
                 </div>
               )}
-              
+
               <div className="absolute bottom-2 right-2 text-[10px] text-gray-500">
                 Zoom: {(zoom * 100).toFixed(0)}%
               </div>
             </div>
 
             {isExpanded && (
-              <div className="h-32 border-t" style={{ borderColor: 'var(--studio-border)' }}>
+              <div
+                className="h-32 border-t"
+                style={{ borderColor: "var(--studio-border)" }}
+              >
                 <Tabs defaultValue="settings" className="h-full">
                   <TabsList className="h-8 px-2">
-                    <TabsTrigger value="settings" className="h-6 text-xs">Settings</TabsTrigger>
-                    <TabsTrigger value="processing" className="h-6 text-xs">Processing</TabsTrigger>
-                    <TabsTrigger value="gpu" className="h-6 text-xs">GPU</TabsTrigger>
+                    <TabsTrigger value="settings" className="h-6 text-xs">
+                      Settings
+                    </TabsTrigger>
+                    <TabsTrigger value="processing" className="h-6 text-xs">
+                      Processing
+                    </TabsTrigger>
+                    <TabsTrigger value="gpu" className="h-6 text-xs">
+                      GPU
+                    </TabsTrigger>
                   </TabsList>
-                  
+
                   <TabsContent value="settings" className="p-2">
                     <div className="flex gap-4">
                       <div className="space-y-2">
                         <Label className="text-[10px]">FFT Size</Label>
                         <Select
                           value={config.fftSize.toString()}
-                          onValueChange={(v) => setConfig(prev => ({ 
-                            ...prev, 
-                            fftSize: parseInt(v) as typeof config.fftSize 
-                          }))}
+                          onValueChange={(v) =>
+                            setConfig((prev) => ({
+                              ...prev,
+                              fftSize: parseInt(v) as typeof config.fftSize,
+                            }))
+                          }
                         >
                           <SelectTrigger className="h-7 w-24 text-xs">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            {FFT_SIZES.map(size => (
+                            {FFT_SIZES.map((size) => (
                               <SelectItem key={size} value={size.toString()}>
                                 {size}
                               </SelectItem>
@@ -552,21 +601,23 @@ export function SpectralProcessor({
                           </SelectContent>
                         </Select>
                       </div>
-                      
+
                       <div className="space-y-2">
                         <Label className="text-[10px]">Window</Label>
                         <Select
                           value={config.windowType}
-                          onValueChange={(v) => setConfig(prev => ({ 
-                            ...prev, 
-                            windowType: v as typeof config.windowType 
-                          }))}
+                          onValueChange={(v) =>
+                            setConfig((prev) => ({
+                              ...prev,
+                              windowType: v as typeof config.windowType,
+                            }))
+                          }
                         >
                           <SelectTrigger className="h-7 w-24 text-xs">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            {WINDOW_TYPES.map(type => (
+                            {WINDOW_TYPES.map((type) => (
                               <SelectItem key={type} value={type}>
                                 {type.charAt(0).toUpperCase() + type.slice(1)}
                               </SelectItem>
@@ -574,9 +625,11 @@ export function SpectralProcessor({
                           </SelectContent>
                         </Select>
                       </div>
-                      
+
                       <div className="space-y-2 flex-1">
-                        <Label className="text-[10px]">Brush Size: {brushSize}px</Label>
+                        <Label className="text-[10px]">
+                          Brush Size: {brushSize}px
+                        </Label>
                         <Slider
                           value={[brushSize]}
                           onValueChange={([v]) => setBrushSize(v)}
@@ -585,9 +638,11 @@ export function SpectralProcessor({
                           step={1}
                         />
                       </div>
-                      
+
                       <div className="space-y-2 flex-1">
-                        <Label className="text-[10px]">Intensity: {(brushIntensity * 100).toFixed(0)}%</Label>
+                        <Label className="text-[10px]">
+                          Intensity: {(brushIntensity * 100).toFixed(0)}%
+                        </Label>
                         <Slider
                           value={[brushIntensity]}
                           onValueChange={([v]) => setBrushIntensity(v)}
@@ -598,13 +653,18 @@ export function SpectralProcessor({
                       </div>
                     </div>
                   </TabsContent>
-                  
+
                   <TabsContent value="processing" className="p-2">
                     <div className="grid grid-cols-6 gap-3">
                       <div className="flex flex-col items-center">
                         <Knob
                           value={spectralParams.noiseReduction}
-                          onChange={(v) => setSpectralParams(p => ({ ...p, noiseReduction: v }))}
+                          onChange={(v) =>
+                            setSpectralParams((p) => ({
+                              ...p,
+                              noiseReduction: v,
+                            }))
+                          }
                           min={0}
                           max={100}
                           size={36}
@@ -615,7 +675,9 @@ export function SpectralProcessor({
                       <div className="flex flex-col items-center">
                         <Knob
                           value={spectralParams.deReverb}
-                          onChange={(v) => setSpectralParams(p => ({ ...p, deReverb: v }))}
+                          onChange={(v) =>
+                            setSpectralParams((p) => ({ ...p, deReverb: v }))
+                          }
                           min={0}
                           max={100}
                           size={36}
@@ -626,7 +688,12 @@ export function SpectralProcessor({
                       <div className="flex flex-col items-center">
                         <Knob
                           value={spectralParams.transientShaping}
-                          onChange={(v) => setSpectralParams(p => ({ ...p, transientShaping: v }))}
+                          onChange={(v) =>
+                            setSpectralParams((p) => ({
+                              ...p,
+                              transientShaping: v,
+                            }))
+                          }
                           min={-50}
                           max={50}
                           size={36}
@@ -637,7 +704,12 @@ export function SpectralProcessor({
                       <div className="flex flex-col items-center">
                         <Knob
                           value={spectralParams.harmonicEnhance}
-                          onChange={(v) => setSpectralParams(p => ({ ...p, harmonicEnhance: v }))}
+                          onChange={(v) =>
+                            setSpectralParams((p) => ({
+                              ...p,
+                              harmonicEnhance: v,
+                            }))
+                          }
                           min={0}
                           max={100}
                           size={36}
@@ -648,7 +720,12 @@ export function SpectralProcessor({
                       <div className="flex flex-col items-center">
                         <Knob
                           value={spectralParams.spectralGate}
-                          onChange={(v) => setSpectralParams(p => ({ ...p, spectralGate: v }))}
+                          onChange={(v) =>
+                            setSpectralParams((p) => ({
+                              ...p,
+                              spectralGate: v,
+                            }))
+                          }
                           min={-80}
                           max={0}
                           size={36}
@@ -659,7 +736,12 @@ export function SpectralProcessor({
                       <div className="flex flex-col items-center">
                         <Knob
                           value={spectralParams.frequencyShift}
-                          onChange={(v) => setSpectralParams(p => ({ ...p, frequencyShift: v }))}
+                          onChange={(v) =>
+                            setSpectralParams((p) => ({
+                              ...p,
+                              frequencyShift: v,
+                            }))
+                          }
                           min={-12}
                           max={12}
                           size={36}
@@ -669,46 +751,58 @@ export function SpectralProcessor({
                       </div>
                     </div>
                   </TabsContent>
-                  
+
                   <TabsContent value="gpu" className="p-2">
                     <div className="flex items-center gap-4">
                       <div className="flex items-center gap-2">
                         <Switch
                           checked={config.useGPU}
-                          onCheckedChange={(checked) => setConfig(prev => ({ ...prev, useGPU: checked }))}
+                          onCheckedChange={(checked) =>
+                            setConfig((prev) => ({ ...prev, useGPU: checked }))
+                          }
                           disabled={!gpuAvailable.webgl && !gpuAvailable.webgpu}
                         />
-                        <Label className="text-xs">Enable GPU Acceleration</Label>
+                        <Label className="text-xs">
+                          Enable GPU Acceleration
+                        </Label>
                       </div>
-                      
+
                       {config.useGPU && (
                         <Select
                           value={config.gpuBackend}
-                          onValueChange={(v) => setConfig(prev => ({ 
-                            ...prev, 
-                            gpuBackend: v as typeof config.gpuBackend 
-                          }))}
+                          onValueChange={(v) =>
+                            setConfig((prev) => ({
+                              ...prev,
+                              gpuBackend: v as typeof config.gpuBackend,
+                            }))
+                          }
                         >
                           <SelectTrigger className="h-7 w-28 text-xs">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="webgpu" disabled={!gpuAvailable.webgpu}>
-                              WebGPU {!gpuAvailable.webgpu && '(N/A)'}
+                            <SelectItem
+                              value="webgpu"
+                              disabled={!gpuAvailable.webgpu}
+                            >
+                              WebGPU {!gpuAvailable.webgpu && "(N/A)"}
                             </SelectItem>
-                            <SelectItem value="webgl" disabled={!gpuAvailable.webgl}>
-                              WebGL {!gpuAvailable.webgl && '(N/A)'}
+                            <SelectItem
+                              value="webgl"
+                              disabled={!gpuAvailable.webgl}
+                            >
+                              WebGL {!gpuAvailable.webgl && "(N/A)"}
                             </SelectItem>
                             <SelectItem value="cpu">CPU</SelectItem>
                           </SelectContent>
                         </Select>
                       )}
-                      
+
                       <div className="flex-1" />
-                      
+
                       <div className="text-[10px] text-gray-500">
-                        WebGPU: {gpuAvailable.webgpu ? '✓' : '✗'} | 
-                        WebGL: {gpuAvailable.webgl ? '✓' : '✗'}
+                        WebGPU: {gpuAvailable.webgpu ? "✓" : "✗"} | WebGL:{" "}
+                        {gpuAvailable.webgl ? "✓" : "✗"}
                       </div>
                     </div>
                   </TabsContent>
@@ -721,7 +815,7 @@ export function SpectralProcessor({
 
       <div
         className="h-10 px-3 flex items-center justify-between border-t"
-        style={{ borderColor: 'var(--studio-border)' }}
+        style={{ borderColor: "var(--studio-border)" }}
       >
         <div className="flex items-center gap-2">
           <Button

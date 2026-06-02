@@ -1,64 +1,73 @@
 /**
  * SELF-HEALING SECURITY MIDDLEWARE
- * 
+ *
  * Integrates the Self-Healing Security Engine with Express.
  * Monitors all requests in real-time for threat detection and automatic healing.
  */
 
-import { Request, Response, NextFunction } from 'express';
-import { selfHealingEngine } from '../services/selfHealingSecurityEngine.js';
-import { logger } from '../logger.js';
-import { isProductionEnv } from '../lib/envHelpers.js';
+import { Request, Response, NextFunction } from "express";
+import { selfHealingEngine } from "../services/selfHealingSecurityEngine.js";
+import { logger } from "../logger.js";
+import { isProductionEnv } from "../lib/envHelpers.js";
 
 const WHITELISTED_IPS = new Set([
-  '127.0.0.1',
-  '::1',
-  '::ffff:127.0.0.1',
-  'localhost',
+  "127.0.0.1",
+  "::1",
+  "::ffff:127.0.0.1",
+  "localhost",
 ]);
 
 const isDev = !isProductionEnv();
 
 function isInternalIp(ip: string): boolean {
-  if (!ip || ip === 'unknown') return false;
-  const stripped = ip.replace(/^::ffff:/, '');
+  if (!ip || ip === "unknown") return false;
+  const stripped = ip.replace(/^::ffff:/, "");
   return (
-    stripped === '127.0.0.1' ||
-    stripped === '::1' ||
-    stripped === 'localhost' ||
-    stripped.startsWith('10.') ||
-    stripped.startsWith('172.16.') ||
-    stripped.startsWith('192.168.') ||
+    stripped === "127.0.0.1" ||
+    stripped === "::1" ||
+    stripped === "localhost" ||
+    stripped.startsWith("10.") ||
+    stripped.startsWith("172.16.") ||
+    stripped.startsWith("192.168.") ||
     WHITELISTED_IPS.has(ip)
   );
 }
 
-export function selfHealingSecurityMiddleware(req: Request, res: Response, next: NextFunction): void {
+export function selfHealingSecurityMiddleware(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): void {
   const startTime = Date.now();
-  
-  const ip = req.ip || 
-    req.headers['x-forwarded-for']?.toString().split(',')[0]?.trim() || 
-    req.socket.remoteAddress || 
-    'unknown';
 
-  const isWhitelisted = isInternalIp(ip) || ip.startsWith('::ffff:127.') || (isDev && ip !== 'unknown');
+  const ip =
+    req.ip ||
+    req.headers["x-forwarded-for"]?.toString().split(",")[0]?.trim() ||
+    req.socket.remoteAddress ||
+    "unknown";
+
+  const isWhitelisted =
+    isInternalIp(ip) ||
+    ip.startsWith("::ffff:127.") ||
+    (isDev && ip !== "unknown");
 
   if (!isWhitelisted && selfHealingEngine.isIpBlocked(ip)) {
     res.status(403).json({
-      error: 'Access denied',
-      code: 'IP_BLOCKED',
-      message: 'Your IP has been temporarily blocked due to suspicious activity',
+      error: "Access denied",
+      code: "IP_BLOCKED",
+      message:
+        "Your IP has been temporarily blocked due to suspicious activity",
     });
     return;
   }
 
   selfHealingEngine.processSecurityEvent({
-    type: 'request',
+    type: "request",
     category: getRequestCategory(req.path),
-    severity: 'low',
+    severity: "low",
     source: {
       ip,
-      userAgent: req.headers['user-agent'],
+      userAgent: req.headers["user-agent"],
       userId: (req as Record<string, unknown>).user?.id,
       sessionId: req.sessionID,
     },
@@ -73,18 +82,19 @@ export function selfHealingSecurityMiddleware(req: Request, res: Response, next:
     },
   });
 
-  res.on('finish', () => {
+  res.on("finish", () => {
     const latency = Date.now() - startTime;
 
-    const isNormalAuthResponse = res.statusCode === 401 || res.statusCode === 403;
+    const isNormalAuthResponse =
+      res.statusCode === 401 || res.statusCode === 403;
     if (res.statusCode >= 400 && !isNormalAuthResponse) {
       selfHealingEngine.processSecurityEvent({
-        type: 'request',
-        category: 'error_response',
-        severity: res.statusCode >= 500 ? 'high' : 'medium',
+        type: "request",
+        category: "error_response",
+        severity: res.statusCode >= 500 ? "high" : "medium",
         source: {
           ip,
-          userAgent: req.headers['user-agent'],
+          userAgent: req.headers["user-agent"],
           userId: (req as Record<string, unknown>).user?.id,
           sessionId: req.sessionID,
         },
@@ -105,42 +115,59 @@ export function selfHealingSecurityMiddleware(req: Request, res: Response, next:
 }
 
 function getRequestCategory(path: string): string {
-  if (path.startsWith('/api/auth')) return 'authentication';
-  if (path.startsWith('/api/admin')) return 'admin';
-  if (path.startsWith('/api/payouts') || path.startsWith('/api/webhooks/stripe')) return 'payment';
-  if (path.startsWith('/api/distribution')) return 'distribution';
-  if (path.startsWith('/api/developer')) return 'developer_api';
-  if (path.startsWith('/api')) return 'api';
-  return 'general';
+  if (path.startsWith("/api/auth")) return "authentication";
+  if (path.startsWith("/api/admin")) return "admin";
+  if (
+    path.startsWith("/api/payouts") ||
+    path.startsWith("/api/webhooks/stripe")
+  )
+    return "payment";
+  if (path.startsWith("/api/distribution")) return "distribution";
+  if (path.startsWith("/api/developer")) return "developer_api";
+  if (path.startsWith("/api")) return "api";
+  return "general";
 }
 
 function sanitizeBody(body: Record<string, unknown>): Record<string, unknown> {
-  if (!body || typeof body !== 'object') return body;
-  
-  const sensitiveFields = ['password', 'token', 'secret', 'apiKey', 'creditCard', 'cvv', 'ssn'];
+  if (!body || typeof body !== "object") return body;
+
+  const sensitiveFields = [
+    "password",
+    "token",
+    "secret",
+    "apiKey",
+    "creditCard",
+    "cvv",
+    "ssn",
+  ];
   const sanitized = { ...body };
-  
+
   for (const field of sensitiveFields) {
     if (field in sanitized) {
-      sanitized[field] = '[REDACTED]';
+      sanitized[field] = "[REDACTED]";
     }
   }
-  
+
   return sanitized;
 }
 
 function sanitizeHeaders(headers: Record<string, any>): Record<string, string> {
-  const sensitiveHeaders = ['authorization', 'cookie', 'x-api-key', 'stripe-signature'];
+  const sensitiveHeaders = [
+    "authorization",
+    "cookie",
+    "x-api-key",
+    "stripe-signature",
+  ];
   const sanitized: Record<string, string> = {};
-  
+
   for (const [key, value] of Object.entries(headers)) {
     if (sensitiveHeaders.includes(key.toLowerCase())) {
-      sanitized[key] = '[REDACTED]';
-    } else if (typeof value === 'string') {
+      sanitized[key] = "[REDACTED]";
+    } else if (typeof value === "string") {
       sanitized[key] = value;
     }
   }
-  
+
   return sanitized;
 }
 

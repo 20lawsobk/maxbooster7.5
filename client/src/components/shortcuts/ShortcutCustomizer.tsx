@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useState, useEffect, useCallback, useRef } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Settings,
   X,
@@ -8,20 +8,20 @@ import {
   AlertTriangle,
   Check,
   Keyboard,
-} from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Badge } from '@/components/ui/badge';
-import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogDescription,
-} from '@/components/ui/dialog';
+} from "@/components/ui/dialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -32,27 +32,31 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from '@/components/ui/alert-dialog';
-import { cn } from '@/lib/utils';
-import { useShortcuts } from '@/contexts/ShortcutContext';
-import { ShortcutHint } from './ShortcutHint';
-import { 
-  ShortcutDefinition, 
-  ShortcutModifier, 
+} from "@/components/ui/alert-dialog";
+import { cn } from "@/lib/utils";
+import { useShortcuts } from "@/contexts/ShortcutContext";
+import { ShortcutHint } from "./ShortcutHint";
+import {
+  ShortcutDefinition,
+  ShortcutModifier,
   getPlatformModifiers,
-  formatShortcutKeys 
-} from '@/lib/shortcuts/types';
+  formatShortcutKeys,
+} from "@/lib/shortcuts/types";
 
 interface ShortcutCustomizerProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
-export function ShortcutCustomizer({ open, onOpenChange }: ShortcutCustomizerProps) {
+export function ShortcutCustomizer({
+  open,
+  onOpenChange,
+}: ShortcutCustomizerProps) {
   const { shortcutManager } = useShortcuts();
   const [shortcuts, setShortcuts] = useState<ShortcutDefinition[]>([]);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [editingShortcut, setEditingShortcut] = useState<ShortcutDefinition | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [editingShortcut, setEditingShortcut] =
+    useState<ShortcutDefinition | null>(null);
   const [recordedKeys, setRecordedKeys] = useState<{
     key: string;
     modifiers: ShortcutModifier[];
@@ -66,10 +70,11 @@ export function ShortcutCustomizer({ open, onOpenChange }: ShortcutCustomizerPro
     }
   }, [open, shortcutManager]);
 
-  const filteredShortcuts = shortcuts.filter(s =>
-    s.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    s.key.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    s.category.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredShortcuts = shortcuts.filter(
+    (s) =>
+      s.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      s.key.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      s.category.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
   const handleStartRecording = (shortcut: ShortcutDefinition) => {
@@ -79,44 +84,49 @@ export function ShortcutCustomizer({ open, onOpenChange }: ShortcutCustomizerPro
     setConflict(null);
   };
 
-  const handleKeyDown = useCallback((e: KeyboardEvent) => {
-    if (!isRecording || !editingShortcut) return;
-    
-    e.preventDefault();
-    e.stopPropagation();
+  const handleKeyDown = useCallback(
+    (e: KeyboardEvent) => {
+      if (!isRecording || !editingShortcut) return;
 
-    const key = e.key;
-    if (['Control', 'Shift', 'Alt', 'Meta', 'CapsLock', 'Tab'].includes(key)) {
-      return;
-    }
+      e.preventDefault();
+      e.stopPropagation();
 
-    const modifiers: ShortcutModifier[] = [];
-    if (e.ctrlKey || e.metaKey) modifiers.push('cmd');
-    if (e.shiftKey) modifiers.push('shift');
-    if (e.altKey) modifiers.push('alt');
+      const key = e.key;
+      if (
+        ["Control", "Shift", "Alt", "Meta", "CapsLock", "Tab"].includes(key)
+      ) {
+        return;
+      }
 
-    const newKeys = { key: key.toLowerCase(), modifiers };
-    setRecordedKeys(newKeys);
-    setIsRecording(false);
+      const modifiers: ShortcutModifier[] = [];
+      if (e.ctrlKey || e.metaKey) modifiers.push("cmd");
+      if (e.shiftKey) modifiers.push("shift");
+      if (e.altKey) modifiers.push("alt");
 
-    const existingConflict = shortcuts.find(s => {
-      if (s.id === editingShortcut.id) return false;
-      const sameKey = s.key.toLowerCase() === newKeys.key;
-      const sameMods = 
-        (s.modifiers || []).length === modifiers.length &&
-        (s.modifiers || []).every(m => modifiers.includes(m));
-      return sameKey && sameMods;
-    });
+      const newKeys = { key: key.toLowerCase(), modifiers };
+      setRecordedKeys(newKeys);
+      setIsRecording(false);
 
-    if (existingConflict) {
-      setConflict(existingConflict);
-    }
-  }, [isRecording, editingShortcut, shortcuts]);
+      const existingConflict = shortcuts.find((s) => {
+        if (s.id === editingShortcut.id) return false;
+        const sameKey = s.key.toLowerCase() === newKeys.key;
+        const sameMods =
+          (s.modifiers || []).length === modifiers.length &&
+          (s.modifiers || []).every((m) => modifiers.includes(m));
+        return sameKey && sameMods;
+      });
+
+      if (existingConflict) {
+        setConflict(existingConflict);
+      }
+    },
+    [isRecording, editingShortcut, shortcuts],
+  );
 
   useEffect(() => {
     if (isRecording) {
-      window.addEventListener('keydown', handleKeyDown);
-      return () => window.removeEventListener('keydown', handleKeyDown);
+      window.addEventListener("keydown", handleKeyDown);
+      return () => window.removeEventListener("keydown", handleKeyDown);
     }
   }, [isRecording, handleKeyDown]);
 
@@ -193,12 +203,15 @@ export function ShortcutCustomizer({ open, onOpenChange }: ShortcutCustomizerPro
               <AlertDialogHeader>
                 <AlertDialogTitle>Reset all shortcuts?</AlertDialogTitle>
                 <AlertDialogDescription>
-                  This will reset all keyboard shortcuts to their default values. This action cannot be undone.
+                  This will reset all keyboard shortcuts to their default
+                  values. This action cannot be undone.
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
                 <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={handleResetAll}>Reset All</AlertDialogAction>
+                <AlertDialogAction onClick={handleResetAll}>
+                  Reset All
+                </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
@@ -206,17 +219,20 @@ export function ShortcutCustomizer({ open, onOpenChange }: ShortcutCustomizerPro
 
         <ScrollArea className="flex-1 -mx-6 px-6">
           <div className="space-y-2">
-            {filteredShortcuts.map(shortcut => (
+            {filteredShortcuts.map((shortcut) => (
               <div
                 key={shortcut.id}
                 className={cn(
                   "flex items-center justify-between p-3 rounded-lg border border-zinc-800",
-                  editingShortcut?.id === shortcut.id && "ring-2 ring-amber-500"
+                  editingShortcut?.id === shortcut.id &&
+                    "ring-2 ring-amber-500",
                 )}
               >
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
-                    <span className="font-medium text-sm">{shortcut.description}</span>
+                    <span className="font-medium text-sm">
+                      {shortcut.description}
+                    </span>
                     <Badge variant="outline" className="text-[10px]">
                       {shortcut.category}
                     </Badge>
@@ -236,7 +252,10 @@ export function ShortcutCustomizer({ open, onOpenChange }: ShortcutCustomizerPro
                       ) : recordedKeys ? (
                         <div className="flex items-center gap-2">
                           <ShortcutHint
-                            shortcut={{ key: recordedKeys.key, modifiers: recordedKeys.modifiers }}
+                            shortcut={{
+                              key: recordedKeys.key,
+                              modifiers: recordedKeys.modifiers,
+                            }}
                             size="sm"
                           />
                           {conflict && (
@@ -245,15 +264,22 @@ export function ShortcutCustomizer({ open, onOpenChange }: ShortcutCustomizerPro
                         </div>
                       ) : (
                         <ShortcutHint
-                          shortcut={{ key: shortcut.key, modifiers: shortcut.modifiers }}
+                          shortcut={{
+                            key: shortcut.key,
+                            modifiers: shortcut.modifiers,
+                          }}
                           size="sm"
                         />
                       )}
-                      <Button size="sm" variant="ghost" onClick={handleCancelEdit}>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={handleCancelEdit}
+                      >
                         <X className="w-4 h-4" />
                       </Button>
-                      <Button 
-                        size="sm" 
+                      <Button
+                        size="sm"
                         onClick={handleSaveShortcut}
                         disabled={!recordedKeys || !!conflict}
                       >
@@ -267,13 +293,18 @@ export function ShortcutCustomizer({ open, onOpenChange }: ShortcutCustomizerPro
                         className="hover:bg-zinc-800 rounded-lg p-1 transition-colors"
                       >
                         <ShortcutHint
-                          shortcut={{ key: shortcut.key, modifiers: shortcut.modifiers }}
+                          shortcut={{
+                            key: shortcut.key,
+                            modifiers: shortcut.modifiers,
+                          }}
                           size="sm"
                         />
                       </button>
                       <Switch
                         checked={shortcut.enabled !== false}
-                        onCheckedChange={(checked) => handleToggleShortcut(shortcut.id, checked)}
+                        onCheckedChange={(checked) =>
+                          handleToggleShortcut(shortcut.id, checked)
+                        }
                       />
                     </>
                   )}
@@ -286,9 +317,7 @@ export function ShortcutCustomizer({ open, onOpenChange }: ShortcutCustomizerPro
         {conflict && editingShortcut && (
           <div className="flex items-center gap-2 p-3 bg-yellow-500/10 border border-yellow-500/30 rounded-lg text-sm text-yellow-400">
             <AlertTriangle className="w-4 h-4 flex-shrink-0" />
-            <span>
-              This shortcut conflicts with "{conflict.description}"
-            </span>
+            <span>This shortcut conflicts with "{conflict.description}"</span>
           </div>
         )}
       </DialogContent>

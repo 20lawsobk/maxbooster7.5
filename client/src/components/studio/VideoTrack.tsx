@@ -1,5 +1,5 @@
-import { logger } from '@/lib/logger';
-import { useCallback, useState, useRef, useEffect, useMemo } from 'react';
+import { logger } from "@/lib/logger";
+import { useCallback, useState, useRef, useEffect, useMemo } from "react";
 import {
   Video,
   Upload,
@@ -22,9 +22,9 @@ import {
   RefreshCw,
   ZoomIn,
   ZoomOut,
-} from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Slider } from '@/components/ui/slider';
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Slider } from "@/components/ui/slider";
 import {
   Dialog,
   DialogContent,
@@ -32,24 +32,24 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter,
-} from '@/components/ui/dialog';
+} from "@/components/ui/dialog";
 import {
   ContextMenu,
   ContextMenuContent,
   ContextMenuItem,
   ContextMenuSeparator,
   ContextMenuTrigger,
-} from '@/components/ui/context-menu';
+} from "@/components/ui/context-menu";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { useStudioStore } from '@/lib/studioStore';
-import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
+} from "@/components/ui/dropdown-menu";
+import { useStudioStore } from "@/lib/studioStore";
+import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
 
 export interface VideoClip {
   id: string;
@@ -58,7 +58,7 @@ export interface VideoClip {
   duration: number;
   filePath: string;
   thumbnails: string[];
-  format: 'mp4' | 'mov' | 'webm' | 'avi' | 'mkv';
+  format: "mp4" | "mov" | "webm" | "avi" | "mkv";
   width: number;
   height: number;
   frameRate: number;
@@ -71,7 +71,7 @@ export interface VideoClip {
 export interface VideoMarker {
   id: string;
   time: number;
-  type: 'cut' | 'copy' | 'paste' | 'general';
+  type: "cut" | "copy" | "paste" | "general";
   label?: string;
 }
 
@@ -91,13 +91,13 @@ interface VideoTrackProps {
   onPendingImportConsumed?: () => void;
 }
 
-const SUPPORTED_FORMATS = ['mp4', 'mov', 'webm', 'avi', 'mkv'];
+const SUPPORTED_FORMATS = ["mp4", "mov", "webm", "avi", "mkv"];
 const FORMAT_COLORS: Record<string, string> = {
-  mp4: '#22c55e',
-  mov: '#3b82f6',
-  webm: '#f97316',
-  avi: '#8b5cf6',
-  mkv: '#ec4899',
+  mp4: "#22c55e",
+  mov: "#3b82f6",
+  webm: "#f97316",
+  avi: "#8b5cf6",
+  mkv: "#ec4899",
 };
 
 const THUMBNAIL_WIDTH = 80;
@@ -116,7 +116,14 @@ export function VideoTrack({
   pendingImportUrl,
   onPendingImportConsumed,
 }: VideoTrackProps) {
-  const { zoom, setZoom, snapEnabled, snapResolution, currentTime, setCurrentTime } = useStudioStore();
+  const {
+    zoom,
+    setZoom,
+    snapEnabled,
+    snapResolution,
+    currentTime,
+    setCurrentTime,
+  } = useStudioStore();
 
   const [clips, setClips] = useState<VideoClip[]>(initialClips);
   const [selectedClipId, setSelectedClipId] = useState<string | null>(null);
@@ -124,7 +131,7 @@ export function VideoTrack({
   const [isDragging, setIsDragging] = useState(false);
   const [isDraggingClip, setIsDraggingClip] = useState(false);
   const [dragOffset, setDragOffset] = useState(0);
-  const [isResizing, setIsResizing] = useState<'start' | 'end' | null>(null);
+  const [isResizing, setIsResizing] = useState<"start" | "end" | null>(null);
   const [isDragOver, setIsDragOver] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
   const [importProgress, setImportProgress] = useState(0);
@@ -143,7 +150,7 @@ export function VideoTrack({
 
   const selectedClip = useMemo(
     () => clips.find((c) => c.id === selectedClipId),
-    [clips, selectedClipId]
+    [clips, selectedClipId],
   );
 
   // ── URL-based import ────────────────────────────────────────────────────────
@@ -158,22 +165,27 @@ export function VideoTrack({
       setIsImporting(true);
       setImportProgress(5);
       try {
-        const resp = await fetch(pendingImportUrl, { credentials: 'include' });
+        const resp = await fetch(pendingImportUrl, { credentials: "include" });
         if (!resp.ok) throw new Error(`Failed to fetch video: ${resp.status}`);
         const blob = await resp.blob();
         if (cancelled) return;
 
-        const filename = pendingImportUrl.split('/').pop()?.split('?')[0] || 'generated-video.mp4';
-        const file = new File([blob], filename, { type: blob.type || 'video/mp4' });
+        const filename =
+          pendingImportUrl.split("/").pop()?.split("?")[0] ||
+          "generated-video.mp4";
+        const file = new File([blob], filename, {
+          type: blob.type || "video/mp4",
+        });
 
         setImportProgress(20);
 
-        const video = document.createElement('video');
+        const video = document.createElement("video");
         video.src = URL.createObjectURL(file);
         await new Promise<void>((resolve, reject) => {
           video.onloadedmetadata = () => resolve();
-          video.onerror = () => reject(new Error('Failed to load video metadata'));
-          setTimeout(() => reject(new Error('Metadata timeout')), 10_000);
+          video.onerror = () =>
+            reject(new Error("Failed to load video metadata"));
+          setTimeout(() => reject(new Error("Metadata timeout")), 10_000);
         });
 
         if (cancelled) return;
@@ -187,19 +199,21 @@ export function VideoTrack({
 
         const newClip: VideoClip = {
           id: `video-${Date.now()}`,
-          name: filename.replace(/\.[^/.]+$/, ''),
+          name: filename.replace(/\.[^/.]+$/, ""),
           startTime: currentTime,
           duration: Math.min(videoDuration, duration - currentTime),
           filePath: URL.createObjectURL(file),
           thumbnails,
-          format: (filename.split('.').pop()?.toLowerCase() as VideoClip['format']) || 'mp4',
+          format:
+            (filename.split(".").pop()?.toLowerCase() as VideoClip["format"]) ||
+            "mp4",
           width: video.videoWidth || 1080,
           height: video.videoHeight || 1920,
           frameRate: 30,
           hasAudio: true,
         };
 
-        setClips(prev => [...prev, newClip]);
+        setClips((prev) => [...prev, newClip]);
         setSelectedClipId(newClip.id);
         setImportProgress(100);
         onPendingImportConsumed?.();
@@ -210,17 +224,19 @@ export function VideoTrack({
         }, 500);
       } catch (err) {
         if (!cancelled) {
-          logger.error('[VideoTrack] URL import failed:', err);
+          logger.error("[VideoTrack] URL import failed:", err);
           setIsImporting(false);
           setImportProgress(0);
         }
       }
     })();
 
-    return () => { cancelled = true; };
-  // INTENTIONAL: only re-run when a new import URL appears. currentTime/duration/generateThumbnails
-  // are deliberately excluded — including them would restart the import on every seek/zoom.
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    return () => {
+      cancelled = true;
+    };
+    // INTENTIONAL: only re-run when a new import URL appears. currentTime/duration/generateThumbnails
+    // are deliberately excluded — including them would restart the import on every seek/zoom.
+     
   }, [pendingImportUrl]);
   // ── End URL-based import ────────────────────────────────────────────────────
 
@@ -230,7 +246,7 @@ export function VideoTrack({
       const width = timelineRef.current.offsetWidth;
       return (time / duration) * width * zoom;
     },
-    [duration, zoom]
+    [duration, zoom],
   );
 
   const pixelsToTime = useCallback(
@@ -239,7 +255,7 @@ export function VideoTrack({
       const width = timelineRef.current.offsetWidth;
       return (pixels / (width * zoom)) * duration;
     },
-    [duration, zoom]
+    [duration, zoom],
   );
 
   const snapToGrid = useCallback(
@@ -247,15 +263,15 @@ export function VideoTrack({
       if (!snapEnabled) return time;
       return Math.round(time / snapResolution) * snapResolution;
     },
-    [snapEnabled, snapResolution]
+    [snapEnabled, snapResolution],
   );
 
   const generateThumbnails = useCallback(
     async (videoFile: File, clipDuration: number): Promise<string[]> => {
       return new Promise((resolve) => {
-        const video = document.createElement('video');
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d');
+        const video = document.createElement("video");
+        const canvas = document.createElement("canvas");
+        const ctx = canvas.getContext("2d");
         const thumbnails: string[] = [];
 
         canvas.width = THUMBNAIL_WIDTH;
@@ -264,7 +280,10 @@ export function VideoTrack({
         video.src = URL.createObjectURL(videoFile);
         video.muted = true;
 
-        const thumbnailCount = Math.max(1, Math.ceil((clipDuration / duration) * 20));
+        const thumbnailCount = Math.max(
+          1,
+          Math.ceil((clipDuration / duration) * 20),
+        );
         const interval = clipDuration / thumbnailCount;
         let currentIndex = 0;
 
@@ -286,14 +305,17 @@ export function VideoTrack({
             // Seek to the midpoint of each thumbnail slot so we never land
             // exactly on currentTime=0 (which would not fire onseeked because
             // the video is already positioned there on metadata load).
-            const targetTime = Math.min((currentIndex + 0.5) * interval, clipDuration - 0.001);
+            const targetTime = Math.min(
+              (currentIndex + 0.5) * interval,
+              clipDuration - 0.001,
+            );
             video.currentTime = targetTime;
           };
 
           video.onseeked = () => {
             if (ctx) {
               ctx.drawImage(video, 0, 0, THUMBNAIL_WIDTH, THUMBNAIL_HEIGHT);
-              thumbnails.push(canvas.toDataURL('image/jpeg', 0.6));
+              thumbnails.push(canvas.toDataURL("image/jpeg", 0.6));
             }
             currentIndex++;
             captureFrame();
@@ -308,13 +330,19 @@ export function VideoTrack({
         };
       });
     },
-    [duration]
+    [duration],
   );
 
   const handleFileSelect = useCallback(
     async (file: File) => {
-      if (!SUPPORTED_FORMATS.some((format) => file.type.includes(format) || file.name.toLowerCase().endsWith(`.${format}`))) {
-        logger.error('Unsupported video format');
+      if (
+        !SUPPORTED_FORMATS.some(
+          (format) =>
+            file.type.includes(format) ||
+            file.name.toLowerCase().endsWith(`.${format}`),
+        )
+      ) {
+        logger.error("Unsupported video format");
         return;
       }
 
@@ -322,18 +350,21 @@ export function VideoTrack({
       setImportProgress(0);
 
       try {
-        const video = document.createElement('video');
+        const video = document.createElement("video");
         video.src = URL.createObjectURL(file);
 
         await new Promise<void>((resolve, reject) => {
           video.onloadedmetadata = () => resolve();
-          video.onerror = () => reject(new Error('Failed to load video'));
+          video.onerror = () => reject(new Error("Failed to load video"));
         });
 
         setImportProgress(30);
 
         const videoDuration = video.duration;
-        const format = file.name.split('.').pop()?.toLowerCase() as VideoClip['format'];
+        const format = file.name
+          .split(".")
+          .pop()
+          ?.toLowerCase() as VideoClip["format"];
 
         setImportProgress(50);
 
@@ -343,18 +374,20 @@ export function VideoTrack({
 
         // captureStream() is supported in Chromium/Firefox but not in the standard
         // HTMLVideoElement type — narrow with a local type.
-        const videoWithCapture = video as HTMLVideoElement & { captureStream?: () => MediaStream };
+        const videoWithCapture = video as HTMLVideoElement & {
+          captureStream?: () => MediaStream;
+        };
         const videoStream = videoWithCapture.captureStream?.() ?? null;
         const hasAudio = (videoStream?.getAudioTracks?.()?.length ?? 0) > 0;
 
         const newClip: VideoClip = {
           id: `video-${Date.now()}`,
-          name: file.name.replace(/\.[^/.]+$/, ''),
+          name: file.name.replace(/\.[^/.]+$/, ""),
           startTime: currentTime,
           duration: Math.min(videoDuration, duration - currentTime),
           filePath: URL.createObjectURL(file),
           thumbnails,
-          format: format || 'mp4',
+          format: format || "mp4",
           width: video.videoWidth,
           height: video.videoHeight,
           frameRate: 30,
@@ -372,12 +405,12 @@ export function VideoTrack({
           setImportProgress(0);
         }, 500);
       } catch (error) {
-        logger.error('Failed to import video:', error);
+        logger.error("Failed to import video:", error);
         setIsImporting(false);
         setImportProgress(0);
       }
     },
-    [currentTime, duration, generateThumbnails, onVideoImport]
+    [currentTime, duration, generateThumbnails, onVideoImport],
   );
 
   const handleDrop = useCallback(
@@ -387,14 +420,18 @@ export function VideoTrack({
 
       const files = Array.from(e.dataTransfer.files);
       const videoFile = files.find((file) =>
-        SUPPORTED_FORMATS.some((format) => file.type.includes(format) || file.name.toLowerCase().endsWith(`.${format}`))
+        SUPPORTED_FORMATS.some(
+          (format) =>
+            file.type.includes(format) ||
+            file.name.toLowerCase().endsWith(`.${format}`),
+        ),
       );
 
       if (videoFile) {
         handleFileSelect(videoFile);
       }
     },
-    [handleFileSelect]
+    [handleFileSelect],
   );
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
@@ -418,7 +455,15 @@ export function VideoTrack({
       setCurrentTime(Math.max(0, Math.min(time, duration)));
       onTimelineClick?.(time);
     },
-    [isDraggingClip, isResizing, pixelsToTime, snapToGrid, setCurrentTime, duration, onTimelineClick]
+    [
+      isDraggingClip,
+      isResizing,
+      pixelsToTime,
+      snapToGrid,
+      setCurrentTime,
+      duration,
+      onTimelineClick,
+    ],
   );
 
   const handleClipMouseDown = useCallback(
@@ -432,7 +477,7 @@ export function VideoTrack({
       setDragOffset(clickTime);
       setIsDraggingClip(true);
     },
-    [pixelsToTime]
+    [pixelsToTime],
   );
 
   const handleClipDrag = useCallback(
@@ -448,13 +493,26 @@ export function VideoTrack({
 
       let newStartTime = mouseTime - dragOffset;
       newStartTime = snapToGrid(newStartTime);
-      newStartTime = Math.max(0, Math.min(newStartTime, duration - clip.duration));
+      newStartTime = Math.max(
+        0,
+        Math.min(newStartTime, duration - clip.duration),
+      );
 
       setClips((prev) =>
-        prev.map((c) => (c.id === selectedClipId ? { ...c, startTime: newStartTime } : c))
+        prev.map((c) =>
+          c.id === selectedClipId ? { ...c, startTime: newStartTime } : c,
+        ),
       );
     },
-    [isDraggingClip, selectedClipId, clips, pixelsToTime, snapToGrid, dragOffset, duration]
+    [
+      isDraggingClip,
+      selectedClipId,
+      clips,
+      pixelsToTime,
+      snapToGrid,
+      dragOffset,
+      duration,
+    ],
   );
 
   const handleClipDragEnd = useCallback(() => {
@@ -468,12 +526,12 @@ export function VideoTrack({
   }, [isDraggingClip, selectedClipId, clips, onClipUpdate]);
 
   const handleResizeStart = useCallback(
-    (e: React.MouseEvent, clipId: string, edge: 'start' | 'end') => {
+    (e: React.MouseEvent, clipId: string, edge: "start" | "end") => {
       e.stopPropagation();
       setSelectedClipId(clipId);
       setIsResizing(edge);
     },
-    []
+    [],
   );
 
   const handleResize = useCallback(
@@ -487,7 +545,7 @@ export function VideoTrack({
       const clip = clips.find((c) => c.id === selectedClipId);
       if (!clip) return;
 
-      if (isResizing === 'start') {
+      if (isResizing === "start") {
         const maxStart = clip.startTime + clip.duration - 0.1;
         const newStartTime = Math.max(0, Math.min(mouseTime, maxStart));
         const durationDelta = clip.startTime - newStartTime;
@@ -501,8 +559,8 @@ export function VideoTrack({
                   duration: c.duration + durationDelta,
                   trimStart: (c.trimStart || 0) - durationDelta,
                 }
-              : c
-          )
+              : c,
+          ),
         );
       } else {
         const minEnd = clip.startTime + 0.1;
@@ -517,12 +575,12 @@ export function VideoTrack({
                   duration: newDuration,
                   trimEnd: (c.trimEnd || 0) + (c.duration - newDuration),
                 }
-              : c
-          )
+              : c,
+          ),
         );
       }
     },
-    [isResizing, selectedClipId, clips, pixelsToTime, snapToGrid, duration]
+    [isResizing, selectedClipId, clips, pixelsToTime, snapToGrid, duration],
   );
 
   const handleResizeEnd = useCallback(() => {
@@ -542,41 +600,43 @@ export function VideoTrack({
 
   useEffect(() => {
     if (isDraggingClip) {
-      document.addEventListener('mousemove', handleClipDrag);
-      document.addEventListener('mouseup', handleClipDragEnd);
+      document.addEventListener("mousemove", handleClipDrag);
+      document.addEventListener("mouseup", handleClipDragEnd);
       return () => {
-        document.removeEventListener('mousemove', handleClipDrag);
-        document.removeEventListener('mouseup', handleClipDragEnd);
+        document.removeEventListener("mousemove", handleClipDrag);
+        document.removeEventListener("mouseup", handleClipDragEnd);
       };
     }
   }, [isDraggingClip, handleClipDrag, handleClipDragEnd]);
 
   useEffect(() => {
     if (isResizing) {
-      document.addEventListener('mousemove', handleResize);
-      document.addEventListener('mouseup', handleResizeEnd);
+      document.addEventListener("mousemove", handleResize);
+      document.addEventListener("mouseup", handleResizeEnd);
       return () => {
-        document.removeEventListener('mousemove', handleResize);
-        document.removeEventListener('mouseup', handleResizeEnd);
+        document.removeEventListener("mousemove", handleResize);
+        document.removeEventListener("mouseup", handleResizeEnd);
       };
     }
   }, [isResizing, handleResize, handleResizeEnd]);
 
   const addMarker = useCallback(
-    (type: VideoMarker['type']) => {
+    (type: VideoMarker["type"]) => {
       const newMarker: VideoMarker = {
         id: `marker-${Date.now()}`,
         time: currentTime,
         type,
         label: `${type.charAt(0).toUpperCase() + type.slice(1)} Marker`,
       };
-      setMarkers((prev) => [...prev, newMarker].sort((a, b) => a.time - b.time));
+      setMarkers((prev) =>
+        [...prev, newMarker].sort((a, b) => a.time - b.time),
+      );
 
-      if (type === 'copy' && selectedClipId) {
+      if (type === "copy" && selectedClipId) {
         setCopiedMarkerTime(currentTime);
       }
     },
-    [currentTime, selectedClipId]
+    [currentTime, selectedClipId],
   );
 
   const deleteMarker = useCallback((markerId: string) => {
@@ -590,7 +650,8 @@ export function VideoTrack({
     if (!clip) return;
 
     const cutTime = currentTime;
-    if (cutTime <= clip.startTime || cutTime >= clip.startTime + clip.duration) return;
+    if (cutTime <= clip.startTime || cutTime >= clip.startTime + clip.duration)
+      return;
 
     const firstDuration = cutTime - clip.startTime;
     const secondDuration = clip.duration - firstDuration;
@@ -609,15 +670,17 @@ export function VideoTrack({
       trimStart: (clip.trimStart || 0) + firstDuration,
     };
 
-    setClips((prev) => prev.map((c) => (c.id === clip.id ? firstClip : c)).concat(secondClip));
+    setClips((prev) =>
+      prev.map((c) => (c.id === clip.id ? firstClip : c)).concat(secondClip),
+    );
 
-    addMarker('cut');
+    addMarker("cut");
   }, [selectedClipId, clips, currentTime, addMarker]);
 
   const handleCopy = useCallback(() => {
     if (!selectedClipId) return;
     setCopiedMarkerTime(currentTime);
-    addMarker('copy');
+    addMarker("copy");
   }, [selectedClipId, currentTime, addMarker]);
 
   const handlePaste = useCallback(() => {
@@ -633,7 +696,7 @@ export function VideoTrack({
     };
 
     setClips((prev) => [...prev, newClip]);
-    addMarker('paste');
+    addMarker("paste");
   }, [selectedClipId, copiedMarkerTime, clips, currentTime, addMarker]);
 
   const handleExtractAudio = useCallback(() => {
@@ -657,7 +720,8 @@ export function VideoTrack({
   useEffect(() => {
     if (videoPreviewRef.current && previewClip) {
       const video = videoPreviewRef.current;
-      video.currentTime = (currentTime - previewClip.startTime) + (previewClip.trimStart || 0);
+      video.currentTime =
+        currentTime - previewClip.startTime + (previewClip.trimStart || 0);
     }
   }, [currentTime, previewClip]);
 
@@ -672,13 +736,16 @@ export function VideoTrack({
   }, [isPlaying, showPreview]);
 
   const getFormatBadgeColor = (format: string) => {
-    return FORMAT_COLORS[format] || '#6b7280';
+    return FORMAT_COLORS[format] || "#6b7280";
   };
 
   const renderThumbnailStrip = useCallback(
     (clip: VideoClip) => {
       const clipWidth = timeToPixels(clip.duration);
-      const thumbnailCount = Math.max(1, Math.floor(clipWidth / (THUMBNAIL_WIDTH * 0.8)));
+      const thumbnailCount = Math.max(
+        1,
+        Math.floor(clipWidth / (THUMBNAIL_WIDTH * 0.8)),
+      );
       const displayThumbnails = clip.thumbnails.slice(0, thumbnailCount);
 
       return (
@@ -701,14 +768,14 @@ export function VideoTrack({
         </div>
       );
     },
-    [timeToPixels]
+    [timeToPixels],
   );
 
   return (
     <div
       ref={containerRef}
       className="relative select-none"
-      style={{ background: 'var(--studio-bg-deep)' }}
+      style={{ background: "var(--studio-bg-deep)" }}
     >
       <input
         ref={fileInputRef}
@@ -724,8 +791,8 @@ export function VideoTrack({
       <div
         className="h-8 flex items-center justify-between px-3 border-b"
         style={{
-          background: 'var(--studio-bg-medium)',
-          borderColor: 'var(--studio-border)',
+          background: "var(--studio-bg-medium)",
+          borderColor: "var(--studio-border)",
         }}
       >
         <div className="flex items-center gap-2">
@@ -736,17 +803,20 @@ export function VideoTrack({
             onClick={() => setIsExpanded(!isExpanded)}
           >
             <ChevronDown
-              className={`h-3.5 w-3.5 transition-transform ${isExpanded ? '' : '-rotate-90'}`}
-              style={{ color: 'var(--studio-text)' }}
+              className={`h-3.5 w-3.5 transition-transform ${isExpanded ? "" : "-rotate-90"}`}
+              style={{ color: "var(--studio-text)" }}
             />
           </Button>
-          <Film className="h-3.5 w-3.5" style={{ color: '#8b5cf6' }} />
-          <span className="text-xs font-medium" style={{ color: 'var(--studio-text-muted)' }}>
+          <Film className="h-3.5 w-3.5" style={{ color: "#8b5cf6" }} />
+          <span
+            className="text-xs font-medium"
+            style={{ color: "var(--studio-text-muted)" }}
+          >
             VIDEO TRACK
           </span>
           {clips.length > 0 && (
             <Badge variant="secondary" className="text-[10px] h-4 px-1.5">
-              {clips.length} clip{clips.length !== 1 ? 's' : ''}
+              {clips.length} clip{clips.length !== 1 ? "s" : ""}
             </Badge>
           )}
         </div>
@@ -778,7 +848,10 @@ export function VideoTrack({
                 <Copy className="h-3.5 w-3.5 mr-2" />
                 Copy
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={handlePaste} disabled={!copiedMarkerTime}>
+              <DropdownMenuItem
+                onClick={handlePaste}
+                disabled={!copiedMarkerTime}
+              >
                 <Clipboard className="h-3.5 w-3.5 mr-2" />
                 Paste
               </DropdownMenuItem>
@@ -791,7 +864,10 @@ export function VideoTrack({
                 Extract Audio
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={handleDeleteClip} disabled={!selectedClipId}>
+              <DropdownMenuItem
+                onClick={handleDeleteClip}
+                disabled={!selectedClipId}
+              >
                 <Trash2 className="h-3.5 w-3.5 mr-2 text-red-500" />
                 Delete Clip
               </DropdownMenuItem>
@@ -806,16 +882,22 @@ export function VideoTrack({
             <div
               className="h-6 flex items-center px-3 gap-2 border-b"
               style={{
-                background: 'var(--studio-bg-medium)',
-                borderColor: 'var(--studio-border)',
+                background: "var(--studio-bg-medium)",
+                borderColor: "var(--studio-border)",
               }}
             >
               <RefreshCw className="h-3 w-3 animate-spin text-blue-500" />
-              <span className="text-xs" style={{ color: 'var(--studio-text-muted)' }}>
+              <span
+                className="text-xs"
+                style={{ color: "var(--studio-text-muted)" }}
+              >
                 Importing video...
               </span>
               <Progress value={importProgress} className="flex-1 h-1.5" />
-              <span className="text-xs" style={{ color: 'var(--studio-text-muted)' }}>
+              <span
+                className="text-xs"
+                style={{ color: "var(--studio-text-muted)" }}
+              >
                 {importProgress}%
               </span>
             </div>
@@ -824,11 +906,13 @@ export function VideoTrack({
           <div
             ref={timelineRef}
             className={`relative h-20 border-b cursor-pointer transition-colors ${
-              isDragOver ? 'bg-blue-500/10 border-blue-500' : ''
+              isDragOver ? "bg-blue-500/10 border-blue-500" : ""
             }`}
             style={{
-              borderColor: isDragOver ? '#3b82f6' : 'var(--studio-border)',
-              background: isDragOver ? 'rgba(59, 130, 246, 0.1)' : 'var(--studio-bg-deep)',
+              borderColor: isDragOver ? "#3b82f6" : "var(--studio-border)",
+              background: isDragOver
+                ? "rgba(59, 130, 246, 0.1)"
+                : "var(--studio-bg-deep)",
             }}
             onClick={handleTimelineClick}
             onDrop={handleDrop}
@@ -839,7 +923,7 @@ export function VideoTrack({
             {clips.length === 0 && !isDragOver && (
               <div
                 className="absolute inset-0 flex flex-col items-center justify-center"
-                style={{ color: 'var(--studio-text-muted)' }}
+                style={{ color: "var(--studio-text-muted)" }}
               >
                 <FileVideo className="h-8 w-8 mb-2 opacity-30" />
                 <span className="text-xs">Drop video or click Import</span>
@@ -850,7 +934,9 @@ export function VideoTrack({
               <div className="absolute inset-0 flex items-center justify-center bg-blue-500/10 border-2 border-dashed border-blue-500 rounded">
                 <div className="text-center">
                   <Upload className="h-8 w-8 mb-2 mx-auto text-blue-500" />
-                  <span className="text-sm text-blue-500 font-medium">Drop video here</span>
+                  <span className="text-sm text-blue-500 font-medium">
+                    Drop video here
+                  </span>
                 </div>
               </div>
             )}
@@ -865,12 +951,15 @@ export function VideoTrack({
                   <ContextMenuTrigger>
                     <div
                       className={`absolute top-1 h-[calc(100%-8px)] rounded overflow-hidden cursor-move transition-all ${
-                        isSelected ? 'ring-2 ring-purple-500 z-10' : 'hover:ring-1 hover:ring-white/30'
-                      } ${isDraggingClip && isSelected ? 'opacity-70' : ''}`}
+                        isSelected
+                          ? "ring-2 ring-purple-500 z-10"
+                          : "hover:ring-1 hover:ring-white/30"
+                      } ${isDraggingClip && isSelected ? "opacity-70" : ""}`}
                       style={{
                         left: `${left}px`,
                         width: `${Math.max(width, 20)}px`,
-                        background: 'linear-gradient(to bottom, #4c1d95, #312e81)',
+                        background:
+                          "linear-gradient(to bottom, #4c1d95, #312e81)",
                       }}
                       onMouseDown={(e) => handleClipMouseDown(e, clip)}
                       onDoubleClick={() => openPreview(clip)}
@@ -886,7 +975,9 @@ export function VideoTrack({
                         </span>
                         <Badge
                           className="text-[8px] h-3 px-1"
-                          style={{ backgroundColor: getFormatBadgeColor(clip.format) }}
+                          style={{
+                            backgroundColor: getFormatBadgeColor(clip.format),
+                          }}
                         >
                           {clip.format.toUpperCase()}
                         </Badge>
@@ -906,11 +997,15 @@ export function VideoTrack({
 
                       <div
                         className="absolute left-0 top-0 bottom-0 w-2 cursor-ew-resize hover:bg-white/30 active:bg-white/50 z-20"
-                        onMouseDown={(e) => handleResizeStart(e, clip.id, 'start')}
+                        onMouseDown={(e) =>
+                          handleResizeStart(e, clip.id, "start")
+                        }
                       />
                       <div
                         className="absolute right-0 top-0 bottom-0 w-2 cursor-ew-resize hover:bg-white/30 active:bg-white/50 z-20"
-                        onMouseDown={(e) => handleResizeStart(e, clip.id, 'end')}
+                        onMouseDown={(e) =>
+                          handleResizeStart(e, clip.id, "end")
+                        }
                       />
                     </div>
                   </ContextMenuTrigger>
@@ -928,12 +1023,15 @@ export function VideoTrack({
                       <Copy className="h-3.5 w-3.5 mr-2" />
                       Copy
                     </ContextMenuItem>
-                    <ContextMenuItem onClick={handlePaste} disabled={!copiedMarkerTime}>
+                    <ContextMenuItem
+                      onClick={handlePaste}
+                      disabled={!copiedMarkerTime}
+                    >
                       <Clipboard className="h-3.5 w-3.5 mr-2" />
                       Paste
                     </ContextMenuItem>
                     <ContextMenuSeparator />
-                    <ContextMenuItem onClick={() => addMarker('general')}>
+                    <ContextMenuItem onClick={() => addMarker("general")}>
                       <Flag className="h-3.5 w-3.5 mr-2" />
                       Add Marker
                     </ContextMenuItem>
@@ -944,7 +1042,10 @@ export function VideoTrack({
                         Extract Audio
                       </ContextMenuItem>
                     )}
-                    <ContextMenuItem onClick={handleDeleteClip} className="text-red-500">
+                    <ContextMenuItem
+                      onClick={handleDeleteClip}
+                      className="text-red-500"
+                    >
                       <Trash2 className="h-3.5 w-3.5 mr-2" />
                       Delete
                     </ContextMenuItem>
@@ -956,13 +1057,13 @@ export function VideoTrack({
             {markers.map((marker) => {
               const markerLeft = timeToPixels(marker.time);
               const markerColor =
-                marker.type === 'cut'
-                  ? '#ef4444'
-                  : marker.type === 'copy'
-                  ? '#3b82f6'
-                  : marker.type === 'paste'
-                  ? '#22c55e'
-                  : '#f97316';
+                marker.type === "cut"
+                  ? "#ef4444"
+                  : marker.type === "copy"
+                    ? "#3b82f6"
+                    : marker.type === "paste"
+                      ? "#22c55e"
+                      : "#f97316";
 
               return (
                 <div
@@ -1005,12 +1106,15 @@ export function VideoTrack({
           <div
             className="h-6 flex items-center justify-between px-3 border-b"
             style={{
-              background: 'var(--studio-bg-medium)',
-              borderColor: 'var(--studio-border)',
+              background: "var(--studio-bg-medium)",
+              borderColor: "var(--studio-border)",
             }}
           >
             <div className="flex items-center gap-2">
-              <span className="text-[10px]" style={{ color: 'var(--studio-text-muted)' }}>
+              <span
+                className="text-[10px]"
+                style={{ color: "var(--studio-text-muted)" }}
+              >
                 Supported:
               </span>
               {SUPPORTED_FORMATS.map((format) => (
@@ -1018,7 +1122,10 @@ export function VideoTrack({
                   key={format}
                   variant="outline"
                   className="text-[8px] h-3.5 px-1"
-                  style={{ borderColor: getFormatBadgeColor(format), color: getFormatBadgeColor(format) }}
+                  style={{
+                    borderColor: getFormatBadgeColor(format),
+                    color: getFormatBadgeColor(format),
+                  }}
                 >
                   {format.toUpperCase()}
                 </Badge>
@@ -1032,9 +1139,15 @@ export function VideoTrack({
                 onClick={() => setZoom(zoom / 1.25)}
                 title="Zoom Out"
               >
-                <ZoomOut className="h-3 w-3" style={{ color: 'var(--studio-text-muted)' }} />
+                <ZoomOut
+                  className="h-3 w-3"
+                  style={{ color: "var(--studio-text-muted)" }}
+                />
               </Button>
-              <span className="text-[10px] w-8 text-center" style={{ color: 'var(--studio-text-muted)' }}>
+              <span
+                className="text-[10px] w-8 text-center"
+                style={{ color: "var(--studio-text-muted)" }}
+              >
                 {Math.round(zoom * 100)}%
               </span>
               <Button
@@ -1044,7 +1157,10 @@ export function VideoTrack({
                 onClick={() => setZoom(zoom * 1.25)}
                 title="Zoom In"
               >
-                <ZoomIn className="h-3 w-3" style={{ color: 'var(--studio-text-muted)' }} />
+                <ZoomIn
+                  className="h-3 w-3"
+                  style={{ color: "var(--studio-text-muted)" }}
+                />
               </Button>
             </div>
           </div>
@@ -1056,11 +1172,13 @@ export function VideoTrack({
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-white">
               <Video className="h-5 w-5 text-purple-500" />
-              {previewClip?.name || 'Video Preview'}
+              {previewClip?.name || "Video Preview"}
               {previewClip && (
                 <Badge
                   className="ml-2"
-                  style={{ backgroundColor: getFormatBadgeColor(previewClip.format) }}
+                  style={{
+                    backgroundColor: getFormatBadgeColor(previewClip.format),
+                  }}
                 >
                   {previewClip.format.toUpperCase()}
                 </Badge>
@@ -1069,9 +1187,9 @@ export function VideoTrack({
             <DialogDescription className="text-slate-400">
               {previewClip && (
                 <>
-                  {previewClip.width}x{previewClip.height} • {previewClip.frameRate}fps •{' '}
-                  {previewClip.duration.toFixed(2)}s
-                  {previewClip.hasAudio && ' • Audio'}
+                  {previewClip.width}x{previewClip.height} •{" "}
+                  {previewClip.frameRate}fps • {previewClip.duration.toFixed(2)}
+                  s{previewClip.hasAudio && " • Audio"}
                 </>
               )}
             </DialogDescription>
@@ -1084,7 +1202,9 @@ export function VideoTrack({
                 src={previewClip.filePath}
                 className="w-full h-full object-contain"
                 muted={isMuted}
-                onTimeUpdate={(e) => setPreviewTime(e.currentTarget.currentTime)}
+                onTimeUpdate={(e) =>
+                  setPreviewTime(e.currentTarget.currentTime)
+                }
               />
             )}
 
@@ -1096,7 +1216,11 @@ export function VideoTrack({
                   className="h-8 w-8 p-0 text-white hover:bg-white/20"
                   onClick={onPlayPause}
                 >
-                  {isPlaying ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5" />}
+                  {isPlaying ? (
+                    <Pause className="h-5 w-5" />
+                  ) : (
+                    <Play className="h-5 w-5" />
+                  )}
                 </Button>
 
                 <div className="flex-1">
@@ -1115,7 +1239,8 @@ export function VideoTrack({
                 </div>
 
                 <span className="text-xs text-white tabular-nums min-w-[80px] text-center">
-                  {formatTime(previewTime)} / {formatTime(previewClip?.duration || 0)}
+                  {formatTime(previewTime)} /{" "}
+                  {formatTime(previewClip?.duration || 0)}
                 </span>
 
                 <Button
@@ -1124,7 +1249,11 @@ export function VideoTrack({
                   className="h-8 w-8 p-0 text-white hover:bg-white/20"
                   onClick={() => setIsMuted(!isMuted)}
                 >
-                  {isMuted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
+                  {isMuted ? (
+                    <VolumeX className="h-4 w-4" />
+                  ) : (
+                    <Volume2 className="h-4 w-4" />
+                  )}
                 </Button>
 
                 <Button
@@ -1159,7 +1288,12 @@ export function VideoTrack({
         </DialogContent>
       </Dialog>
 
-      <canvas ref={thumbnailCanvasRef} className="hidden" width={THUMBNAIL_WIDTH} height={THUMBNAIL_HEIGHT} />
+      <canvas
+        ref={thumbnailCanvasRef}
+        className="hidden"
+        width={THUMBNAIL_WIDTH}
+        height={THUMBNAIL_HEIGHT}
+      />
     </div>
   );
 }
@@ -1168,7 +1302,7 @@ function formatTime(seconds: number): string {
   const mins = Math.floor(seconds / 60);
   const secs = Math.floor(seconds % 60);
   const ms = Math.floor((seconds % 1) * 100);
-  return `${mins}:${secs.toString().padStart(2, '0')}.${ms.toString().padStart(2, '0')}`;
+  return `${mins}:${secs.toString().padStart(2, "0")}.${ms.toString().padStart(2, "0")}`;
 }
 
 export default VideoTrack;

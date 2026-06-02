@@ -4,22 +4,22 @@ This document describes all secrets required for automated desktop and mobile ap
 
 ## Quick Reference
 
-| Category | Secret Name | Required For |
-|----------|-------------|--------------|
-| **Core** | `GITHUB_TOKEN` | All builds (auto-provided) |
-| **Android** | `ANDROID_KEYSTORE_BASE64` | Signed APK/AAB |
-| **Android** | `ANDROID_KEYSTORE_PASSWORD` | Signed APK/AAB |
-| **Android** | `ANDROID_KEY_ALIAS` | Signed APK/AAB |
-| **Android** | `ANDROID_KEY_PASSWORD` | Signed APK/AAB |
-| **Android** | `GOOGLE_PLAY_SERVICE_ACCOUNT_JSON` | Play Store upload |
-| **iOS** | `APPLE_CERTIFICATE_BASE64` | Signed IPA |
-| **iOS** | `APPLE_CERTIFICATE_PASSWORD` | Signed IPA |
-| **iOS** | `APPLE_PROVISIONING_PROFILE_BASE64` | Signed IPA |
-| **iOS** | `APPLE_TEAM_ID` | Signing & Notarization |
-| **macOS** | `MAC_CERTIFICATE_BASE64` | Signed DMG |
-| **macOS** | `MAC_CERTIFICATE_PASSWORD` | Signed DMG |
-| **macOS** | `APPLE_ID` | Notarization |
-| **macOS** | `APPLE_APP_SPECIFIC_PASSWORD` | Notarization |
+| Category    | Secret Name                         | Required For               |
+| ----------- | ----------------------------------- | -------------------------- |
+| **Core**    | `GITHUB_TOKEN`                      | All builds (auto-provided) |
+| **Android** | `ANDROID_KEYSTORE_BASE64`           | Signed APK/AAB             |
+| **Android** | `ANDROID_KEYSTORE_PASSWORD`         | Signed APK/AAB             |
+| **Android** | `ANDROID_KEY_ALIAS`                 | Signed APK/AAB             |
+| **Android** | `ANDROID_KEY_PASSWORD`              | Signed APK/AAB             |
+| **Android** | `GOOGLE_PLAY_SERVICE_ACCOUNT_JSON`  | Play Store upload          |
+| **iOS**     | `APPLE_CERTIFICATE_BASE64`          | Signed IPA                 |
+| **iOS**     | `APPLE_CERTIFICATE_PASSWORD`        | Signed IPA                 |
+| **iOS**     | `APPLE_PROVISIONING_PROFILE_BASE64` | Signed IPA                 |
+| **iOS**     | `APPLE_TEAM_ID`                     | Signing & Notarization     |
+| **macOS**   | `MAC_CERTIFICATE_BASE64`            | Signed DMG                 |
+| **macOS**   | `MAC_CERTIFICATE_PASSWORD`          | Signed DMG                 |
+| **macOS**   | `APPLE_ID`                          | Notarization               |
+| **macOS**   | `APPLE_APP_SPECIFIC_PASSWORD`       | Notarization               |
 
 ---
 
@@ -31,23 +31,24 @@ Desktop builds use Electron Builder to create installers for Windows, macOS, and
 
 #### Automatic Secrets
 
-| Secret | Description |
-|--------|-------------|
+| Secret         | Description                                                |
+| -------------- | ---------------------------------------------------------- |
 | `GITHUB_TOKEN` | Automatically provided by GitHub Actions. No setup needed. |
 
 #### macOS Code Signing & Notarization
 
 For distributing macOS apps, you need:
 
-| Secret | Description | How to Get |
-|--------|-------------|------------|
-| `MAC_CERTIFICATE_BASE64` | Base64-encoded Developer ID Application certificate (.p12) | Export from Keychain Access |
-| `MAC_CERTIFICATE_PASSWORD` | Password used when exporting the .p12 file | Set during export |
-| `APPLE_ID` | Your Apple Developer account email | developer.apple.com |
-| `APPLE_APP_SPECIFIC_PASSWORD` | App-specific password for notarization | [appleid.apple.com](https://appleid.apple.com/account/manage) |
-| `APPLE_TEAM_ID` | 10-character Team ID | developer.apple.com > Membership |
+| Secret                        | Description                                                | How to Get                                                    |
+| ----------------------------- | ---------------------------------------------------------- | ------------------------------------------------------------- |
+| `MAC_CERTIFICATE_BASE64`      | Base64-encoded Developer ID Application certificate (.p12) | Export from Keychain Access                                   |
+| `MAC_CERTIFICATE_PASSWORD`    | Password used when exporting the .p12 file                 | Set during export                                             |
+| `APPLE_ID`                    | Your Apple Developer account email                         | developer.apple.com                                           |
+| `APPLE_APP_SPECIFIC_PASSWORD` | App-specific password for notarization                     | [appleid.apple.com](https://appleid.apple.com/account/manage) |
+| `APPLE_TEAM_ID`               | 10-character Team ID                                       | developer.apple.com > Membership                              |
 
 **Getting a Developer ID Certificate:**
+
 1. Go to [developer.apple.com/account/resources/certificates](https://developer.apple.com/account/resources/certificates)
 2. Create a "Developer ID Application" certificate
 3. Download and install in Keychain Access
@@ -61,12 +62,12 @@ Mobile builds use Capacitor to create Android APK/AAB and iOS IPA files.
 
 #### Android Signing
 
-| Secret | Description | How to Get |
-|--------|-------------|------------|
-| `ANDROID_KEYSTORE_BASE64` | Base64-encoded keystore file | Generate with `keytool` |
-| `ANDROID_KEYSTORE_PASSWORD` | Keystore password | Set during keystore creation |
-| `ANDROID_KEY_ALIAS` | Key alias name in keystore | Set during keystore creation |
-| `ANDROID_KEY_PASSWORD` | Key password | Set during keystore creation |
+| Secret                      | Description                  | How to Get                   |
+| --------------------------- | ---------------------------- | ---------------------------- |
+| `ANDROID_KEYSTORE_BASE64`   | Base64-encoded keystore file | Generate with `keytool`      |
+| `ANDROID_KEYSTORE_PASSWORD` | Keystore password            | Set during keystore creation |
+| `ANDROID_KEY_ALIAS`         | Key alias name in keystore   | Set during keystore creation |
+| `ANDROID_KEY_PASSWORD`      | Key password                 | Set during keystore creation |
 
 **Creating an Android Keystore:**
 
@@ -82,11 +83,12 @@ base64 -i release.keystore > keystore-base64.txt
 
 #### Google Play Store Upload
 
-| Secret | Description | How to Get |
-|--------|-------------|------------|
+| Secret                             | Description                         | How to Get          |
+| ---------------------------------- | ----------------------------------- | ------------------- |
 | `GOOGLE_PLAY_SERVICE_ACCOUNT_JSON` | Service account JSON for API access | Google Play Console |
 
 **Setting up Google Play Service Account:**
+
 1. Go to [Google Play Console](https://play.google.com/console) > Setup > API access
 2. Create a new service account or link existing
 3. Grant "Release Manager" permission
@@ -95,20 +97,22 @@ base64 -i release.keystore > keystore-base64.txt
 
 #### iOS Signing
 
-| Secret | Description | How to Get |
-|--------|-------------|------------|
-| `APPLE_CERTIFICATE_BASE64` | Base64-encoded iOS Distribution certificate (.p12) | Apple Developer Portal |
-| `APPLE_CERTIFICATE_PASSWORD` | Password for the .p12 file | Set during export |
-| `APPLE_PROVISIONING_PROFILE_BASE64` | Base64-encoded App Store provisioning profile | Apple Developer Portal |
-| `APPLE_TEAM_ID` | Your 10-character Team ID | developer.apple.com > Membership |
+| Secret                              | Description                                        | How to Get                       |
+| ----------------------------------- | -------------------------------------------------- | -------------------------------- |
+| `APPLE_CERTIFICATE_BASE64`          | Base64-encoded iOS Distribution certificate (.p12) | Apple Developer Portal           |
+| `APPLE_CERTIFICATE_PASSWORD`        | Password for the .p12 file                         | Set during export                |
+| `APPLE_PROVISIONING_PROFILE_BASE64` | Base64-encoded App Store provisioning profile      | Apple Developer Portal           |
+| `APPLE_TEAM_ID`                     | Your 10-character Team ID                          | developer.apple.com > Membership |
 
 **Getting iOS Distribution Certificate:**
+
 1. Go to [developer.apple.com/account/resources/certificates](https://developer.apple.com/account/resources/certificates)
 2. Create an "Apple Distribution" certificate
 3. Download and install in Keychain Access
 4. Export as .p12 from Keychain Access
 
 **Getting Provisioning Profile:**
+
 1. Go to [developer.apple.com/account/resources/profiles](https://developer.apple.com/account/resources/profiles)
 2. Create an "App Store" provisioning profile
 3. Select the Max Booster App ID (`com.blawzmusic.maxbooster`)
@@ -171,6 +175,7 @@ git push origin v2.1.0
 ```
 
 Tag naming conventions:
+
 - `v2.1.0` - Stable release
 - `v2.1.0-beta.1` - Beta release
 - `v2.1.0-alpha.1` - Alpha release
@@ -192,18 +197,18 @@ Tag naming conventions:
 
 ### Desktop Artifacts
 
-| Platform | Files | Description |
-|----------|-------|-------------|
-| Windows | `.exe` (NSIS), `.exe` (Portable) | Installer and standalone |
-| macOS | `.dmg`, `.zip` | Disk image and archive |
-| Linux | `.AppImage`, `.deb`, `.tar.gz` | Universal, Debian, Archive |
+| Platform | Files                            | Description                |
+| -------- | -------------------------------- | -------------------------- |
+| Windows  | `.exe` (NSIS), `.exe` (Portable) | Installer and standalone   |
+| macOS    | `.dmg`, `.zip`                   | Disk image and archive     |
+| Linux    | `.AppImage`, `.deb`, `.tar.gz`   | Universal, Debian, Archive |
 
 ### Mobile Artifacts
 
-| Platform | Files | Description |
-|----------|-------|-------------|
-| Android | `.apk` (Debug), `.apk` (Release), `.aab` | Debug, Signed, Play Store |
-| iOS | `.app` (Simulator), `.ipa` | Simulator, App Store |
+| Platform | Files                                    | Description               |
+| -------- | ---------------------------------------- | ------------------------- |
+| Android  | `.apk` (Debug), `.apk` (Release), `.aab` | Debug, Signed, Play Store |
+| iOS      | `.app` (Simulator), `.ipa`               | Simulator, App Store      |
 
 ### Artifact Retention
 
@@ -229,18 +234,22 @@ Tag naming conventions:
 ### Common Issues
 
 **Build fails with "No keystore found"**
+
 - Ensure `ANDROID_KEYSTORE_BASE64` is properly base64-encoded
 - Verify the keystore password is correct
 
 **macOS app shows "damaged" warning**
+
 - App wasn't signed/notarized. Ensure all `APPLE_*` secrets are set
 - Run `xattr -cr /Applications/Max\ Booster.app` to clear quarantine
 
 **iOS build fails with "no valid signing identity"**
+
 - Check certificate hasn't expired
 - Ensure provisioning profile matches the App ID
 
 **Google Play upload fails**
+
 - Verify service account has "Release Manager" permission
 - Check the app is set up in Play Console first
 
@@ -259,6 +268,7 @@ For Google Play upload, create release notes in `.github/whatsnew/`:
 ```
 
 Example `whatsnew-en-US`:
+
 ```
 - New mobile-optimized interface
 - Improved performance
@@ -270,6 +280,7 @@ Example `whatsnew-en-US`:
 ## Support
 
 For issues with GitHub Actions workflows:
+
 1. Check the Actions tab for detailed error logs
 2. Verify all required secrets are set
 3. Ensure certificates/profiles haven't expired

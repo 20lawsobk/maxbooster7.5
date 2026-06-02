@@ -11,16 +11,23 @@
  *   satisfying the PDIM-backed store requirement without losing sliding-window
  *   semantics.  The atomic EVAL primary path + ZCOUNT fallback are both PDIM-native.
  */
-import rateLimit, { type Store, type Options, type IncrementResponse } from 'express-rate-limit';
-import type { Request, Response } from 'express';
-import { config } from '../config/defaults.js';
-import { logger } from '../logger.js';
-import { getRedisClient } from '../lib/redisClient.js';
-import { SLIDING_WINDOW_LUA } from './slidingWindowLua.js';
+import rateLimit, {
+  type Store,
+  type Options,
+  type IncrementResponse,
+} from "express-rate-limit";
+import type { Request, Response } from "express";
+import { config } from "../config/defaults.js";
+import { logger } from "../logger.js";
+import { getRedisClient } from "../lib/redisClient.js";
+import { SLIDING_WINDOW_LUA } from "./slidingWindowLua.js";
 
-const RL_PREFIX = 'glrl:';
+const RL_PREFIX = "glrl:";
 
-interface MemEntry { hits: number; resetAt: number; }
+interface MemEntry {
+  hits: number;
+  resetAt: number;
+}
 
 class RedisRateLimitStore implements Store {
   private windowMs: number;
@@ -35,7 +42,8 @@ class RedisRateLimitStore implements Store {
 
   init(options: Options): void {
     this.windowMs = options.windowMs;
-    this.maxRequests = typeof options.max === 'number' ? options.max : this.maxRequests;
+    this.maxRequests =
+      typeof options.max === "number" ? options.max : this.maxRequests;
   }
 
   private fallbackIncrement(key: string): IncrementResponse {
@@ -92,23 +100,35 @@ class RedisRateLimitStore implements Store {
             // EVAL unsupported — PDIM does not support ZREMRANGEBYSCORE, so use
             // ZCOUNT directly to count only in-window members without pruning.
             // ZCOUNT is always supported by PDIM and gives the correct count.
-            const count: number = await redis.zcount(rKey, windowStart, '+inf');
+            const count: number = await redis.zcount(rKey, windowStart, "+inf");
             // Mirror the Lua path: do NOT record the request when already limited.
             // Avoids extending the blocking window on hot keys.
             if (count >= this.maxRequests) return this.maxRequests + 1;
             await redis.zadd(rKey, now, entryId);
-            Promise.resolve(redis.expire(rKey, windowExpireSecs)).catch(() => {});
+            Promise.resolve(redis.expire(rKey, windowExpireSecs)).catch(
+              () => {},
+            );
             return count + 1;
           }
         })(),
         new Promise<never>((_, reject) =>
-          setTimeout(() => reject(new Error('[GlobalRateLimit] Sliding-window ops timeout (400ms)')), 400)
+          setTimeout(
+            () =>
+              reject(
+                new Error(
+                  "[GlobalRateLimit] Sliding-window ops timeout (400ms)",
+                ),
+              ),
+            400,
+          ),
         ),
       ]);
       const resetTime = new Date(now + this.windowMs);
       return { totalHits, resetTime };
     } catch {
-      logger.warn('[GlobalRateLimit] Redis unavailable — using in-memory fallback');
+      logger.warn(
+        "[GlobalRateLimit] Redis unavailable — using in-memory fallback",
+      );
       return this.fallbackIncrement(key);
     }
   }
@@ -140,11 +160,11 @@ class RedisRateLimitStore implements Store {
 
 const globalStore = new RedisRateLimitStore(
   config.rateLimiting.windowMs,
-  config.rateLimiting.maxRequests
+  config.rateLimiting.maxRequests,
 );
 const criticalStore = new RedisRateLimitStore(
   config.rateLimiting.windowMs,
-  config.rateLimiting.criticalMax
+  config.rateLimiting.criticalMax,
 );
 
 export const globalRateLimiter = rateLimit({
@@ -152,31 +172,36 @@ export const globalRateLimiter = rateLimit({
   max: config.rateLimiting.maxRequests,
   store: globalStore,
   message: {
-    error: 'Too many requests',
-    message: 'You have exceeded the request limit. Please slow down and try again later.',
+    error: "Too many requests",
+    message:
+      "You have exceeded the request limit. Please slow down and try again later.",
     retryAfter: `${Math.ceil(config.rateLimiting.windowMs / 1000)} seconds`,
   },
   standardHeaders: true,
   legacyHeaders: false,
   validate: { trustProxy: false },
   skip: (req: Request) => {
-    const isDevelopment = process.env.NODE_ENV !== 'production' && !process.env.REPLIT_DEPLOYMENT;
+    const isDevelopment =
+      process.env.NODE_ENV !== "production" && !process.env.REPLIT_DEPLOYMENT;
     const isMonitoringEndpoint =
-      req.path.startsWith('/api/monitoring/') || req.path.startsWith('/api/system/');
+      req.path.startsWith("/api/monitoring/") ||
+      req.path.startsWith("/api/system/");
     const isStaticAsset =
-      req.path.startsWith('/@fs/') ||
-      req.path.startsWith('/src/') ||
-      req.path.startsWith('/node_modules/') ||
-      req.path.startsWith('/@vite/') ||
-      req.path.startsWith('/@react-refresh') ||
-      req.path.startsWith('/@replit/');
+      req.path.startsWith("/@fs/") ||
+      req.path.startsWith("/src/") ||
+      req.path.startsWith("/node_modules/") ||
+      req.path.startsWith("/@vite/") ||
+      req.path.startsWith("/@react-refresh") ||
+      req.path.startsWith("/@replit/");
     const isLocalhost =
-      req.ip === '127.0.0.1' || req.ip === '::1' || req.ip === '::ffff:127.0.0.1' ||
-      (typeof req.ip === 'string' && req.ip.startsWith('10.'));
+      req.ip === "127.0.0.1" ||
+      req.ip === "::1" ||
+      req.ip === "::ffff:127.0.0.1" ||
+      (typeof req.ip === "string" && req.ip.startsWith("10."));
     const isSessionMaintenance =
-      req.path === '/api/auth/refresh-token' ||
-      req.path === '/api/auth/me' ||
-      req.path === '/api/auth/heartbeat';
+      req.path === "/api/auth/refresh-token" ||
+      req.path === "/api/auth/me" ||
+      req.path === "/api/auth/heartbeat";
 
     if (isMonitoringEndpoint) return true;
     if (isDevelopment) return true;
@@ -187,8 +212,9 @@ export const globalRateLimiter = rateLimit({
   handler: (req: Request, res: Response) => {
     logger.warn(`⚠️ Global rate limit exceeded for IP: ${req.ip}`);
     res.status(429).json({
-      error: 'Too many requests',
-      message: 'You have exceeded the request limit. Please slow down and try again later.',
+      error: "Too many requests",
+      message:
+        "You have exceeded the request limit. Please slow down and try again later.",
       retryAfter: Math.ceil(config.rateLimiting.windowMs / 1000),
     });
   },
@@ -199,12 +225,16 @@ export const criticalEndpointLimiter = rateLimit({
   max: config.rateLimiting.criticalMax,
   store: criticalStore,
   message: {
-    error: 'Too many requests to critical endpoint',
-    message: 'This endpoint is rate-limited. Please try again later.',
+    error: "Too many requests to critical endpoint",
+    message: "This endpoint is rate-limited. Please try again later.",
   },
   validate: { trustProxy: false },
   skip: (req: Request) => {
-    return req.ip === '127.0.0.1' || req.ip === '::1' || req.ip === '::ffff:127.0.0.1' ||
-      (typeof req.ip === 'string' && req.ip.startsWith('10.'));
+    return (
+      req.ip === "127.0.0.1" ||
+      req.ip === "::1" ||
+      req.ip === "::ffff:127.0.0.1" ||
+      (typeof req.ip === "string" && req.ip.startsWith("10."))
+    );
   },
 });

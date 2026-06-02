@@ -1,10 +1,10 @@
-import { useState, useCallback } from 'react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Label } from '@/components/ui/label';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import { useState, useCallback } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -14,8 +14,14 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
-import { AlertTriangle, Trash2, Loader2, FileWarning, Undo2 } from 'lucide-react';
+} from "@/components/ui/alert-dialog";
+import {
+  AlertTriangle,
+  Trash2,
+  Loader2,
+  FileWarning,
+  Undo2,
+} from "lucide-react";
 
 export interface DeleteItem {
   id: string;
@@ -47,31 +53,36 @@ export function BulkDeleteConfirm({
   description,
   isLoading = false,
   allowPermanentDelete = false,
-  resourceName = 'item',
+  resourceName = "item",
 }: BulkDeleteConfirmProps) {
-  const [confirmText, setConfirmText] = useState('');
+  const [confirmText, setConfirmText] = useState("");
   const [permanently, setPermanently] = useState(false);
-  
+
   const itemCount = items.length;
-  const hasReferences = items.some(item => item.hasReferences);
-  const totalReferences = items.reduce((sum, item) => sum + (item.referenceCount || 0), 0);
-  const canRecover = items.every(item => item.canRecover !== false) && !permanently;
-  
+  const hasReferences = items.some((item) => item.hasReferences);
+  const totalReferences = items.reduce(
+    (sum, item) => sum + (item.referenceCount || 0),
+    0,
+  );
+  const canRecover =
+    items.every((item) => item.canRecover !== false) && !permanently;
+
   const requiresConfirmation = itemCount >= 5 || hasReferences || permanently;
   const confirmationPhrase = `delete ${itemCount}`;
-  const isConfirmed = !requiresConfirmation || confirmText.toLowerCase() === confirmationPhrase;
+  const isConfirmed =
+    !requiresConfirmation || confirmText.toLowerCase() === confirmationPhrase;
 
   const handleConfirm = useCallback(async () => {
     if (!isConfirmed) return;
-    const ids = items.map(item => item.id);
+    const ids = items.map((item) => item.id);
     await onConfirm(ids, permanently);
-    setConfirmText('');
+    setConfirmText("");
     setPermanently(false);
     onOpenChange(false);
   }, [items, onConfirm, permanently, isConfirmed, onOpenChange]);
 
   const handleCancel = useCallback(() => {
-    setConfirmText('');
+    setConfirmText("");
     setPermanently(false);
     onOpenChange(false);
   }, [onOpenChange]);
@@ -82,23 +93,26 @@ export function BulkDeleteConfirm({
         <AlertDialogHeader>
           <AlertDialogTitle className="flex items-center gap-2 text-destructive">
             <Trash2 className="h-5 w-5" />
-            {title || `Delete ${itemCount} ${resourceName}${itemCount > 1 ? 's' : ''}`}
+            {title ||
+              `Delete ${itemCount} ${resourceName}${itemCount > 1 ? "s" : ""}`}
           </AlertDialogTitle>
           <AlertDialogDescription asChild>
             <div className="space-y-4">
               <p>
-                {description || 
-                  `Are you sure you want to delete ${itemCount} ${resourceName}${itemCount > 1 ? 's' : ''}?`
-                }
+                {description ||
+                  `Are you sure you want to delete ${itemCount} ${resourceName}${itemCount > 1 ? "s" : ""}?`}
               </p>
 
               {hasReferences && (
                 <div className="flex items-start gap-2 p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg">
                   <FileWarning className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" />
                   <div className="text-sm">
-                    <p className="font-medium text-amber-600">Warning: Items have references</p>
+                    <p className="font-medium text-amber-600">
+                      Warning: Items have references
+                    </p>
                     <p className="text-muted-foreground">
-                      {totalReferences} reference{totalReferences > 1 ? 's' : ''} will also be affected.
+                      {totalReferences} reference
+                      {totalReferences > 1 ? "s" : ""} will also be affected.
                     </p>
                   </div>
                 </div>
@@ -108,7 +122,8 @@ export function BulkDeleteConfirm({
                 <div className="flex items-start gap-2 p-3 bg-muted rounded-lg">
                   <Undo2 className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
                   <p className="text-sm text-muted-foreground">
-                    Items will be moved to trash and can be recovered within 30 days.
+                    Items will be moved to trash and can be recovered within 30
+                    days.
                   </p>
                 </div>
               )}
@@ -123,7 +138,10 @@ export function BulkDeleteConfirm({
                       >
                         <span className="truncate">{item.name}</span>
                         {item.type && (
-                          <Badge variant="outline" className="text-xs shrink-0 ml-2">
+                          <Badge
+                            variant="outline"
+                            className="text-xs shrink-0 ml-2"
+                          >
                             {item.type}
                           </Badge>
                         )}
@@ -138,7 +156,9 @@ export function BulkDeleteConfirm({
                   <Checkbox
                     id="permanent-delete"
                     checked={permanently}
-                    onCheckedChange={(checked) => setPermanently(checked === true)}
+                    onCheckedChange={(checked) =>
+                      setPermanently(checked === true)
+                    }
                   />
                   <Label
                     htmlFor="permanent-delete"
@@ -152,16 +172,21 @@ export function BulkDeleteConfirm({
               {requiresConfirmation && (
                 <div className="space-y-2">
                   <p className="text-sm font-medium">
-                    Type <span className="font-mono text-destructive">"{confirmationPhrase}"</span> to confirm:
+                    Type{" "}
+                    <span className="font-mono text-destructive">
+                      "{confirmationPhrase}"
+                    </span>{" "}
+                    to confirm:
                   </p>
                   <Input
                     value={confirmText}
                     onChange={(e) => setConfirmText(e.target.value)}
                     placeholder={confirmationPhrase}
                     className={
-                      confirmText && confirmText.toLowerCase() !== confirmationPhrase
-                        ? 'border-destructive'
-                        : ''
+                      confirmText &&
+                      confirmText.toLowerCase() !== confirmationPhrase
+                        ? "border-destructive"
+                        : ""
                     }
                   />
                 </div>
@@ -186,7 +211,8 @@ export function BulkDeleteConfirm({
             ) : (
               <>
                 <Trash2 className="h-4 w-4 mr-2" />
-                Delete {itemCount} {resourceName}{itemCount > 1 ? 's' : ''}
+                Delete {itemCount} {resourceName}
+                {itemCount > 1 ? "s" : ""}
               </>
             )}
           </Button>
@@ -204,24 +230,30 @@ export function useBulkDeleteDialog<T extends DeleteItem>() {
     ((ids: string[], permanently: boolean) => Promise<void>) | null
   >(null);
 
-  const openDialog = useCallback((
-    itemsToDelete: T[],
-    onConfirm: (ids: string[], permanently: boolean) => Promise<void>
-  ) => {
-    setItems(itemsToDelete);
-    setOnConfirmCallback(() => onConfirm);
-    setOpen(true);
-  }, []);
+  const openDialog = useCallback(
+    (
+      itemsToDelete: T[],
+      onConfirm: (ids: string[], permanently: boolean) => Promise<void>,
+    ) => {
+      setItems(itemsToDelete);
+      setOnConfirmCallback(() => onConfirm);
+      setOpen(true);
+    },
+    [],
+  );
 
-  const handleConfirm = useCallback(async (ids: string[], permanently: boolean) => {
-    if (!onConfirmCallback) return;
-    setIsLoading(true);
-    try {
-      await onConfirmCallback(ids, permanently);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [onConfirmCallback]);
+  const handleConfirm = useCallback(
+    async (ids: string[], permanently: boolean) => {
+      if (!onConfirmCallback) return;
+      setIsLoading(true);
+      try {
+        await onConfirmCallback(ids, permanently);
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [onConfirmCallback],
+  );
 
   return {
     open,

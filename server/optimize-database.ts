@@ -1,9 +1,9 @@
-import { db } from '../db';
-import { sql } from 'drizzle-orm';
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
-import { logger } from './logger.js';
+import { db } from "../db";
+import { sql } from "drizzle-orm";
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
+import { logger } from "./logger.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -19,16 +19,21 @@ class DatabaseOptimizer {
   private results: OptimizationResult[] = [];
 
   async executeOptimization(): Promise<void> {
-    logger.info('🚀 Starting Max Booster Database Performance Optimization...');
+    logger.info("🚀 Starting Max Booster Database Performance Optimization...");
 
-    const sqlFilePath = path.join(__dirname, 'performance-optimization.sql');
-    const sqlContent = fs.readFileSync(sqlFilePath, 'utf-8');
+    const sqlFilePath = path.join(__dirname, "performance-optimization.sql");
+    const sqlContent = fs.readFileSync(sqlFilePath, "utf-8");
 
     // Split SQL commands by semicolon and filter out comments and empty lines
     const commands = sqlContent
-      .split(';')
+      .split(";")
       .map((cmd) => cmd.trim())
-      .filter((cmd) => cmd && !cmd.startsWith('--') && cmd.toUpperCase().includes('CREATE INDEX'));
+      .filter(
+        (cmd) =>
+          cmd &&
+          !cmd.startsWith("--") &&
+          cmd.toUpperCase().includes("CREATE INDEX"),
+      );
 
     logger.info(`📊 Found ${commands.length} index optimization commands`);
 
@@ -41,7 +46,7 @@ class DatabaseOptimizer {
 
   private async executeIndexCommand(command: string): Promise<void> {
     const indexMatch = command.match(/idx_[\w_]+/);
-    const indexName = indexMatch ? indexMatch[0] : 'unknown_index';
+    const indexName = indexMatch ? indexMatch[0] : "unknown_index";
 
     const startTime = Date.now();
 
@@ -93,8 +98,8 @@ class DatabaseOptimizer {
   }
 
   private printResults(): void {
-    logger.info('\n📈 Database Optimization Results:');
-    logger.info('==================================');
+    logger.info("\n📈 Database Optimization Results:");
+    logger.info("==================================");
 
     const created = this.results.filter((r) => r.created);
     const skipped = this.results.filter((r) => !r.created && !r.error);
@@ -108,23 +113,23 @@ class DatabaseOptimizer {
     logger.info(`⏱️  Total Execution Time: ${totalTime}ms`);
 
     if (failed.length > 0) {
-      logger.info('\n❌ Failed Indexes:');
+      logger.info("\n❌ Failed Indexes:");
       failed.forEach((f) => {
         logger.info(`   ${f.indexName}: ${f.error}`);
       });
     }
 
-    logger.info('\n🎯 Expected Performance Improvements:');
-    logger.info('   • User project queries: 80-95% faster');
-    logger.info('   • Analytics dashboard: 70-90% faster');
-    logger.info('   • Distribution analytics: 75-90% faster');
-    logger.info('   • Search operations: 60-85% faster');
-    logger.info('   • Financial reporting: 80-95% faster');
-    logger.info('\n🚀 Database optimization complete!');
+    logger.info("\n🎯 Expected Performance Improvements:");
+    logger.info("   • User project queries: 80-95% faster");
+    logger.info("   • Analytics dashboard: 70-90% faster");
+    logger.info("   • Distribution analytics: 75-90% faster");
+    logger.info("   • Search operations: 60-85% faster");
+    logger.info("   • Financial reporting: 80-95% faster");
+    logger.info("\n🚀 Database optimization complete!");
   }
 
   async analyzeQueryPerformance(): Promise<void> {
-    logger.info('\n🔍 Analyzing Query Performance...');
+    logger.info("\n🔍 Analyzing Query Performance...");
 
     try {
       // Get slow queries from pg_stat_statements if available
@@ -142,16 +147,20 @@ class DatabaseOptimizer {
       `);
 
       if (slowQueriesResult.rows && slowQueriesResult.rows.length > 0) {
-        logger.info('🐌 Top Slow Queries (>100ms average):');
+        logger.info("🐌 Top Slow Queries (>100ms average):");
         slowQueriesResult.rows.forEach((row: unknown, i: number) => {
-          logger.info(`${i + 1}. ${row.mean_time.toFixed(2)}ms avg (${row.calls} calls)`);
+          logger.info(
+            `${i + 1}. ${row.mean_time.toFixed(2)}ms avg (${row.calls} calls)`,
+          );
           logger.info(`   ${row.query.substring(0, 100)}...`);
         });
       } else {
-        logger.info('✅ No slow queries detected or pg_stat_statements not enabled');
+        logger.info(
+          "✅ No slow queries detected or pg_stat_statements not enabled",
+        );
       }
     } catch (error: unknown) {
-      logger.info('ℹ️  Query analysis requires pg_stat_statements extension');
+      logger.info("ℹ️  Query analysis requires pg_stat_statements extension");
     }
 
     // Analyze table sizes
@@ -168,26 +177,26 @@ class DatabaseOptimizer {
         LIMIT 10
       `);
 
-      logger.info('\n📊 Largest Tables:');
+      logger.info("\n📊 Largest Tables:");
       if (tableSizes.rows) {
         tableSizes.rows.forEach((row: unknown, i: number) => {
           logger.info(`${i + 1}. ${row.tablename}: ${row.size}`);
         });
       }
     } catch (error: unknown) {
-      logger.info('❌ Could not analyze table sizes:', error);
+      logger.info("❌ Could not analyze table sizes:", error);
     }
   }
 
   async validateOptimizations(): Promise<boolean> {
-    logger.info('\n🧪 Validating Database Optimizations...');
+    logger.info("\n🧪 Validating Database Optimizations...");
 
     const criticalIndexes = [
-      'idx_projects_user_updated',
-      'idx_analytics_user_date',
-      'idx_releases_user_updated',
-      'idx_earnings_user_report_date',
-      'idx_users_email',
+      "idx_projects_user_updated",
+      "idx_analytics_user_date",
+      "idx_releases_user_updated",
+      "idx_earnings_user_report_date",
+      "idx_users_email",
     ];
 
     let allValid = true;
@@ -201,7 +210,11 @@ class DatabaseOptimizer {
           ) as exists
         `);
 
-        if (result.rows && result.rows[0] && (result.rows[0] as Record<string, unknown>).exists) {
+        if (
+          result.rows &&
+          result.rows[0] &&
+          (result.rows[0] as Record<string, unknown>).exists
+        ) {
           logger.info(`✅ ${indexName} - OK`);
         } else {
           logger.info(`❌ ${indexName} - MISSING`);

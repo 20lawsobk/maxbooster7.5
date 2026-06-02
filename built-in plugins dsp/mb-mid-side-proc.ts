@@ -1,5 +1,69 @@
-import type { PluginDefinition } from '../server/services/pluginHostService';
+import type { PluginDefinition } from "../server/services/pluginHostService";
 
-const MbMidSideProcPlugin: PluginDefinition = { id: 'mb-mid-side-proc', slug: 'mb-mid-side-proc', name: 'MB Mid-Side Processor', category: 'effect', type: 'stereo' as any, version: '1.0.0', description: 'Advanced mid-side matrix with per-channel EQ and dynamics', author: 'Max Booster', grade: 'A', parameters: [{ id: 'midEqFreq', name: 'Mid EQ Freq', type: 'float', defaultValue: 1000, minValue: 100, maxValue: 10000, automatable: true }, { id: 'midEqGain', name: 'Mid EQ Gain', type: 'float', defaultValue: 0, minValue: -12, maxValue: 12, automatable: true }, { id: 'sideEqFreq', name: 'Side EQ Freq', type: 'float', defaultValue: 3000, minValue: 100, maxValue: 10000, automatable: true }, { id: 'sideEqGain', name: 'Side EQ Gain', type: 'float', defaultValue: 0, minValue: -12, maxValue: 12, automatable: true }, { id: 'width', name: 'Width', type: 'float', defaultValue: 1, minValue: 0, maxValue: 2, automatable: true }], defaultPreset: { midEqFreq: 1000, midEqGain: 0, sideEqFreq: 3000, sideEqGain: 0, width: 1 } };
+const MbMidSideProcPlugin: PluginDefinition = {
+  id: "mb-mid-side-proc",
+  slug: "mb-mid-side-proc",
+  name: "MB Mid-Side Processor",
+  category: "effect",
+  type: "stereo" as any,
+  version: "1.0.0",
+  description: "Advanced mid-side matrix with per-channel EQ and dynamics",
+  author: "Max Booster",
+  grade: "A",
+  parameters: [
+    {
+      id: "midEqFreq",
+      name: "Mid EQ Freq",
+      type: "float",
+      defaultValue: 1000,
+      minValue: 100,
+      maxValue: 10000,
+      automatable: true,
+    },
+    {
+      id: "midEqGain",
+      name: "Mid EQ Gain",
+      type: "float",
+      defaultValue: 0,
+      minValue: -12,
+      maxValue: 12,
+      automatable: true,
+    },
+    {
+      id: "sideEqFreq",
+      name: "Side EQ Freq",
+      type: "float",
+      defaultValue: 3000,
+      minValue: 100,
+      maxValue: 10000,
+      automatable: true,
+    },
+    {
+      id: "sideEqGain",
+      name: "Side EQ Gain",
+      type: "float",
+      defaultValue: 0,
+      minValue: -12,
+      maxValue: 12,
+      automatable: true,
+    },
+    {
+      id: "width",
+      name: "Width",
+      type: "float",
+      defaultValue: 1,
+      minValue: 0,
+      maxValue: 2,
+      automatable: true,
+    },
+  ],
+  defaultPreset: {
+    midEqFreq: 1000,
+    midEqGain: 0,
+    sideEqFreq: 3000,
+    sideEqGain: 0,
+    width: 1,
+  },
+};
 
 export default MbMidSideProcPlugin;

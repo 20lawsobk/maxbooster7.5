@@ -1,6 +1,10 @@
-import { Button } from '@/components/ui/button';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { Separator } from '@/components/ui/separator';
+import { Button } from "@/components/ui/button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { Separator } from "@/components/ui/separator";
 import {
   Volume2,
   Sliders,
@@ -18,10 +22,14 @@ import {
   Music,
   Grid3X3,
   ListMusic,
-} from 'lucide-react';
-import { useStudioLayoutStore, type ConsoleSections, type StudioMode } from '@/lib/studioLayoutStore';
-import { studioOneTheme } from '@/lib/studioOneTheme';
-import { useLocation } from 'wouter';
+} from "lucide-react";
+import {
+  useStudioLayoutStore,
+  type ConsoleSections,
+  type StudioMode,
+} from "@/lib/studioLayoutStore";
+import { studioOneTheme } from "@/lib/studioOneTheme";
+import { useLocation } from "wouter";
 
 interface NavButtonProps {
   icon: React.ReactNode;
@@ -38,9 +46,10 @@ function NavButton({ icon, label, active, onClick }: NavButtonProps) {
           onClick={onClick}
           className={`
             w-8 h-8 flex items-center justify-center rounded transition-all
-            ${active 
-              ? 'bg-[var(--s1-accent-blue)]/20 text-[var(--s1-accent-blue)]' 
-              : 'text-[var(--s1-text-muted)] hover:text-[var(--s1-text-secondary)] hover:bg-white/5'
+            ${
+              active
+                ? "bg-[var(--s1-accent-blue)]/20 text-[var(--s1-accent-blue)]"
+                : "text-[var(--s1-text-muted)] hover:text-[var(--s1-text-secondary)] hover:bg-white/5"
             }
           `}
         >
@@ -70,7 +79,7 @@ export function ConsoleNavColumn() {
   const [, setLocation] = useLocation();
 
   return (
-    <div 
+    <div
       className="w-10 flex flex-col items-center py-2 gap-1 border-r"
       style={{
         background: studioOneTheme.colors.bg.deep,
@@ -82,26 +91,26 @@ export function ConsoleNavColumn() {
         <NavButton
           icon={<ListMusic className="h-4 w-4" />}
           label="Arrange View"
-          active={mode === 'arrange'}
-          onClick={() => setMode('arrange')}
+          active={mode === "arrange"}
+          onClick={() => setMode("arrange")}
         />
         <NavButton
           icon={<Sliders className="h-4 w-4" />}
           label="Mix View"
-          active={mode === 'mix'}
-          onClick={() => setMode('mix')}
+          active={mode === "mix"}
+          onClick={() => setMode("mix")}
         />
         <NavButton
           icon={<Layers className="h-4 w-4" />}
           label="Project View"
-          active={mode === 'project'}
-          onClick={() => setMode('project')}
+          active={mode === "project"}
+          onClick={() => setMode("project")}
         />
         <NavButton
           icon={<Grid3X3 className="h-4 w-4" />}
           label="Launcher"
-          active={mode === 'launcher'}
-          onClick={() => setMode('launcher')}
+          active={mode === "launcher"}
+          onClick={() => setMode("launcher")}
         />
       </div>
 
@@ -113,25 +122,25 @@ export function ConsoleNavColumn() {
           icon={<Volume2 className="h-4 w-4" />}
           label="Inputs"
           active={consoleSections.inputs}
-          onClick={() => toggleConsoleSection('inputs')}
+          onClick={() => toggleConsoleSection("inputs")}
         />
         <NavButton
           icon={<Plug className="h-4 w-4" />}
           label="Inserts"
           active={consoleSections.inserts}
-          onClick={() => toggleConsoleSection('inserts')}
+          onClick={() => toggleConsoleSection("inserts")}
         />
         <NavButton
           icon={<Send className="h-4 w-4" />}
           label="Sends"
           active={consoleSections.sends}
-          onClick={() => toggleConsoleSection('sends')}
+          onClick={() => toggleConsoleSection("sends")}
         />
         <NavButton
           icon={<Activity className="h-4 w-4" />}
           label="Meters"
           active={consoleSections.meters}
-          onClick={() => toggleConsoleSection('meters')}
+          onClick={() => toggleConsoleSection("meters")}
         />
       </div>
 
@@ -143,19 +152,19 @@ export function ConsoleNavColumn() {
           icon={<PanelLeft className="h-4 w-4" />}
           label="Inspector"
           active={inspectorPanel.visible}
-          onClick={() => togglePanel('inspector')}
+          onClick={() => togglePanel("inspector")}
         />
         <NavButton
           icon={<PanelRight className="h-4 w-4" />}
           label="Browser"
           active={browserPanel.visible}
-          onClick={() => togglePanel('browser')}
+          onClick={() => togglePanel("browser")}
         />
         <NavButton
           icon={<PanelBottom className="h-4 w-4" />}
           label="Console"
           active={consolePanel.visible}
-          onClick={() => togglePanel('console')}
+          onClick={() => togglePanel("console")}
         />
       </div>
 
@@ -166,14 +175,14 @@ export function ConsoleNavColumn() {
         <NavButton
           icon={<Minimize2 className="h-4 w-4" />}
           label="Narrow Channels"
-          active={channelWidth === 'narrow'}
-          onClick={() => setChannelWidth('narrow')}
+          active={channelWidth === "narrow"}
+          onClick={() => setChannelWidth("narrow")}
         />
         <NavButton
           icon={<Maximize2 className="h-4 w-4" />}
           label="Wide Channels"
-          active={channelWidth === 'wide'}
-          onClick={() => setChannelWidth('wide')}
+          active={channelWidth === "wide"}
+          onClick={() => setChannelWidth("wide")}
         />
       </div>
 
@@ -184,7 +193,7 @@ export function ConsoleNavColumn() {
       <NavButton
         icon={<Settings2 className="h-4 w-4" />}
         label="Console Settings"
-        onClick={() => setLocation('/settings')}
+        onClick={() => setLocation("/settings")}
       />
     </div>
   );

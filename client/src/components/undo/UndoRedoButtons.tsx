@@ -1,55 +1,57 @@
-import { Undo2, Redo2 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Undo2, Redo2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from '@/components/ui/tooltip';
-import { useUndoActions, useUndoHistory } from '@/contexts/UndoContext';
-import { getActionLabel } from '@/lib/undo/types';
-import { cn } from '@/lib/utils';
+} from "@/components/ui/tooltip";
+import { useUndoActions, useUndoHistory } from "@/contexts/UndoContext";
+import { getActionLabel } from "@/lib/undo/types";
+import { cn } from "@/lib/utils";
 
 export interface UndoRedoButtonsProps {
   className?: string;
-  size?: 'sm' | 'default' | 'lg' | 'icon';
-  variant?: 'default' | 'outline' | 'ghost' | 'secondary';
+  size?: "sm" | "default" | "lg" | "icon";
+  variant?: "default" | "outline" | "ghost" | "secondary";
   showLabels?: boolean;
   showTooltips?: boolean;
 }
 
 export function UndoRedoButtons({
   className,
-  size = 'icon',
-  variant = 'ghost',
+  size = "icon",
+  variant = "ghost",
   showLabels = false,
   showTooltips = true,
 }: UndoRedoButtonsProps) {
   const { undo, redo, canUndo, canRedo } = useUndoActions();
   const { history, redoStack } = useUndoHistory();
 
-  const lastAction = history.filter(a => !a.isUndone).slice(-1)[0];
+  const lastAction = history.filter((a) => !a.isUndone).slice(-1)[0];
   const nextRedoAction = redoStack.slice(-1)[0];
 
-  const undoTooltip = canUndo && lastAction
-    ? `Undo: ${getActionLabel(lastAction)} (Ctrl+Z)`
-    : 'Nothing to undo';
+  const undoTooltip =
+    canUndo && lastAction
+      ? `Undo: ${getActionLabel(lastAction)} (Ctrl+Z)`
+      : "Nothing to undo";
 
-  const redoTooltip = canRedo && nextRedoAction
-    ? `Redo: ${getActionLabel(nextRedoAction)} (Ctrl+Shift+Z)`
-    : 'Nothing to redo';
+  const redoTooltip =
+    canRedo && nextRedoAction
+      ? `Redo: ${getActionLabel(nextRedoAction)} (Ctrl+Shift+Z)`
+      : "Nothing to redo";
 
   const buttons = (
-    <div className={cn('flex items-center gap-1', className)}>
+    <div className={cn("flex items-center gap-1", className)}>
       <Button
         variant={variant}
         size={size}
         onClick={() => undo()}
         disabled={!canUndo}
         aria-label="Undo"
-        className={showLabels ? 'gap-1' : ''}
+        className={showLabels ? "gap-1" : ""}
       >
-        <Undo2 className={size === 'icon' ? 'w-4 h-4' : 'w-3 h-3'} />
+        <Undo2 className={size === "icon" ? "w-4 h-4" : "w-3 h-3"} />
         {showLabels && <span>Undo</span>}
       </Button>
       <Button
@@ -58,9 +60,9 @@ export function UndoRedoButtons({
         onClick={() => redo()}
         disabled={!canRedo}
         aria-label="Redo"
-        className={showLabels ? 'gap-1' : ''}
+        className={showLabels ? "gap-1" : ""}
       >
-        <Redo2 className={size === 'icon' ? 'w-4 h-4' : 'w-3 h-3'} />
+        <Redo2 className={size === "icon" ? "w-4 h-4" : "w-3 h-3"} />
         {showLabels && <span>Redo</span>}
       </Button>
     </div>
@@ -72,7 +74,7 @@ export function UndoRedoButtons({
 
   return (
     <TooltipProvider>
-      <div className={cn('flex items-center gap-1', className)}>
+      <div className={cn("flex items-center gap-1", className)}>
         <Tooltip>
           <TooltipTrigger asChild>
             <Button
@@ -81,9 +83,9 @@ export function UndoRedoButtons({
               onClick={() => undo()}
               disabled={!canUndo}
               aria-label="Undo"
-              className={showLabels ? 'gap-1' : ''}
+              className={showLabels ? "gap-1" : ""}
             >
-              <Undo2 className={size === 'icon' ? 'w-4 h-4' : 'w-3 h-3'} />
+              <Undo2 className={size === "icon" ? "w-4 h-4" : "w-3 h-3"} />
               {showLabels && <span>Undo</span>}
             </Button>
           </TooltipTrigger>
@@ -100,9 +102,9 @@ export function UndoRedoButtons({
               onClick={() => redo()}
               disabled={!canRedo}
               aria-label="Redo"
-              className={showLabels ? 'gap-1' : ''}
+              className={showLabels ? "gap-1" : ""}
             >
-              <Redo2 className={size === 'icon' ? 'w-4 h-4' : 'w-3 h-3'} />
+              <Redo2 className={size === "icon" ? "w-4 h-4" : "w-3 h-3"} />
               {showLabels && <span>Redo</span>}
             </Button>
           </TooltipTrigger>
@@ -117,13 +119,13 @@ export function UndoRedoButtons({
 
 export function UndoButton({
   className,
-  size = 'icon',
-  variant = 'ghost',
+  size = "icon",
+  variant = "ghost",
   showLabel = false,
 }: {
   className?: string;
-  size?: 'sm' | 'default' | 'lg' | 'icon';
-  variant?: 'default' | 'outline' | 'ghost' | 'secondary';
+  size?: "sm" | "default" | "lg" | "icon";
+  variant?: "default" | "outline" | "ghost" | "secondary";
   showLabel?: boolean;
 }) {
   const { undo, canUndo } = useUndoActions();
@@ -138,9 +140,9 @@ export function UndoButton({
             onClick={() => undo()}
             disabled={!canUndo}
             aria-label="Undo"
-            className={cn(showLabel && 'gap-1', className)}
+            className={cn(showLabel && "gap-1", className)}
           >
-            <Undo2 className={size === 'icon' ? 'w-4 h-4' : 'w-3 h-3'} />
+            <Undo2 className={size === "icon" ? "w-4 h-4" : "w-3 h-3"} />
             {showLabel && <span>Undo</span>}
           </Button>
         </TooltipTrigger>
@@ -154,13 +156,13 @@ export function UndoButton({
 
 export function RedoButton({
   className,
-  size = 'icon',
-  variant = 'ghost',
+  size = "icon",
+  variant = "ghost",
   showLabel = false,
 }: {
   className?: string;
-  size?: 'sm' | 'default' | 'lg' | 'icon';
-  variant?: 'default' | 'outline' | 'ghost' | 'secondary';
+  size?: "sm" | "default" | "lg" | "icon";
+  variant?: "default" | "outline" | "ghost" | "secondary";
   showLabel?: boolean;
 }) {
   const { redo, canRedo } = useUndoActions();
@@ -175,9 +177,9 @@ export function RedoButton({
             onClick={() => redo()}
             disabled={!canRedo}
             aria-label="Redo"
-            className={cn(showLabel && 'gap-1', className)}
+            className={cn(showLabel && "gap-1", className)}
           >
-            <Redo2 className={size === 'icon' ? 'w-4 h-4' : 'w-3 h-3'} />
+            <Redo2 className={size === "icon" ? "w-4 h-4" : "w-3 h-3"} />
             {showLabel && <span>Redo</span>}
           </Button>
         </TooltipTrigger>

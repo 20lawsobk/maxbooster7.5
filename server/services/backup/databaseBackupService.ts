@@ -1,11 +1,11 @@
-import { spawn } from 'child_process';
-import { logger } from '../../logger.js';
-import cron from 'node-cron';
-import fsPromises from 'fs/promises';
-import { storageService } from '../storageService.js';
-import { env } from '../../config/env.js';
+import { spawn } from "child_process";
+import { logger } from "../../logger.js";
+import cron from "node-cron";
+import fsPromises from "fs/promises";
+import { storageService } from "../storageService.js";
+import { env } from "../../config/env.js";
 
-const BACKUP_PREFIX = 'database-backups';
+const BACKUP_PREFIX = "database-backups";
 const BACKUP_INDEX_KEY = `${BACKUP_PREFIX}/index.json`;
 const MAX_BACKUPS = 7;
 const RPO_TARGET = 24;
@@ -21,7 +21,7 @@ interface BackupEntry {
 async function loadIndex(): Promise<BackupEntry[]> {
   try {
     const buf = await storageService.downloadFile(BACKUP_INDEX_KEY);
-    return JSON.parse(buf.toString('utf-8')) as BackupEntry[];
+    return JSON.parse(buf.toString("utf-8")) as BackupEntry[];
   } catch {
     return [];
   }
@@ -29,9 +29,9 @@ async function loadIndex(): Promise<BackupEntry[]> {
 
 async function saveIndex(entries: BackupEntry[]): Promise<void> {
   await storageService.uploadFile(
-    Buffer.from(JSON.stringify(entries, null, 2), 'utf-8'),
+    Buffer.from(JSON.stringify(entries, null, 2), "utf-8"),
     BACKUP_INDEX_KEY,
-    'application/json',
+    "application/json",
   );
 }
 
@@ -41,20 +41,26 @@ export class DatabaseBackupService {
 
   async initialize() {
     if (!env.DATABASE_URL) {
-      logger.warn('⚠️  DATABASE_URL not configured - backup service disabled');
+      logger.warn("⚠️  DATABASE_URL not configured - backup service disabled");
       return;
     }
 
-    if (process.env.NODE_ENV !== 'production' && !process.env.REPLIT_DEPLOYMENT && process.env.ENABLE_BACKUPS !== 'true') {
-      logger.info('ℹ️  Database backups disabled (not in production)');
-      logger.info('   Set ENABLE_BACKUPS=true to enable in development');
+    if (
+      process.env.NODE_ENV !== "production" &&
+      !process.env.REPLIT_DEPLOYMENT &&
+      process.env.ENABLE_BACKUPS !== "true"
+    ) {
+      logger.info("ℹ️  Database backups disabled (not in production)");
+      logger.info("   Set ENABLE_BACKUPS=true to enable in development");
       return;
     }
 
     this.scheduleBackups();
     this.isInitialized = true;
 
-    logger.info('✅ Database Backup Service initialized (Pocket Dimension storage)');
+    logger.info(
+      "✅ Database Backup Service initialized (Pocket Dimension storage)",
+    );
     logger.info(`   RPO Target: ${RPO_TARGET} hours`);
     logger.info(`   RTO Target: ${RTO_TARGET} minutes`);
     logger.info(`   Backup Schedule: Daily at 2 AM UTC`);
@@ -62,35 +68,37 @@ export class DatabaseBackupService {
   }
 
   private scheduleBackups() {
-    this.backupSchedule = cron.schedule('0 2 * * *', async () => {
-      logger.info('🔄 Starting scheduled database backup...');
+    this.backupSchedule = cron.schedule("0 2 * * *", async () => {
+      logger.info("🔄 Starting scheduled database backup...");
       try {
         await this.createBackup();
         await this.cleanOldBackups();
-        logger.info('✅ Scheduled backup completed successfully');
+        logger.info("✅ Scheduled backup completed successfully");
       } catch (error: unknown) {
-        logger.warn({ err: error }, '❌ Scheduled backup failed:');
+        logger.warn({ err: error }, "❌ Scheduled backup failed:");
       }
     });
 
-    logger.info('📅 Database backups scheduled (daily at 2 AM UTC)');
+    logger.info("📅 Database backups scheduled (daily at 2 AM UTC)");
   }
 
   async createBackup(): Promise<string> {
     if (!env.DATABASE_URL) {
-      throw new Error('DATABASE_URL not configured');
+      throw new Error("DATABASE_URL not configured");
     }
 
-    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
     const name = `backup-${timestamp}.sql`;
     const key = `${BACKUP_PREFIX}/${name}`;
 
     const tmpPath = `/tmp/${name}`;
 
     await new Promise<void>((resolve, reject) => {
-      const pgDump = spawn('pg_dump', [env.DATABASE_URL!], { env: process.env });
+      const pgDump = spawn("pg_dump", [env.DATABASE_URL!], {
+        env: process.env,
+      });
       const writeStream = fs.createWriteStream(tmpPath);
-      let errorOutput = '';
+      let errorOutput = "";
       let pipelineDone = false;
       let exited = false;
       let exitCode: number | null = null;
@@ -105,35 +113,40 @@ export class DatabaseBackupService {
         reject(err);
       }
 
-      pgDump.stderr.on('data', (d) => { errorOutput += d.toString(); });
+      pgDump.stderr.on("data", (d) => {
+        errorOutput += d.toString();
+      });
 
-      writeStream.on('finish', () => {
+      writeStream.on("finish", () => {
         pipelineDone = true;
         check();
       });
-      writeStream.on('error', (err) => fail(err));
+      writeStream.on("error", (err) => fail(err));
 
       // Absorb EPIPE on pgDump stdout in case writeStream closes early
-      pgDump.stdout.on('error', (e: NodeJS.ErrnoException) => {
-        if (e.code !== 'EPIPE' && e.code !== 'ECONNRESET') fail(e);
+      pgDump.stdout.on("error", (e: NodeJS.ErrnoException) => {
+        if (e.code !== "EPIPE" && e.code !== "ECONNRESET") fail(e);
       });
 
       pgDump.stdout.pipe(writeStream);
 
-      pgDump.on('close', (code) => {
+      pgDump.on("close", (code) => {
         exited = true;
         exitCode = code;
         check();
       });
 
-      pgDump.on('error', (err) => fail(err));
+      pgDump.on("error", (err) => fail(err));
 
       function check() {
         if (!pipelineDone || !exited) return;
         if (settled) return;
         settled = true;
         if (exitCode === 0) resolve();
-        else reject(new Error(`pg_dump failed (code ${exitCode}): ${errorOutput}`));
+        else
+          reject(
+            new Error(`pg_dump failed (code ${exitCode}): ${errorOutput}`),
+          );
       }
     });
 
@@ -167,7 +180,7 @@ export class DatabaseBackupService {
     const sqlBuffer = await fs.promises.readFile(tmpPath);
     await fs.promises.unlink(tmpPath).catch(() => undefined);
 
-    await storageService.uploadFile(sqlBuffer, key, 'application/sql');
+    await storageService.uploadFile(sqlBuffer, key, "application/sql");
 
     logger.info(`✅ Backup stored in Pocket Dimension: ${name} (${sizeMB} MB)`);
 
@@ -181,7 +194,9 @@ export class DatabaseBackupService {
   private async cleanOldBackups(): Promise<void> {
     try {
       const index = await loadIndex();
-      const sorted = [...index].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+      const sorted = [...index].sort(
+        (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
+      );
 
       if (sorted.length > MAX_BACKUPS) {
         const toDelete = sorted.slice(MAX_BACKUPS);
@@ -197,7 +212,7 @@ export class DatabaseBackupService {
         logger.info(`✅ Cleaned ${toDelete.length} old backup(s)`);
       }
     } catch (error: unknown) {
-      logger.warn({ err: error }, 'Error cleaning old backups:');
+      logger.warn({ err: error }, "Error cleaning old backups:");
     }
   }
 
@@ -208,32 +223,47 @@ export class DatabaseBackupService {
       await fsPromises.writeFile(tmpPath, buf);
 
       await new Promise<void>((resolve, reject) => {
-        const psql = spawn('psql', [env.DATABASE_URL || '', '-f', tmpPath], { env: process.env });
-        let errorOutput = '';
-        psql.stderr.on('data', (d) => { errorOutput += d.toString(); });
-        psql.on('close', (code) => {
+        const psql = spawn("psql", [env.DATABASE_URL || "", "-f", tmpPath], {
+          env: process.env,
+        });
+        let errorOutput = "";
+        psql.stderr.on("data", (d) => {
+          errorOutput += d.toString();
+        });
+        psql.on("close", (code) => {
           if (code === 0) {
-            logger.info('✅ Database restored successfully');
+            logger.info("✅ Database restored successfully");
             resolve();
           } else {
             reject(new Error(`Restore failed (code ${code}): ${errorOutput}`));
           }
         });
-        psql.on('error', reject);
+        psql.on("error", reject);
       });
     } finally {
-      try { await fsPromises.unlink(tmpPath); } catch { /* ignore */ }
+      try {
+        await fsPromises.unlink(tmpPath);
+      } catch {
+        /* ignore */
+      }
     }
   }
 
-  async listBackups(): Promise<{ name: string; date: Date; size: number; key: string }[]> {
+  async listBackups(): Promise<
+    { name: string; date: Date; size: number; key: string }[]
+  > {
     try {
       const index = await loadIndex();
       return index
         .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-        .map((e) => ({ name: e.name, date: new Date(e.date), size: e.size, key: e.key }));
+        .map((e) => ({
+          name: e.name,
+          date: new Date(e.date),
+          size: e.size,
+          key: e.key,
+        }));
     } catch (error: unknown) {
-      logger.warn({ err: error }, 'Error listing backups:');
+      logger.warn({ err: error }, "Error listing backups:");
       return [];
     }
   }
@@ -243,15 +273,15 @@ export class DatabaseBackupService {
       rpo: RPO_TARGET,
       rto: RTO_TARGET,
       retentionDays: MAX_BACKUPS,
-      schedule: 'Daily at 2 AM UTC',
-      storageBackend: 'Pocket Dimension',
+      schedule: "Daily at 2 AM UTC",
+      storageBackend: "Pocket Dimension",
     };
   }
 
   stop() {
     if (this.backupSchedule) {
       this.backupSchedule.stop();
-      logger.info('🛑 Database backup schedule stopped');
+      logger.info("🛑 Database backup schedule stopped");
     }
   }
 }

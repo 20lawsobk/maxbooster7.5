@@ -1,6 +1,6 @@
-import { logger } from '@/lib/logger';
-import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { logger } from "@/lib/logger";
+import { useState, useEffect, useRef, useMemo, useCallback } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Play,
   Pause,
@@ -14,10 +14,10 @@ import {
   Scissors,
   Copy,
   Layers,
-} from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Slider } from '@/components/ui/slider';
-import { cn } from '@/lib/utils';
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Slider } from "@/components/ui/slider";
+import { cn } from "@/lib/utils";
 
 interface WaveformData {
   peaks: number[];
@@ -44,7 +44,7 @@ interface RealTimeWaveformDisplayProps {
   onSeek?: (time: number) => void;
   onPlayPause?: () => void;
   onZoomChange?: (zoom: number) => void;
-  onRegionCreate?: (region: Omit<Region, 'id'>) => void;
+  onRegionCreate?: (region: Omit<Region, "id">) => void;
   onRegionUpdate?: (region: Region) => void;
   showControls?: boolean;
   showTimeline?: boolean;
@@ -71,9 +71,9 @@ export function RealTimeWaveformDisplay({
   showControls = true,
   showTimeline = true,
   height = 128,
-  color = '#22c55e',
-  progressColor = '#4ade80',
-  backgroundColor = '#1f1f23',
+  color = "#22c55e",
+  progressColor = "#4ade80",
+  backgroundColor = "#1f1f23",
   className,
 }: RealTimeWaveformDisplayProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -104,15 +104,15 @@ export function RealTimeWaveformDisplay({
     try {
       const response = await fetch(url);
       const arrayBuffer = await response.arrayBuffer();
-      
+
       const audioContext = new AudioContext();
       const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
-      
+
       const channelData = audioBuffer.getChannelData(0);
       const samples = 200;
       const blockSize = Math.floor(channelData.length / samples);
       const peaks: number[] = [];
-      
+
       for (let i = 0; i < samples; i++) {
         let max = 0;
         for (let j = 0; j < blockSize; j++) {
@@ -121,10 +121,10 @@ export function RealTimeWaveformDisplay({
         }
         peaks.push(max);
       }
-      
+
       setLocalWaveformData(peaks);
     } catch (error) {
-      logger.error('Failed to generate waveform:', error);
+      logger.error("Failed to generate waveform:", error);
     }
   };
 
@@ -133,17 +133,17 @@ export function RealTimeWaveformDisplay({
     const container = containerRef.current;
     if (!canvas || !container) return;
 
-    const ctx = canvas.getContext('2d');
+    const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
     const dpr = window.devicePixelRatio || 1;
     const rect = container.getBoundingClientRect();
-    
+
     canvas.width = rect.width * dpr * zoom;
     canvas.height = height * dpr;
     canvas.style.width = `${rect.width * zoom}px`;
     canvas.style.height = `${height}px`;
-    
+
     ctx.scale(dpr, dpr);
     ctx.fillStyle = backgroundColor;
     ctx.fillRect(0, 0, rect.width * zoom, height);
@@ -151,23 +151,24 @@ export function RealTimeWaveformDisplay({
     if (localWaveformData.length === 0) return;
 
     const barWidth = (rect.width * zoom) / localWaveformData.length;
-    const progressX = effectiveDuration > 0 
-      ? (currentTime / effectiveDuration) * (rect.width * zoom) 
-      : 0;
+    const progressX =
+      effectiveDuration > 0
+        ? (currentTime / effectiveDuration) * (rect.width * zoom)
+        : 0;
 
-    regions.forEach(region => {
+    regions.forEach((region) => {
       const startX = (region.start / effectiveDuration) * (rect.width * zoom);
       const endX = (region.end / effectiveDuration) * (rect.width * zoom);
-      
-      ctx.fillStyle = region.color + '30';
+
+      ctx.fillStyle = region.color + "30";
       ctx.fillRect(startX, 0, endX - startX, height);
-      
+
       ctx.fillStyle = region.color;
       ctx.fillRect(startX, 0, 2, height);
       ctx.fillRect(endX - 2, 0, 2, height);
 
       if (region.label) {
-        ctx.font = '10px sans-serif';
+        ctx.font = "10px sans-serif";
         ctx.fillStyle = region.color;
         ctx.fillText(region.label, startX + 4, 12);
       }
@@ -177,16 +178,26 @@ export function RealTimeWaveformDisplay({
       const x = i * barWidth;
       const barHeight = peak * (height * 0.8);
       const y = (height - barHeight) / 2;
-      
+
       const isPlayedBar = x < progressX;
-      
+
       ctx.fillStyle = isPlayedBar ? progressColor : color;
       ctx.fillRect(x, y, Math.max(1, barWidth - 1), barHeight);
     });
 
-    ctx.fillStyle = '#ffffff';
+    ctx.fillStyle = "#ffffff";
     ctx.fillRect(progressX - 1, 0, 2, height);
-  }, [localWaveformData, currentTime, effectiveDuration, height, zoom, color, progressColor, backgroundColor, regions]);
+  }, [
+    localWaveformData,
+    currentTime,
+    effectiveDuration,
+    height,
+    zoom,
+    color,
+    progressColor,
+    backgroundColor,
+    regions,
+  ]);
 
   useEffect(() => {
     drawWaveform();
@@ -196,29 +207,29 @@ export function RealTimeWaveformDisplay({
     const handleResize = () => {
       drawWaveform();
     };
-    
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
   }, [drawWaveform]);
 
   const handleCanvasClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
     if (!containerRef.current || effectiveDuration === 0) return;
-    
+
     const rect = containerRef.current.getBoundingClientRect();
     const scrollLeft = containerRef.current.scrollLeft;
     const x = e.clientX - rect.left + scrollLeft;
     const time = (x / (rect.width * zoom)) * effectiveDuration;
-    
+
     if (isCreatingRegion && regionStart !== null) {
       const end = time;
       const start = regionStart;
-      
+
       onRegionCreate?.({
         start: Math.min(start, end),
         end: Math.max(start, end),
-        color: '#8b5cf6',
+        color: "#8b5cf6",
       });
-      
+
       setIsCreatingRegion(false);
       setRegionStart(null);
     } else {
@@ -228,14 +239,14 @@ export function RealTimeWaveformDisplay({
 
   const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
     if (!containerRef.current || effectiveDuration === 0) return;
-    
+
     const rect = containerRef.current.getBoundingClientRect();
     const scrollLeft = containerRef.current.scrollLeft;
     const x = e.clientX - rect.left + scrollLeft;
     const time = (x / (rect.width * zoom)) * effectiveDuration;
-    
+
     setHoverTime(Math.max(0, Math.min(time, effectiveDuration)));
-    
+
     if (isDragging) {
       onSeek?.(Math.max(0, Math.min(time, effectiveDuration)));
     }
@@ -245,27 +256,33 @@ export function RealTimeWaveformDisplay({
     const mins = Math.floor(seconds / 60);
     const secs = Math.floor(seconds % 60);
     const ms = Math.floor((seconds % 1) * 10);
-    return `${mins}:${secs.toString().padStart(2, '0')}.${ms}`;
+    return `${mins}:${secs.toString().padStart(2, "0")}.${ms}`;
   };
 
   const timeMarkers = useMemo(() => {
     if (effectiveDuration === 0) return [];
-    
+
     const markers: { time: number; position: number }[] = [];
-    const interval = effectiveDuration > 60 ? 10 : effectiveDuration > 30 ? 5 : 2;
-    
+    const interval =
+      effectiveDuration > 60 ? 10 : effectiveDuration > 30 ? 5 : 2;
+
     for (let t = 0; t <= effectiveDuration; t += interval) {
       markers.push({
         time: t,
         position: (t / effectiveDuration) * 100,
       });
     }
-    
+
     return markers;
   }, [effectiveDuration]);
 
   return (
-    <div className={cn("flex flex-col bg-zinc-950 rounded-lg border border-zinc-800", className)}>
+    <div
+      className={cn(
+        "flex flex-col bg-zinc-950 rounded-lg border border-zinc-800",
+        className,
+      )}
+    >
       {showControls && (
         <div className="flex items-center justify-between px-3 py-2 border-b border-zinc-800">
           <div className="flex items-center gap-2">
@@ -281,7 +298,7 @@ export function RealTimeWaveformDisplay({
                 <Play className="w-4 h-4 ml-0.5" />
               )}
             </Button>
-            
+
             <div className="flex items-center gap-1 ml-2">
               <Button
                 size="sm"
@@ -324,7 +341,9 @@ export function RealTimeWaveformDisplay({
             >
               <ZoomOut className="w-3 h-3" />
             </Button>
-            <span className="text-xs text-zinc-500 w-8 text-center">{zoom}x</span>
+            <span className="text-xs text-zinc-500 w-8 text-center">
+              {zoom}x
+            </span>
             <Button
               size="sm"
               variant="ghost"
@@ -334,12 +353,12 @@ export function RealTimeWaveformDisplay({
             >
               <ZoomIn className="w-3 h-3" />
             </Button>
-            
+
             <div className="w-px h-4 bg-zinc-700 mx-1" />
-            
+
             <Button
               size="sm"
-              variant={isCreatingRegion ? 'default' : 'ghost'}
+              variant={isCreatingRegion ? "default" : "ghost"}
               onClick={() => {
                 setIsCreatingRegion(!isCreatingRegion);
                 setRegionStart(null);
@@ -354,7 +373,7 @@ export function RealTimeWaveformDisplay({
 
       {showTimeline && (
         <div className="relative h-5 border-b border-zinc-800 overflow-hidden">
-          <div 
+          <div
             className="absolute inset-0 flex"
             style={{ width: `${100 * zoom}%` }}
           >
@@ -374,7 +393,7 @@ export function RealTimeWaveformDisplay({
         </div>
       )}
 
-      <div 
+      <div
         ref={containerRef}
         className="relative overflow-x-auto"
         style={{ height }}
@@ -392,7 +411,10 @@ export function RealTimeWaveformDisplay({
             if (isCreatingRegion) {
               const rect = containerRef.current?.getBoundingClientRect();
               if (rect) {
-                const x = e.clientX - rect.left + (containerRef.current?.scrollLeft || 0);
+                const x =
+                  e.clientX -
+                  rect.left +
+                  (containerRef.current?.scrollLeft || 0);
                 const time = (x / (rect.width * zoom)) * effectiveDuration;
                 setRegionStart(time);
               }
@@ -403,7 +425,7 @@ export function RealTimeWaveformDisplay({
           onMouseUp={() => setIsDragging(false)}
           className={cn(
             "cursor-pointer transition-opacity",
-            isCreatingRegion && "cursor-crosshair"
+            isCreatingRegion && "cursor-crosshair",
           )}
           style={{ height }}
         />
@@ -431,13 +453,13 @@ export function RealTimeWaveformDisplay({
 
       {regions.length > 0 && (
         <div className="px-3 py-2 border-t border-zinc-800 flex gap-2 overflow-x-auto">
-          {regions.map(region => (
+          {regions.map((region) => (
             <div
               key={region.id}
               className="flex items-center gap-2 px-2 py-1 bg-zinc-900 rounded text-xs"
               style={{ borderLeft: `3px solid ${region.color}` }}
             >
-              <span className="text-zinc-400">{region.label || 'Region'}</span>
+              <span className="text-zinc-400">{region.label || "Region"}</span>
               <span className="text-zinc-600">
                 {formatTime(region.start)} - {formatTime(region.end)}
               </span>

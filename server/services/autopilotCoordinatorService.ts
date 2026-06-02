@@ -1,8 +1,11 @@
-import { randomBytes } from 'crypto';
-import { EventEmitter } from 'events';
-import { logger } from '../logger.js';
-import { notificationService } from './notificationService.js';
-import { getRedisClient, type RedisClientType } from '../lib/redisConnectionFactory.js';
+import { randomBytes } from "crypto";
+import { EventEmitter } from "events";
+import { logger } from "../logger.js";
+import { notificationService } from "./notificationService.js";
+import {
+  getRedisClient,
+  type RedisClientType,
+} from "../lib/redisConnectionFactory.js";
 
 // PDIM persistence — schedule queue + shared insights survive process restarts.
 // TTL keeps the dataset bounded for inactive users without an explicit purge.
@@ -11,11 +14,10 @@ const PDIM_PERSIST_DEBOUNCE_MS = 1500;
 const pdimKeyPosts = (uid: string) => `coord:${uid}:posts`;
 const pdimKeyInsights = (uid: string) => `coord:${uid}:insights`;
 
-
 const MINIMUM_GAP_HOURS = 2;
 const MINIMUM_GAP_MS = MINIMUM_GAP_HOURS * 60 * 60 * 1000;
 
-export type AutopilotType = 'social' | 'advertising';
+export type AutopilotType = "social" | "advertising";
 
 export interface ScheduledPost {
   id: string;
@@ -24,7 +26,7 @@ export interface ScheduledPost {
   platform: string;
   scheduledTime: Date;
   content?: string;
-  status: 'scheduled' | 'posted' | 'failed' | 'cancelled';
+  status: "scheduled" | "posted" | "failed" | "cancelled";
   createdAt: Date;
   postedAt?: Date;
   postId?: string;
@@ -44,7 +46,7 @@ export interface SharedInsight {
   id: string;
   userId: string;
   sourceAutopilot: AutopilotType;
-  insightType: 'timing' | 'content' | 'audience' | 'platform' | 'engagement';
+  insightType: "timing" | "content" | "audience" | "platform" | "engagement";
   data: Record<string, any>;
   createdAt: Date;
   appliedBy: AutopilotType[];
@@ -113,7 +115,10 @@ class AutopilotCoordinatorService extends EventEmitter {
       }
       if (insightsRaw) {
         const arr = JSON.parse(insightsRaw) as SharedInsight[];
-        const revived = arr.map((i) => ({ ...i, createdAt: new Date(i.createdAt) }));
+        const revived = arr.map((i) => ({
+          ...i,
+          createdAt: new Date(i.createdAt),
+        }));
         const current = this.sharedInsights.get(userId) ?? [];
         const currentIds = new Set(current.map((i) => i.id));
         const merged = [
@@ -124,7 +129,10 @@ class AutopilotCoordinatorService extends EventEmitter {
       }
       this.loadedFromPdim.add(userId);
     } catch (err) {
-      logger.warn({ err }, `[AutopilotCoordinator] Failed to load PDIM state for ${userId}`);
+      logger.warn(
+        { err },
+        `[AutopilotCoordinator] Failed to load PDIM state for ${userId}`,
+      );
     }
   }
 
@@ -141,7 +149,7 @@ class AutopilotCoordinatorService extends EventEmitter {
       this.pendingPersist.delete(uid);
     }
     await Promise.all(
-      userIds.map((uid) => this.persistUserStateToPdim(uid).catch(() => {}))
+      userIds.map((uid) => this.persistUserStateToPdim(uid).catch(() => {})),
     );
   }
 
@@ -178,43 +186,66 @@ class AutopilotCoordinatorService extends EventEmitter {
       const posts = this.scheduleQueue.get(userId) || [];
       const insights = this.sharedInsights.get(userId) || [];
       await Promise.all([
-        redis.set(pdimKeyPosts(userId), JSON.stringify(posts), 'EX', PDIM_TTL_SECONDS).catch(() => null),
-        redis.set(pdimKeyInsights(userId), JSON.stringify(insights), 'EX', PDIM_TTL_SECONDS).catch(() => null),
+        redis
+          .set(
+            pdimKeyPosts(userId),
+            JSON.stringify(posts),
+            "EX",
+            PDIM_TTL_SECONDS,
+          )
+          .catch(() => null),
+        redis
+          .set(
+            pdimKeyInsights(userId),
+            JSON.stringify(insights),
+            "EX",
+            PDIM_TTL_SECONDS,
+          )
+          .catch(() => null),
       ]);
     } catch (err) {
       // Persistence is best-effort — never bubble up. PDIM outages are
       // already handled by the AIMD/coalesce layer; the in-memory state
       // remains the source of truth until PDIM recovers.
-      logger.warn({ err }, `[AutopilotCoordinator] Failed to persist PDIM state for ${userId}`);
+      logger.warn(
+        { err },
+        `[AutopilotCoordinator] Failed to persist PDIM state for ${userId}`,
+      );
     }
   }
 
   constructor() {
     super();
     // Evict stale / over-cap entries every 30 minutes.
-    setInterval(() => {
-      const cutoff = Date.now() - AutopilotCoordinatorService.SYNC_STALE_MS;
-      for (const [uid, lastSync] of this.lastSyncTimes.entries()) {
-        if (lastSync.getTime() < cutoff) {
-          this.scheduleQueue.delete(uid);
-          this.sharedInsights.delete(uid);
-          this.connectedAutopilots.delete(uid);
-          this.lastSyncTimes.delete(uid);
-          this.resetUserPdimTracking(uid);
+    setInterval(
+      () => {
+        const cutoff = Date.now() - AutopilotCoordinatorService.SYNC_STALE_MS;
+        for (const [uid, lastSync] of this.lastSyncTimes.entries()) {
+          if (lastSync.getTime() < cutoff) {
+            this.scheduleQueue.delete(uid);
+            this.sharedInsights.delete(uid);
+            this.connectedAutopilots.delete(uid);
+            this.lastSyncTimes.delete(uid);
+            this.resetUserPdimTracking(uid);
+          }
         }
-      }
-      // Hard cap — drop oldest
-      while (this.connectedAutopilots.size > AutopilotCoordinatorService.MAX_CONNECTED_USERS) {
-        const k = this.connectedAutopilots.keys().next().value;
-        if (k === undefined) break;
-        this.scheduleQueue.delete(k);
-        this.sharedInsights.delete(k);
-        this.connectedAutopilots.delete(k);
-        this.lastSyncTimes.delete(k);
-        this.resetUserPdimTracking(k);
-      }
-    }, 30 * 60 * 1000).unref();
-    logger.info('AutopilotCoordinatorService initialized');
+        // Hard cap — drop oldest
+        while (
+          this.connectedAutopilots.size >
+          AutopilotCoordinatorService.MAX_CONNECTED_USERS
+        ) {
+          const k = this.connectedAutopilots.keys().next().value;
+          if (k === undefined) break;
+          this.scheduleQueue.delete(k);
+          this.sharedInsights.delete(k);
+          this.connectedAutopilots.delete(k);
+          this.lastSyncTimes.delete(k);
+          this.resetUserPdimTracking(k);
+        }
+      },
+      30 * 60 * 1000,
+    ).unref();
+    logger.info("AutopilotCoordinatorService initialized");
   }
 
   connectAutopilot(userId: string, autopilotType: AutopilotType): void {
@@ -236,7 +267,7 @@ class AutopilotCoordinatorService extends EventEmitter {
       this.sharedInsights.set(userId, []);
     }
 
-    this.emit('autopilotConnected', { userId, autopilotType });
+    this.emit("autopilotConnected", { userId, autopilotType });
     logger.info(`Autopilot connected: ${autopilotType} for user ${userId}`);
   }
 
@@ -244,8 +275,10 @@ class AutopilotCoordinatorService extends EventEmitter {
     const userAutopilots = this.connectedAutopilots.get(userId);
     if (userAutopilots) {
       userAutopilots.delete(autopilotType);
-      this.emit('autopilotDisconnected', { userId, autopilotType });
-      logger.info(`Autopilot disconnected: ${autopilotType} for user ${userId}`);
+      this.emit("autopilotDisconnected", { userId, autopilotType });
+      logger.info(
+        `Autopilot disconnected: ${autopilotType} for user ${userId}`,
+      );
     }
   }
 
@@ -257,18 +290,23 @@ class AutopilotCoordinatorService extends EventEmitter {
     userId: string,
     autopilotType: AutopilotType,
     platform: string,
-    preferredTime?: Date
+    preferredTime?: Date,
   ): AvailableSlot {
     const schedule = this.scheduleQueue.get(userId) || [];
     const now = new Date();
-    const searchStart = preferredTime && preferredTime > now ? preferredTime : now;
-    
+    const searchStart =
+      preferredTime && preferredTime > now ? preferredTime : now;
+
     const activePosts = schedule
-      .filter(post => 
-        post.status === 'scheduled' &&
-        new Date(post.scheduledTime) >= now
+      .filter(
+        (post) =>
+          post.status === "scheduled" && new Date(post.scheduledTime) >= now,
       )
-      .sort((a, b) => new Date(a.scheduledTime).getTime() - new Date(b.scheduledTime).getTime());
+      .sort(
+        (a, b) =>
+          new Date(a.scheduledTime).getTime() -
+          new Date(b.scheduledTime).getTime(),
+      );
 
     if (activePosts.length === 0) {
       const suggestedTime = new Date(searchStart.getTime() + 5 * 60 * 1000);
@@ -280,20 +318,25 @@ class AutopilotCoordinatorService extends EventEmitter {
     }
 
     let candidateTime = new Date(searchStart.getTime());
-    
+
     for (const post of activePosts) {
       const postTime = new Date(post.scheduledTime);
       const gapBefore = candidateTime.getTime() - postTime.getTime();
       const gapAfter = postTime.getTime() - candidateTime.getTime();
 
-      if (Math.abs(gapBefore) < MINIMUM_GAP_MS || Math.abs(gapAfter) < MINIMUM_GAP_MS) {
+      if (
+        Math.abs(gapBefore) < MINIMUM_GAP_MS ||
+        Math.abs(gapAfter) < MINIMUM_GAP_MS
+      ) {
         candidateTime = new Date(postTime.getTime() + MINIMUM_GAP_MS);
       }
     }
 
     for (const post of activePosts) {
       const postTime = new Date(post.scheduledTime);
-      if (Math.abs(candidateTime.getTime() - postTime.getTime()) < MINIMUM_GAP_MS) {
+      if (
+        Math.abs(candidateTime.getTime() - postTime.getTime()) < MINIMUM_GAP_MS
+      ) {
         candidateTime = new Date(postTime.getTime() + MINIMUM_GAP_MS);
       }
     }
@@ -310,21 +353,23 @@ class AutopilotCoordinatorService extends EventEmitter {
     autopilotType: AutopilotType,
     platform: string,
     scheduledTime: Date,
-    content?: string
+    content?: string,
   ): ScheduledPost | null {
     if (!this.validateSlot(userId, scheduledTime)) {
-      logger.warn(`Cannot register post: time slot conflict for user ${userId} at ${scheduledTime.toISOString()}`);
+      logger.warn(
+        `Cannot register post: time slot conflict for user ${userId} at ${scheduledTime.toISOString()}`,
+      );
       return null;
     }
 
     const post: ScheduledPost = {
-      id: randomBytes(8).toString('hex'),
+      id: randomBytes(8).toString("hex"),
       userId,
       autopilotType,
       platform,
       scheduledTime,
       content,
-      status: 'scheduled',
+      status: "scheduled",
       createdAt: new Date(),
     };
 
@@ -334,9 +379,11 @@ class AutopilotCoordinatorService extends EventEmitter {
     this.scheduleQueue.get(userId)!.push(post);
 
     this.schedulePersist(userId);
-    this.emit('postRegistered', post);
-    logger.info(`Post registered: ${post.id} for ${autopilotType} on ${platform} at ${scheduledTime.toISOString()}`);
-    
+    this.emit("postRegistered", post);
+    logger.info(
+      `Post registered: ${post.id} for ${autopilotType} on ${platform} at ${scheduledTime.toISOString()}`,
+    );
+
     return post;
   }
 
@@ -345,11 +392,11 @@ class AutopilotCoordinatorService extends EventEmitter {
     const targetTime = scheduledTime.getTime();
 
     for (const post of schedule) {
-      if (post.status !== 'scheduled') continue;
-      
+      if (post.status !== "scheduled") continue;
+
       const postTime = new Date(post.scheduledTime).getTime();
       const gap = Math.abs(targetTime - postTime);
-      
+
       if (gap < MINIMUM_GAP_MS) {
         return false;
       }
@@ -361,18 +408,18 @@ class AutopilotCoordinatorService extends EventEmitter {
   updatePostStatus(
     userId: string,
     postId: string,
-    status: ScheduledPost['status'],
+    status: ScheduledPost["status"],
     postIdExternal?: string,
-    performance?: PostPerformance
+    performance?: PostPerformance,
   ): ScheduledPost | null {
     const schedule = this.scheduleQueue.get(userId);
     if (!schedule) return null;
 
-    const post = schedule.find(p => p.id === postId);
+    const post = schedule.find((p) => p.id === postId);
     if (!post) return null;
 
     post.status = status;
-    if (status === 'posted') {
+    if (status === "posted") {
       post.postedAt = new Date();
       if (postIdExternal) post.postId = postIdExternal;
     }
@@ -381,7 +428,7 @@ class AutopilotCoordinatorService extends EventEmitter {
     }
 
     this.schedulePersist(userId);
-    this.emit('postUpdated', post);
+    this.emit("postUpdated", post);
     return post;
   }
 
@@ -390,42 +437,50 @@ class AutopilotCoordinatorService extends EventEmitter {
     options?: {
       autopilotType?: AutopilotType;
       platform?: string;
-      status?: ScheduledPost['status'];
+      status?: ScheduledPost["status"];
       startDate?: Date;
       endDate?: Date;
-    }
+    },
   ): ScheduledPost[] {
     let schedule = this.scheduleQueue.get(userId) || [];
 
     if (options?.autopilotType) {
-      schedule = schedule.filter(p => p.autopilotType === options.autopilotType);
+      schedule = schedule.filter(
+        (p) => p.autopilotType === options.autopilotType,
+      );
     }
     if (options?.platform) {
-      schedule = schedule.filter(p => p.platform === options.platform);
+      schedule = schedule.filter((p) => p.platform === options.platform);
     }
     if (options?.status) {
-      schedule = schedule.filter(p => p.status === options.status);
+      schedule = schedule.filter((p) => p.status === options.status);
     }
     if (options?.startDate) {
-      schedule = schedule.filter(p => new Date(p.scheduledTime) >= options.startDate!);
+      schedule = schedule.filter(
+        (p) => new Date(p.scheduledTime) >= options.startDate!,
+      );
     }
     if (options?.endDate) {
-      schedule = schedule.filter(p => new Date(p.scheduledTime) <= options.endDate!);
+      schedule = schedule.filter(
+        (p) => new Date(p.scheduledTime) <= options.endDate!,
+      );
     }
 
     return schedule.sort(
-      (a, b) => new Date(a.scheduledTime).getTime() - new Date(b.scheduledTime).getTime()
+      (a, b) =>
+        new Date(a.scheduledTime).getTime() -
+        new Date(b.scheduledTime).getTime(),
     );
   }
 
   shareInsight(
     userId: string,
     sourceAutopilot: AutopilotType,
-    insightType: SharedInsight['insightType'],
-    data: Record<string, any>
+    insightType: SharedInsight["insightType"],
+    data: Record<string, any>,
   ): SharedInsight {
     const insight: SharedInsight = {
-      id: randomBytes(8).toString('hex'),
+      id: randomBytes(8).toString("hex"),
       userId,
       sourceAutopilot,
       insightType,
@@ -440,9 +495,11 @@ class AutopilotCoordinatorService extends EventEmitter {
     this.sharedInsights.get(userId)!.push(insight);
 
     this.schedulePersist(userId);
-    this.emit('insightShared', insight);
-    logger.info(`Insight shared: ${insight.id} from ${sourceAutopilot} (${insightType})`);
-    
+    this.emit("insightShared", insight);
+    logger.info(
+      `Insight shared: ${insight.id} from ${sourceAutopilot} (${insightType})`,
+    );
+
     return insight;
   }
 
@@ -450,21 +507,24 @@ class AutopilotCoordinatorService extends EventEmitter {
     userId: string,
     options?: {
       sourceAutopilot?: AutopilotType;
-      insightType?: SharedInsight['insightType'];
+      insightType?: SharedInsight["insightType"];
       limit?: number;
-    }
+    },
   ): SharedInsight[] {
     let insights = this.sharedInsights.get(userId) || [];
 
     if (options?.sourceAutopilot) {
-      insights = insights.filter(i => i.sourceAutopilot === options.sourceAutopilot);
+      insights = insights.filter(
+        (i) => i.sourceAutopilot === options.sourceAutopilot,
+      );
     }
     if (options?.insightType) {
-      insights = insights.filter(i => i.insightType === options.insightType);
+      insights = insights.filter((i) => i.insightType === options.insightType);
     }
 
     insights = insights.sort(
-      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      (a, b) =>
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
     );
 
     if (options?.limit) {
@@ -474,17 +534,21 @@ class AutopilotCoordinatorService extends EventEmitter {
     return insights;
   }
 
-  applyInsight(userId: string, insightId: string, autopilotType: AutopilotType): boolean {
+  applyInsight(
+    userId: string,
+    insightId: string,
+    autopilotType: AutopilotType,
+  ): boolean {
     const insights = this.sharedInsights.get(userId);
     if (!insights) return false;
 
-    const insight = insights.find(i => i.id === insightId);
+    const insight = insights.find((i) => i.id === insightId);
     if (!insight) return false;
 
     if (!insight.appliedBy.includes(autopilotType)) {
       insight.appliedBy.push(autopilotType);
       this.schedulePersist(userId);
-      this.emit('insightApplied', { insight, appliedBy: autopilotType });
+      this.emit("insightApplied", { insight, appliedBy: autopilotType });
       logger.info(`Insight ${insightId} applied by ${autopilotType}`);
       return true;
     }
@@ -497,36 +561,54 @@ class AutopilotCoordinatorService extends EventEmitter {
     advertisingToSocial: SharedInsight[];
   } {
     const insights = this.sharedInsights.get(userId) || [];
-    
+
     const socialInsights = insights.filter(
-      i => i.sourceAutopilot === 'social' && !i.appliedBy.includes('advertising')
+      (i) =>
+        i.sourceAutopilot === "social" && !i.appliedBy.includes("advertising"),
     );
     const advertisingInsights = insights.filter(
-      i => i.sourceAutopilot === 'advertising' && !i.appliedBy.includes('social')
+      (i) =>
+        i.sourceAutopilot === "advertising" && !i.appliedBy.includes("social"),
     );
 
     for (const insight of socialInsights) {
-      this.applyInsight(userId, insight.id, 'advertising');
+      this.applyInsight(userId, insight.id, "advertising");
     }
     for (const insight of advertisingInsights) {
-      this.applyInsight(userId, insight.id, 'social');
+      this.applyInsight(userId, insight.id, "social");
     }
 
     this.lastSyncTimes.set(userId, new Date());
-    this.emit('insightsSynced', { userId, socialToAdvertising: socialInsights, advertisingToSocial: advertisingInsights });
-    
-    logger.info(`Insights synced for user ${userId}: ${socialInsights.length} social->ad, ${advertisingInsights.length} ad->social`);
+    this.emit("insightsSynced", {
+      userId,
+      socialToAdvertising: socialInsights,
+      advertisingToSocial: advertisingInsights,
+    });
+
+    logger.info(
+      `Insights synced for user ${userId}: ${socialInsights.length} social->ad, ${advertisingInsights.length} ad->social`,
+    );
 
     if (socialInsights.length > 0 && advertisingInsights.length > 0) {
       const totalInsights = socialInsights.length + advertisingInsights.length;
-      notificationService.send({
-        userId,
-        type: 'ad_campaign_milestone',
-        title: '⚡ Autopilot Synergy Detected',
-        message: `Your social and advertising autopilots are amplifying each other — ${totalInsights} cross-channel insights synced. Expect stronger reach and engagement across both channels.`,
-        link: '/campaigns?tab=autopilot',
-        metadata: { socialToAd: socialInsights.length, adToSocial: advertisingInsights.length },
-      }).catch((err) => logger.warn({ err: err }, 'Failed to send autopilot synergy notification:'));
+      notificationService
+        .send({
+          userId,
+          type: "ad_campaign_milestone",
+          title: "⚡ Autopilot Synergy Detected",
+          message: `Your social and advertising autopilots are amplifying each other — ${totalInsights} cross-channel insights synced. Expect stronger reach and engagement across both channels.`,
+          link: "/campaigns?tab=autopilot",
+          metadata: {
+            socialToAd: socialInsights.length,
+            adToSocial: advertisingInsights.length,
+          },
+        })
+        .catch((err) =>
+          logger.warn(
+            { err: err },
+            "Failed to send autopilot synergy notification:",
+          ),
+        );
     }
 
     return {
@@ -539,18 +621,25 @@ class AutopilotCoordinatorService extends EventEmitter {
     const schedule = this.scheduleQueue.get(userId) || [];
     const insights = this.sharedInsights.get(userId) || [];
     const autopilots = this.connectedAutopilots.get(userId) || new Set();
-    
+
     const now = new Date();
     const upcomingPosts = schedule
-      .filter(p => p.status === 'scheduled' && new Date(p.scheduledTime) > now)
-      .sort((a, b) => new Date(a.scheduledTime).getTime() - new Date(b.scheduledTime).getTime())
+      .filter(
+        (p) => p.status === "scheduled" && new Date(p.scheduledTime) > now,
+      )
+      .sort(
+        (a, b) =>
+          new Date(a.scheduledTime).getTime() -
+          new Date(b.scheduledTime).getTime(),
+      )
       .slice(0, 10);
 
     return {
       isActive: autopilots.size > 0,
-      socialAutopilotConnected: autopilots.has('social'),
-      advertisingAutopilotConnected: autopilots.has('advertising'),
-      scheduledPostsCount: schedule.filter(p => p.status === 'scheduled').length,
+      socialAutopilotConnected: autopilots.has("social"),
+      advertisingAutopilotConnected: autopilots.has("advertising"),
+      scheduledPostsCount: schedule.filter((p) => p.status === "scheduled")
+        .length,
       sharedInsightsCount: insights.length,
       lastSyncAt: this.lastSyncTimes.get(userId) || null,
       upcomingPosts,
@@ -559,18 +648,21 @@ class AutopilotCoordinatorService extends EventEmitter {
 
   getOptimalPostingTimes(
     userId: string,
-    platform: string
+    platform: string,
   ): { hour: number; engagementScore: number }[] {
     const insights = this.sharedInsights.get(userId) || [];
-    const timingInsights = insights.filter(i => i.insightType === 'timing');
-    
+    const timingInsights = insights.filter((i) => i.insightType === "timing");
+
     const hourlyScores = new Map<number, { total: number; count: number }>();
-    
+
     for (const insight of timingInsights) {
-      if (insight.data.platform === platform && insight.data.hour !== undefined) {
+      if (
+        insight.data.platform === platform &&
+        insight.data.hour !== undefined
+      ) {
         const hour = insight.data.hour as number;
-        const score = insight.data.engagementScore as number || 1;
-        
+        const score = (insight.data.engagementScore as number) || 1;
+
         const existing = hourlyScores.get(hour) || { total: 0, count: 0 };
         existing.total += score;
         existing.count += 1;
@@ -601,15 +693,16 @@ class AutopilotCoordinatorService extends EventEmitter {
   getPostingConflicts(
     userId: string,
     startDate: Date,
-    endDate: Date
+    endDate: Date,
   ): { time: Date; posts: ScheduledPost[] }[] {
     const schedule = this.scheduleQueue.get(userId) || [];
     const conflicts: { time: Date; posts: ScheduledPost[] }[] = [];
 
     const relevantPosts = schedule.filter(
-      p => p.status === 'scheduled' &&
+      (p) =>
+        p.status === "scheduled" &&
         new Date(p.scheduledTime) >= startDate &&
-        new Date(p.scheduledTime) <= endDate
+        new Date(p.scheduledTime) <= endDate,
     );
 
     for (let i = 0; i < relevantPosts.length; i++) {
@@ -634,12 +727,12 @@ class AutopilotCoordinatorService extends EventEmitter {
     const schedule = this.scheduleQueue.get(userId);
     if (!schedule) return false;
 
-    const post = schedule.find(p => p.id === postId);
-    if (!post || post.status !== 'scheduled') return false;
+    const post = schedule.find((p) => p.id === postId);
+    if (!post || post.status !== "scheduled") return false;
 
-    post.status = 'cancelled';
+    post.status = "cancelled";
     this.schedulePersist(userId);
-    this.emit('postCancelled', post);
+    this.emit("postCancelled", post);
     logger.info(`Post cancelled: ${postId}`);
 
     return true;
@@ -651,7 +744,7 @@ class AutopilotCoordinatorService extends EventEmitter {
 
     const initialCount = schedule.length;
     const filtered = schedule.filter(
-      p => new Date(p.scheduledTime) >= olderThan || p.status === 'scheduled'
+      (p) => new Date(p.scheduledTime) >= olderThan || p.status === "scheduled",
     );
 
     this.scheduleQueue.set(userId, filtered);
@@ -671,14 +764,21 @@ class AutopilotCoordinatorService extends EventEmitter {
     combined: { totalPosts: number; avgEngagement: number };
   } {
     const schedule = this.scheduleQueue.get(userId) || [];
-    const postedItems = schedule.filter(p => p.status === 'posted' && p.performance);
+    const postedItems = schedule.filter(
+      (p) => p.status === "posted" && p.performance,
+    );
 
-    const socialPosts = postedItems.filter(p => p.autopilotType === 'social');
-    const adPosts = postedItems.filter(p => p.autopilotType === 'advertising');
+    const socialPosts = postedItems.filter((p) => p.autopilotType === "social");
+    const adPosts = postedItems.filter(
+      (p) => p.autopilotType === "advertising",
+    );
 
     const calcAvgEngagement = (posts: ScheduledPost[]) => {
       if (posts.length === 0) return 0;
-      const total = posts.reduce((sum, p) => sum + (p.performance?.engagementRate || 0), 0);
+      const total = posts.reduce(
+        (sum, p) => sum + (p.performance?.engagementRate || 0),
+        0,
+      );
       return total / posts.length;
     };
 

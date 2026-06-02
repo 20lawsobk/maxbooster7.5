@@ -1,31 +1,104 @@
-import { storage } from '../storage';
-import { logger } from '../logger';
-import { z } from 'zod';
-import { createHash } from 'crypto';
-import { CircuitBreaker, CircuitBreakerRegistry } from '../services/circuitBreaker';
-import { labelGridService, type LabelGridCatalogRelease } from './labelgrid-service';
-import { DISTRIBUTION_PLATFORMS } from '../seed/distributionPlatforms.js';
+import { storage } from "../storage";
+import { logger } from "../logger";
+import { z } from "zod";
+import { createHash } from "crypto";
+import {
+  CircuitBreaker,
+  CircuitBreakerRegistry,
+} from "../services/circuitBreaker";
+import {
+  labelGridService,
+  type LabelGridCatalogRelease,
+} from "./labelgrid-service";
+import { DISTRIBUTION_PLATFORMS } from "../seed/distributionPlatforms.js";
 
 // ── Timeout-guarded fetch: adds a 15s default signal so no outbound HTTP call
 // can hold the event loop indefinitely.  Per-call signal overrides this default.
-const timedFetch = (url: string | URL | Request, init: RequestInit = {}): Promise<Response> =>
+const timedFetch = (
+  url: string | URL | Request,
+  init: RequestInit = {},
+): Promise<Response> =>
   fetch(url, { signal: AbortSignal.timeout(15_000), ...init });
 
-
 export const SUPPORTED_DISTRIBUTORS = [
-  { id: 'distrokid', name: 'DistroKid', importFormat: 'csv', exportUrl: 'https://distrokid.com/stats/' },
-  { id: 'tunecore', name: 'TuneCore', importFormat: 'csv', exportUrl: 'https://www.tunecore.com/dashboard' },
-  { id: 'cdbaby', name: 'CD Baby', importFormat: 'csv', exportUrl: 'https://members.cdbaby.com/' },
-  { id: 'landr', name: 'LANDR', importFormat: 'csv', exportUrl: 'https://app.landr.com/distribution' },
-  { id: 'ditto', name: 'Ditto Music', importFormat: 'csv', exportUrl: 'https://members.dittomusic.com/' },
-  { id: 'amuse', name: 'Amuse', importFormat: 'csv', exportUrl: 'https://artists.amuse.io/' },
-  { id: 'unitedmasters', name: 'UnitedMasters', importFormat: 'csv', exportUrl: 'https://unitedmasters.com/dashboard' },
-  { id: 'onerpm', name: 'ONErpm', importFormat: 'csv', exportUrl: 'https://onerpm.com/' },
-  { id: 'routenote', name: 'RouteNote', importFormat: 'csv', exportUrl: 'https://routenote.com/account/' },
-  { id: 'believe', name: 'Believe Distribution', importFormat: 'csv', exportUrl: 'https://backstage.believe.com/' },
-  { id: 'symphonic', name: 'Symphonic Distribution', importFormat: 'csv', exportUrl: 'https://portal.symphonic.com/' },
-  { id: 'repost', name: 'Repost by SoundCloud', importFormat: 'csv', exportUrl: 'https://repostnetwork.com/' },
-  { id: 'manual', name: 'Manual Entry', importFormat: 'manual', exportUrl: null },
+  {
+    id: "distrokid",
+    name: "DistroKid",
+    importFormat: "csv",
+    exportUrl: "https://distrokid.com/stats/",
+  },
+  {
+    id: "tunecore",
+    name: "TuneCore",
+    importFormat: "csv",
+    exportUrl: "https://www.tunecore.com/dashboard",
+  },
+  {
+    id: "cdbaby",
+    name: "CD Baby",
+    importFormat: "csv",
+    exportUrl: "https://members.cdbaby.com/",
+  },
+  {
+    id: "landr",
+    name: "LANDR",
+    importFormat: "csv",
+    exportUrl: "https://app.landr.com/distribution",
+  },
+  {
+    id: "ditto",
+    name: "Ditto Music",
+    importFormat: "csv",
+    exportUrl: "https://members.dittomusic.com/",
+  },
+  {
+    id: "amuse",
+    name: "Amuse",
+    importFormat: "csv",
+    exportUrl: "https://artists.amuse.io/",
+  },
+  {
+    id: "unitedmasters",
+    name: "UnitedMasters",
+    importFormat: "csv",
+    exportUrl: "https://unitedmasters.com/dashboard",
+  },
+  {
+    id: "onerpm",
+    name: "ONErpm",
+    importFormat: "csv",
+    exportUrl: "https://onerpm.com/",
+  },
+  {
+    id: "routenote",
+    name: "RouteNote",
+    importFormat: "csv",
+    exportUrl: "https://routenote.com/account/",
+  },
+  {
+    id: "believe",
+    name: "Believe Distribution",
+    importFormat: "csv",
+    exportUrl: "https://backstage.believe.com/",
+  },
+  {
+    id: "symphonic",
+    name: "Symphonic Distribution",
+    importFormat: "csv",
+    exportUrl: "https://portal.symphonic.com/",
+  },
+  {
+    id: "repost",
+    name: "Repost by SoundCloud",
+    importFormat: "csv",
+    exportUrl: "https://repostnetwork.com/",
+  },
+  {
+    id: "manual",
+    name: "Manual Entry",
+    importFormat: "manual",
+    exportUrl: null,
+  },
 ] as const;
 
 /**
@@ -40,108 +113,139 @@ export const SUPPORTED_DISTRIBUTORS = [
  *
  * scannerAlias — redirect to another scanner key (e.g. 'itunes' → 'apple_music')
  */
-const PLATFORM_SCANNER_CONFIG: Record<string, {
-  profileType: string;
-  syncMethod: 'api' | 'scrape' | 'proxy' | 'manual';
-  scannerAlias?: string;
-}> = {
-  'spotify':               { profileType: 'spotify_artist_id',       syncMethod: 'api' },
-  'apple-music':           { profileType: 'apple_artist_id',         syncMethod: 'api',    scannerAlias: 'apple_music' },
-  'itunes':                { profileType: 'apple_artist_id',         syncMethod: 'api',    scannerAlias: 'apple_music' },
-  'amazon-music':          { profileType: 'amazon_artist_asin',      syncMethod: 'proxy' },
-  'tidal':                 { profileType: 'tidal_artist_id',         syncMethod: 'proxy' },
-  'deezer':                { profileType: 'deezer_artist_id',        syncMethod: 'api' },
-  'youtube-music':         { profileType: 'youtube_channel_id',      syncMethod: 'proxy' },
-  'pandora':               { profileType: 'pandora_artist_id',       syncMethod: 'proxy' },
-  'iheartradio':           { profileType: 'iheartradio_artist_id',   syncMethod: 'proxy' },
-  'napster':               { profileType: 'napster_artist_id',       syncMethod: 'proxy' },
-  'beatport':              { profileType: 'beatport_artist_id',      syncMethod: 'manual' },
-  'juno-download':         { profileType: 'juno_artist_id',          syncMethod: 'manual' },
-  'bandcamp':              { profileType: 'bandcamp_url',            syncMethod: 'scrape' },
-  'soundcloud':            { profileType: 'soundcloud_permalink',    syncMethod: 'api' },
-  'audiomack':             { profileType: 'audiomack_url',           syncMethod: 'api' },
-  'traxsource':            { profileType: 'traxsource_artist_id',    syncMethod: 'manual' },
-  'netease-cloud-music':   { profileType: 'netease_artist_id',       syncMethod: 'proxy' },
-  'qq-music':              { profileType: 'qq_artist_id',            syncMethod: 'proxy' },
-  'kugou':                 { profileType: 'kugou_artist_id',         syncMethod: 'proxy' },
-  'kuwo':                  { profileType: 'kuwo_artist_id',          syncMethod: 'proxy' },
-  'kuaishou':              { profileType: 'kuaishou_artist_id',      syncMethod: 'proxy' },
-  'jiosaavn':              { profileType: 'jiosaavn_artist_id',      syncMethod: 'proxy' },
-  'saavn':                 { profileType: 'saavn_artist_id',         syncMethod: 'proxy' },
-  'gaana':                 { profileType: 'gaana_artist_id',         syncMethod: 'proxy' },
-  'anghami':               { profileType: 'anghami_artist_id',       syncMethod: 'proxy' },
-  'boomplay':              { profileType: 'boomplay_artist_id',      syncMethod: 'proxy' },
-  'joox':                  { profileType: 'joox_artist_id',          syncMethod: 'proxy' },
-  'kkbox':                 { profileType: 'kkbox_artist_id',         syncMethod: 'proxy' },
-  'awa':                   { profileType: 'awa_artist_id',           syncMethod: 'proxy' },
-  'flo':                   { profileType: 'flo_artist_id',           syncMethod: 'proxy' },
-  'melon':                 { profileType: 'melon_artist_id',         syncMethod: 'proxy' },
-  'yandex-music':          { profileType: 'yandex_artist_id',        syncMethod: 'proxy' },
-  'vk-music':              { profileType: 'vk_artist_id',            syncMethod: 'proxy' },
-  'claro-musica':          { profileType: 'claro_artist_id',         syncMethod: 'proxy' },
-  'trebel':                { profileType: 'trebel_artist_id',        syncMethod: 'proxy' },
-  'tiktok':                { profileType: 'tiktok_unique_id',        syncMethod: 'manual' },
-  'meta-library':          { profileType: 'meta_page_id',            syncMethod: 'manual' },
-  'instagram':             { profileType: 'instagram_handle',        syncMethod: 'manual' },
-  'facebook':              { profileType: 'facebook_page_id',        syncMethod: 'manual' },
-  'snapchat':              { profileType: 'snapchat_handle',         syncMethod: 'manual' },
-  'youtube-content-id':    { profileType: 'youtube_channel_id',      syncMethod: 'manual' },
-  'twitch':                { profileType: 'twitch_channel',          syncMethod: 'manual' },
-  'soundexchange':         { profileType: 'soundexchange_id',        syncMethod: 'manual' },
-  'peloton':               { profileType: 'peloton_artist_id',       syncMethod: 'proxy' },
-  'soundtrack-your-brand': { profileType: 'syb_artist_id',           syncMethod: 'proxy' },
-  'pretzel-rocks':         { profileType: 'pretzel_artist_id',       syncMethod: 'proxy' },
-  'roblox':                { profileType: 'roblox_creator_id',       syncMethod: 'manual' },
-  'amazon-mp3':            { profileType: 'amazon_artist_asin',      syncMethod: 'proxy' },
-  '7digital':              { profileType: '7digital_artist_id',      syncMethod: 'proxy' },
-  'qobuz':                 { profileType: 'qobuz_artist_id',         syncMethod: 'proxy' },
-  'medianet':              { profileType: 'medianet_artist_id',      syncMethod: 'proxy' },
-  'gracenote':             { profileType: 'gracenote_artist_id',     syncMethod: 'manual' },
-  'shazam':                { profileType: 'shazam_artist_id',        syncMethod: 'proxy' },
-  'tencent-music':         { profileType: 'tencent_artist_id',       syncMethod: 'proxy' },
-  'luna':                  { profileType: 'luna_artist_id',          syncMethod: 'proxy' },
-  'capcut':                { profileType: 'capcut_creator_id',       syncMethod: 'manual' },
-  'wesing':                { profileType: 'wesing_artist_id',        syncMethod: 'proxy' },
-  'ultimate-music':        { profileType: 'ultimate_artist_id',      syncMethod: 'proxy' },
-  'bilibili':              { profileType: 'bilibili_uid',            syncMethod: 'proxy' },
-  'tencent-video':         { profileType: 'tencent_video_id',        syncMethod: 'proxy' },
-  'iqiyi':                 { profileType: 'iqiyi_artist_id',         syncMethod: 'proxy' },
-  'siri':                  { profileType: 'apple_artist_id',         syncMethod: 'proxy', scannerAlias: 'apple_music' },
-  'vevo':                  { profileType: 'vevo_artist_id',          syncMethod: 'proxy' },
-  'kuack-media':           { profileType: 'kuack_artist_id',         syncMethod: 'proxy' },
-  'bugs':                  { profileType: 'bugs_artist_id',          syncMethod: 'proxy' },
-  'genie':                 { profileType: 'genie_artist_id',         syncMethod: 'proxy' },
-  'vibe':                  { profileType: 'vibe_artist_id',          syncMethod: 'proxy' },
-  'line-music':            { profileType: 'line_artist_id',          syncMethod: 'proxy' },
-  'rakuten-music':         { profileType: 'rakuten_artist_id',       syncMethod: 'proxy' },
-  'mora':                  { profileType: 'mora_artist_id',          syncMethod: 'proxy' },
-  'recochoku':             { profileType: 'recochoku_artist_id',     syncMethod: 'proxy' },
-  'nuuday':                { profileType: 'nuuday_artist_id',        syncMethod: 'proxy' },
-  'zvuk':                  { profileType: 'zvuk_artist_id',          syncMethod: 'proxy' },
-  'livexlive':             { profileType: 'livexlive_artist_id',     syncMethod: 'proxy' },
-  'mixcloud':              { profileType: 'mixcloud_username',        syncMethod: 'proxy' },
-  'resso':                 { profileType: 'resso_artist_id',         syncMethod: 'proxy' },
-  'uma':                   { profileType: 'uma_artist_id',           syncMethod: 'proxy' },
-  'touchtunes':            { profileType: 'touchtunes_artist_id',    syncMethod: 'proxy' },
-  'tim-music':             { profileType: 'tim_artist_id',           syncMethod: 'proxy' },
-  'wynk':                  { profileType: 'wynk_artist_id',          syncMethod: 'proxy' },
-  'hungama':               { profileType: 'hungama_artist_id',       syncMethod: 'proxy' },
-  'mdundo':                { profileType: 'mdundo_artist_id',        syncMethod: 'proxy' },
-  'udux':                  { profileType: 'udux_artist_id',          syncMethod: 'proxy' },
-  'amazon-alexa':          { profileType: 'amazon_artist_asin',      syncMethod: 'proxy' },
-  'google-assistant':      { profileType: 'google_artist_id',        syncMethod: 'proxy' },
-  'apple-fitness-plus':    { profileType: 'apple_artist_id',         syncMethod: 'proxy', scannerAlias: 'apple_music' },
-  'feed-fm':               { profileType: 'feedfm_artist_id',        syncMethod: 'proxy' },
-  'epidemic-sound':        { profileType: 'epidemic_artist_id',      syncMethod: 'proxy' },
-  'fortnite':              { profileType: 'fortnite_creator_id',     syncMethod: 'manual' },
-  'dj-city':               { profileType: 'djcity_artist_id',        syncMethod: 'manual' },
-  'bpm-supreme':           { profileType: 'bpm_artist_id',           syncMethod: 'manual' },
-  'digital-dj-pool':       { profileType: 'digitaldj_artist_id',     syncMethod: 'manual' },
-  'dubset':                { profileType: 'dubset_artist_id',        syncMethod: 'manual' },
-  'emusic':                { profileType: 'emusic_artist_id',        syncMethod: 'proxy' },
-  'hdtracks':              { profileType: 'hdtracks_artist_id',      syncMethod: 'proxy' },
-  'primephonic':           { profileType: 'primephonic_artist_id',   syncMethod: 'proxy' },
-  'idagio':                { profileType: 'idagio_artist_id',        syncMethod: 'proxy' },
+const PLATFORM_SCANNER_CONFIG: Record<
+  string,
+  {
+    profileType: string;
+    syncMethod: "api" | "scrape" | "proxy" | "manual";
+    scannerAlias?: string;
+  }
+> = {
+  spotify: { profileType: "spotify_artist_id", syncMethod: "api" },
+  "apple-music": {
+    profileType: "apple_artist_id",
+    syncMethod: "api",
+    scannerAlias: "apple_music",
+  },
+  itunes: {
+    profileType: "apple_artist_id",
+    syncMethod: "api",
+    scannerAlias: "apple_music",
+  },
+  "amazon-music": { profileType: "amazon_artist_asin", syncMethod: "proxy" },
+  tidal: { profileType: "tidal_artist_id", syncMethod: "proxy" },
+  deezer: { profileType: "deezer_artist_id", syncMethod: "api" },
+  "youtube-music": { profileType: "youtube_channel_id", syncMethod: "proxy" },
+  pandora: { profileType: "pandora_artist_id", syncMethod: "proxy" },
+  iheartradio: { profileType: "iheartradio_artist_id", syncMethod: "proxy" },
+  napster: { profileType: "napster_artist_id", syncMethod: "proxy" },
+  beatport: { profileType: "beatport_artist_id", syncMethod: "manual" },
+  "juno-download": { profileType: "juno_artist_id", syncMethod: "manual" },
+  bandcamp: { profileType: "bandcamp_url", syncMethod: "scrape" },
+  soundcloud: { profileType: "soundcloud_permalink", syncMethod: "api" },
+  audiomack: { profileType: "audiomack_url", syncMethod: "api" },
+  traxsource: { profileType: "traxsource_artist_id", syncMethod: "manual" },
+  "netease-cloud-music": {
+    profileType: "netease_artist_id",
+    syncMethod: "proxy",
+  },
+  "qq-music": { profileType: "qq_artist_id", syncMethod: "proxy" },
+  kugou: { profileType: "kugou_artist_id", syncMethod: "proxy" },
+  kuwo: { profileType: "kuwo_artist_id", syncMethod: "proxy" },
+  kuaishou: { profileType: "kuaishou_artist_id", syncMethod: "proxy" },
+  jiosaavn: { profileType: "jiosaavn_artist_id", syncMethod: "proxy" },
+  saavn: { profileType: "saavn_artist_id", syncMethod: "proxy" },
+  gaana: { profileType: "gaana_artist_id", syncMethod: "proxy" },
+  anghami: { profileType: "anghami_artist_id", syncMethod: "proxy" },
+  boomplay: { profileType: "boomplay_artist_id", syncMethod: "proxy" },
+  joox: { profileType: "joox_artist_id", syncMethod: "proxy" },
+  kkbox: { profileType: "kkbox_artist_id", syncMethod: "proxy" },
+  awa: { profileType: "awa_artist_id", syncMethod: "proxy" },
+  flo: { profileType: "flo_artist_id", syncMethod: "proxy" },
+  melon: { profileType: "melon_artist_id", syncMethod: "proxy" },
+  "yandex-music": { profileType: "yandex_artist_id", syncMethod: "proxy" },
+  "vk-music": { profileType: "vk_artist_id", syncMethod: "proxy" },
+  "claro-musica": { profileType: "claro_artist_id", syncMethod: "proxy" },
+  trebel: { profileType: "trebel_artist_id", syncMethod: "proxy" },
+  tiktok: { profileType: "tiktok_unique_id", syncMethod: "manual" },
+  "meta-library": { profileType: "meta_page_id", syncMethod: "manual" },
+  instagram: { profileType: "instagram_handle", syncMethod: "manual" },
+  facebook: { profileType: "facebook_page_id", syncMethod: "manual" },
+  snapchat: { profileType: "snapchat_handle", syncMethod: "manual" },
+  "youtube-content-id": {
+    profileType: "youtube_channel_id",
+    syncMethod: "manual",
+  },
+  twitch: { profileType: "twitch_channel", syncMethod: "manual" },
+  soundexchange: { profileType: "soundexchange_id", syncMethod: "manual" },
+  peloton: { profileType: "peloton_artist_id", syncMethod: "proxy" },
+  "soundtrack-your-brand": {
+    profileType: "syb_artist_id",
+    syncMethod: "proxy",
+  },
+  "pretzel-rocks": { profileType: "pretzel_artist_id", syncMethod: "proxy" },
+  roblox: { profileType: "roblox_creator_id", syncMethod: "manual" },
+  "amazon-mp3": { profileType: "amazon_artist_asin", syncMethod: "proxy" },
+  "7digital": { profileType: "7digital_artist_id", syncMethod: "proxy" },
+  qobuz: { profileType: "qobuz_artist_id", syncMethod: "proxy" },
+  medianet: { profileType: "medianet_artist_id", syncMethod: "proxy" },
+  gracenote: { profileType: "gracenote_artist_id", syncMethod: "manual" },
+  shazam: { profileType: "shazam_artist_id", syncMethod: "proxy" },
+  "tencent-music": { profileType: "tencent_artist_id", syncMethod: "proxy" },
+  luna: { profileType: "luna_artist_id", syncMethod: "proxy" },
+  capcut: { profileType: "capcut_creator_id", syncMethod: "manual" },
+  wesing: { profileType: "wesing_artist_id", syncMethod: "proxy" },
+  "ultimate-music": { profileType: "ultimate_artist_id", syncMethod: "proxy" },
+  bilibili: { profileType: "bilibili_uid", syncMethod: "proxy" },
+  "tencent-video": { profileType: "tencent_video_id", syncMethod: "proxy" },
+  iqiyi: { profileType: "iqiyi_artist_id", syncMethod: "proxy" },
+  siri: {
+    profileType: "apple_artist_id",
+    syncMethod: "proxy",
+    scannerAlias: "apple_music",
+  },
+  vevo: { profileType: "vevo_artist_id", syncMethod: "proxy" },
+  "kuack-media": { profileType: "kuack_artist_id", syncMethod: "proxy" },
+  bugs: { profileType: "bugs_artist_id", syncMethod: "proxy" },
+  genie: { profileType: "genie_artist_id", syncMethod: "proxy" },
+  vibe: { profileType: "vibe_artist_id", syncMethod: "proxy" },
+  "line-music": { profileType: "line_artist_id", syncMethod: "proxy" },
+  "rakuten-music": { profileType: "rakuten_artist_id", syncMethod: "proxy" },
+  mora: { profileType: "mora_artist_id", syncMethod: "proxy" },
+  recochoku: { profileType: "recochoku_artist_id", syncMethod: "proxy" },
+  nuuday: { profileType: "nuuday_artist_id", syncMethod: "proxy" },
+  zvuk: { profileType: "zvuk_artist_id", syncMethod: "proxy" },
+  livexlive: { profileType: "livexlive_artist_id", syncMethod: "proxy" },
+  mixcloud: { profileType: "mixcloud_username", syncMethod: "proxy" },
+  resso: { profileType: "resso_artist_id", syncMethod: "proxy" },
+  uma: { profileType: "uma_artist_id", syncMethod: "proxy" },
+  touchtunes: { profileType: "touchtunes_artist_id", syncMethod: "proxy" },
+  "tim-music": { profileType: "tim_artist_id", syncMethod: "proxy" },
+  wynk: { profileType: "wynk_artist_id", syncMethod: "proxy" },
+  hungama: { profileType: "hungama_artist_id", syncMethod: "proxy" },
+  mdundo: { profileType: "mdundo_artist_id", syncMethod: "proxy" },
+  udux: { profileType: "udux_artist_id", syncMethod: "proxy" },
+  "amazon-alexa": { profileType: "amazon_artist_asin", syncMethod: "proxy" },
+  "google-assistant": { profileType: "google_artist_id", syncMethod: "proxy" },
+  "apple-fitness-plus": {
+    profileType: "apple_artist_id",
+    syncMethod: "proxy",
+    scannerAlias: "apple_music",
+  },
+  "feed-fm": { profileType: "feedfm_artist_id", syncMethod: "proxy" },
+  "epidemic-sound": { profileType: "epidemic_artist_id", syncMethod: "proxy" },
+  fortnite: { profileType: "fortnite_creator_id", syncMethod: "manual" },
+  "dj-city": { profileType: "djcity_artist_id", syncMethod: "manual" },
+  "bpm-supreme": { profileType: "bpm_artist_id", syncMethod: "manual" },
+  "digital-dj-pool": {
+    profileType: "digitaldj_artist_id",
+    syncMethod: "manual",
+  },
+  dubset: { profileType: "dubset_artist_id", syncMethod: "manual" },
+  emusic: { profileType: "emusic_artist_id", syncMethod: "proxy" },
+  hdtracks: { profileType: "hdtracks_artist_id", syncMethod: "proxy" },
+  primephonic: { profileType: "primephonic_artist_id", syncMethod: "proxy" },
+  idagio: { profileType: "idagio_artist_id", syncMethod: "proxy" },
 };
 
 /**
@@ -159,22 +263,22 @@ const PLATFORM_SCANNER_CONFIG: Record<string, {
  *   region       — 'global' | 'north_america' | 'asia' | etc.
  *   scannerAlias — if set, delegates to another scanner (e.g. iTunes for 'siri')
  */
-export const STREAMING_PLATFORMS = DISTRIBUTION_PLATFORMS.map(p => {
+export const STREAMING_PLATFORMS = DISTRIBUTION_PLATFORMS.map((p) => {
   const cfg = PLATFORM_SCANNER_CONFIG[p.slug] ?? {
-    profileType: `${p.slug.replace(/-/g, '_')}_artist_id`,
-    syncMethod: 'proxy' as const,
+    profileType: `${p.slug.replace(/-/g, "_")}_artist_id`,
+    syncMethod: "proxy" as const,
   };
   const meta = p.metadata as Record<string, unknown>;
   return {
-    id:               p.slug.replace(/-/g, '_'),
-    slug:             p.slug,
-    name:             p.name,
-    profileType:      cfg.profileType,
-    apiSupported:     cfg.syncMethod !== 'manual',
-    syncMethod:       cfg.syncMethod,
-    scannerAvailable: cfg.syncMethod !== 'manual',
-    category:         (meta?.category ?? 'streaming') as string,
-    region:           (meta?.region   ?? 'global')    as string,
+    id: p.slug.replace(/-/g, "_"),
+    slug: p.slug,
+    name: p.name,
+    profileType: cfg.profileType,
+    apiSupported: cfg.syncMethod !== "manual",
+    syncMethod: cfg.syncMethod,
+    scannerAvailable: cfg.syncMethod !== "manual",
+    category: (meta?.category ?? "streaming") as string,
+    region: (meta?.region ?? "global") as string,
     ...(cfg.scannerAlias ? { scannerAlias: cfg.scannerAlias } : {}),
   };
 });
@@ -182,7 +286,7 @@ export const STREAMING_PLATFORMS = DISTRIBUTION_PLATFORMS.map(p => {
 export interface ImportedRelease {
   title: string;
   artistName: string;
-  releaseType: 'single' | 'EP' | 'album';
+  releaseType: "single" | "EP" | "album";
   releaseDate: string | null;
   upc?: string;
   isrc?: string;
@@ -223,8 +327,8 @@ export interface StreamingProfileData {
   bio?: string;
   socialLinks?: Record<string, string>;
   lastSyncedAt?: string;
-  lastSyncStatus?: 'success' | 'failed' | 'partial';
-  lastSyncMethod?: 'auto' | 'manual' | 'api';
+  lastSyncStatus?: "success" | "failed" | "partial";
+  lastSyncMethod?: "auto" | "manual" | "api";
   syncCount?: number;
   consecutiveFailures?: number;
   autoSyncEnabled?: boolean;
@@ -234,7 +338,7 @@ export interface ScannedRelease {
   id: string;
   title: string;
   artistName: string;
-  releaseType: 'single' | 'EP' | 'album';
+  releaseType: "single" | "EP" | "album";
   releaseDate: string | null;
   trackCount: number;
   coverUrl?: string;
@@ -254,9 +358,9 @@ export interface ScannedRelease {
 export interface DataTransferJob {
   id: string;
   userId: string;
-  type: 'import' | 'sync';
+  type: "import" | "sync";
   source: string;
-  status: 'pending' | 'processing' | 'completed' | 'failed' | 'partial';
+  status: "pending" | "processing" | "completed" | "failed" | "partial";
   progress: number;
   totalItems: number;
   processedItems: number;
@@ -276,7 +380,7 @@ export interface DataTransferJob {
 
 interface SyncResult {
   platformId: string;
-  status: 'success' | 'failed';
+  status: "success" | "failed";
   error?: string;
   timestamp: string;
 }
@@ -285,7 +389,7 @@ interface SyncHistoryEntry {
   syncId: string;
   userId: string;
   timestamp: string;
-  method: 'auto' | 'manual';
+  method: "auto" | "manual";
   results: SyncResult[];
   summary: { total: number; succeeded: number; failed: number };
 }
@@ -300,31 +404,36 @@ interface AutoSyncState {
 const importedReleaseSchema = z.object({
   title: z.string().min(1),
   artistName: z.string().min(1),
-  releaseType: z.enum(['single', 'EP', 'album']).default('single'),
+  releaseType: z.enum(["single", "EP", "album"]).default("single"),
   releaseDate: z.string().nullable().optional(),
   upc: z.string().optional(),
   genre: z.string().optional(),
   label: z.string().optional(),
-  tracks: z.array(z.object({
-    title: z.string(),
-    trackNumber: z.number().int().positive(),
-    isrc: z.string().optional(),
-    duration: z.number().optional(),
-    explicit: z.boolean().optional(),
-  })).default([]),
+  tracks: z
+    .array(
+      z.object({
+        title: z.string(),
+        trackNumber: z.number().int().positive(),
+        isrc: z.string().optional(),
+        duration: z.number().optional(),
+        explicit: z.boolean().optional(),
+      }),
+    )
+    .default([]),
   platformLinks: z.record(z.string()).optional(),
   originalDistributor: z.string(),
 });
 
 function deterministicNumber(seed: string, max: number): number {
-  const hash = createHash('sha256').update(seed).digest('hex');
+  const hash = createHash("sha256").update(seed).digest("hex");
   const value = parseInt(hash.substring(0, 8), 16);
   return value % max;
 }
 
 class DistributionDataTransferService {
   private jobs: Map<string, DataTransferJob> = new Map();
-  private linkedProfiles: Map<string, Map<string, StreamingProfileData>> = new Map();
+  private linkedProfiles: Map<string, Map<string, StreamingProfileData>> =
+    new Map();
   private autoSyncStates: Map<string, AutoSyncState> = new Map();
   private syncHistory: Map<string, SyncHistoryEntry[]> = new Map();
   private circuitBreakers: Map<string, CircuitBreaker> = new Map();
@@ -338,47 +447,70 @@ class DistributionDataTransferService {
   private static readonly JOB_TTL_MS = 48 * 60 * 60 * 1000; // 48 h
 
   constructor() {
-    logger.info('[DataTransfer] Distribution data transfer service initialized');
+    logger.info(
+      "[DataTransfer] Distribution data transfer service initialized",
+    );
     this.initCircuitBreakers();
     this.startMemoryCleanup();
   }
 
   private startMemoryCleanup(): void {
     // Run hourly; evict stale jobs and inactive user profile entries.
-    setInterval(() => {
-      const now = Date.now();
+    setInterval(
+      () => {
+        const now = Date.now();
 
-      // 1. Evict jobs older than 48 h (completed or abandoned).
-      for (const [jobId, job] of this.jobs) {
-        if (now - job.createdAt.getTime() > DistributionDataTransferService.JOB_TTL_MS) {
-          this.jobs.delete(jobId);
-        }
-      }
-      // Safety valve: if still over cap after TTL eviction, drop oldest.
-      while (this.jobs.size > DistributionDataTransferService.MAX_JOBS) {
-        const oldest = this.jobs.keys().next().value;
-        if (oldest !== undefined) this.jobs.delete(oldest); else break;
-      }
-
-      // 2. Evict linkedProfiles + syncHistory for users over the cap.
-      // Users with active autoSync are exempt from eviction.
-      if (this.linkedProfiles.size > DistributionDataTransferService.MAX_LINKED_USERS) {
-        const overflow = this.linkedProfiles.size - DistributionDataTransferService.MAX_LINKED_USERS;
-        let evicted = 0;
-        for (const userId of this.linkedProfiles.keys()) {
-          if (evicted >= overflow) break;
-          if (!this.autoSyncStates.has(userId)) {
-            this.linkedProfiles.delete(userId);
-            this.syncHistory.delete(userId);
-            evicted++;
+        // 1. Evict jobs older than 48 h (completed or abandoned).
+        for (const [jobId, job] of this.jobs) {
+          if (
+            now - job.createdAt.getTime() >
+            DistributionDataTransferService.JOB_TTL_MS
+          ) {
+            this.jobs.delete(jobId);
           }
         }
-      }
-    }, 60 * 60 * 1000);
+        // Safety valve: if still over cap after TTL eviction, drop oldest.
+        while (this.jobs.size > DistributionDataTransferService.MAX_JOBS) {
+          const oldest = this.jobs.keys().next().value;
+          if (oldest !== undefined) this.jobs.delete(oldest);
+          else break;
+        }
+
+        // 2. Evict linkedProfiles + syncHistory for users over the cap.
+        // Users with active autoSync are exempt from eviction.
+        if (
+          this.linkedProfiles.size >
+          DistributionDataTransferService.MAX_LINKED_USERS
+        ) {
+          const overflow =
+            this.linkedProfiles.size -
+            DistributionDataTransferService.MAX_LINKED_USERS;
+          let evicted = 0;
+          for (const userId of this.linkedProfiles.keys()) {
+            if (evicted >= overflow) break;
+            if (!this.autoSyncStates.has(userId)) {
+              this.linkedProfiles.delete(userId);
+              this.syncHistory.delete(userId);
+              evicted++;
+            }
+          }
+        }
+      },
+      60 * 60 * 1000,
+    );
   }
 
   private initCircuitBreakers(): void {
-    const platforms = ['spotify', 'apple_music', 'youtube_music', 'deezer', 'soundcloud', 'tidal', 'bandcamp', 'audiomack'];
+    const platforms = [
+      "spotify",
+      "apple_music",
+      "youtube_music",
+      "deezer",
+      "soundcloud",
+      "tidal",
+      "bandcamp",
+      "audiomack",
+    ];
     for (const platform of platforms) {
       const breaker = new CircuitBreaker({
         name: `streaming-${platform}`,
@@ -405,15 +537,19 @@ class DistributionDataTransferService {
     return STREAMING_PLATFORMS;
   }
 
-  async createTransferJob(userId: string, type: 'import' | 'sync', source: string): Promise<DataTransferJob> {
-    const jobId = `transfer_${Date.now()}_${createHash('md5').update(`${userId}-${Date.now()}`).digest('hex').substring(0, 7)}`;
-    
+  async createTransferJob(
+    userId: string,
+    type: "import" | "sync",
+    source: string,
+  ): Promise<DataTransferJob> {
+    const jobId = `transfer_${Date.now()}_${createHash("md5").update(`${userId}-${Date.now()}`).digest("hex").substring(0, 7)}`;
+
     const job: DataTransferJob = {
       id: jobId,
       userId,
       type,
       source,
-      status: 'pending',
+      status: "pending",
       progress: 0,
       totalItems: 0,
       processedItems: 0,
@@ -423,10 +559,12 @@ class DistributionDataTransferService {
       createdAt: new Date(),
       updatedAt: new Date(),
     };
-    
+
     this.jobs.set(jobId, job);
-    logger.info(`[DataTransfer] Created ${type} job ${jobId} for user ${userId} from ${source}`);
-    
+    logger.info(
+      `[DataTransfer] Created ${type} job ${jobId} for user ${userId} from ${source}`,
+    );
+
     return job;
   }
 
@@ -436,194 +574,205 @@ class DistributionDataTransferService {
 
   async getUserTransferJobs(userId: string): Promise<DataTransferJob[]> {
     const userJobs: DataTransferJob[] = [];
-    this.jobs.forEach(job => {
+    this.jobs.forEach((job) => {
       if (job.userId === userId) {
         userJobs.push(job);
       }
     });
-    return userJobs.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+    return userJobs.sort(
+      (a, b) => b.createdAt.getTime() - a.createdAt.getTime(),
+    );
   }
 
-  async parseDistributorCSV(csvContent: string, distributor: string): Promise<ImportedRelease[]> {
+  async parseDistributorCSV(
+    csvContent: string,
+    distributor: string,
+  ): Promise<ImportedRelease[]> {
     const releases: ImportedRelease[] = [];
-    const lines = csvContent.split('\n').filter(line => line.trim());
-    
+    const lines = csvContent.split("\n").filter((line) => line.trim());
+
     if (lines.length < 2) {
-      throw new Error('CSV file is empty or has no data rows');
+      throw new Error("CSV file is empty or has no data rows");
     }
-    
-    const headers = lines[0].split(',').map(h => h.trim().toLowerCase().replace(/['"]/g, ''));
-    
+
+    const headers = lines[0]
+      .split(",")
+      .map((h) => h.trim().toLowerCase().replace(/['"]/g, ""));
+
     const columnMappings: Record<string, Record<string, string>> = {
       distrokid: {
-        title: 'title',
-        artist: 'artist',
-        album: 'album',
-        upc: 'upc',
-        isrc: 'isrc',
-        release_date: 'date',
-        streams: 'streams',
-        revenue: 'earnings',
+        title: "title",
+        artist: "artist",
+        album: "album",
+        upc: "upc",
+        isrc: "isrc",
+        release_date: "date",
+        streams: "streams",
+        revenue: "earnings",
       },
       tunecore: {
-        title: 'song name',
-        artist: 'artist name',
-        album: 'album name',
-        upc: 'upc',
-        isrc: 'isrc',
-        release_date: 'release date',
-        streams: 'streams',
-        revenue: 'net earnings',
+        title: "song name",
+        artist: "artist name",
+        album: "album name",
+        upc: "upc",
+        isrc: "isrc",
+        release_date: "release date",
+        streams: "streams",
+        revenue: "net earnings",
       },
       cdbaby: {
-        title: 'track title',
-        artist: 'artist',
-        album: 'album title',
-        upc: 'upc',
-        isrc: 'isrc',
-        release_date: 'date',
-        streams: 'units',
-        revenue: 'earnings',
+        title: "track title",
+        artist: "artist",
+        album: "album title",
+        upc: "upc",
+        isrc: "isrc",
+        release_date: "date",
+        streams: "units",
+        revenue: "earnings",
       },
       landr: {
-        title: 'track',
-        artist: 'artist',
-        album: 'release',
-        upc: 'upc',
-        isrc: 'isrc',
-        release_date: 'release date',
-        streams: 'streams',
-        revenue: 'revenue',
+        title: "track",
+        artist: "artist",
+        album: "release",
+        upc: "upc",
+        isrc: "isrc",
+        release_date: "release date",
+        streams: "streams",
+        revenue: "revenue",
       },
       ditto: {
-        title: 'track title',
-        artist: 'artist name',
-        album: 'release title',
-        upc: 'upc',
-        isrc: 'isrc',
-        release_date: 'release date',
-        streams: 'streams',
-        revenue: 'earnings',
+        title: "track title",
+        artist: "artist name",
+        album: "release title",
+        upc: "upc",
+        isrc: "isrc",
+        release_date: "release date",
+        streams: "streams",
+        revenue: "earnings",
       },
       amuse: {
-        title: 'track',
-        artist: 'artist',
-        album: 'album',
-        upc: 'upc',
-        isrc: 'isrc',
-        release_date: 'date',
-        streams: 'streams',
-        revenue: 'revenue',
+        title: "track",
+        artist: "artist",
+        album: "album",
+        upc: "upc",
+        isrc: "isrc",
+        release_date: "date",
+        streams: "streams",
+        revenue: "revenue",
       },
       unitedmasters: {
-        title: 'song',
-        artist: 'artist',
-        album: 'project',
-        upc: 'upc',
-        isrc: 'isrc',
-        release_date: 'release date',
-        streams: 'plays',
-        revenue: 'earnings',
+        title: "song",
+        artist: "artist",
+        album: "project",
+        upc: "upc",
+        isrc: "isrc",
+        release_date: "release date",
+        streams: "plays",
+        revenue: "earnings",
       },
       onerpm: {
-        title: 'track title',
-        artist: 'artist',
-        album: 'album title',
-        upc: 'upc',
-        isrc: 'isrc',
-        release_date: 'release date',
-        streams: 'quantity',
-        revenue: 'net revenue',
+        title: "track title",
+        artist: "artist",
+        album: "album title",
+        upc: "upc",
+        isrc: "isrc",
+        release_date: "release date",
+        streams: "quantity",
+        revenue: "net revenue",
       },
       routenote: {
-        title: 'title',
-        artist: 'artist',
-        album: 'release',
-        upc: 'upc',
-        isrc: 'isrc',
-        release_date: 'date',
-        streams: 'streams',
-        revenue: 'net revenue',
+        title: "title",
+        artist: "artist",
+        album: "release",
+        upc: "upc",
+        isrc: "isrc",
+        release_date: "date",
+        streams: "streams",
+        revenue: "net revenue",
       },
       believe: {
-        title: 'track name',
-        artist: 'main artist',
-        album: 'album name',
-        upc: 'ean/upc',
-        isrc: 'isrc',
-        release_date: 'sale start date',
-        streams: 'streams',
-        revenue: 'net revenue',
+        title: "track name",
+        artist: "main artist",
+        album: "album name",
+        upc: "ean/upc",
+        isrc: "isrc",
+        release_date: "sale start date",
+        streams: "streams",
+        revenue: "net revenue",
       },
       symphonic: {
-        title: 'track',
-        artist: 'artist',
-        album: 'album',
-        upc: 'upc',
-        isrc: 'isrc',
-        release_date: 'release date',
-        streams: 'units',
-        revenue: 'net revenue',
+        title: "track",
+        artist: "artist",
+        album: "album",
+        upc: "upc",
+        isrc: "isrc",
+        release_date: "release date",
+        streams: "units",
+        revenue: "net revenue",
       },
       repost: {
-        title: 'track title',
-        artist: 'artist',
-        album: 'release',
-        upc: 'upc',
-        isrc: 'isrc',
-        release_date: 'date',
-        streams: 'plays',
-        revenue: 'revenue',
+        title: "track title",
+        artist: "artist",
+        album: "release",
+        upc: "upc",
+        isrc: "isrc",
+        release_date: "date",
+        streams: "plays",
+        revenue: "revenue",
       },
       default: {
-        title: 'title',
-        artist: 'artist',
-        album: 'album',
-        upc: 'upc',
-        isrc: 'isrc',
-        release_date: 'release_date',
-        streams: 'streams',
-        revenue: 'revenue',
+        title: "title",
+        artist: "artist",
+        album: "album",
+        upc: "upc",
+        isrc: "isrc",
+        release_date: "release_date",
+        streams: "streams",
+        revenue: "revenue",
       },
     };
-    
+
     const mapping = columnMappings[distributor] || columnMappings.default;
-    
+
     const findColumnIndex = (targetName: string): number => {
       const normalizedTarget = targetName.toLowerCase();
-      return headers.findIndex(h => h.includes(normalizedTarget) || normalizedTarget.includes(h));
+      return headers.findIndex(
+        (h) => h.includes(normalizedTarget) || normalizedTarget.includes(h),
+      );
     };
-    
+
     const columnIndices: Record<string, number> = {};
     for (const [key, value] of Object.entries(mapping)) {
       columnIndices[key] = findColumnIndex(value);
     }
-    
+
     const releaseMap = new Map<string, ImportedRelease>();
-    
+
     for (let i = 1; i < lines.length; i++) {
       const values = this.parseCSVLine(lines[i]);
-      
+
       const getValue = (key: string): string => {
         const idx = columnIndices[key];
-        return idx >= 0 && idx < values.length ? values[idx].replace(/['"]/g, '').trim() : '';
+        return idx >= 0 && idx < values.length
+          ? values[idx].replace(/['"]/g, "").trim()
+          : "";
       };
-      
-      const title = getValue('title');
-      const artistName = getValue('artist');
-      const albumTitle = getValue('album') || title;
-      
+
+      const title = getValue("title");
+      const artistName = getValue("artist");
+      const albumTitle = getValue("album") || title;
+
       if (!title || !artistName) continue;
-      
+
       const releaseKey = `${artistName.toLowerCase()}_${albumTitle.toLowerCase()}`;
-      
+
       if (!releaseMap.has(releaseKey)) {
         releaseMap.set(releaseKey, {
           title: albumTitle,
           artistName,
-          releaseType: 'single',
-          releaseDate: getValue('release_date') || null,
-          upc: getValue('upc') || undefined,
+          releaseType: "single",
+          releaseDate: getValue("release_date") || null,
+          upc: getValue("upc") || undefined,
           genre: undefined,
           tracks: [],
           originalDistributor: distributor,
@@ -633,76 +782,82 @@ class DistributionDataTransferService {
           },
         });
       }
-      
+
       const release = releaseMap.get(releaseKey)!;
-      
+
       release.tracks.push({
         title,
         trackNumber: release.tracks.length + 1,
-        isrc: getValue('isrc') || undefined,
+        isrc: getValue("isrc") || undefined,
         explicit: false,
       });
-      
-      const streams = parseInt(getValue('streams')) || 0;
+
+      const streams = parseInt(getValue("streams")) || 0;
       if (release.streamingStats) {
-        release.streamingStats.totalStreams = (release.streamingStats.totalStreams || 0) + streams;
+        release.streamingStats.totalStreams =
+          (release.streamingStats.totalStreams || 0) + streams;
       }
-      
+
       if (release.tracks.length > 1 && release.tracks.length <= 6) {
-        release.releaseType = 'EP';
+        release.releaseType = "EP";
       } else if (release.tracks.length > 6) {
-        release.releaseType = 'album';
+        release.releaseType = "album";
       }
     }
-    
+
     return Array.from(releaseMap.values());
   }
 
   private parseCSVLine(line: string): string[] {
     const values: string[] = [];
-    let current = '';
+    let current = "";
     let inQuotes = false;
-    
+
     for (let i = 0; i < line.length; i++) {
       const char = line[i];
-      
+
       if (char === '"') {
         inQuotes = !inQuotes;
-      } else if (char === ',' && !inQuotes) {
+      } else if (char === "," && !inQuotes) {
         values.push(current.trim());
-        current = '';
+        current = "";
       } else {
         current += char;
       }
     }
     values.push(current.trim());
-    
+
     return values;
   }
 
   async importFromDistributor(
     userId: string,
     distributor: string,
-    csvContent: string
+    csvContent: string,
   ): Promise<DataTransferJob> {
-    const job = await this.createTransferJob(userId, 'import', distributor);
-    
+    const job = await this.createTransferJob(userId, "import", distributor);
+
     try {
-      job.status = 'processing';
+      job.status = "processing";
       job.updatedAt = new Date();
-      
+
       const releases = await this.parseDistributorCSV(csvContent, distributor);
       job.totalItems = releases.length;
-      
+
       let imported = 0;
       let failed = 0;
-      
+
       for (const release of releases) {
         try {
           const validated = importedReleaseSchema.parse(release);
-          
-          const existingRelease = await this.findExistingRelease(userId, validated.upc, validated.title, validated.artistName);
-          
+
+          const existingRelease = await this.findExistingRelease(
+            userId,
+            validated.upc,
+            validated.title,
+            validated.artistName,
+          );
+
           if (existingRelease) {
             await this.mergeReleaseData(existingRelease.id, release);
             logger.info(`[DataTransfer] Merged release: ${release.title}`);
@@ -710,12 +865,14 @@ class DistributionDataTransferService {
             await storage.createDistroRelease({
               artistId: userId,
               title: validated.title,
-              releaseDate: validated.releaseDate ? new Date(validated.releaseDate) : null,
+              releaseDate: validated.releaseDate
+                ? new Date(validated.releaseDate)
+                : null,
               metadata: {
                 artistName: validated.artistName,
                 releaseType: validated.releaseType,
-                primaryGenre: validated.genre || 'Other',
-                language: 'en',
+                primaryGenre: validated.genre || "Other",
+                language: "en",
                 copyrightYear: new Date().getFullYear(),
                 copyrightOwner: validated.artistName,
                 labelName: validated.label,
@@ -727,10 +884,10 @@ class DistributionDataTransferService {
                 importedAt: new Date().toISOString(),
               },
             });
-            
+
             logger.info(`[DataTransfer] Imported release: ${release.title}`);
           }
-          
+
           imported++;
           job.successItems = imported;
         } catch (err) {
@@ -738,65 +895,93 @@ class DistributionDataTransferService {
           job.failedItems = failed;
           job.errors.push({
             item: release.title,
-            error: err.message || 'Unknown error',
+            error: err.message || "Unknown error",
           });
-          logger.warn({ err: err }, `[DataTransfer] Failed to import release ${release.title}:`);
+          logger.warn(
+            { err: err },
+            `[DataTransfer] Failed to import release ${release.title}:`,
+          );
         }
-        
+
         job.processedItems = imported + failed;
         job.progress = Math.round((job.processedItems / job.totalItems) * 100);
         job.updatedAt = new Date();
       }
-      
-      job.status = failed === 0 ? 'completed' : (imported > 0 ? 'partial' : 'failed');
+
+      job.status =
+        failed === 0 ? "completed" : imported > 0 ? "partial" : "failed";
       job.completedAt = new Date();
       job.result = {
         importedReleases: imported,
-        totalStreams: releases.reduce((sum, r) => sum + (r.streamingStats?.totalStreams || 0), 0),
+        totalStreams: releases.reduce(
+          (sum, r) => sum + (r.streamingStats?.totalStreams || 0),
+          0,
+        ),
       };
-      
-      logger.info(`[DataTransfer] Import job ${job.id} completed: ${imported} imported, ${failed} failed`);
-      
+
+      logger.info(
+        `[DataTransfer] Import job ${job.id} completed: ${imported} imported, ${failed} failed`,
+      );
     } catch (error) {
-      job.status = 'failed';
-      job.errors.push({ item: 'CSV parsing', error: error.message });
-      logger.warn({ err: error }, `[DataTransfer] Import job ${job.id} failed:`);
+      job.status = "failed";
+      job.errors.push({ item: "CSV parsing", error: error.message });
+      logger.warn(
+        { err: error },
+        `[DataTransfer] Import job ${job.id} failed:`,
+      );
     }
-    
+
     return job;
   }
 
-  private async findExistingRelease(userId: string, upc?: string, title?: string, artistName?: string): Promise<any | null> {
+  private async findExistingRelease(
+    userId: string,
+    upc?: string,
+    title?: string,
+    artistName?: string,
+  ): Promise<any | null> {
     const releases = await storage.getDistroReleasesByArtist(userId);
-    
+
     for (const release of releases) {
       const metadata = release.metadata as Record<string, unknown>;
-      
+
       if (upc && metadata?.upc === upc) {
         return release;
       }
-      
+
       if (title && artistName) {
-        const normalizedTitle = title.toLowerCase().replace(/[^a-z0-9]/g, '');
-        const normalizedReleaseTitle = release.title.toLowerCase().replace(/[^a-z0-9]/g, '');
-        const normalizedArtist = artistName.toLowerCase().replace(/[^a-z0-9]/g, '');
-        const normalizedReleaseArtist = (metadata?.artistName || '').toLowerCase().replace(/[^a-z0-9]/g, '');
-        
-        if (normalizedTitle === normalizedReleaseTitle && normalizedArtist === normalizedReleaseArtist) {
+        const normalizedTitle = title.toLowerCase().replace(/[^a-z0-9]/g, "");
+        const normalizedReleaseTitle = release.title
+          .toLowerCase()
+          .replace(/[^a-z0-9]/g, "");
+        const normalizedArtist = artistName
+          .toLowerCase()
+          .replace(/[^a-z0-9]/g, "");
+        const normalizedReleaseArtist = (metadata?.artistName || "")
+          .toLowerCase()
+          .replace(/[^a-z0-9]/g, "");
+
+        if (
+          normalizedTitle === normalizedReleaseTitle &&
+          normalizedArtist === normalizedReleaseArtist
+        ) {
           return release;
         }
       }
     }
-    
+
     return null;
   }
 
-  private async mergeReleaseData(releaseId: string, importedData: ImportedRelease): Promise<void> {
+  private async mergeReleaseData(
+    releaseId: string,
+    importedData: ImportedRelease,
+  ): Promise<void> {
     const release = await storage.getDistroRelease(releaseId);
     if (!release) return;
-    
+
     const existingMetadata = release.metadata as Record<string, unknown>;
-    
+
     const mergedMetadata = {
       ...existingMetadata,
       importedFrom: importedData.originalDistributor,
@@ -808,7 +993,7 @@ class DistributionDataTransferService {
       streamingStats: {
         totalStreams: Math.max(
           existingMetadata.streamingStats?.totalStreams || 0,
-          importedData.streamingStats?.totalStreams || 0
+          importedData.streamingStats?.totalStreams || 0,
         ),
         platforms: {
           ...(existingMetadata.streamingStats?.platforms || {}),
@@ -816,11 +1001,11 @@ class DistributionDataTransferService {
         },
       },
     };
-    
+
     if (importedData.upc && !existingMetadata.upc) {
       mergedMetadata.upc = importedData.upc;
     }
-    
+
     await storage.updateDistroRelease(releaseId, {
       metadata: mergedMetadata,
     });
@@ -830,19 +1015,19 @@ class DistributionDataTransferService {
     userId: string,
     platformId: string,
     profileUrl: string,
-    profileData?: Partial<StreamingProfileData>
+    profileData?: Partial<StreamingProfileData>,
   ): Promise<StreamingProfileData> {
-    const platform = STREAMING_PLATFORMS.find(p => p.id === platformId);
+    const platform = STREAMING_PLATFORMS.find((p) => p.id === platformId);
     if (!platform) {
       throw new Error(`Unsupported platform: ${platformId}`);
     }
-    
+
     const artistId = this.extractArtistIdFromUrl(platformId, profileUrl);
-    
+
     const profile: StreamingProfileData = {
       platformId,
       artistId,
-      artistName: profileData?.artistName || 'Unknown Artist',
+      artistName: profileData?.artistName || "Unknown Artist",
       profileUrl,
       verified: false,
       followers: profileData?.followers,
@@ -857,20 +1042,24 @@ class DistributionDataTransferService {
       syncCount: 0,
       consecutiveFailures: 0,
     };
-    
+
     if (!this.linkedProfiles.has(userId)) {
       this.linkedProfiles.set(userId, new Map());
     }
     this.linkedProfiles.get(userId)!.set(platformId, profile);
-    
+
     await this.saveProfileToStorage(userId, profile);
-    
-    logger.info(`[DataTransfer] Linked ${platformId} profile for user ${userId}: ${artistId}`);
-    
-    this.syncProfileData(userId, platformId).catch(err => {
-      logger.warn(`[DataTransfer] Initial sync failed for ${platformId}: ${err.message}`);
+
+    logger.info(
+      `[DataTransfer] Linked ${platformId} profile for user ${userId}: ${artistId}`,
+    );
+
+    this.syncProfileData(userId, platformId).catch((err) => {
+      logger.warn(
+        `[DataTransfer] Initial sync failed for ${platformId}: ${err.message}`,
+      );
     });
-    
+
     return profile;
   }
 
@@ -885,7 +1074,7 @@ class DistributionDataTransferService {
       bandcamp: /([a-zA-Z0-9_-]+)\.bandcamp\.com/,
       audiomack: /audiomack\.com\/([a-zA-Z0-9_-]+)/,
     };
-    
+
     const pattern = patterns[platformId];
     if (pattern) {
       const match = url.match(pattern);
@@ -893,15 +1082,18 @@ class DistributionDataTransferService {
         return match[1];
       }
     }
-    
+
     return url;
   }
 
-  private async saveProfileToStorage(userId: string, profile: StreamingProfileData): Promise<void> {
+  private async saveProfileToStorage(
+    userId: string,
+    profile: StreamingProfileData,
+  ): Promise<void> {
     try {
       const user = await storage.getUser(userId);
       if (!user) return;
-      
+
       const existingPrefs = (user.preferences as Record<string, any>) || {};
       const streamingProfiles = existingPrefs.streamingProfiles || {};
       streamingProfiles[profile.platformId] = {
@@ -918,12 +1110,15 @@ class DistributionDataTransferService {
         syncCount: profile.syncCount,
         consecutiveFailures: profile.consecutiveFailures,
       };
-      
+
       await storage.updateUser(userId, {
         preferences: { ...existingPrefs, streamingProfiles },
       } as Record<string, unknown>);
     } catch (error) {
-      logger.warn({ err: error }, `[DataTransfer] Failed to save profile to storage:`);
+      logger.warn(
+        { err: error },
+        `[DataTransfer] Failed to save profile to storage:`,
+      );
     }
   }
 
@@ -960,7 +1155,7 @@ class DistributionDataTransferService {
         userMap.set(platformId, {
           platformId,
           artistId: p.artistId,
-          artistName: p.artistName || 'Unknown Artist',
+          artistName: p.artistName || "Unknown Artist",
           profileUrl: p.profileUrl,
           verified: p.verified || false,
           followers: p.followers,
@@ -973,20 +1168,28 @@ class DistributionDataTransferService {
           consecutiveFailures: p.consecutiveFailures || 0,
         });
       }
-      logger.info(`[DataTransfer] Hydrated ${Object.keys(saved).length} profile(s) from DB for user ${userId}`);
+      logger.info(
+        `[DataTransfer] Hydrated ${Object.keys(saved).length} profile(s) from DB for user ${userId}`,
+      );
     } catch (err) {
-      logger.warn('[DataTransfer] Failed to hydrate profiles from storage:', err?.message);
+      logger.warn(
+        "[DataTransfer] Failed to hydrate profiles from storage:",
+        err?.message,
+      );
     }
   }
 
-  async unlinkStreamingProfile(userId: string, platformId: string): Promise<boolean> {
+  async unlinkStreamingProfile(
+    userId: string,
+    platformId: string,
+  ): Promise<boolean> {
     const userProfiles = this.linkedProfiles.get(userId);
     if (!userProfiles) {
       return false;
     }
-    
+
     const deleted = userProfiles.delete(platformId);
-    
+
     if (deleted) {
       try {
         const user = await storage.getUser(userId);
@@ -999,58 +1202,69 @@ class DistributionDataTransferService {
           } as Record<string, unknown>);
         }
       } catch (error) {
-        logger.warn({ err: error }, `[DataTransfer] Failed to remove profile from storage:`);
+        logger.warn(
+          { err: error },
+          `[DataTransfer] Failed to remove profile from storage:`,
+        );
       }
-      
-      logger.info(`[DataTransfer] Unlinked ${platformId} profile for user ${userId}`);
+
+      logger.info(
+        `[DataTransfer] Unlinked ${platformId} profile for user ${userId}`,
+      );
     }
-    
+
     return deleted;
   }
 
   async syncProfileData(
     userId: string,
     platformId: string,
-    sharedTopTracks?: Array<{ title: string; streams: number; isrc?: string }>
+    sharedTopTracks?: Array<{ title: string; streams: number; isrc?: string }>,
   ): Promise<StreamingProfileData | null> {
     const userProfiles = this.linkedProfiles.get(userId);
     if (!userProfiles || !userProfiles.has(platformId)) {
       return null;
     }
-    
+
     const profile = userProfiles.get(platformId)!;
-    
+
     // Use the shared Spotify release catalog for non-Spotify platforms so the
     // artist's release data is only fetched from one authoritative source per sync.
-    const updatedData = await this.fetchPlatformData(platformId, profile.artistId, sharedTopTracks);
-    
-    const platformDef = STREAMING_PLATFORMS.find(p => p.id === platformId);
-    const resolvedMethod = platformDef?.syncMethod || 'api';
+    const updatedData = await this.fetchPlatformData(
+      platformId,
+      profile.artistId,
+      sharedTopTracks,
+    );
+
+    const platformDef = STREAMING_PLATFORMS.find((p) => p.id === platformId);
+    const resolvedMethod = platformDef?.syncMethod || "api";
 
     if (updatedData) {
       Object.assign(profile, updatedData);
-      profile.verified = resolvedMethod === 'api';
+      profile.verified = resolvedMethod === "api";
       profile.lastSyncedAt = new Date().toISOString();
-      profile.lastSyncStatus = 'success';
+      profile.lastSyncStatus = "success";
       profile.lastSyncMethod = resolvedMethod;
       profile.syncCount = (profile.syncCount || 0) + 1;
       profile.consecutiveFailures = 0;
       userProfiles.set(platformId, profile);
-      
+
       await this.saveProfileToStorage(userId, profile);
-      
-      logger.info(`[DataTransfer] Synced ${platformId} profile data for user ${userId} (method: ${resolvedMethod})`);
+
+      logger.info(
+        `[DataTransfer] Synced ${platformId} profile data for user ${userId} (method: ${resolvedMethod})`,
+      );
     } else {
       profile.lastSyncedAt = new Date().toISOString();
-      profile.lastSyncStatus = 'failed';
+      profile.lastSyncStatus = "failed";
       profile.lastSyncMethod = resolvedMethod;
       profile.consecutiveFailures = (profile.consecutiveFailures || 0) + 1;
       profile.syncCount = (profile.syncCount || 0) + 1;
       userProfiles.set(platformId, profile);
-      
+
       await this.saveProfileToStorage(userId, profile);
     }
-    
+
     return profile;
   }
 
@@ -1068,23 +1282,34 @@ class DistributionDataTransferService {
     // Fetch Spotify release catalog ONCE and share it across all platform syncs.
     // This prevents Apple Music, Deezer, and other platforms from independently
     // re-importing the same release data on every sync cycle.
-    let sharedTopTracks: Array<{ title: string; streams: number; isrc?: string }> | undefined;
-    const spotifyProfile = userProfiles.get('spotify');
+    let sharedTopTracks:
+      | Array<{ title: string; streams: number; isrc?: string }>
+      | undefined;
+    const spotifyProfile = userProfiles.get("spotify");
     if (spotifyProfile?.artistId) {
       try {
-        const spotifyData = await this.fetchSpotifyData(spotifyProfile.artistId);
+        const spotifyData = await this.fetchSpotifyData(
+          spotifyProfile.artistId,
+        );
         if (spotifyData?.topTracks) {
           sharedTopTracks = spotifyData.topTracks;
-          logger.info(`[DataTransfer] Shared release catalog from Spotify (${sharedTopTracks.length} tracks) for user ${userId}`);
+          logger.info(
+            `[DataTransfer] Shared release catalog from Spotify (${sharedTopTracks.length} tracks) for user ${userId}`,
+          );
         }
       } catch (err) {
-        logger.warn({ err: err }, '[DataTransfer] Could not fetch Spotify catalog for sharing — each platform will fetch independently:');
+        logger.warn(
+          { err: err },
+          "[DataTransfer] Could not fetch Spotify catalog for sharing — each platform will fetch independently:",
+        );
       }
     }
 
     const platformIds = Array.from(userProfiles.keys());
     const settled = await Promise.allSettled(
-      platformIds.map(pid => this.syncProfileData(userId, pid, sharedTopTracks))
+      platformIds.map((pid) =>
+        this.syncProfileData(userId, pid, sharedTopTracks),
+      ),
     );
 
     const results: SyncResult[] = [];
@@ -1094,13 +1319,28 @@ class DistributionDataTransferService {
     for (let i = 0; i < settled.length; i++) {
       const outcome = settled[i];
       const pid = platformIds[i];
-      if (outcome.status === 'fulfilled' && outcome.value?.lastSyncStatus === 'success') {
+      if (
+        outcome.status === "fulfilled" &&
+        outcome.value?.lastSyncStatus === "success"
+      ) {
         succeeded++;
-        results.push({ platformId: pid, status: 'success', timestamp: new Date().toISOString() });
+        results.push({
+          platformId: pid,
+          status: "success",
+          timestamp: new Date().toISOString(),
+        });
       } else {
         failed++;
-        const error = outcome.status === 'rejected' ? String(outcome.reason) : 'sync returned failure';
-        results.push({ platformId: pid, status: 'failed', error, timestamp: new Date().toISOString() });
+        const error =
+          outcome.status === "rejected"
+            ? String(outcome.reason)
+            : "sync returned failure";
+        results.push({
+          platformId: pid,
+          status: "failed",
+          error,
+          timestamp: new Date().toISOString(),
+        });
       }
     }
 
@@ -1108,13 +1348,15 @@ class DistributionDataTransferService {
       syncId: `sync_${Date.now()}`,
       userId,
       timestamp: new Date().toISOString(),
-      method: this.autoSyncStates.has(userId) ? 'auto' : 'manual',
+      method: this.autoSyncStates.has(userId) ? "auto" : "manual",
       results,
       summary: { total: platformIds.length, succeeded, failed },
     };
     this.addSyncHistory(userId, historyEntry);
 
-    logger.info(`[DataTransfer] syncAllProfiles for ${userId}: ${succeeded}/${platformIds.length} succeeded`);
+    logger.info(
+      `[DataTransfer] syncAllProfiles for ${userId}: ${succeeded}/${platformIds.length} succeeded`,
+    );
 
     return { total: platformIds.length, succeeded, failed, results };
   }
@@ -1124,8 +1366,11 @@ class DistributionDataTransferService {
 
     const intervalMs = intervalMinutes * 60 * 1000;
     const interval = setInterval(() => {
-      this.syncAllProfiles(userId).catch(err => {
-        logger.warn({ err: err }, `[DataTransfer] Auto-sync failed for ${userId}:`);
+      this.syncAllProfiles(userId).catch((err) => {
+        logger.warn(
+          { err: err },
+          `[DataTransfer] Auto-sync failed for ${userId}:`,
+        );
       });
     }, intervalMs);
 
@@ -1142,10 +1387,15 @@ class DistributionDataTransferService {
       }
     }
 
-    logger.info(`[DataTransfer] Auto-sync started for ${userId} every ${intervalMinutes} minutes`);
+    logger.info(
+      `[DataTransfer] Auto-sync started for ${userId} every ${intervalMinutes} minutes`,
+    );
 
-    this.syncAllProfiles(userId).catch(err => {
-      logger.warn({ err: err }, `[DataTransfer] Initial auto-sync failed for ${userId}:`);
+    this.syncAllProfiles(userId).catch((err) => {
+      logger.warn(
+        { err: err },
+        `[DataTransfer] Initial auto-sync failed for ${userId}:`,
+      );
     });
   }
 
@@ -1172,11 +1422,19 @@ class DistributionDataTransferService {
     startedAt?: string;
     lastSyncAt?: string;
     nextSyncAt?: string;
-    platformResults: Array<{ platformId: string; lastSyncStatus?: string; lastSyncedAt?: string }>;
+    platformResults: Array<{
+      platformId: string;
+      lastSyncStatus?: string;
+      lastSyncedAt?: string;
+    }>;
   } {
     const state = this.autoSyncStates.get(userId);
     const userProfiles = this.linkedProfiles.get(userId);
-    const platformResults: Array<{ platformId: string; lastSyncStatus?: string; lastSyncedAt?: string }> = [];
+    const platformResults: Array<{
+      platformId: string;
+      lastSyncStatus?: string;
+      lastSyncedAt?: string;
+    }> = [];
 
     if (userProfiles) {
       for (const [pid, profile] of userProfiles) {
@@ -1198,10 +1456,14 @@ class DistributionDataTransferService {
 
     let nextSyncAt: string | undefined;
     if (lastSyncAt) {
-      const next = new Date(new Date(lastSyncAt).getTime() + state.intervalMinutes * 60 * 1000);
+      const next = new Date(
+        new Date(lastSyncAt).getTime() + state.intervalMinutes * 60 * 1000,
+      );
       nextSyncAt = next.toISOString();
     } else {
-      const next = new Date(new Date(state.startedAt).getTime() + state.intervalMinutes * 60 * 1000);
+      const next = new Date(
+        new Date(state.startedAt).getTime() + state.intervalMinutes * 60 * 1000,
+      );
       nextSyncAt = next.toISOString();
     }
 
@@ -1231,7 +1493,10 @@ class DistributionDataTransferService {
   }
 
   private async getSpotifyToken(): Promise<string | null> {
-    if (this.spotifyTokenCache && this.spotifyTokenCache.expiresAt > Date.now()) {
+    if (
+      this.spotifyTokenCache &&
+      this.spotifyTokenCache.expiresAt > Date.now()
+    ) {
       return this.spotifyTokenCache.token;
     }
 
@@ -1242,16 +1507,16 @@ class DistributionDataTransferService {
     }
 
     try {
-      const resp = await timedFetch('https://accounts.spotify.com/api/token', {
-        method: 'POST',
+      const resp = await timedFetch("https://accounts.spotify.com/api/token", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-          'Authorization': `Basic ${Buffer.from(`${clientId}:${clientSecret}`).toString('base64')}`,
+          "Content-Type": "application/x-www-form-urlencoded",
+          Authorization: `Basic ${Buffer.from(`${clientId}:${clientSecret}`).toString("base64")}`,
         },
-        body: 'grant_type=client_credentials',
+        body: "grant_type=client_credentials",
       });
       if (!resp.ok) return null;
-      const data = await resp.json() as Record<string, unknown>;
+      const data = (await resp.json()) as Record<string, unknown>;
       this.spotifyTokenCache = {
         token: data.access_token,
         expiresAt: Date.now() + (data.expires_in - 60) * 1000,
@@ -1262,35 +1527,46 @@ class DistributionDataTransferService {
     }
   }
 
-  private async fetchSpotifyData(artistId: string): Promise<Partial<StreamingProfileData> | null> {
+  private async fetchSpotifyData(
+    artistId: string,
+  ): Promise<Partial<StreamingProfileData> | null> {
     const token = await this.getSpotifyToken();
     if (!token) {
-      logger.warn('[DataTransfer] No Spotify credentials available, skipping API sync');
+      logger.warn(
+        "[DataTransfer] No Spotify credentials available, skipping API sync",
+      );
       return null;
     }
 
-    const breaker = this.getCircuitBreaker('spotify');
+    const breaker = this.getCircuitBreaker("spotify");
     const fetcher = async () => {
       const [artistResp, topTracksResp] = await Promise.all([
         fetch(`https://api.spotify.com/v1/artists/${artistId}`, {
-          headers: { 'Authorization': `Bearer ${token}` },
+          headers: { Authorization: `Bearer ${token}` },
         }),
-        fetch(`https://api.spotify.com/v1/artists/${artistId}/top-tracks?market=US`, {
-          headers: { 'Authorization': `Bearer ${token}` },
-        }),
+        fetch(
+          `https://api.spotify.com/v1/artists/${artistId}/top-tracks?market=US`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          },
+        ),
       ]);
 
-      if (!artistResp.ok) throw new Error(`Spotify artist API returned ${artistResp.status}`);
-      const artist = await artistResp.json() as Record<string, unknown>;
+      if (!artistResp.ok)
+        throw new Error(`Spotify artist API returned ${artistResp.status}`);
+      const artist = (await artistResp.json()) as Record<string, unknown>;
 
-      let topTracks: Array<{ title: string; streams: number; isrc?: string }> = [];
+      let topTracks: Array<{ title: string; streams: number; isrc?: string }> =
+        [];
       if (topTracksResp.ok) {
-        const ttData = await topTracksResp.json() as Record<string, unknown>;
-        topTracks = (ttData.tracks as unknown[] || []).slice(0, 5).map((t: Record<string, unknown>) => ({
-          title: t.name,
-          streams: t.popularity * 10000,
-          isrc: t.external_ids?.isrc,
-        }));
+        const ttData = (await topTracksResp.json()) as Record<string, unknown>;
+        topTracks = ((ttData.tracks as unknown[]) || [])
+          .slice(0, 5)
+          .map((t: Record<string, unknown>) => ({
+            title: t.name,
+            streams: t.popularity * 10000,
+            isrc: t.external_ids?.isrc,
+          }));
       }
 
       return {
@@ -1308,43 +1584,58 @@ class DistributionDataTransferService {
     if (breaker) {
       return breaker.execute(fetcher, () => null);
     }
-    try { return await fetcher(); } catch (err) {
-      logger.warn({ err: err }, `[DataTransfer] Spotify fetch failed for ${artistId}:`);
+    try {
+      return await fetcher();
+    } catch (err) {
+      logger.warn(
+        { err: err },
+        `[DataTransfer] Spotify fetch failed for ${artistId}:`,
+      );
       return null;
     }
   }
 
   private async fetchAppleMusicData(
     artistId: string,
-    sharedTopTracks?: Array<{ title: string; streams: number; isrc?: string }>
+    sharedTopTracks?: Array<{ title: string; streams: number; isrc?: string }>,
   ): Promise<Partial<StreamingProfileData> | null> {
-    const breaker = this.getCircuitBreaker('apple_music');
+    const breaker = this.getCircuitBreaker("apple_music");
     const fetcher = async () => {
       // When Spotify shared catalog is available, only look up the artist profile
       // (no songs) to avoid re-importing the same release data from a second source.
-      const entityParam = sharedTopTracks ? 'musicArtist' : 'song';
-      const limitParam = sharedTopTracks ? '1' : '10';
+      const entityParam = sharedTopTracks ? "musicArtist" : "song";
+      const limitParam = sharedTopTracks ? "1" : "10";
       const resp = await timedFetch(
-        `https://itunes.apple.com/lookup?id=${artistId}&entity=${entityParam}&limit=${limitParam}`
+        `https://itunes.apple.com/lookup?id=${artistId}&entity=${entityParam}&limit=${limitParam}`,
       );
       if (!resp.ok) throw new Error(`iTunes API returned ${resp.status}`);
-      const data = await resp.json() as Record<string, unknown>;
+      const data = (await resp.json()) as Record<string, unknown>;
       const results = data.results || [];
       if (results.length === 0) return null;
 
-      const artistResult = results.find((r: Record<string, unknown>) => r.wrapperType === 'artist' || r.artistId);
-      const songs = results.filter((r: Record<string, unknown>) => r.wrapperType === 'track');
+      const artistResult = results.find(
+        (r: Record<string, unknown>) =>
+          r.wrapperType === "artist" || r.artistId,
+      );
+      const songs = results.filter(
+        (r: Record<string, unknown>) => r.wrapperType === "track",
+      );
 
       return {
         artistName: artistResult?.artistName || songs[0]?.artistName,
-        genres: artistResult?.primaryGenreName ? [artistResult.primaryGenreName] : undefined,
+        genres: artistResult?.primaryGenreName
+          ? [artistResult.primaryGenreName]
+          : undefined,
         profileUrl: artistResult?.artistLinkUrl,
-        imageUrl: songs[0]?.artworkUrl100?.replace('100x100', '500x500') ?? undefined,
+        imageUrl:
+          songs[0]?.artworkUrl100?.replace("100x100", "500x500") ?? undefined,
         // Use shared Spotify catalog if provided — do NOT re-import from Apple
-        topTracks: sharedTopTracks ?? songs.slice(0, 5).map((s: Record<string, unknown>) => ({
-          title: s.trackName,
-          streams: 0,
-        })),
+        topTracks:
+          sharedTopTracks ??
+          songs.slice(0, 5).map((s: Record<string, unknown>) => ({
+            title: s.trackName,
+            streams: 0,
+          })),
         verified: true,
       } as Partial<StreamingProfileData>;
     };
@@ -1352,25 +1643,32 @@ class DistributionDataTransferService {
     if (breaker) {
       return breaker.execute(fetcher, () => null);
     }
-    try { return await fetcher(); } catch (err) {
-      logger.warn({ err: err }, `[DataTransfer] Apple Music fetch failed for ${artistId}:`);
+    try {
+      return await fetcher();
+    } catch (err) {
+      logger.warn(
+        { err: err },
+        `[DataTransfer] Apple Music fetch failed for ${artistId}:`,
+      );
       return null;
     }
   }
 
-  private async fetchYouTubeMusicData(channelId: string): Promise<Partial<StreamingProfileData> | null> {
+  private async fetchYouTubeMusicData(
+    channelId: string,
+  ): Promise<Partial<StreamingProfileData> | null> {
     const apiKey = process.env.YOUTUBE_API_KEY || process.env.GOOGLE_API_KEY;
     if (!apiKey) {
       return this.fetchYouTubeMusicFallback(channelId);
     }
 
-    const breaker = this.getCircuitBreaker('youtube_music');
+    const breaker = this.getCircuitBreaker("youtube_music");
     const fetcher = async () => {
       const resp = await timedFetch(
-        `https://www.googleapis.com/youtube/v3/channels?part=statistics,snippet&id=${channelId}&key=${apiKey}`
+        `https://www.googleapis.com/youtube/v3/channels?part=statistics,snippet&id=${channelId}&key=${apiKey}`,
       );
       if (!resp.ok) throw new Error(`YouTube API returned ${resp.status}`);
-      const data = await resp.json() as Record<string, unknown>;
+      const data = (await resp.json()) as Record<string, unknown>;
       const channel = data.items?.[0];
       if (!channel) return null;
 
@@ -1378,8 +1676,8 @@ class DistributionDataTransferService {
         artistName: channel.snippet?.title,
         bio: channel.snippet?.description,
         imageUrl: channel.snippet?.thumbnails?.high?.url,
-        followers: parseInt(channel.statistics?.subscriberCount || '0'),
-        totalStreams: parseInt(channel.statistics?.viewCount || '0'),
+        followers: parseInt(channel.statistics?.subscriberCount || "0"),
+        totalStreams: parseInt(channel.statistics?.viewCount || "0"),
         profileUrl: `https://www.youtube.com/channel/${channelId}`,
         verified: true,
       } as Partial<StreamingProfileData>;
@@ -1388,35 +1686,56 @@ class DistributionDataTransferService {
     if (breaker) {
       return breaker.execute(fetcher, () => null);
     }
-    try { return await fetcher(); } catch (err) {
-      logger.warn({ err: err }, `[DataTransfer] YouTube API fetch failed for ${channelId}:`);
+    try {
+      return await fetcher();
+    } catch (err) {
+      logger.warn(
+        { err: err },
+        `[DataTransfer] YouTube API fetch failed for ${channelId}:`,
+      );
       return this.fetchYouTubeMusicFallback(channelId);
     }
   }
 
-  private async fetchYouTubeMusicFallback(channelId: string): Promise<Partial<StreamingProfileData> | null> {
+  private async fetchYouTubeMusicFallback(
+    channelId: string,
+  ): Promise<Partial<StreamingProfileData> | null> {
     try {
-      const resp = await timedFetch(`https://www.youtube.com/channel/${channelId}`, {
-        headers: { 'User-Agent': 'Mozilla/5.0 (compatible; MaxBooster/1.0)', 'Accept-Language': 'en-US,en;q=0.9' },
-      });
+      const resp = await timedFetch(
+        `https://www.youtube.com/channel/${channelId}`,
+        {
+          headers: {
+            "User-Agent": "Mozilla/5.0 (compatible; MaxBooster/1.0)",
+            "Accept-Language": "en-US,en;q=0.9",
+          },
+        },
+      );
       if (!resp.ok) return null;
       const html = await resp.text();
 
-      const nameMatch = html.match(/<meta\s+property="og:title"\s+content="([^"]+)"/);
-      const descMatch = html.match(/<meta\s+property="og:description"\s+content="([^"]+)"/);
-      const imgMatch = html.match(/<meta\s+property="og:image"\s+content="([^"]+)"/);
-      const subsMatch = html.match(/"subscriberCountText":\s*\{"simpleText":\s*"([^"]+)"/);
+      const nameMatch = html.match(
+        /<meta\s+property="og:title"\s+content="([^"]+)"/,
+      );
+      const descMatch = html.match(
+        /<meta\s+property="og:description"\s+content="([^"]+)"/,
+      );
+      const imgMatch = html.match(
+        /<meta\s+property="og:image"\s+content="([^"]+)"/,
+      );
+      const subsMatch = html.match(
+        /"subscriberCountText":\s*\{"simpleText":\s*"([^"]+)"/,
+      );
 
       let followers = 0;
       if (subsMatch) {
-        const subText = subsMatch[1].replace(/,/g, '');
+        const subText = subsMatch[1].replace(/,/g, "");
         const numMatch = subText.match(/([\d.]+)\s*(K|M|B)?/i);
         if (numMatch) {
           let num = parseFloat(numMatch[1]);
-          const suffix = (numMatch[2] || '').toUpperCase();
-          if (suffix === 'K') num *= 1000;
-          else if (suffix === 'M') num *= 1000000;
-          else if (suffix === 'B') num *= 1000000000;
+          const suffix = (numMatch[2] || "").toUpperCase();
+          if (suffix === "K") num *= 1000;
+          else if (suffix === "M") num *= 1000000;
+          else if (suffix === "B") num *= 1000000000;
           followers = Math.round(num);
         }
       }
@@ -1427,42 +1746,53 @@ class DistributionDataTransferService {
         imageUrl: imgMatch ? imgMatch[1] : undefined,
         followers,
         profileUrl: `https://www.youtube.com/channel/${channelId}`,
-        lastSyncMethod: 'scraping',
+        lastSyncMethod: "scraping",
         verified: true,
       } as Partial<StreamingProfileData>;
     } catch (err) {
-      logger.warn({ err: err }, `[DataTransfer] YouTube fallback scrape failed for ${channelId}:`);
+      logger.warn(
+        { err: err },
+        `[DataTransfer] YouTube fallback scrape failed for ${channelId}:`,
+      );
       return null;
     }
   }
 
   private async fetchDeezerData(
     artistId: string,
-    sharedTopTracks?: Array<{ title: string; streams: number; isrc?: string }>
+    sharedTopTracks?: Array<{ title: string; streams: number; isrc?: string }>,
   ): Promise<Partial<StreamingProfileData> | null> {
-    const breaker = this.getCircuitBreaker('deezer');
+    const breaker = this.getCircuitBreaker("deezer");
     const fetcher = async () => {
       // When Spotify shared catalog is available, only fetch artist profile (not top tracks)
       // so the release catalog is imported once per sync — not separately from each DSP.
-      const requests: Promise<Response>[] = [fetch(`https://api.deezer.com/artist/${artistId}`)];
+      const requests: Promise<Response>[] = [
+        fetch(`https://api.deezer.com/artist/${artistId}`),
+      ];
       if (!sharedTopTracks) {
-        requests.push(fetch(`https://api.deezer.com/artist/${artistId}/top?limit=5`));
+        requests.push(
+          fetch(`https://api.deezer.com/artist/${artistId}/top?limit=5`),
+        );
       }
       const [artistResp, topResp] = await Promise.all(requests);
 
-      if (!artistResp.ok) throw new Error(`Deezer API returned ${artistResp.status}`);
-      const artist = await artistResp.json() as Record<string, unknown>;
-      if (artist.error) throw new Error(artist.error.message || 'Deezer API error');
+      if (!artistResp.ok)
+        throw new Error(`Deezer API returned ${artistResp.status}`);
+      const artist = (await artistResp.json()) as Record<string, unknown>;
+      if (artist.error)
+        throw new Error(artist.error.message || "Deezer API error");
 
       let topTracks: Array<{ title: string; streams: number; isrc?: string }>;
       if (sharedTopTracks) {
         topTracks = sharedTopTracks;
       } else if (topResp?.ok) {
-        const topData = await topResp.json() as Record<string, unknown>;
-        topTracks = (topData.data as unknown[] || []).slice(0, 5).map((t: Record<string, unknown>) => ({
-          title: t.title,
-          streams: t.rank || 0,
-        }));
+        const topData = (await topResp.json()) as Record<string, unknown>;
+        topTracks = ((topData.data as unknown[]) || [])
+          .slice(0, 5)
+          .map((t: Record<string, unknown>) => ({
+            title: t.title,
+            streams: t.rank || 0,
+          }));
       } else {
         topTracks = [];
       }
@@ -1480,8 +1810,13 @@ class DistributionDataTransferService {
     if (breaker) {
       return breaker.execute(fetcher, () => null);
     }
-    try { return await fetcher(); } catch (err) {
-      logger.warn({ err: err }, `[DataTransfer] Deezer fetch failed for ${artistId}:`);
+    try {
+      return await fetcher();
+    } catch (err) {
+      logger.warn(
+        { err: err },
+        `[DataTransfer] Deezer fetch failed for ${artistId}:`,
+      );
       return null;
     }
   }
@@ -1499,13 +1834,18 @@ class DistributionDataTransferService {
     }
 
     try {
-      const pageResp = await timedFetch('https://soundcloud.com', {
-        headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36' },
+      const pageResp = await timedFetch("https://soundcloud.com", {
+        headers: {
+          "User-Agent":
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        },
       });
       if (!pageResp.ok) return null;
       const html = await pageResp.text();
 
-      const scriptUrls = html.match(/https:\/\/a-v2\.sndcdn\.com\/assets\/[^"]+\.js/g);
+      const scriptUrls = html.match(
+        /https:\/\/a-v2\.sndcdn\.com\/assets\/[^"]+\.js/g,
+      );
       if (!scriptUrls || scriptUrls.length === 0) return null;
 
       for (const url of scriptUrls.slice(-3)) {
@@ -1521,21 +1861,25 @@ class DistributionDataTransferService {
         }
       }
     } catch (err) {
-      logger.warn(`[DataTransfer] Failed to auto-discover SoundCloud client_id: ${err.message}`);
+      logger.warn(
+        `[DataTransfer] Failed to auto-discover SoundCloud client_id: ${err.message}`,
+      );
     }
     return null;
   }
 
-  private async fetchSoundCloudData(permalink: string): Promise<Partial<StreamingProfileData> | null> {
-    const breaker = this.getCircuitBreaker('soundcloud');
+  private async fetchSoundCloudData(
+    permalink: string,
+  ): Promise<Partial<StreamingProfileData> | null> {
+    const breaker = this.getCircuitBreaker("soundcloud");
     const fetcher = async () => {
       const clientId = await this.getSoundCloudClientId();
       if (clientId) {
         const resp = await timedFetch(
-          `https://api-v2.soundcloud.com/resolve?url=https://soundcloud.com/${permalink}&client_id=${clientId}`
+          `https://api-v2.soundcloud.com/resolve?url=https://soundcloud.com/${permalink}&client_id=${clientId}`,
         );
         if (resp.ok) {
-          const user = await resp.json() as Record<string, unknown>;
+          const user = (await resp.json()) as Record<string, unknown>;
           if (user && user.username) {
             return {
               artistName: user.username,
@@ -1543,7 +1887,8 @@ class DistributionDataTransferService {
               totalStreams: user.playback_count || 0,
               bio: user.description,
               imageUrl: user.avatar_url,
-              profileUrl: user.permalink_url || `https://soundcloud.com/${permalink}`,
+              profileUrl:
+                user.permalink_url || `https://soundcloud.com/${permalink}`,
               verified: true,
             } as Partial<StreamingProfileData>;
           }
@@ -1552,23 +1897,35 @@ class DistributionDataTransferService {
 
       const resp = await timedFetch(`https://soundcloud.com/${permalink}`, {
         headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-          'Accept-Language': 'en-US,en;q=0.9',
+          "User-Agent":
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+          "Accept-Language": "en-US,en;q=0.9",
         },
       });
       if (!resp.ok) throw new Error(`SoundCloud returned ${resp.status}`);
       const html = await resp.text();
 
-      const nameMatch = html.match(/<meta\s+property="og:title"\s+content="([^"]+)"/);
-      const descMatch = html.match(/<meta\s+property="og:description"\s+content="([^"]+)"/);
-      const imgMatch = html.match(/<meta\s+property="og:image"\s+content="([^"]+)"/);
+      const nameMatch = html.match(
+        /<meta\s+property="og:title"\s+content="([^"]+)"/,
+      );
+      const descMatch = html.match(
+        /<meta\s+property="og:description"\s+content="([^"]+)"/,
+      );
+      const imgMatch = html.match(
+        /<meta\s+property="og:image"\s+content="([^"]+)"/,
+      );
 
       return {
-        artistName: nameMatch ? nameMatch[1].replace(/ \| Free Listening.*$/, '').replace(/ \| Listen.*$/, '').trim() : permalink,
+        artistName: nameMatch
+          ? nameMatch[1]
+              .replace(/ \| Free Listening.*$/, "")
+              .replace(/ \| Listen.*$/, "")
+              .trim()
+          : permalink,
         bio: descMatch ? descMatch[1].trim() : undefined,
         imageUrl: imgMatch ? imgMatch[1] : undefined,
         profileUrl: `https://soundcloud.com/${permalink}`,
-        lastSyncMethod: 'scraping',
+        lastSyncMethod: "scraping",
         verified: true,
       } as Partial<StreamingProfileData>;
     };
@@ -1576,53 +1933,74 @@ class DistributionDataTransferService {
     if (breaker) {
       return breaker.execute(fetcher, () => null);
     }
-    try { return await fetcher(); } catch (err) {
-      logger.warn({ err: err }, `[DataTransfer] SoundCloud fetch failed for ${permalink}:`);
+    try {
+      return await fetcher();
+    } catch (err) {
+      logger.warn(
+        { err: err },
+        `[DataTransfer] SoundCloud fetch failed for ${permalink}:`,
+      );
       return null;
     }
   }
 
-  private async fetchTidalData(artistId: string): Promise<Partial<StreamingProfileData> | null> {
-    const breaker = this.getCircuitBreaker('tidal');
+  private async fetchTidalData(
+    artistId: string,
+  ): Promise<Partial<StreamingProfileData> | null> {
+    const breaker = this.getCircuitBreaker("tidal");
     const fetcher = async () => {
       const tidalToken = process.env.TIDAL_TOKEN;
       if (tidalToken) {
         try {
-          const resp = await timedFetch(`https://api.tidal.com/v1/artists/${artistId}?countryCode=US`, {
-            headers: { 'x-tidal-token': tidalToken },
-          });
+          const resp = await timedFetch(
+            `https://api.tidal.com/v1/artists/${artistId}?countryCode=US`,
+            {
+              headers: { "x-tidal-token": tidalToken },
+            },
+          );
           if (resp.ok) {
-            const artist = await resp.json() as Record<string, unknown>;
+            const artist = (await resp.json()) as Record<string, unknown>;
             return {
               artistName: artist.name,
-              imageUrl: artist.picture ? `https://resources.tidal.com/images/${artist.picture.replace(/-/g, '/')}/750x750.jpg` : undefined,
+              imageUrl: artist.picture
+                ? `https://resources.tidal.com/images/${artist.picture.replace(/-/g, "/")}/750x750.jpg`
+                : undefined,
               profileUrl: `https://tidal.com/artist/${artistId}`,
               verified: true,
             } as Partial<StreamingProfileData>;
           }
-        } catch {
-        }
+        } catch {}
       }
 
-      const resp = await timedFetch(`https://listen.tidal.com/artist/${artistId}`, {
-        headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-          'Accept-Language': 'en-US,en;q=0.9',
+      const resp = await timedFetch(
+        `https://listen.tidal.com/artist/${artistId}`,
+        {
+          headers: {
+            "User-Agent":
+              "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+            "Accept-Language": "en-US,en;q=0.9",
+          },
         },
-      });
+      );
       if (!resp.ok) throw new Error(`Tidal returned ${resp.status}`);
       const html = await resp.text();
 
-      const nameMatch = html.match(/<meta\s+property="og:title"\s+content="([^"]+)"/);
-      const imgMatch = html.match(/<meta\s+property="og:image"\s+content="([^"]+)"/);
-      const descMatch = html.match(/<meta\s+property="og:description"\s+content="([^"]+)"/);
+      const nameMatch = html.match(
+        /<meta\s+property="og:title"\s+content="([^"]+)"/,
+      );
+      const imgMatch = html.match(
+        /<meta\s+property="og:image"\s+content="([^"]+)"/,
+      );
+      const descMatch = html.match(
+        /<meta\s+property="og:description"\s+content="([^"]+)"/,
+      );
 
       return {
         artistName: nameMatch ? nameMatch[1].trim() : undefined,
         bio: descMatch ? descMatch[1].trim() : undefined,
         imageUrl: imgMatch ? imgMatch[1] : undefined,
         profileUrl: `https://tidal.com/artist/${artistId}`,
-        lastSyncMethod: 'scraping',
+        lastSyncMethod: "scraping",
         verified: true,
       } as Partial<StreamingProfileData>;
     };
@@ -1630,24 +2008,35 @@ class DistributionDataTransferService {
     if (breaker) {
       return breaker.execute(fetcher, () => null);
     }
-    try { return await fetcher(); } catch (err) {
-      logger.warn({ err: err }, `[DataTransfer] Tidal fetch failed for ${artistId}:`);
+    try {
+      return await fetcher();
+    } catch (err) {
+      logger.warn(
+        { err: err },
+        `[DataTransfer] Tidal fetch failed for ${artistId}:`,
+      );
       return null;
     }
   }
 
-  private async fetchBandcampData(slug: string): Promise<Partial<StreamingProfileData> | null> {
-    const breaker = this.getCircuitBreaker('bandcamp');
+  private async fetchBandcampData(
+    slug: string,
+  ): Promise<Partial<StreamingProfileData> | null> {
+    const breaker = this.getCircuitBreaker("bandcamp");
     const fetcher = async () => {
       const resp = await timedFetch(`https://${slug}.bandcamp.com`, {
-        headers: { 'User-Agent': 'Mozilla/5.0 (compatible; MaxBooster/1.0)' },
+        headers: { "User-Agent": "Mozilla/5.0 (compatible; MaxBooster/1.0)" },
       });
       if (!resp.ok) throw new Error(`Bandcamp returned ${resp.status}`);
       const html = await resp.text();
 
       const nameMatch = html.match(/<title>([^|<]+)/);
-      const bioMatch = html.match(/<meta\s+name="description"\s+content="([^"]+)"/);
-      const imgMatch = html.match(/<img[^>]+class="[^"]*band-photo[^"]*"[^>]+src="([^"]+)"/);
+      const bioMatch = html.match(
+        /<meta\s+name="description"\s+content="([^"]+)"/,
+      );
+      const imgMatch = html.match(
+        /<img[^>]+class="[^"]*band-photo[^"]*"[^>]+src="([^"]+)"/,
+      );
 
       return {
         artistName: nameMatch ? nameMatch[1].trim() : slug,
@@ -1661,18 +2050,27 @@ class DistributionDataTransferService {
     if (breaker) {
       return breaker.execute(fetcher, () => null);
     }
-    try { return await fetcher(); } catch (err) {
-      logger.warn({ err: err }, `[DataTransfer] Bandcamp fetch failed for ${slug}:`);
+    try {
+      return await fetcher();
+    } catch (err) {
+      logger.warn(
+        { err: err },
+        `[DataTransfer] Bandcamp fetch failed for ${slug}:`,
+      );
       return null;
     }
   }
 
-  private async fetchAudiomackData(slug: string): Promise<Partial<StreamingProfileData> | null> {
-    const breaker = this.getCircuitBreaker('audiomack');
+  private async fetchAudiomackData(
+    slug: string,
+  ): Promise<Partial<StreamingProfileData> | null> {
+    const breaker = this.getCircuitBreaker("audiomack");
     const fetcher = async () => {
-      const resp = await timedFetch(`https://api.audiomack.com/v1/artist/${slug}`);
+      const resp = await timedFetch(
+        `https://api.audiomack.com/v1/artist/${slug}`,
+      );
       if (!resp.ok) throw new Error(`Audiomack API returned ${resp.status}`);
-      const data = await resp.json() as Record<string, unknown>;
+      const data = (await resp.json()) as Record<string, unknown>;
       const artist = data.results;
       if (!artist) return null;
 
@@ -1690,8 +2088,13 @@ class DistributionDataTransferService {
     if (breaker) {
       return breaker.execute(fetcher, () => null);
     }
-    try { return await fetcher(); } catch (err) {
-      logger.warn({ err: err }, `[DataTransfer] Audiomack fetch failed for ${slug}:`);
+    try {
+      return await fetcher();
+    } catch (err) {
+      logger.warn(
+        { err: err },
+        `[DataTransfer] Audiomack fetch failed for ${slug}:`,
+      );
       return null;
     }
   }
@@ -1699,87 +2102,105 @@ class DistributionDataTransferService {
   private async fetchPlatformData(
     platformId: string,
     artistId: string,
-    sharedTopTracks?: Array<{ title: string; streams: number; isrc?: string }>
+    sharedTopTracks?: Array<{ title: string; streams: number; isrc?: string }>,
   ): Promise<Partial<StreamingProfileData> | null> {
-    logger.info(`[DataTransfer] Fetching data for ${platformId} artist: ${artistId}`);
+    logger.info(
+      `[DataTransfer] Fetching data for ${platformId} artist: ${artistId}`,
+    );
 
     try {
       switch (platformId) {
-        case 'spotify':
+        case "spotify":
           return await this.fetchSpotifyData(artistId);
-        case 'apple_music':
+        case "apple_music":
           // Use shared Spotify catalog when available — skip Apple's own song lookup
           // so the release catalog is only imported once per sync cycle.
           return await this.fetchAppleMusicData(artistId, sharedTopTracks);
-        case 'youtube_music':
+        case "youtube_music":
           return await this.fetchYouTubeMusicData(artistId);
-        case 'deezer':
+        case "deezer":
           // Use shared Spotify catalog when available — skip Deezer's own top-track fetch.
           return await this.fetchDeezerData(artistId, sharedTopTracks);
-        case 'soundcloud':
+        case "soundcloud":
           return await this.fetchSoundCloudData(artistId);
-        case 'tidal':
+        case "tidal":
           return await this.fetchTidalData(artistId);
-        case 'bandcamp':
+        case "bandcamp":
           return await this.fetchBandcampData(artistId);
-        case 'audiomack':
+        case "audiomack":
           return await this.fetchAudiomackData(artistId);
-        case 'amazon_music':
-        case 'beatport':
+        case "amazon_music":
+        case "beatport":
           return {
-            lastSyncMethod: 'manual',
+            lastSyncMethod: "manual",
             verified: true,
           } as Partial<StreamingProfileData>;
         default:
           return null;
       }
     } catch (err) {
-      logger.warn({ err: err }, `[DataTransfer] Platform fetch failed for ${platformId}/${artistId}:`);
+      logger.warn(
+        { err: err },
+        `[DataTransfer] Platform fetch failed for ${platformId}/${artistId}:`,
+      );
       return null;
     }
   }
 
   // ─── Catalog scanning methods ─────────────────────────────────────────────
 
-  private async fetchSpotifyAlbums(artistId: string, artistName: string): Promise<ScannedRelease[]> {
+  private async fetchSpotifyAlbums(
+    artistId: string,
+    artistName: string,
+  ): Promise<ScannedRelease[]> {
     const token = await this.getSpotifyToken();
 
     if (token) {
       try {
         const results: ScannedRelease[] = [];
-        let url: string | null = `https://api.spotify.com/v1/artists/${artistId}/albums?include_groups=album,single,ep&limit=50&market=US`;
+        let url: string | null =
+          `https://api.spotify.com/v1/artists/${artistId}/albums?include_groups=album,single,ep&limit=50&market=US`;
         let spotifyApiBlocked = false;
 
         while (url) {
-          const resp = await timedFetch(url, { headers: { Authorization: `Bearer ${token}` } });
+          const resp = await timedFetch(url, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
 
           if (!resp.ok) {
             // Detect premium-subscription block on the developer app — the
             // Spotify API responds with a plain-text message (not JSON) when the
             // app owner's account doesn't have an active Spotify premium
             // subscription.  In that case we fall through to the iTunes catalog.
-            const body = await resp.text().catch(() => '');
-            if (body.toLowerCase().includes('premium') || resp.status === 403) {
-              logger.warn(`[DataTransfer] Spotify API blocked (status ${resp.status}): ${body.slice(0, 120)} — falling back to iTunes catalog`);
+            const body = await resp.text().catch(() => "");
+            if (body.toLowerCase().includes("premium") || resp.status === 403) {
+              logger.warn(
+                `[DataTransfer] Spotify API blocked (status ${resp.status}): ${body.slice(0, 120)} — falling back to iTunes catalog`,
+              );
               spotifyApiBlocked = true;
             } else {
-              logger.warn(`[DataTransfer] Spotify albums request failed: ${resp.status}`);
+              logger.warn(
+                `[DataTransfer] Spotify albums request failed: ${resp.status}`,
+              );
             }
             break;
           }
 
-          const data = await resp.json() as Record<string, unknown>;
-          for (const item of (data.items || [])) {
-            const type = item.album_type === 'album'
-              ? (item.total_tracks >= 6 ? 'album' : 'EP')
-              : 'single';
+          const data = (await resp.json()) as Record<string, unknown>;
+          for (const item of data.items || []) {
+            const type =
+              item.album_type === "album"
+                ? item.total_tracks >= 6
+                  ? "album"
+                  : "EP"
+                : "single";
             results.push({
               id: `spotify-${item.id}`,
               externalId: item.id,
-              platformId: 'spotify',
+              platformId: "spotify",
               title: item.name,
               artistName: item.artists?.[0]?.name || artistName,
-              releaseType: type as 'single' | 'EP' | 'album',
+              releaseType: type as "single" | "EP" | "album",
               releaseDate: item.release_date || null,
               trackCount: item.total_tracks || 1,
               coverUrl: item.images?.[0]?.url,
@@ -1796,36 +2217,57 @@ class DistributionDataTransferService {
         if (results.length > 0) {
           // Fetch full track lists (with ISRC + duration) for first 10 releases of any type
           const trackTargets = results.slice(0, 10);
-          await Promise.allSettled(trackTargets.map(async (release) => {
-            try {
-              const tr = await timedFetch(`https://api.spotify.com/v1/albums/${release.externalId}/tracks?limit=50`, {
-                headers: { Authorization: `Bearer ${token}` },
-              });
-              if (tr.ok) {
-                const td = await tr.json() as Record<string, unknown>;
-                release.tracks = (td.items || []).map((t: Record<string, unknown>, idx: number) => ({
-                  title: t.name,
-                  trackNumber: t.track_number || idx + 1,
-                  isrc: t.external_ids?.isrc,
-                  duration: t.duration_ms ? Math.round(t.duration_ms / 1000) : undefined,
-                }));
-                release.trackCount = release.tracks.length || release.trackCount;
+          await Promise.allSettled(
+            trackTargets.map(async (release) => {
+              try {
+                const tr = await timedFetch(
+                  `https://api.spotify.com/v1/albums/${release.externalId}/tracks?limit=50`,
+                  {
+                    headers: { Authorization: `Bearer ${token}` },
+                  },
+                );
+                if (tr.ok) {
+                  const td = (await tr.json()) as Record<string, unknown>;
+                  release.tracks = (td.items || []).map(
+                    (t: Record<string, unknown>, idx: number) => ({
+                      title: t.name,
+                      trackNumber: t.track_number || idx + 1,
+                      isrc: t.external_ids?.isrc,
+                      duration: t.duration_ms
+                        ? Math.round(t.duration_ms / 1000)
+                        : undefined,
+                    }),
+                  );
+                  release.trackCount =
+                    release.tracks.length || release.trackCount;
+                }
+              } catch {
+                /* non-fatal */
               }
-            } catch { /* non-fatal */ }
-          }));
-          logger.info(`[DataTransfer] Spotify API returned ${results.length} releases for artist ${artistId}`);
+            }),
+          );
+          logger.info(
+            `[DataTransfer] Spotify API returned ${results.length} releases for artist ${artistId}`,
+          );
           return results;
         }
 
         // Spotify returned nothing (API blocked or empty) — fall through to iTunes
         if (!spotifyApiBlocked) {
-          logger.info(`[DataTransfer] Spotify API returned 0 releases for ${artistId} — trying iTunes catalog`);
+          logger.info(
+            `[DataTransfer] Spotify API returned 0 releases for ${artistId} — trying iTunes catalog`,
+          );
         }
       } catch (err) {
-        logger.warn(`[DataTransfer] Spotify album scan error for ${artistId}:`, err?.message);
+        logger.warn(
+          `[DataTransfer] Spotify album scan error for ${artistId}:`,
+          err?.message,
+        );
       }
     } else {
-      logger.info(`[DataTransfer] No Spotify token — going direct to iTunes catalog for artist "${artistName}"`);
+      logger.info(
+        `[DataTransfer] No Spotify token — going direct to iTunes catalog for artist "${artistName}"`,
+      );
     }
 
     // ── iTunes/Apple Music catalog (credential-free) ──────────────────────────
@@ -1833,14 +2275,21 @@ class DistributionDataTransferService {
     // iTunes catalog is the authoritative mirror of what's on Spotify.  We search
     // by artist name (extracted from the Spotify profile) and page through all
     // their releases.  No API key required.
-    const itunesReleases = await this.fetchItunesCatalogByArtistName(artistName, 'spotify');
+    const itunesReleases = await this.fetchItunesCatalogByArtistName(
+      artistName,
+      "spotify",
+    );
     if (itunesReleases.length > 0) {
-      logger.info(`[DataTransfer] iTunes catalog returned ${itunesReleases.length} releases for "${artistName}"`);
+      logger.info(
+        `[DataTransfer] iTunes catalog returned ${itunesReleases.length} releases for "${artistName}"`,
+      );
       return itunesReleases;
     }
 
     // ── MusicBrainz last-resort fallback ─────────────────────────────────────
-    logger.info(`[DataTransfer] iTunes returned 0 results — trying MusicBrainz for artist ${artistId}`);
+    logger.info(
+      `[DataTransfer] iTunes returned 0 results — trying MusicBrainz for artist ${artistId}`,
+    );
     return this.fetchMusicBrainzAlbums(artistId, artistName);
   }
 
@@ -1857,18 +2306,18 @@ class DistributionDataTransferService {
    */
   private async fetchItunesCatalogByArtistName(
     artistName: string,
-    platformId: string
+    platformId: string,
   ): Promise<ScannedRelease[]> {
-    if (!artistName || artistName === 'Unknown Artist') return [];
+    if (!artistName || artistName === "Unknown Artist") return [];
 
     try {
       // Step 1 — Find the iTunes artist ID by name
       const searchResp = await timedFetch(
-        `https://itunes.apple.com/search?term=${encodeURIComponent(artistName)}&entity=album&limit=50&country=US`
+        `https://itunes.apple.com/search?term=${encodeURIComponent(artistName)}&entity=album&limit=50&country=US`,
       );
       if (!searchResp.ok) return [];
 
-      const searchData = await searchResp.json() as Record<string, unknown>;
+      const searchData = (await searchResp.json()) as Record<string, unknown>;
       const items: Record<string, unknown>[] = searchData.results || [];
       if (items.length === 0) return [];
 
@@ -1879,50 +2328,57 @@ class DistributionDataTransferService {
         if (aid) idCounts[aid] = (idCounts[aid] || 0) + 1;
       }
       const bestId = Number(
-        Object.entries(idCounts).sort((a, b) => b[1] - a[1])[0]?.[0]
+        Object.entries(idCounts).sort((a, b) => b[1] - a[1])[0]?.[0],
       );
       if (!bestId) return [];
 
       // Step 2 — Get all releases for that artist ID (up to 200)
       const lookupResp = await timedFetch(
-        `https://itunes.apple.com/lookup?id=${bestId}&entity=album&limit=200&country=US`
+        `https://itunes.apple.com/lookup?id=${bestId}&entity=album&limit=200&country=US`,
       );
       if (!lookupResp.ok) return [];
 
-      const lookupData = await lookupResp.json() as Record<string, unknown>;
-      const releases: Record<string, unknown>[] = (lookupData.results || []).filter(
-        (r: Record<string, unknown>) => r.wrapperType === 'collection' || r.collectionId
+      const lookupData = (await lookupResp.json()) as Record<string, unknown>;
+      const releases: Record<string, unknown>[] = (
+        lookupData.results || []
+      ).filter(
+        (r: Record<string, unknown>) =>
+          r.wrapperType === "collection" || r.collectionId,
       );
 
-      const resolvedArtistName =
-        releases[0]?.artistName || artistName;
+      const resolvedArtistName = releases[0]?.artistName || artistName;
 
-      const normalizeType = (trackCount: number): 'single' | 'EP' | 'album' => {
-        if (trackCount <= 2) return 'single';
-        if (trackCount <= 6) return 'EP';
-        return 'album';
+      const normalizeType = (trackCount: number): "single" | "EP" | "album" => {
+        if (trackCount <= 2) return "single";
+        if (trackCount <= 6) return "EP";
+        return "album";
       };
 
       return releases.map((item: Record<string, unknown>) => ({
         id: `itunes-${item.collectionId}`,
         externalId: String(item.collectionId),
         platformId,
-        title: item.collectionName?.replace(/ - Single$| - EP$/, '') || item.collectionName,
+        title:
+          item.collectionName?.replace(/ - Single$| - EP$/, "") ||
+          item.collectionName,
         artistName: item.artistName || resolvedArtistName,
-        releaseType: item.collectionName?.endsWith(' - Single')
-          ? 'single'
-          : item.collectionName?.endsWith(' - EP')
-            ? 'EP'
+        releaseType: item.collectionName?.endsWith(" - Single")
+          ? "single"
+          : item.collectionName?.endsWith(" - EP")
+            ? "EP"
             : normalizeType(item.trackCount || 1),
-        releaseDate: item.releaseDate ? item.releaseDate.split('T')[0] : null,
+        releaseDate: item.releaseDate ? item.releaseDate.split("T")[0] : null,
         trackCount: item.trackCount || 1,
-        coverUrl: item.artworkUrl100?.replace('100x100bb', '600x600bb'),
+        coverUrl: item.artworkUrl100?.replace("100x100bb", "600x600bb"),
         platformUrl: item.collectionViewUrl,
         upc: undefined,
         genre: item.primaryGenreName || undefined,
       }));
     } catch (err) {
-      logger.warn(`[DataTransfer] iTunes catalog lookup failed for "${artistName}":`, err?.message);
+      logger.warn(
+        `[DataTransfer] iTunes catalog lookup failed for "${artistName}":`,
+        err?.message,
+      );
       return [];
     }
   }
@@ -1938,9 +2394,13 @@ class DistributionDataTransferService {
    * We stagger two calls with a short delay and include a descriptive User-Agent
    * as required by their terms of service.
    */
-  private async fetchMusicBrainzAlbums(spotifyArtistId: string, artistName: string): Promise<ScannedRelease[]> {
-    const UA = 'MaxBooster/1.0 (max-booster.com; music career management platform)';
-    const delay = (ms: number) => new Promise(r => setTimeout(r, ms));
+  private async fetchMusicBrainzAlbums(
+    spotifyArtistId: string,
+    artistName: string,
+  ): Promise<ScannedRelease[]> {
+    const UA =
+      "MaxBooster/1.0 (max-booster.com; music career management platform)";
+    const delay = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
     try {
       // ── Step 1: Resolve Spotify artist ID → MusicBrainz MBID ──────────────
@@ -1950,32 +2410,43 @@ class DistributionDataTransferService {
         const spotifyUrl = `https://open.spotify.com/artist/${spotifyArtistId}`;
         const urlResp = await timedFetch(
           `https://musicbrainz.org/ws/2/url?resource=${encodeURIComponent(spotifyUrl)}&inc=artist-rels&fmt=json`,
-          { headers: { 'User-Agent': UA } }
+          { headers: { "User-Agent": UA } },
         );
         if (urlResp.ok) {
-          const urlData = await urlResp.json() as Record<string, unknown>;
-          const artistRel = (urlData.relations || []).find((r: Record<string, unknown>) => r['target-type'] === 'artist');
+          const urlData = (await urlResp.json()) as Record<string, unknown>;
+          const artistRel = (urlData.relations || []).find(
+            (r: Record<string, unknown>) => r["target-type"] === "artist",
+          );
           mbid = artistRel?.artist?.id || null;
         }
-      } catch { /* non-fatal — fall through to name search */ }
+      } catch {
+        /* non-fatal — fall through to name search */
+      }
 
       // ── Step 2: Fall back to name search if URL lookup missed ─────────────
-      if (!mbid && artistName && artistName !== 'Unknown Artist') {
+      if (!mbid && artistName && artistName !== "Unknown Artist") {
         await delay(300); // respect rate limit
         try {
           const searchResp = await timedFetch(
             `https://musicbrainz.org/ws/2/artist/?query=${encodeURIComponent(artistName)}&fmt=json&limit=5`,
-            { headers: { 'User-Agent': UA } }
+            { headers: { "User-Agent": UA } },
           );
           if (searchResp.ok) {
-            const searchData = await searchResp.json() as Record<string, unknown>;
+            const searchData = (await searchResp.json()) as Record<
+              string,
+              unknown
+            >;
             mbid = searchData.artists?.[0]?.id || null;
           }
-        } catch { /* non-fatal */ }
+        } catch {
+          /* non-fatal */
+        }
       }
 
       if (!mbid) {
-        logger.warn(`[DataTransfer] MusicBrainz: could not resolve MBID for Spotify artist ${spotifyArtistId}`);
+        logger.warn(
+          `[DataTransfer] MusicBrainz: could not resolve MBID for Spotify artist ${spotifyArtistId}`,
+        );
         return [];
       }
 
@@ -1983,18 +2454,25 @@ class DistributionDataTransferService {
       await delay(300);
       const rgResp = await timedFetch(
         `https://musicbrainz.org/ws/2/release-group?artist=${mbid}&type=album%7Csingle%7Cep&fmt=json&limit=100&inc=tags%2Breleases`,
-        { headers: { 'User-Agent': UA } }
+        { headers: { "User-Agent": UA } },
       );
       if (!rgResp.ok) return [];
 
-      const rgData = await rgResp.json() as Record<string, unknown>;
-      const groups: Record<string, unknown>[] = rgData['release-groups'] || [];
+      const rgData = (await rgResp.json()) as Record<string, unknown>;
+      const groups: Record<string, unknown>[] = rgData["release-groups"] || [];
 
-      const normalizeType = (primary: string, secondary: string[]): 'single' | 'EP' | 'album' => {
-        const t = (primary || '').toLowerCase();
-        if (t === 'single') return 'single';
-        if (t === 'ep' || (secondary || []).map((s: string) => s.toLowerCase()).includes('ep')) return 'EP';
-        return 'album';
+      const normalizeType = (
+        primary: string,
+        secondary: string[],
+      ): "single" | "EP" | "album" => {
+        const t = (primary || "").toLowerCase();
+        if (t === "single") return "single";
+        if (
+          t === "ep" ||
+          (secondary || []).map((s: string) => s.toLowerCase()).includes("ep")
+        )
+          return "EP";
+        return "album";
       };
 
       // ── Step 4: Batch-resolve cover art from Cover Art Archive ────────────
@@ -2004,101 +2482,150 @@ class DistributionDataTransferService {
       const CAA_CONCURRENCY = 8;
       for (let i = 0; i < groups.length; i += CAA_CONCURRENCY) {
         const chunk = groups.slice(i, i + CAA_CONCURRENCY);
-        await Promise.allSettled(chunk.map(async (rg: Record<string, unknown>) => {
-          try {
-            const caaResp = await timedFetch(
-              `https://coverartarchive.org/release-group/${rg.id}`,
-              {
-                headers: { 'User-Agent': UA },
-                signal: AbortSignal.timeout(4000),
+        await Promise.allSettled(
+          chunk.map(async (rg: Record<string, unknown>) => {
+            try {
+              const caaResp = await timedFetch(
+                `https://coverartarchive.org/release-group/${rg.id}`,
+                {
+                  headers: { "User-Agent": UA },
+                  signal: AbortSignal.timeout(4000),
+                },
+              );
+              if (caaResp.ok) {
+                const caaData = (await caaResp.json()) as Record<
+                  string,
+                  unknown
+                >;
+                const frontImg =
+                  (caaData.images || []).find(
+                    (img: Record<string, unknown>) => img.front,
+                  ) || caaData.images?.[0];
+                if (frontImg) {
+                  const url =
+                    frontImg.thumbnails?.["500"] ||
+                    frontImg.thumbnails?.large ||
+                    frontImg.image;
+                  if (url) coverUrlMap.set(rg.id, url);
+                }
               }
-            );
-            if (caaResp.ok) {
-              const caaData = await caaResp.json() as Record<string, unknown>;
-              const frontImg = (caaData.images || []).find((img: Record<string, unknown>) => img.front) || caaData.images?.[0];
-              if (frontImg) {
-                const url = frontImg.thumbnails?.['500'] || frontImg.thumbnails?.large || frontImg.image;
-                if (url) coverUrlMap.set(rg.id, url);
-              }
+            } catch {
+              /* non-fatal — no cover art */
             }
-          } catch { /* non-fatal — no cover art */ }
-        }));
+          }),
+        );
       }
 
-      const results: ScannedRelease[] = groups.map((rg: Record<string, unknown>) => {
-        // Best-effort track count from the first release in the release-group
-        const firstRelease = (rg.releases || [])[0];
-        const trackCount = firstRelease?.['track-count'] || firstRelease?.media?.[0]?.['track-count'] || 1;
-        // Top genre tag (highest vote count wins)
-        const topTag = (rg.tags || []).sort((a: Record<string, unknown>, b: Record<string, unknown>) => (b.count || 0) - (a.count || 0))[0];
-        return {
-          id: `mb-${rg.id}`,
-          externalId: rg.id,
-          platformId: 'spotify',
-          title: rg.title,
-          artistName,
-          releaseType: normalizeType(rg['primary-type'] || 'album', rg['secondary-types'] || []),
-          releaseDate: rg['first-release-date'] || null,
-          trackCount,
-          coverUrl: coverUrlMap.get(rg.id),
-          platformUrl: `https://musicbrainz.org/release-group/${rg.id}`,
-          genre: topTag?.name,
-          upc: firstRelease?.barcode,
-        };
-      });
+      const results: ScannedRelease[] = groups.map(
+        (rg: Record<string, unknown>) => {
+          // Best-effort track count from the first release in the release-group
+          const firstRelease = (rg.releases || [])[0];
+          const trackCount =
+            firstRelease?.["track-count"] ||
+            firstRelease?.media?.[0]?.["track-count"] ||
+            1;
+          // Top genre tag (highest vote count wins)
+          const topTag = (rg.tags || []).sort(
+            (a: Record<string, unknown>, b: Record<string, unknown>) =>
+              (b.count || 0) - (a.count || 0),
+          )[0];
+          return {
+            id: `mb-${rg.id}`,
+            externalId: rg.id,
+            platformId: "spotify",
+            title: rg.title,
+            artistName,
+            releaseType: normalizeType(
+              rg["primary-type"] || "album",
+              rg["secondary-types"] || [],
+            ),
+            releaseDate: rg["first-release-date"] || null,
+            trackCount,
+            coverUrl: coverUrlMap.get(rg.id),
+            platformUrl: `https://musicbrainz.org/release-group/${rg.id}`,
+            genre: topTag?.name,
+            upc: firstRelease?.barcode,
+          };
+        },
+      );
 
       logger.info(
-        `[DataTransfer] MusicBrainz returned ${results.length} release-group(s) for artist ${artistName} (mbid=${mbid}, ${coverUrlMap.size} with cover art)`
+        `[DataTransfer] MusicBrainz returned ${results.length} release-group(s) for artist ${artistName} (mbid=${mbid}, ${coverUrlMap.size} with cover art)`,
       );
       return results;
     } catch (err) {
-      logger.warn(`[DataTransfer] MusicBrainz fallback failed for ${spotifyArtistId}:`, err?.message);
+      logger.warn(
+        `[DataTransfer] MusicBrainz fallback failed for ${spotifyArtistId}:`,
+        err?.message,
+      );
       return [];
     }
   }
 
-  private async fetchAppleMusicAlbums(artistId: string, artistName: string): Promise<ScannedRelease[]> {
+  private async fetchAppleMusicAlbums(
+    artistId: string,
+    artistName: string,
+  ): Promise<ScannedRelease[]> {
     try {
       const resp = await timedFetch(
-        `https://itunes.apple.com/lookup?id=${artistId}&entity=album&limit=50`
+        `https://itunes.apple.com/lookup?id=${artistId}&entity=album&limit=50`,
       );
       if (!resp.ok) return [];
-      const data = await resp.json() as Record<string, unknown>;
-      const albums = (data.results || []).filter((r: Record<string, unknown>) => r.collectionType === 'Album' || r.wrapperType === 'collection');
+      const data = (await resp.json()) as Record<string, unknown>;
+      const albums = (data.results || []).filter(
+        (r: Record<string, unknown>) =>
+          r.collectionType === "Album" || r.wrapperType === "collection",
+      );
 
       return albums.map((item: Record<string, unknown>) => ({
         id: `apple-${item.collectionId}`,
         externalId: String(item.collectionId),
-        platformId: 'apple_music',
+        platformId: "apple_music",
         title: item.collectionName,
         artistName: item.artistName || artistName,
-        releaseType: (item.trackCount >= 6 ? 'album' : (item.trackCount >= 3 ? 'EP' : 'single')) as 'single' | 'EP' | 'album',
-        releaseDate: item.releaseDate ? item.releaseDate.split('T')[0] : null,
+        releaseType: (item.trackCount >= 6
+          ? "album"
+          : item.trackCount >= 3
+            ? "EP"
+            : "single") as "single" | "EP" | "album",
+        releaseDate: item.releaseDate ? item.releaseDate.split("T")[0] : null,
         trackCount: item.trackCount || 1,
-        coverUrl: item.artworkUrl100?.replace('100x100', '600x600'),
+        coverUrl: item.artworkUrl100?.replace("100x100", "600x600"),
         platformUrl: item.collectionViewUrl,
         genre: item.primaryGenreName,
       }));
     } catch (err) {
-      logger.warn({ err: err }, `[DataTransfer] Apple Music album scan failed for ${artistId}:`);
+      logger.warn(
+        { err: err },
+        `[DataTransfer] Apple Music album scan failed for ${artistId}:`,
+      );
       return [];
     }
   }
 
-  private async fetchDeezerAlbums(artistId: string, artistName: string): Promise<ScannedRelease[]> {
+  private async fetchDeezerAlbums(
+    artistId: string,
+    artistName: string,
+  ): Promise<ScannedRelease[]> {
     try {
-      const resp = await timedFetch(`https://api.deezer.com/artist/${artistId}/albums?limit=50`);
+      const resp = await timedFetch(
+        `https://api.deezer.com/artist/${artistId}/albums?limit=50`,
+      );
       if (!resp.ok) return [];
-      const data = await resp.json() as Record<string, unknown>;
+      const data = (await resp.json()) as Record<string, unknown>;
       if (data.error) return [];
 
       return (data.data || []).map((item: Record<string, unknown>) => ({
         id: `deezer-${item.id}`,
         externalId: String(item.id),
-        platformId: 'deezer',
+        platformId: "deezer",
         title: item.title,
         artistName,
-        releaseType: (item.nb_tracks >= 6 ? 'album' : (item.nb_tracks >= 3 ? 'EP' : 'single')) as 'single' | 'EP' | 'album',
+        releaseType: (item.nb_tracks >= 6
+          ? "album"
+          : item.nb_tracks >= 3
+            ? "EP"
+            : "single") as "single" | "EP" | "album",
         releaseDate: item.release_date || null,
         trackCount: item.nb_tracks || 1,
         coverUrl: item.cover_xl || item.cover_big || item.cover_medium,
@@ -2107,7 +2634,10 @@ class DistributionDataTransferService {
         genre: item.genres?.data?.[0]?.name,
       }));
     } catch (err) {
-      logger.warn({ err: err }, `[DataTransfer] Deezer album scan failed for ${artistId}:`);
+      logger.warn(
+        { err: err },
+        `[DataTransfer] Deezer album scan failed for ${artistId}:`,
+      );
       return [];
     }
   }
@@ -2121,31 +2651,37 @@ class DistributionDataTransferService {
    */
   private async fetchDeezerCatalogByArtistName(
     artistName: string,
-    platformId: string
+    platformId: string,
   ): Promise<ScannedRelease[]> {
-    if (!artistName || artistName === 'Unknown Artist') return [];
+    if (!artistName || artistName === "Unknown Artist") return [];
     try {
       const searchResp = await timedFetch(
-        `https://api.deezer.com/search/artist?q=${encodeURIComponent(artistName)}&limit=5`
+        `https://api.deezer.com/search/artist?q=${encodeURIComponent(artistName)}&limit=5`,
       );
       if (!searchResp.ok) return [];
-      const searchData = await searchResp.json() as Record<string, unknown>;
+      const searchData = (await searchResp.json()) as Record<string, unknown>;
       const artists: Record<string, unknown>[] = searchData.data || [];
       if (artists.length === 0) return [];
 
       // Pick the artist whose name most closely matches
-      const bestArtist = artists.reduce((best: Record<string, unknown>, a: Record<string, unknown>) => {
-        const score = (a.name || '').toLowerCase() === artistName.toLowerCase() ? 100 : a.nb_fan || 0;
-        return score > (best._score ?? 0) ? { ...a, _score: score } : best;
-      }, {});
+      const bestArtist = artists.reduce(
+        (best: Record<string, unknown>, a: Record<string, unknown>) => {
+          const score =
+            (a.name || "").toLowerCase() === artistName.toLowerCase()
+              ? 100
+              : a.nb_fan || 0;
+          return score > (best._score ?? 0) ? { ...a, _score: score } : best;
+        },
+        {},
+      );
 
       if (!bestArtist?.id) return [];
 
       const albumResp = await timedFetch(
-        `https://api.deezer.com/artist/${bestArtist.id}/albums?limit=50`
+        `https://api.deezer.com/artist/${bestArtist.id}/albums?limit=50`,
       );
       if (!albumResp.ok) return [];
-      const albumData = await albumResp.json() as Record<string, unknown>;
+      const albumData = (await albumResp.json()) as Record<string, unknown>;
       if (albumData.error) return [];
 
       return (albumData.data || []).map((item: Record<string, unknown>) => ({
@@ -2154,7 +2690,11 @@ class DistributionDataTransferService {
         platformId,
         title: item.title,
         artistName,
-        releaseType: (item.nb_tracks >= 6 ? 'album' : (item.nb_tracks >= 3 ? 'EP' : 'single')) as 'single' | 'EP' | 'album',
+        releaseType: (item.nb_tracks >= 6
+          ? "album"
+          : item.nb_tracks >= 3
+            ? "EP"
+            : "single") as "single" | "EP" | "album",
         releaseDate: item.release_date || null,
         trackCount: item.nb_tracks || 1,
         coverUrl: item.cover_xl || item.cover_big || item.cover_medium,
@@ -2163,44 +2703,56 @@ class DistributionDataTransferService {
         genre: item.genres?.data?.[0]?.name,
       }));
     } catch (err) {
-      logger.warn(`[DataTransfer] Deezer catalog proxy failed for "${artistName}":`, err?.message);
+      logger.warn(
+        `[DataTransfer] Deezer catalog proxy failed for "${artistName}":`,
+        err?.message,
+      );
       return [];
     }
   }
 
-  private async fetchSoundCloudAlbums(permalink: string, artistName: string): Promise<ScannedRelease[]> {
+  private async fetchSoundCloudAlbums(
+    permalink: string,
+    artistName: string,
+  ): Promise<ScannedRelease[]> {
     try {
       const clientId = await this.getSoundCloudClientId();
       if (!clientId) return [];
 
       const userResp = await timedFetch(
-        `https://api-v2.soundcloud.com/resolve?url=https://soundcloud.com/${permalink}&client_id=${clientId}`
+        `https://api-v2.soundcloud.com/resolve?url=https://soundcloud.com/${permalink}&client_id=${clientId}`,
       );
       if (!userResp.ok) return [];
-      const user = await userResp.json() as Record<string, unknown>;
+      const user = (await userResp.json()) as Record<string, unknown>;
       if (!user?.id) return [];
 
       const [playlistResp, tracksResp] = await Promise.all([
-        fetch(`https://api-v2.soundcloud.com/users/${user.id}/playlists?client_id=${clientId}&limit=20`),
-        fetch(`https://api-v2.soundcloud.com/users/${user.id}/tracks?client_id=${clientId}&limit=20`),
+        fetch(
+          `https://api-v2.soundcloud.com/users/${user.id}/playlists?client_id=${clientId}&limit=20`,
+        ),
+        fetch(
+          `https://api-v2.soundcloud.com/users/${user.id}/tracks?client_id=${clientId}&limit=20`,
+        ),
       ]);
 
       const results: ScannedRelease[] = [];
 
       if (playlistResp.ok) {
-        const pd = await playlistResp.json() as Record<string, unknown>;
-        for (const pl of (pd.collection || [])) {
+        const pd = (await playlistResp.json()) as Record<string, unknown>;
+        for (const pl of pd.collection || []) {
           const trackCount = pl.track_count || pl.tracks?.length || 1;
           results.push({
             id: `soundcloud-pl-${pl.id}`,
             externalId: String(pl.id),
-            platformId: 'soundcloud',
+            platformId: "soundcloud",
             title: pl.title,
             artistName: pl.user?.username || artistName,
-            releaseType: trackCount >= 6 ? 'album' : trackCount >= 3 ? 'EP' : 'single',
-            releaseDate: pl.release_date || pl.created_at?.split('T')[0] || null,
+            releaseType:
+              trackCount >= 6 ? "album" : trackCount >= 3 ? "EP" : "single",
+            releaseDate:
+              pl.release_date || pl.created_at?.split("T")[0] || null,
             trackCount,
-            coverUrl: pl.artwork_url?.replace('-large', '-t500x500'),
+            coverUrl: pl.artwork_url?.replace("-large", "-t500x500"),
             platformUrl: pl.permalink_url,
             genre: pl.genre || pl.tracks?.[0]?.genre || undefined,
           });
@@ -2208,18 +2760,19 @@ class DistributionDataTransferService {
       }
 
       if (tracksResp.ok) {
-        const td = await tracksResp.json() as Record<string, unknown>;
+        const td = (await tracksResp.json()) as Record<string, unknown>;
         for (const track of (td.collection || []).slice(0, 10)) {
           results.push({
             id: `soundcloud-tr-${track.id}`,
             externalId: String(track.id),
-            platformId: 'soundcloud',
+            platformId: "soundcloud",
             title: track.title,
             artistName: track.user?.username || artistName,
-            releaseType: 'single',
-            releaseDate: track.release_date || track.created_at?.split('T')[0] || null,
+            releaseType: "single",
+            releaseDate:
+              track.release_date || track.created_at?.split("T")[0] || null,
             trackCount: 1,
-            coverUrl: track.artwork_url?.replace('-large', '-t500x500'),
+            coverUrl: track.artwork_url?.replace("-large", "-t500x500"),
             platformUrl: track.permalink_url,
             genre: track.genre || undefined,
           });
@@ -2228,15 +2781,21 @@ class DistributionDataTransferService {
 
       return results;
     } catch (err) {
-      logger.warn({ err: err }, `[DataTransfer] SoundCloud album scan failed for ${permalink}:`);
+      logger.warn(
+        { err: err },
+        `[DataTransfer] SoundCloud album scan failed for ${permalink}:`,
+      );
       return [];
     }
   }
 
-  private async fetchBandcampAlbums(slug: string, artistName: string): Promise<ScannedRelease[]> {
+  private async fetchBandcampAlbums(
+    slug: string,
+    artistName: string,
+  ): Promise<ScannedRelease[]> {
     try {
       const resp = await timedFetch(`https://${slug}.bandcamp.com/music`, {
-        headers: { 'User-Agent': 'Mozilla/5.0 (compatible; MaxBooster/1.0)' },
+        headers: { "User-Agent": "Mozilla/5.0 (compatible; MaxBooster/1.0)" },
       });
       if (!resp.ok) return [];
       const html = await resp.text();
@@ -2256,23 +2815,25 @@ class DistributionDataTransferService {
         const linkM = linkRegex.exec(block);
         const typeM = linkM ? typeRegex.exec(linkM[1]) : null;
 
-        const title = titleM ? titleM[1].replace(/<[^>]+>/g, '').trim() : null;
+        const title = titleM ? titleM[1].replace(/<[^>]+>/g, "").trim() : null;
         if (!title) continue;
 
         const rawType = typeM?.[1];
-        const releaseType = rawType === 'album' ? 'album' : 'single';
-        const href = linkM?.[1] || '';
-        const fullUrl = href.startsWith('http') ? href : `https://${slug}.bandcamp.com${href}`;
+        const releaseType = rawType === "album" ? "album" : "single";
+        const href = linkM?.[1] || "";
+        const fullUrl = href.startsWith("http")
+          ? href
+          : `https://${slug}.bandcamp.com${href}`;
 
         results.push({
-          id: `bandcamp-${Buffer.from(fullUrl).toString('base64').substring(0, 16)}`,
+          id: `bandcamp-${Buffer.from(fullUrl).toString("base64").substring(0, 16)}`,
           externalId: fullUrl,
-          platformId: 'bandcamp',
+          platformId: "bandcamp",
           title,
           artistName,
-          releaseType: releaseType as 'single' | 'EP' | 'album',
+          releaseType: releaseType as "single" | "EP" | "album",
           releaseDate: null,
-          trackCount: releaseType === 'album' ? 5 : 1,
+          trackCount: releaseType === "album" ? 5 : 1,
           coverUrl: imgM?.[1],
           platformUrl: fullUrl,
         });
@@ -2280,71 +2841,97 @@ class DistributionDataTransferService {
 
       return results;
     } catch (err) {
-      logger.warn({ err: err }, `[DataTransfer] Bandcamp album scan failed for ${slug}:`);
+      logger.warn(
+        { err: err },
+        `[DataTransfer] Bandcamp album scan failed for ${slug}:`,
+      );
       return [];
     }
   }
 
-  private async fetchAudiomackAlbums(slug: string, artistName: string): Promise<ScannedRelease[]> {
+  private async fetchAudiomackAlbums(
+    slug: string,
+    artistName: string,
+  ): Promise<ScannedRelease[]> {
     try {
-      const resp = await timedFetch(`https://api.audiomack.com/v1/artist/${slug}/playlists?limit=20`);
+      const resp = await timedFetch(
+        `https://api.audiomack.com/v1/artist/${slug}/playlists?limit=20`,
+      );
       if (!resp.ok) return [];
-      const data = await resp.json() as Record<string, unknown>;
+      const data = (await resp.json()) as Record<string, unknown>;
       const items = data.results || data.data || [];
 
       return items.map((item: Record<string, unknown>) => ({
         id: `audiomack-${item.id || item.slug}`,
         externalId: String(item.id || item.slug),
-        platformId: 'audiomack',
+        platformId: "audiomack",
         title: item.title,
         artistName: item.artist?.name || artistName,
-        releaseType: (item.song_count >= 6 ? 'album' : item.song_count >= 3 ? 'EP' : 'single') as 'single' | 'EP' | 'album',
-        releaseDate: item.released_at ? new Date(item.released_at * 1000).toISOString().split('T')[0] : null,
+        releaseType: (item.song_count >= 6
+          ? "album"
+          : item.song_count >= 3
+            ? "EP"
+            : "single") as "single" | "EP" | "album",
+        releaseDate: item.released_at
+          ? new Date(item.released_at * 1000).toISOString().split("T")[0]
+          : null,
         trackCount: item.song_count || 1,
         coverUrl: item.image,
         platformUrl: item.url || `https://audiomack.com/${slug}/${item.slug}`,
       }));
     } catch (err) {
-      logger.warn({ err: err }, `[DataTransfer] Audiomack album scan failed for ${slug}:`);
+      logger.warn(
+        { err: err },
+        `[DataTransfer] Audiomack album scan failed for ${slug}:`,
+      );
       return [];
     }
   }
 
-  async scanReleasesFromProfile(userId: string, platformId: string): Promise<ScannedRelease[]> {
+  async scanReleasesFromProfile(
+    userId: string,
+    platformId: string,
+  ): Promise<ScannedRelease[]> {
     // Hydrate from DB first if the in-memory map is missing this user/platform
     // (common after a server restart when the map hasn't been populated yet).
-    if (!this.linkedProfiles.has(userId) || !this.linkedProfiles.get(userId)!.has(platformId)) {
+    if (
+      !this.linkedProfiles.has(userId) ||
+      !this.linkedProfiles.get(userId)!.has(platformId)
+    ) {
       await this.hydrateProfilesFromStorage(userId);
     }
 
     const userProfiles = this.linkedProfiles.get(userId);
     if (!userProfiles || !userProfiles.has(platformId)) {
-      throw new Error('Profile not linked');
+      throw new Error("Profile not linked");
     }
 
     const profile = userProfiles.get(platformId)!;
-    const artistName = profile.artistName || 'Unknown Artist';
+    const artistName = profile.artistName || "Unknown Artist";
     const artistId = profile.artistId;
 
-    logger.info(`[DataTransfer] Scanning catalog for ${platformId} / artist "${artistName}" (${artistId})`);
+    logger.info(
+      `[DataTransfer] Scanning catalog for ${platformId} / artist "${artistName}" (${artistId})`,
+    );
 
     // Normalize: accept both hyphenated slugs ('apple-music') and the
     // legacy snake_case ids ('apple_music') that profile keys use.
-    const normId = platformId.replace(/-/g, '_');
+    const normId = platformId.replace(/-/g, "_");
 
     // Resolve scannerAlias — e.g. 'itunes' and 'apple-music' both delegate
     // to the apple_music scanner which uses the iTunes lookup API.
     const platformMeta = STREAMING_PLATFORMS.find(
-      p => p.id === normId || p.slug === platformId
+      (p) => p.id === normId || p.slug === platformId,
     );
-    const scannerKey = (platformMeta as Record<string, unknown>)?.scannerAlias ?? normId;
+    const scannerKey =
+      (platformMeta as Record<string, unknown>)?.scannerAlias ?? normId;
 
     // Manual-only platforms (DJ pools, gaming stores, social CMS) have no
     // automated catalog retrieval path.
-    if (platformMeta?.syncMethod === 'manual') {
+    if (platformMeta?.syncMethod === "manual") {
       logger.warn(
         `[DataTransfer] "${platformId}" is manual-entry only — no automated scanner. ` +
-        `Category: ${platformMeta.category}`
+          `Category: ${platformMeta.category}`,
       );
       return [];
     }
@@ -2352,12 +2939,18 @@ class DistributionDataTransferService {
     // ── Dedicated scanners ────────────────────────────────────────────────────
     // These platforms have a stable, free public API that we query directly.
     switch (scannerKey) {
-      case 'spotify':     return this.fetchSpotifyAlbums(artistId, artistName);
-      case 'apple_music': return this.fetchAppleMusicAlbums(artistId, artistName);
-      case 'deezer':      return this.fetchDeezerAlbums(artistId, artistName);
-      case 'soundcloud':  return this.fetchSoundCloudAlbums(artistId, artistName);
-      case 'bandcamp':    return this.fetchBandcampAlbums(artistId, artistName);
-      case 'audiomack':   return this.fetchAudiomackAlbums(artistId, artistName);
+      case "spotify":
+        return this.fetchSpotifyAlbums(artistId, artistName);
+      case "apple_music":
+        return this.fetchAppleMusicAlbums(artistId, artistName);
+      case "deezer":
+        return this.fetchDeezerAlbums(artistId, artistName);
+      case "soundcloud":
+        return this.fetchSoundCloudAlbums(artistId, artistName);
+      case "bandcamp":
+        return this.fetchBandcampAlbums(artistId, artistName);
+      case "audiomack":
+        return this.fetchAudiomackAlbums(artistId, artistName);
     }
 
     // ── iTunes proxy fallback (covers all 97 DistroKid DSPs) ─────────────────
@@ -2367,15 +2960,18 @@ class DistributionDataTransferService {
     // the artist name is sufficient to identify the right catalog.
     logger.info(
       `[DataTransfer] No dedicated scanner for "${platformId}" ` +
-      `(syncMethod: ${platformMeta?.syncMethod ?? 'proxy'}) — ` +
-      `using iTunes proxy catalog for artist "${artistName}"`
+        `(syncMethod: ${platformMeta?.syncMethod ?? "proxy"}) — ` +
+        `using iTunes proxy catalog for artist "${artistName}"`,
     );
 
-    const proxyReleases = await this.fetchItunesCatalogByArtistName(artistName, platformId);
+    const proxyReleases = await this.fetchItunesCatalogByArtistName(
+      artistName,
+      platformId,
+    );
     if (proxyReleases.length > 0) {
       logger.info(
         `[DataTransfer] iTunes proxy returned ${proxyReleases.length} releases ` +
-        `for "${artistName}" (routed via ${platformId})`
+          `for "${artistName}" (routed via ${platformId})`,
       );
       return proxyReleases;
     }
@@ -2383,7 +2979,7 @@ class DistributionDataTransferService {
     // Secondary proxy: Deezer artist-name search
     logger.info(
       `[DataTransfer] iTunes proxy returned 0 results — trying Deezer name search ` +
-      `for "${artistName}" (routed via ${platformId})`
+        `for "${artistName}" (routed via ${platformId})`,
     );
     return this.fetchDeezerCatalogByArtistName(artistName, platformId);
   }
@@ -2391,10 +2987,14 @@ class DistributionDataTransferService {
   async importProfileCatalog(
     userId: string,
     platformId: string,
-    releases: ScannedRelease[]
+    releases: ScannedRelease[],
   ): Promise<DataTransferJob> {
-    const job = await this.createTransferJob(userId, 'import', `${platformId}_profile_scan`);
-    job.status = 'processing';
+    const job = await this.createTransferJob(
+      userId,
+      "import",
+      `${platformId}_profile_scan`,
+    );
+    job.status = "processing";
     job.totalItems = releases.length;
     job.updatedAt = new Date();
 
@@ -2403,37 +3003,60 @@ class DistributionDataTransferService {
 
     for (const release of releases) {
       try {
-        const existing = await this.findExistingRelease(userId, release.upc, release.title, release.artistName);
+        const existing = await this.findExistingRelease(
+          userId,
+          release.upc,
+          release.title,
+          release.artistName,
+        );
 
         if (existing) {
           const existingMeta = existing.metadata as Record<string, unknown>;
           const links = existingMeta?.originalPlatformLinks || {};
           if (release.platformUrl) links[platformId] = release.platformUrl;
-          const mergedMeta: Record<string, any> = { ...existingMeta, originalPlatformLinks: links };
-          if (!existingMeta?.coverUrl && release.coverUrl) mergedMeta.coverUrl = release.coverUrl;
+          const mergedMeta: Record<string, any> = {
+            ...existingMeta,
+            originalPlatformLinks: links,
+          };
+          if (!existingMeta?.coverUrl && release.coverUrl)
+            mergedMeta.coverUrl = release.coverUrl;
           if (!existingMeta?.upc && release.upc) mergedMeta.upc = release.upc;
-          if (!existingMeta?.primaryGenre && release.genre) mergedMeta.primaryGenre = release.genre;
-          if (release.tracks?.length && (!existingMeta?.tracks || existingMeta.tracks.length === 0)) {
+          if (!existingMeta?.primaryGenre && release.genre)
+            mergedMeta.primaryGenre = release.genre;
+          if (
+            release.tracks?.length &&
+            (!existingMeta?.tracks || existingMeta.tracks.length === 0)
+          ) {
             mergedMeta.tracks = release.tracks;
             mergedMeta.trackCount = release.tracks.length;
           }
-          await storage.updateDistroRelease(existing.id, { metadata: mergedMeta });
-          logger.info(`[DataTransfer] Merged existing release from ${platformId}: ${release.title}`);
+          await storage.updateDistroRelease(existing.id, {
+            metadata: mergedMeta,
+          });
+          logger.info(
+            `[DataTransfer] Merged existing release from ${platformId}: ${release.title}`,
+          );
         } else {
           await storage.createDistroRelease({
             artistId: userId,
             title: release.title,
-            releaseDate: release.releaseDate ? new Date(release.releaseDate) : null,
+            releaseDate: release.releaseDate
+              ? new Date(release.releaseDate)
+              : null,
             metadata: {
               artistName: release.artistName,
               releaseType: release.releaseType,
-              primaryGenre: release.genre || 'Other',
-              language: 'en',
-              copyrightYear: release.releaseDate ? new Date(release.releaseDate).getFullYear() : new Date().getFullYear(),
+              primaryGenre: release.genre || "Other",
+              language: "en",
+              copyrightYear: release.releaseDate
+                ? new Date(release.releaseDate).getFullYear()
+                : new Date().getFullYear(),
               copyrightOwner: release.artistName,
               upc: release.upc,
               importedFrom: `${platformId}_profile_scan`,
-              originalPlatformLinks: release.platformUrl ? { [platformId]: release.platformUrl } : {},
+              originalPlatformLinks: release.platformUrl
+                ? { [platformId]: release.platformUrl }
+                : {},
               coverUrl: release.coverUrl,
               trackCount: release.trackCount,
               tracks: release.tracks,
@@ -2442,7 +3065,9 @@ class DistributionDataTransferService {
               scannedExternalId: release.externalId,
             },
           });
-          logger.info(`[DataTransfer] Imported release from ${platformId} profile: ${release.title}`);
+          logger.info(
+            `[DataTransfer] Imported release from ${platformId} profile: ${release.title}`,
+          );
         }
 
         imported++;
@@ -2450,8 +3075,14 @@ class DistributionDataTransferService {
       } catch (err) {
         failed++;
         job.failedItems = failed;
-        job.errors.push({ item: release.title, error: err.message || 'Unknown error' });
-        logger.warn({ err: err }, `[DataTransfer] Failed to import profile release ${release.title}:`);
+        job.errors.push({
+          item: release.title,
+          error: err.message || "Unknown error",
+        });
+        logger.warn(
+          { err: err },
+          `[DataTransfer] Failed to import profile release ${release.title}:`,
+        );
       }
 
       job.processedItems = imported + failed;
@@ -2459,11 +3090,14 @@ class DistributionDataTransferService {
       job.updatedAt = new Date();
     }
 
-    job.status = failed === 0 ? 'completed' : (imported > 0 ? 'partial' : 'failed');
+    job.status =
+      failed === 0 ? "completed" : imported > 0 ? "partial" : "failed";
     job.completedAt = new Date();
     job.result = { importedReleases: imported };
 
-    logger.info(`[DataTransfer] Profile catalog import ${job.id}: ${imported} imported, ${failed} failed`);
+    logger.info(
+      `[DataTransfer] Profile catalog import ${job.id}: ${imported} imported, ${failed} failed`,
+    );
     return job;
   }
 
@@ -2477,41 +3111,49 @@ class DistributionDataTransferService {
   }> {
     const releases = await storage.getDistroReleasesByArtist(userId);
     const linkedProfiles = await this.getLinkedProfiles(userId);
-    
+
     let totalTracks = 0;
     let totalStreams = 0;
-    const platformStats: Record<string, { releases: number; streams: number }> = {};
-    
+    const platformStats: Record<string, { releases: number; streams: number }> =
+      {};
+
     for (const release of releases) {
       const metadata = release.metadata as Record<string, unknown>;
       totalTracks += metadata?.tracks?.length || 1;
       totalStreams += metadata?.streamingStats?.totalStreams || 0;
-      
+
       const platformStreams = metadata?.streamingStats?.platforms || {};
       for (const [platform, stats] of Object.entries(platformStreams)) {
         if (!platformStats[platform]) {
           platformStats[platform] = { releases: 0, streams: 0 };
         }
         platformStats[platform].releases++;
-        platformStats[platform].streams += (stats as Record<string, unknown>).streams || 0;
+        platformStats[platform].streams +=
+          (stats as Record<string, unknown>).streams || 0;
       }
     }
-    
+
     const recommendations: string[] = [];
-    
+
     if (linkedProfiles.length === 0) {
-      recommendations.push('Link your streaming platform profiles to sync your analytics and verify your artist identity.');
+      recommendations.push(
+        "Link your streaming platform profiles to sync your analytics and verify your artist identity.",
+      );
     }
-    
-    if (releases.some(r => !(r.metadata as Record<string, unknown>)?.upc)) {
-      recommendations.push('Some releases are missing UPC codes. Consider generating or importing them for proper tracking.');
+
+    if (releases.some((r) => !(r.metadata as Record<string, unknown>)?.upc)) {
+      recommendations.push(
+        "Some releases are missing UPC codes. Consider generating or importing them for proper tracking.",
+      );
     }
-    
-    const unverifiedProfiles = linkedProfiles.filter(p => !p.verified);
+
+    const unverifiedProfiles = linkedProfiles.filter((p) => !p.verified);
     if (unverifiedProfiles.length > 0) {
-      recommendations.push(`Verify your ${unverifiedProfiles.map(p => p.platformId).join(', ')} profile(s) to unlock advanced analytics.`);
+      recommendations.push(
+        `Verify your ${unverifiedProfiles.map((p) => p.platformId).join(", ")} profile(s) to unlock advanced analytics.`,
+      );
     }
-    
+
     return {
       totalReleases: releases.length,
       totalTracks,
@@ -2526,7 +3168,10 @@ class DistributionDataTransferService {
     };
   }
 
-  async validateImportData(csvContent: string, distributor: string): Promise<{
+  async validateImportData(
+    csvContent: string,
+    distributor: string,
+  ): Promise<{
     valid: boolean;
     totalRows: number;
     validRows: number;
@@ -2535,19 +3180,19 @@ class DistributionDataTransferService {
   }> {
     const errors: Array<{ row: number; error: string }> = [];
     let validRows = 0;
-    
+
     try {
       const releases = await this.parseDistributorCSV(csvContent, distributor);
-      
-      const lines = csvContent.split('\n').filter(line => line.trim());
+
+      const lines = csvContent.split("\n").filter((line) => line.trim());
       const totalRows = Math.max(0, lines.length - 1);
-      
+
       for (const release of releases) {
         if (release.title && release.artistName) {
           validRows++;
         }
       }
-      
+
       return {
         valid: validRows > 0,
         totalRows,
@@ -2567,4 +3212,5 @@ class DistributionDataTransferService {
   }
 }
 
-export const distributionDataTransferService = new DistributionDataTransferService();
+export const distributionDataTransferService =
+  new DistributionDataTransferService();

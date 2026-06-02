@@ -1,24 +1,37 @@
-import { Router } from 'express';
-import { z } from 'zod';
-import { db } from '../db';
-import { posts, scheduledPostBatches, socialAccounts, socialCampaigns } from '@shared/schema';
-import { bulkSchedulePostSchema, bulkValidatePostSchema } from '@shared/schema';
-import { socialQueueService } from '../services/socialQueueService';
-import { eq, and, desc, inArray } from 'drizzle-orm';
-import { randomBytes } from 'crypto';
-import { logger } from '../logger.js';
-import { requireAuth } from '../middleware/auth.js';
+import { Router } from "express";
+import { z } from "zod";
+import { db } from "../db";
+import {
+  posts,
+  scheduledPostBatches,
+  socialAccounts,
+  socialCampaigns,
+} from "@shared/schema";
+import { bulkSchedulePostSchema, bulkValidatePostSchema } from "@shared/schema";
+import { socialQueueService } from "../services/socialQueueService";
+import { eq, and, desc, inArray } from "drizzle-orm";
+import { randomBytes } from "crypto";
+import { logger } from "../logger.js";
+import { requireAuth } from "../middleware/auth.js";
 
 const router = Router();
 
-router.post('/validate', requireAuth, async (req, res) => {
+router.post("/validate", requireAuth, async (req, res) => {
   try {
     const userId = req.user!.id;
     const validatedData = bulkValidatePostSchema.parse(req.body);
     const errors: Array<{ index: number; field: string; message: string }> = [];
     const warnings: Array<{ index: number; message: string }> = [];
 
-    const validPlatforms = ['twitter', 'facebook', 'instagram', 'linkedin', 'tiktok', 'youtube', 'threads'];
+    const validPlatforms = [
+      "twitter",
+      "facebook",
+      "instagram",
+      "linkedin",
+      "tiktok",
+      "youtube",
+      "threads",
+    ];
 
     const platformLimits: Record<string, number> = {
       twitter: 280,
@@ -37,7 +50,7 @@ router.post('/validate', requireAuth, async (req, res) => {
       ...new Set(
         validatedData.posts
           .map((p) => p.socialAccountId)
-          .filter(Boolean) as string[]
+          .filter(Boolean) as string[],
       ),
     ];
     const ownedAccountIdSet = new Set<string>();
@@ -48,8 +61,8 @@ router.post('/validate', requireAuth, async (req, res) => {
         .where(
           and(
             inArray(socialAccounts.id, referencedAccountIds),
-            eq(socialAccounts.userId, userId)
-          )
+            eq(socialAccounts.userId, userId),
+          ),
         )
         .limit(100);
       for (const a of ownedAccounts) ownedAccountIdSet.add(a.id);
@@ -57,26 +70,34 @@ router.post('/validate', requireAuth, async (req, res) => {
 
     for (let i = 0; i < validatedData.posts.length; i++) {
       const post = validatedData.posts[i];
-      const platform = (post.platform || '').toLowerCase();
+      const platform = (post.platform || "").toLowerCase();
 
-      if (!post.platform || post.platform.trim() === '') {
-        errors.push({ index: i, field: 'platform', message: 'Platform is required' });
+      if (!post.platform || post.platform.trim() === "") {
+        errors.push({
+          index: i,
+          field: "platform",
+          message: "Platform is required",
+        });
       } else if (!validPlatforms.includes(platform)) {
         errors.push({
           index: i,
-          field: 'platform',
-          message: `Invalid platform. Must be one of: ${validPlatforms.join(', ')}`,
+          field: "platform",
+          message: `Invalid platform. Must be one of: ${validPlatforms.join(", ")}`,
         });
       }
 
-      if (!post.content || post.content.trim() === '') {
-        errors.push({ index: i, field: 'content', message: 'Content is required' });
+      if (!post.content || post.content.trim() === "") {
+        errors.push({
+          index: i,
+          field: "content",
+          message: "Content is required",
+        });
       } else {
         const limit = platformLimits[platform];
         if (limit && post.content.length > limit) {
           errors.push({
             index: i,
-            field: 'content',
+            field: "content",
             message: `Content exceeds ${limit} character limit for ${post.platform}`,
           });
         }
@@ -85,19 +106,33 @@ router.post('/validate', requireAuth, async (req, res) => {
       if (post.scheduledAt) {
         const scheduledDate = new Date(post.scheduledAt);
         if (isNaN(scheduledDate.getTime())) {
-          errors.push({ index: i, field: 'scheduledAt', message: 'Invalid date format' });
+          errors.push({
+            index: i,
+            field: "scheduledAt",
+            message: "Invalid date format",
+          });
         } else if (scheduledDate < now) {
-          errors.push({ index: i, field: 'scheduledAt', message: 'Scheduled time must be in the future' });
+          errors.push({
+            index: i,
+            field: "scheduledAt",
+            message: "Scheduled time must be in the future",
+          });
         } else if (scheduledDate.getTime() - now.getTime() < 5 * 60 * 1000) {
-          warnings.push({ index: i, message: 'Post scheduled less than 5 minutes from now' });
+          warnings.push({
+            index: i,
+            message: "Post scheduled less than 5 minutes from now",
+          });
         }
       }
 
-      if (post.socialAccountId && !ownedAccountIdSet.has(post.socialAccountId)) {
+      if (
+        post.socialAccountId &&
+        !ownedAccountIdSet.has(post.socialAccountId)
+      ) {
         errors.push({
           index: i,
-          field: 'socialAccountId',
-          message: 'Social account not found or does not belong to you',
+          field: "socialAccountId",
+          message: "Social account not found or does not belong to you",
         });
       }
     }
@@ -109,57 +144,78 @@ router.post('/validate', requireAuth, async (req, res) => {
       warnings,
     });
   } catch (error: unknown) {
-    logger.warn({ err: error }, 'Bulk validation error:');
+    logger.warn({ err: error }, "Bulk validation error:");
     if (error instanceof z.ZodError) {
-      return res.status(400).json({ error: 'Validation failed', details: error.errors });
+      return res
+        .status(400)
+        .json({ error: "Validation failed", details: error.errors });
     }
-    return res.status(500).json({ error: 'Internal server error' });
+    return res.status(500).json({ error: "Internal server error" });
   }
 });
 
-router.post('/schedule', requireAuth, async (req, res) => {
+router.post("/schedule", requireAuth, async (req, res) => {
   try {
     const userId = req.user!.id;
     const validatedData = bulkSchedulePostSchema.parse(req.body);
 
     if (validatedData.posts.length === 0) {
-      return res.status(400).json({ error: 'At least one post is required' });
+      return res.status(400).json({ error: "At least one post is required" });
     }
 
     if (validatedData.posts.length > 500) {
-      return res.status(400).json({ error: 'Batch size exceeds maximum of 500 posts' });
+      return res
+        .status(400)
+        .json({ error: "Batch size exceeds maximum of 500 posts" });
     }
 
-    const validationErrors: Array<{ index: number; field: string; message: string }> = [];
+    const validationErrors: Array<{
+      index: number;
+      field: string;
+      message: string;
+    }> = [];
     for (let i = 0; i < validatedData.posts.length; i++) {
       const post = validatedData.posts[i];
-      if (!post.content || post.content.trim() === '') {
-        validationErrors.push({ index: i, field: 'content', message: 'Content is required' });
+      if (!post.content || post.content.trim() === "") {
+        validationErrors.push({
+          index: i,
+          field: "content",
+          message: "Content is required",
+        });
       }
     }
     if (validationErrors.length > 0) {
-      return res.status(400).json({ error: 'Validation failed', errors: validationErrors });
+      return res
+        .status(400)
+        .json({ error: "Validation failed", errors: validationErrors });
     }
 
     // Verify social account ownership in a single batch query
     const accountIds = [
       ...new Set(
-        validatedData.posts.map((p) => p.socialAccountId).filter(Boolean) as string[]
+        validatedData.posts
+          .map((p) => p.socialAccountId)
+          .filter(Boolean) as string[],
       ),
     ];
     if (accountIds.length > 0) {
       const ownedAccounts = await db
         .select({ id: socialAccounts.id })
         .from(socialAccounts)
-        .where(and(inArray(socialAccounts.id, accountIds), eq(socialAccounts.userId, userId)))
+        .where(
+          and(
+            inArray(socialAccounts.id, accountIds),
+            eq(socialAccounts.userId, userId),
+          ),
+        )
         .limit(100);
       const ownedIds = new Set(ownedAccounts.map((a) => a.id));
       const badIndex = validatedData.posts.findIndex(
-        (p) => p.socialAccountId && !ownedIds.has(p.socialAccountId)
+        (p) => p.socialAccountId && !ownedIds.has(p.socialAccountId),
       );
       if (badIndex !== -1) {
         return res.status(403).json({
-          error: 'One or more social accounts do not belong to you',
+          error: "One or more social accounts do not belong to you",
           index: badIndex,
         });
       }
@@ -168,22 +224,29 @@ router.post('/schedule', requireAuth, async (req, res) => {
     // Verify campaign ownership in a single batch query
     const campaignIds = [
       ...new Set(
-        validatedData.posts.map((p) => p.campaignId).filter(Boolean) as string[]
+        validatedData.posts
+          .map((p) => p.campaignId)
+          .filter(Boolean) as string[],
       ),
     ];
     if (campaignIds.length > 0) {
       const ownedCampaigns = await db
         .select({ id: socialCampaigns.id })
         .from(socialCampaigns)
-        .where(and(inArray(socialCampaigns.id, campaignIds), eq(socialCampaigns.userId, userId)))
+        .where(
+          and(
+            inArray(socialCampaigns.id, campaignIds),
+            eq(socialCampaigns.userId, userId),
+          ),
+        )
         .limit(100);
       const ownedCampaignIds = new Set(ownedCampaigns.map((c) => c.id));
       const badCampaignIndex = validatedData.posts.findIndex(
-        (p) => p.campaignId && !ownedCampaignIds.has(p.campaignId)
+        (p) => p.campaignId && !ownedCampaignIds.has(p.campaignId),
       );
       if (badCampaignIndex !== -1) {
         return res.status(403).json({
-          error: 'One or more campaigns do not belong to you',
+          error: "One or more campaigns do not belong to you",
           index: badCampaignIndex,
         });
       }
@@ -199,7 +262,7 @@ router.post('/schedule', requireAuth, async (req, res) => {
           userId,
           name: `Bulk Schedule - ${new Date().toISOString()}`,
           platforms: [...new Set(validatedData.posts.map((p) => p.platform))],
-          status: 'active',
+          status: "active",
         })
         .returning({ id: socialCampaigns.id });
       defaultCampaignId = newCampaign.id;
@@ -213,7 +276,7 @@ router.post('/schedule', requireAuth, async (req, res) => {
         processedPosts: 0,
         successfulPosts: 0,
         failedPosts: 0,
-        status: 'processing',
+        status: "processing",
         metadata: validatedData.metadata || {},
       })
       .returning();
@@ -226,11 +289,14 @@ router.post('/schedule', requireAuth, async (req, res) => {
       socialAccountId: post.socialAccountId || null,
       content: post.content,
       mediaUrls: post.mediaUrls || [],
-      status: 'scheduled',
+      status: "scheduled",
       scheduledAt: post.scheduledAt ? new Date(post.scheduledAt) : new Date(),
     }));
 
-    const insertedPosts = await db.insert(posts).values(postsToInsert).returning();
+    const insertedPosts = await db
+      .insert(posts)
+      .values(postsToInsert)
+      .returning();
 
     // Queue all posts — parallelise with Promise.all for speed
     await Promise.all(
@@ -242,15 +308,15 @@ router.post('/schedule', requireAuth, async (req, res) => {
             postId: post.id,
             batchId: batch.id,
             platform: post.platform,
-            content: post.content || '',
+            content: post.content || "",
             mediaUrls: (post.mediaUrls as string[]) || [],
             socialAccountId: post.socialAccountId,
             campaignId: post.campaignId,
             scheduledAt: post.scheduledAt || undefined,
           },
-          delay
+          delay,
         );
-      })
+      }),
     );
 
     return res.status(201).json({
@@ -258,35 +324,37 @@ router.post('/schedule', requireAuth, async (req, res) => {
       batchId: batch.id,
       campaignId: defaultCampaignId,
       totalPosts: validatedData.posts.length,
-      message: 'Batch scheduled successfully',
+      message: "Batch scheduled successfully",
     });
   } catch (error: unknown) {
-    logger.warn({ err: error }, 'Bulk schedule error:');
+    logger.warn({ err: error }, "Bulk schedule error:");
     if (error instanceof z.ZodError) {
-      return res.status(400).json({ error: 'Validation failed', details: error.errors });
+      return res
+        .status(400)
+        .json({ error: "Validation failed", details: error.errors });
     }
-    return res.status(500).json({ error: 'Internal server error' });
+    return res.status(500).json({ error: "Internal server error" });
   }
 });
 
-router.get('/status/:batchId', requireAuth, async (req, res) => {
+router.get("/status/:batchId", requireAuth, async (req, res) => {
   try {
     const userId = req.user!.id;
     const { batchId } = req.params;
 
-    if (!batchId || typeof batchId !== 'string') {
-      return res.status(400).json({ error: 'Invalid batch ID' });
+    if (!batchId || typeof batchId !== "string") {
+      return res.status(400).json({ error: "Invalid batch ID" });
     }
 
     const batch = await db.query.scheduledPostBatches.findFirst({
       where: and(
         eq(scheduledPostBatches.id, batchId),
-        eq(scheduledPostBatches.userId, userId)
+        eq(scheduledPostBatches.userId, userId),
       ),
     });
 
     if (!batch) {
-      return res.status(404).json({ error: 'Batch not found' });
+      return res.status(404).json({ error: "Batch not found" });
     }
 
     // Limit to 500 (the max batch size), ordered by schedule time
@@ -301,7 +369,7 @@ router.get('/status/:batchId', requireAuth, async (req, res) => {
         acc[post.status] = (acc[post.status] || 0) + 1;
         return acc;
       },
-      {} as Record<string, number>
+      {} as Record<string, number>,
     );
 
     const queueStats = await socialQueueService.getQueueStats();
@@ -328,38 +396,43 @@ router.get('/status/:batchId', requireAuth, async (req, res) => {
       })),
     });
   } catch (error: unknown) {
-    logger.warn({ err: error }, 'Batch status error:');
-    return res.status(500).json({ error: 'Internal server error' });
+    logger.warn({ err: error }, "Batch status error:");
+    return res.status(500).json({ error: "Internal server error" });
   }
 });
 
-router.delete('/:batchId', requireAuth, async (req, res) => {
+router.delete("/:batchId", requireAuth, async (req, res) => {
   try {
     const userId = req.user!.id;
     const { batchId } = req.params;
 
-    if (!batchId || typeof batchId !== 'string') {
-      return res.status(400).json({ error: 'Invalid batch ID' });
+    if (!batchId || typeof batchId !== "string") {
+      return res.status(400).json({ error: "Invalid batch ID" });
     }
 
     const cancelled = await socialQueueService.cancelBatch(batchId, userId);
 
     if (!cancelled) {
-      return res.status(404).json({ error: 'Batch not found or already completed' });
+      return res
+        .status(404)
+        .json({ error: "Batch not found or already completed" });
     }
 
-    return res.json({ success: true, message: 'Batch cancelled successfully' });
+    return res.json({ success: true, message: "Batch cancelled successfully" });
   } catch (error: unknown) {
-    logger.warn({ err: error }, 'Cancel batch error:');
-    return res.status(500).json({ error: 'Internal server error' });
+    logger.warn({ err: error }, "Cancel batch error:");
+    return res.status(500).json({ error: "Internal server error" });
   }
 });
 
-router.get('/batches', requireAuth, async (req, res) => {
+router.get("/batches", requireAuth, async (req, res) => {
   try {
     const userId = req.user!.id;
-    const page = Math.max(1, parseInt(String(req.query.page || '1'), 10));
-    const pageSize = Math.min(100, Math.max(1, parseInt(String(req.query.pageSize || '50'), 10)));
+    const page = Math.max(1, parseInt(String(req.query.page || "1"), 10));
+    const pageSize = Math.min(
+      100,
+      Math.max(1, parseInt(String(req.query.pageSize || "50"), 10)),
+    );
     const pageOffset = Math.min((page - 1) * pageSize, 100_000);
 
     const batches = await db.query.scheduledPostBatches.findMany({
@@ -385,22 +458,22 @@ router.get('/batches', requireAuth, async (req, res) => {
       })),
     });
   } catch (error: unknown) {
-    logger.warn({ err: error }, 'Get batches error:');
-    return res.status(500).json({ error: 'Internal server error' });
+    logger.warn({ err: error }, "Get batches error:");
+    return res.status(500).json({ error: "Internal server error" });
   }
 });
 
-router.get('/status', requireAuth, async (req, res) => {
+router.get("/status", requireAuth, async (req, res) => {
   try {
     const queueStats = await socialQueueService.getQueueStats();
     return res.json({
-      status: 'ready',
+      status: "ready",
       queuedPosts: queueStats?.waiting ?? 0,
       processingPosts: queueStats?.active ?? 0,
     });
   } catch (error: unknown) {
-    logger.warn({ err: error }, 'Get bulk status error:');
-    return res.status(500).json({ error: 'Internal server error' });
+    logger.warn({ err: error }, "Get bulk status error:");
+    return res.status(500).json({ error: "Internal server error" });
   }
 });
 

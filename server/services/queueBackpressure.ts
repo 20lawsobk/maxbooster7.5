@@ -1,5 +1,5 @@
-import { logger } from '../logger.js';
-import { EventEmitter } from 'events';
+import { logger } from "../logger.js";
+import { EventEmitter } from "events";
 
 interface BackpressureConfig {
   maxQueueSize: number;
@@ -9,7 +9,7 @@ interface BackpressureConfig {
 
 interface BackpressureStatus {
   active: boolean;
-  reason?: 'queue_size' | 'memory_limit' | 'manual';
+  reason?: "queue_size" | "memory_limit" | "manual";
   queueSize?: number;
   memoryUsageMB?: number;
   timestamp: number;
@@ -29,7 +29,7 @@ export class QueueBackpressureManager extends EventEmitter {
       checkIntervalMs: config?.checkIntervalMs || 30000,
     };
 
-    logger.info('🚦 Queue Backpressure Manager initialized');
+    logger.info("🚦 Queue Backpressure Manager initialized");
     logger.info(`   Max Memory: ${this.config.maxMemoryMB}MB`);
   }
 
@@ -42,7 +42,7 @@ export class QueueBackpressureManager extends EventEmitter {
       clearInterval(this.monitoringInterval);
     }
 
-    logger.info('🚦 Starting backpressure monitoring...');
+    logger.info("🚦 Starting backpressure monitoring...");
 
     this.monitoringInterval = setInterval(() => {
       this.checkBackpressure();
@@ -55,7 +55,7 @@ export class QueueBackpressureManager extends EventEmitter {
       this.monitoringInterval = null;
     }
 
-    logger.info('🛑 Stopped backpressure monitoring');
+    logger.info("🛑 Stopped backpressure monitoring");
   }
 
   private _checkInFlight = false;
@@ -82,21 +82,23 @@ export class QueueBackpressureManager extends EventEmitter {
     }
 
     if (shouldActivate && !this.backpressureActive) {
-      logger.warn(`⚠️  BACKPRESSURE ACTIVATED: Memory usage ${heapUsedMB.toFixed(0)}MB exceeds limit ${this.config.maxMemoryMB}MB`);
+      logger.warn(
+        `⚠️  BACKPRESSURE ACTIVATED: Memory usage ${heapUsedMB.toFixed(0)}MB exceeds limit ${this.config.maxMemoryMB}MB`,
+      );
       this.backpressureActive = true;
 
       const status: BackpressureStatus = {
         active: true,
-        reason: 'memory_limit',
+        reason: "memory_limit",
         memoryUsageMB: heapUsedMB,
         timestamp: Date.now(),
       };
 
-      this.emit('backpressure:activated', status);
+      this.emit("backpressure:activated", status);
     }
 
     if (!shouldActivate && this.backpressureActive) {
-      logger.info('✅ BACKPRESSURE DEACTIVATED: System within limits');
+      logger.info("✅ BACKPRESSURE DEACTIVATED: System within limits");
       this.backpressureActive = false;
 
       const status: BackpressureStatus = {
@@ -104,7 +106,7 @@ export class QueueBackpressureManager extends EventEmitter {
         timestamp: Date.now(),
       };
 
-      this.emit('backpressure:deactivated', status);
+      this.emit("backpressure:deactivated", status);
     }
   }
 
@@ -112,15 +114,23 @@ export class QueueBackpressureManager extends EventEmitter {
     return this.backpressureActive;
   }
 
-  async canAcceptJob(queueName?: string): Promise<{ allowed: boolean; reason?: string }> {
+  async canAcceptJob(
+    queueName?: string,
+  ): Promise<{ allowed: boolean; reason?: string }> {
     if (this.backpressureActive) {
-      return { allowed: false, reason: 'Backpressure is active - system under load' };
+      return {
+        allowed: false,
+        reason: "Backpressure is active - system under load",
+      };
     }
 
     const memoryUsage = process.memoryUsage();
     const heapUsedMB = memoryUsage.heapUsed / 1024 / 1024;
     if (heapUsedMB > this.config.maxMemoryMB * 0.9) {
-      return { allowed: false, reason: `Memory usage at ${heapUsedMB.toFixed(0)}MB approaching limit` };
+      return {
+        allowed: false,
+        reason: `Memory usage at ${heapUsedMB.toFixed(0)}MB approaching limit`,
+      };
     }
 
     return { allowed: true };
@@ -128,13 +138,13 @@ export class QueueBackpressureManager extends EventEmitter {
 
   async addJobWithBackpressure<T>(
     queueName: string,
-    addJobFn: () => Promise<T>
+    addJobFn: () => Promise<T>,
   ): Promise<T> {
     const check = await this.canAcceptJob(queueName);
 
     if (!check.allowed) {
       const error = new Error(`Job rejected: ${check.reason}`);
-      (error as Record<string, unknown>).code = 'BACKPRESSURE_REJECTION';
+      (error as Record<string, unknown>).code = "BACKPRESSURE_REJECTION";
       (error as Record<string, unknown>).retryAfter = 30;
       logger.warn(`🚫 Job rejected for queue ${queueName}: ${check.reason}`);
       throw error;
@@ -143,7 +153,9 @@ export class QueueBackpressureManager extends EventEmitter {
     return await addJobFn();
   }
 
-  async getStatus(): Promise<BackpressureStatus & { queueStats?: Record<string, number> }> {
+  async getStatus(): Promise<
+    BackpressureStatus & { queueStats?: Record<string, number> }
+  > {
     const memoryUsage = process.memoryUsage();
     const heapUsedMB = memoryUsage.heapUsed / 1024 / 1024;
 
@@ -156,20 +168,20 @@ export class QueueBackpressureManager extends EventEmitter {
   }
 
   async forceBackpressure(): Promise<void> {
-    logger.warn('⚠️  MANUAL BACKPRESSURE ACTIVATION');
+    logger.warn("⚠️  MANUAL BACKPRESSURE ACTIVATION");
     this.backpressureActive = true;
 
     const status: BackpressureStatus = {
       active: true,
-      reason: 'manual',
+      reason: "manual",
       timestamp: Date.now(),
     };
 
-    this.emit('backpressure:activated', status);
+    this.emit("backpressure:activated", status);
   }
 
   async releaseBackpressure(): Promise<void> {
-    logger.info('ℹ️  MANUAL BACKPRESSURE RELEASE');
+    logger.info("ℹ️  MANUAL BACKPRESSURE RELEASE");
     this.backpressureActive = false;
 
     const status: BackpressureStatus = {
@@ -177,7 +189,7 @@ export class QueueBackpressureManager extends EventEmitter {
       timestamp: Date.now(),
     };
 
-    this.emit('backpressure:deactivated', status);
+    this.emit("backpressure:deactivated", status);
   }
 }
 

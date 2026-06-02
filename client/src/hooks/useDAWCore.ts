@@ -1,7 +1,7 @@
-import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { 
-  dawCore, 
-  DAWCoreState, 
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import {
+  dawCore,
+  DAWCoreState,
   DAWTrack,
   EditMode,
   AutomationMode,
@@ -9,8 +9,8 @@ import {
   MixSuggestion,
   ArrangementSuggestion,
   MIDINote,
-  TimePosition
-} from '@/lib/daw';
+  TimePosition,
+} from "@/lib/daw";
 
 export interface UseDAWCoreReturn {
   isInitialized: boolean;
@@ -19,28 +19,28 @@ export interface UseDAWCoreReturn {
   isLooping: boolean;
   position: TimePosition;
   tempo: number;
-  
+
   tracks: DAWTrack[];
   selectedTrackIds: string[];
   focusedTrackId: string | null;
-  
+
   editMode: EditMode;
   automationMode: AutomationMode;
   snapEnabled: boolean;
   gridDivision: number;
   zoom: number;
-  
+
   canUndo: boolean;
   canRedo: boolean;
   isDirty: boolean;
-  
+
   currentKey: string;
-  currentMode: 'major' | 'minor';
+  currentMode: "major" | "minor";
   suggestions: MixSuggestion[];
   arrangementSections: ArrangementSuggestion[];
-  
+
   initialize: () => Promise<void>;
-  
+
   play: () => void;
   pause: () => void;
   stop: () => void;
@@ -49,59 +49,89 @@ export interface UseDAWCoreReturn {
   setPosition: (beats: number) => void;
   setTempo: (tempo: number) => void;
   setLoop: (enabled: boolean, startBeat?: number, endBeat?: number) => void;
-  
-  addTrack: (type: DAWTrack['type'], name?: string) => string;
+
+  addTrack: (type: DAWTrack["type"], name?: string) => string;
   removeTrack: (trackId: string) => void;
   updateTrack: (trackId: string, updates: Partial<DAWTrack>) => void;
   duplicateTrack: (trackId: string) => string | null;
   reorderTracks: (fromIndex: number, toIndex: number) => void;
-  
+
   setTrackVolume: (trackId: string, volume: number) => void;
   setTrackPan: (trackId: string, pan: number) => void;
   toggleTrackMute: (trackId: string) => void;
   toggleTrackSolo: (trackId: string) => void;
   toggleTrackArm: (trackId: string) => void;
-  
+
   selectTracks: (trackIds: string[]) => void;
-  
-  addPlugin: (trackId: string, pluginId: string, pluginName: string) => string | null;
+
+  addPlugin: (
+    trackId: string,
+    pluginId: string,
+    pluginName: string,
+  ) => string | null;
   removePlugin: (trackId: string, instanceId: string) => void;
-  
-  createSend: (sourceTrackId: string, targetTrackId: string, gain?: number, preFader?: boolean) => string | null;
+
+  createSend: (
+    sourceTrackId: string,
+    targetTrackId: string,
+    gain?: number,
+    preFader?: boolean,
+  ) => string | null;
   createBus: (name: string) => string;
-  
+
   setEditMode: (mode: EditMode) => void;
   setAutomationMode: (mode: AutomationMode) => void;
   setSnap: (enabled: boolean) => void;
   setGridDivision: (division: number) => void;
   setZoom: (zoom: number) => void;
   setScroll: (x: number, y: number) => void;
-  
+
   undo: () => void;
   redo: () => void;
-  
+
   newProject: (name?: string) => void;
   saveProject: () => void;
   loadProject: (data: string) => void;
-  saveToBackend: (projectId?: string) => Promise<{ success: boolean; projectId: string }>;
+  saveToBackend: (
+    projectId?: string,
+  ) => Promise<{ success: boolean; projectId: string }>;
   loadFromBackend: (projectId: string) => Promise<boolean>;
-  listBackendProjects: () => Promise<Array<{ id: string; name: string; updatedAt: string }>>;
-  
+  listBackendProjects: () => Promise<
+    Array<{ id: string; name: string; updatedAt: string }>
+  >;
+
   suggestChords: () => Chord[];
   analyzeMix: () => MixSuggestion[];
   suggestArrangement: () => void;
-  suggestMelody: (key: string, mode: 'major' | 'minor', bars?: number) => MIDINote[];
-  suggestDrums: (bars?: number, style?: 'basic' | 'funk' | 'electronic') => MIDINote[];
-  detectKey: (notes: MIDINote[]) => { key: string; mode: 'major' | 'minor'; confidence: number };
+  suggestMelody: (
+    key: string,
+    mode: "major" | "minor",
+    bars?: number,
+  ) => MIDINote[];
+  suggestDrums: (
+    bars?: number,
+    style?: "basic" | "funk" | "electronic",
+  ) => MIDINote[];
+  detectKey: (notes: MIDINote[]) => {
+    key: string;
+    mode: "major" | "minor";
+    confidence: number;
+  };
 }
 
 export function useDAWCore(): UseDAWCoreReturn {
   const [state, setState] = useState<DAWCoreState>(dawCore.getState());
-  const [transportState, setTransportState] = useState(dawCore.transport.getState());
-  const [position, setPosition] = useState<TimePosition>(dawCore.transport.getCurrentPosition());
+  const [transportState, setTransportState] = useState(
+    dawCore.transport.getState(),
+  );
+  const [position, setPosition] = useState<TimePosition>(
+    dawCore.transport.getCurrentPosition(),
+  );
   const [historyState, setHistoryState] = useState(dawCore.history.getState());
   const [projectState, setProjectState] = useState(dawCore.project.getState());
-  const [intelligenceState, setIntelligenceState] = useState(dawCore.intelligence.getState());
+  const [intelligenceState, setIntelligenceState] = useState(
+    dawCore.intelligence.getState(),
+  );
 
   const animationFrameRef = useRef<number>();
 
@@ -110,7 +140,7 @@ export function useDAWCore(): UseDAWCoreReturn {
       setState(dawCore.getState());
     });
 
-    const unsubTransport = dawCore.transport.on('*', () => {
+    const unsubTransport = dawCore.transport.on("*", () => {
       setTransportState(dawCore.transport.getState());
     });
 
@@ -162,7 +192,7 @@ export function useDAWCore(): UseDAWCoreReturn {
   const pause = useCallback(() => dawCore.pause(), []);
   const stop = useCallback(() => dawCore.stop(), []);
   const record = useCallback(() => dawCore.record(), []);
-  
+
   const toggleLoop = useCallback(() => {
     dawCore.setLoop(!transportState.isLooping);
   }, [transportState.isLooping]);
@@ -172,13 +202,19 @@ export function useDAWCore(): UseDAWCoreReturn {
     setPosition(dawCore.transport.getCurrentPosition());
   }, []);
 
-  const setTempoFn = useCallback((tempo: number) => dawCore.setTempo(tempo), []);
-  
-  const setLoopFn = useCallback((enabled: boolean, startBeat?: number, endBeat?: number) => {
-    dawCore.setLoop(enabled, startBeat, endBeat);
-  }, []);
+  const setTempoFn = useCallback(
+    (tempo: number) => dawCore.setTempo(tempo),
+    [],
+  );
 
-  const addTrack = useCallback((type: DAWTrack['type'], name?: string) => {
+  const setLoopFn = useCallback(
+    (enabled: boolean, startBeat?: number, endBeat?: number) => {
+      dawCore.setLoop(enabled, startBeat, endBeat);
+    },
+    [],
+  );
+
+  const addTrack = useCallback((type: DAWTrack["type"], name?: string) => {
     return dawCore.addTrack(type, name);
   }, []);
 
@@ -186,9 +222,12 @@ export function useDAWCore(): UseDAWCoreReturn {
     dawCore.removeTrack(trackId);
   }, []);
 
-  const updateTrack = useCallback((trackId: string, updates: Partial<DAWTrack>) => {
-    dawCore.updateTrack(trackId, updates);
-  }, []);
+  const updateTrack = useCallback(
+    (trackId: string, updates: Partial<DAWTrack>) => {
+      dawCore.updateTrack(trackId, updates);
+    },
+    [],
+  );
 
   const duplicateTrack = useCallback((trackId: string) => {
     return dawCore.duplicateTrack(trackId);
@@ -222,17 +261,28 @@ export function useDAWCore(): UseDAWCoreReturn {
     dawCore.selectTracks(trackIds);
   }, []);
 
-  const addPlugin = useCallback((trackId: string, pluginId: string, pluginName: string) => {
-    return dawCore.addPlugin(trackId, pluginId, pluginName);
-  }, []);
+  const addPlugin = useCallback(
+    (trackId: string, pluginId: string, pluginName: string) => {
+      return dawCore.addPlugin(trackId, pluginId, pluginName);
+    },
+    [],
+  );
 
   const removePlugin = useCallback((trackId: string, instanceId: string) => {
     dawCore.removePlugin(trackId, instanceId);
   }, []);
 
-  const createSend = useCallback((sourceTrackId: string, targetTrackId: string, gain?: number, preFader?: boolean) => {
-    return dawCore.createSend(sourceTrackId, targetTrackId, gain, preFader);
-  }, []);
+  const createSend = useCallback(
+    (
+      sourceTrackId: string,
+      targetTrackId: string,
+      gain?: number,
+      preFader?: boolean,
+    ) => {
+      return dawCore.createSend(sourceTrackId, targetTrackId, gain, preFader);
+    },
+    [],
+  );
 
   const createBus = useCallback((name: string) => {
     return dawCore.createBus(name);
@@ -301,148 +351,157 @@ export function useDAWCore(): UseDAWCoreReturn {
     dawCore.suggestArrangement();
   }, []);
 
-  const suggestMelody = useCallback((key: string, mode: 'major' | 'minor', bars: number = 4) => {
-    return dawCore.intelligence.suggestMelody(key, mode, bars);
-  }, []);
+  const suggestMelody = useCallback(
+    (key: string, mode: "major" | "minor", bars: number = 4) => {
+      return dawCore.intelligence.suggestMelody(key, mode, bars);
+    },
+    [],
+  );
 
-  const suggestDrums = useCallback((bars: number = 4, style: 'basic' | 'funk' | 'electronic' = 'basic') => {
-    return dawCore.intelligence.suggestDrumPattern(bars, style);
-  }, []);
+  const suggestDrums = useCallback(
+    (bars: number = 4, style: "basic" | "funk" | "electronic" = "basic") => {
+      return dawCore.intelligence.suggestDrumPattern(bars, style);
+    },
+    [],
+  );
 
   const detectKey = useCallback((notes: MIDINote[]) => {
     return dawCore.intelligence.detectKey(notes);
   }, []);
 
-  return useMemo(() => ({
-    isInitialized: state.isInitialized,
-    isPlaying: transportState.isPlaying,
-    isRecording: transportState.isRecording,
-    isLooping: transportState.isLooping,
-    position,
-    tempo: transportState.tempoMap[0]?.tempo ?? 120,
+  return useMemo(
+    () => ({
+      isInitialized: state.isInitialized,
+      isPlaying: transportState.isPlaying,
+      isRecording: transportState.isRecording,
+      isLooping: transportState.isLooping,
+      position,
+      tempo: transportState.tempoMap[0]?.tempo ?? 120,
 
-    tracks: state.tracks,
-    selectedTrackIds: state.selectedTrackIds,
-    focusedTrackId: state.focusedTrackId,
+      tracks: state.tracks,
+      selectedTrackIds: state.selectedTrackIds,
+      focusedTrackId: state.focusedTrackId,
 
-    editMode: state.editMode,
-    automationMode: state.automationMode,
-    snapEnabled: state.snapEnabled,
-    gridDivision: state.gridDivision,
-    zoom: state.zoom,
+      editMode: state.editMode,
+      automationMode: state.automationMode,
+      snapEnabled: state.snapEnabled,
+      gridDivision: state.gridDivision,
+      zoom: state.zoom,
 
-    canUndo: historyState.canUndo,
-    canRedo: historyState.canRedo,
-    isDirty: projectState.isDirty,
+      canUndo: historyState.canUndo,
+      canRedo: historyState.canRedo,
+      isDirty: projectState.isDirty,
 
-    currentKey: intelligenceState.currentKey,
-    currentMode: intelligenceState.currentMode,
-    suggestions: intelligenceState.suggestions,
-    arrangementSections: intelligenceState.arrangementSections,
+      currentKey: intelligenceState.currentKey,
+      currentMode: intelligenceState.currentMode,
+      suggestions: intelligenceState.suggestions,
+      arrangementSections: intelligenceState.arrangementSections,
 
-    initialize,
-    play,
-    pause,
-    stop,
-    record,
-    toggleLoop,
-    setPosition: setPositionFn,
-    setTempo: setTempoFn,
-    setLoop: setLoopFn,
+      initialize,
+      play,
+      pause,
+      stop,
+      record,
+      toggleLoop,
+      setPosition: setPositionFn,
+      setTempo: setTempoFn,
+      setLoop: setLoopFn,
 
-    addTrack,
-    removeTrack,
-    updateTrack,
-    duplicateTrack,
-    reorderTracks,
+      addTrack,
+      removeTrack,
+      updateTrack,
+      duplicateTrack,
+      reorderTracks,
 
-    setTrackVolume,
-    setTrackPan,
-    toggleTrackMute,
-    toggleTrackSolo,
-    toggleTrackArm,
+      setTrackVolume,
+      setTrackPan,
+      toggleTrackMute,
+      toggleTrackSolo,
+      toggleTrackArm,
 
-    selectTracks,
+      selectTracks,
 
-    addPlugin,
-    removePlugin,
+      addPlugin,
+      removePlugin,
 
-    createSend,
-    createBus,
+      createSend,
+      createBus,
 
-    setEditMode,
-    setAutomationMode,
-    setSnap,
-    setGridDivision,
-    setZoom,
-    setScroll,
+      setEditMode,
+      setAutomationMode,
+      setSnap,
+      setGridDivision,
+      setZoom,
+      setScroll,
 
-    undo,
-    redo,
+      undo,
+      redo,
 
-    newProject,
-    saveProject,
-    loadProject,
-    saveToBackend,
-    loadFromBackend,
-    listBackendProjects,
+      newProject,
+      saveProject,
+      loadProject,
+      saveToBackend,
+      loadFromBackend,
+      listBackendProjects,
 
-    suggestChords,
-    analyzeMix,
-    suggestArrangement,
-    suggestMelody,
-    suggestDrums,
-    detectKey,
-  }), [
-    state,
-    transportState,
-    position,
-    historyState,
-    projectState,
-    intelligenceState,
-    initialize,
-    play,
-    pause,
-    stop,
-    record,
-    toggleLoop,
-    setPositionFn,
-    setTempoFn,
-    setLoopFn,
-    addTrack,
-    removeTrack,
-    updateTrack,
-    duplicateTrack,
-    reorderTracks,
-    setTrackVolume,
-    setTrackPan,
-    toggleTrackMute,
-    toggleTrackSolo,
-    toggleTrackArm,
-    selectTracks,
-    addPlugin,
-    removePlugin,
-    createSend,
-    createBus,
-    setEditMode,
-    setAutomationMode,
-    setSnap,
-    setGridDivision,
-    setZoom,
-    setScroll,
-    undo,
-    redo,
-    newProject,
-    saveProject,
-    loadProject,
-    saveToBackend,
-    loadFromBackend,
-    listBackendProjects,
-    suggestChords,
-    analyzeMix,
-    suggestArrangement,
-    suggestMelody,
-    suggestDrums,
-    detectKey,
-  ]);
+      suggestChords,
+      analyzeMix,
+      suggestArrangement,
+      suggestMelody,
+      suggestDrums,
+      detectKey,
+    }),
+    [
+      state,
+      transportState,
+      position,
+      historyState,
+      projectState,
+      intelligenceState,
+      initialize,
+      play,
+      pause,
+      stop,
+      record,
+      toggleLoop,
+      setPositionFn,
+      setTempoFn,
+      setLoopFn,
+      addTrack,
+      removeTrack,
+      updateTrack,
+      duplicateTrack,
+      reorderTracks,
+      setTrackVolume,
+      setTrackPan,
+      toggleTrackMute,
+      toggleTrackSolo,
+      toggleTrackArm,
+      selectTracks,
+      addPlugin,
+      removePlugin,
+      createSend,
+      createBus,
+      setEditMode,
+      setAutomationMode,
+      setSnap,
+      setGridDivision,
+      setZoom,
+      setScroll,
+      undo,
+      redo,
+      newProject,
+      saveProject,
+      loadProject,
+      saveToBackend,
+      loadFromBackend,
+      listBackendProjects,
+      suggestChords,
+      analyzeMix,
+      suggestArrangement,
+      suggestMelody,
+      suggestDrums,
+      detectKey,
+    ],
+  );
 }

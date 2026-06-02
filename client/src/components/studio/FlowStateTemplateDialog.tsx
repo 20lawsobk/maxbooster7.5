@@ -1,10 +1,10 @@
-import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getCsrfTokenFromCookie } from '@/lib/queryClient';
-import { 
-  Layers, 
-  X, 
+import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { getCsrfTokenFromCookie } from "@/lib/queryClient";
+import {
+  Layers,
+  X,
   Music,
   Loader2,
   Sparkles,
@@ -14,13 +14,13 @@ import {
   Piano,
   Waves,
   Search,
-  Plus
-} from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { useToast } from '@/hooks/use-toast';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { ScrollArea } from '@/components/ui/scroll-area';
+  Plus,
+} from "lucide-react";
+import { cn } from "@/lib/utils";
+import { useToast } from "@/hooks/use-toast";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface StudioTemplate {
   id: string;
@@ -36,49 +36,60 @@ interface StudioTemplate {
 }
 
 const CATEGORY_ICONS: Record<string, typeof Music> = {
-  'pop': Music,
-  'hip-hop': Mic2,
-  'electronic': Waves,
-  'rock': Guitar,
-  'drums': Drum,
-  'piano': Piano,
-  'ambient': Sparkles,
-  'default': Layers,
+  pop: Music,
+  "hip-hop": Mic2,
+  electronic: Waves,
+  rock: Guitar,
+  drums: Drum,
+  piano: Piano,
+  ambient: Sparkles,
+  default: Layers,
 };
 
 const CATEGORY_COLORS: Record<string, string> = {
-  'pop': 'from-pink-500 to-rose-500',
-  'hip-hop': 'from-amber-500 to-orange-500',
-  'electronic': 'from-cyan-500 to-blue-500',
-  'rock': 'from-red-500 to-rose-500',
-  'drums': 'from-yellow-500 to-amber-500',
-  'piano': 'from-purple-500 to-violet-500',
-  'ambient': 'from-indigo-500 to-purple-500',
-  'default': 'from-slate-500 to-gray-500',
+  pop: "from-pink-500 to-rose-500",
+  "hip-hop": "from-amber-500 to-orange-500",
+  electronic: "from-cyan-500 to-blue-500",
+  rock: "from-red-500 to-rose-500",
+  drums: "from-yellow-500 to-amber-500",
+  piano: "from-purple-500 to-violet-500",
+  ambient: "from-indigo-500 to-purple-500",
+  default: "from-slate-500 to-gray-500",
 };
 
-async function fetchTemplates(category?: string): Promise<{ templates: StudioTemplate[] }> {
-  const url = category 
+async function fetchTemplates(
+  category?: string,
+): Promise<{ templates: StudioTemplate[] }> {
+  const url = category
     ? `/api/studio/templates?category=${encodeURIComponent(category)}`
-    : '/api/studio/templates';
-  const response = await fetch(url, { credentials: 'include' });
+    : "/api/studio/templates";
+  const response = await fetch(url, { credentials: "include" });
   if (!response.ok) {
-    throw new Error('Failed to fetch templates');
+    throw new Error("Failed to fetch templates");
   }
   return response.json();
 }
 
-async function createProjectFromTemplate(templateId: string, title?: string): Promise<unknown> {
+async function createProjectFromTemplate(
+  templateId: string,
+  title?: string,
+): Promise<unknown> {
   const csrfToken = getCsrfTokenFromCookie();
-  const response = await fetch(`/api/studio/templates/${templateId}/create-project`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...(csrfToken ? { 'x-csrf-token': csrfToken } : {}) },
-    credentials: 'include',
-    body: JSON.stringify({ title }),
-  });
+  const response = await fetch(
+    `/api/studio/templates/${templateId}/create-project`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...(csrfToken ? { "x-csrf-token": csrfToken } : {}),
+      },
+      credentials: "include",
+      body: JSON.stringify({ title }),
+    },
+  );
   if (!response.ok) {
     const error = await response.json();
-    throw new Error(error.error || 'Failed to create project');
+    throw new Error(error.error || "Failed to create project");
   }
   return response.json();
 }
@@ -94,46 +105,52 @@ export function FlowStateTemplateDialog({
   onOpenChange,
   onProjectCreated,
 }: FlowStateTemplateDialogProps) {
-  const [search, setSearch] = useState('');
+  const [search, setSearch] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  const [selectedTemplate, setSelectedTemplate] = useState<StudioTemplate | null>(null);
-  const [projectTitle, setProjectTitle] = useState('');
+  const [selectedTemplate, setSelectedTemplate] =
+    useState<StudioTemplate | null>(null);
+  const [projectTitle, setProjectTitle] = useState("");
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
   const { data, isLoading, error } = useQuery({
-    queryKey: ['studio-templates', selectedCategory],
+    queryKey: ["studio-templates", selectedCategory],
     queryFn: () => fetchTemplates(selectedCategory || undefined),
     enabled: open,
     staleTime: 5 * 60 * 1000,
   });
 
   const createProjectMutation = useMutation({
-    mutationFn: ({ templateId, title }: { templateId: string; title?: string }) =>
-      createProjectFromTemplate(templateId, title),
+    mutationFn: ({
+      templateId,
+      title,
+    }: {
+      templateId: string;
+      title?: string;
+    }) => createProjectFromTemplate(templateId, title),
     onSuccess: (project) => {
       toast({
-        title: 'Project Created',
+        title: "Project Created",
         description: `"${project.title}" has been created from template`,
       });
-      queryClient.invalidateQueries({ queryKey: ['studio-projects'] });
+      queryClient.invalidateQueries({ queryKey: ["studio-projects"] });
       onProjectCreated(project);
       setSelectedTemplate(null);
-      setProjectTitle('');
+      setProjectTitle("");
       onOpenChange(false);
     },
     onError: (error: Error) => {
       toast({
-        title: 'Failed to Create Project',
+        title: "Failed to Create Project",
         description: error.message,
-        variant: 'destructive',
+        variant: "destructive",
       });
     },
   });
 
   const templates = data?.templates || [];
-  
-  const filteredTemplates = templates.filter(template => {
+
+  const filteredTemplates = templates.filter((template) => {
     if (!search.trim()) return true;
     const query = search.toLowerCase();
     return (
@@ -144,7 +161,7 @@ export function FlowStateTemplateDialog({
     );
   });
 
-  const categories = [...new Set(templates.map(t => t.category))];
+  const categories = [...new Set(templates.map((t) => t.category))];
 
   const handleUseTemplate = () => {
     if (!selectedTemplate) return;
@@ -155,16 +172,19 @@ export function FlowStateTemplateDialog({
   };
 
   const getIconForTemplate = (template: StudioTemplate) => {
-    const Icon = CATEGORY_ICONS[template.category.toLowerCase()] || 
-                 CATEGORY_ICONS[template.genre?.toLowerCase() || ''] || 
-                 CATEGORY_ICONS.default;
+    const Icon =
+      CATEGORY_ICONS[template.category.toLowerCase()] ||
+      CATEGORY_ICONS[template.genre?.toLowerCase() || ""] ||
+      CATEGORY_ICONS.default;
     return Icon;
   };
 
   const getColorForTemplate = (template: StudioTemplate) => {
-    return CATEGORY_COLORS[template.category.toLowerCase()] || 
-           CATEGORY_COLORS[template.genre?.toLowerCase() || ''] || 
-           CATEGORY_COLORS.default;
+    return (
+      CATEGORY_COLORS[template.category.toLowerCase()] ||
+      CATEGORY_COLORS[template.genre?.toLowerCase() || ""] ||
+      CATEGORY_COLORS.default
+    );
   };
 
   return (
@@ -190,8 +210,12 @@ export function FlowStateTemplateDialog({
                   <Layers className="w-5 h-5 text-white" />
                 </div>
                 <div>
-                  <h2 className="text-lg font-semibold text-white">Project Templates</h2>
-                  <p className="text-xs text-white/50">Start from a pre-made project</p>
+                  <h2 className="text-lg font-semibold text-white">
+                    Project Templates
+                  </h2>
+                  <p className="text-xs text-white/50">
+                    Start from a pre-made project
+                  </p>
                 </div>
               </div>
               <motion.button
@@ -216,7 +240,7 @@ export function FlowStateTemplateDialog({
                   />
                 </div>
               </div>
-              
+
               {categories.length > 1 && (
                 <div className="flex gap-2 mt-3 flex-wrap">
                   <button
@@ -225,12 +249,12 @@ export function FlowStateTemplateDialog({
                       "px-3 py-1 rounded-full text-xs transition-colors",
                       selectedCategory === null
                         ? "bg-white/20 text-white"
-                        : "bg-white/5 text-white/60 hover:bg-white/10"
+                        : "bg-white/5 text-white/60 hover:bg-white/10",
                     )}
                   >
                     All
                   </button>
-                  {categories.map(cat => (
+                  {categories.map((cat) => (
                     <button
                       key={cat}
                       onClick={() => setSelectedCategory(cat)}
@@ -238,7 +262,7 @@ export function FlowStateTemplateDialog({
                         "px-3 py-1 rounded-full text-xs transition-colors capitalize",
                         selectedCategory === cat
                           ? "bg-white/20 text-white"
-                          : "bg-white/5 text-white/60 hover:bg-white/10"
+                          : "bg-white/5 text-white/60 hover:bg-white/10",
                       )}
                     >
                       {cat}
@@ -253,7 +277,10 @@ export function FlowStateTemplateDialog({
                 {isLoading ? (
                   <div className="grid grid-cols-2 gap-3">
                     {[...Array(6)].map((_, i) => (
-                      <div key={i} className="rounded-lg border border-white/10 bg-white/5 p-4 space-y-3 animate-pulse">
+                      <div
+                        key={i}
+                        className="rounded-lg border border-white/10 bg-white/5 p-4 space-y-3 animate-pulse"
+                      >
                         <div className="h-24 bg-white/10 rounded-md" />
                         <div className="space-y-1.5">
                           <div className="h-3 bg-white/10 rounded w-3/4" />
@@ -272,7 +299,7 @@ export function FlowStateTemplateDialog({
                     <p>No templates found</p>
                     {search && (
                       <button
-                        onClick={() => setSearch('')}
+                        onClick={() => setSearch("")}
                         className="mt-2 text-xs text-purple-400 hover:underline"
                       >
                         Clear search
@@ -292,20 +319,26 @@ export function FlowStateTemplateDialog({
                             "p-4 rounded-xl border text-left transition-all",
                             selectedTemplate?.id === template.id
                               ? "border-purple-500/50 bg-purple-500/10"
-                              : "border-white/5 bg-white/5 hover:bg-white/10 hover:border-white/10"
+                              : "border-white/5 bg-white/5 hover:bg-white/10 hover:border-white/10",
                           )}
                           whileHover={{ scale: 1.02 }}
                           whileTap={{ scale: 0.98 }}
                         >
-                          <div className={cn(
-                            "w-10 h-10 rounded-lg bg-gradient-to-br flex items-center justify-center mb-3",
-                            color
-                          )}>
+                          <div
+                            className={cn(
+                              "w-10 h-10 rounded-lg bg-gradient-to-br flex items-center justify-center mb-3",
+                              color,
+                            )}
+                          >
                             <Icon className="w-5 h-5 text-white" />
                           </div>
-                          <h3 className="text-sm font-medium text-white">{template.name}</h3>
+                          <h3 className="text-sm font-medium text-white">
+                            {template.name}
+                          </h3>
                           {template.description && (
-                            <p className="text-xs text-white/50 mt-1 line-clamp-2">{template.description}</p>
+                            <p className="text-xs text-white/50 mt-1 line-clamp-2">
+                              {template.description}
+                            </p>
                           )}
                           <div className="flex items-center gap-2 mt-2">
                             {template.bpm && (
@@ -336,23 +369,29 @@ export function FlowStateTemplateDialog({
               {selectedTemplate && (
                 <motion.div
                   initial={{ height: 0, opacity: 0 }}
-                  animate={{ height: 'auto', opacity: 1 }}
+                  animate={{ height: "auto", opacity: 1 }}
                   exit={{ height: 0, opacity: 0 }}
                   className="border-t border-white/5 overflow-hidden"
                 >
                   <div className="p-4 space-y-4">
                     <div>
-                      <label className="block text-xs text-white/60 mb-2">Project Name (optional)</label>
+                      <label className="block text-xs text-white/60 mb-2">
+                        Project Name (optional)
+                      </label>
                       <Input
                         value={projectTitle}
                         onChange={(e) => setProjectTitle(e.target.value)}
                         placeholder={`New ${selectedTemplate.name} Project`}
                         className="bg-white/5 border-white/10 text-white placeholder:text-white/40"
-                        onKeyDown={(e) => e.key === 'Enter' && !createProjectMutation.isPending && handleUseTemplate()}
+                        onKeyDown={(e) =>
+                          e.key === "Enter" &&
+                          !createProjectMutation.isPending &&
+                          handleUseTemplate()
+                        }
                         disabled={createProjectMutation.isPending}
                       />
                     </div>
-                    
+
                     <Button
                       onClick={handleUseTemplate}
                       disabled={createProjectMutation.isPending}

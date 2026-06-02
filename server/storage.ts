@@ -1,8 +1,8 @@
-import { logger } from './logger';
-import { randomBytes } from 'crypto';
-import { 
-  users, 
-  dspProviders, 
+import { logger } from "./logger";
+import { randomBytes } from "crypto";
+import {
+  users,
+  dspProviders,
   projects,
   releases,
   posts,
@@ -40,15 +40,30 @@ import {
   systemSettings,
   workspaceAuditLog,
   contractTemplates,
-  type User, 
-  type InsertUser, 
+  type User,
+  type InsertUser,
   type DSPProvider,
   type InsertProject,
   type CollabSnapshot,
-  type InsertCollabSnapshot
+  type InsertCollabSnapshot,
 } from "@shared/schema";
 import { db, dbRead } from "./db";
-import { eq, and, desc, gte, lte, sql, inArray, ilike, or, asc, lt, gt, ne, isNotNull } from "drizzle-orm";
+import {
+  eq,
+  and,
+  desc,
+  gte,
+  lte,
+  sql,
+  inArray,
+  ilike,
+  or,
+  asc,
+  lt,
+  gt,
+  ne,
+  isNotNull,
+} from "drizzle-orm";
 
 type Project = typeof projects.$inferSelect;
 type Release = typeof releases.$inferSelect;
@@ -84,7 +99,10 @@ export interface IStorage {
 export class DatabaseStorage implements IStorage {
   // Auth queries always use the primary db — replicas are for analytics/dashboard reads.
   // Authentication requires the latest committed data; replica lag cannot be tolerated here.
-  private async _retryQuery<T>(fn: () => Promise<T>, label: string): Promise<T> {
+  private async _retryQuery<T>(
+    fn: () => Promise<T>,
+    label: string,
+  ): Promise<T> {
     let lastErr: unknown;
     // 2 attempts (1 retry) with a 300 ms backoff.  Kept small so that a
     // congested Neon WebSocket connection doesn't stall foreground requests
@@ -96,18 +114,49 @@ export class DatabaseStorage implements IStorage {
         return await fn();
       } catch (err) {
         lastErr = err;
-        const msg = err?.message ?? '';
-        const causeMsg = err?.cause?.message ?? '';
-        const causeCode = err?.cause?.code ?? err?.code ?? '';
-        const permanentCodes = new Set(['42703', '42P01', '42601', '23505', '23503', '22001', '22P02']);
+        const msg = err?.message ?? "";
+        const causeMsg = err?.cause?.message ?? "";
+        const causeCode = err?.cause?.code ?? err?.code ?? "";
+        const permanentCodes = new Set([
+          "42703",
+          "42P01",
+          "42601",
+          "23505",
+          "23503",
+          "22001",
+          "22P02",
+        ]);
         const isPermanent = permanentCodes.has(causeCode);
-        const isTransient = !isPermanent && (msg.includes('Failed query') || causeMsg.includes('timeout') || causeMsg.includes('connection') || causeMsg.includes('ECONNRESET') || causeMsg.includes('WebSocket') || causeMsg.includes('closed'));
+        const isTransient =
+          !isPermanent &&
+          (msg.includes("Failed query") ||
+            causeMsg.includes("timeout") ||
+            causeMsg.includes("connection") ||
+            causeMsg.includes("ECONNRESET") ||
+            causeMsg.includes("WebSocket") ||
+            causeMsg.includes("closed"));
         if (isTransient && attempt < MAX_ATTEMPTS) {
-          logger.warn(`[Storage] ${label} transient DB error (attempt ${attempt}/${MAX_ATTEMPTS}), retrying in 300ms:`, msg, '| cause:', causeMsg || 'none', '| code:', causeCode || 'none');
-          await new Promise(r => setTimeout(r, 300));
+          logger.warn(
+            `[Storage] ${label} transient DB error (attempt ${attempt}/${MAX_ATTEMPTS}), retrying in 300ms:`,
+            msg,
+            "| cause:",
+            causeMsg || "none",
+            "| code:",
+            causeCode || "none",
+          );
+          await new Promise((r) => setTimeout(r, 300));
           continue;
         }
-        logger.warn(`[Storage] ${label} final DB error after ${attempt} attempts:`, msg, '| cause:', causeMsg || 'none', '| code:', causeCode || 'none', '| causeDetail:', JSON.stringify(err?.cause ?? null));
+        logger.warn(
+          `[Storage] ${label} final DB error after ${attempt} attempts:`,
+          msg,
+          "| cause:",
+          causeMsg || "none",
+          "| code:",
+          causeCode || "none",
+          "| causeDetail:",
+          JSON.stringify(err?.cause ?? null),
+        );
         throw err;
       }
     }
@@ -117,7 +166,7 @@ export class DatabaseStorage implements IStorage {
   async getUser(id: string): Promise<User | undefined> {
     const [user] = await this._retryQuery(
       () => db.select().from(users).where(eq(users.id, id)).limit(1),
-      'getUser'
+      "getUser",
     );
     return user || undefined;
   }
@@ -125,39 +174,49 @@ export class DatabaseStorage implements IStorage {
   async getUserByEmail(email: string): Promise<User | undefined> {
     const [user] = await this._retryQuery(
       () => db.select().from(users).where(eq(users.email, email)).limit(1),
-      'getUserByEmail'
+      "getUserByEmail",
     );
     return user || undefined;
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
     const [user] = await this._retryQuery(
-      () => db.select().from(users).where(eq(users.username, username)).limit(1),
-      'getUserByUsername'
+      () =>
+        db.select().from(users).where(eq(users.username, username)).limit(1),
+      "getUserByUsername",
     );
     return user || undefined;
   }
 
   async getUserByPasswordResetToken(token: string): Promise<User | undefined> {
     const [user] = await this._retryQuery(
-      () => db.select().from(users).where(eq(users.passwordResetToken, token)).limit(1),
-      'getUserByPasswordResetToken'
+      () =>
+        db
+          .select()
+          .from(users)
+          .where(eq(users.passwordResetToken, token))
+          .limit(1),
+      "getUserByPasswordResetToken",
     );
     return user || undefined;
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
-    const [user] = await db
-      .insert(users)
-      .values(insertUser)
-      .returning();
-    
+    const [user] = await db.insert(users).values(insertUser).returning();
+
     // Initialize Pocket Dimension storage for new user — fire-and-forget so
     // PDIM congestion never blocks or fails the user-creation response.
-    import('./services/userPocketDimensionService.js')
-      .then(({ userPocketService }) => userPocketService.initializeUserStorage(user.id, user.email))
-      .catch((error) => logger.warn({ err: error }, `[Storage] Failed to initialize pocket dimension for user ${user.id}:`));
-    
+    import("./services/userPocketDimensionService.js")
+      .then(({ userPocketService }) =>
+        userPocketService.initializeUserStorage(user.id, user.email),
+      )
+      .catch((error) =>
+        logger.warn(
+          { err: error },
+          `[Storage] Failed to initialize pocket dimension for user ${user.id}:`,
+        ),
+      );
+
     return user;
   }
 
@@ -171,17 +230,30 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteUser(id: string): Promise<boolean> {
-    const result = await db.delete(users).where(eq(users.id, id)).returning({ id: users.id });
+    const result = await db
+      .delete(users)
+      .where(eq(users.id, id))
+      .returning({ id: users.id });
     return result.length > 0;
   }
 
-  async getDistributionProvider(slug: string): Promise<DSPProvider | undefined> {
-    const [provider] = await dbRead.select().from(dspProviders).where(eq(dspProviders.slug, slug));
+  async getDistributionProvider(
+    slug: string,
+  ): Promise<DSPProvider | undefined> {
+    const [provider] = await dbRead
+      .select()
+      .from(dspProviders)
+      .where(eq(dspProviders.slug, slug));
     return provider || undefined;
   }
 
   async getProjectsByUserId(userId: string): Promise<Project[]> {
-    return await dbRead.select().from(projects).where(eq(projects.userId, userId)).orderBy(desc(projects.updatedAt)).limit(500);
+    return await dbRead
+      .select()
+      .from(projects)
+      .where(eq(projects.userId, userId))
+      .orderBy(desc(projects.updatedAt))
+      .limit(500);
   }
 
   async createProject(insertProject: InsertProject): Promise<Project> {
@@ -193,7 +265,12 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getReleasesByUserId(userId: string): Promise<Release[]> {
-    return await dbRead.select().from(releases).where(eq(releases.userId, userId)).orderBy(desc(releases.createdAt)).limit(500);
+    return await dbRead
+      .select()
+      .from(releases)
+      .where(eq(releases.userId, userId))
+      .orderBy(desc(releases.createdAt))
+      .limit(500);
   }
 
   async getAutopilotConfig(userId: string): Promise<any | undefined> {
@@ -202,13 +279,22 @@ export class DatabaseStorage implements IStorage {
       .from(users)
       .where(eq(users.id, userId))
       .limit(1);
-    
+
     if (!user) return undefined;
-    return (user?.preferences as Record<string, unknown>)?.autopilotConfig || undefined;
+    return (
+      (user?.preferences as Record<string, unknown>)?.autopilotConfig ||
+      undefined
+    );
   }
 
-  async saveAutopilotConfig(userId: string, config: Record<string, unknown>): Promise<Record<string, unknown>> {
-    const [user] = await dbRead.select({ preferences: users.preferences }).from(users).where(eq(users.id, userId));
+  async saveAutopilotConfig(
+    userId: string,
+    config: Record<string, unknown>,
+  ): Promise<Record<string, unknown>> {
+    const [user] = await dbRead
+      .select({ preferences: users.preferences })
+      .from(users)
+      .where(eq(users.id, userId));
     const prefs = (user?.preferences as Record<string, unknown>) || {};
     prefs.autopilotConfig = config;
     await db
@@ -218,19 +304,30 @@ export class DatabaseStorage implements IStorage {
     return config;
   }
 
-  async getAdvertisingAutopilotConfig(userId: string): Promise<any | undefined> {
+  async getAdvertisingAutopilotConfig(
+    userId: string,
+  ): Promise<any | undefined> {
     const [user] = await db
       .select()
       .from(users)
       .where(eq(users.id, userId))
       .limit(1);
-    
+
     if (!user) return undefined;
-    return (user?.preferences as Record<string, unknown>)?.advertisingAutopilotConfig || undefined;
+    return (
+      (user?.preferences as Record<string, unknown>)
+        ?.advertisingAutopilotConfig || undefined
+    );
   }
 
-  async saveAdvertisingAutopilotConfig(userId: string, config: Record<string, unknown>): Promise<Record<string, unknown>> {
-    const [user] = await dbRead.select({ preferences: users.preferences }).from(users).where(eq(users.id, userId));
+  async saveAdvertisingAutopilotConfig(
+    userId: string,
+    config: Record<string, unknown>,
+  ): Promise<Record<string, unknown>> {
+    const [user] = await dbRead
+      .select({ preferences: users.preferences })
+      .from(users)
+      .where(eq(users.id, userId));
     const prefs = (user?.preferences as Record<string, unknown>) || {};
     prefs.advertisingAutopilotConfig = config;
     await db
@@ -248,16 +345,22 @@ export class DatabaseStorage implements IStorage {
       LIMIT 1000
     `);
     const rows = (result as { rows?: unknown[] }).rows ?? result;
-    return Array.isArray(rows) ? rows.map((user: Record<string, unknown>) => {
-      const prefs = typeof user.preferences === 'string'
-        ? JSON.parse(user.preferences)
-        : (user.preferences ?? {});
-      const config = prefs?.autopilotConfig;
-      return { userId: user.id, ...config };
-    }) : [];
+    return Array.isArray(rows)
+      ? rows.map((user: Record<string, unknown>) => {
+          const prefs =
+            typeof user.preferences === "string"
+              ? JSON.parse(user.preferences)
+              : (user.preferences ?? {});
+          const config = prefs?.autopilotConfig;
+          return { userId: user.id, ...config };
+        })
+      : [];
   }
 
-  async getUserAIModel(userId: string, modelType: string): Promise<any | undefined> {
+  async getUserAIModel(
+    userId: string,
+    modelType: string,
+  ): Promise<any | undefined> {
     const [model] = await db
       .select()
       .from(aiModels)
@@ -266,16 +369,21 @@ export class DatabaseStorage implements IStorage {
     return model || undefined;
   }
 
-  async saveUserAIModel(userId: string, modelType: string, weights: unknown, metadata?: Record<string, unknown>): Promise<void> {
+  async saveUserAIModel(
+    userId: string,
+    modelType: string,
+    weights: unknown,
+    metadata?: Record<string, unknown>,
+  ): Promise<void> {
     const existing = await this.getUserAIModel(userId, modelType);
     if (existing) {
       await db
         .update(aiModels)
-        .set({ 
+        .set({
           parameters: weights,
           performance: metadata,
           lastTrainedAt: new Date(),
-          updatedAt: new Date()
+          updatedAt: new Date(),
         })
         .where(eq(aiModels.id, existing.id));
     } else {
@@ -298,7 +406,9 @@ export class DatabaseStorage implements IStorage {
     return model || undefined;
   }
 
-  async createInferenceRun(data: Record<string, unknown>): Promise<Record<string, unknown>> {
+  async createInferenceRun(
+    data: Record<string, unknown>,
+  ): Promise<Record<string, unknown>> {
     const [run] = await db.insert(inferenceRuns).values(data).returning();
     return run;
   }
@@ -316,9 +426,11 @@ export class DatabaseStorage implements IStorage {
     return this.getSocialPosts(userId);
   }
 
-  async getScheduledPosts(input: string | { userId?: string; status?: string }): Promise<any[]> {
+  async getScheduledPosts(
+    input: string | { userId?: string; status?: string },
+  ): Promise<any[]> {
     const conditions: import("drizzle-orm").SQL<unknown>[] = [];
-    if (typeof input === 'string') {
+    if (typeof input === "string") {
       conditions.push(eq(posts.userId, input));
       conditions.push(sql`${posts.status} IN ('scheduled', 'pending')`);
     } else {
@@ -337,29 +449,50 @@ export class DatabaseStorage implements IStorage {
       .limit(500);
   }
 
-  async createScheduledPost(post: Record<string, unknown>): Promise<Record<string, unknown>> {
-    const { platforms, content, scheduledTime, viralPrediction, createdBy, results, ...rest } = post;
-    const [newPost] = await db.insert(posts).values({
-      id: post.id,
-      userId: post.userId,
-      platform: Array.isArray(platforms) && platforms.length > 0 ? platforms[0] : 'social',
-      content: typeof content === 'string' ? content : JSON.stringify(content),
-      scheduledAt: scheduledTime ? new Date(scheduledTime) : null,
-      status: post.status || 'scheduled',
-      mediaUrls: Array.isArray(content?.mediaUrls) ? content.mediaUrls : [],
-      engagement: {
-        _autopilotMeta: true,
-        platforms: platforms || [],
-        viralPrediction: viralPrediction || null,
-        createdBy: createdBy || 'social_autopilot',
-        ...(typeof content !== 'string' ? { content } : {}),
-      },
-    }).returning();
+  async createScheduledPost(
+    post: Record<string, unknown>,
+  ): Promise<Record<string, unknown>> {
+    const {
+      platforms,
+      content,
+      scheduledTime,
+      viralPrediction,
+      createdBy,
+      results,
+      ...rest
+    } = post;
+    const [newPost] = await db
+      .insert(posts)
+      .values({
+        id: post.id,
+        userId: post.userId,
+        platform:
+          Array.isArray(platforms) && platforms.length > 0
+            ? platforms[0]
+            : "social",
+        content:
+          typeof content === "string" ? content : JSON.stringify(content),
+        scheduledAt: scheduledTime ? new Date(scheduledTime) : null,
+        status: post.status || "scheduled",
+        mediaUrls: Array.isArray(content?.mediaUrls) ? content.mediaUrls : [],
+        engagement: {
+          _autopilotMeta: true,
+          platforms: platforms || [],
+          viralPrediction: viralPrediction || null,
+          createdBy: createdBy || "social_autopilot",
+          ...(typeof content !== "string" ? { content } : {}),
+        },
+      })
+      .returning();
     return newPost;
   }
 
   async getScheduledPostById(id: string): Promise<any | null> {
-    const [post] = await db.select().from(posts).where(eq(posts.id, id)).limit(1);
+    const [post] = await db
+      .select()
+      .from(posts)
+      .where(eq(posts.id, id))
+      .limit(1);
     if (!post) return null;
     const eng = (post.engagement as Record<string, unknown>) || {};
     const meta = eng._autopilotMeta ? eng : {};
@@ -369,29 +502,59 @@ export class DatabaseStorage implements IStorage {
       content: meta.content || post.content,
       scheduledTime: post.scheduledAt,
       viralPrediction: meta.viralPrediction || null,
-      createdBy: meta.createdBy || 'manual',
-      results: meta._autopilotMeta ? [] : (post.engagement || []),
+      createdBy: meta.createdBy || "manual",
+      results: meta._autopilotMeta ? [] : post.engagement || [],
     };
   }
 
-  async updateScheduledPost(id: string, updates: Partial<Record<string, unknown>>): Promise<unknown> {
-    const { platforms, content, scheduledTime, viralPrediction, createdBy, results, ...rest } = updates;
-    const updateValues: Record<string, unknown> = { ...(rest as Record<string, unknown>) };
-    if (platforms) updateValues.platform = Array.isArray(platforms) ? platforms[0] : platforms;
-    if (content !== undefined) updateValues.content = typeof content === 'string' ? content : JSON.stringify(content);
+  async updateScheduledPost(
+    id: string,
+    updates: Partial<Record<string, unknown>>,
+  ): Promise<unknown> {
+    const {
+      platforms,
+      content,
+      scheduledTime,
+      viralPrediction,
+      createdBy,
+      results,
+      ...rest
+    } = updates;
+    const updateValues: Record<string, unknown> = {
+      ...(rest as Record<string, unknown>),
+    };
+    if (platforms)
+      updateValues.platform = Array.isArray(platforms)
+        ? platforms[0]
+        : platforms;
+    if (content !== undefined)
+      updateValues.content =
+        typeof content === "string" ? content : JSON.stringify(content);
     if (scheduledTime) updateValues.scheduledAt = new Date(scheduledTime);
     if (results !== undefined) updateValues.engagement = results;
-    if (updateValues.status === 'completed' || updateValues.status === 'published') {
+    if (
+      updateValues.status === "completed" ||
+      updateValues.status === "published"
+    ) {
       updateValues.publishedAt = new Date();
     }
-    const [updated] = await db.update(posts).set(updateValues).where(eq(posts.id, id)).returning();
+    const [updated] = await db
+      .update(posts)
+      .set(updateValues)
+      .where(eq(posts.id, id))
+      .returning();
     return updated;
   }
 
-  async updateScheduledPostStatus(id: string, status: string, results?: unknown[]): Promise<void> {
+  async updateScheduledPostStatus(
+    id: string,
+    status: string,
+    results?: unknown[],
+  ): Promise<void> {
     const updateValues: Record<string, unknown> = { status };
     if (results !== undefined) updateValues.engagement = results;
-    if (status === 'completed' || status === 'published') updateValues.publishedAt = new Date();
+    if (status === "completed" || status === "published")
+      updateValues.publishedAt = new Date();
     await db.update(posts).set(updateValues).where(eq(posts.id, id));
   }
 
@@ -399,20 +562,46 @@ export class DatabaseStorage implements IStorage {
     const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
     const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
 
-    const [accounts, recentPosts, weekPosts, autopilotContent] = await Promise.all([
-      this.getSocialAccounts(userId),
-      db.select().from(posts).where(and(eq(posts.userId, userId), gte(posts.createdAt, thirtyDaysAgo))).limit(500),
-      db.select().from(posts).where(and(eq(posts.userId, userId), gte(posts.createdAt, sevenDaysAgo))).limit(200),
-      db.select().from(socialAutopilotContent).where(and(
-        eq(socialAutopilotContent.userId, userId),
-        gte(socialAutopilotContent.createdAt, thirtyDaysAgo)
-      )).limit(500),
-    ]);
+    const [accounts, recentPosts, weekPosts, autopilotContent] =
+      await Promise.all([
+        this.getSocialAccounts(userId),
+        db
+          .select()
+          .from(posts)
+          .where(
+            and(eq(posts.userId, userId), gte(posts.createdAt, thirtyDaysAgo)),
+          )
+          .limit(500),
+        db
+          .select()
+          .from(posts)
+          .where(
+            and(eq(posts.userId, userId), gte(posts.createdAt, sevenDaysAgo)),
+          )
+          .limit(200),
+        db
+          .select()
+          .from(socialAutopilotContent)
+          .where(
+            and(
+              eq(socialAutopilotContent.userId, userId),
+              gte(socialAutopilotContent.createdAt, thirtyDaysAgo),
+            ),
+          )
+          .limit(500),
+      ]);
 
-    const totalFollowers = accounts.reduce((sum, acc) => sum + (acc.followerCount || 0), 0);
+    const totalFollowers = accounts.reduce(
+      (sum, acc) => sum + (acc.followerCount || 0),
+      0,
+    );
 
-    let totalLikes = 0, totalComments = 0, totalShares = 0, totalViews = 0;
-    let totalReach = 0, totalImpressions = 0;
+    let totalLikes = 0,
+      totalComments = 0,
+      totalShares = 0,
+      totalViews = 0;
+    let totalReach = 0,
+      totalImpressions = 0;
 
     for (const post of recentPosts) {
       const eng = post.engagement as Record<string, unknown>;
@@ -437,41 +626,48 @@ export class DatabaseStorage implements IStorage {
     }
 
     const totalEngagement = totalLikes + totalComments + totalShares;
-    const avgEngagementRate = totalViews > 0 ? Math.round((totalEngagement / totalViews) * 10000) / 100 : 0;
+    const avgEngagementRate =
+      totalViews > 0
+        ? Math.round((totalEngagement / totalViews) * 10000) / 100
+        : 0;
 
-    const platformGrowth = accounts.map(acc => ({
+    const platformGrowth = accounts.map((acc) => ({
       platform: acc.platform,
       followers: acc.followerCount || 0,
-      username: acc.username || '',
+      username: acc.username || "",
     }));
 
     // Compute follower growth as percentage change (using account-level data as proxy)
-    const accountsWithFollowers = accounts.filter(a => (a.followerCount || 0) > 0);
-    const followersGrowth = accountsWithFollowers.length > 0
-      ? accountsWithFollowers.map(acc => ({
-          platform: acc.platform,
-          followers: acc.followerCount || 0,
-          change: 0,
-          changePercent: 0,
-        }))
-      : null;
+    const accountsWithFollowers = accounts.filter(
+      (a) => (a.followerCount || 0) > 0,
+    );
+    const followersGrowth =
+      accountsWithFollowers.length > 0
+        ? accountsWithFollowers.map((acc) => ({
+            platform: acc.platform,
+            followers: acc.followerCount || 0,
+            change: 0,
+            changePercent: 0,
+          }))
+        : null;
 
     // Compute content performance from posts
-    const contentPerformance = recentPosts.length > 0
-      ? recentPosts.slice(0, 5).map(p => {
-          const eng = p.engagement as Record<string, unknown>;
-          return {
-            id: p.id,
-            platform: p.platform,
-            content: (p.content || '').substring(0, 80),
-            likes: eng?.likes || 0,
-            comments: eng?.comments || 0,
-            shares: eng?.shares || 0,
-            views: eng?.views || 0,
-            publishedAt: p.publishedAt || p.createdAt,
-          };
-        })
-      : null;
+    const contentPerformance =
+      recentPosts.length > 0
+        ? recentPosts.slice(0, 5).map((p) => {
+            const eng = p.engagement as Record<string, unknown>;
+            return {
+              id: p.id,
+              platform: p.platform,
+              content: (p.content || "").substring(0, 80),
+              likes: eng?.likes || 0,
+              comments: eng?.comments || 0,
+              shares: eng?.shares || 0,
+              views: eng?.views || 0,
+              publishedAt: p.publishedAt || p.createdAt,
+            };
+          })
+        : null;
 
     return {
       totalFollowers,
@@ -499,7 +695,10 @@ export class DatabaseStorage implements IStorage {
       .limit(50);
   }
 
-  async getUserSocialToken(userId: string, platform: string): Promise<string | null> {
+  async getUserSocialToken(
+    userId: string,
+    platform: string,
+  ): Promise<string | null> {
     const rows = await db
       .select({ accessToken: socialAccounts.accessToken })
       .from(socialAccounts)
@@ -507,26 +706,30 @@ export class DatabaseStorage implements IStorage {
         and(
           eq(socialAccounts.userId, userId),
           eq(socialAccounts.platform, platform),
-          eq(socialAccounts.isActive, true)
-        )
+          eq(socialAccounts.isActive, true),
+        ),
       )
       .limit(1);
     return rows[0]?.accessToken ?? null;
   }
 
-  async updateUserSocialToken(userId: string, platform: string, tokenData: string): Promise<void> {
+  async updateUserSocialToken(
+    userId: string,
+    platform: string,
+    tokenData: string,
+  ): Promise<void> {
     const existing = await db
       .select({ id: socialAccounts.id })
       .from(socialAccounts)
       .where(
         and(
           eq(socialAccounts.userId, userId),
-          eq(socialAccounts.platform, platform)
-        )
+          eq(socialAccounts.platform, platform),
+        ),
       )
       .limit(1);
 
-    if (tokenData === '') {
+    if (tokenData === "") {
       if (existing.length > 0) {
         await db
           .update(socialAccounts)
@@ -566,39 +769,52 @@ export class DatabaseStorage implements IStorage {
           and(
             eq(posts.userId, userId),
             sql`${posts.status} IN ('scheduled', 'pending', 'published', 'completed')`,
-            isNotNull(posts.scheduledAt)
-          )
+            isNotNull(posts.scheduledAt),
+          ),
         )
         .orderBy(desc(posts.scheduledAt))
         .limit(500),
     ]);
 
-    const calendarIds = new Set(calendarEntries.map(e => e.id));
+    const calendarIds = new Set(calendarEntries.map((e) => e.id));
 
     const normalizedPosts = scheduledPosts
-      .filter(p => !calendarIds.has(p.id))
-      .map(p => {
+      .filter((p) => !calendarIds.has(p.id))
+      .map((p) => {
         const eng = (p.engagement as Record<string, unknown>) || {};
         const meta = eng._autopilotMeta ? eng : {};
-        const rawContent = typeof p.content === 'string' ? p.content : JSON.stringify(p.content ?? '');
+        const rawContent =
+          typeof p.content === "string"
+            ? p.content
+            : JSON.stringify(p.content ?? "");
         let parsedContent: Record<string, unknown> = {};
-        try { parsedContent = JSON.parse(rawContent); } catch { parsedContent = {}; }
+        try {
+          parsedContent = JSON.parse(rawContent);
+        } catch {
+          parsedContent = {};
+        }
         const contentObj = meta.content || parsedContent || {};
         const titleText =
-          (typeof contentObj === 'object' ? (contentObj.text || contentObj.caption) : null) ||
+          (typeof contentObj === "object"
+            ? contentObj.text || contentObj.caption
+            : null) ||
           rawContent ||
-          'Autopilot post';
-        const title = String(titleText).slice(0, 80) + (String(titleText).length > 80 ? '…' : '');
+          "Autopilot post";
+        const title =
+          String(titleText).slice(0, 80) +
+          (String(titleText).length > 80 ? "…" : "");
         const resolvedStatus =
-          p.status === 'pending' || p.status === 'scheduled' ? 'scheduled' :
-          p.status === 'completed' ? 'published' :
-          p.status ?? 'scheduled';
+          p.status === "pending" || p.status === "scheduled"
+            ? "scheduled"
+            : p.status === "completed"
+              ? "published"
+              : (p.status ?? "scheduled");
         return {
           id: p.id,
           userId: p.userId,
           title,
-          contentType: contentObj.mediaType || 'text',
-          platform: (meta.platforms?.[0]) || p.platform || 'social',
+          contentType: contentObj.mediaType || "text",
+          platform: meta.platforms?.[0] || p.platform || "social",
           platforms: meta.platforms || [p.platform].filter(Boolean),
           scheduledAt: p.scheduledAt,
           status: resolvedStatus,
@@ -608,8 +824,8 @@ export class DatabaseStorage implements IStorage {
           campaignId: null,
           publishedAt: p.publishedAt,
           createdAt: p.createdAt,
-          source: 'autopilot',
-          createdBy: meta.createdBy || 'social_autopilot',
+          source: "autopilot",
+          createdBy: meta.createdBy || "social_autopilot",
         };
       });
 
@@ -641,30 +857,34 @@ export class DatabaseStorage implements IStorage {
         .where(
           and(
             eq(posts.userId, userId),
-            sql`${posts.status} IN ('scheduled', 'pending', 'published', 'completed')`
-          )
+            sql`${posts.status} IN ('scheduled', 'pending', 'published', 'completed')`,
+          ),
         )
         .groupBy(posts.status),
     ]);
 
-    const calendarCounts = Object.fromEntries(calendarRows.map(r => [r.status, r.count]));
+    const calendarCounts = Object.fromEntries(
+      calendarRows.map((r) => [r.status, r.count]),
+    );
     const postStatusMap: Record<string, string> = {
-      scheduled: 'scheduled',
-      pending: 'scheduled',
-      published: 'published',
-      completed: 'published',
+      scheduled: "scheduled",
+      pending: "scheduled",
+      published: "published",
+      completed: "published",
     };
     const postCounts: Record<string, number> = {};
     for (const row of postRows) {
-      const mapped = postStatusMap[row.status ?? ''] ?? 'scheduled';
+      const mapped = postStatusMap[row.status ?? ""] ?? "scheduled";
       postCounts[mapped] = (postCounts[mapped] ?? 0) + row.count;
     }
 
     return {
-      totalScheduled: (calendarCounts['scheduled'] ?? 0) + (postCounts['scheduled'] ?? 0),
-      pendingApproval: calendarCounts['pending_approval'] ?? 0,
-      published: (calendarCounts['published'] ?? 0) + (postCounts['published'] ?? 0),
-      drafts: calendarCounts['draft'] ?? 0,
+      totalScheduled:
+        (calendarCounts["scheduled"] ?? 0) + (postCounts["scheduled"] ?? 0),
+      pendingApproval: calendarCounts["pending_approval"] ?? 0,
+      published:
+        (calendarCounts["published"] ?? 0) + (postCounts["published"] ?? 0),
+      drafts: calendarCounts["draft"] ?? 0,
     };
   }
 
@@ -675,10 +895,10 @@ export class DatabaseStorage implements IStorage {
       .where(eq(posts.userId, userId))
       .orderBy(desc(posts.createdAt))
       .limit(20);
-    
-    return recentPosts.map(post => ({
+
+    return recentPosts.map((post) => ({
       id: post.id,
-      type: 'post',
+      type: "post",
       platform: post.platform,
       content: post.content,
       createdAt: post.createdAt,
@@ -724,11 +944,13 @@ export class DatabaseStorage implements IStorage {
 
     // Index results by ISO date string for O(1) merge
     const postMap = new Map<string, any>();
-    for (const row of ((postRows as { rows?: unknown[] }).rows ?? postRows) as Record<string, unknown>[]) {
+    for (const row of ((postRows as { rows?: unknown[] }).rows ??
+      postRows) as Record<string, unknown>[]) {
       postMap.set(String(row.day).substring(0, 10), row);
     }
     const contentMap = new Map<string, any>();
-    for (const row of ((contentRows as { rows?: unknown[] }).rows ?? contentRows) as Record<string, unknown>[]) {
+    for (const row of ((contentRows as { rows?: unknown[] }).rows ??
+      contentRows) as Record<string, unknown>[]) {
       contentMap.set(String(row.day).substring(0, 10), row);
     }
 
@@ -737,16 +959,17 @@ export class DatabaseStorage implements IStorage {
       const dayStart = new Date();
       dayStart.setHours(0, 0, 0, 0);
       dayStart.setDate(dayStart.getDate() - i);
-      const dateKey = dayStart.toISOString().split('T')[0];
+      const dateKey = dayStart.toISOString().split("T")[0];
 
       const pr = postMap.get(dateKey);
       const cr = contentMap.get(dateKey);
 
       stats.push({
         date: dateKey,
-        day: dayStart.toLocaleDateString('en-US', { weekday: 'short' }),
+        day: dayStart.toLocaleDateString("en-US", { weekday: "short" }),
         posts: (Number(pr?.post_count) || 0) + (Number(cr?.post_count) || 0),
-        engagement: (Number(pr?.engagement) || 0) + (Number(cr?.engagement) || 0),
+        engagement:
+          (Number(pr?.engagement) || 0) + (Number(cr?.engagement) || 0),
         views: (Number(pr?.views) || 0) + (Number(cr?.views) || 0),
         impressions: Number(pr?.impressions) || 0,
       });
@@ -774,112 +997,252 @@ export class DatabaseStorage implements IStorage {
   async getAdvertisingInsights(userId: string): Promise<unknown> {
     const campaigns = await this.getAdvertisingCampaigns(userId);
     if (campaigns.length === 0) return null;
-    
+
     const totalSpend = campaigns.reduce((sum, c) => sum + (c.budget || 0), 0);
     return {
       totalCampaigns: campaigns.length,
       totalSpend,
-      activeCampaigns: campaigns.filter(c => c.status === 'active').length,
+      activeCampaigns: campaigns.filter((c) => c.status === "active").length,
     };
   }
 
   async getAudienceSegments(userId: string): Promise<any[]> {
-    const campaigns = await db.select().from(adCampaigns).where(eq(adCampaigns.userId, userId)).limit(200);
+    const campaigns = await db
+      .select()
+      .from(adCampaigns)
+      .where(eq(adCampaigns.userId, userId))
+      .limit(200);
     const segments: Record<string, unknown>[] = [];
-    campaigns.forEach(c => {
+    campaigns.forEach((c) => {
       const ta = c.targetAudience as Record<string, any> | null;
       if (ta && ta.segment) {
-        segments.push({ id: c.id, name: ta.segment, size: ta.audienceSize || 0, campaignId: c.id, platform: c.platform });
+        segments.push({
+          id: c.id,
+          name: ta.segment,
+          size: ta.audienceSize || 0,
+          campaignId: c.id,
+          platform: c.platform,
+        });
       } else if (ta) {
-        segments.push({ id: c.id, name: `${c.platform} – ${c.objective || 'general'}`, size: ta.audienceSize || 0, campaignId: c.id, platform: c.platform, ageMin: ta.ageMin, ageMax: ta.ageMax, interests: ta.interests });
+        segments.push({
+          id: c.id,
+          name: `${c.platform} – ${c.objective || "general"}`,
+          size: ta.audienceSize || 0,
+          campaignId: c.id,
+          platform: c.platform,
+          ageMin: ta.ageMin,
+          ageMax: ta.ageMax,
+          interests: ta.interests,
+        });
       }
     });
     return segments;
   }
 
   async getCreativeFatigue(userId: string): Promise<any[]> {
-    const creatives = await db.select().from(adCreatives).where(eq(adCreatives.userId, userId)).orderBy(desc(adCreatives.createdAt)).limit(100);
-    return creatives.map(c => {
+    const creatives = await db
+      .select()
+      .from(adCreatives)
+      .where(eq(adCreatives.userId, userId))
+      .orderBy(desc(adCreatives.createdAt))
+      .limit(100);
+    return creatives.map((c) => {
       const perf = c.performance as Record<string, any> | null;
       const impressions = perf?.impressions || 0;
       const clicks = perf?.clicks || 0;
       const ctr = impressions > 0 ? (clicks / impressions) * 100 : 0;
-      const daysSinceCreated = Math.floor((Date.now() - new Date(c.createdAt!).getTime()) / 86400000);
-      const fatigueScore = Math.min(100, daysSinceCreated * 2 + (impressions > 10000 ? 30 : 0) + (ctr < 0.5 && impressions > 1000 ? 20 : 0));
-      return { id: c.id, name: c.name, campaignId: c.campaignId, impressions, ctr, fatigueScore, daysRunning: daysSinceCreated, status: c.status };
+      const daysSinceCreated = Math.floor(
+        (Date.now() - new Date(c.createdAt!).getTime()) / 86400000,
+      );
+      const fatigueScore = Math.min(
+        100,
+        daysSinceCreated * 2 +
+          (impressions > 10000 ? 30 : 0) +
+          (ctr < 0.5 && impressions > 1000 ? 20 : 0),
+      );
+      return {
+        id: c.id,
+        name: c.name,
+        campaignId: c.campaignId,
+        impressions,
+        ctr,
+        fatigueScore,
+        daysRunning: daysSinceCreated,
+        status: c.status,
+      };
     });
   }
 
   async getBiddingStrategies(userId: string): Promise<any[]> {
-    const campaigns = await db.select().from(adCampaigns).where(eq(adCampaigns.userId, userId)).limit(200);
-    return campaigns.map(c => {
+    const campaigns = await db
+      .select()
+      .from(adCampaigns)
+      .where(eq(adCampaigns.userId, userId))
+      .limit(200);
+    return campaigns.map((c) => {
       const meta = c.metadata as Record<string, any> | null;
       const perf = c.performance as Record<string, any> | null;
-      const rawStrategy = meta?.biddingStrategy || 'manual';
-      const validTypes = ['maximize_conversions', 'target_roas', 'target_cpa', 'maximize_clicks', 'manual'];
-      const type = validTypes.includes(rawStrategy) ? rawStrategy : 'manual';
+      const rawStrategy = meta?.biddingStrategy || "manual";
+      const validTypes = [
+        "maximize_conversions",
+        "target_roas",
+        "target_cpa",
+        "maximize_clicks",
+        "manual",
+      ];
+      const type = validTypes.includes(rawStrategy) ? rawStrategy : "manual";
       const clicks = perf?.clicks || 0;
       const impressions = perf?.impressions || 1;
       const ctr = clicks / impressions;
-      const currentPerformance = Math.min(100, Math.round(ctr * 10000 + (perf?.roas || 0) * 10));
+      const currentPerformance = Math.min(
+        100,
+        Math.round(ctr * 10000 + (perf?.roas || 0) * 10),
+      );
       return {
         id: c.id,
-        name: c.name || 'Unnamed Campaign',
+        name: c.name || "Unnamed Campaign",
         type,
         currentPerformance,
-        recommendedAction: currentPerformance < 60 ? 'Switch to maximize_conversions for better ROI' : currentPerformance < 80 ? 'Optimise bid cap to improve CPA' : 'Maintain current strategy',
-        potentialImprovement: Math.max(0, Math.min(50, 90 - currentPerformance)),
-        confidence: Math.min(95, 60 + Math.round((clicks / 10))),
+        recommendedAction:
+          currentPerformance < 60
+            ? "Switch to maximize_conversions for better ROI"
+            : currentPerformance < 80
+              ? "Optimise bid cap to improve CPA"
+              : "Maintain current strategy",
+        potentialImprovement: Math.max(
+          0,
+          Math.min(50, 90 - currentPerformance),
+        ),
+        confidence: Math.min(95, 60 + Math.round(clicks / 10)),
       };
     });
   }
 
   async getLookalikeAudiences(userId: string): Promise<any[]> {
-    const [row] = await db.select().from(systemSettings).where(eq(systemSettings.key, `lookalike_audiences:${userId}`)).limit(1);
+    const [row] = await db
+      .select()
+      .from(systemSettings)
+      .where(eq(systemSettings.key, `lookalike_audiences:${userId}`))
+      .limit(1);
     if (!row) return [];
     return (row.value as unknown[]) || [];
   }
 
   async getAdvertisingForecasts(userId: string): Promise<unknown> {
-    const campaigns = await db.select().from(adCampaigns).where(and(eq(adCampaigns.userId, userId), eq(adCampaigns.status, 'active'))).limit(100);
+    const campaigns = await db
+      .select()
+      .from(adCampaigns)
+      .where(
+        and(eq(adCampaigns.userId, userId), eq(adCampaigns.status, "active")),
+      )
+      .limit(100);
     if (!campaigns.length) return null;
     const totalBudget = campaigns.reduce((s, c) => s + (c.budget || 0), 0);
-    const totalDailyBudget = campaigns.reduce((s, c) => s + (c.dailyBudget || 0), 0);
+    const totalDailyBudget = campaigns.reduce(
+      (s, c) => s + (c.dailyBudget || 0),
+      0,
+    );
     const estReach = Math.round(totalDailyBudget * 400);
     const estImpressions = Math.round(totalDailyBudget * 1200);
-    return { activeCampaigns: campaigns.length, totalBudget, totalDailyBudget, estimatedWeeklyReach: estReach * 7, estimatedWeeklyImpressions: estImpressions * 7, estimatedMonthlyCost: totalDailyBudget * 30, forecastConfidence: campaigns.length >= 3 ? 'high' : campaigns.length >= 1 ? 'medium' : 'low' };
+    return {
+      activeCampaigns: campaigns.length,
+      totalBudget,
+      totalDailyBudget,
+      estimatedWeeklyReach: estReach * 7,
+      estimatedWeeklyImpressions: estImpressions * 7,
+      estimatedMonthlyCost: totalDailyBudget * 30,
+      forecastConfidence:
+        campaigns.length >= 3
+          ? "high"
+          : campaigns.length >= 1
+            ? "medium"
+            : "low",
+    };
   }
 
   async getCompetitorInsights(userId: string): Promise<any[]> {
-    const [row] = await db.select().from(systemSettings).where(eq(systemSettings.key, `competitor_insights:${userId}`)).limit(1);
+    const [row] = await db
+      .select()
+      .from(systemSettings)
+      .where(eq(systemSettings.key, `competitor_insights:${userId}`))
+      .limit(1);
     if (!row) return [];
     return (row.value as unknown[]) || [];
   }
 
   async getABTests(userId: string): Promise<any[]> {
-    const creatives = await db.select().from(adCreatives).where(and(eq(adCreatives.userId, userId))).orderBy(desc(adCreatives.createdAt)).limit(100);
+    const creatives = await db
+      .select()
+      .from(adCreatives)
+      .where(and(eq(adCreatives.userId, userId)))
+      .orderBy(desc(adCreatives.createdAt))
+      .limit(100);
     const byCampaign: Record<string, any[]> = {};
-    creatives.forEach(c => {
-      const key = c.campaignId || 'unassigned';
+    creatives.forEach((c) => {
+      const key = c.campaignId || "unassigned";
       if (!byCampaign[key]) byCampaign[key] = [];
       byCampaign[key].push(c);
     });
     return Object.entries(byCampaign)
       .filter(([, variants]) => variants.length >= 2)
       .map(([campaignId, variants]) => {
-        const perfs = variants.map(v => (v.performance as Record<string, any>) || {});
+        const perfs = variants.map(
+          (v) => (v.performance as Record<string, any>) || {},
+        );
         const best = variants.reduce((a, b) => {
-          const aRate = ((a.performance as Record<string, unknown>)?.clicks || 0) / Math.max(1, (a.performance as Record<string, unknown>)?.impressions || 1);
-          const bRate = ((b.performance as Record<string, unknown>)?.clicks || 0) / Math.max(1, (b.performance as Record<string, unknown>)?.impressions || 1);
+          const aRate =
+            ((a.performance as Record<string, unknown>)?.clicks || 0) /
+            Math.max(
+              1,
+              (a.performance as Record<string, unknown>)?.impressions || 1,
+            );
+          const bRate =
+            ((b.performance as Record<string, unknown>)?.clicks || 0) /
+            Math.max(
+              1,
+              (b.performance as Record<string, unknown>)?.impressions || 1,
+            );
           return bRate > aRate ? b : a;
         });
-        return { id: campaignId, campaignId, name: `A/B Test – ${variants[0].name}`, variants: variants.map(v => ({ id: v.id, name: v.name, status: v.status, performance: v.performance })), winnerVariantId: best.id, status: 'running', createdAt: variants[0].createdAt };
+        return {
+          id: campaignId,
+          campaignId,
+          name: `A/B Test – ${variants[0].name}`,
+          variants: variants.map((v) => ({
+            id: v.id,
+            name: v.name,
+            status: v.status,
+            performance: v.performance,
+          })),
+          winnerVariantId: best.id,
+          status: "running",
+          createdAt: variants[0].createdAt,
+        };
       });
   }
 
   async getCreativeVariants(userId: string): Promise<any[]> {
-    const creatives = await db.select().from(adCreatives).where(eq(adCreatives.userId, userId)).orderBy(desc(adCreatives.createdAt)).limit(100);
-    return creatives.map(c => ({ id: c.id, campaignId: c.campaignId, name: c.name, type: c.type, headline: c.headline, description: c.description, mediaUrl: c.mediaUrl, thumbnailUrl: c.thumbnailUrl, callToAction: c.callToAction, status: c.status, performance: c.performance, variants: c.variants, createdAt: c.createdAt }));
+    const creatives = await db
+      .select()
+      .from(adCreatives)
+      .where(eq(adCreatives.userId, userId))
+      .orderBy(desc(adCreatives.createdAt))
+      .limit(100);
+    return creatives.map((c) => ({
+      id: c.id,
+      campaignId: c.campaignId,
+      name: c.name,
+      type: c.type,
+      headline: c.headline,
+      description: c.description,
+      mediaUrl: c.mediaUrl,
+      thumbnailUrl: c.thumbnailUrl,
+      callToAction: c.callToAction,
+      status: c.status,
+      performance: c.performance,
+      variants: c.variants,
+      createdAt: c.createdAt,
+    }));
   }
 
   async getRoasCampaigns(userId: string): Promise<any[]> {
@@ -891,30 +1254,72 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getRoasForecast(userId: string): Promise<any[]> {
-    const campaigns = await db.select().from(adCampaigns).where(and(eq(adCampaigns.userId, userId), eq(adCampaigns.status, 'active'))).limit(100);
-    return campaigns.map(c => {
+    const campaigns = await db
+      .select()
+      .from(adCampaigns)
+      .where(
+        and(eq(adCampaigns.userId, userId), eq(adCampaigns.status, "active")),
+      )
+      .limit(100);
+    return campaigns.map((c) => {
       const perf = c.performance as Record<string, any> | null;
       const roas = perf?.roas || 0;
       const spend = c.budget || 0;
-      return { campaignId: c.id, campaignName: c.name, platform: c.platform, currentRoas: roas, forecastedRoas: roas * 1.1, spend, forecastedRevenue: spend * roas * 1.1, confidence: perf ? 'medium' : 'low' };
+      return {
+        campaignId: c.id,
+        campaignName: c.name,
+        platform: c.platform,
+        currentRoas: roas,
+        forecastedRoas: roas * 1.1,
+        spend,
+        forecastedRevenue: spend * roas * 1.1,
+        confidence: perf ? "medium" : "low",
+      };
     });
   }
 
   async getBudgetOptimization(userId: string): Promise<any[]> {
-    const campaigns = await db.select().from(adCampaigns).where(eq(adCampaigns.userId, userId)).limit(200);
-    return campaigns.map(c => {
+    const campaigns = await db
+      .select()
+      .from(adCampaigns)
+      .where(eq(adCampaigns.userId, userId))
+      .limit(200);
+    return campaigns.map((c) => {
       const perf = c.performance as Record<string, any> | null;
       const roas = perf?.roas || 0;
       const spend = c.budget || 0;
       const efficiency = roas > 0 ? roas / Math.max(1, spend / 100) : 0;
-      const recommendation = roas > 3 ? 'increase' : roas < 1 && spend > 50 ? 'decrease' : 'maintain';
-      return { campaignId: c.id, campaignName: c.name, platform: c.platform, currentBudget: spend, recommendedBudget: recommendation === 'increase' ? spend * 1.2 : recommendation === 'decrease' ? spend * 0.7 : spend, roas, efficiency, recommendation };
+      const recommendation =
+        roas > 3
+          ? "increase"
+          : roas < 1 && spend > 50
+            ? "decrease"
+            : "maintain";
+      return {
+        campaignId: c.id,
+        campaignName: c.name,
+        platform: c.platform,
+        currentBudget: spend,
+        recommendedBudget:
+          recommendation === "increase"
+            ? spend * 1.2
+            : recommendation === "decrease"
+              ? spend * 0.7
+              : spend,
+        roas,
+        efficiency,
+        recommendation,
+      };
     });
   }
 
   async getOrganicCampaigns(userId: string): Promise<any[]> {
-    const campaigns = await db.select().from(adCampaigns).where(eq(adCampaigns.userId, userId)).limit(200);
-    return campaigns.filter(c => !c.budget || c.budget === 0);
+    const campaigns = await db
+      .select()
+      .from(adCampaigns)
+      .where(eq(adCampaigns.userId, userId))
+      .limit(200);
+    return campaigns.filter((c) => !c.budget || c.budget === 0);
   }
 
   async getCreativeFatigueAnalysis(userId: string): Promise<any[]> {
@@ -926,29 +1331,69 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getBudgetPacingHistory(userId: string): Promise<any[]> {
-    const campaigns = await db.select().from(adCampaigns).where(eq(adCampaigns.userId, userId)).orderBy(desc(adCampaigns.createdAt)).limit(10);
+    const campaigns = await db
+      .select()
+      .from(adCampaigns)
+      .where(eq(adCampaigns.userId, userId))
+      .orderBy(desc(adCampaigns.createdAt))
+      .limit(10);
     const history: Record<string, unknown>[] = [];
-    campaigns.forEach(c => {
+    campaigns.forEach((c) => {
       const perf = c.performance as Record<string, any> | null;
       if (c.startDate) {
-        history.push({ campaignId: c.id, campaignName: c.name, date: c.startDate, budget: c.budget || 0, spend: perf?.spend || 0, pacing: perf?.spend && c.budget ? ((perf.spend / c.budget) * 100) : 0 });
+        history.push({
+          campaignId: c.id,
+          campaignName: c.name,
+          date: c.startDate,
+          budget: c.budget || 0,
+          spend: perf?.spend || 0,
+          pacing: perf?.spend && c.budget ? (perf.spend / c.budget) * 100 : 0,
+        });
       }
     });
     return history;
   }
 
   async getAttributionData(userId: string): Promise<any[]> {
-    const analyticsRows = await db.select().from(analytics).where(eq(analytics.userId, userId)).orderBy(desc(analytics.date)).limit(90);
-    return analyticsRows.map(a => {
+    const analyticsRows = await db
+      .select()
+      .from(analytics)
+      .where(eq(analytics.userId, userId))
+      .orderBy(desc(analytics.date))
+      .limit(90);
+    return analyticsRows.map((a) => {
       const meta = a.metadata as Record<string, any> | null;
-      return { date: a.date, platform: a.platform || 'unknown', streams: a.streams || 0, revenue: a.revenue || 0, source: meta?.source || 'organic', campaign: meta?.campaign || null };
+      return {
+        date: a.date,
+        platform: a.platform || "unknown",
+        streams: a.streams || 0,
+        revenue: a.revenue || 0,
+        source: meta?.source || "organic",
+        campaign: meta?.campaign || null,
+      };
     });
   }
 
   async getCrossChannelAttribution(userId: string): Promise<any[]> {
-    const analyticsRows = await db.select({ platform: analytics.platform, streams: sql<number>`COALESCE(SUM(${analytics.streams}), 0)`, revenue: sql<number>`COALESCE(SUM(${analytics.revenue}), 0)` }).from(analytics).where(eq(analytics.userId, userId)).groupBy(analytics.platform);
+    const analyticsRows = await db
+      .select({
+        platform: analytics.platform,
+        streams: sql<number>`COALESCE(SUM(${analytics.streams}), 0)`,
+        revenue: sql<number>`COALESCE(SUM(${analytics.revenue}), 0)`,
+      })
+      .from(analytics)
+      .where(eq(analytics.userId, userId))
+      .groupBy(analytics.platform);
     const total = analyticsRows.reduce((s, r) => s + (r.streams || 0), 0);
-    return analyticsRows.filter(r => r.platform).map(r => ({ platform: r.platform!, streams: r.streams, revenue: r.revenue, attributionShare: total > 0 ? Math.round((r.streams / total) * 1000) / 10 : 0 }));
+    return analyticsRows
+      .filter((r) => r.platform)
+      .map((r) => ({
+        platform: r.platform!,
+        streams: r.streams,
+        revenue: r.revenue,
+        attributionShare:
+          total > 0 ? Math.round((r.streams / total) * 1000) / 10 : 0,
+      }));
   }
 
   async getSocialListeningKeywords(userId: string): Promise<any[]> {
@@ -973,10 +1418,12 @@ export class DatabaseStorage implements IStorage {
     return await db
       .select()
       .from(socialMentions)
-      .where(and(
-        eq(socialMentions.userId, userId),
-        eq(socialMentions.isInfluencer, true)
-      ))
+      .where(
+        and(
+          eq(socialMentions.userId, userId),
+          eq(socialMentions.isInfluencer, true),
+        ),
+      )
       .orderBy(desc(socialMentions.authorFollowers))
       .limit(20);
   }
@@ -985,10 +1432,12 @@ export class DatabaseStorage implements IStorage {
     return await db
       .select()
       .from(socialMentions)
-      .where(and(
-        eq(socialMentions.userId, userId),
-        eq(socialMentions.sentiment, 'negative')
-      ))
+      .where(
+        and(
+          eq(socialMentions.userId, userId),
+          eq(socialMentions.sentiment, "negative"),
+        ),
+      )
       .orderBy(desc(socialMentions.createdAt))
       .limit(20);
   }
@@ -1006,16 +1455,16 @@ export class DatabaseStorage implements IStorage {
 
     const insights: Record<string, unknown>[] = [];
     if (recentContent.length > 0) {
-      const topPerforming = recentContent.filter(c => {
+      const topPerforming = recentContent.filter((c) => {
         const perf = c.performance as Record<string, unknown>;
         return perf && (perf.views > 0 || perf.likes > 0);
       });
       if (topPerforming.length > 0) {
         insights.push({
-          type: 'content_performance',
-          title: 'Top performing content identified',
+          type: "content_performance",
+          title: "Top performing content identified",
           description: `${topPerforming.length} pieces of content showing strong engagement`,
-          priority: 'medium',
+          priority: "medium",
           createdAt: new Date(),
         });
       }
@@ -1027,7 +1476,10 @@ export class DatabaseStorage implements IStorage {
     const accounts = await this.getSocialAccounts(userId);
     if (accounts.length === 0) return null;
 
-    const totalFollowers = accounts.reduce((sum, acc) => sum + (acc.followerCount || 0), 0);
+    const totalFollowers = accounts.reduce(
+      (sum, acc) => sum + (acc.followerCount || 0),
+      0,
+    );
     const recentPosts = await db
       .select()
       .from(posts)
@@ -1037,15 +1489,25 @@ export class DatabaseStorage implements IStorage {
 
     const totalEngagements = recentPosts.reduce((sum, p) => {
       const meta = p.metadata as Record<string, any> | null;
-      return sum + (meta?.likes || 0) + (meta?.comments || 0) + (meta?.shares || 0) + (meta?.reactions || 0);
+      return (
+        sum +
+        (meta?.likes || 0) +
+        (meta?.comments || 0) +
+        (meta?.shares || 0) +
+        (meta?.reactions || 0)
+      );
     }, 0);
     const totalReach = recentPosts.reduce((sum, p) => {
       const meta = p.metadata as Record<string, any> | null;
       return sum + (meta?.reach || meta?.impressions || 0);
     }, 0);
-    const engagementRate = recentPosts.length > 0 && totalFollowers > 0
-      ? (totalEngagements / recentPosts.length / Math.max(1, totalFollowers)) * 100
-      : 0;
+    const engagementRate =
+      recentPosts.length > 0 && totalFollowers > 0
+        ? (totalEngagements /
+            recentPosts.length /
+            Math.max(1, totalFollowers)) *
+          100
+        : 0;
 
     return {
       followers: totalFollowers,
@@ -1057,12 +1519,19 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getCompetitors(userId: string): Promise<any[]> {
-    const [row] = await db.select().from(systemSettings).where(eq(systemSettings.key, `competitors:${userId}`)).limit(1);
+    const [row] = await db
+      .select()
+      .from(systemSettings)
+      .where(eq(systemSettings.key, `competitors:${userId}`))
+      .limit(1);
     if (!row) return [];
     return (row.value as unknown[]) || [];
   }
 
-  async getRecentAnalyzedContent(userId: string, limit: number): Promise<any[]> {
+  async getRecentAnalyzedContent(
+    userId: string,
+    limit: number,
+  ): Promise<any[]> {
     // posts table has no metadata column — engagement (JSONB) is the only structured field.
     // Return recent posts; callers check features and handle empty gracefully.
     const recentPosts = await db
@@ -1071,7 +1540,7 @@ export class DatabaseStorage implements IStorage {
       .where(eq(posts.userId, userId))
       .orderBy(desc(posts.createdAt))
       .limit(limit || 20);
-    return recentPosts.map(p => {
+    return recentPosts.map((p) => {
       const eng = p.engagement as Record<string, any> | null;
       return {
         id: p.id,
@@ -1084,10 +1553,20 @@ export class DatabaseStorage implements IStorage {
     });
   }
 
-  async saveAnalyzedContentFeatures(userId: string, features: Record<string, unknown>): Promise<string> {
+  async saveAnalyzedContentFeatures(
+    userId: string,
+    features: Record<string, unknown>,
+  ): Promise<string> {
     const id = `feature-${Date.now()}-${userId.slice(0, 8)}`;
     try {
-      await db.insert(systemSettings).values({ key: `analyzed_content:${id}`, value: { userId, features, createdAt: new Date().toISOString() }, description: `Analyzed content features for user ${userId}` }).onConflictDoNothing();
+      await db
+        .insert(systemSettings)
+        .values({
+          key: `analyzed_content:${id}`,
+          value: { userId, features, createdAt: new Date().toISOString() },
+          description: `Analyzed content features for user ${userId}`,
+        })
+        .onConflictDoNothing();
     } catch {
       // Non-critical; log silently
     }
@@ -1174,15 +1653,11 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteNotification(id: string): Promise<void> {
-    await db
-      .delete(notifications)
-      .where(eq(notifications.id, id));
+    await db.delete(notifications).where(eq(notifications.id, id));
   }
 
   async deleteAllNotifications(userId: string): Promise<void> {
-    await db
-      .delete(notifications)
-      .where(eq(notifications.userId, userId));
+    await db.delete(notifications).where(eq(notifications.userId, userId));
   }
 
   async deleteSession(sessionId: string): Promise<boolean> {
@@ -1201,7 +1676,9 @@ export class DatabaseStorage implements IStorage {
     return result.length > 0;
   }
 
-  async getSessionById(sessionId: string): Promise<{ id: string; userId: string } | undefined> {
+  async getSessionById(
+    sessionId: string,
+  ): Promise<{ id: string; userId: string } | undefined> {
     const [session] = await db
       .select({ id: sessions.id, userId: sessions.userId })
       .from(sessions)
@@ -1212,34 +1689,47 @@ export class DatabaseStorage implements IStorage {
 
   async getSessionsByUserId(userId: string): Promise<any[]> {
     return await db
-      .select({ id: sessions.id, lastActivity: sessions.lastActivity, userAgent: sessions.userAgent })
+      .select({
+        id: sessions.id,
+        lastActivity: sessions.lastActivity,
+        userAgent: sessions.userAgent,
+      })
       .from(sessions)
       .where(eq(sessions.userId, userId))
       .orderBy(desc(sessions.lastActivity))
       .limit(20);
   }
 
-  async getAnalytics(userId: string, startDate?: Date, endDate?: Date): Promise<any[]> {
-    let query = dbRead.select().from(analytics).where(eq(analytics.userId, userId));
+  async getAnalytics(
+    userId: string,
+    startDate?: Date,
+    endDate?: Date,
+  ): Promise<any[]> {
+    let query = dbRead
+      .select()
+      .from(analytics)
+      .where(eq(analytics.userId, userId));
     return await query.orderBy(desc(analytics.date)).limit(100);
   }
 
   async seedPluginCatalog(): Promise<void> {
-    const { ALL_PLUGINS } = await import('./services/plugins/index');
-    const { buildFactoryPresetRows } = await import('./services/plugins/pluginEnrichment.js');
+    const { ALL_PLUGINS } = await import("./services/plugins/index");
+    const { buildFactoryPresetRows } = await import(
+      "./services/plugins/pluginEnrichment.js"
+    );
 
     // Bumped whenever the enrichment layer ships new reference parameters or
     // genre presets. Forces an upsert across all rows (presets._rev mismatch).
-    const MANIFEST_REV = 'rev-enrich-v1';
+    const MANIFEST_REV = "rev-enrich-v1";
 
     // Bulk upsert via single round-trip. parameters/presets are jsonb columns.
-    const pluginRows = ALL_PLUGINS.map(plugin => ({
+    const pluginRows = ALL_PLUGINS.map((plugin) => ({
       id: plugin.id,
       name: plugin.name,
       slug: plugin.slug,
       type: plugin.type,
       category: plugin.category,
-      vendor: plugin.author || 'Max Booster',
+      vendor: plugin.author || "Max Booster",
       version: plugin.version,
       description: plugin.description,
       parameters: plugin.parameters as unknown as Record<string, unknown>,
@@ -1257,7 +1747,7 @@ export class DatabaseStorage implements IStorage {
       .select({ slug: pluginCatalog.slug, presets: pluginCatalog.presets })
       .from(pluginCatalog);
     const existingBySlug = new Map<string, { presets: unknown }>(
-      existingRows.map(r => [r.slug, { presets: r.presets }])
+      existingRows.map((r) => [r.slug, { presets: r.presets }]),
     );
 
     const toInsert: typeof pluginRows = [];
@@ -1276,22 +1766,27 @@ export class DatabaseStorage implements IStorage {
       await db.insert(pluginCatalog).values(toInsert).onConflictDoNothing();
     }
     for (const row of toUpdate) {
-      await db.update(pluginCatalog).set({
-        name: row.name,
-        type: row.type,
-        category: row.category,
-        vendor: row.vendor,
-        version: row.version,
-        description: row.description,
-        parameters: row.parameters,
-        presets: row.presets,
-        isBuiltIn: true,
-        isActive: true,
-      }).where(eq(pluginCatalog.slug, row.slug));
+      await db
+        .update(pluginCatalog)
+        .set({
+          name: row.name,
+          type: row.type,
+          category: row.category,
+          vendor: row.vendor,
+          version: row.version,
+          description: row.description,
+          parameters: row.parameters,
+          presets: row.presets,
+          isBuiltIn: true,
+          isActive: true,
+        })
+        .where(eq(pluginCatalog.slug, row.slug));
     }
 
     if (toInsert.length > 0 || toUpdate.length > 0) {
-      logger.info(`   ✓ Plugin catalog: ${toInsert.length} inserted, ${toUpdate.length} updated (rev ${MANIFEST_REV})`);
+      logger.info(
+        `   ✓ Plugin catalog: ${toInsert.length} inserted, ${toUpdate.length} updated (rev ${MANIFEST_REV})`,
+      );
     }
 
     // Seed factory genre presets. pluginPresets.pluginId stores the catalog
@@ -1300,13 +1795,24 @@ export class DatabaseStorage implements IStorage {
     if (presetRows.length === 0) return;
 
     const existingPresets = await dbRead
-      .select({ id: pluginPresets.id, pluginId: pluginPresets.pluginId, name: pluginPresets.name, metadata: pluginPresets.metadata })
+      .select({
+        id: pluginPresets.id,
+        pluginId: pluginPresets.pluginId,
+        name: pluginPresets.name,
+        metadata: pluginPresets.metadata,
+      })
       .from(pluginPresets)
       .where(eq(pluginPresets.isFactory, true));
     const presetKey = (slug: string, name: string) => `${slug}::${name}`;
-    const existingPresetMap = new Map<string, { id: string; metadata: unknown }>();
+    const existingPresetMap = new Map<
+      string,
+      { id: string; metadata: unknown }
+    >();
     for (const p of existingPresets) {
-      existingPresetMap.set(presetKey(p.pluginId, p.name), { id: p.id, metadata: p.metadata });
+      existingPresetMap.set(presetKey(p.pluginId, p.name), {
+        id: p.id,
+        metadata: p.metadata,
+      });
     }
 
     const presetInserts: Array<{
@@ -1320,7 +1826,9 @@ export class DatabaseStorage implements IStorage {
     let presetRefreshed = 0;
     for (const row of presetRows) {
       const metadata = { ...row.metadata, _rev: MANIFEST_REV };
-      const existing = existingPresetMap.get(presetKey(row.pluginSlug, row.name));
+      const existing = existingPresetMap.get(
+        presetKey(row.pluginSlug, row.name),
+      );
       if (!existing) {
         presetInserts.push({
           pluginId: row.pluginSlug,
@@ -1331,10 +1839,16 @@ export class DatabaseStorage implements IStorage {
           metadata,
         });
       } else {
-        const currentRev = (existing.metadata as { _rev?: string } | null)?._rev;
+        const currentRev = (existing.metadata as { _rev?: string } | null)
+          ?._rev;
         if (currentRev !== MANIFEST_REV) {
-          await db.update(pluginPresets)
-            .set({ parameters: row.parameters as Record<string, unknown>, metadata, isFactory: true })
+          await db
+            .update(pluginPresets)
+            .set({
+              parameters: row.parameters as Record<string, unknown>,
+              metadata,
+              isFactory: true,
+            })
             .where(eq(pluginPresets.id, existing.id));
           presetRefreshed++;
         }
@@ -1344,11 +1858,15 @@ export class DatabaseStorage implements IStorage {
       // Insert in chunks to keep the parameterised statement size reasonable.
       const CHUNK = 200;
       for (let i = 0; i < presetInserts.length; i += CHUNK) {
-        await db.insert(pluginPresets).values(presetInserts.slice(i, i + CHUNK));
+        await db
+          .insert(pluginPresets)
+          .values(presetInserts.slice(i, i + CHUNK));
       }
     }
     if (presetInserts.length > 0 || presetRefreshed > 0) {
-      logger.info(`   ✓ Factory genre presets: ${presetInserts.length} inserted, ${presetRefreshed} refreshed (rev ${MANIFEST_REV})`);
+      logger.info(
+        `   ✓ Factory genre presets: ${presetInserts.length} inserted, ${presetRefreshed} refreshed (rev ${MANIFEST_REV})`,
+      );
     }
   }
 
@@ -1402,39 +1920,38 @@ export class DatabaseStorage implements IStorage {
       return rows.map((u: Record<string, unknown>) => {
         const displayName =
           (u.artist_name as string) ||
-          `${u.first_name || ''} ${u.last_name || ''}`.trim() ||
+          `${u.first_name || ""} ${u.last_name || ""}`.trim() ||
           (u.username as string) ||
-          'Producer';
+          "Producer";
         return {
           id: u.id,
           username: u.username || displayName,
           displayName,
-          avatar: u.avatar_url || '',
-          avatarUrl: u.avatar_url || '',
-          bio: u.bio || '',
-          location: u.location || '',
-          website: u.website || '',
-          verified: u.role === 'admin' || u.subscription_tier === 'lifetime',
+          avatar: u.avatar_url || "",
+          avatarUrl: u.avatar_url || "",
+          bio: u.bio || "",
+          location: u.location || "",
+          website: u.website || "",
+          verified: u.role === "admin" || u.subscription_tier === "lifetime",
           followers: Number(u.followers_count) || 0,
           following: 0,
           sales: Number(u.sales_count) || 0,
           beats: Number(u.beats_count) || 0,
           rating: Number(u.avg_rating) || 0,
-          joinedAt: '',
+          joinedAt: "",
           socialLinks: {},
         };
       });
     } catch (error) {
-      logger.warn({ err: error }, 'Error getting producers:');
+      logger.warn({ err: error }, "Error getting producers:");
       return [];
     }
   }
 
-  async createDistroRelease(data: Record<string, unknown>): Promise<DistroRelease> {
-    const [release] = await db
-      .insert(distroReleases)
-      .values(data)
-      .returning();
+  async createDistroRelease(
+    data: Record<string, unknown>,
+  ): Promise<DistroRelease> {
+    const [release] = await db.insert(distroReleases).values(data).returning();
     return release;
   }
 
@@ -1456,7 +1973,10 @@ export class DatabaseStorage implements IStorage {
     return release || undefined;
   }
 
-  async updateDistroRelease(id: string, data: Record<string, unknown>): Promise<DistroRelease | undefined> {
+  async updateDistroRelease(
+    id: string,
+    data: Record<string, unknown>,
+  ): Promise<DistroRelease | undefined> {
     const [release] = await db
       .update(distroReleases)
       .set(data)
@@ -1474,10 +1994,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createDistroTrack(data: Record<string, unknown>): Promise<DistroTrack> {
-    const [track] = await db
-      .insert(distroTracks)
-      .values(data)
-      .returning();
+    const [track] = await db.insert(distroTracks).values(data).returning();
     return track;
   }
 
@@ -1485,24 +2002,41 @@ export class DatabaseStorage implements IStorage {
     return this.getDistroTracksByRelease(releaseId);
   }
 
-  async updateDistroTrack(trackId: string, releaseId: string, data: Record<string, unknown>): Promise<DistroTrack | undefined> {
+  async updateDistroTrack(
+    trackId: string,
+    releaseId: string,
+    data: Record<string, unknown>,
+  ): Promise<DistroTrack | undefined> {
     const [track] = await db
       .update(distroTracks)
       .set(data)
-      .where(and(eq(distroTracks.id, trackId), eq(distroTracks.releaseId, releaseId)))
+      .where(
+        and(
+          eq(distroTracks.id, trackId),
+          eq(distroTracks.releaseId, releaseId),
+        ),
+      )
       .returning();
     return track || undefined;
   }
 
-  async deleteDistroTrack(trackId: string, releaseId: string): Promise<boolean> {
+  async deleteDistroTrack(
+    trackId: string,
+    releaseId: string,
+  ): Promise<boolean> {
     try {
       const deleted = await db
         .delete(distroTracks)
-        .where(and(eq(distroTracks.id, trackId), eq(distroTracks.releaseId, releaseId)))
+        .where(
+          and(
+            eq(distroTracks.id, trackId),
+            eq(distroTracks.releaseId, releaseId),
+          ),
+        )
         .returning({ id: distroTracks.id });
       return deleted.length > 0;
     } catch (error) {
-      logger.warn({ err: error }, 'Error deleting distro track:');
+      logger.warn({ err: error }, "Error deleting distro track:");
       return false;
     }
   }
@@ -1513,7 +2047,7 @@ export class DatabaseStorage implements IStorage {
       await db.delete(distroReleases).where(eq(distroReleases.id, id));
       return true;
     } catch (error) {
-      logger.warn({ err: error }, 'Error deleting distro release:');
+      logger.warn({ err: error }, "Error deleting distro release:");
       return false;
     }
   }
@@ -1527,7 +2061,7 @@ export class DatabaseStorage implements IStorage {
         .limit(1);
       return provider || null;
     } catch (error) {
-      logger.warn({ err: error }, 'Error fetching DSP provider by slug:');
+      logger.warn({ err: error }, "Error fetching DSP provider by slug:");
       return null;
     }
   }
@@ -1537,7 +2071,7 @@ export class DatabaseStorage implements IStorage {
       const providers = await dbRead.select().from(dspProviders).limit(100);
       return providers;
     } catch (error) {
-      logger.warn({ err: error }, 'Error fetching all DSP providers:');
+      logger.warn({ err: error }, "Error fetching all DSP providers:");
       return [];
     }
   }
@@ -1565,16 +2099,19 @@ export class DatabaseStorage implements IStorage {
         .returning();
       return provider;
     } catch (error) {
-      logger.warn({ err: error }, 'Error creating DSP provider:');
+      logger.warn({ err: error }, "Error creating DSP provider:");
       throw error;
     }
   }
 
-  async updateDSPProvider(id: string, data: {
-    name?: string;
-    isActive?: boolean;
-    metadata?: Record<string, unknown>;
-  }): Promise<any | null> {
+  async updateDSPProvider(
+    id: string,
+    data: {
+      name?: string;
+      isActive?: boolean;
+      metadata?: Record<string, unknown>;
+    },
+  ): Promise<any | null> {
     try {
       const [provider] = await db
         .update(dspProviders)
@@ -1586,7 +2123,7 @@ export class DatabaseStorage implements IStorage {
         .returning();
       return provider || null;
     } catch (error) {
-      logger.warn({ err: error }, 'Error updating DSP provider:');
+      logger.warn({ err: error }, "Error updating DSP provider:");
       return null;
     }
   }
@@ -1596,7 +2133,7 @@ export class DatabaseStorage implements IStorage {
       await db.delete(hyperFollowPages).where(eq(hyperFollowPages.id, id));
       return true;
     } catch (error) {
-      logger.warn({ err: error }, 'Error deleting hyperfollow page:');
+      logger.warn({ err: error }, "Error deleting hyperfollow page:");
       return false;
     }
   }
@@ -1607,17 +2144,37 @@ export class DatabaseStorage implements IStorage {
 
   private async _loadDispatches(releaseId: string): Promise<any[]> {
     const key = this._dispatchSettingKey(releaseId);
-    const [row] = await db.select().from(systemSettings).where(eq(systemSettings.key, key)).limit(1);
+    const [row] = await db
+      .select()
+      .from(systemSettings)
+      .where(eq(systemSettings.key, key))
+      .limit(1);
     return (row?.value as unknown[]) || [];
   }
 
-  private async _saveDispatches(releaseId: string, dispatches: unknown[]): Promise<void> {
+  private async _saveDispatches(
+    releaseId: string,
+    dispatches: unknown[],
+  ): Promise<void> {
     const key = this._dispatchSettingKey(releaseId);
-    const [existing] = await db.select({ id: systemSettings.id }).from(systemSettings).where(eq(systemSettings.key, key)).limit(1);
+    const [existing] = await db
+      .select({ id: systemSettings.id })
+      .from(systemSettings)
+      .where(eq(systemSettings.key, key))
+      .limit(1);
     if (existing) {
-      await db.update(systemSettings).set({ value: dispatches, updatedAt: new Date() }).where(eq(systemSettings.key, key));
+      await db
+        .update(systemSettings)
+        .set({ value: dispatches, updatedAt: new Date() })
+        .where(eq(systemSettings.key, key));
     } else {
-      await db.insert(systemSettings).values({ key, value: dispatches, description: `Distribution dispatches for release ${releaseId}` });
+      await db
+        .insert(systemSettings)
+        .values({
+          key,
+          value: dispatches,
+          description: `Distribution dispatches for release ${releaseId}`,
+        });
     }
   }
 
@@ -1638,10 +2195,15 @@ export class DatabaseStorage implements IStorage {
     return this._loadDispatches(releaseId);
   }
 
-  async updateDistroDispatchStatus(releaseId: string, data: Record<string, unknown>): Promise<Record<string, unknown> | null> {
+  async updateDistroDispatchStatus(
+    releaseId: string,
+    data: Record<string, unknown>,
+  ): Promise<Record<string, unknown> | null> {
     const dispatches = await this._loadDispatches(releaseId);
     if (data.platform) {
-      const dispatch = dispatches.find((d: Record<string, unknown>) => d.platform === data.platform);
+      const dispatch = dispatches.find(
+        (d: Record<string, unknown>) => d.platform === data.platform,
+      );
       if (dispatch) {
         Object.assign(dispatch, data, { updatedAt: new Date().toISOString() });
         await this._saveDispatches(releaseId, dispatches);
@@ -1651,15 +2213,23 @@ export class DatabaseStorage implements IStorage {
     return null;
   }
 
-  async updateDistroDispatch(dispatchId: string, data: Record<string, unknown>): Promise<Record<string, unknown> | null> {
-    const rows = await db.select().from(systemSettings)
-      .where(sql`${systemSettings.key} like ${'distro_dispatch:%'}`).limit(200);
+  async updateDistroDispatch(
+    dispatchId: string,
+    data: Record<string, unknown>,
+  ): Promise<Record<string, unknown> | null> {
+    const rows = await db
+      .select()
+      .from(systemSettings)
+      .where(sql`${systemSettings.key} like ${"distro_dispatch:%"}`)
+      .limit(200);
     for (const row of rows) {
       const dispatches = (row.value as Record<string, unknown>[]) || [];
-      const dispatch = dispatches.find((d: Record<string, unknown>) => d.id === dispatchId);
+      const dispatch = dispatches.find(
+        (d: Record<string, unknown>) => d.id === dispatchId,
+      );
       if (dispatch) {
         Object.assign(dispatch, data, { updatedAt: new Date().toISOString() });
-        const releaseId = row.key.replace('distro_dispatch:', '');
+        const releaseId = row.key.replace("distro_dispatch:", "");
         await this._saveDispatches(releaseId, dispatches);
         return dispatch;
       }
@@ -1672,7 +2242,7 @@ export class DatabaseStorage implements IStorage {
       const [entry] = await db
         .insert(workspaceAuditLog)
         .values({
-          workspaceId: data.workspaceId || data.userId || 'default',
+          workspaceId: data.workspaceId || data.userId || "default",
           userId: data.userId,
           action: data.action,
           resourceType: data.resourceType || null,
@@ -1687,7 +2257,7 @@ export class DatabaseStorage implements IStorage {
         .returning();
       return entry;
     } catch (error) {
-      logger.warn({ err: error }, 'Failed to persist audit log entry:');
+      logger.warn({ err: error }, "Failed to persist audit log entry:");
       return { id: `audit_${Date.now()}`, ...data, createdAt: new Date() };
     }
   }
@@ -1698,35 +2268,62 @@ export class DatabaseStorage implements IStorage {
     const prevMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
     const threeMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 3, 1);
 
-    const [allTimeAgg, thisMonthAgg, prevMonthAgg, txRow, recentAnalytics] = await Promise.all([
-      db.select({
-        totalStreams: sql<number>`COALESCE(SUM(${analytics.streams}), 0)`,
-        totalListeners: sql<number>`COALESCE(SUM(${analytics.totalListeners}), 0)`,
-        totalRevenue: sql<number>`COALESCE(SUM(${analytics.revenue}), 0)`,
-      }).from(analytics).where(eq(analytics.userId, userId)),
+    const [allTimeAgg, thisMonthAgg, prevMonthAgg, txRow, recentAnalytics] =
+      await Promise.all([
+        db
+          .select({
+            totalStreams: sql<number>`COALESCE(SUM(${analytics.streams}), 0)`,
+            totalListeners: sql<number>`COALESCE(SUM(${analytics.totalListeners}), 0)`,
+            totalRevenue: sql<number>`COALESCE(SUM(${analytics.revenue}), 0)`,
+          })
+          .from(analytics)
+          .where(eq(analytics.userId, userId)),
 
-      db.select({
-        streams: sql<number>`COALESCE(SUM(${analytics.streams}), 0)`,
-      }).from(analytics).where(and(eq(analytics.userId, userId), gte(analytics.date, thisMonthStart))),
+        db
+          .select({
+            streams: sql<number>`COALESCE(SUM(${analytics.streams}), 0)`,
+          })
+          .from(analytics)
+          .where(
+            and(
+              eq(analytics.userId, userId),
+              gte(analytics.date, thisMonthStart),
+            ),
+          ),
 
-      db.select({
-        streams: sql<number>`COALESCE(SUM(${analytics.streams}), 0)`,
-      }).from(analytics).where(and(
-        eq(analytics.userId, userId),
-        gte(analytics.date, prevMonthStart),
-        lt(analytics.date, thisMonthStart)
-      )),
+        db
+          .select({
+            streams: sql<number>`COALESCE(SUM(${analytics.streams}), 0)`,
+          })
+          .from(analytics)
+          .where(
+            and(
+              eq(analytics.userId, userId),
+              gte(analytics.date, prevMonthStart),
+              lt(analytics.date, thisMonthStart),
+            ),
+          ),
 
-      db.select({
-        totalRevenue: sql<number>`COALESCE(SUM(${royaltyTransactions.amount}), 0)`,
-        totalStreams: sql<number>`COALESCE(SUM(${royaltyTransactions.streamCount}), 0)`,
-      }).from(royaltyTransactions).where(eq(royaltyTransactions.userId, userId)),
+        db
+          .select({
+            totalRevenue: sql<number>`COALESCE(SUM(${royaltyTransactions.amount}), 0)`,
+            totalStreams: sql<number>`COALESCE(SUM(${royaltyTransactions.streamCount}), 0)`,
+          })
+          .from(royaltyTransactions)
+          .where(eq(royaltyTransactions.userId, userId)),
 
-      db.select().from(analytics)
-        .where(and(eq(analytics.userId, userId), gte(analytics.date, threeMonthsAgo)))
-        .orderBy(desc(analytics.date))
-        .limit(90),
-    ]);
+        db
+          .select()
+          .from(analytics)
+          .where(
+            and(
+              eq(analytics.userId, userId),
+              gte(analytics.date, threeMonthsAgo),
+            ),
+          )
+          .orderBy(desc(analytics.date))
+          .limit(90),
+      ]);
 
     const txRevenue = Number(txRow[0]?.totalRevenue ?? 0);
     const txStreams = Number(txRow[0]?.totalStreams ?? 0);
@@ -1741,9 +2338,12 @@ export class DatabaseStorage implements IStorage {
 
     const thisMonthStreams = Number(thisMonthAgg[0]?.streams ?? 0);
     const prevMonthStreams = Number(prevMonthAgg[0]?.streams ?? 0);
-    const streamGrowth = prevMonthStreams > 0
-      ? Math.round(((thisMonthStreams - prevMonthStreams) / prevMonthStreams) * 100)
-      : 0;
+    const streamGrowth =
+      prevMonthStreams > 0
+        ? Math.round(
+            ((thisMonthStreams - prevMonthStreams) / prevMonthStreams) * 100,
+          )
+        : 0;
 
     return {
       totalStreams,
@@ -1769,8 +2369,8 @@ export class DatabaseStorage implements IStorage {
       .where(eq(analytics.userId, userId))
       .orderBy(desc(analytics.date))
       .limit(90);
-    
-    return trends.map(t => ({
+
+    return trends.map((t) => ({
       date: t.date,
       streams: t.streams || 0,
       listeners: t.listeners || 0,
@@ -1784,11 +2384,11 @@ export class DatabaseStorage implements IStorage {
       .from(analytics)
       .where(eq(analytics.userId, userId))
       .limit(1);
-    
+
     if (data.length === 0 || !data[0].topCountries) {
       return [];
     }
-    
+
     return (data[0].topCountries as unknown[]) || [];
   }
 
@@ -1800,10 +2400,10 @@ export class DatabaseStorage implements IStorage {
         .where(eq(instantPayouts.userId, userId))
         .orderBy(desc(instantPayouts.createdAt))
         .limit(50);
-      
+
       return payouts || [];
     } catch (error) {
-      logger.warn({ err: error }, 'Error fetching payout history:');
+      logger.warn({ err: error }, "Error fetching payout history:");
       return [];
     }
   }
@@ -1818,7 +2418,7 @@ export class DatabaseStorage implements IStorage {
         .limit(50);
       return pages || [];
     } catch (error) {
-      logger.warn({ err: error }, 'Error fetching hyperfollow pages:');
+      logger.warn({ err: error }, "Error fetching hyperfollow pages:");
       return [];
     }
   }
@@ -1832,7 +2432,7 @@ export class DatabaseStorage implements IStorage {
         .limit(1);
       return pages[0] || null;
     } catch (error) {
-      logger.warn({ err: error }, 'Error fetching hyperfollow page:');
+      logger.warn({ err: error }, "Error fetching hyperfollow page:");
       return null;
     }
   }
@@ -1846,7 +2446,7 @@ export class DatabaseStorage implements IStorage {
         .limit(1);
       return pages[0] || null;
     } catch (error) {
-      logger.warn({ err: error }, 'Error fetching hyperfollow page by slug:');
+      logger.warn({ err: error }, "Error fetching hyperfollow page by slug:");
       return null;
     }
   }
@@ -1860,12 +2460,14 @@ export class DatabaseStorage implements IStorage {
         .limit(100);
       return providers || [];
     } catch (error) {
-      logger.warn({ err: error }, 'Error fetching DSP providers:');
+      logger.warn({ err: error }, "Error fetching DSP providers:");
       return [];
     }
   }
 
-  async createHyperFollowPage(data: Record<string, unknown>): Promise<any | null> {
+  async createHyperFollowPage(
+    data: Record<string, unknown>,
+  ): Promise<any | null> {
     try {
       const [page] = await db
         .insert(hyperFollowPages)
@@ -1879,12 +2481,15 @@ export class DatabaseStorage implements IStorage {
         .returning();
       return page;
     } catch (error) {
-      logger.warn({ err: error }, 'Error creating hyperfollow page:');
+      logger.warn({ err: error }, "Error creating hyperfollow page:");
       return null;
     }
   }
 
-  async updateHyperFollowPage(id: string, data: Record<string, unknown>): Promise<Record<string, unknown> | null> {
+  async updateHyperFollowPage(
+    id: string,
+    data: Record<string, unknown>,
+  ): Promise<Record<string, unknown> | null> {
     try {
       const [page] = await db
         .update(hyperFollowPages)
@@ -1893,7 +2498,7 @@ export class DatabaseStorage implements IStorage {
         .returning();
       return page || null;
     } catch (error) {
-      logger.warn({ err: error }, 'Error updating hyperfollow page:');
+      logger.warn({ err: error }, "Error updating hyperfollow page:");
       return null;
     }
   }
@@ -1929,7 +2534,7 @@ export class DatabaseStorage implements IStorage {
         .returning();
       return listing;
     } catch (error) {
-      logger.warn({ err: error }, 'Error creating listing:');
+      logger.warn({ err: error }, "Error creating listing:");
       throw error;
     }
   }
@@ -1942,7 +2547,7 @@ export class DatabaseStorage implements IStorage {
     bpm?: number;
     key?: string;
     tags?: string[];
-    sortBy?: 'recent' | 'popular' | 'price_low' | 'price_high';
+    sortBy?: "recent" | "popular" | "price_low" | "price_high";
     limit?: number;
     offset?: number;
     userId?: string;
@@ -1963,8 +2568,8 @@ export class DatabaseStorage implements IStorage {
             ilike(listings.title, searchTerm),
             ilike(listings.description, searchTerm),
             ilike(listings.category, searchTerm),
-            sql`${listings.metadata}::text ilike ${searchTerm}`
-          )
+            sql`${listings.metadata}::text ilike ${searchTerm}`,
+          ),
         );
       }
 
@@ -1972,37 +2577,46 @@ export class DatabaseStorage implements IStorage {
         conditions.push(
           or(
             ilike(listings.category, `%${filters.genre}%`),
-            sql`${listings.metadata}->>'genre' ilike ${`%${filters.genre}%`}`
-          )
+            sql`${listings.metadata}->>'genre' ilike ${`%${filters.genre}%`}`,
+          ),
         );
       }
 
       if (filters?.minPrice != null) {
-        conditions.push(gte(listings.priceCents, Math.round(filters.minPrice * 100)));
+        conditions.push(
+          gte(listings.priceCents, Math.round(filters.minPrice * 100)),
+        );
       }
       if (filters?.maxPrice != null) {
-        conditions.push(lte(listings.priceCents, Math.round(filters.maxPrice * 100)));
+        conditions.push(
+          lte(listings.priceCents, Math.round(filters.maxPrice * 100)),
+        );
       }
 
       if (filters?.bpm != null) {
-        conditions.push(sql`(${listings.metadata}->>'bpm')::int = ${filters.bpm}`);
+        conditions.push(
+          sql`(${listings.metadata}->>'bpm')::int = ${filters.bpm}`,
+        );
       }
 
       if (filters?.key) {
-        conditions.push(sql`${listings.metadata}->>'key' ilike ${`%${filters.key}%`}`);
+        conditions.push(
+          sql`${listings.metadata}->>'key' ilike ${`%${filters.key}%`}`,
+        );
       }
 
-      const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+      const whereClause =
+        conditions.length > 0 ? and(...conditions) : undefined;
 
       let orderBy: import("drizzle-orm").SQL<unknown> | undefined;
       switch (filters?.sortBy) {
-        case 'popular':
+        case "popular":
           orderBy = [desc(sql`(${listings.metadata}->>'plays')::int`)];
           break;
-        case 'price_low':
+        case "price_low":
           orderBy = [asc(listings.priceCents)];
           break;
-        case 'price_high':
+        case "price_high":
           orderBy = [desc(listings.priceCents)];
           break;
         default:
@@ -2024,43 +2638,53 @@ export class DatabaseStorage implements IStorage {
         .limit(limit)
         .offset(offset);
 
-      const userIds = [...new Set(results.map(l => l.userId))];
-      const userRows = userIds.length > 0
-        ? await dbRead.select({ id: users.id, username: users.username, firstName: users.firstName, lastName: users.lastName })
-            .from(users)
-            .where(inArray(users.id, userIds))
-        : [];
-      const userMap = new Map(userRows.map(u => [u.id, u]));
+      const userIds = [...new Set(results.map((l) => l.userId))];
+      const userRows =
+        userIds.length > 0
+          ? await dbRead
+              .select({
+                id: users.id,
+                username: users.username,
+                firstName: users.firstName,
+                lastName: users.lastName,
+              })
+              .from(users)
+              .where(inArray(users.id, userIds))
+          : [];
+      const userMap = new Map(userRows.map((u) => [u.id, u]));
 
-      return results.map(listing => {
+      return results.map((listing) => {
         const meta = (listing.metadata as Record<string, unknown>) || {};
         const owner = userMap.get(listing.userId);
-        const producerName = owner?.username || `${owner?.firstName || ''} ${owner?.lastName || ''}`.trim() || 'Producer';
+        const producerName =
+          owner?.username ||
+          `${owner?.firstName || ""} ${owner?.lastName || ""}`.trim() ||
+          "Producer";
         return {
           id: listing.id,
           userId: listing.userId,
           producerId: listing.userId,
           producer: producerName,
           title: listing.title,
-          description: listing.description || '',
+          description: listing.description || "",
           price: (listing.priceCents || 0) / 100,
-          currency: listing.currency || 'usd',
+          currency: listing.currency || "usd",
           category: listing.category,
-          genre: meta.genre || listing.category || '',
-          mood: meta.mood || '',
+          genre: meta.genre || listing.category || "",
+          mood: meta.mood || "",
           tempo: meta.bpm || 0,
           bpm: meta.bpm || 0,
-          key: meta.key || '',
+          key: meta.key || "",
           duration: meta.duration || 0,
           audioUrl: listing.audioUrl,
           artworkUrl: listing.artworkUrl,
           coverArt: listing.artworkUrl,
           previewUrl: listing.previewUrl,
           isPublished: listing.isPublished,
-          status: listing.isPublished ? 'active' : 'inactive',
+          status: listing.isPublished ? "active" : "inactive",
           isExclusive: meta.isExclusive || false,
           isLease: meta.isLease !== false,
-          licenseType: meta.licenseType || 'basic',
+          licenseType: meta.licenseType || "basic",
           metadata: listing.metadata,
           avgRating: meta.avgRating || 0,
           ratingCount: meta.ratingCount || 0,
@@ -2072,14 +2696,14 @@ export class DatabaseStorage implements IStorage {
           createdAt: listing.createdAt,
           updatedAt: listing.updatedAt ?? listing.createdAt,
           licenses: [
-            { type: 'basic', price: (listing.priceCents || 0) / 100 },
-            { type: 'premium', price: ((listing.priceCents || 0) / 100) * 2 },
-            { type: 'exclusive', price: ((listing.priceCents || 0) / 100) * 5 },
+            { type: "basic", price: (listing.priceCents || 0) / 100 },
+            { type: "premium", price: ((listing.priceCents || 0) / 100) * 2 },
+            { type: "exclusive", price: ((listing.priceCents || 0) / 100) * 5 },
           ],
         };
       });
     } catch (error) {
-      logger.warn({ err: error }, 'Error fetching beat listings:');
+      logger.warn({ err: error }, "Error fetching beat listings:");
       return [];
     }
   }
@@ -2091,16 +2715,16 @@ export class DatabaseStorage implements IStorage {
         .from(listings)
         .where(eq(listings.id, id))
         .limit(1);
-      
+
       if (!listing) return null;
-      
+
       return {
         id: listing.id,
         userId: listing.userId,
         title: listing.title,
         description: listing.description,
         price: (listing.priceCents || 0) / 100,
-        currency: listing.currency || 'usd',
+        currency: listing.currency || "usd",
         category: listing.category,
         audioUrl: listing.audioUrl,
         artworkUrl: listing.artworkUrl,
@@ -2110,39 +2734,65 @@ export class DatabaseStorage implements IStorage {
         metadata: listing.metadata,
         createdAt: listing.createdAt,
         licenses: await (async () => {
-          const tiers = await db.select().from(listingLicenseTiers).where(and(eq(listingLicenseTiers.listingId, id), eq(listingLicenseTiers.isActive, true))).orderBy(asc(listingLicenseTiers.sortOrder)).limit(20);
-          if (tiers.length > 0) return tiers.map(t => ({ id: t.id, type: t.licenseType, label: t.label, price: (t.priceCents || 0) / 100, discountType: t.discountType, discountPercent: t.discountPercent, discountPrice: t.discountPriceCents ? t.discountPriceCents / 100 : null, bogoEnabled: t.bogoEnabled, fileFormats: t.fileFormats }));
+          const tiers = await db
+            .select()
+            .from(listingLicenseTiers)
+            .where(
+              and(
+                eq(listingLicenseTiers.listingId, id),
+                eq(listingLicenseTiers.isActive, true),
+              ),
+            )
+            .orderBy(asc(listingLicenseTiers.sortOrder))
+            .limit(20);
+          if (tiers.length > 0)
+            return tiers.map((t) => ({
+              id: t.id,
+              type: t.licenseType,
+              label: t.label,
+              price: (t.priceCents || 0) / 100,
+              discountType: t.discountType,
+              discountPercent: t.discountPercent,
+              discountPrice: t.discountPriceCents
+                ? t.discountPriceCents / 100
+                : null,
+              bogoEnabled: t.bogoEnabled,
+              fileFormats: t.fileFormats,
+            }));
           const base = (listing.priceCents || 0) / 100;
           return [
-            { type: 'basic', label: 'Basic', price: base },
-            { type: 'premium', label: 'Premium', price: base * 2 },
-            { type: 'exclusive', label: 'Exclusive', price: base * 5 },
+            { type: "basic", label: "Basic", price: base },
+            { type: "premium", label: "Premium", price: base * 2 },
+            { type: "exclusive", label: "Exclusive", price: base * 5 },
           ];
         })(),
       };
     } catch (error) {
-      logger.warn({ err: error }, 'Error fetching beat listing:');
+      logger.warn({ err: error }, "Error fetching beat listing:");
       return null;
     }
   }
 
-  async updateListing(id: string, data: Record<string, unknown>): Promise<Record<string, unknown> | null> {
+  async updateListing(
+    id: string,
+    data: Record<string, unknown>,
+  ): Promise<Record<string, unknown> | null> {
     try {
       const [listing] = await db
         .update(listings)
         .set({ ...data, updatedAt: new Date() })
         .where(eq(listings.id, id))
         .returning();
-      
+
       if (!listing) return null;
-      
+
       return {
         id: listing.id,
         userId: listing.userId,
         title: listing.title,
         description: listing.description,
         priceCents: listing.priceCents,
-        currency: listing.currency || 'usd',
+        currency: listing.currency || "usd",
         category: listing.category,
         audioUrl: listing.audioUrl,
         artworkUrl: listing.artworkUrl,
@@ -2152,7 +2802,7 @@ export class DatabaseStorage implements IStorage {
         createdAt: listing.createdAt,
       };
     } catch (error) {
-      logger.warn({ err: error }, 'Error updating listing:');
+      logger.warn({ err: error }, "Error updating listing:");
       throw error;
     }
   }
@@ -2162,7 +2812,7 @@ export class DatabaseStorage implements IStorage {
       await db.delete(listings).where(eq(listings.id, id));
       return true;
     } catch (error) {
-      logger.warn({ err: error }, 'Error deleting listing:');
+      logger.warn({ err: error }, "Error deleting listing:");
       throw error;
     }
   }
@@ -2177,7 +2827,7 @@ export class DatabaseStorage implements IStorage {
         .limit(100);
       return results;
     } catch (error) {
-      logger.warn({ err: error }, 'Error fetching contract templates:');
+      logger.warn({ err: error }, "Error fetching contract templates:");
       return [];
     }
   }
@@ -2191,21 +2841,29 @@ export class DatabaseStorage implements IStorage {
         .limit(1);
       return template || null;
     } catch (error) {
-      logger.warn({ err: error }, 'Error fetching contract template:');
+      logger.warn({ err: error }, "Error fetching contract template:");
       return null;
     }
   }
 
-  async getContractTemplateByUser(id: string, userId: string): Promise<any | null> {
+  async getContractTemplateByUser(
+    id: string,
+    userId: string,
+  ): Promise<any | null> {
     try {
       const [template] = await db
         .select()
         .from(contractTemplates)
-        .where(and(eq(contractTemplates.id, id), eq(contractTemplates.userId, userId)))
+        .where(
+          and(
+            eq(contractTemplates.id, id),
+            eq(contractTemplates.userId, userId),
+          ),
+        )
         .limit(1);
       return template || null;
     } catch (error) {
-      logger.warn({ err: error }, 'Error fetching contract template by user:');
+      logger.warn({ err: error }, "Error fetching contract template by user:");
       return null;
     }
   }
@@ -2224,21 +2882,24 @@ export class DatabaseStorage implements IStorage {
         .values({
           userId: data.userId,
           name: data.name,
-          description: data.description || '',
+          description: data.description || "",
           content: data.content,
-          category: data.category || 'custom',
+          category: data.category || "custom",
           variables: data.variables || [],
           isDefault: false,
         })
         .returning();
       return template;
     } catch (error) {
-      logger.warn({ err: error }, 'Error creating contract template:');
+      logger.warn({ err: error }, "Error creating contract template:");
       throw error;
     }
   }
 
-  async updateContractTemplate(id: string, data: Record<string, unknown>): Promise<Record<string, unknown> | null> {
+  async updateContractTemplate(
+    id: string,
+    data: Record<string, unknown>,
+  ): Promise<Record<string, unknown> | null> {
     try {
       const [template] = await db
         .update(contractTemplates)
@@ -2247,7 +2908,7 @@ export class DatabaseStorage implements IStorage {
         .returning();
       return template || null;
     } catch (error) {
-      logger.warn({ err: error }, 'Error updating contract template:');
+      logger.warn({ err: error }, "Error updating contract template:");
       throw error;
     }
   }
@@ -2257,7 +2918,7 @@ export class DatabaseStorage implements IStorage {
       await db.delete(contractTemplates).where(eq(contractTemplates.id, id));
       return true;
     } catch (error) {
-      logger.warn({ err: error }, 'Error deleting contract template:');
+      logger.warn({ err: error }, "Error deleting contract template:");
       throw error;
     }
   }
@@ -2292,7 +2953,7 @@ export class DatabaseStorage implements IStorage {
         .orderBy(desc(orders.createdAt));
       return results;
     } catch (error) {
-      logger.warn({ err: error }, 'Error fetching user orders:');
+      logger.warn({ err: error }, "Error fetching user orders:");
       return [];
     }
   }
@@ -2307,7 +2968,7 @@ export class DatabaseStorage implements IStorage {
         .limit(200);
       return results;
     } catch (error) {
-      logger.warn({ err: error }, 'Error fetching seller orders:');
+      logger.warn({ err: error }, "Error fetching seller orders:");
       return [];
     }
   }
@@ -2316,7 +2977,9 @@ export class DatabaseStorage implements IStorage {
   // COLLABORATION SNAPSHOTS - Real-time Yjs document persistence
   // ============================================================================
 
-  async saveCollabSnapshot(data: InsertCollabSnapshot): Promise<CollabSnapshot> {
+  async saveCollabSnapshot(
+    data: InsertCollabSnapshot,
+  ): Promise<CollabSnapshot> {
     const [snapshot] = await db
       .insert(collabSnapshots)
       .values(data)
@@ -2324,7 +2987,9 @@ export class DatabaseStorage implements IStorage {
     return snapshot;
   }
 
-  async getLatestCollabSnapshot(projectId: string): Promise<CollabSnapshot | null> {
+  async getLatestCollabSnapshot(
+    projectId: string,
+  ): Promise<CollabSnapshot | null> {
     const [snapshot] = await db
       .select()
       .from(collabSnapshots)
@@ -2334,7 +2999,10 @@ export class DatabaseStorage implements IStorage {
     return snapshot || null;
   }
 
-  async getCollabSnapshots(projectId: string, limit: number = 10): Promise<CollabSnapshot[]> {
+  async getCollabSnapshots(
+    projectId: string,
+    limit: number = 10,
+  ): Promise<CollabSnapshot[]> {
     return await db
       .select()
       .from(collabSnapshots)
@@ -2343,7 +3011,10 @@ export class DatabaseStorage implements IStorage {
       .limit(limit);
   }
 
-  async deleteOldCollabSnapshots(projectId: string, keepCount: number = 10): Promise<void> {
+  async deleteOldCollabSnapshots(
+    projectId: string,
+    keepCount: number = 10,
+  ): Promise<void> {
     const snapshots = await db
       .select({ id: collabSnapshots.id })
       .from(collabSnapshots)
@@ -2352,9 +3023,11 @@ export class DatabaseStorage implements IStorage {
       .limit(500);
 
     if (snapshots.length > keepCount) {
-      const idsToDelete = snapshots.slice(keepCount).map(s => s.id);
+      const idsToDelete = snapshots.slice(keepCount).map((s) => s.id);
       // Single bulk DELETE instead of N separate round-trips.
-      await db.delete(collabSnapshots).where(inArray(collabSnapshots.id, idsToDelete));
+      await db
+        .delete(collabSnapshots)
+        .where(inArray(collabSnapshots.id, idsToDelete));
     }
   }
 
@@ -2365,7 +3038,11 @@ export class DatabaseStorage implements IStorage {
 
   async verifyJWTToken(jti: string): Promise<boolean> {
     const [token] = await db
-      .select({ id: jwtTokens.id, revoked: jwtTokens.revoked, expiresAt: jwtTokens.expiresAt })
+      .select({
+        id: jwtTokens.id,
+        revoked: jwtTokens.revoked,
+        expiresAt: jwtTokens.expiresAt,
+      })
       .from(jwtTokens)
       .where(eq(jwtTokens.id, jti))
       .limit(1);
@@ -2382,7 +3059,10 @@ export class DatabaseStorage implements IStorage {
       .where(eq(jwtTokens.id, id));
   }
 
-  async revokeAllJWTTokensForUser(userId: string, reason: string): Promise<void> {
+  async revokeAllJWTTokensForUser(
+    userId: string,
+    reason: string,
+  ): Promise<void> {
     await db
       .update(jwtTokens)
       .set({ revoked: true, revokedAt: new Date(), revokedReason: reason })
@@ -2410,11 +3090,16 @@ export class DatabaseStorage implements IStorage {
       .where(eq(refreshTokens.id, id));
   }
 
-  async revokeAllRefreshTokensForUser(userId: string, reason: string): Promise<void> {
+  async revokeAllRefreshTokensForUser(
+    userId: string,
+    reason: string,
+  ): Promise<void> {
     await db
       .update(refreshTokens)
       .set({ revoked: true, revokedAt: new Date(), revokedReason: reason })
-      .where(and(eq(refreshTokens.userId, userId), eq(refreshTokens.revoked, false)));
+      .where(
+        and(eq(refreshTokens.userId, userId), eq(refreshTokens.revoked, false)),
+      );
   }
 }
 

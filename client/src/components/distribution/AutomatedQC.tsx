@@ -1,11 +1,17 @@
-import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Table,
   TableBody,
@@ -13,7 +19,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
+} from "@/components/ui/table";
 import {
   Dialog,
   DialogContent,
@@ -21,11 +27,11 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@/components/ui/dialog';
-import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
-import { useToast } from '@/hooks/use-toast';
-import { apiRequest } from '@/lib/queryClient';
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
 import {
   CheckCircle,
   XCircle,
@@ -45,14 +51,14 @@ import {
   Eye,
   Settings,
   Download,
-} from 'lucide-react';
+} from "lucide-react";
 
 interface QCCheck {
   id: string;
   name: string;
-  category: 'audio' | 'metadata' | 'artwork' | 'codes' | 'content';
-  status: 'passed' | 'failed' | 'warning' | 'pending' | 'skipped';
-  severity: 'critical' | 'major' | 'minor' | 'info';
+  category: "audio" | "metadata" | "artwork" | "codes" | "content";
+  status: "passed" | "failed" | "warning" | "pending" | "skipped";
+  severity: "critical" | "major" | "minor" | "info";
   message: string;
   details?: string;
   fixable: boolean;
@@ -104,7 +110,7 @@ interface QCReport {
   id: string;
   releaseId: string;
   createdAt: string;
-  status: 'passed' | 'failed' | 'warning';
+  status: "passed" | "failed" | "warning";
   overallScore: number;
   checks: QCCheck[];
   audioAnalysis?: AudioAnalysis;
@@ -129,19 +135,22 @@ const CATEGORY_ICONS: Record<string, React.ElementType> = {
   content: Shield,
 };
 
-const STATUS_CONFIG: Record<string, { color: string; icon: React.ElementType; label: string }> = {
-  passed: { color: 'text-green-500', icon: CheckCircle, label: 'Passed' },
-  failed: { color: 'text-red-500', icon: XCircle, label: 'Failed' },
-  warning: { color: 'text-yellow-500', icon: AlertTriangle, label: 'Warning' },
-  pending: { color: 'text-blue-500', icon: RefreshCw, label: 'Checking...' },
-  skipped: { color: 'text-gray-400', icon: Pause, label: 'Skipped' },
+const STATUS_CONFIG: Record<
+  string,
+  { color: string; icon: React.ElementType; label: string }
+> = {
+  passed: { color: "text-green-500", icon: CheckCircle, label: "Passed" },
+  failed: { color: "text-red-500", icon: XCircle, label: "Failed" },
+  warning: { color: "text-yellow-500", icon: AlertTriangle, label: "Warning" },
+  pending: { color: "text-blue-500", icon: RefreshCw, label: "Checking..." },
+  skipped: { color: "text-gray-400", icon: Pause, label: "Skipped" },
 };
 
 const SEVERITY_STYLES: Record<string, string> = {
-  critical: 'bg-red-500/10 text-red-500 border-red-500/20',
-  major: 'bg-orange-500/10 text-orange-500 border-orange-500/20',
-  minor: 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20',
-  info: 'bg-blue-500/10 text-blue-500 border-blue-500/20',
+  critical: "bg-red-500/10 text-red-500 border-red-500/20",
+  major: "bg-orange-500/10 text-orange-500 border-orange-500/20",
+  minor: "bg-yellow-500/10 text-yellow-500 border-yellow-500/20",
+  info: "bg-blue-500/10 text-blue-500 border-blue-500/20",
 };
 
 export function AutomatedQC({
@@ -152,7 +161,7 @@ export function AutomatedQC({
   onCheckComplete,
   onApplyFix,
 }: AutomatedQCProps) {
-  const [activeTab, setActiveTab] = useState('overview');
+  const [activeTab, setActiveTab] = useState("overview");
   const [isRunning, setIsRunning] = useState(false);
   const [progress, setProgress] = useState(0);
   const [autoFix, setAutoFix] = useState(true);
@@ -160,7 +169,7 @@ export function AutomatedQC({
   const queryClient = useQueryClient();
 
   const { data: qcReport, isLoading: reportLoading } = useQuery<QCReport>({
-    queryKey: ['/api/distribution/qc', releaseId],
+    queryKey: ["/api/distribution/qc", releaseId],
     enabled: !!releaseId,
   });
 
@@ -171,22 +180,26 @@ export function AutomatedQC({
 
       const formData = new FormData();
       if (releaseId) {
-        formData.append('releaseId', releaseId);
+        formData.append("releaseId", releaseId);
       }
       audioFiles.forEach((file, index) => {
         formData.append(`audio_${index}`, file);
       });
       if (artwork) {
-        formData.append('artwork', artwork);
+        formData.append("artwork", artwork);
       }
-      formData.append('metadata', JSON.stringify(metadata));
+      formData.append("metadata", JSON.stringify(metadata));
 
       const progressInterval = setInterval(() => {
         setProgress((prev) => Math.min(prev + 10, 90));
       }, 500);
 
       try {
-        const response = await apiRequest('POST', '/api/distribution/qc/analyze', formData);
+        const response = await apiRequest(
+          "POST",
+          "/api/distribution/qc/analyze",
+          formData,
+        );
         const result = await response.json();
         clearInterval(progressInterval);
         setProgress(100);
@@ -198,26 +211,34 @@ export function AutomatedQC({
     },
     onSuccess: (report) => {
       setIsRunning(false);
-      queryClient.invalidateQueries({ queryKey: ['/api/distribution/qc', releaseId] });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/distribution/qc", releaseId],
+      });
       onCheckComplete?.(report);
       toast({
-        title: 'QC Check Complete',
-        description: `${report.checks.filter((c: QCCheck) => c.status === 'passed').length}/${report.checks.length} checks passed`,
+        title: "QC Check Complete",
+        description: `${report.checks.filter((c: QCCheck) => c.status === "passed").length}/${report.checks.length} checks passed`,
       });
     },
     onError: () => {
       setIsRunning(false);
       toast({
-        title: 'QC Check Failed',
-        description: 'Unable to complete quality control checks',
-        variant: 'destructive',
+        title: "QC Check Failed",
+        description: "Unable to complete quality control checks",
+        variant: "destructive",
       });
     },
   });
 
   const applyFixMutation = useMutation({
-    mutationFn: async ({ checkId, fixAction }: { checkId: string; fixAction: string }) => {
-      const response = await apiRequest('POST', '/api/distribution/qc/fix', {
+    mutationFn: async ({
+      checkId,
+      fixAction,
+    }: {
+      checkId: string;
+      fixAction: string;
+    }) => {
+      const response = await apiRequest("POST", "/api/distribution/qc/fix", {
         releaseId,
         checkId,
         fixAction,
@@ -225,28 +246,32 @@ export function AutomatedQC({
       return response.json();
     },
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['/api/distribution/qc', releaseId] });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/distribution/qc", releaseId],
+      });
       onApplyFix?.(variables.checkId, variables.fixAction);
       toast({
-        title: 'Fix Applied',
-        description: 'The issue has been automatically fixed',
+        title: "Fix Applied",
+        description: "The issue has been automatically fixed",
       });
     },
     onError: () => {
       toast({
-        title: 'Fix Failed',
-        description: 'Unable to apply the fix automatically',
-        variant: 'destructive',
+        title: "Fix Failed",
+        description: "Unable to apply the fix automatically",
+        variant: "destructive",
       });
     },
   });
 
   const applyAllFixesMutation = useMutation({
     mutationFn: async () => {
-      const fixableChecks = qcReport?.checks.filter((c) => c.fixable && c.status === 'failed') || [];
+      const fixableChecks =
+        qcReport?.checks.filter((c) => c.fixable && c.status === "failed") ||
+        [];
       for (const check of fixableChecks) {
         if (check.fixAction) {
-          await apiRequest('POST', '/api/distribution/qc/fix', {
+          await apiRequest("POST", "/api/distribution/qc/fix", {
             releaseId,
             checkId: check.id,
             fixAction: check.fixAction,
@@ -255,20 +280,27 @@ export function AutomatedQC({
       }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/distribution/qc', releaseId] });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/distribution/qc", releaseId],
+      });
       toast({
-        title: 'All Fixes Applied',
-        description: 'All fixable issues have been resolved',
+        title: "All Fixes Applied",
+        description: "All fixable issues have been resolved",
       });
     },
   });
 
   const report = qcReport;
 
-  const passedCount = report?.checks.filter((c) => c.status === 'passed').length ?? 0;
-  const failedCount = report?.checks.filter((c) => c.status === 'failed').length ?? 0;
-  const warningCount = report?.checks.filter((c) => c.status === 'warning').length ?? 0;
-  const fixableCount = report?.checks.filter((c) => c.fixable && c.status !== 'passed').length ?? 0;
+  const passedCount =
+    report?.checks.filter((c) => c.status === "passed").length ?? 0;
+  const failedCount =
+    report?.checks.filter((c) => c.status === "failed").length ?? 0;
+  const warningCount =
+    report?.checks.filter((c) => c.status === "warning").length ?? 0;
+  const fixableCount =
+    report?.checks.filter((c) => c.fixable && c.status !== "passed").length ??
+    0;
 
   const getCategoryChecks = (category: string) =>
     report?.checks.filter((c) => c.category === category) ?? [];
@@ -290,7 +322,8 @@ export function AutomatedQC({
               Automated Quality Control
             </CardTitle>
             <CardDescription>
-              Comprehensive checks for audio quality, metadata, artwork, and compliance
+              Comprehensive checks for audio quality, metadata, artwork, and
+              compliance
             </CardDescription>
           </div>
           <div className="flex items-center gap-4">
@@ -300,7 +333,9 @@ export function AutomatedQC({
                 checked={autoFix}
                 onCheckedChange={setAutoFix}
               />
-              <Label htmlFor="auto-fix" className="text-sm">Auto-fix</Label>
+              <Label htmlFor="auto-fix" className="text-sm">
+                Auto-fix
+              </Label>
             </div>
             <Button
               onClick={() => runQCMutation.mutate()}
@@ -337,31 +372,43 @@ export function AutomatedQC({
             <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
               <Card className="p-4">
                 <div className="text-center">
-                  <div className="text-3xl font-bold text-primary">{report.overallScore}%</div>
-                  <p className="text-xs text-muted-foreground mt-1">Overall Score</p>
+                  <div className="text-3xl font-bold text-primary">
+                    {report.overallScore}%
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Overall Score
+                  </p>
                 </div>
               </Card>
               <Card className="p-4">
                 <div className="text-center">
-                  <div className="text-3xl font-bold text-green-500">{passedCount}</div>
+                  <div className="text-3xl font-bold text-green-500">
+                    {passedCount}
+                  </div>
                   <p className="text-xs text-muted-foreground mt-1">Passed</p>
                 </div>
               </Card>
               <Card className="p-4">
                 <div className="text-center">
-                  <div className="text-3xl font-bold text-red-500">{failedCount}</div>
+                  <div className="text-3xl font-bold text-red-500">
+                    {failedCount}
+                  </div>
                   <p className="text-xs text-muted-foreground mt-1">Failed</p>
                 </div>
               </Card>
               <Card className="p-4">
                 <div className="text-center">
-                  <div className="text-3xl font-bold text-yellow-500">{warningCount}</div>
+                  <div className="text-3xl font-bold text-yellow-500">
+                    {warningCount}
+                  </div>
                   <p className="text-xs text-muted-foreground mt-1">Warnings</p>
                 </div>
               </Card>
               <Card className="p-4">
                 <div className="text-center">
-                  <div className="text-3xl font-bold text-blue-500">{fixableCount}</div>
+                  <div className="text-3xl font-bold text-blue-500">
+                    {fixableCount}
+                  </div>
                   <p className="text-xs text-muted-foreground mt-1">Fixable</p>
                 </div>
               </Card>
@@ -372,7 +419,8 @@ export function AutomatedQC({
                 <Wand2 className="h-4 w-4" />
                 <AlertDescription className="flex items-center justify-between">
                   <span>
-                    {fixableCount} issue{fixableCount > 1 ? 's' : ''} can be automatically fixed
+                    {fixableCount} issue{fixableCount > 1 ? "s" : ""} can be
+                    automatically fixed
                   </span>
                   <Button
                     size="sm"
@@ -390,19 +438,19 @@ export function AutomatedQC({
               <TabsList className="grid grid-cols-6 w-full">
                 <TabsTrigger value="overview">Overview</TabsTrigger>
                 <TabsTrigger value="audio">
-                  Audio ({getCategoryChecks('audio').length})
+                  Audio ({getCategoryChecks("audio").length})
                 </TabsTrigger>
                 <TabsTrigger value="metadata">
-                  Metadata ({getCategoryChecks('metadata').length})
+                  Metadata ({getCategoryChecks("metadata").length})
                 </TabsTrigger>
                 <TabsTrigger value="artwork">
-                  Artwork ({getCategoryChecks('artwork').length})
+                  Artwork ({getCategoryChecks("artwork").length})
                 </TabsTrigger>
                 <TabsTrigger value="codes">
-                  Codes ({getCategoryChecks('codes').length})
+                  Codes ({getCategoryChecks("codes").length})
                 </TabsTrigger>
                 <TabsTrigger value="content">
-                  Content ({getCategoryChecks('content').length})
+                  Content ({getCategoryChecks("content").length})
                 </TabsTrigger>
               </TabsList>
 
@@ -420,10 +468,13 @@ export function AutomatedQC({
                   </TableHeader>
                   <TableBody>
                     {report.checks.map((check) => {
-                      const CategoryIcon = CATEGORY_ICONS[check.category] || FileText;
+                      const CategoryIcon =
+                        CATEGORY_ICONS[check.category] || FileText;
                       return (
                         <TableRow key={check.id}>
-                          <TableCell className="font-medium">{check.name}</TableCell>
+                          <TableCell className="font-medium">
+                            {check.name}
+                          </TableCell>
                           <TableCell>
                             <Badge variant="outline" className="gap-1">
                               <CategoryIcon className="h-3 w-3" />
@@ -445,14 +496,14 @@ export function AutomatedQC({
                             {check.message}
                           </TableCell>
                           <TableCell className="text-right">
-                            {check.fixable && check.status !== 'passed' && (
+                            {check.fixable && check.status !== "passed" && (
                               <Button
                                 size="sm"
                                 variant="outline"
                                 onClick={() =>
                                   applyFixMutation.mutate({
                                     checkId: check.id,
-                                    fixAction: check.fixAction || '',
+                                    fixAction: check.fixAction || "",
                                   })
                                 }
                                 disabled={applyFixMutation.isPending}
@@ -473,41 +524,73 @@ export function AutomatedQC({
                 {report.audioAnalysis && (
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
                     <Card className="p-4">
-                      <div className="text-sm text-muted-foreground">Peak Level</div>
-                      <div className="text-xl font-bold">{report.audioAnalysis.peakLevel} dB</div>
-                    </Card>
-                    <Card className="p-4">
-                      <div className="text-sm text-muted-foreground">Loudness (LUFS)</div>
-                      <div className="text-xl font-bold">{report.audioAnalysis.lufs} LUFS</div>
-                    </Card>
-                    <Card className="p-4">
-                      <div className="text-sm text-muted-foreground">Dynamic Range</div>
-                      <div className="text-xl font-bold">{report.audioAnalysis.dynamicRange} dB</div>
-                    </Card>
-                    <Card className="p-4">
-                      <div className="text-sm text-muted-foreground">True Peak</div>
-                      <div className="text-xl font-bold">{report.audioAnalysis.truePeak} dB</div>
-                    </Card>
-                    <Card className="p-4">
-                      <div className="text-sm text-muted-foreground">Sample Rate</div>
-                      <div className="text-xl font-bold">{report.audioAnalysis.sampleRate / 1000} kHz</div>
-                    </Card>
-                    <Card className="p-4">
-                      <div className="text-sm text-muted-foreground">Bit Depth</div>
-                      <div className="text-xl font-bold">{report.audioAnalysis.bitDepth}-bit</div>
-                    </Card>
-                    <Card className="p-4">
-                      <div className="text-sm text-muted-foreground">Duration</div>
+                      <div className="text-sm text-muted-foreground">
+                        Peak Level
+                      </div>
                       <div className="text-xl font-bold">
-                        {Math.floor(report.audioAnalysis.duration / 60)}:
-                        {String(Math.floor(report.audioAnalysis.duration % 60)).padStart(2, '0')}
+                        {report.audioAnalysis.peakLevel} dB
                       </div>
                     </Card>
                     <Card className="p-4">
-                      <div className="text-sm text-muted-foreground">Clipping</div>
+                      <div className="text-sm text-muted-foreground">
+                        Loudness (LUFS)
+                      </div>
+                      <div className="text-xl font-bold">
+                        {report.audioAnalysis.lufs} LUFS
+                      </div>
+                    </Card>
+                    <Card className="p-4">
+                      <div className="text-sm text-muted-foreground">
+                        Dynamic Range
+                      </div>
+                      <div className="text-xl font-bold">
+                        {report.audioAnalysis.dynamicRange} dB
+                      </div>
+                    </Card>
+                    <Card className="p-4">
+                      <div className="text-sm text-muted-foreground">
+                        True Peak
+                      </div>
+                      <div className="text-xl font-bold">
+                        {report.audioAnalysis.truePeak} dB
+                      </div>
+                    </Card>
+                    <Card className="p-4">
+                      <div className="text-sm text-muted-foreground">
+                        Sample Rate
+                      </div>
+                      <div className="text-xl font-bold">
+                        {report.audioAnalysis.sampleRate / 1000} kHz
+                      </div>
+                    </Card>
+                    <Card className="p-4">
+                      <div className="text-sm text-muted-foreground">
+                        Bit Depth
+                      </div>
+                      <div className="text-xl font-bold">
+                        {report.audioAnalysis.bitDepth}-bit
+                      </div>
+                    </Card>
+                    <Card className="p-4">
+                      <div className="text-sm text-muted-foreground">
+                        Duration
+                      </div>
+                      <div className="text-xl font-bold">
+                        {Math.floor(report.audioAnalysis.duration / 60)}:
+                        {String(
+                          Math.floor(report.audioAnalysis.duration % 60),
+                        ).padStart(2, "0")}
+                      </div>
+                    </Card>
+                    <Card className="p-4">
+                      <div className="text-sm text-muted-foreground">
+                        Clipping
+                      </div>
                       <div className="text-xl font-bold">
                         {report.audioAnalysis.hasClipping ? (
-                          <span className="text-red-500">{report.audioAnalysis.clippingInstances} instances</span>
+                          <span className="text-red-500">
+                            {report.audioAnalysis.clippingInstances} instances
+                          </span>
                         ) : (
                           <span className="text-green-500">None</span>
                         )}
@@ -516,27 +599,31 @@ export function AutomatedQC({
                   </div>
                 )}
 
-                {getCategoryChecks('audio').map((check) => (
+                {getCategoryChecks("audio").map((check) => (
                   <Card key={check.id} className="p-4">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
                         {renderStatusIcon(check.status)}
                         <div>
                           <h4 className="font-medium">{check.name}</h4>
-                          <p className="text-sm text-muted-foreground">{check.message}</p>
+                          <p className="text-sm text-muted-foreground">
+                            {check.message}
+                          </p>
                           {check.details && (
-                            <p className="text-xs text-muted-foreground mt-1">{check.details}</p>
+                            <p className="text-xs text-muted-foreground mt-1">
+                              {check.details}
+                            </p>
                           )}
                         </div>
                       </div>
-                      {check.fixable && check.status !== 'passed' && (
+                      {check.fixable && check.status !== "passed" && (
                         <Button
                           size="sm"
                           variant="outline"
                           onClick={() =>
                             applyFixMutation.mutate({
                               checkId: check.id,
-                              fixAction: check.fixAction || '',
+                              fixAction: check.fixAction || "",
                             })
                           }
                         >
@@ -550,27 +637,31 @@ export function AutomatedQC({
               </TabsContent>
 
               <TabsContent value="metadata" className="space-y-4">
-                {getCategoryChecks('metadata').map((check) => (
+                {getCategoryChecks("metadata").map((check) => (
                   <Card key={check.id} className="p-4">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
                         {renderStatusIcon(check.status)}
                         <div>
                           <h4 className="font-medium">{check.name}</h4>
-                          <p className="text-sm text-muted-foreground">{check.message}</p>
+                          <p className="text-sm text-muted-foreground">
+                            {check.message}
+                          </p>
                           {check.details && (
-                            <p className="text-xs text-muted-foreground mt-1">{check.details}</p>
+                            <p className="text-xs text-muted-foreground mt-1">
+                              {check.details}
+                            </p>
                           )}
                         </div>
                       </div>
-                      {check.fixable && check.status !== 'passed' && (
+                      {check.fixable && check.status !== "passed" && (
                         <Button
                           size="sm"
                           variant="outline"
                           onClick={() =>
                             applyFixMutation.mutate({
                               checkId: check.id,
-                              fixAction: check.fixAction || '',
+                              fixAction: check.fixAction || "",
                             })
                           }
                         >
@@ -587,49 +678,70 @@ export function AutomatedQC({
                 {report.artworkAnalysis && (
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
                     <Card className="p-4">
-                      <div className="text-sm text-muted-foreground">Dimensions</div>
+                      <div className="text-sm text-muted-foreground">
+                        Dimensions
+                      </div>
                       <div className="text-xl font-bold">
-                        {report.artworkAnalysis.width}x{report.artworkAnalysis.height}
+                        {report.artworkAnalysis.width}x
+                        {report.artworkAnalysis.height}
                       </div>
                     </Card>
                     <Card className="p-4">
-                      <div className="text-sm text-muted-foreground">Format</div>
-                      <div className="text-xl font-bold">{report.artworkAnalysis.format}</div>
-                    </Card>
-                    <Card className="p-4">
-                      <div className="text-sm text-muted-foreground">Color Space</div>
-                      <div className="text-xl font-bold">{report.artworkAnalysis.colorSpace}</div>
-                    </Card>
-                    <Card className="p-4">
-                      <div className="text-sm text-muted-foreground">File Size</div>
+                      <div className="text-sm text-muted-foreground">
+                        Format
+                      </div>
                       <div className="text-xl font-bold">
-                        {(report.artworkAnalysis.fileSize / (1024 * 1024)).toFixed(1)} MB
+                        {report.artworkAnalysis.format}
+                      </div>
+                    </Card>
+                    <Card className="p-4">
+                      <div className="text-sm text-muted-foreground">
+                        Color Space
+                      </div>
+                      <div className="text-xl font-bold">
+                        {report.artworkAnalysis.colorSpace}
+                      </div>
+                    </Card>
+                    <Card className="p-4">
+                      <div className="text-sm text-muted-foreground">
+                        File Size
+                      </div>
+                      <div className="text-xl font-bold">
+                        {(
+                          report.artworkAnalysis.fileSize /
+                          (1024 * 1024)
+                        ).toFixed(1)}{" "}
+                        MB
                       </div>
                     </Card>
                   </div>
                 )}
 
-                {getCategoryChecks('artwork').map((check) => (
+                {getCategoryChecks("artwork").map((check) => (
                   <Card key={check.id} className="p-4">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
                         {renderStatusIcon(check.status)}
                         <div>
                           <h4 className="font-medium">{check.name}</h4>
-                          <p className="text-sm text-muted-foreground">{check.message}</p>
+                          <p className="text-sm text-muted-foreground">
+                            {check.message}
+                          </p>
                           {check.details && (
-                            <p className="text-xs text-muted-foreground mt-1">{check.details}</p>
+                            <p className="text-xs text-muted-foreground mt-1">
+                              {check.details}
+                            </p>
                           )}
                         </div>
                       </div>
-                      {check.fixable && check.status !== 'passed' && (
+                      {check.fixable && check.status !== "passed" && (
                         <Button
                           size="sm"
                           variant="outline"
                           onClick={() =>
                             applyFixMutation.mutate({
                               checkId: check.id,
-                              fixAction: check.fixAction || '',
+                              fixAction: check.fixAction || "",
                             })
                           }
                         >
@@ -643,32 +755,36 @@ export function AutomatedQC({
               </TabsContent>
 
               <TabsContent value="codes" className="space-y-4">
-                {getCategoryChecks('codes').map((check) => (
+                {getCategoryChecks("codes").map((check) => (
                   <Card key={check.id} className="p-4">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
                         {renderStatusIcon(check.status)}
                         <div>
                           <h4 className="font-medium">{check.name}</h4>
-                          <p className="text-sm text-muted-foreground">{check.message}</p>
+                          <p className="text-sm text-muted-foreground">
+                            {check.message}
+                          </p>
                           {check.value && (
                             <p className="text-xs font-mono bg-muted px-2 py-1 rounded mt-1 inline-block">
                               {check.value}
                             </p>
                           )}
                           {check.details && (
-                            <p className="text-xs text-muted-foreground mt-1">{check.details}</p>
+                            <p className="text-xs text-muted-foreground mt-1">
+                              {check.details}
+                            </p>
                           )}
                         </div>
                       </div>
-                      {check.fixable && check.status !== 'passed' && (
+                      {check.fixable && check.status !== "passed" && (
                         <Button
                           size="sm"
                           variant="outline"
                           onClick={() =>
                             applyFixMutation.mutate({
                               checkId: check.id,
-                              fixAction: check.fixAction || '',
+                              fixAction: check.fixAction || "",
                             })
                           }
                         >
@@ -682,16 +798,20 @@ export function AutomatedQC({
               </TabsContent>
 
               <TabsContent value="content" className="space-y-4">
-                {getCategoryChecks('content').map((check) => (
+                {getCategoryChecks("content").map((check) => (
                   <Card key={check.id} className="p-4">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
                         {renderStatusIcon(check.status)}
                         <div>
                           <h4 className="font-medium">{check.name}</h4>
-                          <p className="text-sm text-muted-foreground">{check.message}</p>
+                          <p className="text-sm text-muted-foreground">
+                            {check.message}
+                          </p>
                           {check.details && (
-                            <p className="text-xs text-muted-foreground mt-1">{check.details}</p>
+                            <p className="text-xs text-muted-foreground mt-1">
+                              {check.details}
+                            </p>
                           )}
                         </div>
                       </div>

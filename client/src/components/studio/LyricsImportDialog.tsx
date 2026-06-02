@@ -1,34 +1,37 @@
-import { useState } from 'react';
-import { useStudioStore } from '@/lib/studioStore';
+import { useState } from "react";
+import { useStudioStore } from "@/lib/studioStore";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogFooter,
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
-import { Upload, FileText, Clipboard } from 'lucide-react';
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Upload, FileText, Clipboard } from "lucide-react";
 
 interface LyricsImportDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
-export function LyricsImportDialog({ open, onOpenChange }: LyricsImportDialogProps) {
+export function LyricsImportDialog({
+  open,
+  onOpenChange,
+}: LyricsImportDialogProps) {
   const { importLyrics } = useStudioStore();
-  const [lyricsText, setLyricsText] = useState('');
+  const [lyricsText, setLyricsText] = useState("");
   const [error, setError] = useState<string | null>(null);
 
   const handleImport = () => {
     if (!lyricsText.trim()) {
-      setError('Please enter some lyrics');
+      setError("Please enter some lyrics");
       return;
     }
     importLyrics(lyricsText);
-    setLyricsText('');
+    setLyricsText("");
     setError(null);
     onOpenChange(false);
   };
@@ -39,7 +42,7 @@ export function LyricsImportDialog({ open, onOpenChange }: LyricsImportDialogPro
       setLyricsText(text);
       setError(null);
     } catch (err) {
-      setError('Failed to paste from clipboard');
+      setError("Failed to paste from clipboard");
     }
   };
 
@@ -47,20 +50,20 @@ export function LyricsImportDialog({ open, onOpenChange }: LyricsImportDialogPro
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (!file.name.endsWith('.txt') && !file.name.endsWith('.lrc')) {
-      setError('Please upload a .txt or .lrc file');
+    if (!file.name.endsWith(".txt") && !file.name.endsWith(".lrc")) {
+      setError("Please upload a .txt or .lrc file");
       return;
     }
 
     const reader = new FileReader();
     reader.onload = (event) => {
       const content = event.target?.result as string;
-      if (file.name.endsWith('.lrc')) {
+      if (file.name.endsWith(".lrc")) {
         const lines = content
-          .split('\n')
-          .map((line) => line.replace(/\[\d+:\d+\.\d+\]/g, '').trim())
+          .split("\n")
+          .map((line) => line.replace(/\[\d+:\d+\.\d+\]/g, "").trim())
           .filter((line) => line);
-        setLyricsText(lines.join('\n'));
+        setLyricsText(lines.join("\n"));
       } else {
         setLyricsText(content);
       }
@@ -117,9 +120,9 @@ export function LyricsImportDialog({ open, onOpenChange }: LyricsImportDialogPro
           </div>
 
           <p className="text-xs text-muted-foreground">
-            Each line will be placed on the timeline at 4-second intervals.
-            You can drag them to adjust timing after import.
-            Use Alt+Enter to snap the selected lyric to the playhead position.
+            Each line will be placed on the timeline at 4-second intervals. You
+            can drag them to adjust timing after import. Use Alt+Enter to snap
+            the selected lyric to the playhead position.
           </p>
         </div>
 

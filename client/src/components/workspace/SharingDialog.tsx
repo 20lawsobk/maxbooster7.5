@@ -1,32 +1,45 @@
-import { useState } from 'react';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Badge } from '@/components/ui/badge';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Switch } from '@/components/ui/switch';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { useToast } from '@/hooks/use-toast';
-import { 
-  Share2, 
-  Link, 
-  Copy, 
-  Check, 
-  UserPlus, 
-  Globe, 
-  Lock, 
-  Clock, 
+import { useState } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { useToast } from "@/hooks/use-toast";
+import {
+  Share2,
+  Link,
+  Copy,
+  Check,
+  UserPlus,
+  Globe,
+  Lock,
+  Clock,
   X,
   Eye,
   Edit,
   Download,
-  Users
-} from 'lucide-react';
+  Users,
+} from "lucide-react";
 
-export type SharePermission = 'view' | 'comment' | 'edit' | 'admin';
+export type SharePermission = "view" | "comment" | "edit" | "admin";
 
 export interface ShareMember {
   id: string;
@@ -63,20 +76,48 @@ interface SharingDialogProps {
   projectName: string;
   currentMembers: ShareMember[];
   currentLinks: ShareLink[];
-  workspaceMembers: { id: string; name: string; email: string; avatar?: string }[];
-  onShareWithMembers: (memberIds: string[], permission: SharePermission) => Promise<void>;
-  onUpdateMemberPermission: (shareId: string, permission: SharePermission) => Promise<void>;
+  workspaceMembers: {
+    id: string;
+    name: string;
+    email: string;
+    avatar?: string;
+  }[];
+  onShareWithMembers: (
+    memberIds: string[],
+    permission: SharePermission,
+  ) => Promise<void>;
+  onUpdateMemberPermission: (
+    shareId: string,
+    permission: SharePermission,
+  ) => Promise<void>;
   onRemoveMember: (shareId: string) => Promise<void>;
-  onCreateLink: (settings: ShareSettings & { permission: SharePermission }) => Promise<ShareLink>;
+  onCreateLink: (
+    settings: ShareSettings & { permission: SharePermission },
+  ) => Promise<ShareLink>;
   onRevokeLink: (linkId: string) => Promise<void>;
   isLoading?: boolean;
 }
 
-const permissionConfig: Record<SharePermission, { icon: React.ElementType; label: string; description: string }> = {
-  view: { icon: Eye, label: 'View', description: 'Can only view' },
-  comment: { icon: Edit, label: 'Comment', description: 'Can view and comment' },
-  edit: { icon: Edit, label: 'Edit', description: 'Can view, comment, and edit' },
-  admin: { icon: Users, label: 'Admin', description: 'Full access including sharing' },
+const permissionConfig: Record<
+  SharePermission,
+  { icon: React.ElementType; label: string; description: string }
+> = {
+  view: { icon: Eye, label: "View", description: "Can only view" },
+  comment: {
+    icon: Edit,
+    label: "Comment",
+    description: "Can view and comment",
+  },
+  edit: {
+    icon: Edit,
+    label: "Edit",
+    description: "Can view, comment, and edit",
+  },
+  admin: {
+    icon: Users,
+    label: "Admin",
+    description: "Full access including sharing",
+  },
 };
 
 export function SharingDialog({
@@ -95,10 +136,11 @@ export function SharingDialog({
   isLoading = false,
 }: SharingDialogProps) {
   const { toast } = useToast();
-  const [activeTab, setActiveTab] = useState('members');
-  const [searchQuery, setSearchQuery] = useState('');
+  const [activeTab, setActiveTab] = useState("members");
+  const [searchQuery, setSearchQuery] = useState("");
   const [selectedMembers, setSelectedMembers] = useState<string[]>([]);
-  const [sharePermission, setSharePermission] = useState<SharePermission>('view');
+  const [sharePermission, setSharePermission] =
+    useState<SharePermission>("view");
   const [copied, setCopied] = useState<string | null>(null);
 
   const [linkSettings, setLinkSettings] = useState<ShareSettings>({
@@ -107,21 +149,22 @@ export function SharingDialog({
     requireSignIn: false,
     expirationDays: 7,
   });
-  const [linkPermission, setLinkPermission] = useState<SharePermission>('view');
+  const [linkPermission, setLinkPermission] = useState<SharePermission>("view");
 
   const availableMembers = workspaceMembers.filter(
-    m => !currentMembers.some(cm => cm.userId === m.id)
+    (m) => !currentMembers.some((cm) => cm.userId === m.id),
   );
 
   const filteredMembers = availableMembers.filter(
-    m => m.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-         m.email.toLowerCase().includes(searchQuery.toLowerCase())
+    (m) =>
+      m.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      m.email.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
   const handleCopyLink = (url: string, linkId: string) => {
     navigator.clipboard.writeText(url);
     setCopied(linkId);
-    toast({ title: 'Link copied to clipboard' });
+    toast({ title: "Link copied to clipboard" });
     setTimeout(() => setCopied(null), 2000);
   };
 
@@ -129,14 +172,17 @@ export function SharingDialog({
     if (selectedMembers.length === 0) return;
     await onShareWithMembers(selectedMembers, sharePermission);
     setSelectedMembers([]);
-    setSearchQuery('');
-    toast({ title: 'Project shared successfully' });
+    setSearchQuery("");
+    toast({ title: "Project shared successfully" });
   };
 
   const handleCreateLink = async () => {
-    const link = await onCreateLink({ ...linkSettings, permission: linkPermission });
+    const link = await onCreateLink({
+      ...linkSettings,
+      permission: linkPermission,
+    });
     handleCopyLink(link.url, link.id);
-    toast({ title: 'Share link created' });
+    toast({ title: "Share link created" });
   };
 
   return (
@@ -173,7 +219,12 @@ export function SharingDialog({
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
-                <Select value={sharePermission} onValueChange={(v) => setSharePermission(v as SharePermission)}>
+                <Select
+                  value={sharePermission}
+                  onValueChange={(v) =>
+                    setSharePermission(v as SharePermission)
+                  }
+                >
                   <SelectTrigger className="w-32">
                     <SelectValue />
                   </SelectTrigger>
@@ -192,15 +243,15 @@ export function SharingDialog({
 
               {searchQuery && filteredMembers.length > 0 && (
                 <div className="border rounded-md max-h-32 overflow-y-auto">
-                  {filteredMembers.map(member => (
+                  {filteredMembers.map((member) => (
                     <button
                       key={member.id}
                       className="w-full flex items-center gap-2 p-2 hover:bg-muted text-left"
                       onClick={() => {
-                        setSelectedMembers(prev =>
+                        setSelectedMembers((prev) =>
                           prev.includes(member.id)
-                            ? prev.filter(id => id !== member.id)
-                            : [...prev, member.id]
+                            ? prev.filter((id) => id !== member.id)
+                            : [...prev, member.id],
                         );
                       }}
                     >
@@ -217,8 +268,12 @@ export function SharingDialog({
                         </AvatarFallback>
                       </Avatar>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium truncate">{member.name}</p>
-                        <p className="text-xs text-muted-foreground truncate">{member.email}</p>
+                        <p className="text-sm font-medium truncate">
+                          {member.name}
+                        </p>
+                        <p className="text-xs text-muted-foreground truncate">
+                          {member.email}
+                        </p>
                       </div>
                     </button>
                   ))}
@@ -226,9 +281,14 @@ export function SharingDialog({
               )}
 
               {selectedMembers.length > 0 && (
-                <Button onClick={handleShareWithMembers} disabled={isLoading} className="w-full">
+                <Button
+                  onClick={handleShareWithMembers}
+                  disabled={isLoading}
+                  className="w-full"
+                >
                   <UserPlus className="h-4 w-4 mr-2" />
-                  Share with {selectedMembers.length} member{selectedMembers.length > 1 ? 's' : ''}
+                  Share with {selectedMembers.length} member
+                  {selectedMembers.length > 1 ? "s" : ""}
                 </Button>
               )}
             </div>
@@ -242,8 +302,11 @@ export function SharingDialog({
                       Not shared with anyone yet
                     </p>
                   ) : (
-                    currentMembers.map(member => (
-                      <div key={member.id} className="flex items-center justify-between p-2 rounded-lg hover:bg-muted">
+                    currentMembers.map((member) => (
+                      <div
+                        key={member.id}
+                        className="flex items-center justify-between p-2 rounded-lg hover:bg-muted"
+                      >
                         <div className="flex items-center gap-2">
                           <Avatar className="h-8 w-8">
                             <AvatarImage src={member.avatar} />
@@ -253,23 +316,32 @@ export function SharingDialog({
                           </Avatar>
                           <div>
                             <p className="text-sm font-medium">{member.name}</p>
-                            <p className="text-xs text-muted-foreground">{member.email}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {member.email}
+                            </p>
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
                           <Select
                             value={member.permission}
-                            onValueChange={(v) => onUpdateMemberPermission(member.id, v as SharePermission)}
+                            onValueChange={(v) =>
+                              onUpdateMemberPermission(
+                                member.id,
+                                v as SharePermission,
+                              )
+                            }
                           >
                             <SelectTrigger className="w-24 h-8 text-xs">
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
-                              {Object.entries(permissionConfig).map(([key, config]) => (
-                                <SelectItem key={key} value={key}>
-                                  {config.label}
-                                </SelectItem>
-                              ))}
+                              {Object.entries(permissionConfig).map(
+                                ([key, config]) => (
+                                  <SelectItem key={key} value={key}>
+                                    {config.label}
+                                  </SelectItem>
+                                ),
+                              )}
                             </SelectContent>
                           </Select>
                           <Button
@@ -295,7 +367,12 @@ export function SharingDialog({
               <div className="space-y-3 p-3 border rounded-lg">
                 <div className="flex items-center justify-between">
                   <Label className="text-sm">Permission</Label>
-                  <Select value={linkPermission} onValueChange={(v) => setLinkPermission(v as SharePermission)}>
+                  <Select
+                    value={linkPermission}
+                    onValueChange={(v) =>
+                      setLinkPermission(v as SharePermission)
+                    }
+                  >
                     <SelectTrigger className="w-32">
                       <SelectValue />
                     </SelectTrigger>
@@ -315,33 +392,49 @@ export function SharingDialog({
                 <div className="flex items-center justify-between">
                   <div className="space-y-0.5">
                     <Label className="text-sm">Require sign in</Label>
-                    <p className="text-xs text-muted-foreground">Users must be logged in</p>
+                    <p className="text-xs text-muted-foreground">
+                      Users must be logged in
+                    </p>
                   </div>
                   <Switch
                     checked={linkSettings.requireSignIn}
-                    onCheckedChange={(checked) => setLinkSettings(prev => ({ ...prev, requireSignIn: checked }))}
+                    onCheckedChange={(checked) =>
+                      setLinkSettings((prev) => ({
+                        ...prev,
+                        requireSignIn: checked,
+                      }))
+                    }
                   />
                 </div>
 
                 <div className="flex items-center justify-between">
                   <div className="space-y-0.5">
                     <Label className="text-sm">Allow downloads</Label>
-                    <p className="text-xs text-muted-foreground">Users can download files</p>
+                    <p className="text-xs text-muted-foreground">
+                      Users can download files
+                    </p>
                   </div>
                   <Switch
                     checked={linkSettings.allowDownload}
-                    onCheckedChange={(checked) => setLinkSettings(prev => ({ ...prev, allowDownload: checked }))}
+                    onCheckedChange={(checked) =>
+                      setLinkSettings((prev) => ({
+                        ...prev,
+                        allowDownload: checked,
+                      }))
+                    }
                   />
                 </div>
 
                 <div className="flex items-center justify-between">
                   <Label className="text-sm">Expires in</Label>
                   <Select
-                    value={String(linkSettings.expirationDays || 'never')}
-                    onValueChange={(v) => setLinkSettings(prev => ({
-                      ...prev,
-                      expirationDays: v === 'never' ? undefined : parseInt(v)
-                    }))}
+                    value={String(linkSettings.expirationDays || "never")}
+                    onValueChange={(v) =>
+                      setLinkSettings((prev) => ({
+                        ...prev,
+                        expirationDays: v === "never" ? undefined : parseInt(v),
+                      }))
+                    }
                   >
                     <SelectTrigger className="w-32">
                       <SelectValue />
@@ -355,7 +448,11 @@ export function SharingDialog({
                   </Select>
                 </div>
 
-                <Button onClick={handleCreateLink} disabled={isLoading} className="w-full">
+                <Button
+                  onClick={handleCreateLink}
+                  disabled={isLoading}
+                  className="w-full"
+                >
                   <Link className="h-4 w-4 mr-2" />
                   Create Link
                 </Button>
@@ -371,8 +468,11 @@ export function SharingDialog({
                       No active share links
                     </p>
                   ) : (
-                    currentLinks.map(link => (
-                      <div key={link.id} className="flex items-center justify-between p-2 rounded-lg border">
+                    currentLinks.map((link) => (
+                      <div
+                        key={link.id}
+                        className="flex items-center justify-between p-2 rounded-lg border"
+                      >
                         <div className="flex items-center gap-2 min-w-0">
                           {link.password ? (
                             <Lock className="h-4 w-4 text-muted-foreground flex-shrink-0" />
@@ -380,7 +480,9 @@ export function SharingDialog({
                             <Globe className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                           )}
                           <div className="min-w-0">
-                            <p className="text-sm font-medium truncate max-w-[200px]">{link.url}</p>
+                            <p className="text-sm font-medium truncate max-w-[200px]">
+                              {link.url}
+                            </p>
                             <div className="flex items-center gap-2 text-xs text-muted-foreground">
                               <Badge variant="secondary" className="text-xs">
                                 {permissionConfig[link.permission].label}
@@ -388,7 +490,10 @@ export function SharingDialog({
                               {link.expiresAt && (
                                 <span className="flex items-center gap-1">
                                   <Clock className="h-3 w-3" />
-                                  Expires {new Date(link.expiresAt).toLocaleDateString()}
+                                  Expires{" "}
+                                  {new Date(
+                                    link.expiresAt,
+                                  ).toLocaleDateString()}
                                 </span>
                               )}
                               <span>{link.accessCount} views</span>

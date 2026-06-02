@@ -32,7 +32,12 @@ interface PresaveTrackerProps {
   isLoading?: boolean;
 }
 
-export function PresaveTracker({ countdownId, presaveUrl, analytics, isLoading }: PresaveTrackerProps) {
+export function PresaveTracker({
+  countdownId,
+  presaveUrl,
+  analytics,
+  isLoading,
+}: PresaveTrackerProps) {
   const { toast } = useToast();
 
   const copyLink = () => {
@@ -82,7 +87,10 @@ export function PresaveTracker({ countdownId, presaveUrl, analytics, isLoading }
             <TrendingUp className="h-5 w-5 text-primary" />
             <CardTitle>Pre-save Tracker</CardTitle>
           </div>
-          <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
+          <Badge
+            variant="outline"
+            className="bg-primary/10 text-primary border-primary/20"
+          >
             {conversionRate}% conversion
           </Badge>
         </div>

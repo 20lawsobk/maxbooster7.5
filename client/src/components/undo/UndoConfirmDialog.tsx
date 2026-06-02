@@ -1,6 +1,6 @@
-import { useState } from 'react';
-import { AlertTriangle, Undo2, X } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { useState } from "react";
+import { AlertTriangle, Undo2, X } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -10,9 +10,9 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
-import { Checkbox } from '@/components/ui/checkbox';
-import { UndoableAction, getActionLabel } from '@/lib/undo/types';
+} from "@/components/ui/alert-dialog";
+import { Checkbox } from "@/components/ui/checkbox";
+import { UndoableAction, getActionLabel } from "@/lib/undo/types";
 
 export interface UndoConfirmDialogProps {
   open: boolean;
@@ -42,7 +42,7 @@ export function UndoConfirmDialog({
     try {
       await onConfirm();
       if (dontAskAgain) {
-        localStorage.setItem('undoConfirmDismissed', 'true');
+        localStorage.setItem("undoConfirmDismissed", "true");
       }
     } finally {
       setIsLoading(false);
@@ -66,9 +66,7 @@ export function UndoConfirmDialog({
             Confirm Undo
           </AlertDialogTitle>
           <AlertDialogDescription className="space-y-3">
-            <p>
-              Are you sure you want to undo this action?
-            </p>
+            <p>Are you sure you want to undo this action?</p>
             <div className="p-3 bg-muted rounded-lg">
               <div className="font-medium text-foreground">{actionLabel}</div>
               <div className="text-xs mt-1 text-muted-foreground">
@@ -77,7 +75,8 @@ export function UndoConfirmDialog({
             </div>
             {isDestructive && (
               <p className="text-amber-600 dark:text-amber-400 text-sm">
-                This will restore previously deleted data. Some related changes may also be affected.
+                This will restore previously deleted data. Some related changes
+                may also be affected.
               </p>
             )}
           </AlertDialogDescription>
@@ -130,10 +129,11 @@ export function useUndoConfirmDialog() {
 
   const showConfirmDialog = (
     action: UndoableAction,
-    onConfirm: () => Promise<void>
+    onConfirm: () => Promise<void>,
   ) => {
-    const skipConfirmation = localStorage.getItem('undoConfirmDismissed') === 'true';
-    
+    const skipConfirmation =
+      localStorage.getItem("undoConfirmDismissed") === "true";
+
     if (skipConfirmation || !action.metadata.requiresConfirmation) {
       onConfirm();
       return;

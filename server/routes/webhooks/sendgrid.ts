@@ -1,6 +1,6 @@
-import { Router, raw } from 'express';
-import { emailTrackingService } from '../../services/emailTrackingService.js';
-import { logger } from '../../logger.js';
+import { Router, raw } from "express";
+import { emailTrackingService } from "../../services/emailTrackingService.js";
+import { logger } from "../../logger.js";
 
 const router = Router();
 
@@ -9,28 +9,48 @@ const router = Router();
  * Handles delivery events: delivered, bounce, spam, unsubscribe, open, click
  * SECURED with signature verification
  */
-router.post('/', raw({ type: 'application/json' }), async (req, res) => {
+router.post("/", raw({ type: "application/json" }), async (req, res) => {
   try {
-    const signature = req.headers['x-twilio-email-event-webhook-signature'] as string;
-    const timestamp = req.headers['x-twilio-email-event-webhook-timestamp'] as string;
-    const rawBody = req.body?.toString('utf-8') || '';
+    const signature = req.headers[
+      "x-twilio-email-event-webhook-signature"
+    ] as string;
+    const timestamp = req.headers[
+      "x-twilio-email-event-webhook-timestamp"
+    ] as string;
+    const rawBody = req.body?.toString("utf-8") || "";
 
-    if ((process.env.NODE_ENV === 'production' || !!process.env.REPLIT_DEPLOYMENT) && !process.env.SENDGRID_WEBHOOK_PUBLIC_KEY) {
-      logger.warn('❌ CRITICAL: SendGrid webhook public key not configured in production');
-      return res.status(500).json({ error: 'Webhook verification not configured' });
+    if (
+      (process.env.NODE_ENV === "production" ||
+        !!process.env.REPLIT_DEPLOYMENT) &&
+      !process.env.SENDGRID_WEBHOOK_PUBLIC_KEY
+    ) {
+      logger.warn(
+        "❌ CRITICAL: SendGrid webhook public key not configured in production",
+      );
+      return res
+        .status(500)
+        .json({ error: "Webhook verification not configured" });
     }
 
-    if (process.env.NODE_ENV === 'production' || !!process.env.REPLIT_DEPLOYMENT || process.env.SENDGRID_WEBHOOK_PUBLIC_KEY) {
+    if (
+      process.env.NODE_ENV === "production" ||
+      !!process.env.REPLIT_DEPLOYMENT ||
+      process.env.SENDGRID_WEBHOOK_PUBLIC_KEY
+    ) {
       if (!signature || !timestamp) {
-        logger.warn('⚠️  SendGrid webhook missing required signature headers');
-        return res.status(401).json({ error: 'Missing signature headers' });
+        logger.warn("⚠️  SendGrid webhook missing required signature headers");
+        return res.status(401).json({ error: "Missing signature headers" });
       }
 
-      const isValid = emailTrackingService.verifySendGridSignature(rawBody, signature, timestamp);
+      const isValid = emailTrackingService.verifySendGridSignature(
+        rawBody,
+        signature,
+        timestamp,
+      );
 
       if (!isValid) {
-        logger.warn('⚠️  SendGrid webhook signature verification failed');
-        return res.status(401).json({ error: 'Signature verification failed' });
+        logger.warn("⚠️  SendGrid webhook signature verification failed");
+        return res.status(401).json({ error: "Signature verification failed" });
       }
     }
 
@@ -63,8 +83,8 @@ router.post('/', raw({ type: 'application/json' }), async (req, res) => {
 
     res.status(200).json({ received: true });
   } catch (error: unknown) {
-    logger.warn({ err: error }, 'SendGrid webhook error:');
-    res.status(500).json({ error: 'Webhook processing failed' });
+    logger.warn({ err: error }, "SendGrid webhook error:");
+    res.status(500).json({ error: "Webhook processing failed" });
   }
 });
 
@@ -72,20 +92,28 @@ router.post('/', raw({ type: 'application/json' }), async (req, res) => {
  * Map SendGrid event types to our enum
  */
 function mapSendGridEventType(
-  eventType: string
-): 'delivered' | 'bounce' | 'spam' | 'unsubscribe' | 'open' | 'click' | 'deferred' | 'dropped' {
+  eventType: string,
+):
+  | "delivered"
+  | "bounce"
+  | "spam"
+  | "unsubscribe"
+  | "open"
+  | "click"
+  | "deferred"
+  | "dropped" {
   const typeMap: Record<string, any> = {
-    delivered: 'delivered',
-    bounce: 'bounce',
-    dropped: 'dropped',
-    spamreport: 'spam',
-    unsubscribe: 'unsubscribe',
-    open: 'open',
-    click: 'click',
-    deferred: 'deferred',
+    delivered: "delivered",
+    bounce: "bounce",
+    dropped: "dropped",
+    spamreport: "spam",
+    unsubscribe: "unsubscribe",
+    open: "open",
+    click: "click",
+    deferred: "deferred",
   };
 
-  return typeMap[eventType] || 'delivered';
+  return typeMap[eventType] || "delivered";
 }
 
 export default router;

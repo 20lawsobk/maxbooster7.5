@@ -1,22 +1,24 @@
-import { useState, useEffect } from 'react';
-import { useLocation } from 'wouter';
-import { useAuth } from '@/hooks/useAuth';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Checkbox } from '@/components/ui/checkbox';
-import { useToast } from '@/hooks/use-toast';
-import { Music, CheckCircle, Eye, EyeOff } from 'lucide-react';
-import { Logo } from '@/components/ui/Logo';
-import { apiRequest } from '@/lib/queryClient';
+import { useState, useEffect } from "react";
+import { useLocation } from "wouter";
+import { useAuth } from "@/hooks/useAuth";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
+import { useToast } from "@/hooks/use-toast";
+import { Music, CheckCircle, Eye, EyeOff } from "lucide-react";
+import { Logo } from "@/components/ui/Logo";
+import { apiRequest } from "@/lib/queryClient";
 
 export default function RegisterSuccess() {
   const [, navigate] = useLocation();
-  const [searchParams] = useState(() => new URLSearchParams(window.location.search));
-  const sessionId = searchParams.get('session_id');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+  const [searchParams] = useState(
+    () => new URLSearchParams(window.location.search),
+  );
+  const sessionId = searchParams.get("session_id");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [tosAccepted, setTosAccepted] = useState(false);
   const [privacyAccepted, setPrivacyAccepted] = useState(false);
   const [marketingConsent, setMarketingConsent] = useState(false);
@@ -31,17 +33,17 @@ export default function RegisterSuccess() {
   useEffect(() => {
     if (!sessionId) {
       toast({
-        title: 'Invalid Session',
-        description: 'No payment session found. Please try again.',
-        variant: 'destructive',
+        title: "Invalid Session",
+        description: "No payment session found. Please try again.",
+        variant: "destructive",
       });
-      navigate('/pricing');
+      navigate("/pricing");
       return;
     }
 
     // If user is already logged in, redirect to dashboard
     if (user) {
-      navigate('/dashboard');
+      navigate("/dashboard");
       return;
     }
 
@@ -54,11 +56,11 @@ export default function RegisterSuccess() {
       } catch (error) {
         setIsVerifying(false);
         toast({
-          title: 'Payment Verification Failed',
-          description: 'Unable to verify your payment. Please try again.',
-          variant: 'destructive',
+          title: "Payment Verification Failed",
+          description: "Unable to verify your payment. Please try again.",
+          variant: "destructive",
         });
-        navigate('/pricing');
+        navigate("/pricing");
       }
     };
 
@@ -71,24 +73,24 @@ export default function RegisterSuccess() {
 
     try {
       if (password !== confirmPassword) {
-        throw new Error('Passwords do not match');
+        throw new Error("Passwords do not match");
       }
 
       if (password.length < 6) {
-        throw new Error('Password must be at least 6 characters long');
+        throw new Error("Password must be at least 6 characters long");
       }
 
       if (!tosAccepted) {
-        throw new Error('You must accept the Terms of Service to continue');
+        throw new Error("You must accept the Terms of Service to continue");
       }
 
       if (!privacyAccepted) {
-        throw new Error('You must accept the Privacy Policy to continue');
+        throw new Error("You must accept the Privacy Policy to continue");
       }
 
       // Create account after payment verification
       // Note: birthdate is retrieved from Stripe session metadata (collected before payment)
-      const response = await apiRequest('POST', '/api/register-after-payment', {
+      const response = await apiRequest("POST", "/api/register-after-payment", {
         sessionId,
         password,
         tosAccepted,
@@ -100,21 +102,25 @@ export default function RegisterSuccess() {
 
       if (data.user) {
         toast({
-          title: 'Welcome to Max Booster!',
-          description: 'Your account has been created and your subscription is active.',
+          title: "Welcome to Max Booster!",
+          description:
+            "Your account has been created and your subscription is active.",
         });
 
         // Force page reload to update authentication state
-        window.location.href = '/dashboard';
+        window.location.href = "/dashboard";
       } else {
-        throw new Error(data.error || 'Account creation failed');
+        throw new Error(data.error || "Account creation failed");
       }
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Something went wrong. Please try again.';
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "Something went wrong. Please try again.";
       toast({
-        title: 'Account Creation Failed',
+        title: "Account Creation Failed",
         description: errorMessage,
-        variant: 'destructive',
+        variant: "destructive",
       });
     } finally {
       setIsLoading(false);
@@ -127,8 +133,12 @@ export default function RegisterSuccess() {
         <Card className="w-full max-w-md">
           <CardContent className="p-8 text-center">
             <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4" />
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Verifying Payment...</h2>
-            <p className="text-gray-600">Please wait while we confirm your payment.</p>
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+              Verifying Payment...
+            </h2>
+            <p className="text-gray-600">
+              Please wait while we confirm your payment.
+            </p>
           </CardContent>
         </Card>
       </div>
@@ -140,11 +150,16 @@ export default function RegisterSuccess() {
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-cyan-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800 flex items-center justify-center p-4">
         <Card className="w-full max-w-md">
           <CardContent className="p-8 text-center">
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">Payment Verification Failed</h1>
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
+              Payment Verification Failed
+            </h1>
             <p className="text-gray-600 mb-6">
               We couldn't verify your payment. Please try again.
             </p>
-            <Button onClick={() => navigate('/pricing')} data-testid="button-back-to-pricing">
+            <Button
+              onClick={() => navigate("/pricing")}
+              data-testid="button-back-to-pricing"
+            >
               Back to Pricing
             </Button>
           </CardContent>
@@ -172,10 +187,12 @@ export default function RegisterSuccess() {
             <div className="mx-auto w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
               <CheckCircle className="h-10 w-10 text-green-600" />
             </div>
-            <CardTitle className="text-2xl font-bold text-gray-900">Payment Successful!</CardTitle>
+            <CardTitle className="text-2xl font-bold text-gray-900">
+              Payment Successful!
+            </CardTitle>
             <p className="text-gray-600 mt-2">
-              Your payment has been processed successfully. Now create your password to complete
-              your account setup.
+              Your payment has been processed successfully. Now create your
+              password to complete your account setup.
             </p>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -186,7 +203,7 @@ export default function RegisterSuccess() {
                   <Input
                     id="password"
                     name="password"
-                    type={showPassword ? 'text' : 'password'}
+                    type={showPassword ? "text" : "password"}
                     placeholder="Create a secure password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
@@ -203,7 +220,11 @@ export default function RegisterSuccess() {
                     onClick={() => setShowPassword(!showPassword)}
                     data-testid="button-toggle-password"
                   >
-                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    {showPassword ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
                   </Button>
                 </div>
               </div>
@@ -214,7 +235,7 @@ export default function RegisterSuccess() {
                   <Input
                     id="confirmPassword"
                     name="confirmPassword"
-                    type={showConfirmPassword ? 'text' : 'password'}
+                    type={showConfirmPassword ? "text" : "password"}
                     placeholder="Confirm your password"
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
@@ -245,13 +266,22 @@ export default function RegisterSuccess() {
                   <Checkbox
                     id="tosAccepted"
                     checked={tosAccepted}
-                    onCheckedChange={(checked) => setTosAccepted(checked as boolean)}
+                    onCheckedChange={(checked) =>
+                      setTosAccepted(checked as boolean)
+                    }
                     data-testid="checkbox-tos"
                     className="mt-1"
                   />
-                  <Label htmlFor="tosAccepted" className="text-sm leading-relaxed cursor-pointer">
-                    I have read and agree to the{' '}
-                    <a href="/terms" target="_blank" className="text-primary hover:underline font-medium">
+                  <Label
+                    htmlFor="tosAccepted"
+                    className="text-sm leading-relaxed cursor-pointer"
+                  >
+                    I have read and agree to the{" "}
+                    <a
+                      href="/terms"
+                      target="_blank"
+                      className="text-primary hover:underline font-medium"
+                    >
                       Terms of Service
                     </a>
                     <span className="text-red-500 ml-1">*</span>
@@ -262,13 +292,22 @@ export default function RegisterSuccess() {
                   <Checkbox
                     id="privacyAccepted"
                     checked={privacyAccepted}
-                    onCheckedChange={(checked) => setPrivacyAccepted(checked as boolean)}
+                    onCheckedChange={(checked) =>
+                      setPrivacyAccepted(checked as boolean)
+                    }
                     data-testid="checkbox-privacy"
                     className="mt-1"
                   />
-                  <Label htmlFor="privacyAccepted" className="text-sm leading-relaxed cursor-pointer">
-                    I have read and agree to the{' '}
-                    <a href="/privacy" target="_blank" className="text-primary hover:underline font-medium">
+                  <Label
+                    htmlFor="privacyAccepted"
+                    className="text-sm leading-relaxed cursor-pointer"
+                  >
+                    I have read and agree to the{" "}
+                    <a
+                      href="/privacy"
+                      target="_blank"
+                      className="text-primary hover:underline font-medium"
+                    >
                       Privacy Policy
                     </a>
                     <span className="text-red-500 ml-1">*</span>
@@ -279,12 +318,18 @@ export default function RegisterSuccess() {
                   <Checkbox
                     id="marketingConsent"
                     checked={marketingConsent}
-                    onCheckedChange={(checked) => setMarketingConsent(checked as boolean)}
+                    onCheckedChange={(checked) =>
+                      setMarketingConsent(checked as boolean)
+                    }
                     data-testid="checkbox-marketing"
                     className="mt-1"
                   />
-                  <Label htmlFor="marketingConsent" className="text-sm leading-relaxed cursor-pointer">
-                    I would like to receive marketing emails and promotional offers (optional)
+                  <Label
+                    htmlFor="marketingConsent"
+                    className="text-sm leading-relaxed cursor-pointer"
+                  >
+                    I would like to receive marketing emails and promotional
+                    offers (optional)
                   </Label>
                 </div>
               </div>
@@ -302,7 +347,7 @@ export default function RegisterSuccess() {
                     <span>Creating Account...</span>
                   </div>
                 ) : (
-                  'Complete Registration'
+                  "Complete Registration"
                 )}
               </Button>
             </form>

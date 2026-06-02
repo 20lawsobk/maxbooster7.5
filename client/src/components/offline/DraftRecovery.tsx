@@ -1,11 +1,26 @@
-import { useState, useEffect, useCallback } from 'react';
-import { logger } from '@/lib/logger';
-import { FileText, RotateCcw, Trash2, Clock, AlertCircle, ChevronDown, ChevronUp, History } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Separator } from '@/components/ui/separator';
+import { useState, useEffect, useCallback } from "react";
+import { logger } from "@/lib/logger";
+import {
+  FileText,
+  RotateCcw,
+  Trash2,
+  Clock,
+  AlertCircle,
+  ChevronDown,
+  ChevronUp,
+  History,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Separator } from "@/components/ui/separator";
 import {
   Dialog,
   DialogContent,
@@ -13,7 +28,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog';
+} from "@/components/ui/dialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -23,10 +38,10 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
-import { cn } from '@/lib/utils';
-import { draftStorage, Draft } from '@/lib/offline';
-import { formatDistanceToNow, format } from 'date-fns';
+} from "@/components/ui/alert-dialog";
+import { cn } from "@/lib/utils";
+import { draftStorage, Draft } from "@/lib/offline";
+import { formatDistanceToNow, format } from "date-fns";
 
 interface DraftRecoveryProps {
   className?: string;
@@ -62,7 +77,7 @@ export function DraftRecovery({
     setIsLoading(true);
     try {
       await draftStorage.init();
-      
+
       let loadedDrafts: Draft[];
       if (formId && !showAllDrafts) {
         const draft = await draftStorage.getDraft(formId);
@@ -70,13 +85,13 @@ export function DraftRecovery({
       } else {
         loadedDrafts = await draftStorage.getAllDrafts();
       }
-      
+
       setDrafts(loadedDrafts.slice(0, maxDrafts));
-      
+
       const draftStats = await draftStorage.getDraftStats();
       setStats(draftStats);
     } catch (error) {
-      logger.error('[DraftRecovery] Failed to load drafts:', error);
+      logger.error("[DraftRecovery] Failed to load drafts:", error);
     } finally {
       setIsLoading(false);
     }
@@ -85,9 +100,9 @@ export function DraftRecovery({
   useEffect(() => {
     loadDrafts();
 
-    const unsubSaved = draftStorage.on('draft-saved', loadDrafts);
-    const unsubDeleted = draftStorage.on('draft-deleted', loadDrafts);
-    const unsubExpired = draftStorage.on('draft-expired', loadDrafts);
+    const unsubSaved = draftStorage.on("draft-saved", loadDrafts);
+    const unsubDeleted = draftStorage.on("draft-deleted", loadDrafts);
+    const unsubExpired = draftStorage.on("draft-expired", loadDrafts);
 
     return () => {
       unsubSaved();
@@ -109,7 +124,7 @@ export function DraftRecovery({
       setShowDeleteConfirm(false);
       setSelectedDraft(null);
     } catch (error) {
-      logger.error('[DraftRecovery] Failed to discard draft:', error);
+      logger.error("[DraftRecovery] Failed to discard draft:", error);
     }
   };
 
@@ -118,12 +133,12 @@ export function DraftRecovery({
       await draftStorage.clearAll();
       setDrafts([]);
     } catch (error) {
-      logger.error('[DraftRecovery] Failed to clear all drafts:', error);
+      logger.error("[DraftRecovery] Failed to clear all drafts:", error);
     }
   };
 
   const toggleExpanded = (draftId: string) => {
-    setExpandedDrafts(prev => {
+    setExpandedDrafts((prev) => {
       const next = new Set(prev);
       if (next.has(draftId)) {
         next.delete(draftId);
@@ -135,23 +150,24 @@ export function DraftRecovery({
   };
 
   const getFormLabel = (fId: string): string => {
-    const parts = fId.split('-');
+    const parts = fId.split("-");
     if (parts.length > 1) {
-      return parts.slice(0, -1).join(' ').replace(/_/g, ' ');
+      return parts.slice(0, -1).join(" ").replace(/_/g, " ");
     }
-    return fId.replace(/_/g, ' ').replace(/-/g, ' ');
+    return fId.replace(/_/g, " ").replace(/-/g, " ");
   };
 
   const getPreviewText = (data: unknown): string => {
-    if (!data) return '';
-    if (typeof data === 'string') return data.substring(0, 200);
-    if (typeof data === 'object') {
-      const values = Object.values(data as Record<string, unknown>)
-        .filter(v => typeof v === 'string' && v.length > 0);
-      const preview = values.join(' ').substring(0, 200);
-      return preview + (preview.length >= 200 ? '...' : '');
+    if (!data) return "";
+    if (typeof data === "string") return data.substring(0, 200);
+    if (typeof data === "object") {
+      const values = Object.values(data as Record<string, unknown>).filter(
+        (v) => typeof v === "string" && v.length > 0,
+      );
+      const preview = values.join(" ").substring(0, 200);
+      return preview + (preview.length >= 200 ? "..." : "");
     }
-    return '';
+    return "";
   };
 
   const formatSize = (bytes: number): string => {
@@ -162,7 +178,7 @@ export function DraftRecovery({
 
   return (
     <>
-      <Card className={cn('w-full', className)}>
+      <Card className={cn("w-full", className)}>
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -192,7 +208,7 @@ export function DraftRecovery({
           <CardDescription>
             {drafts.length > 0
               ? `${stats.total} drafts saved (${formatSize(stats.totalSize)})`
-              : 'No saved drafts found'}
+              : "No saved drafts found"}
           </CardDescription>
         </CardHeader>
 
@@ -207,29 +223,40 @@ export function DraftRecovery({
                 {drafts.map((draft, index) => {
                   const isExpanded = expandedDrafts.has(draft.id);
                   const preview = getPreviewText(draft.data);
-                  
+
                   return (
                     <div key={draft.id}>
                       <div
                         className={cn(
-                          'p-3 rounded-lg border transition-colors',
-                          'hover:bg-muted/50 cursor-pointer'
+                          "p-3 rounded-lg border transition-colors",
+                          "hover:bg-muted/50 cursor-pointer",
                         )}
                       >
                         <div className="flex items-start justify-between gap-2">
-                          <div className="flex-1 min-w-0" onClick={() => toggleExpanded(draft.id)}>
+                          <div
+                            className="flex-1 min-w-0"
+                            onClick={() => toggleExpanded(draft.id)}
+                          >
                             <div className="flex items-center gap-2">
                               <FileText className="h-4 w-4 text-blue-500 flex-shrink-0" />
                               <span className="font-medium text-sm truncate capitalize">
                                 {getFormLabel(draft.formId)}
                               </span>
-                              <Badge variant="outline" className="text-xs px-1.5 py-0">
+                              <Badge
+                                variant="outline"
+                                className="text-xs px-1.5 py-0"
+                              >
                                 v{draft.version}
                               </Badge>
                             </div>
                             <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
                               <Clock className="h-3 w-3" />
-                              <span>Saved {formatDistanceToNow(draft.updatedAt, { addSuffix: true })}</span>
+                              <span>
+                                Saved{" "}
+                                {formatDistanceToNow(draft.updatedAt, {
+                                  addSuffix: true,
+                                })}
+                              </span>
                             </div>
                           </div>
                           <Button
@@ -255,14 +282,27 @@ export function DraftRecovery({
                             )}
                             <div className="grid grid-cols-2 gap-2 text-xs">
                               <div>
-                                <span className="text-muted-foreground">Created:</span>
+                                <span className="text-muted-foreground">
+                                  Created:
+                                </span>
                                 <br />
-                                <span>{format(draft.createdAt, 'MMM d, yyyy h:mm a')}</span>
+                                <span>
+                                  {format(
+                                    draft.createdAt,
+                                    "MMM d, yyyy h:mm a",
+                                  )}
+                                </span>
                               </div>
                               <div>
-                                <span className="text-muted-foreground">Expires:</span>
+                                <span className="text-muted-foreground">
+                                  Expires:
+                                </span>
                                 <br />
-                                <span>{formatDistanceToNow(draft.expiresAt, { addSuffix: true })}</span>
+                                <span>
+                                  {formatDistanceToNow(draft.expiresAt, {
+                                    addSuffix: true,
+                                  })}
+                                </span>
                               </div>
                             </div>
                             <div className="flex gap-2">
@@ -301,7 +341,9 @@ export function DraftRecovery({
                           </div>
                         )}
                       </div>
-                      {index < drafts.length - 1 && <Separator className="my-1" />}
+                      {index < drafts.length - 1 && (
+                        <Separator className="my-1" />
+                      )}
                     </div>
                   );
                 })}
@@ -329,7 +371,11 @@ export function DraftRecovery({
             <DialogDescription>
               {selectedDraft && (
                 <span>
-                  Saved {formatDistanceToNow(selectedDraft.updatedAt, { addSuffix: true })} · Version {selectedDraft.version}
+                  Saved{" "}
+                  {formatDistanceToNow(selectedDraft.updatedAt, {
+                    addSuffix: true,
+                  })}{" "}
+                  · Version {selectedDraft.version}
                 </span>
               )}
             </DialogDescription>
@@ -343,7 +389,9 @@ export function DraftRecovery({
             <Button variant="outline" onClick={() => setShowPreview(false)}>
               Cancel
             </Button>
-            <Button onClick={() => selectedDraft && handleRecover(selectedDraft)}>
+            <Button
+              onClick={() => selectedDraft && handleRecover(selectedDraft)}
+            >
               <RotateCcw className="h-4 w-4 mr-2" />
               Restore Draft
             </Button>
@@ -356,11 +404,11 @@ export function DraftRecovery({
           <AlertDialogHeader>
             <AlertDialogTitle className="flex items-center gap-2">
               <AlertCircle className="h-5 w-5 text-destructive" />
-              {selectedDraft ? 'Delete Draft?' : 'Delete All Drafts?'}
+              {selectedDraft ? "Delete Draft?" : "Delete All Drafts?"}
             </AlertDialogTitle>
             <AlertDialogDescription>
               {selectedDraft
-                ? 'This draft will be permanently deleted. This action cannot be undone.'
+                ? "This draft will be permanently deleted. This action cannot be undone."
                 : `All ${drafts.length} drafts will be permanently deleted. This action cannot be undone.`}
             </AlertDialogDescription>
           </AlertDialogHeader>
@@ -378,7 +426,7 @@ export function DraftRecovery({
               }}
             >
               <Trash2 className="h-4 w-4 mr-2" />
-              {selectedDraft ? 'Delete Draft' : 'Delete All'}
+              {selectedDraft ? "Delete Draft" : "Delete All"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

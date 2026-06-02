@@ -1,18 +1,20 @@
-import { logger } from '../logger.js';
-import { EventEmitter } from 'events';
-import { db } from '../db';
-import { projects, studioTracks, audioClips } from '@shared/schema';
-import { eq } from 'drizzle-orm';
-import * as fs from 'fs';
-import fsPromises from 'fs/promises';
-import * as path from 'path';
-import { PocketDimensionManager } from '../pocket-dimension/index.js';
+import { logger } from "../logger.js";
+import { EventEmitter } from "events";
+import { db } from "../db";
+import { projects, studioTracks, audioClips } from "@shared/schema";
+import { eq } from "drizzle-orm";
+import * as fs from "fs";
+import fsPromises from "fs/promises";
+import * as path from "path";
+import { PocketDimensionManager } from "../pocket-dimension/index.js";
 
 // ── Timeout-guarded fetch: adds a 10s default signal so no outbound HTTP call
 // can hold the event loop indefinitely.  Per-call signal overrides this default.
-const timedFetch = (url: string | URL | Request, init: RequestInit = {}): Promise<Response> =>
+const timedFetch = (
+  url: string | URL | Request,
+  init: RequestInit = {},
+): Promise<Response> =>
   fetch(url, { signal: AbortSignal.timeout(10_000), ...init });
-
 
 export interface OfflineProject {
   id: string;
@@ -23,7 +25,7 @@ export interface OfflineProject {
   lastSyncAt: Date;
   size: number;
   checksum: string;
-  status: 'cached' | 'syncing' | 'outdated' | 'conflict';
+  status: "cached" | "syncing" | "outdated" | "conflict";
   localChanges: number;
   serverChanges: number;
   audioFiles: OfflineAudioFile[];
@@ -78,9 +80,9 @@ export interface CacheStats {
 export interface OfflineSettings {
   maxCacheSize: number;
   autoCacheProjects: boolean;
-  cacheAudioQuality: 'original' | 'high' | 'medium' | 'low';
+  cacheAudioQuality: "original" | "high" | "medium" | "low";
   syncOnReconnect: boolean;
-  conflictResolution: 'local' | 'server' | 'ask';
+  conflictResolution: "local" | "server" | "ask";
   backgroundSync: boolean;
   syncInterval: number;
   offlineNotifications: boolean;
@@ -89,16 +91,21 @@ export interface OfflineSettings {
 const DEFAULT_SETTINGS: OfflineSettings = {
   maxCacheSize: 10 * 1024 * 1024 * 1024,
   autoCacheProjects: true,
-  cacheAudioQuality: 'high',
+  cacheAudioQuality: "high",
   syncOnReconnect: true,
-  conflictResolution: 'ask',
+  conflictResolution: "ask",
   backgroundSync: true,
   syncInterval: 300000,
   offlineNotifications: true,
 };
 
-const OFFLINE_AUDIO_DIR = path.join(process.cwd(), 'data', 'offline-cache', 'audio');
-const POCKET_ID = 'offline-mode-cache';
+const OFFLINE_AUDIO_DIR = path.join(
+  process.cwd(),
+  "data",
+  "offline-cache",
+  "audio",
+);
+const POCKET_ID = "offline-mode-cache";
 
 class OfflineModeService extends EventEmitter {
   private cachedProjects: Map<string, OfflineProject> = new Map();
@@ -131,47 +138,67 @@ class OfflineModeService extends EventEmitter {
 
   private async initPocket(): Promise<void> {
     try {
-      const manager = PocketDimensionManager.getInstance('./pocket-dimensions');
+      const manager = PocketDimensionManager.getInstance("./pocket-dimensions");
       this.pocket = await manager.openPocket(POCKET_ID, {
         compressionLevel: 9,
         enableDeduplication: true,
         enableVersioning: false,
         chunkSize: 2 * 1024 * 1024,
       });
-      logger.info('[OfflineCache] Pocket Dimension storage bubble opened (level-9 gzip, dedup)');
+      logger.info(
+        "[OfflineCache] Pocket Dimension storage bubble opened (level-9 gzip, dedup)",
+      );
       await this.loadCacheIndex();
     } catch (error) {
-      logger.warn({ err: error }, '[OfflineCache] Failed to open Pocket Dimension, cache unavailable:');
+      logger.warn(
+        { err: error },
+        "[OfflineCache] Failed to open Pocket Dimension, cache unavailable:",
+      );
     }
   }
 
   private async loadCacheIndex(): Promise<void> {
     if (!this.pocket) return;
     try {
-      const raw = await this.pocket.read('index/cache-index.json');
-      const index = JSON.parse(raw.toString('utf-8'));
-      for (const [projectId, rawProject] of Object.entries(index.projects || {})) {
+      const raw = await this.pocket.read("index/cache-index.json");
+      const index = JSON.parse(raw.toString("utf-8"));
+      for (const [projectId, rawProject] of Object.entries(
+        index.projects || {},
+      )) {
         const project = rawProject as Record<string, unknown>;
         project.cachedAt = new Date(project.cachedAt);
         project.lastSyncAt = new Date(project.lastSyncAt);
         if (project.audioFiles) {
-          for (const af of project.audioFiles) af.cachedAt = new Date(af.cachedAt);
-          project.audioFiles = project.audioFiles.filter((af: OfflineAudioFile) => {
-            if (af.path.startsWith('/') || af.path.includes('offline-cache')) {
-              return fs.existsSync(af.path);
-            }
-            return true;
-          });
+          for (const af of project.audioFiles)
+            af.cachedAt = new Date(af.cachedAt);
+          project.audioFiles = project.audioFiles.filter(
+            (af: OfflineAudioFile) => {
+              if (
+                af.path.startsWith("/") ||
+                af.path.includes("offline-cache")
+              ) {
+                return fs.existsSync(af.path);
+              }
+              return true;
+            },
+          );
         }
         try {
           const projBuf = await this.pocket.read(`projects/${projectId}.json`);
-          project.projectData = JSON.parse(projBuf.toString('utf-8'));
-        } catch { /* project data missing */ }
+          project.projectData = JSON.parse(projBuf.toString("utf-8"));
+        } catch {
+          /* project data missing */
+        }
         this.cachedProjects.set(projectId, project as OfflineProject);
       }
-      if (index.settings) this.settings = { ...DEFAULT_SETTINGS, ...index.settings };
-      logger.info(`[OfflineCache] Loaded ${this.cachedProjects.size} cached projects from Pocket Dimension`);
-    } catch { /* no index yet — first run */ }
+      if (index.settings)
+        this.settings = { ...DEFAULT_SETTINGS, ...index.settings };
+      logger.info(
+        `[OfflineCache] Loaded ${this.cachedProjects.size} cached projects from Pocket Dimension`,
+      );
+    } catch {
+      /* no index yet — first run */
+    }
   }
 
   private saveCacheIndex(): void {
@@ -182,20 +209,29 @@ class OfflineModeService extends EventEmitter {
       settings: this.settings,
       projects: Object.fromEntries(this.cachedProjects),
     };
-    this.pocket.write('index/cache-index.json', Buffer.from(JSON.stringify(index, null, 2))).catch((err: Error) =>
-      logger.warn({ err: err }, '[OfflineCache] Failed to save cache index:')
-    );
+    this.pocket
+      .write(
+        "index/cache-index.json",
+        Buffer.from(JSON.stringify(index, null, 2)),
+      )
+      .catch((err: Error) =>
+        logger.warn({ err: err }, "[OfflineCache] Failed to save cache index:"),
+      );
   }
 
-  private async downloadAudioFile(audioUrl: string, projectId: string, clipId: string): Promise<{ localPath: string; size: number }> {
+  private async downloadAudioFile(
+    audioUrl: string,
+    projectId: string,
+    clipId: string,
+  ): Promise<{ localPath: string; size: number }> {
     const projectAudioDir = path.join(OFFLINE_AUDIO_DIR, projectId);
     await fsPromises.mkdir(projectAudioDir, { recursive: true });
 
-    const ext = path.extname(audioUrl) || '.wav';
+    const ext = path.extname(audioUrl) || ".wav";
     const localFilename = `${clipId}${ext}`;
     const localPath = path.join(projectAudioDir, localFilename);
 
-    if (audioUrl.startsWith('http://') || audioUrl.startsWith('https://')) {
+    if (audioUrl.startsWith("http://") || audioUrl.startsWith("https://")) {
       try {
         const response = await timedFetch(audioUrl);
         if (!response.ok) {
@@ -205,7 +241,10 @@ class OfflineModeService extends EventEmitter {
         await fsPromises.writeFile(localPath, buffer);
         return { localPath, size: buffer.length };
       } catch (error) {
-        logger.warn({ err: error }, `Failed to download audio from URL ${audioUrl}:`);
+        logger.warn(
+          { err: error },
+          `Failed to download audio from URL ${audioUrl}:`,
+        );
         return { localPath: audioUrl, size: 0 };
       }
     } else if (fs.existsSync(audioUrl)) {
@@ -214,7 +253,10 @@ class OfflineModeService extends EventEmitter {
         const stats = fs.statSync(localPath);
         return { localPath, size: stats.size };
       } catch (error) {
-        logger.warn({ err: error }, `Failed to copy local audio file ${audioUrl}:`);
+        logger.warn(
+          { err: error },
+          `Failed to copy local audio file ${audioUrl}:`,
+        );
         return { localPath: audioUrl, size: 0 };
       }
     }
@@ -235,7 +277,7 @@ class OfflineModeService extends EventEmitter {
       this.lastOnlineCheck = new Date();
 
       if (!wasOnline && this.isOnline) {
-        this.emit('online');
+        this.emit("online");
         if (this.settings.syncOnReconnect) {
           await this.syncAll();
         }
@@ -243,7 +285,7 @@ class OfflineModeService extends EventEmitter {
     } catch (error) {
       this.isOnline = false;
       if (wasOnline) {
-        this.emit('offline');
+        this.emit("offline");
       }
     }
   }
@@ -260,16 +302,19 @@ class OfflineModeService extends EventEmitter {
     return { ...this.offlineCapabilities };
   }
 
-  async cacheProject(projectId: string, userId: string): Promise<OfflineProject> {
+  async cacheProject(
+    projectId: string,
+    userId: string,
+  ): Promise<OfflineProject> {
     try {
-      logger.info('Caching project for offline use:', { projectId, userId });
+      logger.info("Caching project for offline use:", { projectId, userId });
 
       const project = await db.query.projects.findFirst({
         where: eq(projects.id, projectId),
       });
 
       if (!project) {
-        throw new Error('Project not found');
+        throw new Error("Project not found");
       }
 
       const projectTracksData = await db.query.studioTracks.findMany({
@@ -288,13 +333,13 @@ class OfflineModeService extends EventEmitter {
           const { localPath, size } = await this.downloadAudioFile(
             clip.audioUrl,
             projectId,
-            clip.id
+            clip.id,
           );
           totalAudioSize += size;
 
           audioFiles.push({
             id: `audio-${clip.id}`,
-            trackId: clip.trackId || '',
+            trackId: clip.trackId || "",
             filename: path.basename(localPath),
             path: localPath,
             size,
@@ -315,11 +360,14 @@ class OfflineModeService extends EventEmitter {
       };
 
       const serializedData = JSON.stringify(projectData);
-      const metadataSize = Buffer.byteLength(serializedData, 'utf8');
+      const metadataSize = Buffer.byteLength(serializedData, "utf8");
       const totalSize = metadataSize + totalAudioSize;
 
       if (this.pocket) {
-        await this.pocket.write(`projects/${projectId}.json`, Buffer.from(serializedData));
+        await this.pocket.write(
+          `projects/${projectId}.json`,
+          Buffer.from(serializedData),
+        );
       }
 
       const offlineProject: OfflineProject = {
@@ -331,7 +379,7 @@ class OfflineModeService extends EventEmitter {
         lastSyncAt: new Date(),
         size: totalSize,
         checksum: this.generateChecksum(serializedData),
-        status: 'cached',
+        status: "cached",
         localChanges: 0,
         serverChanges: 0,
         audioFiles,
@@ -340,9 +388,9 @@ class OfflineModeService extends EventEmitter {
 
       this.cachedProjects.set(projectId, offlineProject);
       this.saveCacheIndex();
-      this.emit('projectCached', { projectId, size: totalSize });
+      this.emit("projectCached", { projectId, size: totalSize });
 
-      logger.info('Project cached successfully:', {
+      logger.info("Project cached successfully:", {
         projectId,
         totalSize,
         metadataSize,
@@ -352,7 +400,7 @@ class OfflineModeService extends EventEmitter {
 
       return offlineProject;
     } catch (error) {
-      logger.warn({ err: error }, 'Failed to cache project:');
+      logger.warn({ err: error }, "Failed to cache project:");
       throw error;
     }
   }
@@ -360,7 +408,7 @@ class OfflineModeService extends EventEmitter {
   async uncacheProject(projectId: string): Promise<void> {
     const cached = this.cachedProjects.get(projectId);
     if (!cached) {
-      throw new Error('Project not cached');
+      throw new Error("Project not cached");
     }
 
     try {
@@ -372,13 +420,13 @@ class OfflineModeService extends EventEmitter {
         fs.rmSync(projectAudioDir, { recursive: true, force: true });
       }
     } catch (error) {
-      logger.warn({ err: error }, 'Failed to clean up cached files:');
+      logger.warn({ err: error }, "Failed to clean up cached files:");
     }
 
     this.cachedProjects.delete(projectId);
     this.saveCacheIndex();
-    this.emit('projectUncached', { projectId });
-    logger.info('Project uncached:', { projectId });
+    this.emit("projectUncached", { projectId });
+    logger.info("Project uncached:", { projectId });
   }
 
   getCachedProject(projectId: string): OfflineProject | undefined {
@@ -386,8 +434,9 @@ class OfflineModeService extends EventEmitter {
   }
 
   getCachedProjects(userId: string): OfflineProject[] {
-    return Array.from(this.cachedProjects.values())
-      .filter(p => p.userId === userId);
+    return Array.from(this.cachedProjects.values()).filter(
+      (p) => p.userId === userId,
+    );
   }
 
   isProjectCached(projectId: string): boolean {
@@ -405,7 +454,7 @@ class OfflineModeService extends EventEmitter {
         conflictsResolved: 0,
         filesUploaded: 0,
         filesDownloaded: 0,
-        errors: ['Project not cached'],
+        errors: ["Project not cached"],
         syncTime: 0,
       };
     }
@@ -418,21 +467,21 @@ class OfflineModeService extends EventEmitter {
         conflictsResolved: 0,
         filesUploaded: 0,
         filesDownloaded: 0,
-        errors: ['Currently offline - sync queued'],
+        errors: ["Currently offline - sync queued"],
         syncTime: 0,
       };
     }
 
     try {
-      this.emit('syncStart', { projectId });
-      cached.status = 'syncing';
+      this.emit("syncStart", { projectId });
+      cached.status = "syncing";
 
       const serverProject = await db.query.projects.findFirst({
         where: eq(projects.id, projectId),
       });
 
       if (!serverProject) {
-        throw new Error('Project no longer exists on server');
+        throw new Error("Project no longer exists on server");
       }
 
       let conflictsResolved = 0;
@@ -441,9 +490,9 @@ class OfflineModeService extends EventEmitter {
 
       if (cached.localChanges > 0 && cached.serverChanges > 0) {
         const resolution = this.settings.conflictResolution;
-        if (resolution === 'local') {
+        if (resolution === "local") {
           filesUploaded = cached.localChanges;
-        } else if (resolution === 'server') {
+        } else if (resolution === "server") {
           filesDownloaded = cached.serverChanges;
         }
         conflictsResolved = 1;
@@ -454,14 +503,14 @@ class OfflineModeService extends EventEmitter {
       }
 
       cached.lastSyncAt = new Date();
-      cached.status = 'cached';
+      cached.status = "cached";
       cached.localChanges = 0;
       cached.serverChanges = 0;
 
       const syncTime = Date.now() - startTime;
-      this.emit('syncComplete', { projectId, syncTime });
+      this.emit("syncComplete", { projectId, syncTime });
 
-      logger.info('Project synced successfully:', {
+      logger.info("Project synced successfully:", {
         projectId,
         conflictsResolved,
         filesUploaded,
@@ -479,8 +528,8 @@ class OfflineModeService extends EventEmitter {
         syncTime,
       };
     } catch (error) {
-      cached.status = 'outdated';
-      this.emit('syncError', { projectId, error: error.message });
+      cached.status = "outdated";
+      this.emit("syncError", { projectId, error: error.message });
 
       return {
         success: false,
@@ -496,7 +545,7 @@ class OfflineModeService extends EventEmitter {
 
   async syncAll(): Promise<{ results: SyncResult[]; totalTime: number }> {
     if (this.isSyncing) {
-      throw new Error('Sync already in progress');
+      throw new Error("Sync already in progress");
     }
 
     this.isSyncing = true;
@@ -531,8 +580,8 @@ class OfflineModeService extends EventEmitter {
     const cached = this.cachedProjects.get(projectId);
     if (cached) {
       cached.localChanges++;
-      cached.status = 'outdated';
-      this.emit('localChange', { projectId, changes: cached.localChanges });
+      cached.status = "outdated";
+      this.emit("localChange", { projectId, changes: cached.localChanges });
     }
   }
 
@@ -540,23 +589,29 @@ class OfflineModeService extends EventEmitter {
     const cached = this.cachedProjects.get(projectId);
     if (cached) {
       cached.serverChanges++;
-      cached.status = 'outdated';
-      this.emit('serverChange', { projectId, changes: cached.serverChanges });
+      cached.status = "outdated";
+      this.emit("serverChange", { projectId, changes: cached.serverChanges });
     }
   }
 
   getCacheStats(): CacheStats {
     const projects = Array.from(this.cachedProjects.values());
     const totalSize = projects.reduce((sum, p) => sum + p.size, 0);
-    const cacheDates = projects.map(p => p.cachedAt);
+    const cacheDates = projects.map((p) => p.cachedAt);
 
     return {
       totalProjects: projects.length,
       totalSize,
       maxSize: this.settings.maxCacheSize,
       usedPercentage: (totalSize / this.settings.maxCacheSize) * 100,
-      oldestCache: cacheDates.length > 0 ? new Date(Math.min(...cacheDates.map(d => d.getTime()))) : null,
-      newestCache: cacheDates.length > 0 ? new Date(Math.max(...cacheDates.map(d => d.getTime()))) : null,
+      oldestCache:
+        cacheDates.length > 0
+          ? new Date(Math.min(...cacheDates.map((d) => d.getTime())))
+          : null,
+      newestCache:
+        cacheDates.length > 0
+          ? new Date(Math.max(...cacheDates.map((d) => d.getTime())))
+          : null,
     };
   }
 
@@ -566,7 +621,7 @@ class OfflineModeService extends EventEmitter {
 
   updateSettings(updates: Partial<OfflineSettings>): OfflineSettings {
     this.settings = { ...this.settings, ...updates };
-    this.emit('settingsUpdated', this.settings);
+    this.emit("settingsUpdated", this.settings);
     return this.settings;
   }
 
@@ -575,11 +630,13 @@ class OfflineModeService extends EventEmitter {
     for (const projectId of projectIds) {
       await this.uncacheProject(projectId);
     }
-    this.emit('cacheCleared');
-    logger.info('Offline cache cleared');
+    this.emit("cacheCleared");
+    logger.info("Offline cache cleared");
   }
 
-  async cleanupOldCache(maxAge: number = 30 * 24 * 60 * 60 * 1000): Promise<number> {
+  async cleanupOldCache(
+    maxAge: number = 30 * 24 * 60 * 60 * 1000,
+  ): Promise<number> {
     const now = Date.now();
     let cleaned = 0;
 
@@ -590,7 +647,7 @@ class OfflineModeService extends EventEmitter {
       }
     }
 
-    logger.info('Old cache cleaned:', { removed: cleaned });
+    logger.info("Old cache cleaned:", { removed: cleaned });
     return cleaned;
   }
 
@@ -598,7 +655,7 @@ class OfflineModeService extends EventEmitter {
     let hash = 0;
     for (let i = 0; i < data.length; i++) {
       const char = data.charCodeAt(i);
-      hash = ((hash << 5) - hash) + char;
+      hash = (hash << 5) - hash + char;
       hash = hash & hash;
     }
     return Math.abs(hash).toString(16);
@@ -616,14 +673,17 @@ class OfflineModeService extends EventEmitter {
     return this.lastOnlineCheck;
   }
 
-  async exportProjectForOffline(projectId: string, userId: string): Promise<{
+  async exportProjectForOffline(
+    projectId: string,
+    userId: string,
+  ): Promise<{
     filename: string;
     size: number;
     downloadUrl: string;
   }> {
     const cached = await this.cacheProject(projectId, userId);
 
-    const filename = `${cached.name.replace(/[^a-z0-9]/gi, '_')}_offline.mbproj`;
+    const filename = `${cached.name.replace(/[^a-z0-9]/gi, "_")}_offline.mbproj`;
     const downloadUrl = `/api/offline/download/${projectId}`;
 
     return {
@@ -633,12 +693,15 @@ class OfflineModeService extends EventEmitter {
     };
   }
 
-  async importOfflineProject(userId: string, data: Record<string, unknown>): Promise<string> {
-    logger.info('Importing offline project:', { userId });
+  async importOfflineProject(
+    userId: string,
+    data: Record<string, unknown>,
+  ): Promise<string> {
+    logger.info("Importing offline project:", { userId });
 
     const projectId = data.projectData?.project?.id;
     if (!projectId) {
-      throw new Error('Invalid offline project data');
+      throw new Error("Invalid offline project data");
     }
 
     return projectId;

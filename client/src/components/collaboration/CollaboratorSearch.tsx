@@ -1,49 +1,55 @@
-import React, { useState, useCallback, useRef, useEffect } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Search, Filter, X, Users } from 'lucide-react';
-import { CollaboratorCard } from './CollaboratorCard';
+import React, { useState, useCallback, useRef, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Search, Filter, X, Users } from "lucide-react";
+import { CollaboratorCard } from "./CollaboratorCard";
 
 const GENRES = [
-  'Hip Hop',
-  'R&B',
-  'Pop',
-  'Electronic',
-  'Rock',
-  'Jazz',
-  'Classical',
-  'Country',
-  'Reggae',
-  'Latin',
-  'Afrobeats',
-  'K-Pop',
-  'Indie',
-  'Metal',
-  'Folk',
+  "Hip Hop",
+  "R&B",
+  "Pop",
+  "Electronic",
+  "Rock",
+  "Jazz",
+  "Classical",
+  "Country",
+  "Reggae",
+  "Latin",
+  "Afrobeats",
+  "K-Pop",
+  "Indie",
+  "Metal",
+  "Folk",
 ];
 
 const SKILLS = [
-  'Producer',
-  'Vocalist',
-  'Rapper',
-  'Singer',
-  'Songwriter',
-  'Beatmaker',
-  'Mixing Engineer',
-  'Mastering Engineer',
-  'DJ',
-  'Instrumentalist',
+  "Producer",
+  "Vocalist",
+  "Rapper",
+  "Singer",
+  "Songwriter",
+  "Beatmaker",
+  "Mixing Engineer",
+  "Mastering Engineer",
+  "DJ",
+  "Instrumentalist",
 ];
 
 export function CollaboratorSearch() {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [debouncedQuery, setDebouncedQuery] = useState('');
-  const [selectedGenre, setSelectedGenre] = useState<string>('');
-  const [selectedLocation, setSelectedLocation] = useState<string>('');
+  const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedQuery, setDebouncedQuery] = useState("");
+  const [selectedGenre, setSelectedGenre] = useState<string>("");
+  const [selectedLocation, setSelectedLocation] = useState<string>("");
   const [selectedSkills, setSelectedSkills] = useState<string[]>([]);
   const [showFilters, setShowFilters] = useState(false);
 
@@ -73,39 +79,50 @@ export function CollaboratorSearch() {
 
   const buildQueryString = () => {
     const params = new URLSearchParams();
-    if (debouncedQuery) params.set('q', debouncedQuery);
-    if (selectedGenre) params.set('genre', selectedGenre);
-    if (selectedLocation) params.set('location', selectedLocation);
-    if (selectedSkills.length > 0) params.set('skills', selectedSkills.join(','));
+    if (debouncedQuery) params.set("q", debouncedQuery);
+    if (selectedGenre) params.set("genre", selectedGenre);
+    if (selectedLocation) params.set("location", selectedLocation);
+    if (selectedSkills.length > 0)
+      params.set("skills", selectedSkills.join(","));
     return params.toString();
   };
 
   const { data: artists, isLoading } = useQuery({
-    queryKey: ['/api/collaborations/search', debouncedQuery, selectedGenre, selectedLocation, selectedSkills],
+    queryKey: [
+      "/api/collaborations/search",
+      debouncedQuery,
+      selectedGenre,
+      selectedLocation,
+      selectedSkills,
+    ],
     queryFn: async () => {
       const queryString = buildQueryString();
-      const url = `/api/collaborations/search${queryString ? `?${queryString}` : ''}`;
-      const res = await fetch(url, { credentials: 'include' });
-      if (!res.ok) throw new Error('Failed to search artists');
+      const url = `/api/collaborations/search${queryString ? `?${queryString}` : ""}`;
+      const res = await fetch(url, { credentials: "include" });
+      if (!res.ok) throw new Error("Failed to search artists");
       return res.json();
     },
-    enabled: debouncedQuery.length >= 2 || !!selectedGenre || selectedSkills.length > 0,
+    enabled:
+      debouncedQuery.length >= 2 ||
+      !!selectedGenre ||
+      selectedSkills.length > 0,
     staleTime: 30000,
   });
 
   const toggleSkill = (skill: string) => {
     setSelectedSkills((prev) =>
-      prev.includes(skill) ? prev.filter((s) => s !== skill) : [...prev, skill]
+      prev.includes(skill) ? prev.filter((s) => s !== skill) : [...prev, skill],
     );
   };
 
   const clearFilters = () => {
-    setSelectedGenre('');
-    setSelectedLocation('');
+    setSelectedGenre("");
+    setSelectedLocation("");
     setSelectedSkills([]);
   };
 
-  const hasActiveFilters = selectedGenre || selectedLocation || selectedSkills.length > 0;
+  const hasActiveFilters =
+    selectedGenre || selectedLocation || selectedSkills.length > 0;
 
   const renderSkeletons = () => (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -146,14 +163,16 @@ export function CollaboratorSearch() {
             />
           </div>
           <Button
-            variant={showFilters ? 'default' : 'outline'}
+            variant={showFilters ? "default" : "outline"}
             onClick={() => setShowFilters(!showFilters)}
           >
             <Filter className="h-4 w-4 mr-2" />
             Filters
             {hasActiveFilters && (
               <span className="ml-2 bg-primary-foreground text-primary rounded-full px-2 py-0.5 text-xs">
-                {(selectedGenre ? 1 : 0) + (selectedLocation ? 1 : 0) + selectedSkills.length}
+                {(selectedGenre ? 1 : 0) +
+                  (selectedLocation ? 1 : 0) +
+                  selectedSkills.length}
               </span>
             )}
           </Button>
@@ -189,7 +208,9 @@ export function CollaboratorSearch() {
               </div>
 
               <div>
-                <label className="text-sm font-medium mb-2 block">Location</label>
+                <label className="text-sm font-medium mb-2 block">
+                  Location
+                </label>
                 <Input
                   placeholder="Enter location..."
                   value={selectedLocation}
@@ -204,7 +225,11 @@ export function CollaboratorSearch() {
                 {SKILLS.map((skill) => (
                   <Button
                     key={skill}
-                    variant={selectedSkills.includes(skill.toLowerCase()) ? 'default' : 'outline'}
+                    variant={
+                      selectedSkills.includes(skill.toLowerCase())
+                        ? "default"
+                        : "outline"
+                    }
                     size="sm"
                     onClick={() => toggleSkill(skill.toLowerCase())}
                   >
@@ -239,7 +264,9 @@ export function CollaboratorSearch() {
             <div className="text-center py-8 text-muted-foreground">
               <Search className="h-12 w-12 mx-auto mb-2 opacity-50" />
               <p>Search for collaborators</p>
-              <p className="text-sm">Enter a name or use filters to find artists</p>
+              <p className="text-sm">
+                Enter a name or use filters to find artists
+              </p>
             </div>
           )}
         </div>

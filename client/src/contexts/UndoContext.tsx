@@ -1,6 +1,13 @@
-import React, { createContext, useContext, useCallback, useEffect, useState, useRef } from 'react';
-import { UndoManager, getUndoManager } from '@/lib/undo/UndoManager';
-import { UndoableAction, UndoContextValue, UndoState } from '@/lib/undo/types';
+import React, {
+  createContext,
+  useContext,
+  useCallback,
+  useEffect,
+  useState,
+  useRef,
+} from "react";
+import { UndoManager, getUndoManager } from "@/lib/undo/UndoManager";
+import { UndoableAction, UndoContextValue, UndoState } from "@/lib/undo/types";
 
 const initialState: UndoState = {
   history: [],
@@ -69,14 +76,14 @@ export function UndoProvider({
     const handleKeyDown = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement;
       if (
-        target.tagName === 'INPUT' ||
-        target.tagName === 'TEXTAREA' ||
+        target.tagName === "INPUT" ||
+        target.tagName === "TEXTAREA" ||
         target.isContentEditable
       ) {
         return;
       }
 
-      if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
+      if ((e.ctrlKey || e.metaKey) && e.key === "z") {
         e.preventDefault();
         if (e.shiftKey) {
           redo();
@@ -85,24 +92,26 @@ export function UndoProvider({
         }
       }
 
-      if ((e.ctrlKey || e.metaKey) && e.key === 'y') {
+      if ((e.ctrlKey || e.metaKey) && e.key === "y") {
         e.preventDefault();
         redo();
       }
     };
 
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
 
   const executeAction = useCallback(
-    async <T,>(action: Omit<UndoableAction<T>, 'id' | 'isUndone' | 'result'>): Promise<T> => {
+    async <T,>(
+      action: Omit<UndoableAction<T>, "id" | "isUndone" | "result">,
+    ): Promise<T> => {
       if (!undoManagerRef.current) {
-        throw new Error('UndoManager not initialized');
+        throw new Error("UndoManager not initialized");
       }
       return undoManagerRef.current.executeAction(action);
     },
-    []
+    [],
   );
 
   const undo = useCallback(async () => {
@@ -140,7 +149,7 @@ export function UndoProvider({
   }, []);
 
   const startGroup = useCallback((name: string) => {
-    return undoManagerRef.current?.startGroup(name) || '';
+    return undoManagerRef.current?.startGroup(name) || "";
   }, []);
 
   const endGroup = useCallback((groupId: string) => {
@@ -181,16 +190,14 @@ export function UndoProvider({
   };
 
   return (
-    <UndoContext.Provider value={contextValue}>
-      {children}
-    </UndoContext.Provider>
+    <UndoContext.Provider value={contextValue}>{children}</UndoContext.Provider>
   );
 }
 
 export function useUndo(): UndoContextValue {
   const context = useContext(UndoContext);
   if (!context) {
-    throw new Error('useUndo must be used within an UndoProvider');
+    throw new Error("useUndo must be used within an UndoProvider");
   }
   return context;
 }

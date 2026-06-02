@@ -1,11 +1,11 @@
-import { logger } from '@/lib/logger';
-import { useState, useEffect, useCallback, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { apiRequest } from '@/lib/queryClient';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { cn } from '@/lib/utils';
+import { logger } from "@/lib/logger";
+import { useState, useEffect, useCallback, useRef } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 import {
   X,
   ArrowRight,
@@ -16,14 +16,14 @@ import {
   Check,
   SkipForward,
   RotateCcw,
-} from 'lucide-react';
+} from "lucide-react";
 
 export interface TooltipStep {
   id: string;
   targetSelector: string;
   title: string;
   description: string;
-  position?: 'top' | 'bottom' | 'left' | 'right';
+  position?: "top" | "bottom" | "left" | "right";
   highlight?: boolean;
   actionLabel?: string;
   actionUrl?: string;
@@ -71,12 +71,22 @@ export default function FeatureDiscoveryTooltip({
   const isLastStep = currentStepIndex === tutorial.steps.length - 1;
 
   const trackProgressMutation = useMutation({
-    mutationFn: async (data: { tutorialId: string; stepId: string; completed: boolean }) => {
-      const response = await apiRequest('POST', '/api/onboarding/track-tutorial', data);
+    mutationFn: async (data: {
+      tutorialId: string;
+      stepId: string;
+      completed: boolean;
+    }) => {
+      const response = await apiRequest(
+        "POST",
+        "/api/onboarding/track-tutorial",
+        data,
+      );
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/onboarding/tutorials'] });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/onboarding/tutorials"],
+      });
     },
   });
 
@@ -93,41 +103,52 @@ export default function FeatureDiscoveryTooltip({
     const tooltipWidth = 320;
     const tooltipHeight = 200;
     const padding = 16;
-    const position = currentStep.position || 'bottom';
+    const position = currentStep.position || "bottom";
 
     let top = 0;
     let left = 0;
 
     switch (position) {
-      case 'top':
+      case "top":
         top = targetRect.top - tooltipHeight - padding;
         left = targetRect.left + targetRect.width / 2 - tooltipWidth / 2;
         break;
-      case 'bottom':
+      case "bottom":
         top = targetRect.bottom + padding;
         left = targetRect.left + targetRect.width / 2 - tooltipWidth / 2;
         break;
-      case 'left':
+      case "left":
         top = targetRect.top + targetRect.height / 2 - tooltipHeight / 2;
         left = targetRect.left - tooltipWidth - padding;
         break;
-      case 'right':
+      case "right":
         top = targetRect.top + targetRect.height / 2 - tooltipHeight / 2;
         left = targetRect.right + padding;
         break;
     }
 
-    left = Math.max(padding, Math.min(left, window.innerWidth - tooltipWidth - padding));
-    top = Math.max(padding, Math.min(top, window.innerHeight - tooltipHeight - padding));
+    left = Math.max(
+      padding,
+      Math.min(left, window.innerWidth - tooltipWidth - padding),
+    );
+    top = Math.max(
+      padding,
+      Math.min(top, window.innerHeight - tooltipHeight - padding),
+    );
 
     setTooltipPosition({ top, left });
 
     if (currentStep.highlight) {
-      target.classList.add('ring-2', 'ring-blue-500', 'ring-offset-2', 'z-50');
+      target.classList.add("ring-2", "ring-blue-500", "ring-offset-2", "z-50");
     }
 
     return () => {
-      target.classList.remove('ring-2', 'ring-blue-500', 'ring-offset-2', 'z-50');
+      target.classList.remove(
+        "ring-2",
+        "ring-blue-500",
+        "ring-offset-2",
+        "z-50",
+      );
     };
   }, [currentStep]);
 
@@ -135,13 +156,13 @@ export default function FeatureDiscoveryTooltip({
     if (isActive && currentStep) {
       const cleanup = calculatePosition();
       const handleResize = () => calculatePosition();
-      window.addEventListener('resize', handleResize);
-      window.addEventListener('scroll', handleResize, true);
+      window.addEventListener("resize", handleResize);
+      window.addEventListener("scroll", handleResize, true);
 
       return () => {
         cleanup?.();
-        window.removeEventListener('resize', handleResize);
-        window.removeEventListener('scroll', handleResize, true);
+        window.removeEventListener("resize", handleResize);
+        window.removeEventListener("scroll", handleResize, true);
       };
     }
   }, [isActive, currentStep, calculatePosition]);
@@ -178,7 +199,10 @@ export default function FeatureDiscoveryTooltip({
 
   return (
     <>
-      <div className="fixed inset-0 bg-black/30 z-40" onClick={() => setShowSkipConfirm(true)} />
+      <div
+        className="fixed inset-0 bg-black/30 z-40"
+        onClick={() => setShowSkipConfirm(true)}
+      />
 
       <AnimatePresence mode="wait">
         <motion.div
@@ -199,7 +223,10 @@ export default function FeatureDiscoveryTooltip({
                   <span className="text-sm font-medium">{tutorial.name}</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Badge variant="secondary" className="bg-white/20 text-white text-xs">
+                  <Badge
+                    variant="secondary"
+                    className="bg-white/20 text-white text-xs"
+                  >
                     {currentStepIndex + 1} / {tutorial.steps.length}
                   </Badge>
                   <Button
@@ -225,7 +252,9 @@ export default function FeatureDiscoveryTooltip({
             <div className="p-4 space-y-4">
               <div>
                 <h3 className="font-semibold text-lg">{currentStep.title}</h3>
-                <p className="text-sm text-muted-foreground mt-1">{currentStep.description}</p>
+                <p className="text-sm text-muted-foreground mt-1">
+                  {currentStep.description}
+                </p>
               </div>
 
               {showSkipConfirm ? (
@@ -303,12 +332,17 @@ export default function FeatureDiscoveryTooltip({
 
           <div
             className={cn(
-              'absolute w-3 h-3 bg-white dark:bg-gray-900 rotate-45',
-              currentStep.position === 'top' && 'bottom-[-6px] left-1/2 -translate-x-1/2 border-b border-r border-border',
-              currentStep.position === 'bottom' && 'top-[-6px] left-1/2 -translate-x-1/2 border-t border-l border-border',
-              currentStep.position === 'left' && 'right-[-6px] top-1/2 -translate-y-1/2 border-t border-r border-border',
-              currentStep.position === 'right' && 'left-[-6px] top-1/2 -translate-y-1/2 border-b border-l border-border',
-              !currentStep.position && 'top-[-6px] left-1/2 -translate-x-1/2 border-t border-l border-border'
+              "absolute w-3 h-3 bg-white dark:bg-gray-900 rotate-45",
+              currentStep.position === "top" &&
+                "bottom-[-6px] left-1/2 -translate-x-1/2 border-b border-r border-border",
+              currentStep.position === "bottom" &&
+                "top-[-6px] left-1/2 -translate-x-1/2 border-t border-l border-border",
+              currentStep.position === "left" &&
+                "right-[-6px] top-1/2 -translate-y-1/2 border-t border-r border-border",
+              currentStep.position === "right" &&
+                "left-[-6px] top-1/2 -translate-y-1/2 border-b border-l border-border",
+              !currentStep.position &&
+                "top-[-6px] left-1/2 -translate-x-1/2 border-t border-l border-border",
             )}
           />
         </motion.div>
@@ -329,13 +363,13 @@ export function ContextSensitiveHelp({
   const [showHelp, setShowHelp] = useState(false);
 
   const { data: helpContent } = useQuery<{ title: string; content: string }>({
-    queryKey: ['/api/help/context', featureId],
+    queryKey: ["/api/help/context", featureId],
     enabled: showHelp,
     staleTime: 60000,
   });
 
   return (
-    <div className={cn('relative inline-block', className)}>
+    <div className={cn("relative inline-block", className)}>
       <button
         onClick={() => setShowHelp(!showHelp)}
         className="p-1 rounded-full hover:bg-muted transition-colors"
@@ -358,7 +392,9 @@ export function ContextSensitiveHelp({
                 <X className="w-3 h-3 text-muted-foreground" />
               </button>
             </div>
-            <p className="text-xs text-muted-foreground mt-1">{helpContent.content}</p>
+            <p className="text-xs text-muted-foreground mt-1">
+              {helpContent.content}
+            </p>
           </motion.div>
         )}
       </AnimatePresence>
@@ -368,78 +404,85 @@ export function ContextSensitiveHelp({
 
 export const TUTORIAL_CONFIGS: Record<string, TutorialConfig> = {
   studio: {
-    id: 'studio-tour',
-    name: 'Studio Tour',
-    module: 'studio',
+    id: "studio-tour",
+    name: "Studio Tour",
+    module: "studio",
     steps: [
       {
-        id: 'studio-1',
+        id: "studio-1",
         targetSelector: '[data-tour="studio-toolbar"]',
-        title: 'Studio Toolbar',
-        description: 'Access all your production tools here - from recording to mixing to mastering.',
-        position: 'bottom',
+        title: "Studio Toolbar",
+        description:
+          "Access all your production tools here - from recording to mixing to mastering.",
+        position: "bottom",
         highlight: true,
       },
       {
-        id: 'studio-2',
+        id: "studio-2",
         targetSelector: '[data-tour="studio-timeline"]',
-        title: 'Timeline & Tracks',
-        description: 'Arrange your audio clips, MIDI, and automation on the timeline.',
-        position: 'top',
+        title: "Timeline & Tracks",
+        description:
+          "Arrange your audio clips, MIDI, and automation on the timeline.",
+        position: "top",
         highlight: true,
       },
       {
-        id: 'studio-3',
+        id: "studio-3",
         targetSelector: '[data-tour="ai-generator"]',
-        title: 'AI Music Generator',
-        description: 'Generate beats, melodies, or full tracks using AI. Just describe what you want!',
-        position: 'left',
+        title: "AI Music Generator",
+        description:
+          "Generate beats, melodies, or full tracks using AI. Just describe what you want!",
+        position: "left",
         highlight: true,
       },
     ],
   },
   distribution: {
-    id: 'distribution-tour',
-    name: 'Distribution Guide',
-    module: 'distribution',
+    id: "distribution-tour",
+    name: "Distribution Guide",
+    module: "distribution",
     steps: [
       {
-        id: 'dist-1',
+        id: "dist-1",
         targetSelector: '[data-tour="release-wizard"]',
-        title: 'Create a Release',
-        description: 'Start here to distribute your music to 150+ streaming platforms.',
-        position: 'bottom',
+        title: "Create a Release",
+        description:
+          "Start here to distribute your music to 150+ streaming platforms.",
+        position: "bottom",
         highlight: true,
       },
       {
-        id: 'dist-2',
+        id: "dist-2",
         targetSelector: '[data-tour="platform-selector"]',
-        title: 'Choose Platforms',
-        description: 'Select which streaming services and stores to release on.',
-        position: 'right',
+        title: "Choose Platforms",
+        description:
+          "Select which streaming services and stores to release on.",
+        position: "right",
         highlight: true,
       },
     ],
   },
   socialMedia: {
-    id: 'social-tour',
-    name: 'Social Media Setup',
-    module: 'social-media',
+    id: "social-tour",
+    name: "Social Media Setup",
+    module: "social-media",
     steps: [
       {
-        id: 'social-1',
+        id: "social-1",
         targetSelector: '[data-tour="connect-accounts"]',
-        title: 'Connect Accounts',
-        description: 'Link your social media accounts to enable posting and analytics.',
-        position: 'bottom',
+        title: "Connect Accounts",
+        description:
+          "Link your social media accounts to enable posting and analytics.",
+        position: "bottom",
         highlight: true,
       },
       {
-        id: 'social-2',
+        id: "social-2",
         targetSelector: '[data-tour="autopilot"]',
-        title: 'Social Autopilot',
-        description: 'Let AI create and schedule viral content for you automatically.',
-        position: 'left',
+        title: "Social Autopilot",
+        description:
+          "Let AI create and schedule viral content for you automatically.",
+        position: "left",
         highlight: true,
       },
     ],

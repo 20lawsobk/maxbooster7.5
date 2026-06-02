@@ -1,5 +1,5 @@
-import { Component, ErrorInfo, ReactNode, useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
+import { Component, ErrorInfo, ReactNode, useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -7,10 +7,10 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Progress } from '@/components/ui/progress';
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Progress } from "@/components/ui/progress";
 import {
   AlertCircle,
   Home,
@@ -32,14 +32,14 @@ import {
   Mail,
   ExternalLink,
   Zap,
-} from 'lucide-react';
+} from "lucide-react";
 import {
   errorService,
   ErrorSeverity,
   ErrorCategory,
   ErrorRecoveryAction,
   captureException,
-} from '@/lib/errorService';
+} from "@/lib/errorService";
 
 interface Props {
   children: ReactNode;
@@ -71,9 +71,9 @@ export class ErrorBoundary extends Component<Props, State> {
     hasError: false,
     error: null,
     errorInfo: null,
-    severity: 'error',
-    category: 'unknown',
-    userMessage: 'An unexpected error occurred',
+    severity: "error",
+    category: "unknown",
+    userMessage: "An unexpected error occurred",
     recoveryActions: [],
     retryCount: 0,
     maxRetries: 3,
@@ -104,11 +104,11 @@ export class ErrorBoundary extends Component<Props, State> {
     const message = error.message;
     const match = message.match(/^(\d{3}):/);
     if (match) return match[1];
-    if (message.includes('404')) return '404';
-    if (message.includes('500')) return '500';
-    if (message.includes('502')) return '502';
-    if (message.includes('503')) return '503';
-    if (message.includes('504')) return '504';
+    if (message.includes("404")) return "404";
+    if (message.includes("500")) return "500";
+    if (message.includes("502")) return "502";
+    if (message.includes("503")) return "503";
+    if (message.includes("504")) return "504";
     return null;
   }
 
@@ -116,54 +116,82 @@ export class ErrorBoundary extends Component<Props, State> {
     const message = error.message.toLowerCase();
     const name = error.name.toLowerCase();
 
-    if (message.includes('network') || message.includes('fetch') || name.includes('network') || message.includes('failed to fetch')) {
-      return 'network';
+    if (
+      message.includes("network") ||
+      message.includes("fetch") ||
+      name.includes("network") ||
+      message.includes("failed to fetch")
+    ) {
+      return "network";
     }
-    if (message.includes('401') || message.includes('403') || message.includes('auth') || message.includes('unauthorized')) {
-      return 'auth';
+    if (
+      message.includes("401") ||
+      message.includes("403") ||
+      message.includes("auth") ||
+      message.includes("unauthorized")
+    ) {
+      return "auth";
     }
-    if (message.includes('timeout') || name.includes('timeout') || message.includes('timed out')) {
-      return 'timeout';
+    if (
+      message.includes("timeout") ||
+      name.includes("timeout") ||
+      message.includes("timed out")
+    ) {
+      return "timeout";
     }
-    if (message.includes('permission') || message.includes('denied') || message.includes('forbidden')) {
-      return 'permission';
+    if (
+      message.includes("permission") ||
+      message.includes("denied") ||
+      message.includes("forbidden")
+    ) {
+      return "permission";
     }
-    if (message.includes('storage') || message.includes('quota')) {
-      return 'storage';
+    if (message.includes("storage") || message.includes("quota")) {
+      return "storage";
     }
-    if (message.includes('audio') || message.includes('media')) {
-      return 'media';
+    if (message.includes("audio") || message.includes("media")) {
+      return "media";
     }
-    if (message.includes('memory') || message.includes('cpu')) {
-      return 'system';
+    if (message.includes("memory") || message.includes("cpu")) {
+      return "system";
     }
-    if (message.includes('validation') || message.includes('invalid')) {
-      return 'validation';
+    if (message.includes("validation") || message.includes("invalid")) {
+      return "validation";
     }
-    return 'unknown';
+    return "unknown";
   }
 
-  private static determineSeverity(error: Error, category: ErrorCategory): ErrorSeverity {
-    if (category === 'auth' || category === 'system') return 'critical';
-    if (category === 'network' || category === 'timeout') return 'error';
-    if (category === 'permission' || category === 'storage') return 'warning';
-    return 'error';
+  private static determineSeverity(
+    error: Error,
+    category: ErrorCategory,
+  ): ErrorSeverity {
+    if (category === "auth" || category === "system") return "critical";
+    if (category === "network" || category === "timeout") return "error";
+    if (category === "permission" || category === "storage") return "warning";
+    return "error";
   }
 
   private static isTransientError(category: ErrorCategory): boolean {
-    return ['network', 'timeout', 'system'].includes(category);
+    return ["network", "timeout", "system"].includes(category);
   }
 
   private static getUserMessage(category: ErrorCategory, error: Error): string {
     const messages: Record<ErrorCategory, string> = {
-      network: "We're having trouble connecting to our servers. This could be a temporary network issue.",
-      auth: 'Your session has expired or you need to log in to access this feature.',
-      validation: 'Some information appears to be incorrect. Please review and try again.',
-      system: 'Our servers are experiencing high load. This should resolve automatically.',
-      timeout: 'The operation is taking longer than expected. Our servers might be busy.',
-      permission: "You don't have permission to access this feature. Contact support if you think this is an error.",
-      storage: 'Storage space is running low. Please free up some space to continue.',
-      media: 'There was an issue processing audio/video. Try a different file or format.',
+      network:
+        "We're having trouble connecting to our servers. This could be a temporary network issue.",
+      auth: "Your session has expired or you need to log in to access this feature.",
+      validation:
+        "Some information appears to be incorrect. Please review and try again.",
+      system:
+        "Our servers are experiencing high load. This should resolve automatically.",
+      timeout:
+        "The operation is taking longer than expected. Our servers might be busy.",
+      permission:
+        "You don't have permission to access this feature. Contact support if you think this is an error.",
+      storage:
+        "Storage space is running low. Please free up some space to continue.",
+      media:
+        "There was an issue processing audio/video. Try a different file or format.",
       unknown: "Something unexpected happened. Our team has been notified.",
     };
 
@@ -175,8 +203,8 @@ export class ErrorBoundary extends Component<Props, State> {
       errorService.handleError(
         error,
         {
-          component: 'ErrorBoundary',
-          action: 'component-error',
+          component: "ErrorBoundary",
+          action: "component-error",
           metadata: {
             componentStack: errorInfo.componentStack,
             errorBoundary: true,
@@ -186,7 +214,7 @@ export class ErrorBoundary extends Component<Props, State> {
           severity: this.state.severity,
           showToast: false,
           retryable: this.state.maxRetries > 0,
-        }
+        },
       );
 
       this.setState({ hasReportedError: true });
@@ -203,7 +231,10 @@ export class ErrorBoundary extends Component<Props, State> {
       this.props.onError(error, errorInfo);
     }
 
-    if (this.state.maxRetries > 0 && this.state.retryCount < this.state.maxRetries) {
+    if (
+      this.state.maxRetries > 0 &&
+      this.state.retryCount < this.state.maxRetries
+    ) {
       this.scheduleRetry();
     }
   }
@@ -213,32 +244,34 @@ export class ErrorBoundary extends Component<Props, State> {
     const { category } = this.state;
 
     switch (category) {
-      case 'network':
-      case 'timeout':
+      case "network":
+      case "timeout":
         actions.push({
-          label: 'Retry Now',
-          type: 'primary',
+          label: "Retry Now",
+          type: "primary",
           action: () => this.handleManualRetry(),
         });
         break;
 
-      case 'auth':
+      case "auth":
         actions.push({
-          label: 'Log In',
-          type: 'primary',
+          label: "Log In",
+          type: "primary",
           action: () => {
-            const returnUrl = encodeURIComponent(window.location.pathname + window.location.search);
+            const returnUrl = encodeURIComponent(
+              window.location.pathname + window.location.search,
+            );
             window.location.href = `/login?returnUrl=${returnUrl}`;
           },
         });
         break;
 
-      case 'storage':
+      case "storage":
         actions.push({
-          label: 'Clear Cache',
-          type: 'primary',
+          label: "Clear Cache",
+          type: "primary",
           action: async () => {
-            if ('caches' in window) {
+            if ("caches" in window) {
               const cacheNames = await caches.keys();
               await Promise.all(cacheNames.map((name) => caches.delete(name)));
               this.handleReset();
@@ -249,21 +282,21 @@ export class ErrorBoundary extends Component<Props, State> {
 
       default:
         actions.push({
-          label: 'Try Again',
-          type: 'primary',
+          label: "Try Again",
+          type: "primary",
           action: () => this.handleReset(),
         });
     }
 
     actions.push({
-      label: 'Go Home',
-      type: 'secondary',
+      label: "Go Home",
+      type: "secondary",
       action: () => this.handleGoHome(),
     });
 
     actions.push({
-      label: 'Report Issue',
-      type: 'secondary',
+      label: "Report Issue",
+      type: "secondary",
       action: () => this.handleReportIssue(),
     });
 
@@ -271,7 +304,10 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   private scheduleRetry() {
-    const retryDelay = Math.min(1000 * Math.pow(2, this.state.retryCount), 30000);
+    const retryDelay = Math.min(
+      1000 * Math.pow(2, this.state.retryCount),
+      30000,
+    );
     const countdownSeconds = Math.ceil(retryDelay / 1000);
 
     this.setState({
@@ -330,21 +366,21 @@ export class ErrorBoundary extends Component<Props, State> {
   };
 
   private handleGoHome = () => {
-    window.location.href = '/';
+    window.location.href = "/";
   };
 
   private handleReportIssue = () => {
     const { error, errorInfo } = this.state;
 
-    errorService.addBreadcrumb('error-boundary-report', {
+    errorService.addBreadcrumb("error-boundary-report", {
       error: error?.message,
       stack: error?.stack,
       componentStack: errorInfo?.componentStack,
     });
 
-    errorService.captureException(error || new Error('Unknown error'), {
-      component: 'ErrorBoundary',
-      action: 'manual-report',
+    errorService.captureException(error || new Error("Unknown error"), {
+      component: "ErrorBoundary",
+      action: "manual-report",
     });
   };
 
@@ -366,10 +402,12 @@ export class ErrorBoundary extends Component<Props, State> {
 
   private getSeverityColor(severity: ErrorSeverity) {
     const colors: Record<ErrorSeverity, string> = {
-      critical: 'bg-red-100 dark:bg-red-900/20 text-red-600 dark:text-red-400',
-      error: 'bg-orange-100 dark:bg-orange-900/20 text-orange-600 dark:text-orange-400',
-      warning: 'bg-yellow-100 dark:bg-yellow-900/20 text-yellow-600 dark:text-yellow-400',
-      info: 'bg-blue-100 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400',
+      critical: "bg-red-100 dark:bg-red-900/20 text-red-600 dark:text-red-400",
+      error:
+        "bg-orange-100 dark:bg-orange-900/20 text-orange-600 dark:text-orange-400",
+      warning:
+        "bg-yellow-100 dark:bg-yellow-900/20 text-yellow-600 dark:text-yellow-400",
+      info: "bg-blue-100 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400",
     };
 
     return colors[severity] || colors.error;
@@ -392,11 +430,16 @@ export class ErrorBoundary extends Component<Props, State> {
 
       const { errorCode, category } = this.state;
 
-      if (errorCode === '404') {
-        return <NotFoundErrorPage onGoHome={this.handleGoHome} onGoBack={() => window.history.back()} />;
+      if (errorCode === "404") {
+        return (
+          <NotFoundErrorPage
+            onGoHome={this.handleGoHome}
+            onGoBack={() => window.history.back()}
+          />
+        );
       }
 
-      if (errorCode === '500' || errorCode === '502' || errorCode === '503') {
+      if (errorCode === "500" || errorCode === "502" || errorCode === "503") {
         return (
           <ServerErrorPage
             errorCode={errorCode}
@@ -407,7 +450,7 @@ export class ErrorBoundary extends Component<Props, State> {
         );
       }
 
-      if (category === 'network') {
+      if (category === "network") {
         return (
           <NetworkErrorPage
             isRetrying={this.state.isRetrying}
@@ -420,7 +463,7 @@ export class ErrorBoundary extends Component<Props, State> {
         );
       }
 
-      if (category === 'timeout') {
+      if (category === "timeout") {
         return (
           <TimeoutErrorPage
             isRetrying={this.state.isRetrying}
@@ -455,13 +498,17 @@ export class ErrorBoundary extends Component<Props, State> {
                 <div className="flex-1">
                   <div className="flex items-center gap-2">
                     <CardTitle className="text-2xl">
-                      {severity === 'critical'
-                        ? 'Critical Error'
-                        : severity === 'warning'
-                          ? 'Warning'
-                          : 'Something went wrong'}
+                      {severity === "critical"
+                        ? "Critical Error"
+                        : severity === "warning"
+                          ? "Warning"
+                          : "Something went wrong"}
                     </CardTitle>
-                    <Badge variant={severity === 'critical' ? 'destructive' : 'secondary'}>
+                    <Badge
+                      variant={
+                        severity === "critical" ? "destructive" : "secondary"
+                      }
+                    >
                       {category}
                     </Badge>
                   </div>
@@ -474,12 +521,14 @@ export class ErrorBoundary extends Component<Props, State> {
                 <Alert>
                   <RefreshCw className="h-4 w-4 animate-spin" />
                   <AlertDescription>
-                    Automatically retrying in {retryCountdown} seconds... (Attempt {retryCount + 1}{' '}
-                    of {maxRetries})
+                    Automatically retrying in {retryCountdown} seconds...
+                    (Attempt {retryCount + 1} of {maxRetries})
                   </AlertDescription>
                   <Progress
                     value={
-                      (1 - retryCountdown / Math.ceil((1000 * Math.pow(2, retryCount)) / 1000)) *
+                      (1 -
+                        retryCountdown /
+                          Math.ceil((1000 * Math.pow(2, retryCount)) / 1000)) *
                       100
                     }
                     className="mt-2"
@@ -497,12 +546,14 @@ export class ErrorBoundary extends Component<Props, State> {
 
               {error && (
                 <details className="text-xs text-muted-foreground bg-muted p-3 rounded-md">
-                  <summary className="cursor-pointer font-medium mb-2">Technical details</summary>
+                  <summary className="cursor-pointer font-medium mb-2">
+                    Technical details
+                  </summary>
                   <pre className="whitespace-pre-wrap break-words mt-2">
                     {error.message}
                     {error.stack && (
                       <>
-                        {'\n\nStack trace:\n'}
+                        {"\n\nStack trace:\n"}
                         {error.stack}
                       </>
                     )}
@@ -516,11 +567,11 @@ export class ErrorBoundary extends Component<Props, State> {
                   key={index}
                   onClick={action.action}
                   variant={
-                    action.type === 'primary'
-                      ? 'default'
-                      : action.type === 'danger'
-                        ? 'destructive'
-                        : 'outline'
+                    action.type === "primary"
+                      ? "default"
+                      : action.type === "danger"
+                        ? "destructive"
+                        : "outline"
                   }
                   disabled={isRetrying}
                   data-testid={`button-recovery-${index}`}
@@ -542,50 +593,50 @@ export class ErrorBoundary extends Component<Props, State> {
 function RecoverySuggestions({ category }: { category: ErrorCategory }) {
   const suggestions: Record<ErrorCategory, string[]> = {
     network: [
-      'Check your internet connection',
-      'Try disabling VPN or proxy',
-      'Clear your browser cache',
-      'Try a different browser',
+      "Check your internet connection",
+      "Try disabling VPN or proxy",
+      "Clear your browser cache",
+      "Try a different browser",
     ],
     auth: [
-      'Log in again with your credentials',
-      'Check if your account is active',
-      'Reset your password if needed',
+      "Log in again with your credentials",
+      "Check if your account is active",
+      "Reset your password if needed",
     ],
     validation: [
-      'Review the form for errors',
-      'Check required fields are filled',
-      'Ensure data format is correct',
+      "Review the form for errors",
+      "Check required fields are filled",
+      "Ensure data format is correct",
     ],
     system: [
-      'Wait a few moments and try again',
-      'Our team is likely already working on it',
-      'Check our status page for updates',
+      "Wait a few moments and try again",
+      "Our team is likely already working on it",
+      "Check our status page for updates",
     ],
     timeout: [
-      'The server might be busy',
-      'Try with smaller data sets',
-      'Check your internet speed',
+      "The server might be busy",
+      "Try with smaller data sets",
+      "Check your internet speed",
     ],
     permission: [
-      'Verify your account type',
-      'Contact your admin for access',
-      'Check if your subscription is active',
+      "Verify your account type",
+      "Contact your admin for access",
+      "Check if your subscription is active",
     ],
     storage: [
-      'Clear browser storage',
-      'Remove old projects or files',
-      'Check available disk space',
+      "Clear browser storage",
+      "Remove old projects or files",
+      "Check available disk space",
     ],
     media: [
-      'Try a different file format',
-      'Check if the file is corrupted',
-      'Reduce file size if too large',
+      "Try a different file format",
+      "Check if the file is corrupted",
+      "Reduce file size if too large",
     ],
     unknown: [
-      'Try refreshing the page',
-      'Clear your browser cache',
-      'Contact support if issue persists',
+      "Try refreshing the page",
+      "Clear your browser cache",
+      "Contact support if issue persists",
     ],
   };
 
@@ -622,11 +673,15 @@ function NotFoundErrorPage({ onGoHome, onGoBack }: NotFoundErrorPageProps) {
           <div className="inline-flex items-center justify-center w-24 h-24 rounded-full bg-purple-100 dark:bg-purple-900/30 mb-6">
             <FileQuestion className="h-12 w-12 text-purple-600 dark:text-purple-400" />
           </div>
-          <h1 className="text-6xl font-bold text-gray-900 dark:text-white mb-2">404</h1>
-          <h2 className="text-2xl font-semibold text-gray-700 dark:text-gray-300 mb-4">Page Not Found</h2>
+          <h1 className="text-6xl font-bold text-gray-900 dark:text-white mb-2">
+            404
+          </h1>
+          <h2 className="text-2xl font-semibold text-gray-700 dark:text-gray-300 mb-4">
+            Page Not Found
+          </h2>
           <p className="text-gray-600 dark:text-gray-400 mb-8">
-            The page you're looking for doesn't exist or has been moved.
-            Don't worry, it happens to the best of us!
+            The page you're looking for doesn't exist or has been moved. Don't
+            worry, it happens to the best of us!
           </p>
         </div>
 
@@ -644,21 +699,35 @@ function NotFoundErrorPage({ onGoHome, onGoBack }: NotFoundErrorPageProps) {
         </div>
 
         <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm">
-          <h3 className="font-medium text-gray-900 dark:text-white mb-3">Looking for something specific?</h3>
+          <h3 className="font-medium text-gray-900 dark:text-white mb-3">
+            Looking for something specific?
+          </h3>
           <div className="grid grid-cols-2 gap-3 text-sm">
-            <a href="/studio" className="flex items-center gap-2 text-primary hover:underline">
+            <a
+              href="/studio"
+              className="flex items-center gap-2 text-primary hover:underline"
+            >
               <Zap className="h-4 w-4" />
               Studio
             </a>
-            <a href="/dashboard" className="flex items-center gap-2 text-primary hover:underline">
+            <a
+              href="/dashboard"
+              className="flex items-center gap-2 text-primary hover:underline"
+            >
               <Home className="h-4 w-4" />
               Dashboard
             </a>
-            <a href="/marketplace" className="flex items-center gap-2 text-primary hover:underline">
+            <a
+              href="/marketplace"
+              className="flex items-center gap-2 text-primary hover:underline"
+            >
               <Search className="h-4 w-4" />
               Marketplace
             </a>
-            <a href="/help" className="flex items-center gap-2 text-primary hover:underline">
+            <a
+              href="/help"
+              className="flex items-center gap-2 text-primary hover:underline"
+            >
               <MessageSquare className="h-4 w-4" />
               Help Center
             </a>
@@ -676,27 +745,38 @@ interface ServerErrorPageProps {
   onReportIssue: () => void;
 }
 
-function ServerErrorPage({ errorCode, onRetry, onGoHome, onReportIssue }: ServerErrorPageProps) {
-  const errorMessages: Record<string, { title: string; description: string }> = {
-    '500': {
-      title: 'Internal Server Error',
-      description: 'Something went wrong on our end. Our team has been notified and is working on it.',
-    },
-    '502': {
-      title: 'Bad Gateway',
-      description: 'Our servers are temporarily unavailable. This usually resolves quickly.',
-    },
-    '503': {
-      title: 'Service Unavailable',
-      description: 'We\'re performing maintenance or experiencing high traffic. Please try again soon.',
-    },
-    '504': {
-      title: 'Gateway Timeout',
-      description: 'The server took too long to respond. Please try again in a moment.',
-    },
-  };
+function ServerErrorPage({
+  errorCode,
+  onRetry,
+  onGoHome,
+  onReportIssue,
+}: ServerErrorPageProps) {
+  const errorMessages: Record<string, { title: string; description: string }> =
+    {
+      "500": {
+        title: "Internal Server Error",
+        description:
+          "Something went wrong on our end. Our team has been notified and is working on it.",
+      },
+      "502": {
+        title: "Bad Gateway",
+        description:
+          "Our servers are temporarily unavailable. This usually resolves quickly.",
+      },
+      "503": {
+        title: "Service Unavailable",
+        description:
+          "We're performing maintenance or experiencing high traffic. Please try again soon.",
+      },
+      "504": {
+        title: "Gateway Timeout",
+        description:
+          "The server took too long to respond. Please try again in a moment.",
+      },
+    };
 
-  const { title, description } = errorMessages[errorCode] || errorMessages['500'];
+  const { title, description } =
+    errorMessages[errorCode] || errorMessages["500"];
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-red-50 to-orange-50 dark:from-gray-900 dark:to-gray-800 p-4">
@@ -705,13 +785,17 @@ function ServerErrorPage({ errorCode, onRetry, onGoHome, onReportIssue }: Server
           <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-red-100 dark:bg-red-900/30 mx-auto mb-4">
             <ServerCrash className="h-10 w-10 text-red-600 dark:text-red-400" />
           </div>
-          <div className="text-5xl font-bold text-red-600 dark:text-red-400 mb-2">{errorCode}</div>
+          <div className="text-5xl font-bold text-red-600 dark:text-red-400 mb-2">
+            {errorCode}
+          </div>
           <CardTitle className="text-xl">{title}</CardTitle>
           <CardDescription className="text-base">{description}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="bg-amber-50 dark:bg-amber-900/20 rounded-lg p-4">
-            <h4 className="text-sm font-medium text-amber-900 dark:text-amber-100 mb-2">What you can do:</h4>
+            <h4 className="text-sm font-medium text-amber-900 dark:text-amber-100 mb-2">
+              What you can do:
+            </h4>
             <ul className="text-sm text-amber-800 dark:text-amber-200 space-y-1">
               <li>• Wait a moment and try again</li>
               <li>• Check our status page for updates</li>
@@ -729,7 +813,11 @@ function ServerErrorPage({ errorCode, onRetry, onGoHome, onReportIssue }: Server
             <Home className="h-4 w-4" />
             Go Home
           </Button>
-          <Button onClick={onReportIssue} variant="ghost" className="w-full gap-2">
+          <Button
+            onClick={onReportIssue}
+            variant="ghost"
+            className="w-full gap-2"
+          >
             <Mail className="h-4 w-4" />
             Report Issue
           </Button>
@@ -748,19 +836,26 @@ interface NetworkErrorPageProps {
   onGoHome: () => void;
 }
 
-function NetworkErrorPage({ isRetrying, retryCountdown, retryCount, maxRetries, onRetry, onGoHome }: NetworkErrorPageProps) {
+function NetworkErrorPage({
+  isRetrying,
+  retryCountdown,
+  retryCount,
+  maxRetries,
+  onRetry,
+  onGoHome,
+}: NetworkErrorPageProps) {
   const [isOnline, setIsOnline] = useState(navigator.onLine);
 
   useEffect(() => {
     const handleOnline = () => setIsOnline(true);
     const handleOffline = () => setIsOnline(false);
 
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
 
     return () => {
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
     };
   }, []);
 
@@ -776,7 +871,7 @@ function NetworkErrorPage({ isRetrying, retryCountdown, retryCount, maxRetries, 
             )}
           </div>
           <CardTitle className="text-xl">
-            {isOnline ? 'Connection Problem' : "You're Offline"}
+            {isOnline ? "Connection Problem" : "You're Offline"}
           </CardTitle>
           <CardDescription className="text-base">
             {isOnline
@@ -785,16 +880,23 @@ function NetworkErrorPage({ isRetrying, retryCountdown, retryCount, maxRetries, 
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className={`rounded-lg p-4 ${isOnline ? 'bg-blue-50 dark:bg-blue-900/20' : 'bg-yellow-50 dark:bg-yellow-900/20'}`}>
+          <div
+            className={`rounded-lg p-4 ${isOnline ? "bg-blue-50 dark:bg-blue-900/20" : "bg-yellow-50 dark:bg-yellow-900/20"}`}
+          >
             <div className="flex items-center gap-2 mb-2">
-              <div className={`w-2 h-2 rounded-full ${isOnline ? 'bg-blue-500' : 'bg-yellow-500'}`} />
-              <span className={`text-sm font-medium ${isOnline ? 'text-blue-900 dark:text-blue-100' : 'text-yellow-900 dark:text-yellow-100'}`}>
-                Status: {isOnline ? 'Online (Server Issue)' : 'Offline'}
+              <div
+                className={`w-2 h-2 rounded-full ${isOnline ? "bg-blue-500" : "bg-yellow-500"}`}
+              />
+              <span
+                className={`text-sm font-medium ${isOnline ? "text-blue-900 dark:text-blue-100" : "text-yellow-900 dark:text-yellow-100"}`}
+              >
+                Status: {isOnline ? "Online (Server Issue)" : "Offline"}
               </span>
             </div>
             {!isOnline && (
               <p className="text-sm text-yellow-800 dark:text-yellow-200">
-                The page will automatically refresh when your connection is restored.
+                The page will automatically refresh when your connection is
+                restored.
               </p>
             )}
           </div>
@@ -803,16 +905,26 @@ function NetworkErrorPage({ isRetrying, retryCountdown, retryCount, maxRetries, 
             <Alert>
               <RefreshCw className="h-4 w-4 animate-spin" />
               <AlertDescription>
-                Retrying in {retryCountdown} seconds... (Attempt {retryCount + 1} of {maxRetries})
+                Retrying in {retryCountdown} seconds... (Attempt{" "}
+                {retryCount + 1} of {maxRetries})
               </AlertDescription>
-              <Progress value={(1 - retryCountdown / 10) * 100} className="mt-2" />
+              <Progress
+                value={(1 - retryCountdown / 10) * 100}
+                className="mt-2"
+              />
             </Alert>
           )}
         </CardContent>
         <CardFooter className="flex gap-2">
-          <Button onClick={onRetry} className="flex-1 gap-2" disabled={isRetrying || !isOnline}>
-            <RefreshCw className={`h-4 w-4 ${isRetrying ? 'animate-spin' : ''}`} />
-            {isRetrying ? 'Retrying...' : 'Try Again'}
+          <Button
+            onClick={onRetry}
+            className="flex-1 gap-2"
+            disabled={isRetrying || !isOnline}
+          >
+            <RefreshCw
+              className={`h-4 w-4 ${isRetrying ? "animate-spin" : ""}`}
+            />
+            {isRetrying ? "Retrying..." : "Try Again"}
           </Button>
           <Button onClick={onGoHome} variant="outline" className="flex-1 gap-2">
             <Home className="h-4 w-4" />
@@ -831,7 +943,12 @@ interface TimeoutErrorPageProps {
   onGoHome: () => void;
 }
 
-function TimeoutErrorPage({ isRetrying, retryCountdown, onRetry, onGoHome }: TimeoutErrorPageProps) {
+function TimeoutErrorPage({
+  isRetrying,
+  retryCountdown,
+  onRetry,
+  onGoHome,
+}: TimeoutErrorPageProps) {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 p-4">
       <Card className="max-w-lg w-full">
@@ -841,12 +958,15 @@ function TimeoutErrorPage({ isRetrying, retryCountdown, onRetry, onGoHome }: Tim
           </div>
           <CardTitle className="text-xl">Request Timed Out</CardTitle>
           <CardDescription className="text-base">
-            The server took too long to respond. This usually means our servers are busy or there's a complex operation running.
+            The server took too long to respond. This usually means our servers
+            are busy or there's a complex operation running.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="bg-orange-50 dark:bg-orange-900/20 rounded-lg p-4">
-            <h4 className="text-sm font-medium text-orange-900 dark:text-orange-100 mb-2">Tips:</h4>
+            <h4 className="text-sm font-medium text-orange-900 dark:text-orange-100 mb-2">
+              Tips:
+            </h4>
             <ul className="text-sm text-orange-800 dark:text-orange-200 space-y-1">
               <li>• Try again in a few moments</li>
               <li>• For large files, try smaller batches</li>
@@ -865,9 +985,15 @@ function TimeoutErrorPage({ isRetrying, retryCountdown, onRetry, onGoHome }: Tim
           )}
         </CardContent>
         <CardFooter className="flex gap-2">
-          <Button onClick={onRetry} className="flex-1 gap-2" disabled={isRetrying}>
-            <RefreshCw className={`h-4 w-4 ${isRetrying ? 'animate-spin' : ''}`} />
-            {isRetrying ? 'Retrying...' : 'Try Again'}
+          <Button
+            onClick={onRetry}
+            className="flex-1 gap-2"
+            disabled={isRetrying}
+          >
+            <RefreshCw
+              className={`h-4 w-4 ${isRetrying ? "animate-spin" : ""}`}
+            />
+            {isRetrying ? "Retrying..." : "Try Again"}
           </Button>
           <Button onClick={onGoHome} variant="outline" className="flex-1 gap-2">
             <Home className="h-4 w-4" />

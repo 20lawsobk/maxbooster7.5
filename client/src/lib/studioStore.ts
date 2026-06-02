@@ -1,4 +1,4 @@
-import { create } from 'zustand';
+import { create } from "zustand";
 
 export interface Take {
   id: string;
@@ -43,7 +43,7 @@ export interface VideoClip {
   duration: number;
   filePath: string;
   thumbnails: string[];
-  format: 'mp4' | 'mov' | 'webm' | 'avi' | 'mkv';
+  format: "mp4" | "mov" | "webm" | "avi" | "mkv";
   width: number;
   height: number;
   frameRate: number;
@@ -54,15 +54,28 @@ export interface VideoClip {
 }
 
 // Fader Flip Types
-export type FaderMode = 
-  | 'volume'
-  | 'fx1' | 'fx2' | 'fx3' | 'fx4'
-  | 'cue1' | 'cue2' | 'cue3' | 'cue4'
-  | 'bus1' | 'bus2' | 'bus3' | 'bus4' | 'bus5' | 'bus6' | 'bus7' | 'bus8';
+export type FaderMode =
+  | "volume"
+  | "fx1"
+  | "fx2"
+  | "fx3"
+  | "fx4"
+  | "cue1"
+  | "cue2"
+  | "cue3"
+  | "cue4"
+  | "bus1"
+  | "bus2"
+  | "bus3"
+  | "bus4"
+  | "bus5"
+  | "bus6"
+  | "bus7"
+  | "bus8";
 
 // Spatial Audio Types
-export type SpeakerConfiguration = 'stereo' | '5.1' | '7.1' | '9.1.6';
-export type ObjectType = 'bed' | 'object';
+export type SpeakerConfiguration = "stereo" | "5.1" | "7.1" | "9.1.6";
+export type ObjectType = "bed" | "object";
 
 export interface SpatialObject {
   id: string;
@@ -73,7 +86,7 @@ export interface SpatialObject {
   distance: number;
   width: number;
   lfeLevel: number;
-  heightLayer: 'floor' | 'mid' | 'ceiling';
+  heightLayer: "floor" | "mid" | "ceiling";
   busId: string;
   mute: boolean;
   solo: boolean;
@@ -99,12 +112,12 @@ export interface LyricLine {
 
 // Lyrics Display Settings
 export interface LyricsDisplaySettings {
-  fontSize: 'small' | 'medium' | 'large' | 'xlarge';
+  fontSize: "small" | "medium" | "large" | "xlarge";
   fontFamily: string;
   textColor: string;
   highlightColor: string;
   backgroundColor: string;
-  textAlign: 'left' | 'center' | 'right';
+  textAlign: "left" | "center" | "right";
   lineSpacing: number;
   showWordHighlight: boolean;
   teleprompterMode: boolean;
@@ -150,22 +163,58 @@ export interface StoreTrack {
 }
 
 // Autoscroll modes matching Studio One Pro 7.2+
-export type AutoscrollMode = 'off' | 'turnover' | 'continuous-centered' | 'continuous-left';
+export type AutoscrollMode =
+  | "off"
+  | "turnover"
+  | "continuous-centered"
+  | "continuous-left";
 
 // Musical Key Types for Global Transpose
-export type MusicalKey = 'C' | 'C#' | 'D' | 'D#' | 'E' | 'F' | 'F#' | 'G' | 'G#' | 'A' | 'A#' | 'B';
-export type KeyMode = 'major' | 'minor';
+export type MusicalKey =
+  | "C"
+  | "C#"
+  | "D"
+  | "D#"
+  | "E"
+  | "F"
+  | "F#"
+  | "G"
+  | "G#"
+  | "A"
+  | "A#"
+  | "B";
+export type KeyMode = "major" | "minor";
 
 // Musical key constants
-export const MUSICAL_KEYS: MusicalKey[] = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+export const MUSICAL_KEYS: MusicalKey[] = [
+  "C",
+  "C#",
+  "D",
+  "D#",
+  "E",
+  "F",
+  "F#",
+  "G",
+  "G#",
+  "A",
+  "A#",
+  "B",
+];
 
 // Professional DAW Types
-export type RecordingMode = 'replace' | 'overdub' | 'stacked';
-export type AutomationMode = 'read' | 'write' | 'touch' | 'latch' | 'off';
-export type EditTool = 'pointer' | 'range' | 'split' | 'slip' | 'draw' | 'pencil' | 'eraser';
+export type RecordingMode = "replace" | "overdub" | "stacked";
+export type AutomationMode = "read" | "write" | "touch" | "latch" | "off";
+export type EditTool =
+  | "pointer"
+  | "range"
+  | "split"
+  | "slip"
+  | "draw"
+  | "pencil"
+  | "eraser";
 
 // Chord Display Mode Types
-export type ChordDisplayMode = 'standard' | 'nashville' | 'roman';
+export type ChordDisplayMode = "standard" | "nashville" | "roman";
 
 // Mastering Project Types
 export interface MasteringProject {
@@ -175,7 +224,7 @@ export interface MasteringProject {
   createdAt: number;
   updatedAt: number;
   targetLoudness: number; // LUFS target (-14 to -6)
-  format: 'wav' | 'mp3' | 'flac' | 'aiff';
+  format: "wav" | "mp3" | "flac" | "aiff";
   sampleRate: 44100 | 48000 | 96000;
   bitDepth: 16 | 24 | 32;
 }
@@ -215,7 +264,7 @@ export interface LauncherScene {
   tempo?: number; // optional scene-specific tempo
 }
 
-export type LauncherQuantize = '1bar' | '2bars' | '4bars' | '1beat';
+export type LauncherQuantize = "1bar" | "2bars" | "4bars" | "1beat";
 
 // Show Page Types (Live Performance Environment)
 export interface SetlistItem {
@@ -245,92 +294,108 @@ export interface PerformanceState {
 
 // Nashville Number System utility
 const NASHVILLE_SCALE_INTERVALS: Record<MusicalKey, number[]> = {
-  'C': [0, 2, 4, 5, 7, 9, 11],
-  'C#': [1, 3, 5, 6, 8, 10, 0],
-  'D': [2, 4, 6, 7, 9, 11, 1],
-  'D#': [3, 5, 7, 8, 10, 0, 2],
-  'E': [4, 6, 8, 9, 11, 1, 3],
-  'F': [5, 7, 9, 10, 0, 2, 4],
-  'F#': [6, 8, 10, 11, 1, 3, 5],
-  'G': [7, 9, 11, 0, 2, 4, 6],
-  'G#': [8, 10, 0, 1, 3, 5, 7],
-  'A': [9, 11, 1, 2, 4, 6, 8],
-  'A#': [10, 0, 2, 3, 5, 7, 9],
-  'B': [11, 1, 3, 4, 6, 8, 10],
+  C: [0, 2, 4, 5, 7, 9, 11],
+  "C#": [1, 3, 5, 6, 8, 10, 0],
+  D: [2, 4, 6, 7, 9, 11, 1],
+  "D#": [3, 5, 7, 8, 10, 0, 2],
+  E: [4, 6, 8, 9, 11, 1, 3],
+  F: [5, 7, 9, 10, 0, 2, 4],
+  "F#": [6, 8, 10, 11, 1, 3, 5],
+  G: [7, 9, 11, 0, 2, 4, 6],
+  "G#": [8, 10, 0, 1, 3, 5, 7],
+  A: [9, 11, 1, 2, 4, 6, 8],
+  "A#": [10, 0, 2, 3, 5, 7, 9],
+  B: [11, 1, 3, 4, 6, 8, 10],
 };
 
-const ROMAN_NUMERALS = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII'];
+const ROMAN_NUMERALS = ["I", "II", "III", "IV", "V", "VI", "VII"];
 
-export function formatChord(chordRoot: string, chordQuality: string, key: MusicalKey, mode: ChordDisplayMode): string {
-  if (mode === 'standard') {
+export function formatChord(
+  chordRoot: string,
+  chordQuality: string,
+  key: MusicalKey,
+  mode: ChordDisplayMode,
+): string {
+  if (mode === "standard") {
     return `${chordRoot}${chordQuality}`;
   }
 
-  const normalizedRoot = chordRoot.replace('b', '#').replace('Db', 'C#').replace('Eb', 'D#').replace('Gb', 'F#').replace('Ab', 'G#').replace('Bb', 'A#');
-  
+  const normalizedRoot = chordRoot
+    .replace("b", "#")
+    .replace("Db", "C#")
+    .replace("Eb", "D#")
+    .replace("Gb", "F#")
+    .replace("Ab", "G#")
+    .replace("Bb", "A#");
+
   let rootSemitone = MUSICAL_KEYS.indexOf(normalizedRoot as MusicalKey);
   if (rootSemitone === -1) {
     const flatToSharp: Record<string, MusicalKey> = {
-      'Db': 'C#', 'Eb': 'D#', 'Gb': 'F#', 'Ab': 'G#', 'Bb': 'A#'
+      Db: "C#",
+      Eb: "D#",
+      Gb: "F#",
+      Ab: "G#",
+      Bb: "A#",
     };
     const converted = flatToSharp[chordRoot];
     if (converted) {
       rootSemitone = MUSICAL_KEYS.indexOf(converted);
     }
   }
-  
+
   if (rootSemitone === -1) {
     return `${chordRoot}${chordQuality}`;
   }
 
   const scaleIntervals = NASHVILLE_SCALE_INTERVALS[key];
   let scaleDegree = -1;
-  let accidental = '';
-  
+  let accidental = "";
+
   for (let i = 0; i < scaleIntervals.length; i++) {
     if (scaleIntervals[i] === rootSemitone) {
       scaleDegree = i + 1;
       break;
     }
   }
-  
+
   if (scaleDegree === -1) {
     for (let i = 0; i < scaleIntervals.length; i++) {
       if ((scaleIntervals[i] + 1) % 12 === rootSemitone) {
         scaleDegree = i + 1;
-        accidental = '#';
+        accidental = "#";
         break;
       }
       if ((scaleIntervals[i] - 1 + 12) % 12 === rootSemitone) {
         scaleDegree = i + 1;
-        accidental = 'b';
+        accidental = "b";
         break;
       }
     }
   }
-  
+
   if (scaleDegree === -1) {
     return `${chordRoot}${chordQuality}`;
   }
 
-  const isMinor = chordQuality.startsWith('m') && !chordQuality.startsWith('maj');
-  const isDiminished = chordQuality.includes('dim');
-  const qualitySuffix = chordQuality.replace(/^m(?!aj)/, '');
+  const isMinor =
+    chordQuality.startsWith("m") && !chordQuality.startsWith("maj");
+  const isDiminished = chordQuality.includes("dim");
+  const qualitySuffix = chordQuality.replace(/^m(?!aj)/, "");
 
-  if (mode === 'nashville') {
-    const prefix = accidental === '#' ? '#' : accidental === 'b' ? 'b' : '';
-    const minorSuffix = isMinor ? 'm' : isDiminished ? 'o' : '';
-    return `${prefix}${scaleDegree}${minorSuffix}${qualitySuffix.replace('dim', '').replace('m', '')}`;
+  if (mode === "nashville") {
+    const prefix = accidental === "#" ? "#" : accidental === "b" ? "b" : "";
+    const minorSuffix = isMinor ? "m" : isDiminished ? "o" : "";
+    return `${prefix}${scaleDegree}${minorSuffix}${qualitySuffix.replace("dim", "").replace("m", "")}`;
   }
 
-  if (mode === 'roman') {
+  if (mode === "roman") {
     const romanBase = ROMAN_NUMERALS[scaleDegree - 1];
-    const prefix = accidental === '#' ? '#' : accidental === 'b' ? 'b' : '';
-    
+    const prefix = accidental === "#" ? "#" : accidental === "b" ? "b" : "";
+
     if (isMinor || isDiminished) {
       const lowerRoman = romanBase.toLowerCase();
-      const dimSuffix = isDiminished ? 'o' : '';
-      return `${prefix}${lowerRoman}${dimSuffix}${qualitySuffix.replace('dim', '').replace('m', '')}`;
+      const dimSuffix = isDiminished ? "o" : "";
+      return `${prefix}${lowerRoman}${dimSuffix}${qualitySuffix.replace("dim", "").replace("m", "")}`;
     } else {
       return `${prefix}${romanBase}${qualitySuffix}`;
     }
@@ -378,7 +443,7 @@ export interface StudioState {
   // Browser State
   browserVisible: boolean;
   browserSearchQuery: string;
-  browserActiveTab: 'pool' | 'presets' | 'samples' | 'plugins' | 'files';
+  browserActiveTab: "pool" | "presets" | "samples" | "plugins" | "files";
   browserSelectedItem: string | null;
 
   // Inspector State
@@ -450,7 +515,7 @@ export interface StudioState {
 
   // Crossfade Settings
   crossfadeLength: number;
-  crossfadeCurve: 'linear' | 'equal-power' | 'exponential';
+  crossfadeCurve: "linear" | "equal-power" | "exponential";
 
   // Infinite Timeline State (Studio One style)
   projectDuration: number; // Dynamic duration in seconds
@@ -466,7 +531,7 @@ export interface StudioState {
   adaptiveSnapEnabled: boolean; // When true, snap resolution adapts to zoom level
   translucentEventsEnabled: boolean; // When true, waveforms are semi-transparent showing grid lines through
   showSyncPoints: boolean; // When true, sync point markers are visible
-  
+
   // Studio One 7-style Timeline Features
   loopToolEnabled: boolean; // When true, dragging clip edges repeats/loops the audio
   timeStretchEnabled: boolean; // When true, Alt/Option+drag stretches audio to fit
@@ -548,7 +613,9 @@ export interface StudioState {
   // Browser Actions
   toggleBrowser: () => void;
   setBrowserSearchQuery: (query: string) => void;
-  setBrowserActiveTab: (tab: 'pool' | 'presets' | 'samples' | 'plugins' | 'files') => void;
+  setBrowserActiveTab: (
+    tab: "pool" | "presets" | "samples" | "plugins" | "files",
+  ) => void;
   setBrowserSelectedItem: (itemId: string | null) => void;
 
   // Inspector Actions
@@ -610,7 +677,9 @@ export interface StudioState {
   snapLyricToPlayhead: (id: string) => void;
   toggleLyricsDisplay: () => void;
   toggleLyricsTrack: () => void;
-  updateLyricsDisplaySettings: (updates: Partial<LyricsDisplaySettings>) => void;
+  updateLyricsDisplaySettings: (
+    updates: Partial<LyricsDisplaySettings>,
+  ) => void;
   importLyrics: (text: string) => void;
   getCurrentLyricLine: () => LyricLine | null;
   getCurrentLyricWord: () => LyricWord | null;
@@ -638,7 +707,7 @@ export interface StudioState {
 
   // Crossfade Actions
   setCrossfadeLength: (length: number) => void;
-  setCrossfadeCurve: (curve: 'linear' | 'equal-power' | 'exponential') => void;
+  setCrossfadeCurve: (curve: "linear" | "equal-power" | "exponential") => void;
 
   // Infinite Timeline Actions (Studio One style)
   setProjectDuration: (duration: number) => void;
@@ -656,7 +725,7 @@ export interface StudioState {
   setAdaptiveSnapEnabled: (enabled: boolean) => void;
   setTranslucentEventsEnabled: (enabled: boolean) => void;
   setShowSyncPoints: (enabled: boolean) => void;
-  
+
   // Studio One 7-style Timeline Feature Actions
   setLoopToolEnabled: (enabled: boolean) => void;
   setTimeStretchEnabled: (enabled: boolean) => void;
@@ -697,8 +766,15 @@ export interface StudioState {
   addSongToProject: (projectId: string, song: Partial<MasteringSong>) => void;
   removeSongFromProject: (projectId: string, songId: string) => void;
   reorderSongs: (projectId: string, songIds: string[]) => void;
-  updateMasteringSettings: (projectId: string, settings: Partial<MasteringProject>) => void;
-  updateMasteringSong: (projectId: string, songId: string, updates: Partial<MasteringSong>) => void;
+  updateMasteringSettings: (
+    projectId: string,
+    settings: Partial<MasteringProject>,
+  ) => void;
+  updateMasteringSong: (
+    projectId: string,
+    songId: string,
+    updates: Partial<MasteringSong>,
+  ) => void;
   toggleMasteringPanel: () => void;
   setMasteringProcessing: (processing: boolean) => void;
   getActiveMasteringProject: () => MasteringProject | null;
@@ -715,9 +791,15 @@ export interface StudioState {
   toggleLauncher: () => void;
   addLauncherScene: (scene: Partial<LauncherScene>) => void;
   removeLauncherScene: (sceneIndex: number) => void;
-  updateLauncherScene: (sceneId: string, updates: Partial<LauncherScene>) => void;
+  updateLauncherScene: (
+    sceneId: string,
+    updates: Partial<LauncherScene>,
+  ) => void;
   getLauncherClipsForTrack: (trackId: string) => LauncherClip[];
-  getLauncherClipAt: (trackId: string, slotIndex: number) => LauncherClip | undefined;
+  getLauncherClipAt: (
+    trackId: string,
+    slotIndex: number,
+  ) => LauncherClip | undefined;
 
   // Show Page Actions (Live Performance Environment)
   createSetlist: (name: string) => void;
@@ -741,21 +823,22 @@ export interface StudioState {
 export const useStudioStore = create<StudioState>((set, get) => ({
   // Current Project
   currentProjectId: null,
-  setCurrentProjectId: (projectId: string | null) => set({ currentProjectId: projectId }),
+  setCurrentProjectId: (projectId: string | null) =>
+    set({ currentProjectId: projectId }),
 
   // Initial State
   currentTime: 0,
   isPlaying: false,
   isRecording: false,
   followPlayhead: true,
-  autoscrollMode: 'turnover' as AutoscrollMode,
+  autoscrollMode: "turnover" as AutoscrollMode,
 
   // Transport State
   loopEnabled: false,
   loopStart: 0,
   loopEnd: 8,
   tempo: 120,
-  timeSignature: '4/4',
+  timeSignature: "4/4",
   metronomeEnabled: false,
 
   zoom: 1.0,
@@ -774,8 +857,8 @@ export const useStudioStore = create<StudioState>((set, get) => ({
 
   // Browser State
   browserVisible: true,
-  browserSearchQuery: '',
-  browserActiveTab: 'pool',
+  browserSearchQuery: "",
+  browserActiveTab: "pool",
   browserSelectedItem: null,
 
   // Inspector State
@@ -813,7 +896,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
 
   // Spatial Audio State
   spatialObjects: [],
-  speakerConfig: '7.1',
+  speakerConfig: "7.1",
   binauralEnabled: false,
 
   // Lyrics State
@@ -822,31 +905,31 @@ export const useStudioStore = create<StudioState>((set, get) => ({
   lyricsDisplayVisible: false,
   lyricsTrackVisible: true,
   lyricsDisplaySettings: {
-    fontSize: 'large' as const,
-    fontFamily: 'Inter, sans-serif',
-    textColor: '#ffffff',
-    highlightColor: '#fbbf24',
-    backgroundColor: 'rgba(0, 0, 0, 0.85)',
-    textAlign: 'center' as const,
+    fontSize: "large" as const,
+    fontFamily: "Inter, sans-serif",
+    textColor: "#ffffff",
+    highlightColor: "#fbbf24",
+    backgroundColor: "rgba(0, 0, 0, 0.85)",
+    textAlign: "center" as const,
     lineSpacing: 1.5,
     showWordHighlight: true,
     teleprompterMode: false,
   },
 
   // Professional Recording State
-  recordingMode: 'replace',
+  recordingMode: "replace",
   preRollBars: 0,
   countInBars: 0,
   returnToStartOnStop: true,
   inputMonitoring: false,
 
   // Editing Tools
-  currentTool: 'pointer',
+  currentTool: "pointer",
   rangeSelectionStart: null,
   rangeSelectionEnd: null,
 
   // Automation State
-  automationMode: 'read',
+  automationMode: "read",
   automationLanesVisible: false,
   selectedAutomationParameter: null,
 
@@ -856,7 +939,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
 
   // Crossfade Settings
   crossfadeLength: 0.01,
-  crossfadeCurve: 'equal-power',
+  crossfadeCurve: "equal-power",
 
   // Infinite Timeline State (Studio One style - default 5 minutes)
   projectDuration: 300, // 5 minutes in seconds
@@ -872,7 +955,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
   adaptiveSnapEnabled: true,
   translucentEventsEnabled: false,
   showSyncPoints: true,
-  
+
   // Studio One 7-style Timeline Features
   loopToolEnabled: true,
   timeStretchEnabled: true,
@@ -889,13 +972,13 @@ export const useStudioStore = create<StudioState>((set, get) => ({
   freezingTrackId: null,
 
   // Global Transpose State
-  projectKey: 'C',
-  projectKeyMode: 'major',
+  projectKey: "C",
+  projectKeyMode: "major",
   globalTranspose: 0,
-  originalProjectKey: 'C',
+  originalProjectKey: "C",
 
   // Chord Display Mode State
-  chordDisplayMode: 'standard',
+  chordDisplayMode: "standard",
 
   // Mastering Project State
   masteringProjects: [],
@@ -906,31 +989,63 @@ export const useStudioStore = create<StudioState>((set, get) => ({
   // Launcher State (Ableton Session View style)
   launcherClips: [],
   launcherScenes: [
-    { id: 'scene-1', index: 0, name: 'Scene 1', color: '#4ade80' },
-    { id: 'scene-2', index: 1, name: 'Scene 2', color: '#60a5fa' },
-    { id: 'scene-3', index: 2, name: 'Scene 3', color: '#f87171' },
-    { id: 'scene-4', index: 3, name: 'Scene 4', color: '#fbbf24' },
+    { id: "scene-1", index: 0, name: "Scene 1", color: "#4ade80" },
+    { id: "scene-2", index: 1, name: "Scene 2", color: "#60a5fa" },
+    { id: "scene-3", index: 2, name: "Scene 3", color: "#f87171" },
+    { id: "scene-4", index: 3, name: "Scene 4", color: "#fbbf24" },
   ],
   activeLauncherClips: [],
   queuedLauncherClips: [],
-  launcherQuantize: '1bar' as LauncherQuantize,
+  launcherQuantize: "1bar" as LauncherQuantize,
   showLauncher: false,
 
   // Show Page State (Live Performance Environment) with sample data
   setlists: [
     {
-      id: 'setlist-demo',
-      name: 'Demo Show',
+      id: "setlist-demo",
+      name: "Demo Show",
       createdAt: Date.now(),
       items: [
-        { id: 'item-1', name: 'Opening Night', duration: 240, bpm: 128, key: 'Am', notes: 'Start with soft intro, build up at 1:30', order: 0 },
-        { id: 'item-2', name: 'Electric Dreams', duration: 195, bpm: 140, key: 'E', notes: 'Heavy synth lead, crowd interaction at bridge', order: 1 },
-        { id: 'item-3', name: 'Midnight Groove', duration: 280, bpm: 110, key: 'Dm', notes: 'Bass-heavy, extended outro for DJ transition', order: 2 },
-        { id: 'item-4', name: 'Final Countdown', duration: 210, bpm: 135, key: 'G', notes: 'Closing anthem, pyro cue at 3:00', order: 3 },
+        {
+          id: "item-1",
+          name: "Opening Night",
+          duration: 240,
+          bpm: 128,
+          key: "Am",
+          notes: "Start with soft intro, build up at 1:30",
+          order: 0,
+        },
+        {
+          id: "item-2",
+          name: "Electric Dreams",
+          duration: 195,
+          bpm: 140,
+          key: "E",
+          notes: "Heavy synth lead, crowd interaction at bridge",
+          order: 1,
+        },
+        {
+          id: "item-3",
+          name: "Midnight Groove",
+          duration: 280,
+          bpm: 110,
+          key: "Dm",
+          notes: "Bass-heavy, extended outro for DJ transition",
+          order: 2,
+        },
+        {
+          id: "item-4",
+          name: "Final Countdown",
+          duration: 210,
+          bpm: 135,
+          key: "G",
+          notes: "Closing anthem, pyro cue at 3:00",
+          order: 3,
+        },
       ],
     },
   ],
-  activeSetlistId: 'setlist-demo',
+  activeSetlistId: "setlist-demo",
   performanceState: {
     currentSetlistId: null,
     currentItemIndex: 0,
@@ -943,15 +1058,23 @@ export const useStudioStore = create<StudioState>((set, get) => ({
   setCurrentTime: (time) => set({ currentTime: time }),
   setIsPlaying: (playing) => set({ isPlaying: playing }),
   setIsRecording: (recording) => set({ isRecording: recording }),
-  toggleFollowPlayhead: () => set((state) => ({ followPlayhead: !state.followPlayhead })),
-  setAutoscrollMode: (mode) => set({ autoscrollMode: mode, followPlayhead: mode !== 'off' }),
-  cycleAutoscrollMode: () => set((state) => {
-    const modes: AutoscrollMode[] = ['off', 'turnover', 'continuous-centered', 'continuous-left'];
-    const currentIndex = modes.indexOf(state.autoscrollMode);
-    const nextIndex = (currentIndex + 1) % modes.length;
-    const nextMode = modes[nextIndex];
-    return { autoscrollMode: nextMode, followPlayhead: nextMode !== 'off' };
-  }),
+  toggleFollowPlayhead: () =>
+    set((state) => ({ followPlayhead: !state.followPlayhead })),
+  setAutoscrollMode: (mode) =>
+    set({ autoscrollMode: mode, followPlayhead: mode !== "off" }),
+  cycleAutoscrollMode: () =>
+    set((state) => {
+      const modes: AutoscrollMode[] = [
+        "off",
+        "turnover",
+        "continuous-centered",
+        "continuous-left",
+      ];
+      const currentIndex = modes.indexOf(state.autoscrollMode);
+      const nextIndex = (currentIndex + 1) % modes.length;
+      const nextMode = modes[nextIndex];
+      return { autoscrollMode: nextMode, followPlayhead: nextMode !== "off" };
+    }),
 
   // Transport Actions
   setLoopEnabled: (enabled) => set({ loopEnabled: enabled }),
@@ -963,7 +1086,8 @@ export const useStudioStore = create<StudioState>((set, get) => ({
 
   // View Actions
   setZoom: (zoom) => set({ zoom: Math.max(0.1, Math.min(10, zoom)) }),
-  setScrollPosition: (position) => set({ scrollPosition: Math.max(0, position) }),
+  setScrollPosition: (position) =>
+    set({ scrollPosition: Math.max(0, position) }),
   toggleSnap: () => set((state) => ({ snapEnabled: !state.snapEnabled })),
   setSnapResolution: (resolution) => set({ snapResolution: resolution }),
 
@@ -1004,42 +1128,40 @@ export const useStudioStore = create<StudioState>((set, get) => ({
   setTrackVolume: (trackId, volume) =>
     set((state) => ({
       tracks: state.tracks.map((t) =>
-        t.id === trackId ? { ...t, volume: Math.max(0, Math.min(1, volume)) } : t
+        t.id === trackId
+          ? { ...t, volume: Math.max(0, Math.min(1, volume)) }
+          : t,
       ),
     })),
   setTrackPan: (trackId, pan) =>
     set((state) => ({
       tracks: state.tracks.map((t) =>
-        t.id === trackId ? { ...t, pan: Math.max(-1, Math.min(1, pan)) } : t
+        t.id === trackId ? { ...t, pan: Math.max(-1, Math.min(1, pan)) } : t,
       ),
     })),
   setTrackMute: (trackId, mute) =>
     set((state) => ({
-      tracks: state.tracks.map((t) =>
-        t.id === trackId ? { ...t, mute } : t
-      ),
+      tracks: state.tracks.map((t) => (t.id === trackId ? { ...t, mute } : t)),
     })),
   setTrackSolo: (trackId, solo) =>
     set((state) => ({
-      tracks: state.tracks.map((t) =>
-        t.id === trackId ? { ...t, solo } : t
-      ),
+      tracks: state.tracks.map((t) => (t.id === trackId ? { ...t, solo } : t)),
     })),
   setTrackArmed: (trackId, armed) =>
     set((state) => ({
-      tracks: state.tracks.map((t) =>
-        t.id === trackId ? { ...t, armed } : t
-      ),
+      tracks: state.tracks.map((t) => (t.id === trackId ? { ...t, armed } : t)),
     })),
 
   // Browser Actions
-  toggleBrowser: () => set((state) => ({ browserVisible: !state.browserVisible })),
+  toggleBrowser: () =>
+    set((state) => ({ browserVisible: !state.browserVisible })),
   setBrowserSearchQuery: (query) => set({ browserSearchQuery: query }),
   setBrowserActiveTab: (tab) => set({ browserActiveTab: tab }),
   setBrowserSelectedItem: (itemId) => set({ browserSelectedItem: itemId }),
 
   // Inspector Actions
-  toggleInspector: () => set((state) => ({ inspectorVisible: !state.inspectorVisible })),
+  toggleInspector: () =>
+    set((state) => ({ inspectorVisible: !state.inspectorVisible })),
 
   // Routing Matrix Actions
   toggleRoutingMatrix: () =>
@@ -1061,16 +1183,19 @@ export const useStudioStore = create<StudioState>((set, get) => ({
   deleteMarker: (id) =>
     set((state) => ({
       markers: state.markers.filter((m) => m.id !== id),
-      selectedMarkerId: state.selectedMarkerId === id ? null : state.selectedMarkerId,
+      selectedMarkerId:
+        state.selectedMarkerId === id ? null : state.selectedMarkerId,
     })),
 
   // Audio Device Actions
   setSelectedInputDevice: (deviceId) => set({ selectedInputDevice: deviceId }),
-  setSelectedOutputDevice: (deviceId) => set({ selectedOutputDevice: deviceId }),
+  setSelectedOutputDevice: (deviceId) =>
+    set({ selectedOutputDevice: deviceId }),
   setBufferSize: (size) => set({ bufferSize: size }),
 
   // Metronome Actions
-  setMetronomeVolume: (volume) => set({ metronomeVolume: Math.max(0, Math.min(1, volume)) }),
+  setMetronomeVolume: (volume) =>
+    set({ metronomeVolume: Math.max(0, Math.min(1, volume)) }),
 
   // Punch Recording Actions
   setPunchMode: (enabled) => set({ punchMode: enabled }),
@@ -1090,7 +1215,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
       takesByTrack: {
         ...state.takesByTrack,
         [trackId]: (state.takesByTrack[trackId] || []).map((t) =>
-          t.id === takeId ? { ...t, ...updates } : t
+          t.id === takeId ? { ...t, ...updates } : t,
         ),
       },
     })),
@@ -1098,14 +1223,18 @@ export const useStudioStore = create<StudioState>((set, get) => ({
     set((state) => ({
       takesByTrack: {
         ...state.takesByTrack,
-        [trackId]: (state.takesByTrack[trackId] || []).filter((t) => t.id !== takeId),
+        [trackId]: (state.takesByTrack[trackId] || []).filter(
+          (t) => t.id !== takeId,
+        ),
       },
     })),
 
   // Chord Track Actions
   addChord: (chord) =>
     set((state) => ({
-      chords: [...state.chords, chord].sort((a, b) => a.startTime - b.startTime),
+      chords: [...state.chords, chord].sort(
+        (a, b) => a.startTime - b.startTime,
+      ),
     })),
 
   updateChord: (id, updates) =>
@@ -1122,7 +1251,20 @@ export const useStudioStore = create<StudioState>((set, get) => ({
 
   transposeChords: (semitones) =>
     set((state) => {
-      const CHORD_ROOTS = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+      const CHORD_ROOTS = [
+        "C",
+        "C#",
+        "D",
+        "D#",
+        "E",
+        "F",
+        "F#",
+        "G",
+        "G#",
+        "A",
+        "A#",
+        "B",
+      ];
       return {
         chords: state.chords.map((chord) => {
           const rootIndex = CHORD_ROOTS.indexOf(chord.root);
@@ -1139,7 +1281,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
           return {
             ...chord,
             root: newRoot,
-            name: `${newRoot}${chord.quality}${newBass ? `/${newBass}` : ''}`,
+            name: `${newRoot}${chord.quality}${newBass ? `/${newBass}` : ""}`,
             bass: newBass,
           };
         }),
@@ -1149,7 +1291,9 @@ export const useStudioStore = create<StudioState>((set, get) => ({
   // Video Track Actions
   addVideoClip: (clip) =>
     set((state) => ({
-      videoClips: [...state.videoClips, clip].sort((a, b) => a.startTime - b.startTime),
+      videoClips: [...state.videoClips, clip].sort(
+        (a, b) => a.startTime - b.startTime,
+      ),
     })),
 
   updateVideoClip: (id, updates) =>
@@ -1174,7 +1318,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
     })),
 
   getFaderMode: (channelId) => {
-    return get().faderModes[channelId] || 'volume';
+    return get().faderModes[channelId] || "volume";
   },
 
   // Spatial Audio Actions
@@ -1186,7 +1330,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
   updateSpatialObject: (id, updates) =>
     set((state) => ({
       spatialObjects: state.spatialObjects.map((o) =>
-        o.id === id ? { ...o, ...updates } : o
+        o.id === id ? { ...o, ...updates } : o,
       ),
     })),
 
@@ -1229,8 +1373,12 @@ export const useStudioStore = create<StudioState>((set, get) => ({
         lyrics: state.lyrics
           .map((l) =>
             l.id === id
-              ? { ...l, startTime: currentTime, endTime: currentTime + duration }
-              : l
+              ? {
+                  ...l,
+                  startTime: currentTime,
+                  endTime: currentTime + duration,
+                }
+              : l,
           )
           .sort((a, b) => a.startTime - b.startTime),
       };
@@ -1248,135 +1396,158 @@ export const useStudioStore = create<StudioState>((set, get) => ({
     })),
 
   importLyrics: (text) => {
-    const lines = text.split('\n').filter((line) => line.trim());
+    const lines = text.split("\n").filter((line) => line.trim());
     const newLyrics: LyricLine[] = lines.map((line, index) => ({
       id: `lyric-${Date.now()}-${index}`,
       text: line.trim(),
-      words: line.trim().split(/\s+/).map((word, wordIndex) => ({
-        id: `word-${Date.now()}-${index}-${wordIndex}`,
-        text: word,
-        startTime: index * 4,
-        endTime: index * 4 + 2,
-      })),
+      words: line
+        .trim()
+        .split(/\s+/)
+        .map((word, wordIndex) => ({
+          id: `word-${Date.now()}-${index}-${wordIndex}`,
+          text: word,
+          startTime: index * 4,
+          endTime: index * 4 + 2,
+        })),
       startTime: index * 4,
       endTime: (index + 1) * 4,
     }));
     set((state) => ({
-      lyrics: [...state.lyrics, ...newLyrics].sort((a, b) => a.startTime - b.startTime),
+      lyrics: [...state.lyrics, ...newLyrics].sort(
+        (a, b) => a.startTime - b.startTime,
+      ),
     }));
   },
 
   getCurrentLyricLine: () => {
     const state = get();
     const currentTime = state.currentTime;
-    return state.lyrics.find(
-      (line) => currentTime >= line.startTime && currentTime < line.endTime
-    ) || null;
+    return (
+      state.lyrics.find(
+        (line) => currentTime >= line.startTime && currentTime < line.endTime,
+      ) || null
+    );
   },
 
   getCurrentLyricWord: () => {
     const state = get();
     const currentTime = state.currentTime;
     const currentLine = state.lyrics.find(
-      (line) => currentTime >= line.startTime && currentTime < line.endTime
+      (line) => currentTime >= line.startTime && currentTime < line.endTime,
     );
     if (!currentLine) return null;
-    return currentLine.words.find(
-      (word) => currentTime >= word.startTime && currentTime < word.endTime
-    ) || null;
+    return (
+      currentLine.words.find(
+        (word) => currentTime >= word.startTime && currentTime < word.endTime,
+      ) || null
+    );
   },
 
   // Recording Mode Actions
   setRecordingMode: (mode) => set({ recordingMode: mode }),
-  setPreRollBars: (bars) => set({ preRollBars: Math.max(0, Math.min(8, bars)) }),
-  setCountInBars: (bars) => set({ countInBars: Math.max(0, Math.min(8, bars)) }),
+  setPreRollBars: (bars) =>
+    set({ preRollBars: Math.max(0, Math.min(8, bars)) }),
+  setCountInBars: (bars) =>
+    set({ countInBars: Math.max(0, Math.min(8, bars)) }),
   setReturnToStartOnStop: (enabled) => set({ returnToStartOnStop: enabled }),
   setInputMonitoring: (enabled) => set({ inputMonitoring: enabled }),
 
   // Edit Tool Actions
   setCurrentTool: (tool) => set({ currentTool: tool }),
-  setRangeSelection: (start, end) => set({ rangeSelectionStart: start, rangeSelectionEnd: end }),
-  clearRangeSelection: () => set({ rangeSelectionStart: null, rangeSelectionEnd: null }),
+  setRangeSelection: (start, end) =>
+    set({ rangeSelectionStart: start, rangeSelectionEnd: end }),
+  clearRangeSelection: () =>
+    set({ rangeSelectionStart: null, rangeSelectionEnd: null }),
 
   // Automation Actions
   setAutomationMode: (mode) => set({ automationMode: mode }),
-  toggleAutomationLanes: () => set((state) => ({ automationLanesVisible: !state.automationLanesVisible })),
-  setSelectedAutomationParameter: (param) => set({ selectedAutomationParameter: param }),
+  toggleAutomationLanes: () =>
+    set((state) => ({ automationLanesVisible: !state.automationLanesVisible })),
+  setSelectedAutomationParameter: (param) =>
+    set({ selectedAutomationParameter: param }),
 
   // Grid Actions
-  toggleGridVisible: () => set((state) => ({ gridVisible: !state.gridVisible })),
+  toggleGridVisible: () =>
+    set((state) => ({ gridVisible: !state.gridVisible })),
   setGridDivision: (division) => set({ gridDivision: division }),
 
   // Crossfade Actions
-  setCrossfadeLength: (length) => set({ crossfadeLength: Math.max(0.001, Math.min(5, length)) }),
+  setCrossfadeLength: (length) =>
+    set({ crossfadeLength: Math.max(0.001, Math.min(5, length)) }),
   setCrossfadeCurve: (curve) => set({ crossfadeCurve: curve }),
 
   // Infinite Timeline Actions (Studio One style)
-  setProjectDuration: (duration) => set((state) => ({ 
-    projectDuration: Math.max(state.minProjectDuration, duration) 
-  })),
-  
+  setProjectDuration: (duration) =>
+    set((state) => ({
+      projectDuration: Math.max(state.minProjectDuration, duration),
+    })),
+
   setProjectEndMarker: (time) => set({ projectEndMarker: Math.max(0, time) }),
-  
+
   // Dynamic expansion: auto-allocate more time when playhead nears end
-  expandTimelineIfNeeded: (playheadTime) => set((state) => {
-    if (!state.autoExpandEnabled) return {};
-    
-    // Expand when playhead is within 10% of the end
-    const threshold = state.projectDuration * 0.9;
-    if (playheadTime >= threshold) {
-      // Expand by 50% each time
-      const newDuration = state.projectDuration * 1.5;
-      return { projectDuration: newDuration };
-    }
-    return {};
-  }),
-  
+  expandTimelineIfNeeded: (playheadTime) =>
+    set((state) => {
+      if (!state.autoExpandEnabled) return {};
+
+      // Expand when playhead is within 10% of the end
+      const threshold = state.projectDuration * 0.9;
+      if (playheadTime >= threshold) {
+        // Expand by 50% each time
+        const newDuration = state.projectDuration * 1.5;
+        return { projectDuration: newDuration };
+      }
+      return {};
+    }),
+
   // Fit timeline view to content (like "Fit Timeline to Contents" command)
-  fitTimelineToContents: (contentEndTime) => set((state) => {
-    // Add 10% padding after content
-    const paddedDuration = contentEndTime * 1.1;
-    const newDuration = Math.max(state.minProjectDuration, paddedDuration);
-    return { 
-      projectDuration: newDuration,
-      projectEndMarker: contentEndTime 
-    };
-  }),
-  
+  fitTimelineToContents: (contentEndTime) =>
+    set((state) => {
+      // Add 10% padding after content
+      const paddedDuration = contentEndTime * 1.1;
+      const newDuration = Math.max(state.minProjectDuration, paddedDuration);
+      return {
+        projectDuration: newDuration,
+        projectEndMarker: contentEndTime,
+      };
+    }),
+
   setAutoExpandEnabled: (enabled) => set({ autoExpandEnabled: enabled }),
 
   // Smart Re-engagement Actions (Studio One 7.2 style)
-  pauseAutoscroll: () => set({ 
-    autoscrollPaused: true, 
-    lastManualScrollTime: Date.now() 
-  }),
-  
-  resumeAutoscroll: () => set({ 
-    autoscrollPaused: false 
-  }),
-  
+  pauseAutoscroll: () =>
+    set({
+      autoscrollPaused: true,
+      lastManualScrollTime: Date.now(),
+    }),
+
+  resumeAutoscroll: () =>
+    set({
+      autoscrollPaused: false,
+    }),
+
   isAutoscrollActive: () => {
     const state = get();
-    return state.autoscrollMode !== 'off' && !state.autoscrollPaused;
+    return state.autoscrollMode !== "off" && !state.autoscrollPaused;
   },
 
   // Adaptive Grid and Sync Actions (Studio One style)
   setAdaptiveSnapEnabled: (enabled) => set({ adaptiveSnapEnabled: enabled }),
-  setTranslucentEventsEnabled: (enabled) => set({ translucentEventsEnabled: enabled }),
+  setTranslucentEventsEnabled: (enabled) =>
+    set({ translucentEventsEnabled: enabled }),
   setShowSyncPoints: (enabled) => set({ showSyncPoints: enabled }),
-  
+
   // Studio One 7-style Timeline Feature Setters
   setLoopToolEnabled: (enabled) => set({ loopToolEnabled: enabled }),
   setTimeStretchEnabled: (enabled) => set({ timeStretchEnabled: enabled }),
   setHorizontalDropMode: (enabled) => set({ horizontalDropMode: enabled }),
-  
+
   getAdaptiveSnapInterval: (zoom: number): number => {
     const state = get();
     const tempo = state.tempo;
     const secondsPerBeat = 60 / tempo;
-    
+
     if (zoom < 0.5) {
-      const [numerator] = state.timeSignature.split('/').map(Number);
+      const [numerator] = state.timeSignature.split("/").map(Number);
       return secondsPerBeat * numerator;
     } else if (zoom < 1.0) {
       return secondsPerBeat;
@@ -1400,7 +1571,9 @@ export const useStudioStore = create<StudioState>((set, get) => ({
 
   removeTempoMap: (clipId) =>
     set((state) => ({
-      projectTempoMaps: state.projectTempoMaps.filter((m) => m.clipId !== clipId),
+      projectTempoMaps: state.projectTempoMaps.filter(
+        (m) => m.clipId !== clipId,
+      ),
     })),
 
   setIsAnalyzingTempo: (analyzing, clipId = null) =>
@@ -1417,11 +1590,11 @@ export const useStudioStore = create<StudioState>((set, get) => ({
   // Frozen Track Actions
   freezeTrack: async (trackId: string, duration: number = 60) => {
     set({ isFreezing: true, freezingTrackId: trackId });
-    
+
     // Mock freeze process - simulate render time proportional to duration
     const renderTime = Math.min(2000, Math.max(500, duration * 200));
-    await new Promise(resolve => setTimeout(resolve, renderTime));
-    
+    await new Promise((resolve) => setTimeout(resolve, renderTime));
+
     const frozenState: FrozenTrackState = {
       trackId,
       frozenAt: Date.now(),
@@ -1429,9 +1602,12 @@ export const useStudioStore = create<StudioState>((set, get) => ({
       frozenAudioUrl: `/frozen/${trackId}-${Date.now()}.wav`,
       frozenDuration: duration,
     };
-    
+
     set((state) => ({
-      frozenTracks: [...state.frozenTracks.filter(f => f.trackId !== trackId), frozenState],
+      frozenTracks: [
+        ...state.frozenTracks.filter((f) => f.trackId !== trackId),
+        frozenState,
+      ],
       isFreezing: false,
       freezingTrackId: null,
     }));
@@ -1462,7 +1638,8 @@ export const useStudioStore = create<StudioState>((set, get) => ({
   setProjectKey: (key) =>
     set((state) => ({
       projectKey: key,
-      originalProjectKey: state.globalTranspose === 0 ? key : state.originalProjectKey,
+      originalProjectKey:
+        state.globalTranspose === 0 ? key : state.originalProjectKey,
     })),
 
   setProjectKeyMode: (mode) => set({ projectKeyMode: mode }),
@@ -1497,7 +1674,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
 
   cycleChordDisplayMode: () =>
     set((state) => {
-      const modes: ChordDisplayMode[] = ['standard', 'nashville', 'roman'];
+      const modes: ChordDisplayMode[] = ["standard", "nashville", "roman"];
       const currentIndex = modes.indexOf(state.chordDisplayMode);
       const nextIndex = (currentIndex + 1) % modes.length;
       return { chordDisplayMode: modes[nextIndex] };
@@ -1505,7 +1682,12 @@ export const useStudioStore = create<StudioState>((set, get) => ({
 
   getFormattedChord: (chordRoot: string, chordQuality: string) => {
     const state = get();
-    return formatChord(chordRoot, chordQuality, state.projectKey, state.chordDisplayMode);
+    return formatChord(
+      chordRoot,
+      chordQuality,
+      state.projectKey,
+      state.chordDisplayMode,
+    );
   },
 
   // Mastering Project Actions
@@ -1517,7 +1699,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
       createdAt: Date.now(),
       updatedAt: Date.now(),
       targetLoudness: -14,
-      format: 'wav',
+      format: "wav",
       sampleRate: 44100,
       bitDepth: 24,
     };
@@ -1531,7 +1713,9 @@ export const useStudioStore = create<StudioState>((set, get) => ({
     set((state) => ({
       masteringProjects: state.masteringProjects.filter((p) => p.id !== id),
       activeMasteringProjectId:
-        state.activeMasteringProjectId === id ? null : state.activeMasteringProjectId,
+        state.activeMasteringProjectId === id
+          ? null
+          : state.activeMasteringProjectId,
     })),
 
   setActiveMasteringProject: (id) => set({ activeMasteringProjectId: id }),
@@ -1543,7 +1727,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
         const newSong: MasteringSong = {
           id: song.id || `song-${Date.now()}`,
           projectId,
-          title: song.title || 'Untitled Song',
+          title: song.title || "Untitled Song",
           sourceFileUrl: song.sourceFileUrl,
           masteredFileUrl: song.masteredFileUrl,
           duration: song.duration || 0,
@@ -1610,7 +1794,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
         return {
           ...p,
           songs: p.songs.map((s) =>
-            s.id === songId ? { ...s, ...updates, lastUpdated: Date.now() } : s
+            s.id === songId ? { ...s, ...updates, lastUpdated: Date.now() } : s,
           ),
           updatedAt: Date.now(),
         };
@@ -1620,24 +1804,31 @@ export const useStudioStore = create<StudioState>((set, get) => ({
   toggleMasteringPanel: () =>
     set((state) => ({ masteringPanelVisible: !state.masteringPanelVisible })),
 
-  setMasteringProcessing: (processing) => set({ isMasteringProcessing: processing }),
+  setMasteringProcessing: (processing) =>
+    set({ isMasteringProcessing: processing }),
 
   getActiveMasteringProject: () => {
     const state = get();
-    return state.masteringProjects.find((p) => p.id === state.activeMasteringProjectId) || null;
+    return (
+      state.masteringProjects.find(
+        (p) => p.id === state.activeMasteringProjectId,
+      ) || null
+    );
   },
 
   // Launcher Actions (Ableton Session View style)
   addLauncherClip: (clip) => {
     if (!clip.trackId) {
-      throw new Error('LauncherClip requires a trackId - this is a programming error');
+      throw new Error(
+        "LauncherClip requires a trackId - this is a programming error",
+      );
     }
     const newClip: LauncherClip = {
       id: clip.id || `clip-${Date.now()}`,
       trackId: clip.trackId,
       slotIndex: clip.slotIndex ?? 0,
-      name: clip.name || 'New Clip',
-      color: clip.color || '#4ade80',
+      name: clip.name || "New Clip",
+      color: clip.color || "#4ade80",
       duration: clip.duration ?? 4,
       isPlaying: false,
       isQueued: false,
@@ -1651,14 +1842,18 @@ export const useStudioStore = create<StudioState>((set, get) => ({
   removeLauncherClip: (clipId) =>
     set((state) => ({
       launcherClips: state.launcherClips.filter((c) => c.id !== clipId),
-      activeLauncherClips: state.activeLauncherClips.filter((id) => id !== clipId),
-      queuedLauncherClips: state.queuedLauncherClips.filter((id) => id !== clipId),
+      activeLauncherClips: state.activeLauncherClips.filter(
+        (id) => id !== clipId,
+      ),
+      queuedLauncherClips: state.queuedLauncherClips.filter(
+        (id) => id !== clipId,
+      ),
     })),
 
   updateLauncherClip: (clipId, updates) =>
     set((state) => ({
       launcherClips: state.launcherClips.map((c) =>
-        c.id === clipId ? { ...c, ...updates } : c
+        c.id === clipId ? { ...c, ...updates } : c,
       ),
     })),
 
@@ -1669,43 +1864,56 @@ export const useStudioStore = create<StudioState>((set, get) => ({
 
       // Stop any playing clip on the same track
       const stoppedClips = state.launcherClips
-        .filter((c) => c.trackId === clip.trackId && c.id !== clipId && c.isPlaying)
+        .filter(
+          (c) => c.trackId === clip.trackId && c.id !== clipId && c.isPlaying,
+        )
         .map((c) => c.id);
 
       // If clip is already playing, stop it
       if (clip.isPlaying) {
         return {
           launcherClips: state.launcherClips.map((c) =>
-            c.id === clipId ? { ...c, isPlaying: false, isQueued: false } : c
+            c.id === clipId ? { ...c, isPlaying: false, isQueued: false } : c,
           ),
-          activeLauncherClips: state.activeLauncherClips.filter((id) => id !== clipId),
+          activeLauncherClips: state.activeLauncherClips.filter(
+            (id) => id !== clipId,
+          ),
         };
       }
 
       // Queue the clip (simulating quantize behavior)
-      const isImmediate = state.launcherQuantize === '1beat';
-      
+      const isImmediate = state.launcherQuantize === "1beat";
+
       if (isImmediate) {
         // Immediately trigger
         return {
           launcherClips: state.launcherClips.map((c) => {
-            if (c.id === clipId) return { ...c, isPlaying: true, isQueued: false };
-            if (stoppedClips.includes(c.id)) return { ...c, isPlaying: false, isQueued: false };
+            if (c.id === clipId)
+              return { ...c, isPlaying: true, isQueued: false };
+            if (stoppedClips.includes(c.id))
+              return { ...c, isPlaying: false, isQueued: false };
             return c;
           }),
           activeLauncherClips: [
-            ...state.activeLauncherClips.filter((id) => !stoppedClips.includes(id)),
+            ...state.activeLauncherClips.filter(
+              (id) => !stoppedClips.includes(id),
+            ),
             clipId,
           ],
-          queuedLauncherClips: state.queuedLauncherClips.filter((id) => id !== clipId),
+          queuedLauncherClips: state.queuedLauncherClips.filter(
+            (id) => id !== clipId,
+          ),
         };
       } else {
         // Queue for next quantize point
         return {
           launcherClips: state.launcherClips.map((c) =>
-            c.id === clipId ? { ...c, isQueued: true } : c
+            c.id === clipId ? { ...c, isQueued: true } : c,
           ),
-          queuedLauncherClips: [...state.queuedLauncherClips.filter((id) => id !== clipId), clipId],
+          queuedLauncherClips: [
+            ...state.queuedLauncherClips.filter((id) => id !== clipId),
+            clipId,
+          ],
         };
       }
     }),
@@ -1713,25 +1921,34 @@ export const useStudioStore = create<StudioState>((set, get) => ({
   stopClip: (clipId) =>
     set((state) => ({
       launcherClips: state.launcherClips.map((c) =>
-        c.id === clipId ? { ...c, isPlaying: false, isQueued: false } : c
+        c.id === clipId ? { ...c, isPlaying: false, isQueued: false } : c,
       ),
-      activeLauncherClips: state.activeLauncherClips.filter((id) => id !== clipId),
-      queuedLauncherClips: state.queuedLauncherClips.filter((id) => id !== clipId),
+      activeLauncherClips: state.activeLauncherClips.filter(
+        (id) => id !== clipId,
+      ),
+      queuedLauncherClips: state.queuedLauncherClips.filter(
+        (id) => id !== clipId,
+      ),
     })),
 
   triggerScene: (sceneIndex) =>
     set((state) => {
       // Find all clips in this scene
-      const clipsInScene = state.launcherClips.filter((c) => c.slotIndex === sceneIndex);
+      const clipsInScene = state.launcherClips.filter(
+        (c) => c.slotIndex === sceneIndex,
+      );
       const clipIds = clipsInScene.map((c) => c.id);
       const trackIds = clipsInScene.map((c) => c.trackId);
 
       // Stop clips on the same tracks that are not in this scene
       const clipsToStop = state.launcherClips.filter(
-        (c) => trackIds.includes(c.trackId) && !clipIds.includes(c.id) && (c.isPlaying || c.isQueued)
+        (c) =>
+          trackIds.includes(c.trackId) &&
+          !clipIds.includes(c.id) &&
+          (c.isPlaying || c.isQueued),
       );
 
-      const isImmediate = state.launcherQuantize === '1beat';
+      const isImmediate = state.launcherQuantize === "1beat";
 
       if (isImmediate) {
         return {
@@ -1745,10 +1962,14 @@ export const useStudioStore = create<StudioState>((set, get) => ({
             return c;
           }),
           activeLauncherClips: [
-            ...state.activeLauncherClips.filter((id) => !clipsToStop.map((c) => c.id).includes(id)),
+            ...state.activeLauncherClips.filter(
+              (id) => !clipsToStop.map((c) => c.id).includes(id),
+            ),
             ...clipIds,
           ],
-          queuedLauncherClips: state.queuedLauncherClips.filter((id) => !clipIds.includes(id)),
+          queuedLauncherClips: state.queuedLauncherClips.filter(
+            (id) => !clipIds.includes(id),
+          ),
         };
       } else {
         return {
@@ -1758,7 +1979,9 @@ export const useStudioStore = create<StudioState>((set, get) => ({
             }
             return c;
           }),
-          queuedLauncherClips: [...new Set([...state.queuedLauncherClips, ...clipIds])],
+          queuedLauncherClips: [
+            ...new Set([...state.queuedLauncherClips, ...clipIds]),
+          ],
         };
       }
     }),
@@ -1780,23 +2003,30 @@ export const useStudioStore = create<StudioState>((set, get) => ({
 
   addLauncherScene: (scene) => {
     const state = get();
-    const maxIndex = state.launcherScenes.reduce((max, s) => Math.max(max, s.index), -1);
+    const maxIndex = state.launcherScenes.reduce(
+      (max, s) => Math.max(max, s.index),
+      -1,
+    );
     const newScene: LauncherScene = {
       id: scene.id || `scene-${Date.now()}`,
       index: scene.index ?? maxIndex + 1,
       name: scene.name || `Scene ${maxIndex + 2}`,
-      color: scene.color || '#8b5cf6',
+      color: scene.color || "#8b5cf6",
       tempo: scene.tempo,
     };
     set((state) => ({
-      launcherScenes: [...state.launcherScenes, newScene].sort((a, b) => a.index - b.index),
+      launcherScenes: [...state.launcherScenes, newScene].sort(
+        (a, b) => a.index - b.index,
+      ),
     }));
   },
 
   removeLauncherScene: (sceneIndex) =>
     set((state) => {
       // Remove all clips in this scene
-      const clipsToRemove = state.launcherClips.filter((c) => c.slotIndex === sceneIndex);
+      const clipsToRemove = state.launcherClips.filter(
+        (c) => c.slotIndex === sceneIndex,
+      );
       const clipIdsToRemove = clipsToRemove.map((c) => c.id);
 
       return {
@@ -1809,15 +2039,19 @@ export const useStudioStore = create<StudioState>((set, get) => ({
             ...c,
             slotIndex: c.slotIndex > sceneIndex ? c.slotIndex - 1 : c.slotIndex,
           })),
-        activeLauncherClips: state.activeLauncherClips.filter((id) => !clipIdsToRemove.includes(id)),
-        queuedLauncherClips: state.queuedLauncherClips.filter((id) => !clipIdsToRemove.includes(id)),
+        activeLauncherClips: state.activeLauncherClips.filter(
+          (id) => !clipIdsToRemove.includes(id),
+        ),
+        queuedLauncherClips: state.queuedLauncherClips.filter(
+          (id) => !clipIdsToRemove.includes(id),
+        ),
       };
     }),
 
   updateLauncherScene: (sceneId, updates) =>
     set((state) => ({
       launcherScenes: state.launcherScenes.map((s) =>
-        s.id === sceneId ? { ...s, ...updates } : s
+        s.id === sceneId ? { ...s, ...updates } : s,
       ),
     })),
 
@@ -1828,7 +2062,9 @@ export const useStudioStore = create<StudioState>((set, get) => ({
 
   getLauncherClipAt: (trackId, slotIndex) => {
     const state = get();
-    return state.launcherClips.find((c) => c.trackId === trackId && c.slotIndex === slotIndex);
+    return state.launcherClips.find(
+      (c) => c.trackId === trackId && c.slotIndex === slotIndex,
+    );
   },
 
   // Show Page Actions (Live Performance Environment)
@@ -1848,10 +2084,15 @@ export const useStudioStore = create<StudioState>((set, get) => ({
   deleteSetlist: (id) =>
     set((state) => ({
       setlists: state.setlists.filter((s) => s.id !== id),
-      activeSetlistId: state.activeSetlistId === id ? null : state.activeSetlistId,
+      activeSetlistId:
+        state.activeSetlistId === id ? null : state.activeSetlistId,
       performanceState:
         state.performanceState.currentSetlistId === id
-          ? { ...state.performanceState, currentSetlistId: null, isPerforming: false }
+          ? {
+              ...state.performanceState,
+              currentSetlistId: null,
+              isPerforming: false,
+            }
           : state.performanceState,
     })),
 
@@ -1861,10 +2102,10 @@ export const useStudioStore = create<StudioState>((set, get) => ({
         if (s.id !== setlistId) return s;
         const newItem: SetlistItem = {
           id: item.id || `item-${Date.now()}`,
-          name: item.name || 'New Song',
+          name: item.name || "New Song",
           duration: item.duration || 180,
           bpm: item.bpm || 120,
-          key: item.key || 'C',
+          key: item.key || "C",
           notes: item.notes,
           audioUrl: item.audioUrl,
           order: item.order ?? s.items.length,
@@ -1926,9 +2167,14 @@ export const useStudioStore = create<StudioState>((set, get) => ({
 
   nextItem: () =>
     set((state) => {
-      const setlist = state.setlists.find((s) => s.id === state.performanceState.currentSetlistId);
+      const setlist = state.setlists.find(
+        (s) => s.id === state.performanceState.currentSetlistId,
+      );
       if (!setlist) return {};
-      const nextIndex = Math.min(state.performanceState.currentItemIndex + 1, setlist.items.length - 1);
+      const nextIndex = Math.min(
+        state.performanceState.currentItemIndex + 1,
+        setlist.items.length - 1,
+      );
       return {
         performanceState: {
           ...state.performanceState,
@@ -1941,15 +2187,23 @@ export const useStudioStore = create<StudioState>((set, get) => ({
     set((state) => ({
       performanceState: {
         ...state.performanceState,
-        currentItemIndex: Math.max(0, state.performanceState.currentItemIndex - 1),
+        currentItemIndex: Math.max(
+          0,
+          state.performanceState.currentItemIndex - 1,
+        ),
       },
     })),
 
   goToItem: (index) =>
     set((state) => {
-      const setlist = state.setlists.find((s) => s.id === state.performanceState.currentSetlistId);
+      const setlist = state.setlists.find(
+        (s) => s.id === state.performanceState.currentSetlistId,
+      );
       if (!setlist) return {};
-      const clampedIndex = Math.max(0, Math.min(index, setlist.items.length - 1));
+      const clampedIndex = Math.max(
+        0,
+        Math.min(index, setlist.items.length - 1),
+      );
       return {
         performanceState: {
           ...state.performanceState,
@@ -1975,14 +2229,18 @@ export const useStudioStore = create<StudioState>((set, get) => ({
 
   getCurrentSetlistItem: () => {
     const state = get();
-    const setlist = state.setlists.find((s) => s.id === state.performanceState.currentSetlistId);
+    const setlist = state.setlists.find(
+      (s) => s.id === state.performanceState.currentSetlistId,
+    );
     if (!setlist) return null;
     return setlist.items[state.performanceState.currentItemIndex] || null;
   },
 
   getNextSetlistItem: () => {
     const state = get();
-    const setlist = state.setlists.find((s) => s.id === state.performanceState.currentSetlistId);
+    const setlist = state.setlists.find(
+      (s) => s.id === state.performanceState.currentSetlistId,
+    );
     if (!setlist) return null;
     return setlist.items[state.performanceState.currentItemIndex + 1] || null;
   },

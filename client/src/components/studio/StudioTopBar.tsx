@@ -1,25 +1,30 @@
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { Input } from '@/components/ui/input';
+} from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogFooter,
-} from '@/components/ui/dialog';
-import { Label } from '@/components/ui/label';
-import { useState } from 'react';
-import { useIsMobile } from '@/hooks/use-mobile';
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { useState } from "react";
+import { useIsMobile } from "@/hooks/use-mobile";
 import {
   MousePointer2,
   Scissors,
@@ -43,7 +48,7 @@ import {
   LayoutGrid,
   Radio,
   Home,
-} from 'lucide-react';
+} from "lucide-react";
 
 interface Project {
   id: string;
@@ -56,10 +61,10 @@ interface StudioTopBarProps {
   timeSignature: string;
   cpuUsage: number;
   zoom: number;
-  selectedTool?: 'select' | 'cut' | 'delete';
+  selectedTool?: "select" | "cut" | "delete";
   selectedProject?: Project | null;
   projects?: Project[];
-  onToolSelect: (tool: 'select' | 'cut' | 'delete') => void;
+  onToolSelect: (tool: "select" | "cut" | "delete") => void;
   onZoomIn: () => void;
   onZoomOut: () => void;
   onZoomReset: () => void;
@@ -87,7 +92,7 @@ export function StudioTopBar({
   timeSignature,
   cpuUsage,
   zoom,
-  selectedTool = 'select',
+  selectedTool = "select",
   selectedProject,
   projects = [],
   onToolSelect,
@@ -113,30 +118,36 @@ export function StudioTopBar({
   onOpenProjectHub,
 }: StudioTopBarProps) {
   const [showCreateDialog, setShowCreateDialog] = useState(false);
-  const [newProjectTitle, setNewProjectTitle] = useState('');
+  const [newProjectTitle, setNewProjectTitle] = useState("");
   const isMobile = useIsMobile();
 
   const handleCreateProject = () => {
     if (newProjectTitle.trim() && onCreateProject) {
       onCreateProject(newProjectTitle.trim());
-      setNewProjectTitle('');
+      setNewProjectTitle("");
       setShowCreateDialog(false);
     }
   };
 
   return (
     <>
-      <div className={`h-full ${isMobile ? 'px-2 py-1' : 'px-4'} flex flex-wrap items-center justify-between gap-1.5 md:gap-4 overflow-hidden`}>
+      <div
+        className={`h-full ${isMobile ? "px-2 py-1" : "px-4"} flex flex-wrap items-center justify-between gap-1.5 md:gap-4 overflow-hidden`}
+      >
         {/* Left: Project Controls */}
         <div className="flex flex-wrap items-center gap-1 md:gap-2 min-w-0">
-          <Select value={selectedProject?.id || ''} onValueChange={onProjectChange}>
+          <Select
+            value={selectedProject?.id || ""}
+            onValueChange={onProjectChange}
+          >
             <SelectTrigger
-              className={`${isMobile ? 'w-[120px]' : 'w-[220px]'} h-9 text-sm font-medium`}
+              className={`${isMobile ? "w-[120px]" : "w-[220px]"} h-9 text-sm font-medium`}
               style={{
-                background: 'var(--studio-surface)',
-                borderColor: 'var(--studio-border-subtle)',
-                color: 'var(--studio-text)',
-                boxShadow: 'var(--studio-shadow-sm), inset 0 1px 0 rgba(255,255,255,0.05)',
+                background: "var(--studio-surface)",
+                borderColor: "var(--studio-border-subtle)",
+                color: "var(--studio-text)",
+                boxShadow:
+                  "var(--studio-shadow-sm), inset 0 1px 0 rgba(255,255,255,0.05)",
               }}
               data-testid="select-project"
             >
@@ -144,18 +155,18 @@ export function StudioTopBar({
             </SelectTrigger>
             <SelectContent
               style={{
-                background: 'var(--studio-surface-elevated)',
-                borderColor: 'var(--studio-border)',
-                boxShadow: 'var(--studio-shadow-lg)',
+                background: "var(--studio-surface-elevated)",
+                borderColor: "var(--studio-border)",
+                boxShadow: "var(--studio-shadow-lg)",
               }}
             >
               {projects.map((project) => (
                 <SelectItem
                   key={project.id}
                   value={project.id}
-                  style={{ color: 'var(--studio-text)' }}
+                  style={{ color: "var(--studio-text)" }}
                 >
-                  {project.title || project.name || 'Untitled'}
+                  {project.title || project.name || "Untitled"}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -167,20 +178,22 @@ export function StudioTopBar({
                 <button
                   className="h-9 w-9 rounded-md flex items-center justify-center transition-all"
                   style={{
-                    background: 'var(--studio-surface)',
-                    color: 'var(--studio-text-muted)',
-                    border: '1px solid var(--studio-border-subtle)',
-                    boxShadow: 'var(--studio-shadow-sm), inset 0 1px 0 rgba(255,255,255,0.05)',
+                    background: "var(--studio-surface)",
+                    color: "var(--studio-text-muted)",
+                    border: "1px solid var(--studio-border-subtle)",
+                    boxShadow:
+                      "var(--studio-shadow-sm), inset 0 1px 0 rgba(255,255,255,0.05)",
                   }}
                   onClick={onOpenProjectHub}
                   data-testid="button-project-hub"
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.background = 'var(--studio-surface-elevated)';
-                    e.currentTarget.style.color = 'var(--studio-accent)';
+                    e.currentTarget.style.background =
+                      "var(--studio-surface-elevated)";
+                    e.currentTarget.style.color = "var(--studio-accent)";
                   }}
                   onMouseLeave={(e) => {
-                    e.currentTarget.style.background = 'var(--studio-surface)';
-                    e.currentTarget.style.color = 'var(--studio-text-muted)';
+                    e.currentTarget.style.background = "var(--studio-surface)";
+                    e.currentTarget.style.color = "var(--studio-text-muted)";
                   }}
                 >
                   <Home className="h-4 w-4" />
@@ -194,20 +207,22 @@ export function StudioTopBar({
                 <button
                   className="h-9 w-9 rounded-md flex items-center justify-center transition-all"
                   style={{
-                    background: 'var(--studio-surface)',
-                    color: 'var(--studio-text-muted)',
-                    border: '1px solid var(--studio-border-subtle)',
-                    boxShadow: 'var(--studio-shadow-sm), inset 0 1px 0 rgba(255,255,255,0.05)',
+                    background: "var(--studio-surface)",
+                    color: "var(--studio-text-muted)",
+                    border: "1px solid var(--studio-border-subtle)",
+                    boxShadow:
+                      "var(--studio-shadow-sm), inset 0 1px 0 rgba(255,255,255,0.05)",
                   }}
                   onClick={() => setShowCreateDialog(true)}
                   data-testid="button-create-project"
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.background = 'var(--studio-surface-elevated)';
-                    e.currentTarget.style.color = 'var(--studio-accent)';
+                    e.currentTarget.style.background =
+                      "var(--studio-surface-elevated)";
+                    e.currentTarget.style.color = "var(--studio-accent)";
                   }}
                   onMouseLeave={(e) => {
-                    e.currentTarget.style.background = 'var(--studio-surface)';
-                    e.currentTarget.style.color = 'var(--studio-text-muted)';
+                    e.currentTarget.style.background = "var(--studio-surface)";
+                    e.currentTarget.style.color = "var(--studio-text-muted)";
                   }}
                 >
                   <Plus className="h-4 w-4" />
@@ -222,31 +237,33 @@ export function StudioTopBar({
                   className="h-9 w-9 rounded-md flex items-center justify-center transition-all"
                   style={{
                     background: selectedProject
-                      ? 'var(--studio-surface)'
-                      : 'var(--studio-bg-medium)',
+                      ? "var(--studio-surface)"
+                      : "var(--studio-bg-medium)",
                     color: selectedProject
-                      ? 'var(--studio-text-muted)'
-                      : 'var(--studio-text-subtle)',
-                    border: '1px solid var(--studio-border-subtle)',
+                      ? "var(--studio-text-muted)"
+                      : "var(--studio-text-subtle)",
+                    border: "1px solid var(--studio-border-subtle)",
                     boxShadow: selectedProject
-                      ? 'var(--studio-shadow-sm), inset 0 1px 0 rgba(255,255,255,0.05)'
-                      : 'none',
+                      ? "var(--studio-shadow-sm), inset 0 1px 0 rgba(255,255,255,0.05)"
+                      : "none",
                     opacity: selectedProject ? 1 : 0.5,
-                    cursor: selectedProject ? 'pointer' : 'not-allowed',
+                    cursor: selectedProject ? "pointer" : "not-allowed",
                   }}
                   onClick={onUploadFile}
                   disabled={!selectedProject}
                   data-testid="button-upload-file"
                   onMouseEnter={(e) => {
                     if (selectedProject) {
-                      e.currentTarget.style.background = 'var(--studio-surface-elevated)';
-                      e.currentTarget.style.color = 'var(--studio-accent)';
+                      e.currentTarget.style.background =
+                        "var(--studio-surface-elevated)";
+                      e.currentTarget.style.color = "var(--studio-accent)";
                     }
                   }}
                   onMouseLeave={(e) => {
                     if (selectedProject) {
-                      e.currentTarget.style.background = 'var(--studio-surface)';
-                      e.currentTarget.style.color = 'var(--studio-text-muted)';
+                      e.currentTarget.style.background =
+                        "var(--studio-surface)";
+                      e.currentTarget.style.color = "var(--studio-text-muted)";
                     }
                   }}
                 >
@@ -263,40 +280,45 @@ export function StudioTopBar({
                   style={{
                     background:
                       selectedProject && !isSaving
-                        ? 'var(--studio-surface)'
-                        : 'var(--studio-bg-medium)',
+                        ? "var(--studio-surface)"
+                        : "var(--studio-bg-medium)",
                     color:
                       selectedProject && !isSaving
-                        ? 'var(--studio-text-muted)'
-                        : 'var(--studio-text-subtle)',
-                    border: '1px solid var(--studio-border-subtle)',
+                        ? "var(--studio-text-muted)"
+                        : "var(--studio-text-subtle)",
+                    border: "1px solid var(--studio-border-subtle)",
                     boxShadow:
                       selectedProject && !isSaving
-                        ? 'var(--studio-shadow-sm), inset 0 1px 0 rgba(255,255,255,0.05)'
-                        : 'none',
+                        ? "var(--studio-shadow-sm), inset 0 1px 0 rgba(255,255,255,0.05)"
+                        : "none",
                     opacity: selectedProject && !isSaving ? 1 : 0.5,
-                    cursor: selectedProject && !isSaving ? 'pointer' : 'not-allowed',
+                    cursor:
+                      selectedProject && !isSaving ? "pointer" : "not-allowed",
                   }}
                   onClick={onSaveProject}
                   disabled={!selectedProject || isSaving}
                   data-testid="button-save-project"
                   onMouseEnter={(e) => {
                     if (selectedProject && !isSaving) {
-                      e.currentTarget.style.background = 'var(--studio-surface-elevated)';
-                      e.currentTarget.style.color = 'var(--studio-accent)';
+                      e.currentTarget.style.background =
+                        "var(--studio-surface-elevated)";
+                      e.currentTarget.style.color = "var(--studio-accent)";
                     }
                   }}
                   onMouseLeave={(e) => {
                     if (selectedProject && !isSaving) {
-                      e.currentTarget.style.background = 'var(--studio-surface)';
-                      e.currentTarget.style.color = 'var(--studio-text-muted)';
+                      e.currentTarget.style.background =
+                        "var(--studio-surface)";
+                      e.currentTarget.style.color = "var(--studio-text-muted)";
                     }
                   }}
                 >
                   <Save className="h-4 w-4" />
                 </button>
               </TooltipTrigger>
-              <TooltipContent>{isSaving ? 'Saving...' : 'Save Project'}</TooltipContent>
+              <TooltipContent>
+                {isSaving ? "Saving..." : "Save Project"}
+              </TooltipContent>
             </Tooltip>
 
             {/* AI Melody Generator Button */}
@@ -306,37 +328,47 @@ export function StudioTopBar({
                   className="h-9 px-3 rounded-md flex items-center justify-center gap-1.5 transition-all"
                   style={{
                     background: selectedProject
-                      ? 'linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%)'
-                      : 'var(--studio-bg-medium)',
-                    color: selectedProject ? '#fff' : 'var(--studio-text-subtle)',
-                    border: '1px solid var(--studio-border-subtle)',
+                      ? "linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%)"
+                      : "var(--studio-bg-medium)",
+                    color: selectedProject
+                      ? "#fff"
+                      : "var(--studio-text-subtle)",
+                    border: "1px solid var(--studio-border-subtle)",
                     boxShadow: selectedProject
-                      ? '0 2px 8px rgba(139, 92, 246, 0.3)'
-                      : 'none',
+                      ? "0 2px 8px rgba(139, 92, 246, 0.3)"
+                      : "none",
                     opacity: selectedProject ? 1 : 0.5,
-                    cursor: selectedProject ? 'pointer' : 'not-allowed',
+                    cursor: selectedProject ? "pointer" : "not-allowed",
                   }}
                   onClick={onOpenAIGenerator}
                   disabled={!selectedProject}
                   data-testid="button-ai-generator"
                   onMouseEnter={(e) => {
                     if (selectedProject) {
-                      e.currentTarget.style.background = 'linear-gradient(135deg, #9b6cf7 0%, #7376f2 100%)';
-                      e.currentTarget.style.boxShadow = '0 4px 12px rgba(139, 92, 246, 0.4)';
+                      e.currentTarget.style.background =
+                        "linear-gradient(135deg, #9b6cf7 0%, #7376f2 100%)";
+                      e.currentTarget.style.boxShadow =
+                        "0 4px 12px rgba(139, 92, 246, 0.4)";
                     }
                   }}
                   onMouseLeave={(e) => {
                     if (selectedProject) {
-                      e.currentTarget.style.background = 'linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%)';
-                      e.currentTarget.style.boxShadow = '0 2px 8px rgba(139, 92, 246, 0.3)';
+                      e.currentTarget.style.background =
+                        "linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%)";
+                      e.currentTarget.style.boxShadow =
+                        "0 2px 8px rgba(139, 92, 246, 0.3)";
                     }
                   }}
                 >
                   <Wand2 className="h-4 w-4" />
-                  <span className="text-xs font-medium hidden lg:inline">AI Generate</span>
+                  <span className="text-xs font-medium hidden lg:inline">
+                    AI Generate
+                  </span>
                 </button>
               </TooltipTrigger>
-              <TooltipContent>AI Melody Generator - Create melodies, beats & instruments</TooltipContent>
+              <TooltipContent>
+                AI Melody Generator - Create melodies, beats & instruments
+              </TooltipContent>
             </Tooltip>
 
             {/* Mastering Suite Button */}
@@ -346,27 +378,36 @@ export function StudioTopBar({
                   <button
                     className="h-9 px-3 rounded-md flex items-center justify-center gap-1.5 transition-all"
                     style={{
-                      background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
-                      color: '#fff',
-                      border: '1px solid var(--studio-border-subtle)',
-                      boxShadow: '0 2px 8px rgba(245, 158, 11, 0.3)',
+                      background:
+                        "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)",
+                      color: "#fff",
+                      border: "1px solid var(--studio-border-subtle)",
+                      boxShadow: "0 2px 8px rgba(245, 158, 11, 0.3)",
                     }}
                     onClick={onOpenMasteringSuite}
                     data-testid="button-mastering-suite"
                     onMouseEnter={(e) => {
-                      e.currentTarget.style.background = 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)';
-                      e.currentTarget.style.boxShadow = '0 4px 12px rgba(245, 158, 11, 0.4)';
+                      e.currentTarget.style.background =
+                        "linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)";
+                      e.currentTarget.style.boxShadow =
+                        "0 4px 12px rgba(245, 158, 11, 0.4)";
                     }}
                     onMouseLeave={(e) => {
-                      e.currentTarget.style.background = 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)';
-                      e.currentTarget.style.boxShadow = '0 2px 8px rgba(245, 158, 11, 0.3)';
+                      e.currentTarget.style.background =
+                        "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)";
+                      e.currentTarget.style.boxShadow =
+                        "0 2px 8px rgba(245, 158, 11, 0.3)";
                     }}
                   >
                     <Disc3 className="h-4 w-4" />
-                    <span className="text-xs font-medium hidden lg:inline">Mastering</span>
+                    <span className="text-xs font-medium hidden lg:inline">
+                      Mastering
+                    </span>
                   </button>
                 </TooltipTrigger>
-                <TooltipContent>Mastering Suite - Master and export your tracks</TooltipContent>
+                <TooltipContent>
+                  Mastering Suite - Master and export your tracks
+                </TooltipContent>
               </Tooltip>
             )}
 
@@ -377,58 +418,76 @@ export function StudioTopBar({
                   <button
                     className="h-9 px-3 rounded-md flex items-center justify-center gap-1.5 transition-all"
                     style={{
-                      background: 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)',
-                      color: '#fff',
-                      border: '1px solid var(--studio-border-subtle)',
-                      boxShadow: '0 2px 8px rgba(34, 197, 94, 0.3)',
+                      background:
+                        "linear-gradient(135deg, #22c55e 0%, #16a34a 100%)",
+                      color: "#fff",
+                      border: "1px solid var(--studio-border-subtle)",
+                      boxShadow: "0 2px 8px rgba(34, 197, 94, 0.3)",
                     }}
                     onClick={onOpenShowMode}
                     data-testid="button-show-mode"
                     onMouseEnter={(e) => {
-                      e.currentTarget.style.background = 'linear-gradient(135deg, #4ade80 0%, #22c55e 100%)';
-                      e.currentTarget.style.boxShadow = '0 4px 12px rgba(34, 197, 94, 0.4)';
+                      e.currentTarget.style.background =
+                        "linear-gradient(135deg, #4ade80 0%, #22c55e 100%)";
+                      e.currentTarget.style.boxShadow =
+                        "0 4px 12px rgba(34, 197, 94, 0.4)";
                     }}
                     onMouseLeave={(e) => {
-                      e.currentTarget.style.background = 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)';
-                      e.currentTarget.style.boxShadow = '0 2px 8px rgba(34, 197, 94, 0.3)';
+                      e.currentTarget.style.background =
+                        "linear-gradient(135deg, #22c55e 0%, #16a34a 100%)";
+                      e.currentTarget.style.boxShadow =
+                        "0 2px 8px rgba(34, 197, 94, 0.3)";
                     }}
                   >
                     <Radio className="h-4 w-4" />
-                    <span className="text-xs font-medium hidden lg:inline">Show Mode</span>
+                    <span className="text-xs font-medium hidden lg:inline">
+                      Show Mode
+                    </span>
                   </button>
                 </TooltipTrigger>
-                <TooltipContent>Show Mode - Live performance environment</TooltipContent>
+                <TooltipContent>
+                  Show Mode - Live performance environment
+                </TooltipContent>
               </Tooltip>
             )}
 
             {/* Undo/Redo Buttons */}
-            <div className="h-6 w-px mx-1" style={{ background: 'var(--studio-border)' }} />
+            <div
+              className="h-6 w-px mx-1"
+              style={{ background: "var(--studio-border)" }}
+            />
 
             <Tooltip>
               <TooltipTrigger asChild>
                 <button
                   className="h-9 w-9 rounded-md flex items-center justify-center transition-all"
                   style={{
-                    background: canUndo ? 'var(--studio-surface)' : 'var(--studio-bg-medium)',
-                    color: canUndo ? 'var(--studio-text-muted)' : 'var(--studio-text-subtle)',
-                    border: '1px solid var(--studio-border-subtle)',
-                    boxShadow: canUndo ? 'var(--studio-shadow-sm)' : 'none',
+                    background: canUndo
+                      ? "var(--studio-surface)"
+                      : "var(--studio-bg-medium)",
+                    color: canUndo
+                      ? "var(--studio-text-muted)"
+                      : "var(--studio-text-subtle)",
+                    border: "1px solid var(--studio-border-subtle)",
+                    boxShadow: canUndo ? "var(--studio-shadow-sm)" : "none",
                     opacity: canUndo ? 1 : 0.5,
-                    cursor: canUndo ? 'pointer' : 'not-allowed',
+                    cursor: canUndo ? "pointer" : "not-allowed",
                   }}
                   onClick={onUndo}
                   disabled={!canUndo}
                   data-testid="button-undo"
                   onMouseEnter={(e) => {
                     if (canUndo) {
-                      e.currentTarget.style.background = 'var(--studio-surface-elevated)';
-                      e.currentTarget.style.color = 'var(--studio-text)';
+                      e.currentTarget.style.background =
+                        "var(--studio-surface-elevated)";
+                      e.currentTarget.style.color = "var(--studio-text)";
                     }
                   }}
                   onMouseLeave={(e) => {
                     if (canUndo) {
-                      e.currentTarget.style.background = 'var(--studio-surface)';
-                      e.currentTarget.style.color = 'var(--studio-text-muted)';
+                      e.currentTarget.style.background =
+                        "var(--studio-surface)";
+                      e.currentTarget.style.color = "var(--studio-text-muted)";
                     }
                   }}
                 >
@@ -443,26 +502,32 @@ export function StudioTopBar({
                 <button
                   className="h-9 w-9 rounded-md flex items-center justify-center transition-all"
                   style={{
-                    background: canRedo ? 'var(--studio-surface)' : 'var(--studio-bg-medium)',
-                    color: canRedo ? 'var(--studio-text-muted)' : 'var(--studio-text-subtle)',
-                    border: '1px solid var(--studio-border-subtle)',
-                    boxShadow: canRedo ? 'var(--studio-shadow-sm)' : 'none',
+                    background: canRedo
+                      ? "var(--studio-surface)"
+                      : "var(--studio-bg-medium)",
+                    color: canRedo
+                      ? "var(--studio-text-muted)"
+                      : "var(--studio-text-subtle)",
+                    border: "1px solid var(--studio-border-subtle)",
+                    boxShadow: canRedo ? "var(--studio-shadow-sm)" : "none",
                     opacity: canRedo ? 1 : 0.5,
-                    cursor: canRedo ? 'pointer' : 'not-allowed',
+                    cursor: canRedo ? "pointer" : "not-allowed",
                   }}
                   onClick={onRedo}
                   disabled={!canRedo}
                   data-testid="button-redo"
                   onMouseEnter={(e) => {
                     if (canRedo) {
-                      e.currentTarget.style.background = 'var(--studio-surface-elevated)';
-                      e.currentTarget.style.color = 'var(--studio-text)';
+                      e.currentTarget.style.background =
+                        "var(--studio-surface-elevated)";
+                      e.currentTarget.style.color = "var(--studio-text)";
                     }
                   }}
                   onMouseLeave={(e) => {
                     if (canRedo) {
-                      e.currentTarget.style.background = 'var(--studio-surface)';
-                      e.currentTarget.style.color = 'var(--studio-text-muted)';
+                      e.currentTarget.style.background =
+                        "var(--studio-surface)";
+                      e.currentTarget.style.color = "var(--studio-text-muted)";
                     }
                   }}
                 >
@@ -473,7 +538,10 @@ export function StudioTopBar({
             </Tooltip>
           </TooltipProvider>
 
-          <div className="h-6 w-px" style={{ background: 'var(--studio-border)' }} />
+          <div
+            className="h-6 w-px"
+            style={{ background: "var(--studio-border)" }}
+          />
         </div>
 
         {/* Center: Tool Selection & Zoom */}
@@ -481,30 +549,37 @@ export function StudioTopBar({
           <TooltipProvider>
             <div
               className="flex items-center gap-1 p-1 rounded-md"
-              style={{ background: 'var(--studio-bg-medium)' }}
+              style={{ background: "var(--studio-bg-medium)" }}
             >
               <Tooltip>
                 <TooltipTrigger asChild>
                   <button
                     className="h-8 w-8 rounded flex items-center justify-center transition-all"
-                    onClick={() => onToolSelect('select')}
+                    onClick={() => onToolSelect("select")}
                     data-testid="button-tool-select"
                     style={{
                       background:
-                        selectedTool === 'select'
-                          ? 'linear-gradient(135deg, var(--studio-accent) 0%, var(--studio-accent-active) 100%)'
-                          : 'transparent',
-                      color: selectedTool === 'select' ? 'white' : 'var(--studio-text-muted)',
-                      boxShadow: selectedTool === 'select' ? 'var(--studio-shadow-sm)' : 'none',
+                        selectedTool === "select"
+                          ? "linear-gradient(135deg, var(--studio-accent) 0%, var(--studio-accent-active) 100%)"
+                          : "transparent",
+                      color:
+                        selectedTool === "select"
+                          ? "white"
+                          : "var(--studio-text-muted)",
+                      boxShadow:
+                        selectedTool === "select"
+                          ? "var(--studio-shadow-sm)"
+                          : "none",
                     }}
                     onMouseEnter={(e) => {
-                      if (selectedTool !== 'select') {
-                        e.currentTarget.style.color = 'var(--studio-text)';
+                      if (selectedTool !== "select") {
+                        e.currentTarget.style.color = "var(--studio-text)";
                       }
                     }}
                     onMouseLeave={(e) => {
-                      if (selectedTool !== 'select') {
-                        e.currentTarget.style.color = 'var(--studio-text-muted)';
+                      if (selectedTool !== "select") {
+                        e.currentTarget.style.color =
+                          "var(--studio-text-muted)";
                       }
                     }}
                   >
@@ -518,24 +593,31 @@ export function StudioTopBar({
                 <TooltipTrigger asChild>
                   <button
                     className="h-8 w-8 rounded flex items-center justify-center transition-all"
-                    onClick={() => onToolSelect('cut')}
+                    onClick={() => onToolSelect("cut")}
                     data-testid="button-tool-cut"
                     style={{
                       background:
-                        selectedTool === 'cut'
-                          ? 'linear-gradient(135deg, var(--studio-accent) 0%, var(--studio-accent-active) 100%)'
-                          : 'transparent',
-                      color: selectedTool === 'cut' ? 'white' : 'var(--studio-text-muted)',
-                      boxShadow: selectedTool === 'cut' ? 'var(--studio-shadow-sm)' : 'none',
+                        selectedTool === "cut"
+                          ? "linear-gradient(135deg, var(--studio-accent) 0%, var(--studio-accent-active) 100%)"
+                          : "transparent",
+                      color:
+                        selectedTool === "cut"
+                          ? "white"
+                          : "var(--studio-text-muted)",
+                      boxShadow:
+                        selectedTool === "cut"
+                          ? "var(--studio-shadow-sm)"
+                          : "none",
                     }}
                     onMouseEnter={(e) => {
-                      if (selectedTool !== 'cut') {
-                        e.currentTarget.style.color = 'var(--studio-text)';
+                      if (selectedTool !== "cut") {
+                        e.currentTarget.style.color = "var(--studio-text)";
                       }
                     }}
                     onMouseLeave={(e) => {
-                      if (selectedTool !== 'cut') {
-                        e.currentTarget.style.color = 'var(--studio-text-muted)';
+                      if (selectedTool !== "cut") {
+                        e.currentTarget.style.color =
+                          "var(--studio-text-muted)";
                       }
                     }}
                   >
@@ -549,24 +631,31 @@ export function StudioTopBar({
                 <TooltipTrigger asChild>
                   <button
                     className="h-8 w-8 rounded flex items-center justify-center transition-all"
-                    onClick={() => onToolSelect('delete')}
+                    onClick={() => onToolSelect("delete")}
                     data-testid="button-tool-delete"
                     style={{
                       background:
-                        selectedTool === 'delete'
-                          ? 'linear-gradient(135deg, var(--studio-accent) 0%, var(--studio-accent-active) 100%)'
-                          : 'transparent',
-                      color: selectedTool === 'delete' ? 'white' : 'var(--studio-text-muted)',
-                      boxShadow: selectedTool === 'delete' ? 'var(--studio-shadow-sm)' : 'none',
+                        selectedTool === "delete"
+                          ? "linear-gradient(135deg, var(--studio-accent) 0%, var(--studio-accent-active) 100%)"
+                          : "transparent",
+                      color:
+                        selectedTool === "delete"
+                          ? "white"
+                          : "var(--studio-text-muted)",
+                      boxShadow:
+                        selectedTool === "delete"
+                          ? "var(--studio-shadow-sm)"
+                          : "none",
                     }}
                     onMouseEnter={(e) => {
-                      if (selectedTool !== 'delete') {
-                        e.currentTarget.style.color = 'var(--studio-text)';
+                      if (selectedTool !== "delete") {
+                        e.currentTarget.style.color = "var(--studio-text)";
                       }
                     }}
                     onMouseLeave={(e) => {
-                      if (selectedTool !== 'delete') {
-                        e.currentTarget.style.color = 'var(--studio-text-muted)';
+                      if (selectedTool !== "delete") {
+                        e.currentTarget.style.color =
+                          "var(--studio-text-muted)";
                       }
                     }}
                   >
@@ -580,7 +669,10 @@ export function StudioTopBar({
             {/* Hide separator and zoom controls on mobile */}
             {!isMobile && (
               <>
-                <div className="h-6 w-px" style={{ background: 'var(--studio-border)' }} />
+                <div
+                  className="h-6 w-px"
+                  style={{ background: "var(--studio-border)" }}
+                />
 
                 {/* Zoom Controls */}
                 <div className="flex items-center gap-1">
@@ -591,18 +683,21 @@ export function StudioTopBar({
                         onClick={onZoomOut}
                         data-testid="button-zoom-out"
                         style={{
-                          background: 'var(--studio-surface)',
-                          color: 'var(--studio-text-muted)',
-                          border: '1px solid var(--studio-border-subtle)',
-                          boxShadow: 'var(--studio-shadow-sm)',
+                          background: "var(--studio-surface)",
+                          color: "var(--studio-text-muted)",
+                          border: "1px solid var(--studio-border-subtle)",
+                          boxShadow: "var(--studio-shadow-sm)",
                         }}
                         onMouseEnter={(e) => {
-                          e.currentTarget.style.background = 'var(--studio-surface-elevated)';
-                          e.currentTarget.style.color = 'var(--studio-text)';
+                          e.currentTarget.style.background =
+                            "var(--studio-surface-elevated)";
+                          e.currentTarget.style.color = "var(--studio-text)";
                         }}
                         onMouseLeave={(e) => {
-                          e.currentTarget.style.background = 'var(--studio-surface)';
-                          e.currentTarget.style.color = 'var(--studio-text-muted)';
+                          e.currentTarget.style.background =
+                            "var(--studio-surface)";
+                          e.currentTarget.style.color =
+                            "var(--studio-text-muted)";
                         }}
                       >
                         <ZoomOut className="h-4 w-4" />
@@ -616,10 +711,10 @@ export function StudioTopBar({
                     onClick={onZoomReset}
                     data-testid="badge-zoom-level"
                     style={{
-                      background: 'var(--studio-surface)',
-                      color: 'var(--studio-text)',
-                      border: '1px solid var(--studio-border-subtle)',
-                      boxShadow: 'var(--studio-shadow-inner)',
+                      background: "var(--studio-surface)",
+                      color: "var(--studio-text)",
+                      border: "1px solid var(--studio-border-subtle)",
+                      boxShadow: "var(--studio-shadow-inner)",
                     }}
                   >
                     {Math.round(zoom * 100)}%
@@ -632,18 +727,21 @@ export function StudioTopBar({
                         onClick={onZoomIn}
                         data-testid="button-zoom-in"
                         style={{
-                          background: 'var(--studio-surface)',
-                          color: 'var(--studio-text-muted)',
-                          border: '1px solid var(--studio-border-subtle)',
-                          boxShadow: 'var(--studio-shadow-sm)',
+                          background: "var(--studio-surface)",
+                          color: "var(--studio-text-muted)",
+                          border: "1px solid var(--studio-border-subtle)",
+                          boxShadow: "var(--studio-shadow-sm)",
                         }}
                         onMouseEnter={(e) => {
-                          e.currentTarget.style.background = 'var(--studio-surface-elevated)';
-                          e.currentTarget.style.color = 'var(--studio-text)';
+                          e.currentTarget.style.background =
+                            "var(--studio-surface-elevated)";
+                          e.currentTarget.style.color = "var(--studio-text)";
                         }}
                         onMouseLeave={(e) => {
-                          e.currentTarget.style.background = 'var(--studio-surface)';
-                          e.currentTarget.style.color = 'var(--studio-text-muted)';
+                          e.currentTarget.style.background =
+                            "var(--studio-surface)";
+                          e.currentTarget.style.color =
+                            "var(--studio-text-muted)";
                         }}
                       >
                         <ZoomIn className="h-4 w-4" />
@@ -661,10 +759,13 @@ export function StudioTopBar({
         {!isMobile && (
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2">
-              <Clock className="h-3.5 w-3.5" style={{ color: 'var(--studio-text-muted)' }} />
+              <Clock
+                className="h-3.5 w-3.5"
+                style={{ color: "var(--studio-text-muted)" }}
+              />
               <span
                 className="text-sm font-medium"
-                style={{ color: 'var(--studio-text)' }}
+                style={{ color: "var(--studio-text)" }}
                 data-testid="text-tempo"
               >
                 {tempo} BPM
@@ -672,7 +773,7 @@ export function StudioTopBar({
             </div>
             <div
               className="text-sm"
-              style={{ color: 'var(--studio-text-muted)' }}
+              style={{ color: "var(--studio-text-muted)" }}
               data-testid="text-time-signature"
             >
               {timeSignature}
@@ -686,11 +787,14 @@ export function StudioTopBar({
           {!isMobile && (
             <>
               <div className="flex items-center gap-2">
-                <Cpu className="h-3.5 w-3.5" style={{ color: 'var(--studio-text-muted)' }} />
+                <Cpu
+                  className="h-3.5 w-3.5"
+                  style={{ color: "var(--studio-text-muted)" }}
+                />
                 <div className="flex items-center gap-1.5">
                   <div
                     className="h-1.5 w-12 rounded-full overflow-hidden"
-                    style={{ backgroundColor: 'var(--studio-bg-deep)' }}
+                    style={{ backgroundColor: "var(--studio-bg-deep)" }}
                   >
                     <div
                       className="h-full transition-all duration-300"
@@ -698,16 +802,16 @@ export function StudioTopBar({
                         width: `${cpuUsage}%`,
                         backgroundColor:
                           cpuUsage > 80
-                            ? '#ef4444'
+                            ? "#ef4444"
                             : cpuUsage > 60
-                              ? '#f59e0b'
-                              : 'var(--studio-accent)',
+                              ? "#f59e0b"
+                              : "var(--studio-accent)",
                       }}
                     />
                   </div>
                   <span
                     className="text-xs font-mono"
-                    style={{ color: 'var(--studio-text-muted)' }}
+                    style={{ color: "var(--studio-text-muted)" }}
                     data-testid="text-cpu-usage"
                   >
                     {Math.round(cpuUsage)}%
@@ -718,7 +822,7 @@ export function StudioTopBar({
               <Separator
                 orientation="vertical"
                 className="h-6"
-                style={{ backgroundColor: 'var(--studio-border)' }}
+                style={{ backgroundColor: "var(--studio-border)" }}
               />
             </>
           )}
@@ -732,7 +836,7 @@ export function StudioTopBar({
                   className="h-8 w-8 p-0"
                   onClick={onShowTutorial}
                   data-testid="button-show-tutorial"
-                  style={{ color: 'var(--studio-text)' }}
+                  style={{ color: "var(--studio-text)" }}
                 >
                   <HelpCircle className="h-4 w-4" />
                 </Button>
@@ -751,13 +855,17 @@ export function StudioTopBar({
                   onClick={onToggleLauncher}
                   data-testid="button-launcher"
                   style={{
-                    color: showLauncher ? 'var(--studio-accent)' : 'var(--studio-text)',
+                    color: showLauncher
+                      ? "var(--studio-accent)"
+                      : "var(--studio-text)",
                   }}
                 >
                   <LayoutGrid className="h-4 w-4" />
                 </Button>
               </TooltipTrigger>
-              <TooltipContent>Session Launcher (Ableton-style clip grid)</TooltipContent>
+              <TooltipContent>
+                Session Launcher (Ableton-style clip grid)
+              </TooltipContent>
             </Tooltip>
           )}
 
@@ -768,7 +876,7 @@ export function StudioTopBar({
               className="h-8 w-8 p-0"
               onClick={onOpenSettings}
               data-testid="button-settings"
-              style={{ color: 'var(--studio-text)' }}
+              style={{ color: "var(--studio-text)" }}
             >
               <Settings className="h-4 w-4" />
             </Button>
@@ -780,17 +888,22 @@ export function StudioTopBar({
       <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
         <DialogContent
           style={{
-            backgroundColor: 'var(--studio-bg-medium)',
-            borderColor: 'var(--studio-border)',
-            color: 'var(--studio-text)',
+            backgroundColor: "var(--studio-bg-medium)",
+            borderColor: "var(--studio-border)",
+            color: "var(--studio-text)",
           }}
         >
           <DialogHeader>
-            <DialogTitle style={{ color: 'var(--studio-text)' }}>Create New Project</DialogTitle>
+            <DialogTitle style={{ color: "var(--studio-text)" }}>
+              Create New Project
+            </DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="project-title" style={{ color: 'var(--studio-text)' }}>
+              <Label
+                htmlFor="project-title"
+                style={{ color: "var(--studio-text)" }}
+              >
                 Project Title
               </Label>
               <Input
@@ -799,15 +912,15 @@ export function StudioTopBar({
                 value={newProjectTitle}
                 onChange={(e) => setNewProjectTitle(e.target.value)}
                 onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
+                  if (e.key === "Enter") {
                     e.preventDefault();
                     handleCreateProject();
                   }
                 }}
                 style={{
-                  backgroundColor: 'var(--studio-bg-deep)',
-                  borderColor: 'var(--studio-border)',
-                  color: 'var(--studio-text)',
+                  backgroundColor: "var(--studio-bg-deep)",
+                  borderColor: "var(--studio-border)",
+                  color: "var(--studio-text)",
                 }}
                 data-testid="input-project-title"
                 autoFocus
@@ -818,7 +931,7 @@ export function StudioTopBar({
             <Button
               variant="ghost"
               onClick={() => setShowCreateDialog(false)}
-              style={{ color: 'var(--studio-text)' }}
+              style={{ color: "var(--studio-text)" }}
               data-testid="button-cancel-create"
             >
               Cancel
@@ -827,8 +940,8 @@ export function StudioTopBar({
               onClick={handleCreateProject}
               disabled={!newProjectTitle.trim()}
               style={{
-                backgroundColor: 'var(--studio-accent)',
-                color: 'white',
+                backgroundColor: "var(--studio-accent)",
+                color: "white",
               }}
               data-testid="button-confirm-create"
             >

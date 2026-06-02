@@ -12,7 +12,7 @@
  *   • Results are cached for 30 s per domain+type to avoid DoH rate limits.
  */
 
-import { logger } from '../logger.js';
+import { logger } from "../logger.js";
 
 // ─── Resolvers ────────────────────────────────────────────────────────────────
 
@@ -24,15 +24,29 @@ interface DoHResolver {
 
 const RESOLVERS: DoHResolver[] = [
   // Cloudflare DoH — most globally distributed, most permissive from server IPs
-  { name: 'Cloudflare',    region: 'Global',      url: 'https://cloudflare-dns.com/dns-query' },
-  { name: 'Cloudflare Alt', region: 'Global',     url: 'https://1.1.1.1/dns-query' },
+  {
+    name: "Cloudflare",
+    region: "Global",
+    url: "https://cloudflare-dns.com/dns-query",
+  },
+  {
+    name: "Cloudflare Alt",
+    region: "Global",
+    url: "https://1.1.1.1/dns-query",
+  },
   // Google DoH — reliable, cloud-friendly
-  { name: 'Google',        region: 'Global',      url: 'https://dns.google/resolve' },
-  { name: 'Google Alt',    region: 'Global',      url: 'https://8.8.8.8/resolve' },
+  { name: "Google", region: "Global", url: "https://dns.google/resolve" },
+  { name: "Google Alt", region: "Global", url: "https://8.8.8.8/resolve" },
 ];
 
 const DNS_TYPE_NUMS: Record<string, number> = {
-  A: 1, NS: 2, CNAME: 5, MX: 15, TXT: 16, AAAA: 28, CAA: 257,
+  A: 1,
+  NS: 2,
+  CNAME: 5,
+  MX: 15,
+  TXT: 16,
+  AAAA: 28,
+  CAA: 257,
 };
 
 // ─── Simple 30-second cache ────────────────────────────────────────────────────
@@ -87,39 +101,55 @@ async function queryResolver(
     const tid = setTimeout(() => controller.abort(), timeoutMs);
 
     const resp = await fetch(url, {
-      headers: { Accept: 'application/dns-json' },
+      headers: { Accept: "application/dns-json" },
       signal: controller.signal,
     });
     clearTimeout(tid);
 
     if (!resp.ok) {
       return {
-        resolver: resolver.name, region: resolver.region, propagated: false,
-        values: [], latencyMs: Date.now() - start, error: `HTTP ${resp.status}`,
+        resolver: resolver.name,
+        region: resolver.region,
+        propagated: false,
+        values: [],
+        latencyMs: Date.now() - start,
+        error: `HTTP ${resp.status}`,
       };
     }
 
-    const data = await resp.json() as { Answer?: Array<{ type: number; data: string }>; Status: number };
+    const data = (await resp.json()) as {
+      Answer?: Array<{ type: number; data: string }>;
+      Status: number;
+    };
     const values = (data.Answer || [])
-      .filter(a => a.type === typeNum)
-      .map(a => a.data.replace(/^"|"$/g, '').trim());
+      .filter((a) => a.type === typeNum)
+      .map((a) => a.data.replace(/^"|"$/g, "").trim());
 
     const propagated = expectedValue
-      ? values.some(v =>
-          v.toLowerCase().replace(/\.$/, '') === expectedValue.toLowerCase().replace(/\.$/, '') ||
-          v.includes(expectedValue)
+      ? values.some(
+          (v) =>
+            v.toLowerCase().replace(/\.$/, "") ===
+              expectedValue.toLowerCase().replace(/\.$/, "") ||
+            v.includes(expectedValue),
         )
       : values.length > 0;
 
     return {
-      resolver: resolver.name, region: resolver.region, propagated,
-      values, latencyMs: Date.now() - start,
+      resolver: resolver.name,
+      region: resolver.region,
+      propagated,
+      values,
+      latencyMs: Date.now() - start,
     };
   } catch (err) {
     return {
-      resolver: resolver.name, region: resolver.region, propagated: false,
-      values: [], latencyMs: Date.now() - start,
-      error: err?.name === 'AbortError' ? 'timeout' : (err?.message ?? 'unknown'),
+      resolver: resolver.name,
+      region: resolver.region,
+      propagated: false,
+      values: [],
+      latencyMs: Date.now() - start,
+      error:
+        err?.name === "AbortError" ? "timeout" : (err?.message ?? "unknown"),
     };
   }
 }
@@ -144,7 +174,7 @@ export async function checkPropagation(
   timeoutMs = 4000,
 ): Promise<PropagationResult> {
   const upperType = type.toUpperCase();
-  const cacheKey = `${domain}:${upperType}:${expected ?? '*'}`;
+  const cacheKey = `${domain}:${upperType}:${expected ?? "*"}`;
 
   // Serve from cache if fresh
   const cached = cache.get(cacheKey);
@@ -158,10 +188,12 @@ export async function checkPropagation(
   }
 
   const results = await Promise.all(
-    RESOLVERS.map(r => queryResolver(r, domain, typeNum, upperType, expected, timeoutMs)),
+    RESOLVERS.map((r) =>
+      queryResolver(r, domain, typeNum, upperType, expected, timeoutMs),
+    ),
   );
 
-  const propagatedCount = results.filter(r => r.propagated).length;
+  const propagatedCount = results.filter((r) => r.propagated).length;
   const result: PropagationResult = {
     domain,
     type: upperType,
@@ -205,9 +237,9 @@ export async function checkDomainSetupPropagation(
 }> {
   const cnameTarget = `${storefrontId}.${baseDomain}`;
   const [ns, a, wwwCname] = await Promise.all([
-    checkPropagation(domain, 'NS', ns1),
-    checkPropagation(domain, 'A', platformIp),
-    checkPropagation(`www.${domain}`, 'CNAME', cnameTarget),
+    checkPropagation(domain, "NS", ns1),
+    checkPropagation(domain, "A", platformIp),
+    checkPropagation(`www.${domain}`, "CNAME", cnameTarget),
   ]);
 
   // Setup is complete if NS delegation OR (A record AND www CNAME) are propagated

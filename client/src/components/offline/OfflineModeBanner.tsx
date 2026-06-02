@@ -1,9 +1,9 @@
-import { WifiOff, Check, X, Info } from 'lucide-react';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
-import { useOfflineStatus } from '@/hooks/useOfflineStatus';
-import { useOfflineCapable } from '@/hooks/useOfflineCapable';
+import { WifiOff, Check, X, Info } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+import { useOfflineStatus } from "@/hooks/useOfflineStatus";
+import { useOfflineCapable } from "@/hooks/useOfflineCapable";
 
 interface OfflineModeBannerProps {
   className?: string;
@@ -12,14 +12,14 @@ interface OfflineModeBannerProps {
 }
 
 const OFFLINE_CAPABILITIES = [
-  { feature: 'Edit projects', available: true },
-  { feature: 'Play audio', available: true },
-  { feature: 'Save drafts', available: true },
-  { feature: 'View cached analytics', available: true },
-  { feature: 'AI features', available: false },
-  { feature: 'Distribution', available: false },
-  { feature: 'Social posting', available: false },
-  { feature: 'Marketplace', available: false },
+  { feature: "Edit projects", available: true },
+  { feature: "Play audio", available: true },
+  { feature: "Save drafts", available: true },
+  { feature: "View cached analytics", available: true },
+  { feature: "AI features", available: false },
+  { feature: "Distribution", available: false },
+  { feature: "Social posting", available: false },
+  { feature: "Marketplace", available: false },
 ];
 
 export function OfflineModeBanner({
@@ -35,13 +35,21 @@ export function OfflineModeBanner({
   return (
     <Alert
       variant="destructive"
-      className={cn('border-yellow-500 bg-yellow-50 dark:bg-yellow-950/20', className)}
+      className={cn(
+        "border-yellow-500 bg-yellow-50 dark:bg-yellow-950/20",
+        className,
+      )}
     >
       <WifiOff className="h-4 w-4" />
       <AlertTitle className="flex items-center justify-between">
         <span>You're offline</span>
         {onDismiss && (
-          <Button variant="ghost" size="icon" className="h-6 w-6" onClick={onDismiss}>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-6 w-6"
+            onClick={onDismiss}
+          >
             <X className="h-4 w-4" />
           </Button>
         )}
@@ -49,7 +57,8 @@ export function OfflineModeBanner({
       <AlertDescription>
         <p className="mb-3">
           Don't worry! Your work is being saved locally.
-          {pendingCount > 0 && ` ${pendingCount} changes will sync when you're back online.`}
+          {pendingCount > 0 &&
+            ` ${pendingCount} changes will sync when you're back online.`}
         </p>
 
         {showCapabilities && (
@@ -63,8 +72,10 @@ export function OfflineModeBanner({
                 <div
                   key={feature}
                   className={cn(
-                    'flex items-center gap-1',
-                    available ? 'text-green-600 dark:text-green-400' : 'text-muted-foreground'
+                    "flex items-center gap-1",
+                    available
+                      ? "text-green-600 dark:text-green-400"
+                      : "text-muted-foreground",
                   )}
                 >
                   {available ? (

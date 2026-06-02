@@ -31,28 +31,30 @@ export default {
     const originalHost = url.hostname; // e.g. b-lawzmusic.max-booster.com
 
     // Rewrite to the main origin — the only host with a Replit TLS cert.
-    url.hostname = 'max-booster.com';
+    url.hostname = "max-booster.com";
 
     // Build headers: preserve everything the browser sent, then inject
     // routing metadata so the Express app can resolve the storefront.
     const headers = new Headers(request.headers);
-    headers.set('X-Forwarded-Host', originalHost);
-    headers.set('X-Forwarded-Proto', 'https');
+    headers.set("X-Forwarded-Host", originalHost);
+    headers.set("X-Forwarded-Proto", "https");
 
     // Propagate the real client IP from the outer Cloudflare edge so that
     // the app's rate-limiter and audit logger see the correct address.
-    const cfIp = request.headers.get('CF-Connecting-IP');
-    if (cfIp) headers.set('CF-Connecting-IP', cfIp);
-    const cfRay = request.headers.get('CF-Ray');
-    if (cfRay) headers.set('CF-Ray', cfRay);
+    const cfIp = request.headers.get("CF-Connecting-IP");
+    if (cfIp) headers.set("CF-Connecting-IP", cfIp);
+    const cfRay = request.headers.get("CF-Ray");
+    if (cfRay) headers.set("CF-Ray", cfRay);
 
-    const hasBody = !['GET', 'HEAD', 'OPTIONS'].includes(request.method.toUpperCase());
+    const hasBody = !["GET", "HEAD", "OPTIONS"].includes(
+      request.method.toUpperCase(),
+    );
 
     const originRequest = new Request(url.toString(), {
       method: request.method,
       headers,
       body: hasBody ? request.body : null,
-      redirect: 'manual',
+      redirect: "manual",
     });
 
     try {
@@ -64,8 +66,11 @@ export default {
       return response;
     } catch (err) {
       return new Response(
-        JSON.stringify({ error: 'Upstream connection failed', detail: String(err) }),
-        { status: 502, headers: { 'Content-Type': 'application/json' } }
+        JSON.stringify({
+          error: "Upstream connection failed",
+          detail: String(err),
+        }),
+        { status: 502, headers: { "Content-Type": "application/json" } },
       );
     }
   },

@@ -1,5 +1,5 @@
-import { useState, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useState, useCallback } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   History,
   Clock,
@@ -15,11 +15,11 @@ import {
   Loader2,
   Cloud,
   CloudOff,
-} from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { ScrollArea } from '@/components/ui/scroll-area';
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Dialog,
   DialogContent,
@@ -27,7 +27,7 @@ import {
   DialogTitle,
   DialogFooter,
   DialogDescription,
-} from '@/components/ui/dialog';
+} from "@/components/ui/dialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -37,17 +37,17 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
-import { cn } from '@/lib/utils';
-import { useToast } from '@/hooks/use-toast';
+} from "@/components/ui/alert-dialog";
+import { cn } from "@/lib/utils";
+import { useToast } from "@/hooks/use-toast";
 
 export type VersionOutcomeType =
-  | 'new_version_created'
-  | 'version_restored'
-  | 'version_compared'
-  | 'version_deleted'
-  | 'auto_save_completed'
-  | 'unsaved_changes_warning';
+  | "new_version_created"
+  | "version_restored"
+  | "version_compared"
+  | "version_deleted"
+  | "auto_save_completed"
+  | "unsaved_changes_warning";
 
 export interface Version {
   id: string;
@@ -77,7 +77,10 @@ interface VersionHistoryProps {
   hasUnsavedChanges?: boolean;
   lastAutoSave?: Date;
   onRestore: (versionId: string) => Promise<void>;
-  onCompare: (versionAId: string, versionBId: string) => Promise<VersionComparison>;
+  onCompare: (
+    versionAId: string,
+    versionBId: string,
+  ) => Promise<VersionComparison>;
   onDelete: (versionId: string) => Promise<void>;
   onSaveVersion: (name?: string, description?: string) => Promise<void>;
   onDownload?: (versionId: string) => Promise<void>;
@@ -105,34 +108,41 @@ export function VersionHistory({
   const [isLoading, setIsLoading] = useState(false);
   const [selectedVersion, setSelectedVersion] = useState<Version | null>(null);
   const [compareMode, setCompareMode] = useState(false);
-  const [compareVersions, setCompareVersions] = useState<[string | null, string | null]>([null, null]);
+  const [compareVersions, setCompareVersions] = useState<
+    [string | null, string | null]
+  >([null, null]);
   const [comparison, setComparison] = useState<VersionComparison | null>(null);
   const [showCompareDialog, setShowCompareDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [versionToDelete, setVersionToDelete] = useState<Version | null>(null);
   const [showUnsavedWarning, setShowUnsavedWarning] = useState(false);
-  const [pendingAction, setPendingAction] = useState<(() => Promise<void>) | null>(null);
+  const [pendingAction, setPendingAction] = useState<
+    (() => Promise<void>) | null
+  >(null);
 
-  const handleRestore = useCallback(async (version: Version) => {
-    if (hasUnsavedChanges) {
-      setShowUnsavedWarning(true);
-      setPendingAction(() => async () => {
-        await performRestore(version);
-      });
-      onOutcome?.('unsaved_changes_warning', { versionId: version.id });
-      return;
-    }
-    
-    await performRestore(version);
-  }, [hasUnsavedChanges, onOutcome]);
+  const handleRestore = useCallback(
+    async (version: Version) => {
+      if (hasUnsavedChanges) {
+        setShowUnsavedWarning(true);
+        setPendingAction(() => async () => {
+          await performRestore(version);
+        });
+        onOutcome?.("unsaved_changes_warning", { versionId: version.id });
+        return;
+      }
+
+      await performRestore(version);
+    },
+    [hasUnsavedChanges, onOutcome],
+  );
 
   const performRestore = async (version: Version) => {
     setIsLoading(true);
     try {
       await onRestore(version.id);
-      
+
       toast({
-        title: 'Version Restored',
+        title: "Version Restored",
         description: (
           <div className="flex items-center gap-2">
             <RotateCcw className="w-4 h-4 text-green-400" />
@@ -140,13 +150,16 @@ export function VersionHistory({
           </div>
         ),
       });
-      
-      onOutcome?.('version_restored', { versionId: version.id, versionName: version.name });
+
+      onOutcome?.("version_restored", {
+        versionId: version.id,
+        versionName: version.name,
+      });
     } catch (error) {
       toast({
-        title: 'Restore Failed',
-        description: 'Failed to restore version. Please try again.',
-        variant: 'destructive',
+        title: "Restore Failed",
+        description: "Failed to restore version. Please try again.",
+        variant: "destructive",
       });
     } finally {
       setIsLoading(false);
@@ -155,22 +168,22 @@ export function VersionHistory({
 
   const handleCompare = useCallback(async () => {
     if (!compareVersions[0] || !compareVersions[1]) return;
-    
+
     setIsLoading(true);
     try {
       const result = await onCompare(compareVersions[0], compareVersions[1]);
       setComparison(result);
       setShowCompareDialog(true);
-      
-      onOutcome?.('version_compared', {
+
+      onOutcome?.("version_compared", {
         versionAId: compareVersions[0],
         versionBId: compareVersions[1],
       });
     } catch (error) {
       toast({
-        title: 'Compare Failed',
-        description: 'Failed to compare versions. Please try again.',
-        variant: 'destructive',
+        title: "Compare Failed",
+        description: "Failed to compare versions. Please try again.",
+        variant: "destructive",
       });
     } finally {
       setIsLoading(false);
@@ -179,24 +192,24 @@ export function VersionHistory({
 
   const handleDelete = useCallback(async () => {
     if (!versionToDelete) return;
-    
+
     setIsLoading(true);
     try {
       await onDelete(versionToDelete.id);
-      
+
       toast({
-        title: 'Version Deleted',
+        title: "Version Deleted",
         description: `${versionToDelete.name} has been deleted`,
       });
-      
-      onOutcome?.('version_deleted', { versionId: versionToDelete.id });
+
+      onOutcome?.("version_deleted", { versionId: versionToDelete.id });
       setShowDeleteDialog(false);
       setVersionToDelete(null);
     } catch (error) {
       toast({
-        title: 'Delete Failed',
-        description: 'Failed to delete version. Please try again.',
-        variant: 'destructive',
+        title: "Delete Failed",
+        description: "Failed to delete version. Please try again.",
+        variant: "destructive",
       });
     } finally {
       setIsLoading(false);
@@ -207,9 +220,9 @@ export function VersionHistory({
     setIsLoading(true);
     try {
       await onSaveVersion();
-      
+
       toast({
-        title: 'Version Saved',
+        title: "Version Saved",
         description: (
           <div className="flex items-center gap-2">
             <Save className="w-4 h-4 text-green-400" />
@@ -217,13 +230,13 @@ export function VersionHistory({
           </div>
         ),
       });
-      
-      onOutcome?.('new_version_created');
+
+      onOutcome?.("new_version_created");
     } catch (error) {
       toast({
-        title: 'Save Failed',
-        description: 'Failed to save version. Please try again.',
-        variant: 'destructive',
+        title: "Save Failed",
+        description: "Failed to save version. Please try again.",
+        variant: "destructive",
       });
     } finally {
       setIsLoading(false);
@@ -248,8 +261,8 @@ export function VersionHistory({
     const now = new Date();
     const diff = now.getTime() - date.getTime();
     const minutes = Math.floor(diff / 60000);
-    
-    if (minutes < 1) return 'Just now';
+
+    if (minutes < 1) return "Just now";
     if (minutes < 60) return `${minutes}m ago`;
     const hours = Math.floor(minutes / 60);
     if (hours < 24) return `${hours}h ago`;
@@ -257,14 +270,16 @@ export function VersionHistory({
   };
 
   const formatSize = (bytes?: number) => {
-    if (!bytes) return '';
+    if (!bytes) return "";
     const kb = bytes / 1024;
     if (kb < 1024) return `${kb.toFixed(1)} KB`;
     return `${(kb / 1024).toFixed(1)} MB`;
   };
 
   return (
-    <div className={cn("bg-zinc-950 rounded-lg border border-zinc-800", className)}>
+    <div
+      className={cn("bg-zinc-950 rounded-lg border border-zinc-800", className)}
+    >
       <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-800">
         <div className="flex items-center gap-2">
           <History className="w-4 h-4 text-violet-400" />
@@ -276,12 +291,15 @@ export function VersionHistory({
 
         <div className="flex items-center gap-2">
           {hasUnsavedChanges && (
-            <Badge variant="outline" className="text-amber-400 border-amber-400/30">
+            <Badge
+              variant="outline"
+              className="text-amber-400 border-amber-400/30"
+            >
               <AlertTriangle className="w-3 h-3 mr-1" />
               Unsaved
             </Badge>
           )}
-          
+
           {lastAutoSave && (
             <span className="text-xs text-zinc-500 flex items-center gap-1">
               <Cloud className="w-3 h-3" />
@@ -293,17 +311,15 @@ export function VersionHistory({
             variant="outline"
             size="sm"
             onClick={() => setCompareMode(!compareMode)}
-            className={cn(compareMode && "bg-violet-500/20 border-violet-500/50")}
+            className={cn(
+              compareMode && "bg-violet-500/20 border-violet-500/50",
+            )}
           >
             <GitCompare className="w-4 h-4 mr-1" />
             Compare
           </Button>
 
-          <Button
-            size="sm"
-            onClick={handleSaveVersion}
-            disabled={isLoading}
-          >
+          <Button size="sm" onClick={handleSaveVersion} disabled={isLoading}>
             {isLoading ? (
               <Loader2 className="w-4 h-4 mr-1 animate-spin" />
             ) : (
@@ -317,10 +333,15 @@ export function VersionHistory({
       {compareMode && compareVersions[0] && compareVersions[1] && (
         <div className="px-4 py-2 bg-violet-500/10 border-b border-zinc-800 flex items-center justify-between">
           <span className="text-xs text-violet-400">
-            Comparing {versions.find(v => v.id === compareVersions[0])?.name} with {versions.find(v => v.id === compareVersions[1])?.name}
+            Comparing {versions.find((v) => v.id === compareVersions[0])?.name}{" "}
+            with {versions.find((v) => v.id === compareVersions[1])?.name}
           </span>
           <Button size="sm" onClick={handleCompare} disabled={isLoading}>
-            {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'View Diff'}
+            {isLoading ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              "View Diff"
+            )}
           </Button>
         </div>
       )}
@@ -330,7 +351,8 @@ export function VersionHistory({
           <AnimatePresence mode="popLayout">
             {versions.map((version, index) => {
               const isSelected = compareVersions.includes(version.id);
-              const isCurrent = version.isCurrent || version.id === currentVersionId;
+              const isCurrent =
+                version.isCurrent || version.id === currentVersionId;
 
               return (
                 <motion.div
@@ -341,27 +363,35 @@ export function VersionHistory({
                   exit={{ opacity: 0, y: 10 }}
                   className={cn(
                     "relative flex items-start gap-3 p-3 rounded-lg transition-colors",
-                    isCurrent ? "bg-green-500/10 border border-green-500/30" : "hover:bg-zinc-900",
-                    compareMode && isSelected && "ring-2 ring-violet-500"
+                    isCurrent
+                      ? "bg-green-500/10 border border-green-500/30"
+                      : "hover:bg-zinc-900",
+                    compareMode && isSelected && "ring-2 ring-violet-500",
                   )}
                 >
                   <div className="flex flex-col items-center">
-                    <div className={cn(
-                      "w-3 h-3 rounded-full border-2",
-                      isCurrent 
-                        ? "bg-green-500 border-green-400" 
-                        : version.isAutoSave
-                          ? "bg-blue-500/50 border-blue-400/50"
-                          : "bg-zinc-700 border-zinc-600"
-                    )} />
+                    <div
+                      className={cn(
+                        "w-3 h-3 rounded-full border-2",
+                        isCurrent
+                          ? "bg-green-500 border-green-400"
+                          : version.isAutoSave
+                            ? "bg-blue-500/50 border-blue-400/50"
+                            : "bg-zinc-700 border-zinc-600",
+                      )}
+                    />
                     {index < versions.length - 1 && (
                       <div className="w-0.5 flex-1 bg-zinc-800 mt-1" />
                     )}
                   </div>
 
-                  <div 
+                  <div
                     className="flex-1 min-w-0 cursor-pointer"
-                    onClick={() => compareMode ? toggleCompareSelection(version.id) : setSelectedVersion(version)}
+                    onClick={() =>
+                      compareMode
+                        ? toggleCompareSelection(version.id)
+                        : setSelectedVersion(version)
+                    }
                   >
                     <div className="flex items-center gap-2">
                       <span className="text-sm font-medium truncate">
@@ -373,7 +403,10 @@ export function VersionHistory({
                         </Badge>
                       )}
                       {version.isAutoSave && (
-                        <Badge variant="outline" className="text-[10px] text-blue-400 border-blue-400/30">
+                        <Badge
+                          variant="outline"
+                          className="text-[10px] text-blue-400 border-blue-400/30"
+                        >
                           Auto-save
                         </Badge>
                       )}
@@ -397,7 +430,9 @@ export function VersionHistory({
                       {version.size && (
                         <>
                           <span className="text-xs text-zinc-600">•</span>
-                          <span className="text-xs text-zinc-500">{formatSize(version.size)}</span>
+                          <span className="text-xs text-zinc-500">
+                            {formatSize(version.size)}
+                          </span>
                         </>
                       )}
                     </div>
@@ -459,12 +494,14 @@ export function VersionHistory({
                   )}
 
                   {compareMode && (
-                    <div className={cn(
-                      "w-6 h-6 rounded-full border-2 flex items-center justify-center",
-                      isSelected 
-                        ? "bg-violet-500 border-violet-400" 
-                        : "border-zinc-600"
-                    )}>
+                    <div
+                      className={cn(
+                        "w-6 h-6 rounded-full border-2 flex items-center justify-center",
+                        isSelected
+                          ? "bg-violet-500 border-violet-400"
+                          : "border-zinc-600",
+                      )}
+                    >
                       {isSelected && <Check className="w-4 h-4" />}
                     </div>
                   )}
@@ -484,7 +521,8 @@ export function VersionHistory({
             </DialogTitle>
             {comparison && (
               <DialogDescription>
-                Comparing {comparison.versionA.name} with {comparison.versionB.name}
+                Comparing {comparison.versionA.name} with{" "}
+                {comparison.versionB.name}
               </DialogDescription>
             )}
           </DialogHeader>
@@ -512,7 +550,10 @@ export function VersionHistory({
           )}
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowCompareDialog(false)}>
+            <Button
+              variant="outline"
+              onClick={() => setShowCompareDialog(false)}
+            >
               Close
             </Button>
           </DialogFooter>
@@ -527,7 +568,8 @@ export function VersionHistory({
               Delete Version
             </AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete "{versionToDelete?.name}"? This action cannot be undone.
+              Are you sure you want to delete "{versionToDelete?.name}"? This
+              action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -536,13 +578,20 @@ export function VersionHistory({
               onClick={handleDelete}
               className="bg-red-600 hover:bg-red-700"
             >
-              {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Delete'}
+              {isLoading ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                "Delete"
+              )}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
 
-      <AlertDialog open={showUnsavedWarning} onOpenChange={setShowUnsavedWarning}>
+      <AlertDialog
+        open={showUnsavedWarning}
+        onOpenChange={setShowUnsavedWarning}
+      >
         <AlertDialogContent className="bg-zinc-950 border-zinc-800">
           <AlertDialogHeader>
             <AlertDialogTitle className="flex items-center gap-2 text-amber-400">
@@ -550,7 +599,8 @@ export function VersionHistory({
               Unsaved Changes
             </AlertDialogTitle>
             <AlertDialogDescription>
-              You have unsaved changes. Restoring this version will discard your current changes.
+              You have unsaved changes. Restoring this version will discard your
+              current changes.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

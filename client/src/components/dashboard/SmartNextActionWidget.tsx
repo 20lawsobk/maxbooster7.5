@@ -1,13 +1,13 @@
-import React, { useState, useEffect } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useLocation } from 'wouter';
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Skeleton } from '@/components/ui/skeleton';
-import { useToast } from '@/hooks/use-toast';
-import { apiRequest } from '@/lib/queryClient';
-import { logger } from '@/lib/logger';
+import React, { useState, useEffect } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useLocation } from "wouter";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
+import { logger } from "@/lib/logger";
 import {
   Music,
   Upload,
@@ -20,7 +20,7 @@ import {
   ArrowRight,
   Lightbulb,
   TrendingUp,
-} from 'lucide-react';
+} from "lucide-react";
 
 const iconMap = {
   Music,
@@ -35,19 +35,19 @@ const iconMap = {
 
 interface NextActionRecommendation {
   action:
-    | 'create_project'
-    | 'add_tracks'
-    | 'distribute'
-    | 'promote_social'
-    | 'launch_ads'
-    | 'check_analytics';
+    | "create_project"
+    | "add_tracks"
+    | "distribute"
+    | "promote_social"
+    | "launch_ads"
+    | "check_analytics";
   title: string;
   description: string;
   ctaText: string;
   ctaLink: string;
   reason: string;
   icon: keyof typeof iconMap;
-  priority: 'high' | 'medium' | 'low';
+  priority: "high" | "medium" | "low";
 }
 
 export function SmartNextActionWidget() {
@@ -55,12 +55,12 @@ export function SmartNextActionWidget() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [isDismissed, setIsDismissed] = useState(() => {
-    return localStorage.getItem('smartNextActionDismissed') === 'true';
+    return localStorage.getItem("smartNextActionDismissed") === "true";
   });
 
   // Check if user is authenticated first
   const { data: authUser } = useQuery({
-    queryKey: ['/api/auth/me'],
+    queryKey: ["/api/auth/me"],
     staleTime: 5 * 60 * 1000,
     retry: false, // Don't retry auth check
   });
@@ -71,7 +71,7 @@ export function SmartNextActionWidget() {
     error,
     refetch,
   } = useQuery<NextActionRecommendation>({
-    queryKey: ['/api/dashboard/next-action'],
+    queryKey: ["/api/dashboard/next-action"],
     enabled: !isDismissed && !!authUser, // Only fetch if not dismissed AND authenticated
     staleTime: 5 * 60 * 1000,
     retry: false, // No automatic retries - user can retry manually if needed
@@ -80,12 +80,12 @@ export function SmartNextActionWidget() {
   const trackImpressionMutation = useMutation({
     mutationFn: async (action: string) => {
       try {
-        await apiRequest('POST', '/api/analytics/track-event', {
-          eventType: 'smart_next_action_view',
+        await apiRequest("POST", "/api/analytics/track-event", {
+          eventType: "smart_next_action_view",
           eventData: { action },
         });
       } catch (error: unknown) {
-        logger.error('Failed to track impression:', error);
+        logger.error("Failed to track impression:", error);
       }
     },
   });
@@ -93,12 +93,12 @@ export function SmartNextActionWidget() {
   const trackClickMutation = useMutation({
     mutationFn: async (action: string) => {
       try {
-        await apiRequest('POST', '/api/analytics/track-event', {
-          eventType: 'smart_next_action_click',
+        await apiRequest("POST", "/api/analytics/track-event", {
+          eventType: "smart_next_action_click",
           eventData: { action },
         });
       } catch (error: unknown) {
-        logger.error('Failed to track click:', error);
+        logger.error("Failed to track click:", error);
       }
     },
   });
@@ -111,10 +111,10 @@ export function SmartNextActionWidget() {
 
   const handleDismiss = () => {
     setIsDismissed(true);
-    localStorage.setItem('smartNextActionDismissed', 'true');
+    localStorage.setItem("smartNextActionDismissed", "true");
     toast({
-      title: 'Widget Dismissed',
-      description: 'You can clear browser data to show it again.',
+      title: "Widget Dismissed",
+      description: "You can clear browser data to show it again.",
     });
   };
 
@@ -150,7 +150,7 @@ export function SmartNextActionWidget() {
   if (error || !recommendation) {
     // Log error for debugging but don't show to user
     if (error) {
-      logger.debug('SmartNextActionWidget error:', error);
+      logger.debug("SmartNextActionWidget error:", error);
     }
     return null;
   }
@@ -158,27 +158,28 @@ export function SmartNextActionWidget() {
   const Icon = iconMap[recommendation.icon] || Sparkles;
   const priorityColors = {
     high: {
-      gradient: 'from-red-500 via-orange-500 to-yellow-500',
-      bg: 'bg-gradient-to-br from-red-50 via-orange-50 to-yellow-50 dark:from-red-950/20 dark:via-orange-950/20 dark:to-yellow-950/20',
-      border: 'border-red-200 dark:border-red-800',
-      badge: 'bg-red-100 text-red-800 border-red-300',
-      button: 'bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-700 hover:to-orange-700',
+      gradient: "from-red-500 via-orange-500 to-yellow-500",
+      bg: "bg-gradient-to-br from-red-50 via-orange-50 to-yellow-50 dark:from-red-950/20 dark:via-orange-950/20 dark:to-yellow-950/20",
+      border: "border-red-200 dark:border-red-800",
+      badge: "bg-red-100 text-red-800 border-red-300",
+      button:
+        "bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-700 hover:to-orange-700",
     },
     medium: {
-      gradient: 'from-blue-500 via-purple-500 to-pink-500',
-      bg: 'bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 dark:from-blue-950/20 dark:via-purple-950/20 dark:to-pink-950/20',
-      border: 'border-blue-200 dark:border-blue-800',
-      badge: 'bg-blue-100 text-blue-800 border-blue-300',
+      gradient: "from-blue-500 via-purple-500 to-pink-500",
+      bg: "bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 dark:from-blue-950/20 dark:via-purple-950/20 dark:to-pink-950/20",
+      border: "border-blue-200 dark:border-blue-800",
+      badge: "bg-blue-100 text-blue-800 border-blue-300",
       button:
-        'bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700',
+        "bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700",
     },
     low: {
-      gradient: 'from-green-500 via-emerald-500 to-teal-500',
-      bg: 'bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 dark:from-green-950/20 dark:via-emerald-950/20 dark:to-teal-950/20',
-      border: 'border-green-200 dark:border-green-800',
-      badge: 'bg-green-100 text-green-800 border-green-300',
+      gradient: "from-green-500 via-emerald-500 to-teal-500",
+      bg: "bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 dark:from-green-950/20 dark:via-emerald-950/20 dark:to-teal-950/20",
+      border: "border-green-200 dark:border-green-800",
+      badge: "bg-green-100 text-green-800 border-green-300",
       button:
-        'bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700',
+        "bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700",
     },
   };
 
@@ -191,14 +192,18 @@ export function SmartNextActionWidget() {
       aria-label="Smart next action recommendation"
     >
       <div className="absolute top-0 left-0 right-0 h-1.5">
-        <div className={`h-full bg-gradient-to-r ${colors.gradient} animate-pulse`} />
+        <div
+          className={`h-full bg-gradient-to-r ${colors.gradient} animate-pulse`}
+        />
       </div>
 
       <CardContent className="p-6 pt-8">
         <div className="flex items-start justify-between gap-4">
           <div className="flex-1 space-y-4">
             <div className="flex items-center gap-3">
-              <div className={`p-3 rounded-full bg-gradient-to-r ${colors.gradient}`}>
+              <div
+                className={`p-3 rounded-full bg-gradient-to-r ${colors.gradient}`}
+              >
                 <Icon className="w-6 h-6 text-white" aria-hidden="true" />
               </div>
               <div>
@@ -210,14 +215,16 @@ export function SmartNextActionWidget() {
                     className={colors.badge}
                     aria-label={`Priority: ${recommendation.priority}`}
                   >
-                    {recommendation.priority === 'high'
-                      ? '⚡ High Priority'
-                      : recommendation.priority === 'medium'
-                        ? '📌 Recommended'
-                        : '💡 Suggested'}
+                    {recommendation.priority === "high"
+                      ? "⚡ High Priority"
+                      : recommendation.priority === "medium"
+                        ? "📌 Recommended"
+                        : "💡 Suggested"}
                   </Badge>
                 </div>
-                <p className="text-sm text-muted-foreground">Your personalized next step</p>
+                <p className="text-sm text-muted-foreground">
+                  Your personalized next step
+                </p>
               </div>
             </div>
 
@@ -226,7 +233,9 @@ export function SmartNextActionWidget() {
                 <h4 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
                   {recommendation.title}
                 </h4>
-                <p className="text-gray-700 dark:text-gray-300">{recommendation.description}</p>
+                <p className="text-gray-700 dark:text-gray-300">
+                  {recommendation.description}
+                </p>
               </div>
 
               <div className="flex items-start gap-2 p-3 rounded-lg bg-white/60 dark:bg-gray-900/60 border border-gray-200 dark:border-gray-700">

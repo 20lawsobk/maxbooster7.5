@@ -1,12 +1,12 @@
-import { useState, useCallback, useMemo } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Badge } from '@/components/ui/badge';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import { useState, useCallback, useMemo } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Dialog,
   DialogContent,
@@ -14,14 +14,14 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog';
+} from "@/components/ui/dialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+} from "@/components/ui/dropdown-menu";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -31,22 +31,22 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
+} from "@/components/ui/alert-dialog";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card';
+} from "@/components/ui/card";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from '@/components/ui/tooltip';
-import { useToast } from '@/hooks/use-toast';
-import { apiRequest } from '@/lib/queryClient';
+} from "@/components/ui/tooltip";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
 import {
   Save,
   FolderOpen,
@@ -66,7 +66,7 @@ import {
   Settings,
   Download,
   Upload,
-} from 'lucide-react';
+} from "lucide-react";
 
 export interface BatchTemplate {
   id: string;
@@ -103,78 +103,122 @@ export function BatchTemplateManager({
   const [loadDialogOpen, setLoadDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
-  const [selectedTemplate, setSelectedTemplate] = useState<BatchTemplate | null>(null);
-  const [templateName, setTemplateName] = useState('');
-  const [templateDescription, setTemplateDescription] = useState('');
-  const [shareEmail, setShareEmail] = useState('');
+  const [selectedTemplate, setSelectedTemplate] =
+    useState<BatchTemplate | null>(null);
+  const [templateName, setTemplateName] = useState("");
+  const [templateDescription, setTemplateDescription] = useState("");
+  const [shareEmail, setShareEmail] = useState("");
 
   const { data: templates = [], isLoading: templatesLoading } = useQuery({
-    queryKey: ['/api/batch/templates', resource],
+    queryKey: ["/api/batch/templates", resource],
     queryFn: async () => {
-      const response = await apiRequest('GET', `/api/batch/templates?resource=${resource}`);
+      const response = await apiRequest(
+        "GET",
+        `/api/batch/templates?resource=${resource}`,
+      );
       return response.templates || [];
     },
   });
 
   const saveMutation = useMutation({
-    mutationFn: async (data: { name: string; description?: string; configuration: Record<string, any> }) => {
-      return apiRequest('POST', '/api/batch/templates', {
+    mutationFn: async (data: {
+      name: string;
+      description?: string;
+      configuration: Record<string, any>;
+    }) => {
+      return apiRequest("POST", "/api/batch/templates", {
         ...data,
         resource,
-        action: 'bulk_operation',
+        action: "bulk_operation",
       });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/batch/templates'] });
-      toast({ title: 'Template saved', description: 'Your batch template has been saved.' });
+      queryClient.invalidateQueries({ queryKey: ["/api/batch/templates"] });
+      toast({
+        title: "Template saved",
+        description: "Your batch template has been saved.",
+      });
       setSaveDialogOpen(false);
-      setTemplateName('');
-      setTemplateDescription('');
+      setTemplateName("");
+      setTemplateDescription("");
     },
     onError: (error) => {
-      toast({ title: 'Failed to save template', description: error.message, variant: 'destructive' });
+      toast({
+        title: "Failed to save template",
+        description: error.message,
+        variant: "destructive",
+      });
     },
   });
 
   const updateMutation = useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: Partial<BatchTemplate> }) => {
-      return apiRequest('PUT', `/api/batch/templates/${id}`, data);
+    mutationFn: async ({
+      id,
+      data,
+    }: {
+      id: string;
+      data: Partial<BatchTemplate>;
+    }) => {
+      return apiRequest("PUT", `/api/batch/templates/${id}`, data);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/batch/templates'] });
-      toast({ title: 'Template updated' });
+      queryClient.invalidateQueries({ queryKey: ["/api/batch/templates"] });
+      toast({ title: "Template updated" });
     },
     onError: (error) => {
-      toast({ title: 'Failed to update template', description: error.message, variant: 'destructive' });
+      toast({
+        title: "Failed to update template",
+        description: error.message,
+        variant: "destructive",
+      });
     },
   });
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      return apiRequest('DELETE', `/api/batch/templates/${id}`);
+      return apiRequest("DELETE", `/api/batch/templates/${id}`);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/batch/templates'] });
-      toast({ title: 'Template deleted' });
+      queryClient.invalidateQueries({ queryKey: ["/api/batch/templates"] });
+      toast({ title: "Template deleted" });
       setDeleteDialogOpen(false);
       setSelectedTemplate(null);
     },
     onError: (error) => {
-      toast({ title: 'Failed to delete template', description: error.message, variant: 'destructive' });
+      toast({
+        title: "Failed to delete template",
+        description: error.message,
+        variant: "destructive",
+      });
     },
   });
 
   const shareMutation = useMutation({
-    mutationFn: async ({ templateId, email }: { templateId: string; email: string }) => {
-      return apiRequest('POST', `/api/batch/templates/${templateId}/share`, { email });
+    mutationFn: async ({
+      templateId,
+      email,
+    }: {
+      templateId: string;
+      email: string;
+    }) => {
+      return apiRequest("POST", `/api/batch/templates/${templateId}/share`, {
+        email,
+      });
     },
     onSuccess: () => {
-      toast({ title: 'Template shared', description: `Template shared successfully.` });
+      toast({
+        title: "Template shared",
+        description: `Template shared successfully.`,
+      });
       setShareDialogOpen(false);
-      setShareEmail('');
+      setShareEmail("");
     },
     onError: (error) => {
-      toast({ title: 'Failed to share template', description: error.message, variant: 'destructive' });
+      toast({
+        title: "Failed to share template",
+        description: error.message,
+        variant: "destructive",
+      });
     },
   });
 
@@ -187,80 +231,106 @@ export function BatchTemplateManager({
     });
   }, [templateName, templateDescription, currentConfiguration, saveMutation]);
 
-  const handleApplyTemplate = useCallback((template: BatchTemplate) => {
-    onApplyTemplate(template.configuration);
-    updateMutation.mutate({
-      id: template.id,
-      data: { usageCount: template.usageCount + 1 },
-    });
-    toast({ title: 'Template applied', description: `Applied "${template.name}" configuration.` });
-    setLoadDialogOpen(false);
-  }, [onApplyTemplate, updateMutation, toast]);
+  const handleApplyTemplate = useCallback(
+    (template: BatchTemplate) => {
+      onApplyTemplate(template.configuration);
+      updateMutation.mutate({
+        id: template.id,
+        data: { usageCount: template.usageCount + 1 },
+      });
+      toast({
+        title: "Template applied",
+        description: `Applied "${template.name}" configuration.`,
+      });
+      setLoadDialogOpen(false);
+    },
+    [onApplyTemplate, updateMutation, toast],
+  );
 
-  const handleToggleFavorite = useCallback((template: BatchTemplate) => {
-    updateMutation.mutate({
-      id: template.id,
-      data: { isFavorite: !template.isFavorite },
-    });
-  }, [updateMutation]);
+  const handleToggleFavorite = useCallback(
+    (template: BatchTemplate) => {
+      updateMutation.mutate({
+        id: template.id,
+        data: { isFavorite: !template.isFavorite },
+      });
+    },
+    [updateMutation],
+  );
 
-  const handleDuplicateTemplate = useCallback((template: BatchTemplate) => {
-    saveMutation.mutate({
-      name: `${template.name} (Copy)`,
-      description: template.description,
-      configuration: template.configuration,
-    });
-  }, [saveMutation]);
+  const handleDuplicateTemplate = useCallback(
+    (template: BatchTemplate) => {
+      saveMutation.mutate({
+        name: `${template.name} (Copy)`,
+        description: template.description,
+        configuration: template.configuration,
+      });
+    },
+    [saveMutation],
+  );
 
-  const handleExportTemplate = useCallback((template: BatchTemplate) => {
-    const exportData = {
-      name: template.name,
-      description: template.description,
-      resource: template.resource,
-      action: template.action,
-      configuration: template.configuration,
-      exportedAt: new Date().toISOString(),
-    };
-    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `batch-template-${template.name.toLowerCase().replace(/\s+/g, '-')}.json`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-    toast({ title: 'Template exported' });
-  }, [toast]);
+  const handleExportTemplate = useCallback(
+    (template: BatchTemplate) => {
+      const exportData = {
+        name: template.name,
+        description: template.description,
+        resource: template.resource,
+        action: template.action,
+        configuration: template.configuration,
+        exportedAt: new Date().toISOString(),
+      };
+      const blob = new Blob([JSON.stringify(exportData, null, 2)], {
+        type: "application/json",
+      });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `batch-template-${template.name.toLowerCase().replace(/\s+/g, "-")}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      toast({ title: "Template exported" });
+    },
+    [toast],
+  );
 
   const favoriteTemplates = useMemo(
     () => templates.filter((t: BatchTemplate) => t.isFavorite),
-    [templates]
+    [templates],
   );
 
   const recentTemplates = useMemo(
-    () => [...templates]
-      .sort((a: BatchTemplate, b: BatchTemplate) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
-      .slice(0, 5),
-    [templates]
+    () =>
+      [...templates]
+        .sort(
+          (a: BatchTemplate, b: BatchTemplate) =>
+            new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
+        )
+        .slice(0, 5),
+    [templates],
   );
 
   return (
     <TooltipProvider>
-      <div className={cn('flex items-center gap-2', className)}>
+      <div className={cn("flex items-center gap-2", className)}>
         <Tooltip>
           <TooltipTrigger asChild>
             <Button
               variant="outline"
               size="sm"
               onClick={() => setSaveDialogOpen(true)}
-              disabled={!currentConfiguration || Object.keys(currentConfiguration).length === 0}
+              disabled={
+                !currentConfiguration ||
+                Object.keys(currentConfiguration).length === 0
+              }
             >
               <Save className="h-4 w-4 mr-2" />
               Save Template
             </Button>
           </TooltipTrigger>
-          <TooltipContent>Save current configuration as a template</TooltipContent>
+          <TooltipContent>
+            Save current configuration as a template
+          </TooltipContent>
         </Tooltip>
 
         <Tooltip>
@@ -335,7 +405,10 @@ export function BatchTemplateManager({
             </div>
 
             <DialogFooter>
-              <Button variant="outline" onClick={() => setSaveDialogOpen(false)}>
+              <Button
+                variant="outline"
+                onClick={() => setSaveDialogOpen(false)}
+              >
                 Cancel
               </Button>
               <Button
@@ -378,7 +451,9 @@ export function BatchTemplateManager({
               <div className="text-center py-8 text-muted-foreground">
                 <BookOpen className="h-12 w-12 mx-auto mb-4 opacity-50" />
                 <p>No templates saved yet.</p>
-                <p className="text-sm">Save your first template to get started.</p>
+                <p className="text-sm">
+                  Save your first template to get started.
+                </p>
               </div>
             ) : (
               <ScrollArea className="max-h-[60vh]">
@@ -387,8 +462,8 @@ export function BatchTemplateManager({
                     <Card
                       key={template.id}
                       className={cn(
-                        'cursor-pointer transition-colors hover:bg-muted/50',
-                        template.isFavorite && 'ring-1 ring-amber-400/50'
+                        "cursor-pointer transition-colors hover:bg-muted/50",
+                        template.isFavorite && "ring-1 ring-amber-400/50",
                       )}
                       onClick={() => handleApplyTemplate(template)}
                     >
@@ -414,8 +489,15 @@ export function BatchTemplateManager({
                             )}
                           </div>
                           <DropdownMenu>
-                            <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                              <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                            <DropdownMenuTrigger
+                              asChild
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-8 w-8 p-0"
+                              >
                                 <MoreHorizontal className="h-4 w-4" />
                               </Button>
                             </DropdownMenuTrigger>
@@ -490,7 +572,8 @@ export function BatchTemplateManager({
                           </span>
                           <span className="flex items-center gap-1">
                             <Settings className="h-3 w-3" />
-                            {Object.keys(template.configuration).length} settings
+                            {Object.keys(template.configuration).length}{" "}
+                            settings
                           </span>
                           <span>Used {template.usageCount}x</span>
                         </div>
@@ -502,7 +585,10 @@ export function BatchTemplateManager({
             )}
 
             <DialogFooter>
-              <Button variant="outline" onClick={() => setLoadDialogOpen(false)}>
+              <Button
+                variant="outline"
+                onClick={() => setLoadDialogOpen(false)}
+              >
                 Close
               </Button>
             </DialogFooter>
@@ -514,19 +600,22 @@ export function BatchTemplateManager({
             <AlertDialogHeader>
               <AlertDialogTitle>Delete Template</AlertDialogTitle>
               <AlertDialogDescription>
-                Are you sure you want to delete "{selectedTemplate?.name}"? This action cannot be undone.
+                Are you sure you want to delete "{selectedTemplate?.name}"? This
+                action cannot be undone.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel>Cancel</AlertDialogCancel>
               <AlertDialogAction
-                onClick={() => selectedTemplate && deleteMutation.mutate(selectedTemplate.id)}
+                onClick={() =>
+                  selectedTemplate && deleteMutation.mutate(selectedTemplate.id)
+                }
                 className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               >
                 {deleteMutation.isPending ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
                 ) : (
-                  'Delete'
+                  "Delete"
                 )}
               </AlertDialogAction>
             </AlertDialogFooter>
@@ -559,14 +648,20 @@ export function BatchTemplateManager({
             </div>
 
             <DialogFooter>
-              <Button variant="outline" onClick={() => setShareDialogOpen(false)}>
+              <Button
+                variant="outline"
+                onClick={() => setShareDialogOpen(false)}
+              >
                 Cancel
               </Button>
               <Button
-                onClick={() => selectedTemplate && shareMutation.mutate({
-                  templateId: selectedTemplate.id,
-                  email: shareEmail,
-                })}
+                onClick={() =>
+                  selectedTemplate &&
+                  shareMutation.mutate({
+                    templateId: selectedTemplate.id,
+                    email: shareEmail,
+                  })
+                }
                 disabled={!shareEmail.trim() || shareMutation.isPending}
               >
                 {shareMutation.isPending ? (
@@ -608,7 +703,7 @@ export function QuickTemplateButton({
           </Button>
         </TooltipTrigger>
         <TooltipContent>
-          <p>{template.description || 'Apply this template'}</p>
+          <p>{template.description || "Apply this template"}</p>
         </TooltipContent>
       </Tooltip>
     </TooltipProvider>

@@ -8,23 +8,25 @@
  * build scripts in script/build.ts and the start-up sequence in server/index.ts.
  */
 
-import { existsSync } from 'fs';
-import { join, dirname } from 'path';
-import { fileURLToPath } from 'url';
+import { existsSync } from "fs";
+import { join, dirname } from "path";
+import { fileURLToPath } from "url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const root = join(__dirname, '..');
+const root = join(__dirname, "..");
 
 // Skip everything when running inside CI or explicitly opted out
-if (process.env.SKIP_POSTINSTALL === '1' || process.env.CI === 'true') {
-  console.log('[postinstall] Skipping (SKIP_POSTINSTALL or CI=true).');
+if (process.env.SKIP_POSTINSTALL === "1" || process.env.CI === "true") {
+  console.log("[postinstall] Skipping (SKIP_POSTINSTALL or CI=true).");
   process.exit(0);
 }
 
 // Confirm the server entry point exists so a bad install is caught early
-const serverEntry = join(root, 'server', 'index.ts');
+const serverEntry = join(root, "server", "index.ts");
 if (!existsSync(serverEntry)) {
-  console.error('[postinstall] ERROR: server/index.ts not found — installation may be incomplete.');
+  console.error(
+    "[postinstall] ERROR: server/index.ts not found — installation may be incomplete.",
+  );
   process.exit(1);
 }
 
@@ -32,4 +34,4 @@ if (!existsSync(serverEntry)) {
 // by the deployment platform at server start-up, not during npm install.
 // No env var checks needed here.
 
-console.log('[postinstall] Max Booster dependencies installed successfully.');
+console.log("[postinstall] Max Booster dependencies installed successfully.");

@@ -1,9 +1,9 @@
-import { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import { useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Heart,
   MessageCircle,
@@ -25,7 +25,7 @@ import {
   MapPin,
   Image as ImageIcon,
   Video,
-} from 'lucide-react';
+} from "lucide-react";
 import {
   FacebookIcon,
   InstagramIcon,
@@ -34,16 +34,21 @@ import {
   LinkedInIcon,
   TwitterIcon,
   ThreadsIcon,
-} from '@/components/ui/brand-icons';
+} from "@/components/ui/brand-icons";
 
-export type PostStatus = 'draft' | 'scheduled' | 'publishing' | 'published' | 'failed';
+export type PostStatus =
+  | "draft"
+  | "scheduled"
+  | "publishing"
+  | "published"
+  | "failed";
 
 export interface PostPreviewData {
   id?: string;
   content: string;
   platforms: string[];
   mediaUrls?: string[];
-  mediaType?: 'image' | 'video' | 'carousel';
+  mediaType?: "image" | "video" | "carousel";
   hashtags?: string[];
   mentions?: string[];
   location?: string;
@@ -68,81 +73,96 @@ interface PostPreviewProps {
   showStats?: boolean;
 }
 
-const PLATFORM_CONFIG: Record<string, {
-  icon: React.ReactNode;
-  name: string;
-  color: string;
-  bgColor: string;
-  maxChars: number;
-  features: string[];
-}> = {
+const PLATFORM_CONFIG: Record<
+  string,
+  {
+    icon: React.ReactNode;
+    name: string;
+    color: string;
+    bgColor: string;
+    maxChars: number;
+    features: string[];
+  }
+> = {
   twitter: {
     icon: TwitterIcon,
-    name: 'Twitter',
-    color: '#000000',
-    bgColor: 'bg-gray-100 dark:bg-gray-800',
+    name: "Twitter",
+    color: "#000000",
+    bgColor: "bg-gray-100 dark:bg-gray-800",
     maxChars: 280,
-    features: ['threads', 'quotes', 'polls'],
+    features: ["threads", "quotes", "polls"],
   },
   instagram: {
     icon: InstagramIcon,
-    name: 'Instagram',
-    color: '#E4405F',
-    bgColor: 'bg-gradient-to-br from-purple-500/10 to-pink-500/10',
+    name: "Instagram",
+    color: "#E4405F",
+    bgColor: "bg-gradient-to-br from-purple-500/10 to-pink-500/10",
     maxChars: 2200,
-    features: ['stories', 'reels', 'carousel'],
+    features: ["stories", "reels", "carousel"],
   },
   facebook: {
     icon: FacebookIcon,
-    name: 'Facebook',
-    color: '#1877F2',
-    bgColor: 'bg-blue-50 dark:bg-blue-900/20',
+    name: "Facebook",
+    color: "#1877F2",
+    bgColor: "bg-blue-50 dark:bg-blue-900/20",
     maxChars: 63206,
-    features: ['stories', 'reels', 'groups'],
+    features: ["stories", "reels", "groups"],
   },
   linkedin: {
     icon: LinkedInIcon,
-    name: 'LinkedIn',
-    color: '#0077B5',
-    bgColor: 'bg-sky-50 dark:bg-sky-900/20',
+    name: "LinkedIn",
+    color: "#0077B5",
+    bgColor: "bg-sky-50 dark:bg-sky-900/20",
     maxChars: 3000,
-    features: ['articles', 'polls', 'documents'],
+    features: ["articles", "polls", "documents"],
   },
   tiktok: {
     icon: TikTokIcon,
-    name: 'TikTok',
-    color: '#000000',
-    bgColor: 'bg-gradient-to-br from-pink-500/10 to-cyan-500/10',
+    name: "TikTok",
+    color: "#000000",
+    bgColor: "bg-gradient-to-br from-pink-500/10 to-cyan-500/10",
     maxChars: 2200,
-    features: ['duets', 'stitches', 'sounds'],
+    features: ["duets", "stitches", "sounds"],
   },
   youtube: {
     icon: YouTubeIcon,
-    name: 'YouTube',
-    color: '#FF0000',
-    bgColor: 'bg-red-50 dark:bg-red-900/20',
+    name: "YouTube",
+    color: "#FF0000",
+    bgColor: "bg-red-50 dark:bg-red-900/20",
     maxChars: 5000,
-    features: ['shorts', 'community', 'premiere'],
+    features: ["shorts", "community", "premiere"],
   },
   threads: {
     icon: ThreadsIcon,
-    name: 'Threads',
-    color: '#000000',
-    bgColor: 'bg-gray-50 dark:bg-gray-800',
+    name: "Threads",
+    color: "#000000",
+    bgColor: "bg-gray-50 dark:bg-gray-800",
     maxChars: 500,
-    features: ['replies', 'reposts'],
+    features: ["replies", "reposts"],
   },
 };
 
-const STATUS_CONFIG: Record<PostStatus, { label: string; icon: Record<string, unknown>; color: string }> = {
-  draft: { label: 'Draft', icon: Clock, color: 'text-gray-500' },
-  scheduled: { label: 'Scheduled', icon: Calendar, color: 'text-blue-500' },
-  publishing: { label: 'Publishing...', icon: Loader2, color: 'text-yellow-500' },
-  published: { label: 'Published', icon: CheckCircle, color: 'text-green-500' },
-  failed: { label: 'Failed', icon: AlertCircle, color: 'text-red-500' },
+const STATUS_CONFIG: Record<
+  PostStatus,
+  { label: string; icon: Record<string, unknown>; color: string }
+> = {
+  draft: { label: "Draft", icon: Clock, color: "text-gray-500" },
+  scheduled: { label: "Scheduled", icon: Calendar, color: "text-blue-500" },
+  publishing: {
+    label: "Publishing...",
+    icon: Loader2,
+    color: "text-yellow-500",
+  },
+  published: { label: "Published", icon: CheckCircle, color: "text-green-500" },
+  failed: { label: "Failed", icon: AlertCircle, color: "text-red-500" },
 };
 
-function TwitterPreview({ post, authorName, authorHandle, authorAvatar }: {
+function TwitterPreview({
+  post,
+  authorName,
+  authorHandle,
+  authorAvatar,
+}: {
   post: PostPreviewData;
   authorName: string;
   authorHandle: string;
@@ -156,7 +176,11 @@ function TwitterPreview({ post, authorName, authorHandle, authorAvatar }: {
       <div className="flex gap-3">
         <div className="w-10 h-10 rounded-full bg-gray-300 flex-shrink-0 overflow-hidden">
           {authorAvatar ? (
-            <img src={authorAvatar} alt={`${authorName} avatar`} className="w-full h-full object-cover" />
+            <img
+              src={authorAvatar}
+              alt={`${authorName} avatar`}
+              className="w-full h-full object-cover"
+            />
           ) : (
             <div className="w-full h-full bg-gradient-to-br from-blue-400 to-blue-600" />
           )}
@@ -168,48 +192,82 @@ function TwitterPreview({ post, authorName, authorHandle, authorAvatar }: {
             <span className="text-muted-foreground">·</span>
             <span className="text-muted-foreground">now</span>
           </div>
-          <p className={`mt-1 text-sm whitespace-pre-wrap ${isOverLimit ? 'text-red-500' : ''}`}>
+          <p
+            className={`mt-1 text-sm whitespace-pre-wrap ${isOverLimit ? "text-red-500" : ""}`}
+          >
             {post.content}
           </p>
           {post.mediaUrls && post.mediaUrls.length > 0 && (
-            <div className={`mt-3 rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700 ${post.mediaUrls.length > 1 ? 'grid grid-cols-2 gap-0.5' : ''}`}>
+            <div
+              className={`mt-3 rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700 ${post.mediaUrls.length > 1 ? "grid grid-cols-2 gap-0.5" : ""}`}
+            >
               {post.mediaUrls.slice(0, 4).map((url, idx) => (
-                <div key={idx} className="aspect-video bg-gray-100 dark:bg-gray-800 relative">
-                  {post.mediaType === 'video' ? (
+                <div
+                  key={idx}
+                  className="aspect-video bg-gray-100 dark:bg-gray-800 relative"
+                >
+                  {post.mediaType === "video" ? (
                     <div className="absolute inset-0 flex items-center justify-center">
                       <Play className="w-12 h-12 text-white drop-shadow-lg" />
                     </div>
                   ) : (
-                    <img src={url} alt="Post media" className="w-full h-full object-cover" />
+                    <img
+                      src={url}
+                      alt="Post media"
+                      className="w-full h-full object-cover"
+                    />
                   )}
                 </div>
               ))}
             </div>
           )}
           <div className="flex items-center justify-between mt-3 text-muted-foreground">
-            <Button variant="ghost" size="sm" className="hover:text-blue-500 hover:bg-blue-50">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="hover:text-blue-500 hover:bg-blue-50"
+            >
               <MessageCircle className="w-4 h-4" />
             </Button>
-            <Button variant="ghost" size="sm" className="hover:text-green-500 hover:bg-green-50">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="hover:text-green-500 hover:bg-green-50"
+            >
               <Share2 className="w-4 h-4" />
             </Button>
-            <Button variant="ghost" size="sm" className="hover:text-pink-500 hover:bg-pink-50">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="hover:text-pink-500 hover:bg-pink-50"
+            >
               <Heart className="w-4 h-4" />
             </Button>
-            <Button variant="ghost" size="sm" className="hover:text-blue-500 hover:bg-blue-50">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="hover:text-blue-500 hover:bg-blue-50"
+            >
               <Bookmark className="w-4 h-4" />
             </Button>
           </div>
         </div>
       </div>
-      <div className={`mt-2 text-xs text-right ${isOverLimit ? 'text-red-500' : 'text-muted-foreground'}`}>
+      <div
+        className={`mt-2 text-xs text-right ${isOverLimit ? "text-red-500" : "text-muted-foreground"}`}
+      >
         {charCount}/280 characters
       </div>
     </div>
   );
 }
 
-function InstagramPreview({ post, authorName, authorHandle, authorAvatar }: {
+function InstagramPreview({
+  post,
+  authorName,
+  authorHandle,
+  authorAvatar,
+}: {
   post: PostPreviewData;
   authorName: string;
   authorHandle: string;
@@ -222,7 +280,11 @@ function InstagramPreview({ post, authorName, authorHandle, authorAvatar }: {
           <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 p-0.5">
             <div className="w-full h-full rounded-full bg-white dark:bg-gray-900 p-0.5">
               {authorAvatar ? (
-                <img src={authorAvatar} alt={`${authorName} avatar`} className="w-full h-full rounded-full object-cover" />
+                <img
+                  src={authorAvatar}
+                  alt={`${authorName} avatar`}
+                  className="w-full h-full rounded-full object-cover"
+                />
               ) : (
                 <div className="w-full h-full rounded-full bg-gradient-to-br from-blue-400 to-blue-600" />
               )}
@@ -235,12 +297,16 @@ function InstagramPreview({ post, authorName, authorHandle, authorAvatar }: {
 
       {post.mediaUrls && post.mediaUrls.length > 0 ? (
         <div className="aspect-square bg-gray-100 dark:bg-gray-800 relative">
-          {post.mediaType === 'video' ? (
+          {post.mediaType === "video" ? (
             <div className="absolute inset-0 flex items-center justify-center">
               <Play className="w-16 h-16 text-white drop-shadow-lg" />
             </div>
           ) : (
-            <img src={post.mediaUrls[0]} alt="Post media" className="w-full h-full object-cover" />
+            <img
+              src={post.mediaUrls[0]}
+              alt="Post media"
+              className="w-full h-full object-cover"
+            />
           )}
           {post.mediaUrls.length > 1 && (
             <div className="absolute top-2 right-2">
@@ -267,8 +333,10 @@ function InstagramPreview({ post, authorName, authorHandle, authorAvatar }: {
         </div>
 
         <div className="text-sm">
-          <span className="font-semibold">{authorHandle}</span>{' '}
-          <span className="whitespace-pre-wrap">{post.content.slice(0, 125)}</span>
+          <span className="font-semibold">{authorHandle}</span>{" "}
+          <span className="whitespace-pre-wrap">
+            {post.content.slice(0, 125)}
+          </span>
           {post.content.length > 125 && (
             <span className="text-muted-foreground">... more</span>
           )}
@@ -276,7 +344,10 @@ function InstagramPreview({ post, authorName, authorHandle, authorAvatar }: {
 
         {post.hashtags && post.hashtags.length > 0 && (
           <div className="text-sm text-blue-500">
-            {post.hashtags.slice(0, 5).map(tag => `#${tag}`).join(' ')}
+            {post.hashtags
+              .slice(0, 5)
+              .map((tag) => `#${tag}`)
+              .join(" ")}
           </div>
         )}
       </div>
@@ -284,7 +355,12 @@ function InstagramPreview({ post, authorName, authorHandle, authorAvatar }: {
   );
 }
 
-function LinkedInPreview({ post, authorName, authorHandle, authorAvatar }: {
+function LinkedInPreview({
+  post,
+  authorName,
+  authorHandle,
+  authorAvatar,
+}: {
   post: PostPreviewData;
   authorName: string;
   authorHandle: string;
@@ -296,7 +372,11 @@ function LinkedInPreview({ post, authorName, authorHandle, authorAvatar }: {
         <div className="flex gap-3">
           <div className="w-12 h-12 rounded-full bg-gray-300 flex-shrink-0 overflow-hidden">
             {authorAvatar ? (
-              <img src={authorAvatar} alt={`${authorName} avatar`} className="w-full h-full object-cover" />
+              <img
+                src={authorAvatar}
+                alt={`${authorName} avatar`}
+                className="w-full h-full object-cover"
+              />
             ) : (
               <div className="w-full h-full bg-gradient-to-br from-blue-400 to-blue-600" />
             )}
@@ -317,14 +397,21 @@ function LinkedInPreview({ post, authorName, authorHandle, authorAvatar }: {
 
         {post.hashtags && post.hashtags.length > 0 && (
           <div className="mt-2 text-sm text-blue-600">
-            {post.hashtags.slice(0, 3).map(tag => `#${tag}`).join(' ')}
+            {post.hashtags
+              .slice(0, 3)
+              .map((tag) => `#${tag}`)
+              .join(" ")}
           </div>
         )}
       </div>
 
       {post.mediaUrls && post.mediaUrls.length > 0 && (
         <div className="aspect-video bg-gray-100 dark:bg-gray-800 relative border-t border-gray-200 dark:border-gray-700">
-          <img src={post.mediaUrls[0]} alt="Post media" className="w-full h-full object-cover" />
+          <img
+            src={post.mediaUrls[0]}
+            alt="Post media"
+            className="w-full h-full object-cover"
+          />
         </div>
       )}
 
@@ -350,7 +437,11 @@ function LinkedInPreview({ post, authorName, authorHandle, authorAvatar }: {
   );
 }
 
-function FacebookPreview({ post, authorName, authorAvatar }: {
+function FacebookPreview({
+  post,
+  authorName,
+  authorAvatar,
+}: {
   post: PostPreviewData;
   authorName: string;
   authorAvatar?: string;
@@ -362,7 +453,11 @@ function FacebookPreview({ post, authorName, authorAvatar }: {
           <div className="flex gap-3">
             <div className="w-10 h-10 rounded-full bg-gray-300 flex-shrink-0 overflow-hidden">
               {authorAvatar ? (
-                <img src={authorAvatar} alt={`${authorName} avatar`} className="w-full h-full object-cover" />
+                <img
+                  src={authorAvatar}
+                  alt={`${authorName} avatar`}
+                  className="w-full h-full object-cover"
+                />
               ) : (
                 <div className="w-full h-full bg-gradient-to-br from-blue-400 to-blue-600" />
               )}
@@ -380,7 +475,11 @@ function FacebookPreview({ post, authorName, authorAvatar }: {
 
       {post.mediaUrls && post.mediaUrls.length > 0 && (
         <div className="aspect-video bg-gray-100 dark:bg-gray-800 relative">
-          <img src={post.mediaUrls[0]} alt="Post media" className="w-full h-full object-cover" />
+          <img
+            src={post.mediaUrls[0]}
+            alt="Post media"
+            className="w-full h-full object-cover"
+          />
         </div>
       )}
 
@@ -404,8 +503,8 @@ function FacebookPreview({ post, authorName, authorAvatar }: {
 
 export function PostPreview({
   post,
-  authorName = 'Your Name',
-  authorHandle = 'yourhandle',
+  authorName = "Your Name",
+  authorHandle = "yourhandle",
   authorAvatar,
   onEdit,
   onSchedule,
@@ -414,22 +513,58 @@ export function PostPreview({
   showActions = true,
   showStats = true,
 }: PostPreviewProps) {
-  const [selectedPlatform, setSelectedPlatform] = useState(post.platforms[0] || 'twitter');
-  const status = post.status || 'draft';
+  const [selectedPlatform, setSelectedPlatform] = useState(
+    post.platforms[0] || "twitter",
+  );
+  const status = post.status || "draft";
   const StatusIcon = STATUS_CONFIG[status].icon;
 
   const renderPreview = () => {
     switch (selectedPlatform) {
-      case 'twitter':
-        return <TwitterPreview post={post} authorName={authorName} authorHandle={authorHandle} authorAvatar={authorAvatar} />;
-      case 'instagram':
-        return <InstagramPreview post={post} authorName={authorName} authorHandle={authorHandle} authorAvatar={authorAvatar} />;
-      case 'linkedin':
-        return <LinkedInPreview post={post} authorName={authorName} authorHandle={authorHandle} authorAvatar={authorAvatar} />;
-      case 'facebook':
-        return <FacebookPreview post={post} authorName={authorName} authorAvatar={authorAvatar} />;
+      case "twitter":
+        return (
+          <TwitterPreview
+            post={post}
+            authorName={authorName}
+            authorHandle={authorHandle}
+            authorAvatar={authorAvatar}
+          />
+        );
+      case "instagram":
+        return (
+          <InstagramPreview
+            post={post}
+            authorName={authorName}
+            authorHandle={authorHandle}
+            authorAvatar={authorAvatar}
+          />
+        );
+      case "linkedin":
+        return (
+          <LinkedInPreview
+            post={post}
+            authorName={authorName}
+            authorHandle={authorHandle}
+            authorAvatar={authorAvatar}
+          />
+        );
+      case "facebook":
+        return (
+          <FacebookPreview
+            post={post}
+            authorName={authorName}
+            authorAvatar={authorAvatar}
+          />
+        );
       default:
-        return <TwitterPreview post={post} authorName={authorName} authorHandle={authorHandle} authorAvatar={authorAvatar} />;
+        return (
+          <TwitterPreview
+            post={post}
+            authorName={authorName}
+            authorHandle={authorHandle}
+            authorAvatar={authorAvatar}
+          />
+        );
     }
   };
 
@@ -438,11 +573,10 @@ export function PostPreview({
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
           <CardTitle className="text-lg">Post Preview</CardTitle>
-          <Badge
-            variant="outline"
-            className={STATUS_CONFIG[status].color}
-          >
-            <StatusIcon className={`w-3 h-3 mr-1 ${status === 'publishing' ? 'animate-spin' : ''}`} />
+          <Badge variant="outline" className={STATUS_CONFIG[status].color}>
+            <StatusIcon
+              className={`w-3 h-3 mr-1 ${status === "publishing" ? "animate-spin" : ""}`}
+            />
             {STATUS_CONFIG[status].label}
           </Badge>
         </div>
@@ -454,13 +588,22 @@ export function PostPreview({
       <CardContent className="space-y-4">
         {post.platforms.length > 1 && (
           <Tabs value={selectedPlatform} onValueChange={setSelectedPlatform}>
-            <TabsList className="w-full grid" style={{ gridTemplateColumns: `repeat(${post.platforms.length}, 1fr)` }}>
+            <TabsList
+              className="w-full grid"
+              style={{
+                gridTemplateColumns: `repeat(${post.platforms.length}, 1fr)`,
+              }}
+            >
               {post.platforms.map((platform) => {
                 const config = PLATFORM_CONFIG[platform];
                 if (!config) return null;
                 const Icon = config.icon;
                 return (
-                  <TabsTrigger key={platform} value={platform} className="gap-1">
+                  <TabsTrigger
+                    key={platform}
+                    value={platform}
+                    className="gap-1"
+                  >
                     <Icon className="w-4 h-4" style={{ color: config.color }} />
                     <span className="hidden sm:inline">{config.name}</span>
                   </TabsTrigger>
@@ -471,9 +614,7 @@ export function PostPreview({
         )}
 
         <ScrollArea className="max-h-[500px]">
-          <div className="flex justify-center py-4">
-            {renderPreview()}
-          </div>
+          <div className="flex justify-center py-4">{renderPreview()}</div>
         </ScrollArea>
 
         {showStats && (
@@ -483,11 +624,15 @@ export function PostPreview({
               <p className="text-xs text-muted-foreground">Characters</p>
             </div>
             <div className="text-center">
-              <p className="text-lg font-semibold">{post.hashtags?.length || 0}</p>
+              <p className="text-lg font-semibold">
+                {post.hashtags?.length || 0}
+              </p>
               <p className="text-xs text-muted-foreground">Hashtags</p>
             </div>
             <div className="text-center">
-              <p className="text-lg font-semibold">{post.mediaUrls?.length || 0}</p>
+              <p className="text-lg font-semibold">
+                {post.mediaUrls?.length || 0}
+              </p>
               <p className="text-xs text-muted-foreground">Media</p>
             </div>
             <div className="text-center">
@@ -514,7 +659,9 @@ export function PostPreview({
             <Clock className="w-5 h-5 text-green-500" />
             <div>
               <p className="text-sm font-medium">Best Time to Post</p>
-              <p className="text-xs text-muted-foreground">{post.optimalTime}</p>
+              <p className="text-xs text-muted-foreground">
+                {post.optimalTime}
+              </p>
             </div>
           </div>
         )}
@@ -526,20 +673,25 @@ export function PostPreview({
                 Edit
               </Button>
             )}
-            {onSchedule && status === 'draft' && (
+            {onSchedule && status === "draft" && (
               <Button variant="outline" size="sm" onClick={onSchedule}>
                 <Calendar className="w-4 h-4 mr-1" />
                 Schedule
               </Button>
             )}
-            {onPublish && (status === 'draft' || status === 'scheduled') && (
+            {onPublish && (status === "draft" || status === "scheduled") && (
               <Button size="sm" onClick={onPublish}>
                 <Send className="w-4 h-4 mr-1" />
                 Publish Now
               </Button>
             )}
             {onDelete && (
-              <Button variant="ghost" size="sm" className="text-red-500 ml-auto" onClick={onDelete}>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-red-500 ml-auto"
+                onClick={onDelete}
+              >
                 Delete
               </Button>
             )}

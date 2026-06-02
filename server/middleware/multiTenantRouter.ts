@@ -17,7 +17,8 @@ function isInternalHost(host: string): boolean {
 }
 
 // Static asset file extensions — never need tenant resolution
-const STATIC_EXT_RE = /\.(js|css|woff2?|ttf|eot|otf|ico|png|jpg|jpeg|gif|webp|svg|avif|map|json|txt|xml)$/i;
+const STATIC_EXT_RE =
+  /\.(js|css|woff2?|ttf|eot|otf|ico|png|jpg|jpeg|gif|webp|svg|avif|map|json|txt|xml)$/i;
 
 function isStaticAssetPath(p: string): boolean {
   return (
@@ -33,7 +34,7 @@ function isStaticAssetPath(p: string): boolean {
 export async function multiTenantRouter(
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ): Promise<void> {
   try {
     const host = (req.headers.host || "").toLowerCase().split(":")[0];
@@ -77,7 +78,9 @@ export async function multiTenantRouter(
     (req as Record<string, unknown>).storefront = hostRow.storefront;
     (req as Record<string, unknown>).artist = user ?? null;
 
-    logger.debug(`[multiTenant] Resolved ${host} → storefront ${hostRow.storefront.id}`);
+    logger.debug(
+      `[multiTenant] Resolved ${host} → storefront ${hostRow.storefront.id}`,
+    );
     next();
   } catch (err) {
     logger.warn({ err }, "[multiTenant] Error resolving storefront");

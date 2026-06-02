@@ -18,6 +18,7 @@ really happening." False-positive success is worse than an honest failure becaus
 hides the broken stage.
 
 **How to apply:**
+
 - Have the worker return an explicit outcome object (e.g. `{posted, reason}`) and set
   the terminal status from it: `completed` only when the side-effect is confirmed
   (`results.postsCreated > 0`), otherwise a distinct honest status (`listed`) carrying
@@ -45,14 +46,14 @@ media in `mediaUrl` — there are no `normalizedContent`/`rawContent`/`assetUrls
 
 Same trap, one level deeper. The Self-Evolution Engine produced bounded "enhancement"
 payloads into an applied-registry and reported them `applied=true` simply because the
-payload's *category* was in the consumed set. But an enhancement only changes behavior
+payload's _category_ was in the consumed set. But an enhancement only changes behavior
 if it carries a payload **field a live consumer actually reads**. Example: a
 `posting_optimization` payload with `contentFormatPriority`/`engagementTargeting` was
 marked applied, yet the only field any consumer read was `optimalHours` — so it changed
 nothing while reporting success.
 
 **Rule:** gate `applied` on `consumed && payloadHasEffectiveField`, where
-*effective field* = a field with a real runtime reader today. Maintain an explicit
+_effective field_ = a field with a real runtime reader today. Maintain an explicit
 `EFFECTIVE_FIELDS` map per category (the fields a consumer reads). Category membership
 is necessary but NOT sufficient. When consumed-but-not-effective, store the entry as
 honest advisory with a `notAppliedReason`, never as applied.

@@ -4,7 +4,7 @@ export {
   useOptionalBatchSelectContext,
   withBatchSelect,
   type BatchSelectProviderProps,
-} from './BatchSelectProvider';
+} from "./BatchSelectProvider";
 
 export {
   BatchActionBar,
@@ -14,13 +14,13 @@ export {
   StudioBatchActionBar,
   type BatchAction,
   type BatchActionBarProps,
-} from './BatchActionBar';
+} from "./BatchActionBar";
 
 export {
   BatchProgressDialog,
   useBatchProgressDialog,
   type BatchProgressDialogProps,
-} from './BatchProgressDialog';
+} from "./BatchProgressDialog";
 
 export {
   BulkEditDialog,
@@ -30,7 +30,7 @@ export {
   studioEditFields,
   type EditableField,
   type BulkEditDialogProps,
-} from './BulkEditDialog';
+} from "./BulkEditDialog";
 
 export {
   BulkEditForm,
@@ -42,37 +42,35 @@ export {
   type BulkEditField,
   type BulkEditFormProps,
   type FieldValue,
-} from './BulkEditForm';
+} from "./BulkEditForm";
 
 export {
   MultiSelectList,
   SelectableCard,
   type MultiSelectListProps,
   type SelectableCardProps,
-} from './MultiSelectList';
+} from "./MultiSelectList";
 
-export {
-  BulkDeleteConfirm,
-} from './BulkDeleteConfirm';
+export { BulkDeleteConfirm } from "./BulkDeleteConfirm";
 
 export {
   BatchTemplateManager,
   QuickTemplateButton,
   type BatchTemplate,
   type BatchTemplateManagerProps,
-} from './BatchTemplateManager';
+} from "./BatchTemplateManager";
 
 export {
   SelectAllCheckbox,
   StandaloneSelectAllCheckbox,
   type SelectAllCheckboxProps,
-} from './SelectAllCheckbox';
+} from "./SelectAllCheckbox";
 
 export {
   SelectionCounter,
   StandaloneSelectionCounter,
   type SelectionCounterProps,
-} from './SelectionCounter';
+} from "./SelectionCounter";
 
 export {
   BulkCreateDialog,
@@ -83,7 +81,7 @@ export {
   type BulkCreateField,
   type BulkCreateTemplate,
   type BulkCreateDialogProps,
-} from './BulkCreateDialog';
+} from "./BulkCreateDialog";
 
 export {
   BatchSelector,
@@ -96,7 +94,7 @@ export {
   type BatchSelectRowProps,
   type RangeSelectableListProps,
   type SelectionIndicatorProps,
-} from './BatchSelector';
+} from "./BatchSelector";
 
 export {
   BatchEditDialog,
@@ -107,7 +105,7 @@ export {
   type BatchEditField,
   type BatchEditPreview,
   type BatchEditDialogProps,
-} from './BatchEditDialog';
+} from "./BatchEditDialog";
 
 export {
   BatchProgress,
@@ -118,4 +116,4 @@ export {
   type BatchProgressState,
   type BatchProgressProps,
   type BatchProgressInlineProps,
-} from './BatchProgress';
+} from "./BatchProgress";

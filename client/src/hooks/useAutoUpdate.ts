@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef } from "react";
 
 const POLL_INTERVAL_MS = 5 * 60 * 1000;
 
@@ -14,7 +14,7 @@ export function useAutoUpdate() {
 
     async function checkVersion() {
       try {
-        const res = await fetch('/api/version', { cache: 'no-store' });
+        const res = await fetch("/api/version", { cache: "no-store" });
         if (!res.ok) return;
         const data = await res.json();
         const currentId = data.buildId as string;
@@ -28,8 +28,7 @@ export function useAutoUpdate() {
           knownBuildId.current = currentId;
           window.location.reload();
         }
-      } catch {
-      }
+      } catch {}
     }
 
     checkVersion();

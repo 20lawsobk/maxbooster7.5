@@ -1,4 +1,4 @@
-import { db } from '../db.js';
+import { db } from "../db.js";
 import {
   systemMetrics,
   alertRules,
@@ -6,9 +6,9 @@ import {
   type InsertSystemMetric,
   type InsertAlertRule,
   type InsertAlertIncident,
-} from '@shared/schema';
-import { eq, desc, and, gte, lte, sql } from 'drizzle-orm';
-import { logger } from '../logger.js';
+} from "@shared/schema";
+import { eq, desc, and, gte, lte, sql } from "drizzle-orm";
+import { logger } from "../logger.js";
 
 export class MetricsService {
   /**
@@ -17,8 +17,8 @@ export class MetricsService {
   async recordMetric(
     metricName: string,
     value: number,
-    source: string = 'server',
-    tags: Record<string, any> = {}
+    source: string = "server",
+    tags: Record<string, any> = {},
   ): Promise<void> {
     try {
       const now = new Date();
@@ -52,7 +52,7 @@ export class MetricsService {
           },
         });
     } catch (error: unknown) {
-      logger.warn({ err: error }, 'Failed to record metric:');
+      logger.warn({ err: error }, "Failed to record metric:");
     }
   }
 
@@ -63,8 +63,15 @@ export class MetricsService {
     metricName: string,
     startTime: Date,
     endTime: Date,
-    source?: string
-  ): Promise<Array<{ bucketStart: Date; avgValue: number; minValue: number; maxValue: number }>> {
+    source?: string,
+  ): Promise<
+    Array<{
+      bucketStart: Date;
+      avgValue: number;
+      minValue: number;
+      maxValue: number;
+    }>
+  > {
     try {
       const conditions = [
         eq(systemMetrics.metricName, metricName),
@@ -89,12 +96,12 @@ export class MetricsService {
 
       return results.map((r) => ({
         bucketStart: r.bucketStart!,
-        avgValue: parseFloat(r.avgValue || '0'),
-        minValue: parseFloat(r.minValue || '0'),
-        maxValue: parseFloat(r.maxValue || '0'),
+        avgValue: parseFloat(r.avgValue || "0"),
+        minValue: parseFloat(r.minValue || "0"),
+        maxValue: parseFloat(r.maxValue || "0"),
       }));
     } catch (error: unknown) {
-      logger.warn({ err: error }, 'Failed to get metrics:');
+      logger.warn({ err: error }, "Failed to get metrics:");
       return [];
     }
   }
@@ -106,7 +113,7 @@ export class MetricsService {
     try {
       await db.insert(alertRules).values(data);
     } catch (error: unknown) {
-      logger.warn({ err: error }, 'Failed to create alert rule:');
+      logger.warn({ err: error }, "Failed to create alert rule:");
       throw error;
     }
   }
@@ -116,31 +123,41 @@ export class MetricsService {
    */
   async evaluateAlerts(): Promise<void> {
     try {
-      const activeRules = await db.select().from(alertRules).where(eq(alertRules.isActive, true)).limit(200);
+      const activeRules = await db
+        .select()
+        .from(alertRules)
+        .where(eq(alertRules.isActive, true))
+        .limit(200);
 
       for (const rule of activeRules) {
         const endTime = new Date();
-        const startTime = new Date(endTime.getTime() - (rule.durationSecs || 300) * 1000);
+        const startTime = new Date(
+          endTime.getTime() - (rule.durationSecs || 300) * 1000,
+        );
 
-        const metrics = await this.getMetrics(rule.metricName, startTime, endTime);
+        const metrics = await this.getMetrics(
+          rule.metricName,
+          startTime,
+          endTime,
+        );
 
         if (metrics.length === 0) continue;
 
         const latestValue = metrics[metrics.length - 1].avgValue;
-        const threshold = parseFloat(rule.threshold || '0');
+        const threshold = parseFloat(rule.threshold || "0");
         let shouldTrigger = false;
 
         switch (rule.condition) {
-          case 'gt':
+          case "gt":
             shouldTrigger = latestValue > threshold;
             break;
-          case 'lt':
+          case "lt":
             shouldTrigger = latestValue < threshold;
             break;
-          case 'outside':
+          case "outside":
             shouldTrigger = Math.abs(latestValue) > threshold;
             break;
-          case 'inside':
+          case "inside":
             shouldTrigger = Math.abs(latestValue) < threshold;
             break;
         }
@@ -149,13 +166,18 @@ export class MetricsService {
           const existingIncidents = await db
             .select()
             .from(alertIncidents)
-            .where(and(eq(alertIncidents.ruleId, rule.id), eq(alertIncidents.status, 'triggered')))
+            .where(
+              and(
+                eq(alertIncidents.ruleId, rule.id),
+                eq(alertIncidents.status, "triggered"),
+              ),
+            )
             .limit(1);
 
           if (existingIncidents.length === 0) {
             await db.insert(alertIncidents).values({
               ruleId: rule.id,
-              status: 'triggered',
+              status: "triggered",
               context: {
                 metricName: rule.metricName,
                 value: latestValue,
@@ -165,21 +187,26 @@ export class MetricsService {
             });
 
             logger.info(
-              `Alert triggered: ${rule.name} (${latestValue} ${rule.condition} ${threshold})`
+              `Alert triggered: ${rule.name} (${latestValue} ${rule.condition} ${threshold})`,
             );
           }
         } else {
           await db
             .update(alertIncidents)
             .set({
-              status: 'resolved',
+              status: "resolved",
               resolvedAt: new Date(),
             })
-            .where(and(eq(alertIncidents.ruleId, rule.id), eq(alertIncidents.status, 'triggered')));
+            .where(
+              and(
+                eq(alertIncidents.ruleId, rule.id),
+                eq(alertIncidents.status, "triggered"),
+              ),
+            );
         }
       }
     } catch (error: unknown) {
-      logger.warn({ err: error }, 'Failed to evaluate alerts:');
+      logger.warn({ err: error }, "Failed to evaluate alerts:");
     }
   }
 
@@ -195,12 +222,12 @@ export class MetricsService {
         })
         .from(alertIncidents)
         .innerJoin(alertRules, eq(alertIncidents.ruleId, alertRules.id))
-        .where(eq(alertIncidents.status, 'triggered'))
+        .where(eq(alertIncidents.status, "triggered"))
         .orderBy(desc(alertIncidents.triggeredAt));
 
       return incidents;
     } catch (error: unknown) {
-      logger.warn({ err: error }, 'Failed to get active incidents:');
+      logger.warn({ err: error }, "Failed to get active incidents:");
       return [];
     }
   }

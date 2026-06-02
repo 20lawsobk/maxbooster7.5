@@ -21,14 +21,14 @@
  *              → Scans feat:processing:* keys, re-queues items to feat:buf, deletes stale keys
  */
 
-import { logger } from '../logger.js';
-import { getRedisClient } from '../lib/redisClient.js';
-import { db } from '../db.js';
-import { featureEvents } from '@shared/schema';
-import crypto from 'crypto';
+import { logger } from "../logger.js";
+import { getRedisClient } from "../lib/redisClient.js";
+import { db } from "../db.js";
+import { featureEvents } from "@shared/schema";
+import crypto from "crypto";
 
-const BUFFER_KEY = 'feat:buf';
-const PROCESSING_PREFIX = 'feat:processing:';
+const BUFFER_KEY = "feat:buf";
+const PROCESSING_PREFIX = "feat:processing:";
 const FLUSH_BATCH_SIZE = 500;
 const PROCESSING_TTL_SECONDS = 300;
 
@@ -43,7 +43,9 @@ export interface FeatureEventPayload {
  * Push a single event onto the Redis buffer.
  * Falls back to direct DB insert when Redis is unavailable.
  */
-export async function pushFeatureEvent(payload: FeatureEventPayload): Promise<void> {
+export async function pushFeatureEvent(
+  payload: FeatureEventPayload,
+): Promise<void> {
   let redis: ReturnType<typeof getRedisClient> | null = null;
   try {
     redis = getRedisClient();
@@ -59,7 +61,10 @@ export async function pushFeatureEvent(payload: FeatureEventPayload): Promise<vo
   try {
     await redis.rpush(BUFFER_KEY, JSON.stringify(payload));
   } catch (err) {
-    logger.warn({ err: err }, '[FeatureEventBuffer] Redis push failed, writing directly:');
+    logger.warn(
+      { err: err },
+      "[FeatureEventBuffer] Redis push failed, writing directly:",
+    );
     await insertDirect([payload]);
   }
 }
@@ -80,7 +85,7 @@ export async function flushFeatureEvents(): Promise<number> {
   }
   if (!redis) return 0;
 
-  const batchId = crypto.randomBytes(6).toString('hex');
+  const batchId = crypto.randomBytes(6).toString("hex");
   const processingKey = `${PROCESSING_PREFIX}${batchId}`;
 
   // Atomic Lua: copy batch to processing key (with TTL), trim buffer
@@ -101,12 +106,15 @@ export async function flushFeatureEvents(): Promise<number> {
   let raw: string[];
   try {
     raw = (await redis.eval(
-      fetchLua, 2,
-      BUFFER_KEY, processingKey,
-      String(FLUSH_BATCH_SIZE), String(PROCESSING_TTL_SECONDS)
+      fetchLua,
+      2,
+      BUFFER_KEY,
+      processingKey,
+      String(FLUSH_BATCH_SIZE),
+      String(PROCESSING_TTL_SECONDS),
     )) as string[];
   } catch (err) {
-    logger.warn({ err: err }, '[FeatureEventBuffer] Fetch Lua script failed:');
+    logger.warn({ err: err }, "[FeatureEventBuffer] Fetch Lua script failed:");
     return 0;
   }
 
@@ -117,7 +125,7 @@ export async function flushFeatureEvents(): Promise<number> {
     try {
       payloads.push(JSON.parse(item) as FeatureEventPayload);
     } catch {
-      logger.warn('[FeatureEventBuffer] Skipping malformed event payload');
+      logger.warn("[FeatureEventBuffer] Skipping malformed event payload");
     }
   }
 
@@ -130,13 +138,20 @@ export async function flushFeatureEvents(): Promise<number> {
     await insertDirect(payloads);
     // Confirm delivery: remove the processing key
     await redis.del(processingKey).catch((err) => {
-      logger.warn({ err: err }, '[FeatureEventBuffer] Failed to delete processing key (harmless — TTL will clean up):');
+      logger.warn(
+        { err: err },
+        "[FeatureEventBuffer] Failed to delete processing key (harmless — TTL will clean up):",
+      );
     });
-    logger.info(`[FeatureEventBuffer] Flushed ${payloads.length} events (batch ${batchId})`);
+    logger.info(
+      `[FeatureEventBuffer] Flushed ${payloads.length} events (batch ${batchId})`,
+    );
     return payloads.length;
-
   } catch (insertErr) {
-    logger.warn(`[FeatureEventBuffer] Insert failed for batch ${batchId}, restoring to buffer:`, insertErr);
+    logger.warn(
+      `[FeatureEventBuffer] Insert failed for batch ${batchId}, restoring to buffer:`,
+      insertErr,
+    );
     // Restore items to the front of the buffer (reverse order to preserve sequence)
     let restored = 0;
     for (let i = payloads.length - 1; i >= 0; i--) {
@@ -144,11 +159,16 @@ export async function flushFeatureEvents(): Promise<number> {
         await redis.lpush(BUFFER_KEY, JSON.stringify(payloads[i]));
         restored++;
       } catch (restoreErr) {
-        logger.warn(`[FeatureEventBuffer] Lost event during restore (index ${i}):`, restoreErr);
+        logger.warn(
+          `[FeatureEventBuffer] Lost event during restore (index ${i}):`,
+          restoreErr,
+        );
       }
     }
     await redis.del(processingKey).catch(() => {});
-    logger.info(`[FeatureEventBuffer] Restored ${restored}/${payloads.length} events after insert failure`);
+    logger.info(
+      `[FeatureEventBuffer] Restored ${restored}/${payloads.length} events after insert failure`,
+    );
     throw insertErr;
   }
 }
@@ -170,12 +190,16 @@ export async function recoverStaleProcessingBatches(): Promise<void> {
   if (!redis) return;
 
   try {
-    let cursor = '0';
+    let cursor = "0";
     let recovered = 0;
 
     do {
       const [nextCursor, keys] = await redis.scan(
-        cursor, 'MATCH', `${PROCESSING_PREFIX}*`, 'COUNT', '100'
+        cursor,
+        "MATCH",
+        `${PROCESSING_PREFIX}*`,
+        "COUNT",
+        "100",
       );
       cursor = nextCursor;
 
@@ -190,25 +214,33 @@ export async function recoverStaleProcessingBatches(): Promise<void> {
             pipeline.del(key);
             await pipeline.exec();
             recovered += items.length;
-            logger.info(`[FeatureEventBuffer] Recovered ${items.length} events from stale batch ${key}`);
+            logger.info(
+              `[FeatureEventBuffer] Recovered ${items.length} events from stale batch ${key}`,
+            );
           } else {
             await redis.del(key);
           }
         } catch (err) {
           const msg = err instanceof Error ? err.message : String(err);
-          logger.warn(`[FeatureEventBuffer] Failed to recover stale batch ${key}: ${msg}`);
+          logger.warn(
+            `[FeatureEventBuffer] Failed to recover stale batch ${key}: ${msg}`,
+          );
         }
       }
-    } while (cursor !== '0');
+    } while (cursor !== "0");
 
     if (recovered > 0) {
-      logger.warn(`[FeatureEventBuffer] Crash recovery: restored ${recovered} events to buffer`);
+      logger.warn(
+        `[FeatureEventBuffer] Crash recovery: restored ${recovered} events to buffer`,
+      );
     }
   } catch (err) {
     // PDIM outages cause scan failures at startup — expected and self-healing.
     // Log at WARN (not ERROR) so it doesn't pollute error dashboards.
     const msg = err instanceof Error ? err.message : String(err);
-    logger.info(`[FeatureEventBuffer] Crash recovery scan skipped (PDIM unavailable): ${msg}`);
+    logger.info(
+      `[FeatureEventBuffer] Crash recovery scan skipped (PDIM unavailable): ${msg}`,
+    );
   }
 }
 
@@ -231,7 +263,7 @@ export async function bufferDepth(): Promise<number> {
 }
 
 async function insertDirect(payloads: FeatureEventPayload[]): Promise<void> {
-  const rows = payloads.map(p => ({
+  const rows = payloads.map((p) => ({
     userId: p.userId,
     featureName: p.featureName,
     action: p.action,

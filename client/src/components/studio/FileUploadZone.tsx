@@ -1,13 +1,19 @@
-import { logger } from '@/lib/logger';
-import { useState, useCallback, useRef, useEffect } from 'react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
-import { useToast } from '@/hooks/use-toast';
-import { uploadWithProgress } from '@/lib/queryClient';
-import { UploadList, type UploadItemData } from '@/components/ui/upload-item';
-import { isInFullscreenMode, exitFullscreenForUpload, reenterFullscreen, openFilePickerInFullscreen, canPickFilesInFullscreen } from '@/hooks/useFullscreenFileUpload';
+import { logger } from "@/lib/logger";
+import { useState, useCallback, useRef, useEffect } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
+import { useToast } from "@/hooks/use-toast";
+import { uploadWithProgress } from "@/lib/queryClient";
+import { UploadList, type UploadItemData } from "@/components/ui/upload-item";
+import {
+  isInFullscreenMode,
+  exitFullscreenForUpload,
+  reenterFullscreen,
+  openFilePickerInFullscreen,
+  canPickFilesInFullscreen,
+} from "@/hooks/useFullscreenFileUpload";
 import {
   Upload,
   FileAudio,
@@ -18,13 +24,13 @@ import {
   Music,
   FolderOpen,
   Clipboard,
-} from 'lucide-react';
+} from "lucide-react";
 
 interface UploadingFile {
   id: string;
   file: File;
   progress: number;
-  status: 'pending' | 'uploading' | 'success' | 'error';
+  status: "pending" | "uploading" | "success" | "error";
   error?: string;
 }
 
@@ -61,20 +67,28 @@ interface FileUploadZoneProps {
 }
 
 const ACCEPTED_AUDIO_TYPES = [
-  'audio/wav',
-  'audio/x-wav',
-  'audio/wave',
-  'audio/mp3',
-  'audio/mpeg',
-  'audio/flac',
-  'audio/x-flac',
-  'audio/aiff',
-  'audio/x-aiff',
-  'audio/ogg',
-  'audio/webm',
+  "audio/wav",
+  "audio/x-wav",
+  "audio/wave",
+  "audio/mp3",
+  "audio/mpeg",
+  "audio/flac",
+  "audio/x-flac",
+  "audio/aiff",
+  "audio/x-aiff",
+  "audio/ogg",
+  "audio/webm",
 ];
 
-const ACCEPTED_EXTENSIONS = ['.wav', '.mp3', '.flac', '.aiff', '.aif', '.ogg', '.webm'];
+const ACCEPTED_EXTENSIONS = [
+  ".wav",
+  ".mp3",
+  ".flac",
+  ".aiff",
+  ".aif",
+  ".ogg",
+  ".webm",
+];
 const MAX_FILE_SIZE = 500 * 1024 * 1024;
 
 export function FileUploadZone({
@@ -97,9 +111,12 @@ export function FileUploadZone({
   const queryClient = useQueryClient();
 
   const validateFile = useCallback((file: File): string | null => {
-    const extension = '.' + file.name.split('.').pop()?.toLowerCase();
-    if (!ACCEPTED_EXTENSIONS.includes(extension) && !ACCEPTED_AUDIO_TYPES.includes(file.type)) {
-      return `Unsupported file type. Accepted: ${ACCEPTED_EXTENSIONS.join(', ')}`;
+    const extension = "." + file.name.split(".").pop()?.toLowerCase();
+    if (
+      !ACCEPTED_EXTENSIONS.includes(extension) &&
+      !ACCEPTED_AUDIO_TYPES.includes(file.type)
+    ) {
+      return `Unsupported file type. Accepted: ${ACCEPTED_EXTENSIONS.join(", ")}`;
     }
     if (file.size > MAX_FILE_SIZE) {
       return `File too large. Maximum size: ${MAX_FILE_SIZE / (1024 * 1024)}MB`;
@@ -110,43 +127,56 @@ export function FileUploadZone({
   const uploadFile = useCallback(
     async (uploadingFile: UploadingFile): Promise<UploadResult | null> => {
       const formData = new FormData();
-      formData.append('audioFile', uploadingFile.file);
+      formData.append("audioFile", uploadingFile.file);
       if (projectId) {
-        formData.append('projectId', projectId.toString());
+        formData.append("projectId", projectId.toString());
       }
 
       try {
         setUploadingFiles((prev) =>
-          prev.map((f) => (f.id === uploadingFile.id ? { ...f, status: 'uploading' } : f))
+          prev.map((f) =>
+            f.id === uploadingFile.id ? { ...f, status: "uploading" } : f,
+          ),
         );
 
-        const response = await uploadWithProgress('/api/studio/upload', formData, {
-          onProgress: (percent) => {
-            setUploadingFiles((prev) =>
-              prev.map((f) => (f.id === uploadingFile.id ? { ...f, progress: percent } : f))
-            );
+        const response = await uploadWithProgress(
+          "/api/studio/upload",
+          formData,
+          {
+            onProgress: (percent) => {
+              setUploadingFiles((prev) =>
+                prev.map((f) =>
+                  f.id === uploadingFile.id ? { ...f, progress: percent } : f,
+                ),
+              );
+            },
+            timeout: 300000, // 5 minutes
           },
-          timeout: 300000, // 5 minutes
-        });
+        );
 
         setUploadingFiles((prev) =>
           prev.map((f) =>
-            f.id === uploadingFile.id ? { ...f, status: 'success', progress: 100 } : f
-          )
+            f.id === uploadingFile.id
+              ? { ...f, status: "success", progress: 100 }
+              : f,
+          ),
         );
 
         return response as UploadResult;
       } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : 'Upload failed';
+        const errorMessage =
+          error instanceof Error ? error.message : "Upload failed";
         setUploadingFiles((prev) =>
           prev.map((f) =>
-            f.id === uploadingFile.id ? { ...f, status: 'error', error: errorMessage } : f
-          )
+            f.id === uploadingFile.id
+              ? { ...f, status: "error", error: errorMessage }
+              : f,
+          ),
         );
         throw error;
       }
     },
-    [projectId]
+    [projectId],
   );
 
   const processFiles = useCallback(
@@ -160,7 +190,7 @@ export function FileUploadZone({
           toast({
             title: `Cannot upload ${file.name}`,
             description: validationError,
-            variant: 'destructive',
+            variant: "destructive",
           });
           continue;
         }
@@ -169,7 +199,7 @@ export function FileUploadZone({
           id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
           file,
           progress: 0,
-          status: 'pending',
+          status: "pending",
         };
         newUploadingFiles.push(uploadingFile);
       }
@@ -181,27 +211,27 @@ export function FileUploadZone({
       setUploadingFiles((prev) =>
         prev.map((f) =>
           newUploadingFiles.find((nf) => nf.id === f.id)
-            ? { ...f, status: 'uploading' as const }
-            : f
-        )
+            ? { ...f, status: "uploading" as const }
+            : f,
+        ),
       );
 
       const uploadPromises = newUploadingFiles.map((uploadingFile) =>
         uploadFile(uploadingFile)
           .then((result) => ({ success: true, result }))
-          .catch(() => ({ success: false, result: null }))
+          .catch(() => ({ success: false, result: null })),
       );
 
       const results = await Promise.all(uploadPromises);
       const successCount = results.filter((r) => r.success).length;
 
       queryClient.invalidateQueries({
-        queryKey: ['/api/studio/projects', projectId, 'tracks'],
+        queryKey: ["/api/studio/projects", projectId, "tracks"],
       });
       queryClient.invalidateQueries({
-        queryKey: ['/api/studio/projects', projectId?.toString(), 'tracks'],
+        queryKey: ["/api/studio/projects", projectId?.toString(), "tracks"],
       });
-      queryClient.invalidateQueries({ queryKey: ['/api/studio/recent-files'] });
+      queryClient.invalidateQueries({ queryKey: ["/api/studio/recent-files"] });
 
       for (const result of results) {
         if (result.success && result.result && onTrackCreated) {
@@ -211,47 +241,58 @@ export function FileUploadZone({
 
       if (successCount > 0) {
         toast({
-          title: `${successCount} file${successCount > 1 ? 's' : ''} uploaded successfully`,
+          title: `${successCount} file${successCount > 1 ? "s" : ""} uploaded successfully`,
         });
         onUploadComplete?.();
       }
 
       setTimeout(() => {
-        setUploadingFiles((prev) => prev.filter((f) => f.status !== 'success'));
+        setUploadingFiles((prev) => prev.filter((f) => f.status !== "success"));
       }, 2000);
     },
-    [validateFile, uploadFile, queryClient, projectId, toast, onUploadComplete, onTrackCreated]
+    [
+      validateFile,
+      uploadFile,
+      queryClient,
+      projectId,
+      toast,
+      onUploadComplete,
+      onTrackCreated,
+    ],
   );
 
-  const handleFullscreenAwareClick = useCallback(async (e: React.MouseEvent | React.KeyboardEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    
-    const inFullscreen = isInFullscreenMode();
-    
-    if (inFullscreen && canPickFilesInFullscreen()) {
-      try {
-        const acceptTypes = ACCEPTED_EXTENSIONS.join(',');
-        const files = await openFilePickerInFullscreen({
-          accept: acceptTypes,
-          multiple: true
-        });
-        if (files.length > 0) {
-          processFiles(files);
+  const handleFullscreenAwareClick = useCallback(
+    async (e: React.MouseEvent | React.KeyboardEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+
+      const inFullscreen = isInFullscreenMode();
+
+      if (inFullscreen && canPickFilesInFullscreen()) {
+        try {
+          const acceptTypes = ACCEPTED_EXTENSIONS.join(",");
+          const files = await openFilePickerInFullscreen({
+            accept: acceptTypes,
+            multiple: true,
+          });
+          if (files.length > 0) {
+            processFiles(files);
+          }
+          return;
+        } catch (err) {
+          logger.warn("File System Access API not available, using fallback");
         }
-        return;
-      } catch (err) {
-        logger.warn('File System Access API not available, using fallback');
       }
-    }
-    
-    if (inFullscreen) {
-      fullscreenElementRef.current = await exitFullscreenForUpload();
-      await new Promise(resolve => setTimeout(resolve, 150));
-    }
-    
-    fileInputRef.current?.click();
-  }, [processFiles]);
+
+      if (inFullscreen) {
+        fullscreenElementRef.current = await exitFullscreenForUpload();
+        await new Promise((resolve) => setTimeout(resolve, 150));
+      }
+
+      fileInputRef.current?.click();
+    },
+    [processFiles],
+  );
 
   const handleFileSelectWithReenter = useCallback(
     async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -260,20 +301,24 @@ export function FileUploadZone({
         processFiles(files);
       }
       if (fileInputRef.current) {
-        fileInputRef.current.value = '';
+        fileInputRef.current.value = "";
       }
-      
+
       if (fullscreenElementRef.current) {
-        await new Promise(resolve => setTimeout(resolve, 100));
+        await new Promise((resolve) => setTimeout(resolve, 100));
         await reenterFullscreen(fullscreenElementRef.current);
         fullscreenElementRef.current = null;
       }
     },
-    [processFiles]
+    [processFiles],
   );
 
   useEffect(() => {
-    if (externalFiles && externalFiles.length > 0 && externalFiles !== processedExternalFilesRef.current) {
+    if (
+      externalFiles &&
+      externalFiles.length > 0 &&
+      externalFiles !== processedExternalFilesRef.current
+    ) {
       processedExternalFilesRef.current = externalFiles;
       processFiles(externalFiles);
       onExternalFilesProcessed?.();
@@ -282,15 +327,16 @@ export function FileUploadZone({
 
   useEffect(() => {
     const handlePaste = (e: ClipboardEvent) => {
-      if (!dropZoneRef.current?.contains(document.activeElement) && !isFocused) return;
-      
+      if (!dropZoneRef.current?.contains(document.activeElement) && !isFocused)
+        return;
+
       const items = e.clipboardData?.items;
       if (!items) return;
 
       const audioFiles: File[] = [];
       for (let i = 0; i < items.length; i++) {
         const item = items[i];
-        if (item.kind === 'file' && item.type.startsWith('audio/')) {
+        if (item.kind === "file" && item.type.startsWith("audio/")) {
           const file = item.getAsFile();
           if (file) audioFiles.push(file);
         }
@@ -300,14 +346,14 @@ export function FileUploadZone({
         e.preventDefault();
         processFiles(audioFiles);
         toast({
-          title: `${audioFiles.length} file${audioFiles.length > 1 ? 's' : ''} pasted`,
-          description: 'Starting upload...',
+          title: `${audioFiles.length} file${audioFiles.length > 1 ? "s" : ""} pasted`,
+          description: "Starting upload...",
         });
       }
     };
 
-    document.addEventListener('paste', handlePaste);
-    return () => document.removeEventListener('paste', handlePaste);
+    document.addEventListener("paste", handlePaste);
+    return () => document.removeEventListener("paste", handlePaste);
   }, [isFocused, processFiles, toast]);
 
   const handleDragEnter = useCallback((e: React.DragEvent) => {
@@ -339,7 +385,7 @@ export function FileUploadZone({
         processFiles(files);
       }
     },
-    [processFiles]
+    [processFiles],
   );
 
   const handleFileSelect = useCallback(
@@ -349,10 +395,10 @@ export function FileUploadZone({
         processFiles(files);
       }
       if (fileInputRef.current) {
-        fileInputRef.current.value = '';
+        fileInputRef.current.value = "";
       }
     },
-    [processFiles]
+    [processFiles],
   );
 
   const removeFile = useCallback((id: string) => {
@@ -360,24 +406,26 @@ export function FileUploadZone({
   }, []);
 
   const hasActiveUploads = uploadingFiles.some(
-    (f) => f.status === 'pending' || f.status === 'uploading'
+    (f) => f.status === "pending" || f.status === "uploading",
   );
 
-  const inputId = useRef(`file-upload-${Math.random().toString(36).substr(2, 9)}`).current;
+  const inputId = useRef(
+    `file-upload-${Math.random().toString(36).substr(2, 9)}`,
+  ).current;
 
   if (compact) {
     return (
-      <div className={cn('space-y-2', className)}>
+      <div className={cn("space-y-2", className)}>
         <div
           ref={dropZoneRef}
           role="button"
           className={cn(
-            'relative border-2 border-dashed rounded-lg p-4 transition-all duration-200 cursor-pointer touch-manipulation block',
+            "relative border-2 border-dashed rounded-lg p-4 transition-all duration-200 cursor-pointer touch-manipulation block",
             isDragging
-              ? 'border-primary bg-primary/10'
+              ? "border-primary bg-primary/10"
               : isFocused
-                ? 'border-primary/70 bg-primary/5'
-                : 'border-muted-foreground/25 hover:border-primary/50 hover:bg-muted/50 active:bg-muted/70'
+                ? "border-primary/70 bg-primary/5"
+                : "border-muted-foreground/25 hover:border-primary/50 hover:bg-muted/50 active:bg-muted/70",
           )}
           onClick={handleFullscreenAwareClick}
           onDragEnter={handleDragEnter}
@@ -387,7 +435,11 @@ export function FileUploadZone({
           onFocus={() => setIsFocused(true)}
           onBlur={() => setIsFocused(false)}
           tabIndex={0}
-          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { handleFullscreenAwareClick(e); } }}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              handleFullscreenAwareClick(e);
+            }
+          }}
           aria-label="Click or tap to upload audio files. Paste with Ctrl+V."
         >
           <input
@@ -407,7 +459,9 @@ export function FileUploadZone({
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium">Tap to upload audio files</p>
-              <p className="text-xs text-muted-foreground">WAV, MP3, FLAC, AIFF, OGG</p>
+              <p className="text-xs text-muted-foreground">
+                WAV, MP3, FLAC, AIFF, OGG
+              </p>
             </div>
           </div>
         </div>
@@ -419,20 +473,24 @@ export function FileUploadZone({
                 key={file.id}
                 className="flex items-center gap-2 p-2 rounded-md bg-muted/50 text-sm"
               >
-                {file.status === 'uploading' ? (
+                {file.status === "uploading" ? (
                   <Loader2 className="h-3 w-3 animate-spin text-primary" />
-                ) : file.status === 'success' ? (
+                ) : file.status === "success" ? (
                   <CheckCircle2 className="h-3 w-3 text-green-500" />
-                ) : file.status === 'error' ? (
+                ) : file.status === "error" ? (
                   <AlertCircle className="h-3 w-3 text-destructive" />
                 ) : (
                   <FileAudio className="h-3 w-3 text-muted-foreground" />
                 )}
-                <span className="flex-1 truncate text-xs">{file.file.name}</span>
-                {file.status === 'uploading' && (
-                  <span className="text-xs text-muted-foreground">{file.progress}%</span>
+                <span className="flex-1 truncate text-xs">
+                  {file.file.name}
+                </span>
+                {file.status === "uploading" && (
+                  <span className="text-xs text-muted-foreground">
+                    {file.progress}%
+                  </span>
                 )}
-                {(file.status === 'error' || file.status === 'pending') && (
+                {(file.status === "error" || file.status === "pending") && (
                   <Button
                     variant="ghost"
                     size="icon"
@@ -449,19 +507,19 @@ export function FileUploadZone({
       </div>
     );
   }
-  
+
   return (
-    <div className={cn('space-y-3 sm:space-y-4', className)}>
+    <div className={cn("space-y-3 sm:space-y-4", className)}>
       <div
         ref={dropZoneRef}
         role="button"
         className={cn(
-          'relative border-2 border-dashed rounded-xl p-4 sm:p-6 md:p-8 transition-all duration-200 cursor-pointer touch-manipulation block',
+          "relative border-2 border-dashed rounded-xl p-4 sm:p-6 md:p-8 transition-all duration-200 cursor-pointer touch-manipulation block",
           isDragging
-            ? 'border-primary bg-primary/10 scale-[1.01] sm:scale-[1.02]'
+            ? "border-primary bg-primary/10 scale-[1.01] sm:scale-[1.02]"
             : isFocused
-              ? 'border-primary/70 bg-primary/5 ring-2 ring-primary/20'
-              : 'border-muted-foreground/25 hover:border-primary/50 hover:bg-muted/30 active:bg-muted/50'
+              ? "border-primary/70 bg-primary/5 ring-2 ring-primary/20"
+              : "border-muted-foreground/25 hover:border-primary/50 hover:bg-muted/30 active:bg-muted/50",
         )}
         onClick={handleFullscreenAwareClick}
         onDragEnter={handleDragEnter}
@@ -471,7 +529,11 @@ export function FileUploadZone({
         onFocus={() => setIsFocused(true)}
         onBlur={() => setIsFocused(false)}
         tabIndex={0}
-        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { handleFullscreenAwareClick(e); } }}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            handleFullscreenAwareClick(e);
+          }
+        }}
         aria-label="Click or tap to upload audio files. You can also paste files with Ctrl+V."
       >
         <input
@@ -489,8 +551,8 @@ export function FileUploadZone({
         <div className="flex flex-col items-center justify-center text-center gap-3 sm:gap-4">
           <div
             className={cn(
-              'p-3 sm:p-4 rounded-full transition-all duration-200',
-              isDragging ? 'bg-primary/20 scale-110' : 'bg-muted'
+              "p-3 sm:p-4 rounded-full transition-all duration-200",
+              isDragging ? "bg-primary/20 scale-110" : "bg-muted",
             )}
           >
             {isDragging ? (
@@ -502,7 +564,9 @@ export function FileUploadZone({
 
           <div className="space-y-1">
             <p className="text-base sm:text-lg font-medium">
-              {isDragging ? 'Drop your audio files here' : 'Tap to upload audio files'}
+              {isDragging
+                ? "Drop your audio files here"
+                : "Tap to upload audio files"}
             </p>
             <p className="text-xs sm:text-sm text-muted-foreground hidden sm:block">
               or drag & drop • paste with Ctrl+V
@@ -512,21 +576,31 @@ export function FileUploadZone({
             </p>
           </div>
 
-          <span 
-            className="gap-2 min-h-[44px] h-10 sm:h-11 px-5 sm:px-6 text-sm touch-manipulation inline-flex items-center justify-center rounded-md border border-input bg-background hover:bg-accent hover:text-accent-foreground"
-          >
+          <span className="gap-2 min-h-[44px] h-10 sm:h-11 px-5 sm:px-6 text-sm touch-manipulation inline-flex items-center justify-center rounded-md border border-input bg-background hover:bg-accent hover:text-accent-foreground">
             <FolderOpen className="h-4 w-4" />
             <span className="hidden xs:inline">Browse Files</span>
             <span className="xs:hidden">Browse</span>
           </span>
 
           <div className="flex flex-wrap items-center justify-center gap-1.5 sm:gap-2 text-[10px] sm:text-xs text-muted-foreground">
-            <span className="px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full bg-muted">WAV</span>
-            <span className="px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full bg-muted">MP3</span>
-            <span className="px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full bg-muted">FLAC</span>
-            <span className="hidden sm:inline px-2 py-1 rounded-full bg-muted">AIFF</span>
-            <span className="hidden sm:inline px-2 py-1 rounded-full bg-muted">OGG</span>
-            <span className="text-muted-foreground/60 text-[9px] sm:text-xs">Max 500MB</span>
+            <span className="px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full bg-muted">
+              WAV
+            </span>
+            <span className="px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full bg-muted">
+              MP3
+            </span>
+            <span className="px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full bg-muted">
+              FLAC
+            </span>
+            <span className="hidden sm:inline px-2 py-1 rounded-full bg-muted">
+              AIFF
+            </span>
+            <span className="hidden sm:inline px-2 py-1 rounded-full bg-muted">
+              OGG
+            </span>
+            <span className="text-muted-foreground/60 text-[9px] sm:text-xs">
+              Max 500MB
+            </span>
           </div>
         </div>
       </div>
@@ -535,18 +609,19 @@ export function FileUploadZone({
         <div className="space-y-1.5 sm:space-y-2">
           <div className="flex items-center justify-between">
             <h4 className="text-xs sm:text-sm font-medium">
-              {hasActiveUploads ? 'Uploading...' : 'Upload Complete'}
+              {hasActiveUploads ? "Uploading..." : "Upload Complete"}
             </h4>
-            {!hasActiveUploads && uploadingFiles.some((f) => f.status === 'error') && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setUploadingFiles([])}
-                className="h-6 sm:h-7 text-[10px] sm:text-xs px-2"
-              >
-                Clear All
-              </Button>
-            )}
+            {!hasActiveUploads &&
+              uploadingFiles.some((f) => f.status === "error") && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setUploadingFiles([])}
+                  className="h-6 sm:h-7 text-[10px] sm:text-xs px-2"
+                >
+                  Clear All
+                </Button>
+              )}
           </div>
 
           <div className="space-y-1.5 sm:space-y-2 max-h-32 sm:max-h-48 overflow-y-auto">
@@ -554,42 +629,48 @@ export function FileUploadZone({
               <div
                 key={file.id}
                 className={cn(
-                  'flex items-center gap-2 sm:gap-3 p-2 sm:p-3 rounded-lg transition-colors',
-                  file.status === 'success'
-                    ? 'bg-green-500/10'
-                    : file.status === 'error'
-                      ? 'bg-destructive/10'
-                      : 'bg-muted/50'
+                  "flex items-center gap-2 sm:gap-3 p-2 sm:p-3 rounded-lg transition-colors",
+                  file.status === "success"
+                    ? "bg-green-500/10"
+                    : file.status === "error"
+                      ? "bg-destructive/10"
+                      : "bg-muted/50",
                 )}
               >
-                {file.status === 'uploading' ? (
+                {file.status === "uploading" ? (
                   <Loader2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 animate-spin text-primary flex-shrink-0" />
-                ) : file.status === 'success' ? (
+                ) : file.status === "success" ? (
                   <CheckCircle2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-green-500 flex-shrink-0" />
-                ) : file.status === 'error' ? (
+                ) : file.status === "error" ? (
                   <AlertCircle className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-destructive flex-shrink-0" />
                 ) : (
                   <FileAudio className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" />
                 )}
 
                 <div className="flex-1 min-w-0">
-                  <p className="text-xs sm:text-sm font-medium truncate">{file.file.name}</p>
-                  {file.status === 'uploading' && (
+                  <p className="text-xs sm:text-sm font-medium truncate">
+                    {file.file.name}
+                  </p>
+                  {file.status === "uploading" && (
                     <Progress value={file.progress} className="h-1 mt-1" />
                   )}
-                  {file.status === 'error' && file.error && (
-                    <p className="text-[10px] sm:text-xs text-destructive mt-0.5 line-clamp-1">{file.error}</p>
+                  {file.status === "error" && file.error && (
+                    <p className="text-[10px] sm:text-xs text-destructive mt-0.5 line-clamp-1">
+                      {file.error}
+                    </p>
                   )}
                 </div>
 
                 <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
-                  {file.status === 'uploading' && (
-                    <span className="text-[10px] sm:text-xs text-muted-foreground">{file.progress}%</span>
+                  {file.status === "uploading" && (
+                    <span className="text-[10px] sm:text-xs text-muted-foreground">
+                      {file.progress}%
+                    </span>
                   )}
                   <span className="text-[10px] sm:text-xs text-muted-foreground hidden xs:inline">
                     {(file.file.size / (1024 * 1024)).toFixed(1)}MB
                   </span>
-                  {(file.status === 'error' || file.status === 'pending') && (
+                  {(file.status === "error" || file.status === "pending") && (
                     <Button
                       variant="ghost"
                       size="icon"

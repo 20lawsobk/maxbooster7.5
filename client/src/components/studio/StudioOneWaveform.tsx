@@ -1,14 +1,14 @@
-import { useRef, useEffect, useCallback, useState, useMemo } from 'react';
-import { cn } from '@/lib/utils';
+import { useRef, useEffect, useCallback, useState, useMemo } from "react";
+import { cn } from "@/lib/utils";
 import {
   StudioOneWaveformEngine,
   ClipRenderData,
   TimelineRenderConfig,
   EngineStats,
-} from '@/lib/daw/StudioOneWaveformEngine';
-import { ZoomIn, ZoomOut, Maximize2, Activity, Gauge } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Slider } from '@/components/ui/slider';
+} from "@/lib/daw/StudioOneWaveformEngine";
+import { ZoomIn, ZoomOut, Maximize2, Activity, Gauge } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Slider } from "@/components/ui/slider";
 
 export interface StudioOneWaveformProps {
   clips?: ClipRenderData[];
@@ -32,7 +32,7 @@ export interface StudioOneWaveformProps {
 export function StudioOneWaveform({
   clips = [],
   audioData,
-  sourceId = 'default',
+  sourceId = "default",
   isPlaying = false,
   currentTime = 0,
   bpm = 120,
@@ -93,22 +93,25 @@ export function StudioOneWaveform({
     if (clips.length > 0) {
       engine.setClips(clips);
     } else if (audioData) {
-      const dur = audioData instanceof AudioBuffer
-        ? audioData.duration
-        : audioData.length / sampleRate;
+      const dur =
+        audioData instanceof AudioBuffer
+          ? audioData.duration
+          : audioData.length / sampleRate;
 
-      engine.setClips([{
-        id: `clip_${sourceId}`,
-        sourceId,
-        name: 'Audio',
-        startTime: 0,
-        duration: dur,
-        sourceOffset: 0,
-        color: renderConfig?.waveformColor || '#4ade80',
-        selected: false,
-        muted: false,
-        gain: 1,
-      }]);
+      engine.setClips([
+        {
+          id: `clip_${sourceId}`,
+          sourceId,
+          name: "Audio",
+          startTime: 0,
+          duration: dur,
+          sourceOffset: 0,
+          color: renderConfig?.waveformColor || "#4ade80",
+          selected: false,
+          muted: false,
+          gain: 1,
+        },
+      ]);
     }
   }, [clips, audioData, sourceId, sampleRate, renderConfig?.waveformColor]);
 
@@ -146,49 +149,58 @@ export function StudioOneWaveform({
     return () => clearInterval(interval);
   }, [showStats]);
 
-  const handleWheel = useCallback((e: React.WheelEvent) => {
-    e.preventDefault();
-    const engine = engineRef.current;
-    if (!engine) return;
+  const handleWheel = useCallback(
+    (e: React.WheelEvent) => {
+      e.preventDefault();
+      const engine = engineRef.current;
+      if (!engine) return;
 
-    if (e.ctrlKey || e.metaKey) {
-      const factor = e.deltaY < 0 ? 1.2 : 1 / 1.2;
-      const rect = canvasRef.current?.getBoundingClientRect();
-      const localX = rect ? e.clientX - rect.left : undefined;
-      engine.zoomIn(factor, localX);
-      setZoomLevel(prev => Math.max(0.01, Math.min(1000, prev * factor)));
-      onZoomChange?.(zoomLevel * factor);
-    } else if (e.shiftKey) {
-      const newScale = Math.max(0.1, Math.min(10, verticalScale + (e.deltaY < 0 ? 0.1 : -0.1)));
-      setVerticalScale(newScale);
-      engine.setVerticalScale(newScale);
-    } else {
-      const scrollDelta = e.deltaX !== 0 ? e.deltaX : e.deltaY;
-      engine.scrollBy(scrollDelta * 0.01);
-    }
-  }, [verticalScale, zoomLevel, onZoomChange]);
+      if (e.ctrlKey || e.metaKey) {
+        const factor = e.deltaY < 0 ? 1.2 : 1 / 1.2;
+        const rect = canvasRef.current?.getBoundingClientRect();
+        const localX = rect ? e.clientX - rect.left : undefined;
+        engine.zoomIn(factor, localX);
+        setZoomLevel((prev) => Math.max(0.01, Math.min(1000, prev * factor)));
+        onZoomChange?.(zoomLevel * factor);
+      } else if (e.shiftKey) {
+        const newScale = Math.max(
+          0.1,
+          Math.min(10, verticalScale + (e.deltaY < 0 ? 0.1 : -0.1)),
+        );
+        setVerticalScale(newScale);
+        engine.setVerticalScale(newScale);
+      } else {
+        const scrollDelta = e.deltaX !== 0 ? e.deltaX : e.deltaY;
+        engine.scrollBy(scrollDelta * 0.01);
+      }
+    },
+    [verticalScale, zoomLevel, onZoomChange],
+  );
 
-  const handleCanvasClick = useCallback((e: React.MouseEvent) => {
-    if (!canvasRef.current || !onSeek) return;
-    const rect = canvasRef.current.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const ratio = x / rect.width;
-    const seekTime = ratio * duration;
-    onSeek(seekTime);
-  }, [onSeek, duration]);
+  const handleCanvasClick = useCallback(
+    (e: React.MouseEvent) => {
+      if (!canvasRef.current || !onSeek) return;
+      const rect = canvasRef.current.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const ratio = x / rect.width;
+      const seekTime = ratio * duration;
+      onSeek(seekTime);
+    },
+    [onSeek, duration],
+  );
 
   const handleZoomIn = useCallback(() => {
     const engine = engineRef.current;
     if (!engine) return;
     engine.zoomIn(1.5);
-    setZoomLevel(prev => prev * 1.5);
+    setZoomLevel((prev) => prev * 1.5);
   }, []);
 
   const handleZoomOut = useCallback(() => {
     const engine = engineRef.current;
     if (!engine) return;
     engine.zoomOut(1.5);
-    setZoomLevel(prev => prev / 1.5);
+    setZoomLevel((prev) => prev / 1.5);
   }, []);
 
   const handleFitToView = useCallback(() => {
@@ -213,10 +225,8 @@ export function StudioOneWaveform({
     for (let i = 0; i < len; i++) {
       const t = i / sampleRate;
       data[i] =
-        Math.sin(t * 440 * 2 * Math.PI) * 0.3 *
-        Math.sin(t * Math.PI * 0.5) +
-        Math.sin(t * 880 * 2 * Math.PI) * 0.15 *
-        Math.cos(t * Math.PI * 0.3) +
+        Math.sin(t * 440 * 2 * Math.PI) * 0.3 * Math.sin(t * Math.PI * 0.5) +
+        Math.sin(t * 880 * 2 * Math.PI) * 0.15 * Math.cos(t * Math.PI * 0.3) +
         (Math.random() - 0.5) * 0.05;
     }
     return data;
@@ -224,24 +234,31 @@ export function StudioOneWaveform({
 
   useEffect(() => {
     if (demoData && engineRef.current) {
-      engineRef.current.loadAudio('demo', demoData, sampleRate);
-      engineRef.current.setClips([{
-        id: 'clip_demo',
-        sourceId: 'demo',
-        name: 'Demo Audio',
-        startTime: 0,
-        duration: 10,
-        sourceOffset: 0,
-        color: '#4ade80',
-        selected: false,
-        muted: false,
-        gain: 1,
-      }]);
+      engineRef.current.loadAudio("demo", demoData, sampleRate);
+      engineRef.current.setClips([
+        {
+          id: "clip_demo",
+          sourceId: "demo",
+          name: "Demo Audio",
+          startTime: 0,
+          duration: 10,
+          sourceOffset: 0,
+          color: "#4ade80",
+          selected: false,
+          muted: false,
+          gain: 1,
+        },
+      ]);
     }
   }, [demoData, sampleRate]);
 
   return (
-    <div className={cn('relative bg-[#1a1a2e] rounded-lg overflow-hidden border border-white/10', className)}>
+    <div
+      className={cn(
+        "relative bg-[#1a1a2e] rounded-lg overflow-hidden border border-white/10",
+        className,
+      )}
+    >
       {showControls && (
         <div className="flex items-center gap-2 px-3 py-1.5 bg-black/30 border-b border-white/5">
           <Button
@@ -289,7 +306,9 @@ export function StudioOneWaveform({
 
           <div className="ml-auto flex items-center gap-2 text-[10px] text-white/30">
             <span>{bpm} BPM</span>
-            <span>{timeSignature[0]}/{timeSignature[1]}</span>
+            <span>
+              {timeSignature[0]}/{timeSignature[1]}
+            </span>
             <span>Zoom: {zoomLevel.toFixed(1)}x</span>
           </div>
         </div>
@@ -305,7 +324,7 @@ export function StudioOneWaveform({
           onClick={handleCanvasClick}
           onWheel={handleWheel}
           className="w-full h-full"
-          style={{ width: '100%', height: '100%' }}
+          style={{ width: "100%", height: "100%" }}
         />
       </div>
 
@@ -313,10 +332,13 @@ export function StudioOneWaveform({
         <div className="flex items-center gap-3 px-3 py-1 bg-black/40 border-t border-white/5">
           <div className="flex items-center gap-1">
             <Gauge className="h-3 w-3 text-green-400" />
-            <span className="text-[10px] text-green-400 font-mono">{stats.fps} FPS</span>
+            <span className="text-[10px] text-green-400 font-mono">
+              {stats.fps} FPS
+            </span>
           </div>
           <span className="text-[10px] text-white/30 font-mono">
-            Cache: {stats.cacheEntries} entries ({(stats.totalCacheBytes / 1024 / 1024).toFixed(1)} MB)
+            Cache: {stats.cacheEntries} entries (
+            {(stats.totalCacheBytes / 1024 / 1024).toFixed(1)} MB)
           </span>
           <span className="text-[10px] text-white/30 font-mono">
             {stats.cacheUtilization.toFixed(1)}% utilized

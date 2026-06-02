@@ -1,9 +1,9 @@
-import { useState, useEffect, useCallback, memo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
+import { useState, useEffect, useCallback, memo } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
 import {
   Download,
   Loader2,
@@ -18,15 +18,24 @@ import {
   AlertCircle,
   Zap,
   HardDrive,
-} from 'lucide-react';
-import { cn } from '@/lib/utils';
+} from "lucide-react";
+import { cn } from "@/lib/utils";
 
-export type ExportStatus = 'queued' | 'preparing' | 'processing' | 'encoding' | 'uploading' | 'complete' | 'failed' | 'cancelled' | 'paused';
+export type ExportStatus =
+  | "queued"
+  | "preparing"
+  | "processing"
+  | "encoding"
+  | "uploading"
+  | "complete"
+  | "failed"
+  | "cancelled"
+  | "paused";
 
 export interface ExportJob {
   id: string;
   name: string;
-  type: 'audio' | 'data' | 'stems' | 'batch';
+  type: "audio" | "data" | "stems" | "batch";
   format: string;
   status: ExportStatus;
   progress: number;
@@ -54,22 +63,74 @@ interface ExportProgressProps {
   compact?: boolean;
 }
 
-const STATUS_CONFIG: Record<ExportStatus, {
-  color: string;
-  bgColor: string;
-  icon: React.ElementType;
-  label: string;
-  animated?: boolean;
-}> = {
-  queued: { color: 'text-zinc-400', bgColor: 'bg-zinc-800', icon: Clock, label: 'Queued' },
-  preparing: { color: 'text-blue-400', bgColor: 'bg-blue-900/30', icon: Loader2, label: 'Preparing', animated: true },
-  processing: { color: 'text-blue-400', bgColor: 'bg-blue-900/30', icon: Zap, label: 'Processing', animated: true },
-  encoding: { color: 'text-purple-400', bgColor: 'bg-purple-900/30', icon: Loader2, label: 'Encoding', animated: true },
-  uploading: { color: 'text-cyan-400', bgColor: 'bg-cyan-900/30', icon: Loader2, label: 'Uploading', animated: true },
-  complete: { color: 'text-green-400', bgColor: 'bg-green-900/30', icon: CheckCircle2, label: 'Complete' },
-  failed: { color: 'text-red-400', bgColor: 'bg-red-900/30', icon: XCircle, label: 'Failed' },
-  cancelled: { color: 'text-zinc-500', bgColor: 'bg-zinc-800', icon: X, label: 'Cancelled' },
-  paused: { color: 'text-amber-400', bgColor: 'bg-amber-900/30', icon: Pause, label: 'Paused' },
+const STATUS_CONFIG: Record<
+  ExportStatus,
+  {
+    color: string;
+    bgColor: string;
+    icon: React.ElementType;
+    label: string;
+    animated?: boolean;
+  }
+> = {
+  queued: {
+    color: "text-zinc-400",
+    bgColor: "bg-zinc-800",
+    icon: Clock,
+    label: "Queued",
+  },
+  preparing: {
+    color: "text-blue-400",
+    bgColor: "bg-blue-900/30",
+    icon: Loader2,
+    label: "Preparing",
+    animated: true,
+  },
+  processing: {
+    color: "text-blue-400",
+    bgColor: "bg-blue-900/30",
+    icon: Zap,
+    label: "Processing",
+    animated: true,
+  },
+  encoding: {
+    color: "text-purple-400",
+    bgColor: "bg-purple-900/30",
+    icon: Loader2,
+    label: "Encoding",
+    animated: true,
+  },
+  uploading: {
+    color: "text-cyan-400",
+    bgColor: "bg-cyan-900/30",
+    icon: Loader2,
+    label: "Uploading",
+    animated: true,
+  },
+  complete: {
+    color: "text-green-400",
+    bgColor: "bg-green-900/30",
+    icon: CheckCircle2,
+    label: "Complete",
+  },
+  failed: {
+    color: "text-red-400",
+    bgColor: "bg-red-900/30",
+    icon: XCircle,
+    label: "Failed",
+  },
+  cancelled: {
+    color: "text-zinc-500",
+    bgColor: "bg-zinc-800",
+    icon: X,
+    label: "Cancelled",
+  },
+  paused: {
+    color: "text-amber-400",
+    bgColor: "bg-amber-900/30",
+    icon: Pause,
+    label: "Paused",
+  },
 };
 
 function formatTime(seconds: number): string {
@@ -85,7 +146,8 @@ function formatTime(seconds: number): string {
 function formatFileSize(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-  if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  if (bytes < 1024 * 1024 * 1024)
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`;
 }
 
@@ -105,7 +167,12 @@ export const ExportProgressItem = memo(function ExportProgressItem({
 
   const config = STATUS_CONFIG[job.status];
   const Icon = config.icon;
-  const isActive = ['preparing', 'processing', 'encoding', 'uploading'].includes(job.status);
+  const isActive = [
+    "preparing",
+    "processing",
+    "encoding",
+    "uploading",
+  ].includes(job.status);
 
   useEffect(() => {
     if (!isActive || !job.startTime) return;
@@ -144,27 +211,43 @@ export const ExportProgressItem = memo(function ExportProgressItem({
           "flex items-center gap-3 p-3 rounded-lg border",
           config.bgColor,
           "border-zinc-800",
-          className
+          className,
         )}
       >
-        <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center", config.bgColor)}>
-          <Icon className={cn("h-4 w-4", config.color, config.animated && "animate-spin")} />
+        <div
+          className={cn(
+            "w-8 h-8 rounded-lg flex items-center justify-center",
+            config.bgColor,
+          )}
+        >
+          <Icon
+            className={cn(
+              "h-4 w-4",
+              config.color,
+              config.animated && "animate-spin",
+            )}
+          />
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
             <span className="text-sm font-medium truncate">{job.name}</span>
-            <Badge variant="outline" className="text-[10px] uppercase">{job.format}</Badge>
+            <Badge variant="outline" className="text-[10px] uppercase">
+              {job.format}
+            </Badge>
           </div>
-          {isActive && (
-            <Progress value={job.progress} className="h-1 mt-1.5" />
-          )}
+          {isActive && <Progress value={job.progress} className="h-1 mt-1.5" />}
         </div>
         <div className="flex items-center gap-1">
           {isActive && eta && (
             <span className="text-xs text-zinc-500">{eta}</span>
           )}
-          {job.status === 'complete' && (
-            <Button size="sm" variant="ghost" className="h-7 px-2" onClick={handleDownload}>
+          {job.status === "complete" && (
+            <Button
+              size="sm"
+              variant="ghost"
+              className="h-7 px-2"
+              onClick={handleDownload}
+            >
               <Download className="h-3.5 w-3.5" />
             </Button>
           )}
@@ -178,49 +261,75 @@ export const ExportProgressItem = memo(function ExportProgressItem({
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, height: 0 }}
-      className={cn("rounded-lg border overflow-hidden", config.bgColor, "border-zinc-800", className)}
+      className={cn(
+        "rounded-lg border overflow-hidden",
+        config.bgColor,
+        "border-zinc-800",
+        className,
+      )}
     >
       <div className="p-4">
         <div className="flex items-start justify-between mb-3">
           <div className="flex items-center gap-3">
-            <div className={cn(
-              "w-12 h-12 rounded-lg flex items-center justify-center",
-              job.status === 'complete' ? 'bg-green-500/20' :
-              job.status === 'failed' ? 'bg-red-500/20' :
-              'bg-zinc-800'
-            )}>
-              <Icon className={cn(
-                "h-6 w-6",
-                config.color,
-                config.animated && "animate-spin"
-              )} />
+            <div
+              className={cn(
+                "w-12 h-12 rounded-lg flex items-center justify-center",
+                job.status === "complete"
+                  ? "bg-green-500/20"
+                  : job.status === "failed"
+                    ? "bg-red-500/20"
+                    : "bg-zinc-800",
+              )}
+            >
+              <Icon
+                className={cn(
+                  "h-6 w-6",
+                  config.color,
+                  config.animated && "animate-spin",
+                )}
+              />
             </div>
             <div>
               <h4 className="font-medium">{job.name}</h4>
               <div className="flex items-center gap-2 mt-0.5">
-                <Badge variant="outline" className="text-xs uppercase">{job.format}</Badge>
-                <Badge variant="secondary" className={cn("text-xs", config.color)}>
+                <Badge variant="outline" className="text-xs uppercase">
+                  {job.format}
+                </Badge>
+                <Badge
+                  variant="secondary"
+                  className={cn("text-xs", config.color)}
+                >
                   {config.label}
                 </Badge>
-                {job.type === 'stems' && (
-                  <Badge variant="secondary" className="text-xs">Stems</Badge>
+                {job.type === "stems" && (
+                  <Badge variant="secondary" className="text-xs">
+                    Stems
+                  </Badge>
                 )}
               </div>
             </div>
           </div>
-          
+
           <div className="flex items-center gap-1">
             {isActive && job.canPause && (
               <Button
                 size="sm"
                 variant="ghost"
                 className="h-8 w-8 p-0"
-                onClick={() => job.status === 'paused' ? onResume?.(job.id) : onPause?.(job.id)}
+                onClick={() =>
+                  job.status === "paused"
+                    ? onResume?.(job.id)
+                    : onPause?.(job.id)
+                }
               >
-                {job.status === 'paused' ? <Play className="h-4 w-4" /> : <Pause className="h-4 w-4" />}
+                {job.status === "paused" ? (
+                  <Play className="h-4 w-4" />
+                ) : (
+                  <Pause className="h-4 w-4" />
+                )}
               </Button>
             )}
-            {(isActive || job.status === 'queued') && (
+            {(isActive || job.status === "queued") && (
               <Button
                 size="sm"
                 variant="ghost"
@@ -230,7 +339,9 @@ export const ExportProgressItem = memo(function ExportProgressItem({
                 <X className="h-4 w-4" />
               </Button>
             )}
-            {(job.status === 'complete' || job.status === 'failed' || job.status === 'cancelled') && (
+            {(job.status === "complete" ||
+              job.status === "failed" ||
+              job.status === "cancelled") && (
               <Button
                 size="sm"
                 variant="ghost"
@@ -246,7 +357,7 @@ export const ExportProgressItem = memo(function ExportProgressItem({
         {isActive && (
           <div className="space-y-2">
             <div className="flex items-center justify-between text-xs text-zinc-400">
-              <span>{job.stage || 'Processing...'}</span>
+              <span>{job.stage || "Processing..."}</span>
               <span>{job.progress.toFixed(0)}%</span>
             </div>
             <Progress value={job.progress} className="h-2" />
@@ -257,7 +368,7 @@ export const ExportProgressItem = memo(function ExportProgressItem({
           </div>
         )}
 
-        {job.status === 'complete' && (
+        {job.status === "complete" && (
           <div className="flex items-center justify-between mt-2 pt-3 border-t border-zinc-800">
             <div className="flex items-center gap-4 text-xs text-zinc-400">
               {job.fileSize && (
@@ -284,14 +395,14 @@ export const ExportProgressItem = memo(function ExportProgressItem({
           </div>
         )}
 
-        {job.status === 'failed' && (
+        {job.status === "failed" && (
           <div className="mt-3 space-y-3">
             <div className="flex items-start gap-2 p-3 bg-red-950/50 rounded-lg">
               <AlertCircle className="h-4 w-4 text-red-400 shrink-0 mt-0.5" />
               <div>
                 <p className="text-sm text-red-400">Export Failed</p>
                 <p className="text-xs text-red-300/80 mt-0.5">
-                  {job.error || 'An unexpected error occurred'}
+                  {job.error || "An unexpected error occurred"}
                 </p>
               </div>
             </div>
@@ -305,7 +416,9 @@ export const ExportProgressItem = memo(function ExportProgressItem({
                 <RefreshCw className="h-4 w-4 mr-2" />
                 Retry Export
                 {job.retryCount && job.retryCount > 0 && (
-                  <span className="ml-1 text-xs">({job.retryCount} attempts)</span>
+                  <span className="ml-1 text-xs">
+                    ({job.retryCount} attempts)
+                  </span>
                 )}
               </Button>
             )}
@@ -339,13 +452,23 @@ export function ExportProgressPanel({
   onClearCompleted,
   className,
 }: ExportProgressPanelProps) {
-  const activeJobs = jobs.filter(j => ['queued', 'preparing', 'processing', 'encoding', 'uploading', 'paused'].includes(j.status));
-  const completedJobs = jobs.filter(j => j.status === 'complete');
-  const failedJobs = jobs.filter(j => j.status === 'failed');
+  const activeJobs = jobs.filter((j) =>
+    [
+      "queued",
+      "preparing",
+      "processing",
+      "encoding",
+      "uploading",
+      "paused",
+    ].includes(j.status),
+  );
+  const completedJobs = jobs.filter((j) => j.status === "complete");
+  const failedJobs = jobs.filter((j) => j.status === "failed");
 
-  const totalProgress = activeJobs.length > 0
-    ? activeJobs.reduce((sum, j) => sum + j.progress, 0) / activeJobs.length
-    : 0;
+  const totalProgress =
+    activeJobs.length > 0
+      ? activeJobs.reduce((sum, j) => sum + j.progress, 0) / activeJobs.length
+      : 0;
 
   if (jobs.length === 0) {
     return null;
@@ -389,7 +512,7 @@ export function ExportProgressPanel({
       </CardHeader>
       <CardContent className="space-y-3 max-h-96 overflow-y-auto">
         <AnimatePresence mode="popLayout">
-          {jobs.map(job => (
+          {jobs.map((job) => (
             <ExportProgressItem
               key={job.id}
               job={job}

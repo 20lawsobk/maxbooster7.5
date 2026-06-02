@@ -4,17 +4,17 @@ on:
   push:
     branches:
       - main
-      - 'release/**'
-      - 'deploy/**'
+      - "release/**"
+      - "deploy/**"
     tags:
-      - 'v*'
+      - "v*"
   deployment:
   workflow_dispatch:
     inputs:
       platform:
-        description: 'Platform to build'
+        description: "Platform to build"
         required: true
-        default: 'all'
+        default: "all"
         type: choice
         options:
           - all
@@ -23,8 +23,8 @@ on:
           - macos
 
 env:
-  APP_NAME: 'Max Booster'
-  APP_ID: 'com.blawzmusic.maxbooster'
+  APP_NAME: "Max Booster"
+  APP_ID: "com.blawzmusic.maxbooster"
 
 # Cancel superseded runs of this workflow on the same ref. Tag pushes get a
 # stable group keyed off the tag so the release artifacts complete cleanly.
@@ -52,8 +52,8 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version-file: '.nvmrc'
-          cache: 'npm'
+          node-version-file: ".nvmrc"
+          cache: "npm"
 
       - name: Install system dependencies
         run: |
@@ -70,7 +70,7 @@ jobs:
         run: npx tsx script/build.ts
         env:
           NODE_ENV: production
-          SKIP_BOOSTERSTATE: '1'
+          SKIP_BOOSTERSTATE: "1"
 
       - name: Remove dangling native module symlinks
         run: find node_modules -maxdepth 5 -name "*.so" -type l ! -exec test -e {} \; -delete 2>/dev/null || true
@@ -124,8 +124,8 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version-file: '.nvmrc'
-          cache: 'npm'
+          node-version-file: ".nvmrc"
+          cache: "npm"
 
       - name: Install dependencies
         run: npm ci --no-audit --no-fund --legacy-peer-deps
@@ -138,7 +138,7 @@ jobs:
         run: npx tsx script/build.ts
         env:
           NODE_ENV: production
-          SKIP_BOOSTERSTATE: '1'
+          SKIP_BOOSTERSTATE: "1"
 
       - name: Build Windows packages
         run: npx electron-builder --win --publish never
@@ -184,8 +184,8 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version-file: '.nvmrc'
-          cache: 'npm'
+          node-version-file: ".nvmrc"
+          cache: "npm"
 
       - name: Install dependencies
         run: npm ci --no-audit --no-fund --legacy-peer-deps
@@ -197,7 +197,7 @@ jobs:
         run: npx tsx script/build.ts
         env:
           NODE_ENV: production
-          SKIP_BOOSTERSTATE: '1'
+          SKIP_BOOSTERSTATE: "1"
 
       - name: Build macOS packages
         run: npx electron-builder --mac zip --x64 --arm64 --publish never

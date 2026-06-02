@@ -1,16 +1,26 @@
-import { logger } from '@/lib/logger';
-import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Users, Crown, Eye, Edit3, Mic, MousePointer2, Wifi, WifiOff, RefreshCw } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { logger } from "@/lib/logger";
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  Users,
+  Crown,
+  Eye,
+  Edit3,
+  Mic,
+  MousePointer2,
+  Wifi,
+  WifiOff,
+  RefreshCw,
+} from "lucide-react";
+import { cn } from "@/lib/utils";
 
 export interface Collaborator {
   id: string;
   name: string;
   avatar?: string;
   color: string;
-  role: 'owner' | 'editor' | 'viewer';
-  status: 'active' | 'idle' | 'away';
+  role: "owner" | "editor" | "viewer";
+  status: "active" | "idle" | "away";
   cursorPosition?: { x: number; y: number };
   currentTrackId?: string;
   isRecording?: boolean;
@@ -32,22 +42,22 @@ const ROLE_ICONS = {
 };
 
 const ROLE_LABELS = {
-  owner: 'Owner',
-  editor: 'Editor',
-  viewer: 'Viewer',
+  owner: "Owner",
+  editor: "Editor",
+  viewer: "Viewer",
 };
 
 const STATUS_COLORS = {
-  active: 'bg-green-500',
-  idle: 'bg-yellow-500',
-  away: 'bg-gray-500',
+  active: "bg-green-500",
+  idle: "bg-yellow-500",
+  away: "bg-gray-500",
 };
 
 function getInitials(name: string): string {
   return name
-    .split(' ')
+    .split(" ")
     .map((n) => n[0])
-    .join('')
+    .join("")
     .toUpperCase()
     .slice(0, 2);
 }
@@ -65,13 +75,13 @@ export function FlowStateCollaborationPresence({
     return [...collaborators].sort((a, b) => {
       if (a.id === currentUserId) return -1;
       if (b.id === currentUserId) return 1;
-      if (a.role === 'owner') return -1;
-      if (b.role === 'owner') return 1;
+      if (a.role === "owner") return -1;
+      if (b.role === "owner") return 1;
       return a.name.localeCompare(b.name);
     });
   }, [collaborators, currentUserId]);
 
-  const activeCount = collaborators.filter((c) => c.status === 'active').length;
+  const activeCount = collaborators.filter((c) => c.status === "active").length;
 
   return (
     <>
@@ -84,7 +94,7 @@ export function FlowStateCollaborationPresence({
           className={cn(
             "bg-black/60 backdrop-blur-xl rounded-2xl border overflow-hidden transition-all",
             isExpanded ? "w-64" : "w-auto",
-            isConnected ? "border-white/10" : "border-red-500/30"
+            isConnected ? "border-white/10" : "border-red-500/30",
           )}
         >
           <motion.button
@@ -97,10 +107,11 @@ export function FlowStateCollaborationPresence({
                   key={collaborator.id}
                   className={cn(
                     "w-7 h-7 rounded-full border-2 flex items-center justify-center text-[10px] font-bold relative",
-                    collaborator.isRecording && "ring-2 ring-red-500 ring-offset-1 ring-offset-black"
+                    collaborator.isRecording &&
+                      "ring-2 ring-red-500 ring-offset-1 ring-offset-black",
                   )}
                   style={{
-                    backgroundColor: collaborator.color + '40',
+                    backgroundColor: collaborator.color + "40",
                     borderColor: collaborator.color,
                     color: collaborator.color,
                   }}
@@ -120,7 +131,7 @@ export function FlowStateCollaborationPresence({
                   <div
                     className={cn(
                       "absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border border-black",
-                      STATUS_COLORS[collaborator.status]
+                      STATUS_COLORS[collaborator.status],
                     )}
                   />
                   {collaborator.isRecording && (
@@ -134,14 +145,14 @@ export function FlowStateCollaborationPresence({
                   )}
                 </motion.div>
               ))}
-              
+
               {collaborators.length > 4 && (
                 <div className="w-7 h-7 rounded-full bg-white/10 border-2 border-white/20 flex items-center justify-center text-[10px] text-white/60">
                   +{collaborators.length - 4}
                 </div>
               )}
             </div>
-            
+
             <div className="flex items-center gap-1.5 text-white/70">
               {isConnected ? (
                 <Wifi className="w-4 h-4 text-green-400" />
@@ -156,13 +167,15 @@ export function FlowStateCollaborationPresence({
             {isExpanded && (
               <motion.div
                 initial={{ height: 0, opacity: 0 }}
-                animate={{ height: 'auto', opacity: 1 }}
+                animate={{ height: "auto", opacity: 1 }}
                 exit={{ height: 0, opacity: 0 }}
                 className="border-t border-white/5"
               >
                 {!isConnected && (
                   <div className="px-3 py-2 bg-red-500/10 border-b border-red-500/20 flex items-center justify-between">
-                    <span className="text-xs text-red-400">Connection lost</span>
+                    <span className="text-xs text-red-400">
+                      Connection lost
+                    </span>
                     <motion.button
                       onClick={onReconnect}
                       className="text-xs text-red-300 hover:text-white flex items-center gap-1"
@@ -185,17 +198,17 @@ export function FlowStateCollaborationPresence({
                         key={collaborator.id}
                         className={cn(
                           "px-3 py-2 flex items-center gap-3 hover:bg-white/5 transition-colors",
-                          isCurrentUser && "bg-white/5"
+                          isCurrentUser && "bg-white/5",
                         )}
                       >
                         <div className="relative">
                           <div
                             className={cn(
                               "w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold",
-                              collaborator.isRecording && "ring-2 ring-red-500"
+                              collaborator.isRecording && "ring-2 ring-red-500",
                             )}
                             style={{
-                              backgroundColor: collaborator.color + '40',
+                              backgroundColor: collaborator.color + "40",
                               color: collaborator.color,
                             }}
                           >
@@ -212,7 +225,7 @@ export function FlowStateCollaborationPresence({
                           <div
                             className={cn(
                               "absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border border-black",
-                              STATUS_COLORS[collaborator.status]
+                              STATUS_COLORS[collaborator.status],
                             )}
                           />
                         </div>
@@ -222,7 +235,9 @@ export function FlowStateCollaborationPresence({
                             <span className="text-sm font-medium text-white truncate">
                               {collaborator.name}
                               {isCurrentUser && (
-                                <span className="text-white/40 ml-1">(you)</span>
+                                <span className="text-white/40 ml-1">
+                                  (you)
+                                </span>
                               )}
                             </span>
                           </div>
@@ -288,7 +303,7 @@ export function FlowStateCollaborationPresence({
             />
             <div
               className="absolute left-4 top-4 px-2 py-0.5 rounded text-[10px] font-medium whitespace-nowrap"
-              style={{ backgroundColor: collaborator.color, color: 'white' }}
+              style={{ backgroundColor: collaborator.color, color: "white" }}
             >
               {collaborator.name}
             </div>
@@ -306,7 +321,7 @@ interface UseCollaborationPresenceOptions {
 
 export function useCollaborationPresence(
   projectId: string | null,
-  options: UseCollaborationPresenceOptions = {}
+  options: UseCollaborationPresenceOptions = {},
 ) {
   const {
     heartbeatInterval = 30000,
@@ -316,8 +331,10 @@ export function useCollaborationPresence(
 
   const [collaborators, setCollaborators] = useState<Collaborator[]>([]);
   const [isConnected, setIsConnected] = useState(false);
-  const [connectionState, setConnectionState] = useState<'disconnected' | 'connecting' | 'connected'>('disconnected');
-  
+  const [connectionState, setConnectionState] = useState<
+    "disconnected" | "connecting" | "connected"
+  >("disconnected");
+
   const wsRef = useRef<WebSocket | null>(null);
   const heartbeatRef = useRef<ReturnType<typeof setInterval>>();
   const reconnectAttemptsRef = useRef(0);
@@ -326,29 +343,27 @@ export function useCollaborationPresence(
   const connect = useCallback(() => {
     if (!projectId || wsRef.current?.readyState === WebSocket.OPEN) return;
 
-    setConnectionState('connecting');
+    setConnectionState("connecting");
 
     setCollaborators([
       {
-        id: 'current-user',
-        name: 'You',
-        color: '#8b5cf6',
-        role: 'owner',
-        status: 'active',
+        id: "current-user",
+        name: "You",
+        color: "#8b5cf6",
+        role: "owner",
+        status: "active",
         lastActivity: Date.now(),
       },
     ]);
     setIsConnected(true);
-    setConnectionState('connected');
+    setConnectionState("connected");
     reconnectAttemptsRef.current = 0;
 
     heartbeatRef.current = setInterval(() => {
       setCollaborators((prev) =>
         prev.map((c) =>
-          c.id === 'current-user'
-            ? { ...c, lastActivity: Date.now() }
-            : c
-        )
+          c.id === "current-user" ? { ...c, lastActivity: Date.now() } : c,
+        ),
       );
     }, heartbeatInterval);
   }, [projectId, heartbeatInterval]);
@@ -365,18 +380,19 @@ export function useCollaborationPresence(
       wsRef.current = null;
     }
     setIsConnected(false);
-    setConnectionState('disconnected');
+    setConnectionState("disconnected");
     setCollaborators([]);
   }, []);
 
   const reconnect = useCallback(() => {
     if (reconnectAttemptsRef.current >= maxReconnectAttempts) {
-      logger.warn('Max reconnection attempts reached');
+      logger.warn("Max reconnection attempts reached");
       return;
     }
 
     reconnectAttemptsRef.current += 1;
-    const delay = reconnectDelay * Math.pow(2, reconnectAttemptsRef.current - 1);
+    const delay =
+      reconnectDelay * Math.pow(2, reconnectAttemptsRef.current - 1);
 
     reconnectTimeoutRef.current = setTimeout(() => {
       connect();
@@ -396,40 +412,44 @@ export function useCollaborationPresence(
   const updateCursorPosition = useCallback((x: number, y: number) => {
     setCollaborators((prev) =>
       prev.map((c) =>
-        c.id === 'current-user'
+        c.id === "current-user"
           ? { ...c, cursorPosition: { x, y }, lastActivity: Date.now() }
-          : c
-      )
+          : c,
+      ),
     );
   }, []);
 
   const setCurrentTrack = useCallback((trackId: string | null) => {
     setCollaborators((prev) =>
       prev.map((c) =>
-        c.id === 'current-user'
-          ? { ...c, currentTrackId: trackId || undefined, lastActivity: Date.now() }
-          : c
-      )
+        c.id === "current-user"
+          ? {
+              ...c,
+              currentTrackId: trackId || undefined,
+              lastActivity: Date.now(),
+            }
+          : c,
+      ),
     );
   }, []);
 
   const setRecordingStatus = useCallback((isRecording: boolean) => {
     setCollaborators((prev) =>
       prev.map((c) =>
-        c.id === 'current-user'
+        c.id === "current-user"
           ? { ...c, isRecording, lastActivity: Date.now() }
-          : c
-      )
+          : c,
+      ),
     );
   }, []);
 
-  const setUserStatus = useCallback((status: Collaborator['status']) => {
+  const setUserStatus = useCallback((status: Collaborator["status"]) => {
     setCollaborators((prev) =>
       prev.map((c) =>
-        c.id === 'current-user'
+        c.id === "current-user"
           ? { ...c, status, lastActivity: Date.now() }
-          : c
-      )
+          : c,
+      ),
     );
   }, []);
 

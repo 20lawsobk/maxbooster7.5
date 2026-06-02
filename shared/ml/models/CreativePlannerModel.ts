@@ -16,23 +16,44 @@
  *                        variant_diversity, cta_urgency
  */
 
-import * as tf from '@tensorflow/tfjs';
-import { BaseModel } from './BaseModel.js';
+import * as tf from "@tensorflow/tfjs";
+import { BaseModel } from "./BaseModel.js";
 
 // ─── Lookup Tables ────────────────────────────────────────────────────────────
 
 export const PLATFORM_IDX: Record<string, number> = {
-  tiktok: 0, reels: 1, instagram: 1, shorts: 2, youtube: 2,
-  twitter: 3, feed: 4, facebook: 4, story: 5, linkedin: 6, threads: 4,
+  tiktok: 0,
+  reels: 1,
+  instagram: 1,
+  shorts: 2,
+  youtube: 2,
+  twitter: 3,
+  feed: 4,
+  facebook: 4,
+  story: 5,
+  linkedin: 6,
+  threads: 4,
 };
 export const GOAL_IDX: Record<string, number> = {
-  awareness: 0, launch: 1, conversion: 2, engagement: 3, growth: 4,
+  awareness: 0,
+  launch: 1,
+  conversion: 2,
+  engagement: 3,
+  growth: 4,
 };
 export const TONE_IDX: Record<string, number> = {
-  high_energy: 0, cinematic: 1, lo_fi: 2, hype: 3, emotional: 4, chill: 5,
+  high_energy: 0,
+  cinematic: 1,
+  lo_fi: 2,
+  hype: 3,
+  emotional: 4,
+  chill: 5,
 };
 export const DOMAIN_IDX: Record<string, number> = {
-  music: 0, advertising: 1, social_media: 2, technology: 3,
+  music: 0,
+  advertising: 1,
+  social_media: 2,
+  technology: 3,
 };
 
 // ─── Feature Extraction ───────────────────────────────────────────────────────
@@ -63,7 +84,9 @@ export interface CreativePlannerOutput {
   ctaUrgency: number;
 }
 
-export function extractCreativePlannerFeatures(input: CreativePlannerInput): number[] {
+export function extractCreativePlannerFeatures(
+  input: CreativePlannerInput,
+): number[] {
   return [
     (PLATFORM_IDX[input.platform] ?? 0) / 7,
     (GOAL_IDX[input.goal] ?? 0) / 4,
@@ -85,9 +108,9 @@ export function extractCreativePlannerFeatures(input: CreativePlannerInput): num
 export class CreativePlannerModel extends BaseModel {
   constructor() {
     super({
-      name: 'CreativePlannerModel',
-      version: '1.0.0',
-      type: 'regression',
+      name: "CreativePlannerModel",
+      version: "1.0.0",
+      type: "regression",
       inputShape: [12],
       outputShape: [4],
     });
@@ -95,14 +118,26 @@ export class CreativePlannerModel extends BaseModel {
 
   protected buildModel(): tf.LayersModel {
     const input = tf.input({ shape: [12] });
-    let x = tf.layers.dense({ units: 64, activation: 'relu', kernelInitializer: 'heNormal' }).apply(input) as tf.SymbolicTensor;
+    let x = tf.layers
+      .dense({ units: 64, activation: "relu", kernelInitializer: "heNormal" })
+      .apply(input) as tf.SymbolicTensor;
     x = tf.layers.batchNormalization().apply(x) as tf.SymbolicTensor;
     x = tf.layers.dropout({ rate: 0.2 }).apply(x) as tf.SymbolicTensor;
-    x = tf.layers.dense({ units: 32, activation: 'relu', kernelInitializer: 'heNormal' }).apply(x) as tf.SymbolicTensor;
-    x = tf.layers.dense({ units: 16, activation: 'relu' }).apply(x) as tf.SymbolicTensor;
-    const output = tf.layers.dense({ units: 4, activation: 'sigmoid' }).apply(x) as tf.SymbolicTensor;
+    x = tf.layers
+      .dense({ units: 32, activation: "relu", kernelInitializer: "heNormal" })
+      .apply(x) as tf.SymbolicTensor;
+    x = tf.layers
+      .dense({ units: 16, activation: "relu" })
+      .apply(x) as tf.SymbolicTensor;
+    const output = tf.layers
+      .dense({ units: 4, activation: "sigmoid" })
+      .apply(x) as tf.SymbolicTensor;
     const model = tf.model({ inputs: input, outputs: output });
-    model.compile({ optimizer: tf.train.adam(0.001), loss: 'meanSquaredError', metrics: ['mae'] });
+    model.compile({
+      optimizer: tf.train.adam(0.001),
+      loss: "meanSquaredError",
+      metrics: ["mae"],
+    });
     return model;
   }
 
@@ -120,7 +155,9 @@ export class CreativePlannerModel extends BaseModel {
     };
   }
 
-  public async predictPlan(input: CreativePlannerInput): Promise<CreativePlannerOutput> {
+  public async predictPlan(
+    input: CreativePlannerInput,
+  ): Promise<CreativePlannerOutput> {
     if (!this.model) await this.initialize();
     const features = extractCreativePlannerFeatures(input);
     const result = await this.predict(features);
@@ -128,7 +165,10 @@ export class CreativePlannerModel extends BaseModel {
   }
 
   /** Synthetic training sample generator */
-  public static makeSyntheticSamples(count: number): { inputs: number[][]; labels: number[][] } {
+  public static makeSyntheticSamples(count: number): {
+    inputs: number[][];
+    labels: number[][];
+  } {
     const platforms = Object.keys(PLATFORM_IDX);
     const goals = Object.keys(GOAL_IDX);
     const tones = Object.keys(TONE_IDX);
@@ -151,20 +191,40 @@ export class CreativePlannerModel extends BaseModel {
       const energyPeak = Math.random();
       const moodEnergy = Math.random();
 
-      inputs.push(extractCreativePlannerFeatures({
-        platform, goal, tone, domain, bpm, energyMean, sectionCount,
-        hasDrop, isMinor, tempoStability, energyPeak, moodEnergy,
-      }));
+      inputs.push(
+        extractCreativePlannerFeatures({
+          platform,
+          goal,
+          tone,
+          domain,
+          bpm,
+          energyMean,
+          sectionCount,
+          hasDrop,
+          isMinor,
+          tempoStability,
+          energyPeak,
+          moodEnergy,
+        }),
+      );
 
       // Label heuristics based on platform + goal + music features
-      const isTikTok = platform === 'tiktok' || platform === 'reels';
-      const isConversion = goal === 'conversion' || goal === 'launch';
-      const isHighEnergy = tone === 'high_energy' || tone === 'hype';
+      const isTikTok = platform === "tiktok" || platform === "reels";
+      const isConversion = goal === "conversion" || goal === "launch";
+      const isHighEnergy = tone === "high_energy" || tone === "hype";
 
-      const beatCountNorm = isTikTok ? 0.4 + Math.random() * 0.3 : 0.2 + Math.random() * 0.6;
-      const hookWeight = isHighEnergy ? 0.7 + Math.random() * 0.3 : 0.3 + Math.random() * 0.5;
-      const varDiversity = isConversion ? 0.6 + Math.random() * 0.4 : 0.2 + Math.random() * 0.5;
-      const ctaUrgency = isConversion ? 0.7 + Math.random() * 0.3 : 0.2 + Math.random() * 0.5;
+      const beatCountNorm = isTikTok
+        ? 0.4 + Math.random() * 0.3
+        : 0.2 + Math.random() * 0.6;
+      const hookWeight = isHighEnergy
+        ? 0.7 + Math.random() * 0.3
+        : 0.3 + Math.random() * 0.5;
+      const varDiversity = isConversion
+        ? 0.6 + Math.random() * 0.4
+        : 0.2 + Math.random() * 0.5;
+      const ctaUrgency = isConversion
+        ? 0.7 + Math.random() * 0.3
+        : 0.2 + Math.random() * 0.5;
 
       labels.push([beatCountNorm, hookWeight, varDiversity, ctaUrgency]);
     }

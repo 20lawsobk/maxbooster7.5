@@ -5,6 +5,4 @@
 // for isSchedulerLeader() tracking.  This file is the conventional workers/ entry
 // point that workers/index.ts uses in its shutdown sequence.
 
-export {
-  closeScheduler as closeAutonomousWorker,
-} from '../services/autonomousJobScheduler.js';
+export { closeScheduler as closeAutonomousWorker } from "../services/autonomousJobScheduler.js";

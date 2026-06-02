@@ -1,10 +1,10 @@
-import { randomBytes } from 'crypto';
+import { randomBytes } from "crypto";
 
-import fsPromises from 'fs/promises';
-import path from 'path';
-import { logger } from '../logger.js';
-import { db } from '../db.js';
-import { sql } from 'drizzle-orm';
+import fsPromises from "fs/promises";
+import path from "path";
+import { logger } from "../logger.js";
+import { db } from "../db.js";
+import { sql } from "drizzle-orm";
 
 export interface AuditLog {
   id: string;
@@ -20,10 +20,10 @@ export interface AuditLog {
 
 export interface SecurityIncident {
   id: string;
-  severity: 'low' | 'medium' | 'high' | 'critical';
+  severity: "low" | "medium" | "high" | "critical";
   title: string;
   description: string;
-  status: 'open' | 'investigating' | 'resolved' | 'closed';
+  status: "open" | "investigating" | "resolved" | "closed";
   affectedUsers?: string[];
   createdAt: Date;
   resolvedAt?: Date;
@@ -32,7 +32,7 @@ export interface SecurityIncident {
 
 export interface HealthCheck {
   service: string;
-  status: 'healthy' | 'degraded' | 'down';
+  status: "healthy" | "degraded" | "down";
   responseTime?: number;
   lastCheck: Date;
   message?: string;
@@ -43,25 +43,31 @@ export class SecurityService {
   private incidents: Map<string, SecurityIncident> = new Map();
   private healthChecks: Map<string, HealthCheck> = new Map();
 
-  private static readonly MAX_AUDIT_LOGS  = 20_000;
-  private static readonly MAX_INCIDENTS   =  5_000;
-  private static readonly MAX_HEALTH      =    200;
+  private static readonly MAX_AUDIT_LOGS = 20_000;
+  private static readonly MAX_INCIDENTS = 5_000;
+  private static readonly MAX_HEALTH = 200;
 
   constructor() {
-    setInterval(() => {
-      while (this.auditLogs.size > SecurityService.MAX_AUDIT_LOGS) {
-        const k = this.auditLogs.keys().next().value;
-        if (k !== undefined) this.auditLogs.delete(k); else break;
-      }
-      while (this.incidents.size > SecurityService.MAX_INCIDENTS) {
-        const k = this.incidents.keys().next().value;
-        if (k !== undefined) this.incidents.delete(k); else break;
-      }
-      while (this.healthChecks.size > SecurityService.MAX_HEALTH) {
-        const k = this.healthChecks.keys().next().value;
-        if (k !== undefined) this.healthChecks.delete(k); else break;
-      }
-    }, 30 * 60 * 1000).unref();
+    setInterval(
+      () => {
+        while (this.auditLogs.size > SecurityService.MAX_AUDIT_LOGS) {
+          const k = this.auditLogs.keys().next().value;
+          if (k !== undefined) this.auditLogs.delete(k);
+          else break;
+        }
+        while (this.incidents.size > SecurityService.MAX_INCIDENTS) {
+          const k = this.incidents.keys().next().value;
+          if (k !== undefined) this.incidents.delete(k);
+          else break;
+        }
+        while (this.healthChecks.size > SecurityService.MAX_HEALTH) {
+          const k = this.healthChecks.keys().next().value;
+          if (k !== undefined) this.healthChecks.delete(k);
+          else break;
+        }
+      },
+      30 * 60 * 1000,
+    ).unref();
   }
 
   /**
@@ -73,11 +79,11 @@ export class SecurityService {
     resource: string,
     metadata?: unknown,
     ipAddress?: string,
-    userAgent?: string
+    userAgent?: string,
   ): Promise<AuditLog> {
     try {
       const log: AuditLog = {
-        id: `audit_${randomBytes(8).toString('hex')}`,
+        id: `audit_${randomBytes(8).toString("hex")}`,
         userId,
         action,
         resource,
@@ -94,8 +100,8 @@ export class SecurityService {
 
       return log;
     } catch (error: unknown) {
-      logger.warn({ err: error }, 'Error creating audit log:');
-      throw new Error('Failed to create audit log');
+      logger.warn({ err: error }, "Error creating audit log:");
+      throw new Error("Failed to create audit log");
     }
   }
 
@@ -142,8 +148,8 @@ export class SecurityService {
 
       return logs;
     } catch (error: unknown) {
-      logger.warn({ err: error }, 'Error fetching audit logs:');
-      throw new Error('Failed to fetch audit logs');
+      logger.warn({ err: error }, "Error fetching audit logs:");
+      throw new Error("Failed to fetch audit logs");
     }
   }
 
@@ -153,56 +159,56 @@ export class SecurityService {
   async checkHealth(service: string): Promise<HealthCheck> {
     try {
       const startTime = Date.now();
-      let status: 'healthy' | 'degraded' | 'down' = 'healthy';
+      let status: "healthy" | "degraded" | "down" = "healthy";
       let message: string | undefined;
 
       // Perform service-specific health checks
       switch (service) {
-        case 'database':
+        case "database":
           try {
             await db.execute(sql`SELECT 1`);
             const responseTime = Date.now() - startTime;
             if (responseTime > 1000) {
-              status = 'degraded';
-              message = 'Database response time is slow';
+              status = "degraded";
+              message = "Database response time is slow";
             }
           } catch (error: unknown) {
-            status = 'down';
-            message = 'Database is unreachable';
+            status = "down";
+            message = "Database is unreachable";
           }
           break;
 
-        case 'stripe':
+        case "stripe":
           try {
             const stripeKey = process.env.STRIPE_SECRET_KEY;
             if (!stripeKey) {
-              status = 'degraded';
-              message = 'Stripe secret key not configured';
+              status = "degraded";
+              message = "Stripe secret key not configured";
             } else {
-              status = 'healthy';
+              status = "healthy";
             }
           } catch (error: unknown) {
-            status = 'down';
-            message = 'Stripe API is unreachable';
+            status = "down";
+            message = "Stripe API is unreachable";
           }
           break;
 
-        case 'storage':
+        case "storage":
           // Check storage service
           try {
-            const uploadsDir = path.join(process.cwd(), 'uploads');
+            const uploadsDir = path.join(process.cwd(), "uploads");
             if (!fs.existsSync(uploadsDir)) {
-              status = 'degraded';
-              message = 'Uploads directory not accessible';
+              status = "degraded";
+              message = "Uploads directory not accessible";
             }
           } catch (error: unknown) {
-            status = 'down';
-            message = 'Storage service is down';
+            status = "down";
+            message = "Storage service is down";
           }
           break;
 
         default:
-          status = 'healthy';
+          status = "healthy";
       }
 
       const healthCheck: HealthCheck = {
@@ -226,18 +232,18 @@ export class SecurityService {
    * Create security incident
    */
   async createIncident(
-    severity: 'low' | 'medium' | 'high' | 'critical',
+    severity: "low" | "medium" | "high" | "critical",
     title: string,
     description: string,
-    affectedUsers?: string[]
+    affectedUsers?: string[],
   ): Promise<SecurityIncident> {
     try {
       const incident: SecurityIncident = {
-        id: `incident_${randomBytes(8).toString('hex')}`,
+        id: `incident_${randomBytes(8).toString("hex")}`,
         severity,
         title,
         description,
-        status: 'open',
+        status: "open",
         affectedUsers,
         createdAt: new Date(),
       };
@@ -248,28 +254,31 @@ export class SecurityService {
       await this.writeIncidentToFile(incident);
 
       // Send alerts for high/critical incidents
-      if (severity === 'high' || severity === 'critical') {
+      if (severity === "high" || severity === "critical") {
         await this.sendIncidentAlert(incident);
       }
 
       return incident;
     } catch (error: unknown) {
-      logger.warn({ err: error }, 'Error creating incident:');
-      throw new Error('Failed to create incident');
+      logger.warn({ err: error }, "Error creating incident:");
+      throw new Error("Failed to create incident");
     }
   }
 
   /**
    * Resolve security incident
    */
-  async resolveIncident(incidentId: string, resolvedBy: string): Promise<SecurityIncident> {
+  async resolveIncident(
+    incidentId: string,
+    resolvedBy: string,
+  ): Promise<SecurityIncident> {
     try {
       const incident = this.incidents.get(incidentId);
       if (!incident) {
-        throw new Error('Incident not found');
+        throw new Error("Incident not found");
       }
 
-      incident.status = 'resolved';
+      incident.status = "resolved";
       incident.resolvedAt = new Date();
       incident.resolvedBy = resolvedBy;
 
@@ -277,8 +286,8 @@ export class SecurityService {
 
       return incident;
     } catch (error: unknown) {
-      logger.warn({ err: error }, 'Error resolving incident:');
-      throw new Error('Failed to resolve incident');
+      logger.warn({ err: error }, "Error resolving incident:");
+      throw new Error("Failed to resolve incident");
     }
   }
 
@@ -310,8 +319,8 @@ export class SecurityService {
 
       return incidents;
     } catch (error: unknown) {
-      logger.warn({ err: error }, 'Error fetching incidents:');
-      throw new Error('Failed to fetch incidents');
+      logger.warn({ err: error }, "Error fetching incidents:");
+      throw new Error("Failed to fetch incidents");
     }
   }
 
@@ -334,39 +343,65 @@ export class SecurityService {
 
       // Define permission hierarchy based on roles and subscription tiers
       const rolePermissions: Record<string, string[]> = {
-        admin: ['*'], // Admin has all permissions
-        moderator: ['read', 'write', 'moderate', 'view_analytics', 'manage_content'],
-        user: ['read', 'write', 'view_own_analytics'],
+        admin: ["*"], // Admin has all permissions
+        moderator: [
+          "read",
+          "write",
+          "moderate",
+          "view_analytics",
+          "manage_content",
+        ],
+        user: ["read", "write", "view_own_analytics"],
       };
 
       const tierPermissions: Record<string, string[]> = {
-        enterprise: ['distribution', 'marketplace', 'analytics', 'social_automation', 'ai_features', 'priority_support'],
-        professional: ['distribution', 'marketplace', 'analytics', 'social_automation', 'ai_features'],
-        starter: ['distribution', 'marketplace', 'analytics'],
-        free: ['marketplace'],
+        enterprise: [
+          "distribution",
+          "marketplace",
+          "analytics",
+          "social_automation",
+          "ai_features",
+          "priority_support",
+        ],
+        professional: [
+          "distribution",
+          "marketplace",
+          "analytics",
+          "social_automation",
+          "ai_features",
+        ],
+        starter: ["distribution", "marketplace", "analytics"],
+        free: ["marketplace"],
       };
 
       // Check if user's role grants the permission
-      const userRole = user.role || 'user';
-      const userRolePermissions = rolePermissions[userRole] || rolePermissions.user;
-      
-      if (userRolePermissions.includes('*') || userRolePermissions.includes(permission)) {
+      const userRole = user.role || "user";
+      const userRolePermissions =
+        rolePermissions[userRole] || rolePermissions.user;
+
+      if (
+        userRolePermissions.includes("*") ||
+        userRolePermissions.includes(permission)
+      ) {
         return true;
       }
 
       // Check if user's subscription tier grants the permission
-      const userTier = user.subscriptionTier || 'free';
-      const userTierPermissions = tierPermissions[userTier] || tierPermissions.free;
-      
+      const userTier = user.subscriptionTier || "free";
+      const userTierPermissions =
+        tierPermissions[userTier] || tierPermissions.free;
+
       if (userTierPermissions.includes(permission)) {
         return true;
       }
 
-      logger.info(`RBAC denied: User ${userId} (role: ${userRole}, tier: ${userTier}) lacks permission: ${permission}`);
+      logger.info(
+        `RBAC denied: User ${userId} (role: ${userRole}, tier: ${userTier}) lacks permission: ${permission}`,
+      );
       return false;
     } catch (error: unknown) {
-      logger.warn({ err: error }, 'Error checking RBAC:');
-      throw new Error('Failed to check permissions');
+      logger.warn({ err: error }, "Error checking RBAC:");
+      throw new Error("Failed to check permissions");
     }
   }
 
@@ -399,26 +434,26 @@ export class SecurityService {
         },
       };
     } catch (error: unknown) {
-      logger.warn({ err: error }, 'Error fetching system metrics:');
-      throw new Error('Failed to fetch system metrics');
+      logger.warn({ err: error }, "Error fetching system metrics:");
+      throw new Error("Failed to fetch system metrics");
     }
   }
 
   private async writeAuditLogToFile(log: AuditLog): Promise<void> {
-    const logDir = path.join(process.cwd(), 'logs');
+    const logDir = path.join(process.cwd(), "logs");
     await fsPromises.mkdir(logDir, { recursive: true });
 
-    const logFile = path.join(logDir, 'audit.log');
+    const logFile = path.join(logDir, "audit.log");
     const logEntry = `${log.timestamp.toISOString()} | ${log.userId} | ${log.action} | ${log.resource} | ${JSON.stringify(log.metadata)}\n`;
 
     await fsPromises.appendFile(logFile, logEntry);
   }
 
   private async writeIncidentToFile(incident: SecurityIncident): Promise<void> {
-    const logDir = path.join(process.cwd(), 'logs');
+    const logDir = path.join(process.cwd(), "logs");
     await fsPromises.mkdir(logDir, { recursive: true });
 
-    const logFile = path.join(logDir, 'security.log');
+    const logFile = path.join(logDir, "security.log");
     const logEntry = `${incident.createdAt.toISOString()} | ${incident.severity} | ${incident.title} | ${incident.description}\n`;
 
     await fsPromises.appendFile(logFile, logEntry);

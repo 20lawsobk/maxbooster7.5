@@ -29,10 +29,10 @@ DNS wire-format response → back to client
 
 ## Files
 
-| File | Purpose |
-|------|---------|
-| `setup.sh` | One-command installer (primary) |
-| `dns-proxy.service` | Systemd unit file for AdGuard dnsproxy (reference) |
+| File                | Purpose                                                                |
+| ------------------- | ---------------------------------------------------------------------- |
+| `setup.sh`          | One-command installer (primary)                                        |
+| `dns-proxy.service` | Systemd unit file for AdGuard dnsproxy (reference)                     |
 | `dns-proxy-node.js` | Node.js fallback proxy (used automatically if dnsproxy download fails) |
 
 ---
@@ -60,6 +60,7 @@ APP_URL=https://maxbooster.replit.app bash setup.sh
 ```
 
 The installer will:
+
 1. Free port 53 (disable systemd-resolved stub)
 2. Download and install AdGuard `dnsproxy` binary (falls back to Node.js if download fails)
 3. Install and start the `maxbooster-dns` systemd service
@@ -89,6 +90,7 @@ dig @127.0.0.1 max-booster.com SOA
 ```
 
 Expected output:
+
 ```
 ;; ANSWER SECTION:
 max-booster.com.   300   IN   A   34.111.179.208
@@ -101,15 +103,16 @@ so resolvers can find them without a circular lookup.
 
 At wherever `max-booster.com` is registered, create these **host objects**:
 
-| Hostname            | Type | Value              |
-|---------------------|------|--------------------|
-| ns1.max-booster.com | A    | `<your VPS IP>`    |
-| ns2.max-booster.com | A    | `<your VPS IP>`    |
+| Hostname            | Type | Value           |
+| ------------------- | ---- | --------------- |
+| ns1.max-booster.com | A    | `<your VPS IP>` |
+| ns2.max-booster.com | A    | `<your VPS IP>` |
 
 Both point to the same VPS IP. For true redundancy, spin up a second identical
 VPS and point `ns2` there.
 
 **Registrar-specific guides:**
+
 - **Namecheap**: Domain list → Manage → Advanced DNS → "Personal DNS Servers"
 - **GoDaddy**: Domain settings → Manage DNS → "Host names"
 - **Porkbun**: Manage → Glue Records
@@ -185,13 +188,14 @@ dig @<vps-ip> b-lawz-music.max-booster.com A
 
 The Max Booster app exposes these endpoints:
 
-| Method | URL | Description |
-|--------|-----|-------------|
-| `POST` | `/api/dns/query` | RFC 8484 POST (binary body) |
-| `GET`  | `/api/dns/query?dns=<base64url>` | RFC 8484 GET |
-| `GET`  | `/api/dns/info` | JSON status / configuration |
+| Method | URL                              | Description                 |
+| ------ | -------------------------------- | --------------------------- |
+| `POST` | `/api/dns/query`                 | RFC 8484 POST (binary body) |
+| `GET`  | `/api/dns/query?dns=<base64url>` | RFC 8484 GET                |
+| `GET`  | `/api/dns/info`                  | JSON status / configuration |
 
 **AdGuard dnsproxy** uses the POST method by default — it sends:
+
 ```
 POST /api/dns/query HTTP/2
 Content-Type: application/dns-message
@@ -200,6 +204,7 @@ Accept: application/dns-message
 ```
 
 The response is:
+
 ```
 HTTP/2 200 OK
 Content-Type: application/dns-message
@@ -211,24 +216,25 @@ Cache-Control: max-age=300   ← per RFC 8484 §5.1, from answer TTL
 
 ## Why AdGuard dnsproxy?
 
-| Feature | AdGuard dnsproxy | Custom Node.js |
-|---------|-----------------|----------------|
-| DoH upstream (`https://`) | ✅ Native | ✅ Custom |
-| DoT upstream (`tls://`) | ✅ | ❌ |
-| Answer cache | ✅ Built-in | ❌ None |
-| EDNS0 / large responses | ✅ | ⚠️ Basic |
-| Health checks | ✅ Automatic | ❌ None |
-| Parallel upstreams | ✅ | ❌ Single |
-| TCP fallback | ✅ | ✅ |
-| Production track record | ✅ AdGuard Home | — |
-| Binary size | ~15 MB Go binary | Node.js + npm |
-| Maintenance | Actively maintained | Manual |
+| Feature                   | AdGuard dnsproxy    | Custom Node.js |
+| ------------------------- | ------------------- | -------------- |
+| DoH upstream (`https://`) | ✅ Native           | ✅ Custom      |
+| DoT upstream (`tls://`)   | ✅                  | ❌             |
+| Answer cache              | ✅ Built-in         | ❌ None        |
+| EDNS0 / large responses   | ✅                  | ⚠️ Basic       |
+| Health checks             | ✅ Automatic        | ❌ None        |
+| Parallel upstreams        | ✅                  | ❌ Single      |
+| TCP fallback              | ✅                  | ✅             |
+| Production track record   | ✅ AdGuard Home     | —              |
+| Binary size               | ~15 MB Go binary    | Node.js + npm  |
+| Maintenance               | Actively maintained | Manual         |
 
 ---
 
 ## Troubleshooting
 
 **Port 53 already in use after setup:**
+
 ```bash
 ss -ulnp | grep ':53'
 # Kill whatever is using it, then:
@@ -236,18 +242,21 @@ systemctl restart maxbooster-dns
 ```
 
 **Service fails to start:**
+
 ```bash
 journalctl -u maxbooster-dns -n 50 --no-pager
 # Common issues: port 53 in use, binary permission, upstream unreachable
 ```
 
 **Upstream unreachable:**
+
 ```bash
 # Test the DoH endpoint from the VPS
 curl -sv https://maxbooster.replit.app/api/dns/info
 ```
 
 **Queries not resolving after propagation:**
+
 ```bash
 # Check if VPS is responding on port 53
 dig @<vps-ip> max-booster.com A

@@ -1,6 +1,6 @@
-import { Request, Response, NextFunction } from 'express';
-import { randomUUID } from 'crypto';
-import { logger } from '../logger.js';
+import { Request, Response, NextFunction } from "express";
+import { randomUUID } from "crypto";
+import { logger } from "../logger.js";
 
 // Cache for the maxBooster247 instance to avoid repeated imports
 let maxBooster247Cache: Record<string, unknown> | null = null;
@@ -14,12 +14,15 @@ async function getMaxBooster247() {
 
   if (!importAttempted) {
     try {
-      const reliabilityModule = await import('../reliability-system.js');
+      const reliabilityModule = await import("../reliability-system.js");
       maxBooster247Cache = reliabilityModule.maxBooster247;
       importAttempted = true;
       return maxBooster247Cache;
     } catch (error: unknown) {
-      logger.warn('⚠️ Reliability system import failed:', error?.message || error);
+      logger.warn(
+        "⚠️ Reliability system import failed:",
+        error?.message || error,
+      );
       importAttempted = true;
       return null;
     }
@@ -39,11 +42,15 @@ declare global {
 }
 
 // Request correlation middleware
-export function requestCorrelation(req: Request, res: Response, next: NextFunction): void {
+export function requestCorrelation(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): void {
   // Generate or extract request ID
   const requestId =
-    (req.headers['x-request-id'] as string) ||
-    (req.headers['x-correlation-id'] as string) ||
+    (req.headers["x-request-id"] as string) ||
+    (req.headers["x-correlation-id"] as string) ||
     randomUUID();
 
   // Store request ID in request object
@@ -51,39 +58,50 @@ export function requestCorrelation(req: Request, res: Response, next: NextFuncti
   req.startTime = Date.now();
 
   // Add request ID to response headers
-  res.set('X-Request-ID', requestId);
-  res.set('X-Correlation-ID', requestId);
+  res.set("X-Request-ID", requestId);
+  res.set("X-Correlation-ID", requestId);
 
   next();
 }
 
 // Performance monitoring middleware
-export function performanceMonitoring(req: Request, res: Response, next: NextFunction): void {
+export function performanceMonitoring(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): void {
   const start = process.hrtime.bigint();
 
   // Override res.end to capture timing
   const originalEnd = res.end.bind(res);
-  res.end = function (chunk?: unknown, encoding?: unknown, cb?: unknown): Response {
+  res.end = function (
+    chunk?: unknown,
+    encoding?: unknown,
+    cb?: unknown,
+  ): Response {
     const end = process.hrtime.bigint();
     const duration = Number(end - start) / 1000000; // Convert to milliseconds
 
     // Add performance headers only if headers haven't been sent
     if (!res.headersSent) {
-      res.set('X-Response-Time', `${duration.toFixed(2)}ms`);
-      res.set('X-Process-Time', `${Date.now() - req.startTime}ms`);
+      res.set("X-Response-Time", `${duration.toFixed(2)}ms`);
+      res.set("X-Process-Time", `${Date.now() - req.startTime}ms`);
     }
 
     // Log slow requests (> 1 second)
     if (duration > 1000) {
-      logger.warn(`🐌 SLOW REQUEST: ${req.method} ${req.originalUrl} - ${duration.toFixed(2)}ms`, {
-        requestId: req.requestId,
-        method: req.method,
-        url: req.originalUrl,
-        statusCode: res.statusCode,
-        duration: `${duration.toFixed(2)}ms`,
-        userAgent: req.get('user-agent'),
-        ip: req.ip,
-      });
+      logger.warn(
+        `🐌 SLOW REQUEST: ${req.method} ${req.originalUrl} - ${duration.toFixed(2)}ms`,
+        {
+          requestId: req.requestId,
+          method: req.method,
+          url: req.originalUrl,
+          statusCode: res.statusCode,
+          duration: `${duration.toFixed(2)}ms`,
+          userAgent: req.get("user-agent"),
+          ip: req.ip,
+        },
+      );
     }
 
     // Track request completion in reliability system (async safe)
@@ -95,16 +113,18 @@ export function performanceMonitoring(req: Request, res: Response, next: NextFun
 
             // Track errors for 4xx/5xx responses
             if (res.statusCode >= 400) {
-              maxBooster247.trackError(`HTTP ${res.statusCode}: ${req.method} ${req.originalUrl}`);
+              maxBooster247.trackError(
+                `HTTP ${res.statusCode}: ${req.method} ${req.originalUrl}`,
+              );
             }
           } catch (trackingError: unknown) {
             // Don't let tracking errors break requests
-            logger.warn('⚠️ Request tracking failed:', trackingError);
+            logger.warn("⚠️ Request tracking failed:", trackingError);
           }
         }
       })
       .catch((error) => {
-        logger.warn('⚠️ Request tracking import failed:', error.message);
+        logger.warn("⚠️ Request tracking import failed:", error.message);
       });
 
     // Properly forward all arguments to original end method
@@ -123,18 +143,29 @@ export function performanceMonitoring(req: Request, res: Response, next: NextFun
 }
 
 // Memory monitoring middleware
-export function memoryMonitoring(req: Request, res: Response, next: NextFunction): void {
+export function memoryMonitoring(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): void {
   const initialMemory = process.memoryUsage();
 
   // Override res.end to capture memory usage
   const originalEnd = res.end.bind(res);
-  res.end = function (chunk?: unknown, encoding?: unknown, cb?: unknown): Response {
+  res.end = function (
+    chunk?: unknown,
+    encoding?: unknown,
+    cb?: unknown,
+  ): Response {
     const finalMemory = process.memoryUsage();
     const memoryDelta = finalMemory.heapUsed - initialMemory.heapUsed;
 
     // Add memory usage header only if headers haven't been sent
     if (!res.headersSent) {
-      res.set('X-Memory-Usage', `${Math.round(finalMemory.heapUsed / 1024 / 1024)}MB`);
+      res.set(
+        "X-Memory-Usage",
+        `${Math.round(finalMemory.heapUsed / 1024 / 1024)}MB`,
+      );
     }
 
     // Log memory leaks (> 10MB increase per request)

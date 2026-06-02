@@ -1,12 +1,12 @@
-import { EventEmitter } from 'events';
-import { processMonitor } from './process-monitor';
-import { databaseResilience } from './database-resilience';
-import { memoryManager } from './memory-manager';
-import { healthCheck } from '../middleware/healthCheck';
-import { logger } from '../logger.js';
+import { EventEmitter } from "events";
+import { processMonitor } from "./process-monitor";
+import { databaseResilience } from "./database-resilience";
+import { memoryManager } from "./memory-manager";
+import { healthCheck } from "../middleware/healthCheck";
+import { logger } from "../logger.js";
 
 interface SystemHealth {
-  status: 'healthy' | 'degraded' | 'critical';
+  status: "healthy" | "degraded" | "critical";
   uptime: number;
   components: {
     process: Record<string, unknown>;
@@ -73,7 +73,7 @@ class ReliabilityCoordinator extends EventEmitter {
     };
 
     this.systemHealth = {
-      status: 'healthy',
+      status: "healthy",
       uptime: 0,
       components: {
         process: {},
@@ -95,11 +95,11 @@ class ReliabilityCoordinator extends EventEmitter {
 
   async start(): Promise<void> {
     if (this.isActive) {
-      logger.info('⚠️  Reliability coordinator already active');
+      logger.info("⚠️  Reliability coordinator already active");
       return;
     }
 
-    logger.info('🚀 Starting 24/7/365 Reliability System...');
+    logger.info("🚀 Starting 24/7/365 Reliability System...");
 
     this.isActive = true;
 
@@ -113,18 +113,18 @@ class ReliabilityCoordinator extends EventEmitter {
     // Track global connection count
     (global as Record<string, unknown>).activeConnections = 0;
 
-    logger.info('✅ 24/7/365 Reliability System ACTIVE');
-    logger.info('📊 Monitoring: Process, Memory, Database, Health Checks');
-    logger.info('🔄 Auto-recovery: Enabled');
-    logger.info('⚡ High-availability: Ready');
+    logger.info("✅ 24/7/365 Reliability System ACTIVE");
+    logger.info("📊 Monitoring: Process, Memory, Database, Health Checks");
+    logger.info("🔄 Auto-recovery: Enabled");
+    logger.info("⚡ High-availability: Ready");
 
-    this.emit('system-started');
+    this.emit("system-started");
   }
 
   async stop(): Promise<void> {
     if (!this.isActive) return;
 
-    logger.info('🔄 Stopping reliability system...');
+    logger.info("🔄 Stopping reliability system...");
 
     this.isActive = false;
 
@@ -137,40 +137,40 @@ class ReliabilityCoordinator extends EventEmitter {
     await databaseResilience.gracefulShutdown();
     await memoryManager.gracefulShutdown();
 
-    logger.info('✅ Reliability system stopped');
-    this.emit('system-stopped');
+    logger.info("✅ Reliability system stopped");
+    this.emit("system-stopped");
   }
 
   private setupEventListeners(): void {
     // Process monitoring events
-    processMonitor.on('critical-alert', (data) => {
-      this.handleCriticalAlert('process', data);
+    processMonitor.on("critical-alert", (data) => {
+      this.handleCriticalAlert("process", data);
     });
 
-    processMonitor.on('health-update', (health) => {
+    processMonitor.on("health-update", (health) => {
       this.systemHealth.components.process = health;
     });
 
     // Database events
-    databaseResilience.on('circuit-breaker-open', (data) => {
-      this.handleCriticalAlert('database', data);
+    databaseResilience.on("circuit-breaker-open", (data) => {
+      this.handleCriticalAlert("database", data);
     });
 
-    databaseResilience.on('connection-failure', (data) => {
-      this.handleServiceDegradation('database', data);
+    databaseResilience.on("connection-failure", (data) => {
+      this.handleServiceDegradation("database", data);
     });
 
     // Memory events
-    memoryManager.on('memory-critical', (data) => {
-      this.handleCriticalAlert('memory', data);
+    memoryManager.on("memory-critical", (data) => {
+      this.handleCriticalAlert("memory", data);
     });
 
-    memoryManager.on('memory-leak-detected', (data) => {
-      this.handleCriticalAlert('memory-leak', data);
+    memoryManager.on("memory-leak-detected", (data) => {
+      this.handleCriticalAlert("memory-leak", data);
     });
 
-    memoryManager.on('memory-warning', (data) => {
-      this.handleServiceDegradation('memory', data);
+    memoryManager.on("memory-warning", (data) => {
+      this.handleServiceDegradation("memory", data);
     });
   }
 
@@ -194,7 +194,8 @@ class ReliabilityCoordinator extends EventEmitter {
         database: databaseHealth,
         memory: memoryHealth,
         server: {
-          activeConnections: (global as Record<string, unknown>).activeConnections || 0,
+          activeConnections:
+            (global as Record<string, unknown>).activeConnections || 0,
           totalRequests: this.totalRequests,
           failedRequests: this.failedRequests,
         },
@@ -209,15 +210,20 @@ class ReliabilityCoordinator extends EventEmitter {
       this.systemHealth.lastHealthCheck = new Date();
 
       // Emit health update
-      this.emit('health-update', this.systemHealth);
+      this.emit("health-update", this.systemHealth);
 
       // Log status every 10 minutes
-      if (Date.now() % (10 * 60 * 1000) < this.config.monitoring.healthCheckInterval) {
+      if (
+        Date.now() % (10 * 60 * 1000) <
+        this.config.monitoring.healthCheckInterval
+      ) {
         this.logSystemStatus();
       }
     } catch (error: unknown) {
-      logger.warn({ err: error }, '❌ System health check failed:');
-      this.handleCriticalAlert('health-check', { error: (error as Error).message });
+      logger.warn({ err: error }, "❌ System health check failed:");
+      this.handleCriticalAlert("health-check", {
+        error: (error as Error).message,
+      });
     }
   }
 
@@ -227,13 +233,14 @@ class ReliabilityCoordinator extends EventEmitter {
     // Calculate uptime percentage (assume target is 99.9%)
     this.systemHealth.reliability.uptimePercentage = Math.min(
       99.99,
-      100 - (this.failedRequests / Math.max(this.totalRequests, 1)) * 100
+      100 - (this.failedRequests / Math.max(this.totalRequests, 1)) * 100,
     );
 
     // Average response time
     if (this.responseTimes.length > 0) {
       this.systemHealth.reliability.avgResponseTime =
-        this.responseTimes.reduce((sum, time) => sum + time, 0) / this.responseTimes.length;
+        this.responseTimes.reduce((sum, time) => sum + time, 0) /
+        this.responseTimes.length;
 
       // Keep only last 1000 response times
       if (this.responseTimes.length > 1000) {
@@ -243,7 +250,9 @@ class ReliabilityCoordinator extends EventEmitter {
 
     // Error rate
     this.systemHealth.reliability.errorRate =
-      this.totalRequests > 0 ? (this.failedRequests / this.totalRequests) * 100 : 0;
+      this.totalRequests > 0
+        ? (this.failedRequests / this.totalRequests) * 100
+        : 0;
   }
 
   private determineSystemStatus(): void {
@@ -253,10 +262,10 @@ class ReliabilityCoordinator extends EventEmitter {
     let criticalIssues = 0;
     let degradedIssues = 0;
 
-    if (proc?.status === 'critical') criticalIssues++;
-    if (proc?.status === 'warning') degradedIssues++;
+    if (proc?.status === "critical") criticalIssues++;
+    if (proc?.status === "warning") degradedIssues++;
 
-    if (database?.circuitBreakerState === 'open') criticalIssues++;
+    if (database?.circuitBreakerState === "open") criticalIssues++;
     if (database?.successRate < 95) degradedIssues++;
 
     if (memory?.current?.heapUsedMB > 1024) criticalIssues++;
@@ -264,14 +273,14 @@ class ReliabilityCoordinator extends EventEmitter {
 
     // Determine overall status
     if (criticalIssues >= this.config.thresholds.criticalAlertThreshold) {
-      this.systemHealth.status = 'critical';
+      this.systemHealth.status = "critical";
     } else if (
       criticalIssues > 0 ||
       degradedIssues >= this.config.thresholds.degradedServiceThreshold
     ) {
-      this.systemHealth.status = 'degraded';
+      this.systemHealth.status = "degraded";
     } else {
-      this.systemHealth.status = 'healthy';
+      this.systemHealth.status = "healthy";
     }
   }
 
@@ -279,7 +288,7 @@ class ReliabilityCoordinator extends EventEmitter {
     const alert = {
       id: `${Date.now()}-${component}`,
       component,
-      severity: 'critical',
+      severity: "critical",
       message: data.message || `Critical alert in ${component}`,
       timestamp: new Date(),
       data,
@@ -294,7 +303,7 @@ class ReliabilityCoordinator extends EventEmitter {
 
     logger.warn(`🚨 CRITICAL SYSTEM ALERT [${component}]: ${alert.message}`);
 
-    this.emit('critical-alert', alert);
+    this.emit("critical-alert", alert);
 
     // Trigger recovery if enabled
     if (this.config.recovery.autoRestartEnabled) {
@@ -306,7 +315,7 @@ class ReliabilityCoordinator extends EventEmitter {
     const alert = {
       id: `${Date.now()}-${component}`,
       component,
-      severity: 'warning',
+      severity: "warning",
       message: data.message || `Service degradation in ${component}`,
       timestamp: new Date(),
       data,
@@ -316,23 +325,26 @@ class ReliabilityCoordinator extends EventEmitter {
 
     logger.warn(`⚠️  SERVICE DEGRADATION [${component}]: ${alert.message}`);
 
-    this.emit('service-degradation', alert);
+    this.emit("service-degradation", alert);
   }
 
-  private async attemptAutoRecovery(component: string, data: unknown): Promise<void> {
+  private async attemptAutoRecovery(
+    component: string,
+    data: unknown,
+  ): Promise<void> {
     logger.info(`🔄 Attempting auto-recovery for ${component}...`);
 
     try {
       switch (component) {
-        case 'database':
+        case "database":
           databaseResilience.resetCircuitBreaker();
           break;
 
-        case 'memory':
+        case "memory":
           memoryManager.scheduleGarbageCollection();
           break;
 
-        case 'process':
+        case "process":
           // Let the process monitor handle restart logic
           break;
       }
@@ -347,15 +359,15 @@ class ReliabilityCoordinator extends EventEmitter {
     const { status, uptime, reliability } = this.systemHealth;
     const uptimeHours = Math.round((uptime / (1000 * 60 * 60)) * 100) / 100;
 
-    logger.info('📊 24/7 System Status Report:');
+    logger.info("📊 24/7 System Status Report:");
     logger.info(
-      `   Status: ${status} | Uptime: ${uptimeHours}h | Reliability: ${reliability.uptimePercentage.toFixed(2)}%`
+      `   Status: ${status} | Uptime: ${uptimeHours}h | Reliability: ${reliability.uptimePercentage.toFixed(2)}%`,
     );
     logger.info(
-      `   Avg Response: ${Math.round(reliability.avgResponseTime)}ms | Error Rate: ${reliability.errorRate.toFixed(2)}%`
+      `   Avg Response: ${Math.round(reliability.avgResponseTime)}ms | Error Rate: ${reliability.errorRate.toFixed(2)}%`,
     );
     logger.info(
-      `   Memory: ${this.systemHealth.components.memory?.current?.heapUsedMB || 0}MB | DB: ${this.systemHealth.components.database?.circuitBreakerState || 'unknown'}`
+      `   Memory: ${this.systemHealth.components.memory?.current?.heapUsedMB || 0}MB | DB: ${this.systemHealth.components.database?.circuitBreakerState || "unknown"}`,
     );
   }
 
@@ -375,7 +387,7 @@ class ReliabilityCoordinator extends EventEmitter {
       uptimeDays: Math.round(uptimeDays * 100) / 100,
       uptimePercentage: this.systemHealth.reliability.uptimePercentage,
       startTime: new Date(this.startTime),
-      isHealthy: this.systemHealth.status === 'healthy',
+      isHealthy: this.systemHealth.status === "healthy",
     };
   }
 
@@ -400,7 +412,7 @@ class ReliabilityCoordinator extends EventEmitter {
   // Configuration updates
   updateConfig(config: Partial<ReliabilityConfig>): void {
     this.config = { ...this.config, ...config };
-    logger.info('🔧 Reliability configuration updated');
+    logger.info("🔧 Reliability configuration updated");
   }
 }
 

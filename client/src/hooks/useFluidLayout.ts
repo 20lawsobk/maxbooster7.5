@@ -1,8 +1,20 @@
-import { useState, useEffect, useRef, useCallback, RefObject, useMemo } from 'react';
+import {
+  useState,
+  useEffect,
+  useRef,
+  useCallback,
+  RefObject,
+  useMemo,
+} from "react";
 
-export type LayoutMode = 'mobile' | 'tablet' | 'desktop' | 'wide';
+export type LayoutMode = "mobile" | "tablet" | "desktop" | "wide";
 
-export { useDynamicLayout, getDynamicGridClass, getDynamicSpacingClass, getDynamicTextClass } from './useDynamicLayout';
+export {
+  useDynamicLayout,
+  getDynamicGridClass,
+  getDynamicSpacingClass,
+  getDynamicTextClass,
+} from "./useDynamicLayout";
 
 interface FluidLayoutConfig {
   mobileMax?: number;
@@ -28,25 +40,36 @@ const DEFAULT_CONFIG: FluidLayoutConfig = {
   desktopMax: 1440,
 };
 
-export function useFluidLayout(config: FluidLayoutConfig = {}): FluidLayoutResult {
+export function useFluidLayout(
+  config: FluidLayoutConfig = {},
+): FluidLayoutResult {
   const containerRef = useRef<HTMLDivElement>(null);
-  const [containerWidth, setContainerWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1200);
-  const [containerHeight, setContainerHeight] = useState(typeof window !== 'undefined' ? window.innerHeight : 800);
+  const [containerWidth, setContainerWidth] = useState(
+    typeof window !== "undefined" ? window.innerWidth : 1200,
+  );
+  const [containerHeight, setContainerHeight] = useState(
+    typeof window !== "undefined" ? window.innerHeight : 800,
+  );
 
   const { mobileMax, tabletMax, desktopMax } = { ...DEFAULT_CONFIG, ...config };
 
-  const calculateLayoutMode = useCallback((width: number): LayoutMode => {
-    if (width < mobileMax!) return 'mobile';
-    if (width < tabletMax!) return 'tablet';
-    if (width < desktopMax!) return 'desktop';
-    return 'wide';
-  }, [mobileMax, tabletMax, desktopMax]);
+  const calculateLayoutMode = useCallback(
+    (width: number): LayoutMode => {
+      if (width < mobileMax!) return "mobile";
+      if (width < tabletMax!) return "tablet";
+      if (width < desktopMax!) return "desktop";
+      return "wide";
+    },
+    [mobileMax, tabletMax, desktopMax],
+  );
 
-  const [layoutMode, setLayoutMode] = useState<LayoutMode>(() => calculateLayoutMode(containerWidth));
+  const [layoutMode, setLayoutMode] = useState<LayoutMode>(() =>
+    calculateLayoutMode(containerWidth),
+  );
 
   useEffect(() => {
     const container = containerRef.current;
-    
+
     const updateDimensions = (width: number, height: number) => {
       if (width > 0 && height > 0) {
         setContainerWidth(width);
@@ -69,8 +92,8 @@ export function useFluidLayout(config: FluidLayoutConfig = {}): FluidLayoutResul
         updateDimensions(window.innerWidth, window.innerHeight);
       };
       handleResize();
-      window.addEventListener('resize', handleResize);
-      return () => window.removeEventListener('resize', handleResize);
+      window.addEventListener("resize", handleResize);
+      return () => window.removeEventListener("resize", handleResize);
     }
   }, [calculateLayoutMode]);
 
@@ -79,47 +102,85 @@ export function useFluidLayout(config: FluidLayoutConfig = {}): FluidLayoutResul
     layoutMode,
     containerWidth,
     containerHeight,
-    isMobile: layoutMode === 'mobile',
-    isTablet: layoutMode === 'tablet',
-    isDesktop: layoutMode === 'desktop',
-    isWide: layoutMode === 'wide',
+    isMobile: layoutMode === "mobile",
+    isTablet: layoutMode === "tablet",
+    isDesktop: layoutMode === "desktop",
+    isWide: layoutMode === "wide",
     isSmallHeight: containerHeight < 500,
   };
 }
 
 export function getFluidPadding(layoutMode: LayoutMode): string {
   switch (layoutMode) {
-    case 'mobile': return 'px-3 py-3';
-    case 'tablet': return 'px-4 py-4';
-    case 'desktop': return 'px-6 py-5';
-    case 'wide': return 'px-8 py-6';
+    case "mobile":
+      return "px-3 py-3";
+    case "tablet":
+      return "px-4 py-4";
+    case "desktop":
+      return "px-6 py-5";
+    case "wide":
+      return "px-8 py-6";
   }
 }
 
 export function getFluidGap(layoutMode: LayoutMode): string {
   switch (layoutMode) {
-    case 'mobile': return 'gap-3';
-    case 'tablet': return 'gap-4';
-    case 'desktop': return 'gap-5';
-    case 'wide': return 'gap-6';
+    case "mobile":
+      return "gap-3";
+    case "tablet":
+      return "gap-4";
+    case "desktop":
+      return "gap-5";
+    case "wide":
+      return "gap-6";
   }
 }
 
-export function getFluidGridCols(layoutMode: LayoutMode, defaultCols: number = 4): string {
+export function getFluidGridCols(
+  layoutMode: LayoutMode,
+  defaultCols: number = 4,
+): string {
   switch (layoutMode) {
-    case 'mobile': return 'grid-cols-1';
-    case 'tablet': return 'grid-cols-2';
-    case 'desktop': return `grid-cols-${Math.min(defaultCols, 3)}`;
-    case 'wide': return `grid-cols-${defaultCols}`;
+    case "mobile":
+      return "grid-cols-1";
+    case "tablet":
+      return "grid-cols-2";
+    case "desktop":
+      return `grid-cols-${Math.min(defaultCols, 3)}`;
+    case "wide":
+      return `grid-cols-${defaultCols}`;
   }
 }
 
-export function getFluidTextSize(layoutMode: LayoutMode, base: 'sm' | 'base' | 'lg' | 'xl' = 'base'): string {
+export function getFluidTextSize(
+  layoutMode: LayoutMode,
+  base: "sm" | "base" | "lg" | "xl" = "base",
+): string {
   const sizeMap = {
-    sm: { mobile: 'text-xs', tablet: 'text-sm', desktop: 'text-sm', wide: 'text-sm' },
-    base: { mobile: 'text-sm', tablet: 'text-base', desktop: 'text-base', wide: 'text-base' },
-    lg: { mobile: 'text-base', tablet: 'text-lg', desktop: 'text-lg', wide: 'text-xl' },
-    xl: { mobile: 'text-lg', tablet: 'text-xl', desktop: 'text-2xl', wide: 'text-3xl' },
+    sm: {
+      mobile: "text-xs",
+      tablet: "text-sm",
+      desktop: "text-sm",
+      wide: "text-sm",
+    },
+    base: {
+      mobile: "text-sm",
+      tablet: "text-base",
+      desktop: "text-base",
+      wide: "text-base",
+    },
+    lg: {
+      mobile: "text-base",
+      tablet: "text-lg",
+      desktop: "text-lg",
+      wide: "text-xl",
+    },
+    xl: {
+      mobile: "text-lg",
+      tablet: "text-xl",
+      desktop: "text-2xl",
+      wide: "text-3xl",
+    },
   };
   return sizeMap[base][layoutMode];
 }

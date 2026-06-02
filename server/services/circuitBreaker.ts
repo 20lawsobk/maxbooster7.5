@@ -1,7 +1,7 @@
-import { EventEmitter } from 'events';
-import { logger } from '../logger.js';
+import { EventEmitter } from "events";
+import { logger } from "../logger.js";
 
-export type CircuitState = 'CLOSED' | 'OPEN' | 'HALF_OPEN';
+export type CircuitState = "CLOSED" | "OPEN" | "HALF_OPEN";
 
 export interface CircuitBreakerOptions {
   name: string;
@@ -29,7 +29,7 @@ export interface CircuitBreakerStats {
 
 export interface CircuitBreakerEvent {
   name: string;
-  type: 'state_change' | 'failure' | 'success' | 'timeout' | 'fallback';
+  type: "state_change" | "failure" | "success" | "timeout" | "fallback";
   previousState?: CircuitState;
   newState?: CircuitState;
   error?: Error;
@@ -40,25 +40,25 @@ export class CircuitBreakerError extends Error {
   constructor(
     public readonly serviceName: string,
     public readonly state: CircuitState,
-    message: string
+    message: string,
   ) {
     super(message);
-    this.name = 'CircuitBreakerError';
+    this.name = "CircuitBreakerError";
   }
 }
 
 export class TimeoutError extends Error {
   constructor(
     public readonly serviceName: string,
-    public readonly timeoutMs: number
+    public readonly timeoutMs: number,
   ) {
     super(`${serviceName} timeout after ${timeoutMs}ms`);
-    this.name = 'TimeoutError';
+    this.name = "TimeoutError";
   }
 }
 
 export class CircuitBreaker extends EventEmitter {
-  private state: CircuitState = 'CLOSED';
+  private state: CircuitState = "CLOSED";
   private failures = 0;
   private successes = 0;
   private consecutiveFailures = 0;
@@ -93,41 +93,47 @@ export class CircuitBreaker extends EventEmitter {
     return this.options.name;
   }
 
-  async execute<T>(fn: () => Promise<T>, fallback?: () => Promise<T> | T): Promise<T> {
-    if (this.state === 'OPEN') {
+  async execute<T>(
+    fn: () => Promise<T>,
+    fallback?: () => Promise<T> | T,
+  ): Promise<T> {
+    if (this.state === "OPEN") {
       const elapsed = this.lastFailure
         ? Date.now() - this.lastFailure.getTime()
         : this.options.resetTimeout;
 
       if (elapsed >= this.options.resetTimeout) {
-        this.transitionTo('HALF_OPEN');
+        this.transitionTo("HALF_OPEN");
       } else {
         if (fallback) {
-          this.emitEvent('fallback');
+          this.emitEvent("fallback");
           return Promise.resolve(fallback());
         }
         throw new CircuitBreakerError(
           this.options.name,
           this.state,
-          `Circuit breaker ${this.options.name} is OPEN. Service temporarily unavailable.`
+          `Circuit breaker ${this.options.name} is OPEN. Service temporarily unavailable.`,
         );
       }
     }
 
-    if (this.state === 'HALF_OPEN' && this.halfOpenRequests >= this.maxHalfOpenRequests) {
+    if (
+      this.state === "HALF_OPEN" &&
+      this.halfOpenRequests >= this.maxHalfOpenRequests
+    ) {
       if (fallback) {
-        this.emitEvent('fallback');
+        this.emitEvent("fallback");
         return Promise.resolve(fallback());
       }
       throw new CircuitBreakerError(
         this.options.name,
         this.state,
-        `Circuit breaker ${this.options.name} is in HALF_OPEN state with max requests reached.`
+        `Circuit breaker ${this.options.name} is in HALF_OPEN state with max requests reached.`,
       );
     }
 
     this.totalRequests++;
-    if (this.state === 'HALF_OPEN') {
+    if (this.state === "HALF_OPEN") {
       this.halfOpenRequests++;
     }
 
@@ -139,7 +145,7 @@ export class CircuitBreaker extends EventEmitter {
       this.onFailure(error as Error);
 
       if (fallback) {
-        this.emitEvent('fallback');
+        this.emitEvent("fallback");
         return Promise.resolve(fallback());
       }
 
@@ -163,7 +169,7 @@ export class CircuitBreaker extends EventEmitter {
     } catch (error) {
       clearTimeout(timeoutId!);
       if (error instanceof TimeoutError) {
-        this.emitEvent('timeout', error);
+        this.emitEvent("timeout", error);
       }
       throw error;
     }
@@ -174,11 +180,11 @@ export class CircuitBreaker extends EventEmitter {
     this.consecutiveSuccesses++;
     this.consecutiveFailures = 0;
     this.lastSuccess = new Date();
-    this.emitEvent('success');
+    this.emitEvent("success");
 
-    if (this.state === 'HALF_OPEN') {
+    if (this.state === "HALF_OPEN") {
       if (this.consecutiveSuccesses >= this.options.successThreshold) {
-        this.transitionTo('CLOSED');
+        this.transitionTo("CLOSED");
         this.halfOpenRequests = 0;
       }
     }
@@ -189,14 +195,14 @@ export class CircuitBreaker extends EventEmitter {
     this.consecutiveFailures++;
     this.consecutiveSuccesses = 0;
     this.lastFailure = new Date();
-    this.emitEvent('failure', error);
+    this.emitEvent("failure", error);
 
-    if (this.state === 'HALF_OPEN') {
-      this.transitionTo('OPEN');
+    if (this.state === "HALF_OPEN") {
+      this.transitionTo("OPEN");
       this.halfOpenRequests = 0;
-    } else if (this.state === 'CLOSED') {
+    } else if (this.state === "CLOSED") {
       if (this.consecutiveFailures >= this.options.failureThreshold) {
-        this.transitionTo('OPEN');
+        this.transitionTo("OPEN");
       }
     }
   }
@@ -210,34 +216,31 @@ export class CircuitBreaker extends EventEmitter {
       this.resetTimer = null;
     }
 
-    if (newState === 'OPEN') {
+    if (newState === "OPEN") {
       this.resetTimer = setTimeout(() => {
-        this.transitionTo('HALF_OPEN');
+        this.transitionTo("HALF_OPEN");
       }, this.options.resetTimeout);
     }
 
-    if (newState === 'CLOSED') {
+    if (newState === "CLOSED") {
       this.consecutiveFailures = 0;
       this.consecutiveSuccesses = 0;
     }
 
     logger.info(
-      `🔌 Circuit breaker ${this.options.name}: ${previousState} → ${newState}`
+      `🔌 Circuit breaker ${this.options.name}: ${previousState} → ${newState}`,
     );
 
-    this.emit('state_change', {
+    this.emit("state_change", {
       name: this.options.name,
-      type: 'state_change',
+      type: "state_change",
       previousState,
       newState,
       timestamp: new Date(),
     });
   }
 
-  private emitEvent(
-    type: CircuitBreakerEvent['type'],
-    error?: Error
-  ): void {
+  private emitEvent(type: CircuitBreakerEvent["type"], error?: Error): void {
     this.emit(type, {
       name: this.options.name,
       type,
@@ -248,7 +251,7 @@ export class CircuitBreaker extends EventEmitter {
 
   private startMonitoring(): void {
     this.monitorTimer = setInterval(() => {
-      this.emit('health_check', this.getStats());
+      this.emit("health_check", this.getStats());
     }, this.options.monitorInterval);
   }
 
@@ -273,12 +276,12 @@ export class CircuitBreaker extends EventEmitter {
       failureRate,
       consecutiveFailures: this.consecutiveFailures,
       consecutiveSuccesses: this.consecutiveSuccesses,
-      isHealthy: this.state === 'CLOSED',
+      isHealthy: this.state === "CLOSED",
     };
   }
 
   reset(): void {
-    this.state = 'CLOSED';
+    this.state = "CLOSED";
     this.failures = 0;
     this.successes = 0;
     this.consecutiveFailures = 0;
@@ -294,15 +297,15 @@ export class CircuitBreaker extends EventEmitter {
     }
 
     logger.info(`🔌 Circuit breaker ${this.options.name} reset`);
-    this.emit('reset', { name: this.options.name, timestamp: new Date() });
+    this.emit("reset", { name: this.options.name, timestamp: new Date() });
   }
 
   forceOpen(): void {
-    this.transitionTo('OPEN');
+    this.transitionTo("OPEN");
   }
 
   forceClose(): void {
-    this.transitionTo('CLOSED');
+    this.transitionTo("CLOSED");
   }
 
   destroy(): void {
@@ -319,7 +322,7 @@ export class CircuitBreaker extends EventEmitter {
 export async function withTimeout<T>(
   promise: Promise<T>,
   ms: number,
-  serviceName: string
+  serviceName: string,
 ): Promise<T> {
   let timeoutId: NodeJS.Timeout;
 

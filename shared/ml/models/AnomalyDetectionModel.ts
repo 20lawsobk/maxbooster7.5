@@ -12,17 +12,17 @@
  *  • Severity quantiles calibrated to the training distribution (not hardcoded z-score)
  */
 
-import * as tf from '@tensorflow/tfjs';
-import { BaseModel } from './BaseModel.js';
-import { calculateStatistics } from '../statistics/core.js';
-import { IsolationForest } from '../algorithms/IsolationForest.js';
-import type { AnomalyResult } from '../types.js';
+import * as tf from "@tensorflow/tfjs";
+import { BaseModel } from "./BaseModel.js";
+import { calculateStatistics } from "../statistics/core.js";
+import { IsolationForest } from "../algorithms/IsolationForest.js";
+import type { AnomalyResult } from "../types.js";
 
-const EWMA_ALPHA = 0.05;          // slow drift tracking
-const IF_WEIGHT  = 0.40;
-const AE_WEIGHT  = 0.40;
-const STAT_WEIGHT = 0.20;
-const ANOMALY_THRESHOLD = 0.55;   // weighted score must exceed this
+const EWMA_ALPHA = 0.05; // slow drift tracking
+const IF_WEIGHT = 0.4;
+const AE_WEIGHT = 0.4;
+const STAT_WEIGHT = 0.2;
+const ANOMALY_THRESHOLD = 0.55; // weighted score must exceed this
 
 export class AnomalyDetectionModel extends BaseModel {
   private autoencoderModel: tf.LayersModel | null = null;
@@ -37,9 +37,9 @@ export class AnomalyDetectionModel extends BaseModel {
 
   constructor() {
     super({
-      name: 'AnomalyDetector',
-      type: 'anomaly',
-      version: '2.0.0',
+      name: "AnomalyDetector",
+      type: "anomaly",
+      version: "2.0.0",
       inputShape: [12],
       outputShape: [12],
     });
@@ -49,21 +49,25 @@ export class AnomalyDetectionModel extends BaseModel {
     const autoencoder = tf.sequential({
       layers: [
         // Encoder
-        tf.layers.dense({ units: 16, activation: 'relu', inputShape: [12],
-                          kernelRegularizer: tf.regularizers.l2({ l2: 0.001 }) }),
+        tf.layers.dense({
+          units: 16,
+          activation: "relu",
+          inputShape: [12],
+          kernelRegularizer: tf.regularizers.l2({ l2: 0.001 }),
+        }),
         tf.layers.dropout({ rate: 0.1 }),
-        tf.layers.dense({ units: 8,  activation: 'relu' }),
-        tf.layers.dense({ units: 4,  activation: 'relu' }),   // bottleneck
+        tf.layers.dense({ units: 8, activation: "relu" }),
+        tf.layers.dense({ units: 4, activation: "relu" }), // bottleneck
         // Decoder
-        tf.layers.dense({ units: 8,  activation: 'relu' }),
-        tf.layers.dense({ units: 16, activation: 'relu' }),
-        tf.layers.dense({ units: 12, activation: 'linear' }),
+        tf.layers.dense({ units: 8, activation: "relu" }),
+        tf.layers.dense({ units: 16, activation: "relu" }),
+        tf.layers.dense({ units: 12, activation: "linear" }),
       ],
     });
 
     autoencoder.compile({
       optimizer: tf.train.adam(0.0005),
-      loss: 'meanSquaredError',
+      loss: "meanSquaredError",
     });
 
     this.autoencoderModel = autoencoder;
@@ -72,7 +76,7 @@ export class AnomalyDetectionModel extends BaseModel {
 
   public async trainOnNormalData(normalData: number[][]): Promise<void> {
     if (!this.model) await this.initialize();
-    if (!this.model) throw new Error('Model initialization failed');
+    if (!this.model) throw new Error("Model initialization failed");
 
     const allValues = normalData.flat();
     const stats = calculateStatistics(allValues);
@@ -102,18 +106,22 @@ export class AnomalyDetectionModel extends BaseModel {
       const errorTensor = tf.losses.meanSquaredError(inputTensor, predictions);
       const errors = Array.from(await errorTensor.data()).sort((a, b) => a - b);
 
-      this.reconstructionThreshold95 = errors[Math.floor(errors.length * 0.95)] ?? 0;
-      this.reconstructionThreshold99 = errors[Math.floor(errors.length * 0.99)] ?? 0;
+      this.reconstructionThreshold95 =
+        errors[Math.floor(errors.length * 0.95)] ?? 0;
+      this.reconstructionThreshold99 =
+        errors[Math.floor(errors.length * 0.99)] ?? 0;
 
       // Calibrate severity quantiles on the weighted ensemble score distribution
-      const scores = normalData.map(f => this.computeWeightedScore(
-        this.isolationForest!.anomalyScore(f),
-        0,   // no reconstruction during calibration pass
-        false
-      ));
+      const scores = normalData.map((f) =>
+        this.computeWeightedScore(
+          this.isolationForest!.anomalyScore(f),
+          0, // no reconstruction during calibration pass
+          false,
+        ),
+      );
       scores.sort((a, b) => a - b);
       this.p75score = scores[Math.floor(scores.length * 0.75)] ?? 0.6;
-      this.p90score = scores[Math.floor(scores.length * 0.90)] ?? 0.75;
+      this.p90score = scores[Math.floor(scores.length * 0.9)] ?? 0.75;
 
       this.isTrained = true;
       this.metadata.lastTrained = new Date();
@@ -126,13 +134,15 @@ export class AnomalyDetectionModel extends BaseModel {
   }
 
   public async trainOnTimeSeriesData(data: number[]): Promise<void> {
-    const vectors = data.slice(10).map((_, idx) =>
-      this.extractFeatures(data[idx + 10], data, idx + 10)
-    );
+    const vectors = data
+      .slice(10)
+      .map((_, idx) => this.extractFeatures(data[idx + 10], data, idx + 10));
     await this.trainOnNormalData(vectors);
   }
 
-  public async detectAnomalies(featureData: number[][]): Promise<AnomalyResult[]> {
+  public async detectAnomalies(
+    featureData: number[][],
+  ): Promise<AnomalyResult[]> {
     if (!this.isTrained || !this.statisticalBaseline) return [];
     const results: AnomalyResult[] = [];
     for (let i = 0; i < featureData.length; i++) {
@@ -142,7 +152,9 @@ export class AnomalyDetectionModel extends BaseModel {
     return results;
   }
 
-  public async detectTimeSeriesAnomalies(data: number[]): Promise<AnomalyResult[]> {
+  public async detectTimeSeriesAnomalies(
+    data: number[],
+  ): Promise<AnomalyResult[]> {
     if (!this.isTrained || !this.statisticalBaseline) return [];
     const results: AnomalyResult[] = [];
     for (let i = 10; i < data.length; i++) {
@@ -156,12 +168,19 @@ export class AnomalyDetectionModel extends BaseModel {
   private computeWeightedScore(
     ifScore: number,
     aeScore: number,
-    statFlag: boolean
+    statFlag: boolean,
   ): number {
-    return IF_WEIGHT * ifScore + AE_WEIGHT * aeScore + STAT_WEIGHT * (statFlag ? 1 : 0);
+    return (
+      IF_WEIGHT * ifScore +
+      AE_WEIGHT * aeScore +
+      STAT_WEIGHT * (statFlag ? 1 : 0)
+    );
   }
 
-  private async evaluateFeatures(features: number[], index: number): Promise<AnomalyResult> {
+  private async evaluateFeatures(
+    features: number[],
+    index: number,
+  ): Promise<AnomalyResult> {
     const sb = this.statisticalBaseline!;
 
     // ── Statistical detector ──────────────────────────────────────────────
@@ -185,7 +204,10 @@ export class AnomalyDetectionModel extends BaseModel {
         const errT = tf.losses.meanSquaredError(inputTensor, prediction);
         reconstructionError = (await errT.data())[0];
         // Normalise against the 99th percentile threshold
-        aeScore = Math.min(1, reconstructionError / (this.reconstructionThreshold99 || 1));
+        aeScore = Math.min(
+          1,
+          reconstructionError / (this.reconstructionThreshold99 || 1),
+        );
         errT.dispose();
         prediction.dispose();
       } finally {
@@ -194,30 +216,39 @@ export class AnomalyDetectionModel extends BaseModel {
     }
 
     // ── Weighted ensemble decision ─────────────────────────────────────────
-    const weightedScore = this.computeWeightedScore(ifScore, aeScore, isStatAnomaly);
+    const weightedScore = this.computeWeightedScore(
+      ifScore,
+      aeScore,
+      isStatAnomaly,
+    );
     const isAnomaly = weightedScore > ANOMALY_THRESHOLD;
 
     // ── Severity (calibrated against training distribution) ──────────────
-    let severity: 'low' | 'medium' | 'high' = 'low';
-    if (weightedScore >= this.p90score) severity = 'high';
-    else if (weightedScore >= this.p75score) severity = 'medium';
+    let severity: "low" | "medium" | "high" = "low";
+    if (weightedScore >= this.p90score) severity = "high";
+    else if (weightedScore >= this.p75score) severity = "medium";
 
     // ── EWMA baseline drift update ────────────────────────────────────────
     if (this.statisticalBaseline) {
       this.statisticalBaseline.mean =
-        (1 - EWMA_ALPHA) * this.statisticalBaseline.mean + EWMA_ALPHA * featureMean;
+        (1 - EWMA_ALPHA) * this.statisticalBaseline.mean +
+        EWMA_ALPHA * featureMean;
     }
 
     const value = features[0];
     const { mean } = sb;
     const featureStd = Math.sqrt(
-      features.reduce((s, v) => s + (v - featureMean) ** 2, 0) / features.length
+      features.reduce((s, v) => s + (v - featureMean) ** 2, 0) /
+        features.length,
     );
 
-    let description = '';
-    if (value > mean + 3 * featureStd)      description = `Unusual spike: ${value.toFixed(2)} (expected ~${mean.toFixed(2)})`;
-    else if (value < mean - 3 * featureStd) description = `Unusual drop: ${value.toFixed(2)} (expected ~${mean.toFixed(2)})`;
-    else                                    description = `Pattern anomaly at index ${index} (score=${weightedScore.toFixed(3)})`;
+    let description = "";
+    if (value > mean + 3 * featureStd)
+      description = `Unusual spike: ${value.toFixed(2)} (expected ~${mean.toFixed(2)})`;
+    else if (value < mean - 3 * featureStd)
+      description = `Unusual drop: ${value.toFixed(2)} (expected ~${mean.toFixed(2)})`;
+    else
+      description = `Pattern anomaly at index ${index} (score=${weightedScore.toFixed(3)})`;
 
     return {
       isAnomaly,
@@ -231,17 +262,22 @@ export class AnomalyDetectionModel extends BaseModel {
 
   private extractFeatures(value: number, ctx: number[], idx: number): number[] {
     const window = ctx.slice(Math.max(0, idx - 10), idx);
-    const wMean = window.length ? window.reduce((s, v) => s + v, 0) / window.length : value;
-    const wMax  = window.length ? Math.max(...window) : value;
-    const wMin  = window.length ? Math.min(...window) : value;
-    const wStd  = window.length
-      ? Math.sqrt(window.reduce((s, v) => s + (v - wMean) ** 2, 0) / window.length) : 0;
+    const wMean = window.length
+      ? window.reduce((s, v) => s + v, 0) / window.length
+      : value;
+    const wMax = window.length ? Math.max(...window) : value;
+    const wMin = window.length ? Math.min(...window) : value;
+    const wStd = window.length
+      ? Math.sqrt(
+          window.reduce((s, v) => s + (v - wMean) ** 2, 0) / window.length,
+        )
+      : 0;
 
     // Rate of change
-    const prev  = ctx[idx - 1] ?? value;
+    const prev = ctx[idx - 1] ?? value;
     const prev2 = ctx[idx - 2] ?? prev;
-    const roc1  = value - prev;
-    const roc2  = prev - prev2;
+    const roc1 = value - prev;
+    const roc2 = prev - prev2;
 
     const features = [
       value,
@@ -255,7 +291,7 @@ export class AnomalyDetectionModel extends BaseModel {
       wStd,
       roc1,
       roc2,
-      roc1 - roc2,   // acceleration
+      roc1 - roc2, // acceleration
     ];
 
     return features.slice(0, 12);
@@ -264,10 +300,14 @@ export class AnomalyDetectionModel extends BaseModel {
   public detectAnomaliesStatistical(data: number[]): AnomalyResult[] {
     const stats = calculateStatistics(data);
     const mean = stats.mean;
-    const std  = stats.stdDev || 1;
+    const std = stats.stdDev || 1;
 
-    const q1 = data.slice().sort((a, b) => a - b)[Math.floor(data.length * 0.25)];
-    const q3 = data.slice().sort((a, b) => a - b)[Math.floor(data.length * 0.75)];
+    const q1 = data.slice().sort((a, b) => a - b)[
+      Math.floor(data.length * 0.25)
+    ];
+    const q3 = data.slice().sort((a, b) => a - b)[
+      Math.floor(data.length * 0.75)
+    ];
     const iqr = q3 - q1;
     const lower = q1 - 1.5 * iqr;
     const upper = q3 + 1.5 * iqr;
@@ -280,7 +320,10 @@ export class AnomalyDetectionModel extends BaseModel {
         return {
           isAnomaly: true,
           score: Math.min(1, z / 5),
-          severity: (z > 5 ? 'high' : z > 3.5 ? 'medium' : 'low') as 'low' | 'medium' | 'high',
+          severity: (z > 5 ? "high" : z > 3.5 ? "medium" : "low") as
+            | "low"
+            | "medium"
+            | "high",
           expectedValue: mean,
           actualValue: value,
           description: `Statistical outlier at index ${i}: ${value.toFixed(2)}`,

@@ -1,8 +1,8 @@
-import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { useState } from 'react';
-import { useLocation } from 'wouter';
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { useState } from "react";
+import { useLocation } from "wouter";
 import {
   FileQuestion,
   Home,
@@ -17,26 +17,56 @@ import {
   Users,
   Settings,
   ExternalLink,
-} from 'lucide-react';
+} from "lucide-react";
 
 const popularPages = [
-  { name: 'Dashboard', href: '/dashboard', icon: Home, description: 'Your main workspace' },
-  { name: 'Studio', href: '/studio', icon: Music, description: 'Create and edit music' },
-  { name: 'Analytics', href: '/analytics', icon: BarChart3, description: 'Track your performance' },
-  { name: 'Marketplace', href: '/marketplace', icon: Store, description: 'Browse beats and sounds' },
-  { name: 'Collaborations', href: '/collaborations', icon: Users, description: 'Work with others' },
-  { name: 'Settings', href: '/settings', icon: Settings, description: 'Manage your account' },
+  {
+    name: "Dashboard",
+    href: "/dashboard",
+    icon: Home,
+    description: "Your main workspace",
+  },
+  {
+    name: "Studio",
+    href: "/studio",
+    icon: Music,
+    description: "Create and edit music",
+  },
+  {
+    name: "Analytics",
+    href: "/analytics",
+    icon: BarChart3,
+    description: "Track your performance",
+  },
+  {
+    name: "Marketplace",
+    href: "/marketplace",
+    icon: Store,
+    description: "Browse beats and sounds",
+  },
+  {
+    name: "Collaborations",
+    href: "/collaborations",
+    icon: Users,
+    description: "Work with others",
+  },
+  {
+    name: "Settings",
+    href: "/settings",
+    icon: Settings,
+    description: "Manage your account",
+  },
 ];
 
 const helpResources = [
-  { name: 'Help Center', href: '/help', icon: HelpCircle },
-  { name: 'Contact Support', href: '/help#contact', icon: MessageSquare },
-  { name: 'Documentation', href: '/documentation', icon: ExternalLink },
+  { name: "Help Center", href: "/help", icon: HelpCircle },
+  { name: "Contact Support", href: "/help#contact", icon: MessageSquare },
+  { name: "Documentation", href: "/documentation", icon: ExternalLink },
 ];
 
 export default function NotFound() {
   const [, setLocation] = useLocation();
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState("");
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -49,7 +79,7 @@ export default function NotFound() {
     if (window.history.length > 1) {
       window.history.back();
     } else {
-      setLocation('/dashboard');
+      setLocation("/dashboard");
     }
   };
 
@@ -60,31 +90,32 @@ export default function NotFound() {
           <div className="inline-flex items-center justify-center w-28 h-28 rounded-full bg-gradient-to-br from-purple-100 to-pink-100 dark:from-purple-900/40 dark:to-pink-900/40 mb-6 animate-pulse">
             <FileQuestion className="h-14 w-14 text-purple-600 dark:text-purple-400" />
           </div>
-          
+
           <h1 className="text-7xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-3">
             404
           </h1>
-          
+
           <h2 className="text-2xl font-semibold text-gray-800 dark:text-gray-200 mb-3">
             Page Not Found
           </h2>
-          
+
           <p className="text-gray-600 dark:text-gray-400 max-w-md mx-auto mb-6">
-            Looks like this page took a vacation! The page you're looking for doesn't exist or has been moved.
+            Looks like this page took a vacation! The page you're looking for
+            doesn't exist or has been moved.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-3 justify-center mb-8">
-            <Button 
-              onClick={handleGoBack} 
-              variant="outline" 
+            <Button
+              onClick={handleGoBack}
+              variant="outline"
               size="lg"
               className="gap-2"
             >
               <ArrowLeft className="h-4 w-4" />
               Go Back
             </Button>
-            <Button 
-              onClick={() => setLocation('/dashboard')} 
+            <Button
+              onClick={() => setLocation("/dashboard")}
               size="lg"
               className="gap-2 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
             >
@@ -151,11 +182,12 @@ export default function NotFound() {
                 <HelpCircle className="h-5 w-5 text-blue-500" />
                 Need Help?
               </h3>
-              
+
               <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                If you believe this is an error or need assistance, our support team is here to help.
+                If you believe this is an error or need assistance, our support
+                team is here to help.
               </p>
-              
+
               <div className="space-y-2 mb-4">
                 {helpResources.map((resource) => (
                   <a
@@ -174,7 +206,10 @@ export default function NotFound() {
                   Error Code: 404 • Page Not Found
                 </p>
                 <p className="text-xs text-gray-500 dark:text-gray-400">
-                  URL: {typeof window !== 'undefined' ? window.location.pathname : ''}
+                  URL:{" "}
+                  {typeof window !== "undefined"
+                    ? window.location.pathname
+                    : ""}
                 </p>
               </div>
             </CardContent>
@@ -183,8 +218,11 @@ export default function NotFound() {
 
         <div className="text-center mt-8">
           <p className="text-sm text-gray-500 dark:text-gray-400">
-            Still stuck?{' '}
-            <a href="mailto:support@maxbooster.com" className="text-primary hover:underline">
+            Still stuck?{" "}
+            <a
+              href="mailto:support@maxbooster.com"
+              className="text-primary hover:underline"
+            >
               Contact our support team
             </a>
           </p>

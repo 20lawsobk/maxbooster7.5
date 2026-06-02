@@ -1,8 +1,8 @@
-import { logger } from '../logger';
-import { offlineQueue, QueuedAction, QueueEvent } from './OfflineQueue';
-import { apiRequest } from '../queryClient';
+import { logger } from "../logger";
+import { offlineQueue, QueuedAction, QueueEvent } from "./OfflineQueue";
+import { apiRequest } from "../queryClient";
 
-export type SyncStatus = 'idle' | 'syncing' | 'error' | 'paused';
+export type SyncStatus = "idle" | "syncing" | "error" | "paused";
 
 export interface SyncProgress {
   total: number;
@@ -38,7 +38,13 @@ export interface BatchSyncResponse {
   }>;
 }
 
-type SyncEventType = 'status-change' | 'progress-update' | 'sync-complete' | 'sync-error' | 'online' | 'offline';
+type SyncEventType =
+  | "status-change"
+  | "progress-update"
+  | "sync-complete"
+  | "sync-error"
+  | "online"
+  | "offline";
 
 interface SyncEvent {
   type: SyncEventType;
@@ -55,7 +61,7 @@ const DEFAULT_RETRY_DELAYS = [1000, 2000, 4000, 8000, 16000, 32000];
 const SYNC_DEBOUNCE_MS = 1000;
 
 class SyncManager {
-  private status: SyncStatus = 'idle';
+  private status: SyncStatus = "idle";
   private progress: SyncProgress = {
     total: 0,
     completed: 0,
@@ -77,10 +83,10 @@ class SyncManager {
 
     await offlineQueue.init();
 
-    window.addEventListener('online', this.handleOnline);
-    window.addEventListener('offline', this.handleOffline);
+    window.addEventListener("online", this.handleOnline);
+    window.addEventListener("offline", this.handleOffline);
 
-    offlineQueue.on('action-added', this.handleActionAdded);
+    offlineQueue.on("action-added", this.handleActionAdded);
 
     this.isOnline = navigator.onLine;
     this.isInitialized = true;
@@ -92,7 +98,7 @@ class SyncManager {
 
   private handleOnline = (): void => {
     this.isOnline = true;
-    this.emit({ type: 'online' });
+    this.emit({ type: "online" });
 
     if (!this.isPaused) {
       this.scheduleSync();
@@ -101,7 +107,7 @@ class SyncManager {
 
   private handleOffline = (): void => {
     this.isOnline = false;
-    this.emit({ type: 'offline' });
+    this.emit({ type: "offline" });
 
     this.cancelPendingSync();
   };
@@ -115,11 +121,11 @@ class SyncManager {
   private emit(event: SyncEvent): void {
     const listeners = this.listeners.get(event.type);
     if (listeners) {
-      listeners.forEach(listener => {
+      listeners.forEach((listener) => {
         try {
           listener(event);
         } catch (error) {
-          logger.error('[SyncManager] Event listener error:', error);
+          logger.error("[SyncManager] Event listener error:", error);
         }
       });
     }
@@ -155,13 +161,13 @@ class SyncManager {
   private setStatus(status: SyncStatus): void {
     if (this.status !== status) {
       this.status = status;
-      this.emit({ type: 'status-change', status });
+      this.emit({ type: "status-change", status });
     }
   }
 
   private updateProgress(updates: Partial<SyncProgress>): void {
     this.progress = { ...this.progress, ...updates };
-    this.emit({ type: 'progress-update', progress: this.progress });
+    this.emit({ type: "progress-update", progress: this.progress });
   }
 
   private scheduleSync(): void {
@@ -182,11 +188,11 @@ class SyncManager {
   }
 
   async sync(): Promise<SyncResult[]> {
-    if (!this.isOnline || this.isPaused || this.status === 'syncing') {
+    if (!this.isOnline || this.isPaused || this.status === "syncing") {
       return [];
     }
 
-    this.setStatus('syncing');
+    this.setStatus("syncing");
     const allResults: SyncResult[] = [];
 
     try {
@@ -209,8 +215,8 @@ class SyncManager {
         const results = await this.syncBatch(batch);
         allResults.push(...results);
 
-        const completed = results.filter(r => r.success).length;
-        const failed = results.filter(r => !r.success).length;
+        const completed = results.filter((r) => r.success).length;
+        const failed = results.filter((r) => !r.success).length;
 
         this.updateProgress({
           completed: this.progress.completed + completed,
@@ -218,15 +224,14 @@ class SyncManager {
         });
       }
 
-      this.setStatus('idle');
-      this.emit({ type: 'sync-complete', results: allResults });
+      this.setStatus("idle");
+      this.emit({ type: "sync-complete", results: allResults });
 
       await offlineQueue.clearCompleted();
-
     } catch (error) {
-      logger.error('[SyncManager] Sync error:', error);
-      this.setStatus('error');
-      this.emit({ type: 'sync-error', error: error as Error });
+      logger.error("[SyncManager] Sync error:", error);
+      this.setStatus("error");
+      this.emit({ type: "sync-error", error: error as Error });
     }
 
     return allResults;
@@ -234,7 +239,7 @@ class SyncManager {
 
   private async syncBatch(batch: QueuedAction[]): Promise<SyncResult[]> {
     const batchRequest: BatchSyncRequest = {
-      actions: batch.map(action => ({
+      actions: batch.map((action) => ({
         id: action.id,
         type: action.type,
         payload: action.payload,
@@ -248,14 +253,21 @@ class SyncManager {
     }
 
     try {
-      const response = await apiRequest('POST', '/api/sync/batch', batchRequest);
+      const response = await apiRequest(
+        "POST",
+        "/api/sync/batch",
+        batchRequest,
+      );
       const data: BatchSyncResponse = await response.json();
 
       for (const result of data.results) {
         if (result.success) {
           await offlineQueue.markCompleted(result.actionId);
         } else {
-          await offlineQueue.markFailed(result.actionId, result.error || 'Unknown error');
+          await offlineQueue.markFailed(
+            result.actionId,
+            result.error || "Unknown error",
+          );
           this.scheduleRetry(result.actionId);
         }
       }
@@ -264,20 +276,21 @@ class SyncManager {
         await offlineQueue.recordConflict(
           conflict.actionId,
           conflict.localData,
-          conflict.serverData
+          conflict.serverData,
         );
       }
 
       return data.results;
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Network error';
+      const errorMessage =
+        error instanceof Error ? error.message : "Network error";
 
       for (const action of batch) {
         await offlineQueue.markFailed(action.id, errorMessage);
         this.scheduleRetry(action.id);
       }
 
-      return batch.map(action => ({
+      return batch.map((action) => ({
         actionId: action.id,
         success: false,
         error: errorMessage,
@@ -286,10 +299,13 @@ class SyncManager {
   }
 
   private scheduleRetry(actionId: string): void {
-    offlineQueue.getAction(actionId).then(action => {
+    offlineQueue.getAction(actionId).then((action) => {
       if (!action || action.retryCount >= action.maxRetries) return;
 
-      const delay = DEFAULT_RETRY_DELAYS[Math.min(action.retryCount, DEFAULT_RETRY_DELAYS.length - 1)];
+      const delay =
+        DEFAULT_RETRY_DELAYS[
+          Math.min(action.retryCount, DEFAULT_RETRY_DELAYS.length - 1)
+        ];
       const jitter = Math.random() * 1000;
 
       const timeout = setTimeout(() => {
@@ -305,14 +321,14 @@ class SyncManager {
 
   pause(): void {
     this.isPaused = true;
-    this.setStatus('paused');
+    this.setStatus("paused");
     this.cancelPendingSync();
   }
 
   resume(): void {
     this.isPaused = false;
     if (this.isOnline) {
-      this.setStatus('idle');
+      this.setStatus("idle");
       this.scheduleSync();
     }
   }
@@ -326,11 +342,11 @@ class SyncManager {
   }
 
   async retryFailed(): Promise<SyncResult[]> {
-    const failed = await offlineQueue.getByStatus('failed');
+    const failed = await offlineQueue.getByStatus("failed");
 
     for (const action of failed) {
       await offlineQueue.updateAction(action.id, {
-        status: 'pending',
+        status: "pending",
         retryCount: 0,
         error: undefined,
       });
@@ -355,8 +371,8 @@ class SyncManager {
   }
 
   destroy(): void {
-    window.removeEventListener('online', this.handleOnline);
-    window.removeEventListener('offline', this.handleOffline);
+    window.removeEventListener("online", this.handleOnline);
+    window.removeEventListener("offline", this.handleOffline);
 
     this.cancelPendingSync();
 

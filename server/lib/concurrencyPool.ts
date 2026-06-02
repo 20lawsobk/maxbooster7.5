@@ -12,8 +12,8 @@
  */
 
 export type SettledResult<T> =
-  | { status: 'fulfilled'; value: T }
-  | { status: 'rejected'; reason: unknown };
+  | { status: "fulfilled"; value: T }
+  | { status: "rejected"; reason: unknown };
 
 /**
  * pMap — parallel map with bounded concurrency.
@@ -38,9 +38,9 @@ export async function pMap<T, R>(
     while (next < items.length) {
       const i = next++;
       try {
-        results[i] = { status: 'fulfilled', value: await fn(items[i], i) };
+        results[i] = { status: "fulfilled", value: await fn(items[i], i) };
       } catch (reason) {
-        results[i] = { status: 'rejected', reason };
+        results[i] = { status: "rejected", reason };
       }
     }
   }
@@ -81,7 +81,7 @@ export async function pBatch<T>(
     const chunk = items.slice(i, i + batchSize);
     await Promise.allSettled(chunk.map(fn));
     if (gapMs > 0 && i + batchSize < items.length) {
-      await new Promise(r => setTimeout(r, gapMs));
+      await new Promise((r) => setTimeout(r, gapMs));
     }
   }
 }
@@ -105,7 +105,9 @@ export async function drainN<T>(
     Array.from({ length: n }, () => popFn()),
   );
   return attempts
-    .filter((r): r is { status: 'fulfilled'; value: T } =>
-      r.status === 'fulfilled' && r.value !== null)
-    .map(r => r.value);
+    .filter(
+      (r): r is { status: "fulfilled"; value: T } =>
+        r.status === "fulfilled" && r.value !== null,
+    )
+    .map((r) => r.value);
 }

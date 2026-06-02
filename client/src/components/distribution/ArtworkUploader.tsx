@@ -1,9 +1,15 @@
-import { useRef, useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Image, Upload, X, AlertCircle, CheckCircle, Info } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
+import { useRef, useState } from "react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Image, Upload, X, AlertCircle, CheckCircle, Info } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 interface ArtworkUploaderProps {
   artwork: File | null;
@@ -11,7 +17,11 @@ interface ArtworkUploaderProps {
   onChange: (file: File | null, previewUrl: string | null) => void;
 }
 
-export function ArtworkUploader({ artwork, previewUrl, onChange }: ArtworkUploaderProps) {
+export function ArtworkUploader({
+  artwork,
+  previewUrl,
+  onChange,
+}: ArtworkUploaderProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [validation, setValidation] = useState<{
@@ -25,24 +35,29 @@ export function ArtworkUploader({ artwork, previewUrl, onChange }: ArtworkUpload
   const MIN_SIZE = 3000;
   const MAX_SIZE = 5000;
   const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
-  const ALLOWED_FORMATS = ['image/jpeg', 'image/jpg', 'image/png'];
+  const ALLOWED_FORMATS = ["image/jpeg", "image/jpg", "image/png"];
 
   const validateImage = (
-    file: File
-  ): Promise<{ isValid: boolean; width?: number; height?: number; errors: string[] }> => {
+    file: File,
+  ): Promise<{
+    isValid: boolean;
+    width?: number;
+    height?: number;
+    errors: string[];
+  }> => {
     return new Promise((resolve) => {
       const errors: string[] = [];
 
       // Check file size
       if (file.size > MAX_FILE_SIZE) {
         errors.push(
-          `File too large (${(file.size / 1024 / 1024).toFixed(1)}MB). Maximum 10MB allowed.`
+          `File too large (${(file.size / 1024 / 1024).toFixed(1)}MB). Maximum 10MB allowed.`,
         );
       }
 
       // Check format
       if (!ALLOWED_FORMATS.includes(file.type)) {
-        errors.push('Invalid format. Only JPEG and PNG allowed.');
+        errors.push("Invalid format. Only JPEG and PNG allowed.");
         resolve({ isValid: false, errors });
         return;
       }
@@ -57,20 +72,20 @@ export function ArtworkUploader({ artwork, previewUrl, onChange }: ArtworkUpload
 
         // Check if square
         if (width !== height) {
-          errors.push('Artwork must be square (1:1 aspect ratio)');
+          errors.push("Artwork must be square (1:1 aspect ratio)");
         }
 
         // Check minimum dimensions
         if (width < MIN_SIZE || height < MIN_SIZE) {
           errors.push(
-            `Too small (${width}x${height}px). Minimum ${MIN_SIZE}x${MIN_SIZE}px required.`
+            `Too small (${width}x${height}px). Minimum ${MIN_SIZE}x${MIN_SIZE}px required.`,
           );
         }
 
         // Check maximum dimensions
         if (width > MAX_SIZE || height > MAX_SIZE) {
           errors.push(
-            `Too large (${width}x${height}px). Maximum ${MAX_SIZE}x${MAX_SIZE}px recommended.`
+            `Too large (${width}x${height}px). Maximum ${MAX_SIZE}x${MAX_SIZE}px recommended.`,
           );
         }
 
@@ -84,7 +99,7 @@ export function ArtworkUploader({ artwork, previewUrl, onChange }: ArtworkUpload
 
       img.onerror = () => {
         URL.revokeObjectURL(url);
-        errors.push('Failed to load image. File may be corrupted.');
+        errors.push("Failed to load image. File may be corrupted.");
         resolve({ isValid: false, errors });
       };
 
@@ -106,15 +121,15 @@ export function ArtworkUploader({ artwork, previewUrl, onChange }: ArtworkUpload
       const url = URL.createObjectURL(file);
       onChange(file, url);
       toast({
-        title: 'Artwork uploaded',
+        title: "Artwork uploaded",
         description: `${validationResult.width}x${validationResult.height}px - Perfect!`,
       });
     } else {
       onChange(null, null);
       toast({
-        title: 'Invalid artwork',
+        title: "Invalid artwork",
         description: validationResult.errors[0],
-        variant: 'destructive',
+        variant: "destructive",
       });
     }
   };
@@ -152,7 +167,8 @@ export function ArtworkUploader({ artwork, previewUrl, onChange }: ArtworkUpload
           Album Artwork
         </CardTitle>
         <CardDescription>
-          Upload cover art in JPEG or PNG format. Must be square and at least 3000x3000px.
+          Upload cover art in JPEG or PNG format. Must be square and at least
+          3000x3000px.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -160,8 +176,9 @@ export function ArtworkUploader({ artwork, previewUrl, onChange }: ArtworkUpload
         <Alert>
           <Info className="h-4 w-4" />
           <AlertDescription>
-            <strong>DSP Requirements:</strong> Square aspect ratio (1:1), minimum 3000x3000px,
-            maximum 5000x5000px recommended. Avoid text, logos, or price info.
+            <strong>DSP Requirements:</strong> Square aspect ratio (1:1),
+            minimum 3000x3000px, maximum 5000x5000px recommended. Avoid text,
+            logos, or price info.
           </AlertDescription>
         </Alert>
 
@@ -170,17 +187,25 @@ export function ArtworkUploader({ artwork, previewUrl, onChange }: ArtworkUpload
           <div
             className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
               isDragging
-                ? 'border-primary bg-primary/5'
-                : 'border-muted-foreground/25 hover:border-primary/50'
+                ? "border-primary bg-primary/5"
+                : "border-muted-foreground/25 hover:border-primary/50"
             }`}
             onDrop={handleDrop}
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
           >
             <Image className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
-            <p className="text-lg font-medium mb-2">Drag and drop artwork here</p>
-            <p className="text-sm text-muted-foreground mb-4">or click to browse</p>
-            <Button type="button" variant="outline" onClick={() => fileInputRef.current?.click()}>
+            <p className="text-lg font-medium mb-2">
+              Drag and drop artwork here
+            </p>
+            <p className="text-sm text-muted-foreground mb-4">
+              or click to browse
+            </p>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => fileInputRef.current?.click()}
+            >
               <Upload className="h-4 w-4 mr-2" />
               Select Image
             </Button>
@@ -240,7 +265,8 @@ export function ArtworkUploader({ artwork, previewUrl, onChange }: ArtworkUpload
                 <div className="text-xs text-muted-foreground">
                   {artwork && (
                     <>
-                      {artwork.name} • {(artwork.size / 1024 / 1024).toFixed(2)}MB
+                      {artwork.name} • {(artwork.size / 1024 / 1024).toFixed(2)}
+                      MB
                     </>
                   )}
                 </div>

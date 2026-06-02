@@ -1,6 +1,6 @@
-import type { AudioAnalysisData } from '../AudioAnalyzer';
+import type { AudioAnalysisData } from "../AudioAnalyzer";
 
-export type CircularStyle = 'bars' | 'wave' | 'dots' | 'spikes' | 'ring';
+export type CircularStyle = "bars" | "wave" | "dots" | "spikes" | "ring";
 
 export interface CircularVisualizerOptions {
   style: CircularStyle;
@@ -63,7 +63,7 @@ export class CircularVisualizer {
   private lastBeatTime: number = 0;
 
   static readonly defaultOptions: CircularVisualizerOptions = {
-    style: 'bars',
+    style: "bars",
     barCount: 64,
     innerRadius: 100,
     outerRadius: 250,
@@ -71,15 +71,15 @@ export class CircularVisualizer {
     barMinHeight: 5,
     barMaxHeight: 150,
     barRadius: 2,
-    color: '#00ff88',
-    secondaryColor: '#0088ff',
-    gradientColors: ['#ff0080', '#ff8000', '#00ff88', '#00ffff', '#8000ff'],
+    color: "#00ff88",
+    secondaryColor: "#0088ff",
+    gradientColors: ["#ff0080", "#ff8000", "#00ff88", "#00ffff", "#8000ff"],
     useRadialGradient: true,
     rotation: 0,
     rotationSpeed: 0.5,
     mirror: true,
     glow: true,
-    glowColor: '#00ff88',
+    glowColor: "#00ff88",
     glowIntensity: 0.8,
     glowBlur: 15,
     smoothing: 0.7,
@@ -88,7 +88,7 @@ export class CircularVisualizer {
     beatPulseAmount: 20,
     particleBurst: true,
     particleCount: 20,
-    particleColor: '#ffffff',
+    particleColor: "#ffffff",
     particleSize: 3,
     particleSpeed: 5,
     particleLifetime: 60,
@@ -113,7 +113,7 @@ export class CircularVisualizer {
   updateOptions(options: Partial<CircularVisualizerOptions>): void {
     const prevBarCount = this.options.barCount;
     this.options = { ...this.options, ...options };
-    
+
     if (options.barCount && options.barCount !== prevBarCount) {
       this.initializeBarStates();
     }
@@ -124,17 +124,17 @@ export class CircularVisualizer {
     audioData: AudioAnalysisData,
     width: number,
     height: number,
-    time: number
+    time: number,
   ): void {
     const frequencyBands = this.getFrequencyBands(audioData);
     this.updateBarStates(frequencyBands);
     this.updateRotation(time);
     this.updatePulse(audioData);
-    
+
     if (this.options.particleBurst && audioData.beatDetected) {
       this.emitParticles(width, height);
     }
-    
+
     this.updateParticles();
 
     const centerX = width * this.options.centerX;
@@ -149,24 +149,26 @@ export class CircularVisualizer {
       ctx.shadowBlur = this.options.glowBlur * this.options.glowIntensity;
     }
 
-    const pulseOffset = this.options.beatPulse ? (this.pulseScale - 1) * this.options.beatPulseAmount : 0;
+    const pulseOffset = this.options.beatPulse
+      ? (this.pulseScale - 1) * this.options.beatPulseAmount
+      : 0;
     const effectiveInnerRadius = this.options.innerRadius + pulseOffset;
     const effectiveOuterRadius = this.options.outerRadius + pulseOffset;
 
     switch (this.options.style) {
-      case 'wave':
+      case "wave":
         this.renderWave(ctx, effectiveInnerRadius);
         break;
-      case 'dots':
+      case "dots":
         this.renderDots(ctx, effectiveInnerRadius, effectiveOuterRadius);
         break;
-      case 'spikes':
+      case "spikes":
         this.renderSpikes(ctx, effectiveInnerRadius, effectiveOuterRadius);
         break;
-      case 'ring':
+      case "ring":
         this.renderRing(ctx, effectiveInnerRadius);
         break;
-      case 'bars':
+      case "bars":
       default:
         this.renderBars(ctx, effectiveInnerRadius, effectiveOuterRadius);
         break;
@@ -200,18 +202,20 @@ export class CircularVisualizer {
 
   private updateBarStates(frequencyBands: number[]): void {
     const smoothFactor = 1 - this.options.smoothing;
-    
+
     for (let i = 0; i < this.options.barCount; i++) {
       const state = this.barStates[i];
       const targetHeight = frequencyBands[i] * this.options.barMaxHeight;
-      
+
       state.targetHeight = targetHeight;
-      state.currentHeight += (targetHeight - state.currentHeight) * smoothFactor;
+      state.currentHeight +=
+        (targetHeight - state.currentHeight) * smoothFactor;
     }
   }
 
   private updateRotation(time: number): void {
-    this.currentRotation = this.options.rotation + (time * this.options.rotationSpeed * 0.01);
+    this.currentRotation =
+      this.options.rotation + time * this.options.rotationSpeed * 0.01;
   }
 
   private updatePulse(audioData: AudioAnalysisData): void {
@@ -227,44 +231,65 @@ export class CircularVisualizer {
   private renderBars(
     ctx: CanvasRenderingContext2D,
     innerRadius: number,
-    outerRadius: number
+    outerRadius: number,
   ): void {
     const { barCount, barWidth, barMinHeight, barRadius } = this.options;
-    const angleStep = (this.options.endAngle - this.options.startAngle) / barCount;
+    const angleStep =
+      (this.options.endAngle - this.options.startAngle) / barCount;
 
     for (let i = 0; i < barCount; i++) {
       const angle = this.options.startAngle + i * angleStep;
       const state = this.barStates[i];
       const barHeight = Math.max(barMinHeight, state.currentHeight);
-      
+
       ctx.save();
       ctx.rotate(angle);
-      
+
       ctx.fillStyle = this.getBarColor(i, barHeight);
-      
+
       if (barRadius > 0) {
-        this.drawRoundedRect(ctx, -barWidth / 2, innerRadius, barWidth, barHeight, barRadius);
+        this.drawRoundedRect(
+          ctx,
+          -barWidth / 2,
+          innerRadius,
+          barWidth,
+          barHeight,
+          barRadius,
+        );
       } else {
         ctx.fillRect(-barWidth / 2, innerRadius, barWidth, barHeight);
       }
-      
+
       if (this.options.mirror) {
         ctx.globalAlpha = 0.4;
         if (barRadius > 0) {
-          this.drawRoundedRect(ctx, -barWidth / 2, -innerRadius - barHeight, barWidth, barHeight, barRadius);
+          this.drawRoundedRect(
+            ctx,
+            -barWidth / 2,
+            -innerRadius - barHeight,
+            barWidth,
+            barHeight,
+            barRadius,
+          );
         } else {
-          ctx.fillRect(-barWidth / 2, -innerRadius - barHeight, barWidth, barHeight);
+          ctx.fillRect(
+            -barWidth / 2,
+            -innerRadius - barHeight,
+            barWidth,
+            barHeight,
+          );
         }
         ctx.globalAlpha = 1;
       }
-      
+
       ctx.restore();
     }
   }
 
   private renderWave(ctx: CanvasRenderingContext2D, innerRadius: number): void {
     const { barCount, barMaxHeight } = this.options;
-    const angleStep = (this.options.endAngle - this.options.startAngle) / barCount;
+    const angleStep =
+      (this.options.endAngle - this.options.startAngle) / barCount;
 
     ctx.beginPath();
     ctx.strokeStyle = this.options.color;
@@ -275,10 +300,10 @@ export class CircularVisualizer {
       const angle = this.options.startAngle + i * angleStep;
       const state = this.barStates[index];
       const radius = innerRadius + state.currentHeight;
-      
+
       const x = Math.cos(angle) * radius;
       const y = Math.sin(angle) * radius;
-      
+
       if (i === 0) {
         ctx.moveTo(x, y);
       } else {
@@ -289,32 +314,40 @@ export class CircularVisualizer {
     if (this.options.endAngle - this.options.startAngle >= Math.PI * 2) {
       ctx.closePath();
     }
-    
-    const gradient = ctx.createRadialGradient(0, 0, innerRadius, 0, 0, innerRadius + barMaxHeight);
+
+    const gradient = ctx.createRadialGradient(
+      0,
+      0,
+      innerRadius,
+      0,
+      0,
+      innerRadius + barMaxHeight,
+    );
     gradient.addColorStop(0, this.options.color);
     gradient.addColorStop(1, this.options.secondaryColor);
     ctx.strokeStyle = gradient;
-    
+
     ctx.stroke();
   }
 
   private renderDots(
     ctx: CanvasRenderingContext2D,
     innerRadius: number,
-    outerRadius: number
+    outerRadius: number,
   ): void {
     const { barCount, barMaxHeight } = this.options;
-    const angleStep = (this.options.endAngle - this.options.startAngle) / barCount;
+    const angleStep =
+      (this.options.endAngle - this.options.startAngle) / barCount;
 
     for (let i = 0; i < barCount; i++) {
       const angle = this.options.startAngle + i * angleStep;
       const state = this.barStates[i];
       const radius = innerRadius + state.currentHeight;
-      const dotSize = 2 + state.currentHeight / barMaxHeight * 6;
-      
+      const dotSize = 2 + (state.currentHeight / barMaxHeight) * 6;
+
       const x = Math.cos(angle) * radius;
       const y = Math.sin(angle) * radius;
-      
+
       ctx.beginPath();
       ctx.arc(x, y, dotSize, 0, Math.PI * 2);
       ctx.fillStyle = this.getBarColor(i, state.currentHeight);
@@ -325,31 +358,32 @@ export class CircularVisualizer {
   private renderSpikes(
     ctx: CanvasRenderingContext2D,
     innerRadius: number,
-    outerRadius: number
+    outerRadius: number,
   ): void {
     const { barCount, barWidth, barMinHeight } = this.options;
-    const angleStep = (this.options.endAngle - this.options.startAngle) / barCount;
+    const angleStep =
+      (this.options.endAngle - this.options.startAngle) / barCount;
     const halfAngle = angleStep / 4;
 
     for (let i = 0; i < barCount; i++) {
       const angle = this.options.startAngle + i * angleStep;
       const state = this.barStates[i];
       const barHeight = Math.max(barMinHeight, state.currentHeight);
-      
+
       const innerX1 = Math.cos(angle - halfAngle) * innerRadius;
       const innerY1 = Math.sin(angle - halfAngle) * innerRadius;
       const innerX2 = Math.cos(angle + halfAngle) * innerRadius;
       const innerY2 = Math.sin(angle + halfAngle) * innerRadius;
-      
+
       const outerX = Math.cos(angle) * (innerRadius + barHeight);
       const outerY = Math.sin(angle) * (innerRadius + barHeight);
-      
+
       ctx.beginPath();
       ctx.moveTo(innerX1, innerY1);
       ctx.lineTo(outerX, outerY);
       ctx.lineTo(innerX2, innerY2);
       ctx.closePath();
-      
+
       ctx.fillStyle = this.getBarColor(i, barHeight);
       ctx.fill();
     }
@@ -357,28 +391,29 @@ export class CircularVisualizer {
 
   private renderRing(ctx: CanvasRenderingContext2D, innerRadius: number): void {
     const { barCount, barMaxHeight } = this.options;
-    const angleStep = (this.options.endAngle - this.options.startAngle) / barCount;
+    const angleStep =
+      (this.options.endAngle - this.options.startAngle) / barCount;
 
     ctx.beginPath();
-    
+
     for (let i = 0; i <= barCount; i++) {
       const index = i % barCount;
       const angle = this.options.startAngle + i * angleStep;
       const state = this.barStates[index];
       const radius = innerRadius + state.currentHeight;
-      
+
       const x = Math.cos(angle) * radius;
       const y = Math.sin(angle) * radius;
-      
+
       if (i === 0) {
         ctx.moveTo(x, y);
       } else {
         ctx.lineTo(x, y);
       }
     }
-    
+
     ctx.closePath();
-    
+
     for (let i = barCount; i >= 0; i--) {
       const index = i % barCount;
       const angle = this.options.startAngle + i * angleStep;
@@ -386,10 +421,17 @@ export class CircularVisualizer {
       const y = Math.sin(angle) * innerRadius;
       ctx.lineTo(x, y);
     }
-    
+
     ctx.closePath();
-    
-    const gradient = ctx.createRadialGradient(0, 0, innerRadius, 0, 0, innerRadius + barMaxHeight);
+
+    const gradient = ctx.createRadialGradient(
+      0,
+      0,
+      innerRadius,
+      0,
+      0,
+      innerRadius + barMaxHeight,
+    );
     gradient.addColorStop(0, this.options.color);
     gradient.addColorStop(1, this.options.secondaryColor);
     ctx.fillStyle = gradient;
@@ -402,7 +444,7 @@ export class CircularVisualizer {
     y: number,
     width: number,
     height: number,
-    radius: number
+    radius: number,
   ): void {
     ctx.beginPath();
     ctx.moveTo(x + radius, y);
@@ -420,28 +462,30 @@ export class CircularVisualizer {
 
   private getBarColor(index: number, height: number): string {
     const { gradientColors, barCount, useRadialGradient } = this.options;
-    
+
     if (useRadialGradient && gradientColors.length > 1) {
-      const colorIndex = Math.floor((index / barCount) * (gradientColors.length - 1));
+      const colorIndex = Math.floor(
+        (index / barCount) * (gradientColors.length - 1),
+      );
       const t = ((index / barCount) * (gradientColors.length - 1)) % 1;
       return this.interpolateColors(
         gradientColors[colorIndex],
         gradientColors[colorIndex + 1] || gradientColors[colorIndex],
-        t
+        t,
       );
     }
-    
+
     return this.options.color;
   }
 
   private emitParticles(width: number, height: number): void {
     const centerX = width * this.options.centerX;
     const centerY = height * this.options.centerY;
-    
+
     for (let i = 0; i < this.options.particleCount; i++) {
       const angle = Math.random() * Math.PI * 2;
       const speed = this.options.particleSpeed * (0.5 + Math.random() * 0.5);
-      
+
       this.particles.push({
         x: centerX + Math.cos(angle) * this.options.innerRadius,
         y: centerY + Math.sin(angle) * this.options.innerRadius,
@@ -456,7 +500,7 @@ export class CircularVisualizer {
   }
 
   private updateParticles(): void {
-    this.particles = this.particles.filter(p => {
+    this.particles = this.particles.filter((p) => {
       p.x += p.vx;
       p.y += p.vy;
       p.life--;
@@ -467,7 +511,7 @@ export class CircularVisualizer {
   private renderParticles(
     ctx: CanvasRenderingContext2D,
     centerX: number,
-    centerY: number
+    centerY: number,
   ): void {
     for (const particle of this.particles) {
       const alpha = particle.life / particle.maxLife;
@@ -483,23 +527,25 @@ export class CircularVisualizer {
   private interpolateColors(color1: string, color2: string, t: number): string {
     const c1 = this.hexToRgb(color1);
     const c2 = this.hexToRgb(color2);
-    
+
     if (!c1 || !c2) return color1;
-    
+
     const r = Math.round(c1.r + (c2.r - c1.r) * t);
     const g = Math.round(c1.g + (c2.g - c1.g) * t);
     const b = Math.round(c1.b + (c2.b - c1.b) * t);
-    
+
     return `rgb(${r}, ${g}, ${b})`;
   }
 
   private hexToRgb(hex: string): { r: number; g: number; b: number } | null {
     const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-    return result ? {
-      r: parseInt(result[1], 16),
-      g: parseInt(result[2], 16),
-      b: parseInt(result[3], 16),
-    } : null;
+    return result
+      ? {
+          r: parseInt(result[1], 16),
+          g: parseInt(result[2], 16),
+          b: parseInt(result[3], 16),
+        }
+      : null;
   }
 
   reset(): void {

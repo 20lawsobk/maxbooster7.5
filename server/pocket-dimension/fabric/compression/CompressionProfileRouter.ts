@@ -1,14 +1,24 @@
-import { createHash } from 'crypto';
-import { cdcChunker } from './ContentDefinedChunker.js';
-import { zstdEngine } from './ZstdEngine.js';
-import { deltaEngine } from './DeltaEngine.js';
-import { mediaTranscoder, classifyContentType } from './MediaTranscoder.js';
-import { semanticArchiver } from './SemanticArchiver.js';
-import type { CompressionProfile, ContentClass, StoreOptions, CompressionResult } from './types.js';
+import { createHash } from "crypto";
+import { cdcChunker } from "./ContentDefinedChunker.js";
+import { zstdEngine } from "./ZstdEngine.js";
+import { deltaEngine } from "./DeltaEngine.js";
+import { mediaTranscoder, classifyContentType } from "./MediaTranscoder.js";
+import { semanticArchiver } from "./SemanticArchiver.js";
+import type {
+  CompressionProfile,
+  ContentClass,
+  StoreOptions,
+  CompressionResult,
+} from "./types.js";
 
-const MEDIA_CLASSES = new Set<ContentClass>(['video', 'audio', 'image']);
-const SEMANTIC_CLASSES = new Set<ContentClass>(['json', 'log', 'text', 'metrics']);
-const ALREADY_COMPRESSED = new Set<ContentClass>(['archive']);
+const MEDIA_CLASSES = new Set<ContentClass>(["video", "audio", "image"]);
+const SEMANTIC_CLASSES = new Set<ContentClass>([
+  "json",
+  "log",
+  "text",
+  "metrics",
+]);
+const ALREADY_COMPRESSED = new Set<ContentClass>(["archive"]);
 
 const LARGE_MEDIA_THRESHOLD = 50 * 1024 * 1024;
 const LOSSY_SIZE_THRESHOLD = 5 * 1024 * 1024;
@@ -16,22 +26,28 @@ const LOSSY_SIZE_THRESHOLD = 5 * 1024 * 1024;
 export class CompressionProfileRouter {
   private versionBases = new Map<string, Buffer>();
 
-  chooseProfile(contentClass: ContentClass, opts: StoreOptions): CompressionProfile {
+  chooseProfile(
+    contentClass: ContentClass,
+    opts: StoreOptions,
+  ): CompressionProfile {
     if (opts.profile) return opts.profile;
 
     if (MEDIA_CLASSES.has(contentClass)) {
       const size = opts.sizeHintBytes ?? 0;
-      if (opts.allowLossy !== false && (size === 0 || size >= LOSSY_SIZE_THRESHOLD)) {
-        return 'media-lossy';
+      if (
+        opts.allowLossy !== false &&
+        (size === 0 || size >= LOSSY_SIZE_THRESHOLD)
+      ) {
+        return "media-lossy";
       }
-      return 'lossless-max-dedup';
+      return "lossless-max-dedup";
     }
 
     if (SEMANTIC_CLASSES.has(contentClass)) {
-      return 'semantic-archive';
+      return "semantic-archive";
     }
 
-    return 'lossless-max-dedup';
+    return "lossless-max-dedup";
   }
 
   async process(
@@ -41,15 +57,23 @@ export class CompressionProfileRouter {
     opts: StoreOptions = {},
   ): Promise<CompressionResult> {
     const contentClass = classifyContentType(contentType, originalName);
-    const profile = this.chooseProfile(contentClass, { ...opts, sizeHintBytes: data.length });
+    const profile = this.chooseProfile(contentClass, {
+      ...opts,
+      sizeHintBytes: data.length,
+    });
 
     switch (profile) {
-      case 'media-lossy':
+      case "media-lossy":
         return this.processMediaLossy(data, contentClass, originalName, opts);
-      case 'semantic-archive':
+      case "semantic-archive":
         return this.processSemanticArchive(data, contentClass, opts);
       default:
-        return this.processLosslessMaxDedup(data, contentClass, originalName, opts);
+        return this.processLosslessMaxDedup(
+          data,
+          contentClass,
+          originalName,
+          opts,
+        );
     }
   }
 
@@ -63,7 +87,7 @@ export class CompressionProfileRouter {
     let processedData = data;
     let isDelta = false;
     let deltaBaseId: string | undefined;
-    let codec = 'cdc+zstd';
+    let codec = "cdc+zstd";
 
     if (opts.versionOf) {
       const base = this.versionBases.get(opts.versionOf);
@@ -74,17 +98,19 @@ export class CompressionProfileRouter {
             processedData = delta;
             isDelta = true;
             deltaBaseId = opts.versionOf;
-            codec = 'delta+zstd';
+            codec = "delta+zstd";
           }
-        } catch {
-        }
+        } catch {}
       }
     }
 
     await zstdEngine.addSample(domain, processedData.subarray(0, 32 * 1024));
     const dictId = await zstdEngine.getDictForDomain(domain);
 
-    const { compressed, dictId: usedDict } = await zstdEngine.compress(processedData, dictId);
+    const { compressed, dictId: usedDict } = await zstdEngine.compress(
+      processedData,
+      dictId,
+    );
 
     if (opts.versionOf && !isDelta) {
       this.versionBases.set(opts.versionOf, data);
@@ -94,7 +120,7 @@ export class CompressionProfileRouter {
 
     return {
       data: compressed,
-      profile: 'lossless-max-dedup',
+      profile: "lossless-max-dedup",
       contentClass,
       originalBytes: data.length,
       compressedBytes: compressed.length,
@@ -114,10 +140,14 @@ export class CompressionProfileRouter {
     opts: StoreOptions,
   ): Promise<CompressionResult> {
     let workingData = data;
-    let codec = 'passthrough';
+    let codec = "passthrough";
     let wasTranscoded = false;
 
-    const transcodeResult = await mediaTranscoder.transcode(data, contentClass, originalName);
+    const transcodeResult = await mediaTranscoder.transcode(
+      data,
+      contentClass,
+      originalName,
+    );
 
     if (transcodeResult && transcodeResult.ratio > 1.1) {
       workingData = transcodeResult.data;
@@ -128,12 +158,14 @@ export class CompressionProfileRouter {
     const domain = `media-${contentClass}`;
     const { compressed } = await zstdEngine.compress(workingData);
 
-    const finalData = compressed.length < workingData.length ? compressed : workingData;
-    const finalCodec = compressed.length < workingData.length ? `${codec}+zstd` : codec;
+    const finalData =
+      compressed.length < workingData.length ? compressed : workingData;
+    const finalCodec =
+      compressed.length < workingData.length ? `${codec}+zstd` : codec;
 
     return {
       data: finalData,
-      profile: 'media-lossy',
+      profile: "media-lossy",
       contentClass,
       originalBytes: data.length,
       compressedBytes: finalData.length,
@@ -156,16 +188,25 @@ export class CompressionProfileRouter {
     const archiveResult = await semanticArchiver.archive(data, contentClass);
 
     const domain = `semantic-${contentClass}`;
-    await zstdEngine.addSample(domain, archiveResult.data.subarray(0, 32 * 1024));
+    await zstdEngine.addSample(
+      domain,
+      archiveResult.data.subarray(0, 32 * 1024),
+    );
     const dictId = await zstdEngine.getDictForDomain(domain);
 
-    const { compressed } = await zstdEngine.compress(archiveResult.data, dictId);
+    const { compressed } = await zstdEngine.compress(
+      archiveResult.data,
+      dictId,
+    );
 
-    const finalData = compressed.length < archiveResult.data.length ? compressed : archiveResult.data;
+    const finalData =
+      compressed.length < archiveResult.data.length
+        ? compressed
+        : archiveResult.data;
 
     return {
       data: finalData,
-      profile: 'semantic-archive',
+      profile: "semantic-archive",
       contentClass,
       originalBytes: data.length,
       compressedBytes: finalData.length,
@@ -181,9 +222,22 @@ export class CompressionProfileRouter {
   }
 
   async trainDictionaries(): Promise<Record<string, string | null>> {
-    const domains = ['video', 'audio', 'image', 'json', 'log', 'text', 'metrics',
-      'media-video', 'media-audio', 'media-image', 'semantic-json', 'semantic-log',
-      'semantic-text', 'semantic-metrics'];
+    const domains = [
+      "video",
+      "audio",
+      "image",
+      "json",
+      "log",
+      "text",
+      "metrics",
+      "media-video",
+      "media-audio",
+      "media-image",
+      "semantic-json",
+      "semantic-log",
+      "semantic-text",
+      "semantic-metrics",
+    ];
 
     const results: Record<string, string | null> = {};
     for (const d of domains) {
@@ -193,7 +247,7 @@ export class CompressionProfileRouter {
   }
 
   private hashContent(data: Buffer): string {
-    return createHash('sha256').update(data).digest('hex');
+    return createHash("sha256").update(data).digest("hex");
   }
 }
 

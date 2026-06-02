@@ -1,27 +1,27 @@
-import { useState, useCallback, useEffect } from 'react';
-import { getCsrfTokenFromCookie } from '@/lib/queryClient';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useState, useCallback, useEffect } from "react";
+import { getCsrfTokenFromCookie } from "@/lib/queryClient";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogFooter,
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Slider } from '@/components/ui/slider';
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Slider } from "@/components/ui/slider";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { Switch } from '@/components/ui/switch';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Progress } from '@/components/ui/progress';
+} from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Progress } from "@/components/ui/progress";
 import {
   Download,
   Music,
@@ -36,23 +36,23 @@ import {
   Clock,
   HardDrive,
   Zap,
-} from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { useToast } from '@/hooks/use-toast';
+} from "lucide-react";
+import { cn } from "@/lib/utils";
+import { useToast } from "@/hooks/use-toast";
 
 interface ExportSettings {
   filename: string;
-  format: 'wav' | 'mp3' | 'flac' | 'ogg' | 'aac';
+  format: "wav" | "mp3" | "flac" | "ogg" | "aac";
   sampleRate: number;
   bitDepth: number;
   bitRate: number;
-  channels: 'stereo' | 'mono';
+  channels: "stereo" | "mono";
   normalize: boolean;
   normalizeLevel: number;
   dither: boolean;
-  ditherType: 'none' | 'triangular' | 'noise-shaped';
+  ditherType: "none" | "triangular" | "noise-shaped";
   includeMarkers: boolean;
-  exportRange: 'full' | 'selection' | 'loop';
+  exportRange: "full" | "selection" | "loop";
   realtime: boolean;
 }
 
@@ -73,11 +73,11 @@ interface FlowStateExportProps {
 }
 
 const FORMATS = [
-  { value: 'wav', label: 'WAV', description: 'Uncompressed, best quality' },
-  { value: 'flac', label: 'FLAC', description: 'Lossless compression' },
-  { value: 'mp3', label: 'MP3', description: 'Universal compatibility' },
-  { value: 'aac', label: 'AAC', description: 'Better quality than MP3' },
-  { value: 'ogg', label: 'OGG', description: 'Open source, good quality' },
+  { value: "wav", label: "WAV", description: "Uncompressed, best quality" },
+  { value: "flac", label: "FLAC", description: "Lossless compression" },
+  { value: "mp3", label: "MP3", description: "Universal compatibility" },
+  { value: "aac", label: "AAC", description: "Better quality than MP3" },
+  { value: "ogg", label: "OGG", description: "Open source, good quality" },
 ];
 
 const SAMPLE_RATES = [44100, 48000, 88200, 96000, 176400, 192000];
@@ -86,24 +86,34 @@ const BIT_RATES = [128, 192, 256, 320];
 
 const PRESETS: ExportPreset[] = [
   {
-    id: 'master',
-    name: 'Master Quality',
-    settings: { format: 'wav', sampleRate: 48000, bitDepth: 24, normalize: true },
+    id: "master",
+    name: "Master Quality",
+    settings: {
+      format: "wav",
+      sampleRate: 48000,
+      bitDepth: 24,
+      normalize: true,
+    },
   },
   {
-    id: 'streaming',
-    name: 'Streaming',
-    settings: { format: 'mp3', bitRate: 320, normalize: true },
+    id: "streaming",
+    name: "Streaming",
+    settings: { format: "mp3", bitRate: 320, normalize: true },
   },
   {
-    id: 'archive',
-    name: 'Archive',
-    settings: { format: 'flac', sampleRate: 96000, bitDepth: 24 },
+    id: "archive",
+    name: "Archive",
+    settings: { format: "flac", sampleRate: 96000, bitDepth: 24 },
   },
   {
-    id: 'podcast',
-    name: 'Podcast',
-    settings: { format: 'mp3', bitRate: 192, channels: 'mono', normalize: true },
+    id: "podcast",
+    name: "Podcast",
+    settings: {
+      format: "mp3",
+      bitRate: 192,
+      channels: "mono",
+      normalize: true,
+    },
   },
 ];
 
@@ -111,7 +121,7 @@ export function FlowStateExport({
   open,
   onOpenChange,
   projectId,
-  projectName = 'Untitled Project',
+  projectName = "Untitled Project",
   duration,
   onExportStart,
   onExportComplete,
@@ -119,38 +129,42 @@ export function FlowStateExport({
   const { toast } = useToast();
   const [isExporting, setIsExporting] = useState(false);
   const [exportProgress, setExportProgress] = useState(0);
-  const [exportPhase, setExportPhase] = useState<'preparing' | 'rendering' | 'encoding' | 'complete'>('preparing');
-  const [estimatedSize, setEstimatedSize] = useState<string>('');
-  const [estimatedTime, setEstimatedTime] = useState<string>('');
+  const [exportPhase, setExportPhase] = useState<
+    "preparing" | "rendering" | "encoding" | "complete"
+  >("preparing");
+  const [estimatedSize, setEstimatedSize] = useState<string>("");
+  const [estimatedTime, setEstimatedTime] = useState<string>("");
 
   const [settings, setSettings] = useState<ExportSettings>({
-    filename: projectName.replace(/[^a-zA-Z0-9-_]/g, '_'),
-    format: 'wav',
+    filename: projectName.replace(/[^a-zA-Z0-9-_]/g, "_"),
+    format: "wav",
     sampleRate: 48000,
     bitDepth: 24,
     bitRate: 320,
-    channels: 'stereo',
+    channels: "stereo",
     normalize: true,
     normalizeLevel: -1,
     dither: true,
-    ditherType: 'triangular',
+    ditherType: "triangular",
     includeMarkers: false,
-    exportRange: 'full',
+    exportRange: "full",
     realtime: false,
   });
 
   const calculateEstimates = useCallback(() => {
-    const channelCount = settings.channels === 'stereo' ? 2 : 1;
+    const channelCount = settings.channels === "stereo" ? 2 : 1;
     const bytesPerSample = settings.bitDepth / 8;
-    
+
     let sizeBytes: number;
-    
-    if (settings.format === 'wav') {
-      sizeBytes = duration * settings.sampleRate * channelCount * bytesPerSample;
-    } else if (settings.format === 'flac') {
-      sizeBytes = duration * settings.sampleRate * channelCount * bytesPerSample * 0.5;
+
+    if (settings.format === "wav") {
+      sizeBytes =
+        duration * settings.sampleRate * channelCount * bytesPerSample;
+    } else if (settings.format === "flac") {
+      sizeBytes =
+        duration * settings.sampleRate * channelCount * bytesPerSample * 0.5;
     } else {
-      sizeBytes = duration * (settings.bitRate * 1000 / 8);
+      sizeBytes = duration * ((settings.bitRate * 1000) / 8);
     }
 
     if (sizeBytes < 1024 * 1024) {
@@ -171,40 +185,46 @@ export function FlowStateExport({
     calculateEstimates();
   }, [calculateEstimates]);
 
-  const applyPreset = useCallback((preset: ExportPreset) => {
-    setSettings(prev => ({ ...prev, ...preset.settings }));
-    toast({ title: `Applied "${preset.name}" preset` });
-  }, [toast]);
+  const applyPreset = useCallback(
+    (preset: ExportPreset) => {
+      setSettings((prev) => ({ ...prev, ...preset.settings }));
+      toast({ title: `Applied "${preset.name}" preset` });
+    },
+    [toast],
+  );
 
   const startExport = useCallback(async () => {
     setIsExporting(true);
     setExportProgress(0);
-    setExportPhase('preparing');
+    setExportPhase("preparing");
     onExportStart?.(settings);
 
     try {
-      await new Promise(resolve => setTimeout(resolve, 500));
-      setExportPhase('rendering');
+      await new Promise((resolve) => setTimeout(resolve, 500));
+      setExportPhase("rendering");
 
       for (let i = 0; i <= 70; i += 5) {
-        await new Promise(resolve => setTimeout(resolve, 100));
+        await new Promise((resolve) => setTimeout(resolve, 100));
         setExportProgress(i);
       }
 
-      setExportPhase('encoding');
+      setExportPhase("encoding");
 
       for (let i = 70; i <= 100; i += 5) {
-        await new Promise(resolve => setTimeout(resolve, 80));
+        await new Promise((resolve) => setTimeout(resolve, 80));
         setExportProgress(i);
       }
 
-      setExportPhase('complete');
+      setExportPhase("complete");
 
       const csrfToken = getCsrfTokenFromCookie();
       const response = await fetch(`/api/studio/projects/${projectId}/render`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...(csrfToken ? { 'x-csrf-token': csrfToken } : {}) },
-        credentials: 'include',
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(csrfToken ? { "x-csrf-token": csrfToken } : {}),
+        },
+        credentials: "include",
         body: JSON.stringify(settings),
       });
 
@@ -212,16 +232,16 @@ export function FlowStateExport({
         const data = await response.json();
         onExportComplete?.(data.downloadUrl);
         toast({
-          title: 'Export complete!',
+          title: "Export complete!",
           description: `${settings.filename}.${settings.format} is ready for download.`,
         });
       } else {
-        throw new Error('Export failed');
+        throw new Error("Export failed");
       }
     } catch (error) {
       toast({
-        title: 'Export complete',
-        description: 'Your file is ready for download.',
+        title: "Export complete",
+        description: "Your file is ready for download.",
       });
       onExportComplete?.(`/api/studio/projects/${projectId}/download`);
     } finally {
@@ -232,10 +252,10 @@ export function FlowStateExport({
   const formatDuration = (seconds: number): string => {
     const mins = Math.floor(seconds / 60);
     const secs = Math.floor(seconds % 60);
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
+    return `${mins}:${secs.toString().padStart(2, "0")}`;
   };
 
-  const isLossless = settings.format === 'wav' || settings.format === 'flac';
+  const isLossless = settings.format === "wav" || settings.format === "flac";
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -252,16 +272,16 @@ export function FlowStateExport({
               <div className="text-center space-y-2">
                 <motion.div
                   animate={{ rotate: 360 }}
-                  transition={{ repeat: Infinity, duration: 2, ease: 'linear' }}
+                  transition={{ repeat: Infinity, duration: 2, ease: "linear" }}
                   className="w-16 h-16 mx-auto rounded-full bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center"
                 >
                   <Waves className="h-8 w-8 text-white" />
                 </motion.div>
                 <h2 className="text-xl font-bold text-white">
-                  {exportPhase === 'preparing' && 'Preparing export...'}
-                  {exportPhase === 'rendering' && 'Rendering audio...'}
-                  {exportPhase === 'encoding' && 'Encoding file...'}
-                  {exportPhase === 'complete' && 'Export complete!'}
+                  {exportPhase === "preparing" && "Preparing export..."}
+                  {exportPhase === "rendering" && "Rendering audio..."}
+                  {exportPhase === "encoding" && "Encoding file..."}
+                  {exportPhase === "complete" && "Export complete!"}
                 </h2>
                 <p className="text-white/60">
                   {settings.filename}.{settings.format}
@@ -271,7 +291,9 @@ export function FlowStateExport({
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">
                   <span className="text-white/60">Progress</span>
-                  <span className="text-white font-mono">{exportProgress}%</span>
+                  <span className="text-white font-mono">
+                    {exportProgress}%
+                  </span>
                 </div>
                 <Progress value={exportProgress} className="h-2" />
               </div>
@@ -280,12 +302,16 @@ export function FlowStateExport({
                 <div className="p-3 bg-slate-900 rounded-lg">
                   <Clock className="h-5 w-5 mx-auto text-white/40 mb-1" />
                   <span className="text-xs text-white/60">Duration</span>
-                  <p className="text-sm font-medium text-white">{formatDuration(duration)}</p>
+                  <p className="text-sm font-medium text-white">
+                    {formatDuration(duration)}
+                  </p>
                 </div>
                 <div className="p-3 bg-slate-900 rounded-lg">
                   <HardDrive className="h-5 w-5 mx-auto text-white/40 mb-1" />
                   <span className="text-xs text-white/60">Est. Size</span>
-                  <p className="text-sm font-medium text-white">{estimatedSize}</p>
+                  <p className="text-sm font-medium text-white">
+                    {estimatedSize}
+                  </p>
                 </div>
                 <div className="p-3 bg-slate-900 rounded-lg">
                   <Zap className="h-5 w-5 mx-auto text-white/40 mb-1" />
@@ -309,7 +335,9 @@ export function FlowStateExport({
                     <Download className="h-5 w-5 text-white" />
                   </div>
                   <div>
-                    <h2 className="text-lg font-semibold text-white">Export Audio</h2>
+                    <h2 className="text-lg font-semibold text-white">
+                      Export Audio
+                    </h2>
                     <p className="text-sm text-white/60">{projectName}</p>
                   </div>
                 </div>
@@ -317,7 +345,7 @@ export function FlowStateExport({
 
               <div className="p-6 space-y-6">
                 <div className="flex gap-2 overflow-x-auto pb-2">
-                  {PRESETS.map(preset => (
+                  {PRESETS.map((preset) => (
                     <Button
                       key={preset.id}
                       variant="outline"
@@ -336,7 +364,12 @@ export function FlowStateExport({
                     <div className="flex gap-2">
                       <Input
                         value={settings.filename}
-                        onChange={(e) => setSettings(s => ({ ...s, filename: e.target.value }))}
+                        onChange={(e) =>
+                          setSettings((s) => ({
+                            ...s,
+                            filename: e.target.value,
+                          }))
+                        }
                         className="bg-slate-800 border-slate-700"
                       />
                       <span className="flex items-center px-3 bg-slate-800 border border-slate-700 rounded-md text-white/60">
@@ -349,17 +382,24 @@ export function FlowStateExport({
                     <Label>Format</Label>
                     <Select
                       value={settings.format}
-                      onValueChange={(v) => setSettings(s => ({ ...s, format: v as ExportSettings['format'] }))}
+                      onValueChange={(v) =>
+                        setSettings((s) => ({
+                          ...s,
+                          format: v as ExportSettings["format"],
+                        }))
+                      }
                     >
                       <SelectTrigger className="bg-slate-800 border-slate-700">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        {FORMATS.map(format => (
+                        {FORMATS.map((format) => (
                           <SelectItem key={format.value} value={format.value}>
                             <div>
                               <div>{format.label}</div>
-                              <div className="text-xs text-white/40">{format.description}</div>
+                              <div className="text-xs text-white/40">
+                                {format.description}
+                              </div>
                             </div>
                           </SelectItem>
                         ))}
@@ -371,7 +411,12 @@ export function FlowStateExport({
                     <Label>Channels</Label>
                     <Select
                       value={settings.channels}
-                      onValueChange={(v) => setSettings(s => ({ ...s, channels: v as 'stereo' | 'mono' }))}
+                      onValueChange={(v) =>
+                        setSettings((s) => ({
+                          ...s,
+                          channels: v as "stereo" | "mono",
+                        }))
+                      }
                     >
                       <SelectTrigger className="bg-slate-800 border-slate-700">
                         <SelectValue />
@@ -389,13 +434,18 @@ export function FlowStateExport({
                         <Label>Sample Rate</Label>
                         <Select
                           value={settings.sampleRate.toString()}
-                          onValueChange={(v) => setSettings(s => ({ ...s, sampleRate: parseInt(v) }))}
+                          onValueChange={(v) =>
+                            setSettings((s) => ({
+                              ...s,
+                              sampleRate: parseInt(v),
+                            }))
+                          }
                         >
                           <SelectTrigger className="bg-slate-800 border-slate-700">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            {SAMPLE_RATES.map(rate => (
+                            {SAMPLE_RATES.map((rate) => (
                               <SelectItem key={rate} value={rate.toString()}>
                                 {rate / 1000} kHz
                               </SelectItem>
@@ -408,13 +458,18 @@ export function FlowStateExport({
                         <Label>Bit Depth</Label>
                         <Select
                           value={settings.bitDepth.toString()}
-                          onValueChange={(v) => setSettings(s => ({ ...s, bitDepth: parseInt(v) }))}
+                          onValueChange={(v) =>
+                            setSettings((s) => ({
+                              ...s,
+                              bitDepth: parseInt(v),
+                            }))
+                          }
                         >
                           <SelectTrigger className="bg-slate-800 border-slate-700">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            {BIT_DEPTHS.map(depth => (
+                            {BIT_DEPTHS.map((depth) => (
                               <SelectItem key={depth} value={depth.toString()}>
                                 {depth}-bit
                               </SelectItem>
@@ -428,13 +483,15 @@ export function FlowStateExport({
                       <Label>Bitrate</Label>
                       <Select
                         value={settings.bitRate.toString()}
-                        onValueChange={(v) => setSettings(s => ({ ...s, bitRate: parseInt(v) }))}
+                        onValueChange={(v) =>
+                          setSettings((s) => ({ ...s, bitRate: parseInt(v) }))
+                        }
                       >
                         <SelectTrigger className="bg-slate-800 border-slate-700">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          {BIT_RATES.map(rate => (
+                          {BIT_RATES.map((rate) => (
                             <SelectItem key={rate} value={rate.toString()}>
                               {rate} kbps
                             </SelectItem>
@@ -449,11 +506,15 @@ export function FlowStateExport({
                   <div className="flex items-center justify-between">
                     <div>
                       <Label>Normalize Audio</Label>
-                      <p className="text-xs text-white/40">Adjust volume to target level</p>
+                      <p className="text-xs text-white/40">
+                        Adjust volume to target level
+                      </p>
                     </div>
                     <Switch
                       checked={settings.normalize}
-                      onCheckedChange={(v) => setSettings(s => ({ ...s, normalize: v }))}
+                      onCheckedChange={(v) =>
+                        setSettings((s) => ({ ...s, normalize: v }))
+                      }
                     />
                   </div>
 
@@ -461,11 +522,15 @@ export function FlowStateExport({
                     <div className="space-y-2">
                       <div className="flex justify-between text-sm">
                         <Label>Target Level</Label>
-                        <span className="text-white/60">{settings.normalizeLevel} dB</span>
+                        <span className="text-white/60">
+                          {settings.normalizeLevel} dB
+                        </span>
                       </div>
                       <Slider
                         value={[settings.normalizeLevel]}
-                        onValueChange={([v]) => setSettings(s => ({ ...s, normalizeLevel: v }))}
+                        onValueChange={([v]) =>
+                          setSettings((s) => ({ ...s, normalizeLevel: v }))
+                        }
                         min={-6}
                         max={0}
                         step={0.1}
@@ -477,11 +542,15 @@ export function FlowStateExport({
                     <div className="flex items-center justify-between">
                       <div>
                         <Label>Apply Dither</Label>
-                        <p className="text-xs text-white/40">Reduce quantization noise</p>
+                        <p className="text-xs text-white/40">
+                          Reduce quantization noise
+                        </p>
                       </div>
                       <Switch
                         checked={settings.dither}
-                        onCheckedChange={(v) => setSettings(s => ({ ...s, dither: v }))}
+                        onCheckedChange={(v) =>
+                          setSettings((s) => ({ ...s, dither: v }))
+                        }
                       />
                     </div>
                   )}
@@ -491,15 +560,21 @@ export function FlowStateExport({
                   <div className="flex items-center gap-4">
                     <div>
                       <span className="text-xs text-white/40">Duration</span>
-                      <p className="text-sm font-medium text-white">{formatDuration(duration)}</p>
+                      <p className="text-sm font-medium text-white">
+                        {formatDuration(duration)}
+                      </p>
                     </div>
                     <div>
                       <span className="text-xs text-white/40">Est. Size</span>
-                      <p className="text-sm font-medium text-white">{estimatedSize}</p>
+                      <p className="text-sm font-medium text-white">
+                        {estimatedSize}
+                      </p>
                     </div>
                     <div>
                       <span className="text-xs text-white/40">Est. Time</span>
-                      <p className="text-sm font-medium text-white">{estimatedTime}</p>
+                      <p className="text-sm font-medium text-white">
+                        {estimatedTime}
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -509,7 +584,10 @@ export function FlowStateExport({
                 <Button variant="outline" onClick={() => onOpenChange(false)}>
                   Cancel
                 </Button>
-                <Button onClick={startExport} className="bg-blue-500 hover:bg-blue-600">
+                <Button
+                  onClick={startExport}
+                  className="bg-blue-500 hover:bg-blue-600"
+                >
                   <Download className="h-4 w-4 mr-2" />
                   Export
                 </Button>

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -6,33 +6,38 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Input } from '@/components/ui/input';
-import { Checkbox } from '@/components/ui/checkbox';
-import { useToast } from '@/hooks/use-toast';
-import { apiRequest } from '@/lib/queryClient';
-import { useQueryClient } from '@tanstack/react-query';
-import { 
-  RotateCcw, 
-  Loader2, 
-  CheckCircle, 
+} from "@/components/ui/select";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
+import { useQueryClient } from "@tanstack/react-query";
+import {
+  RotateCcw,
+  Loader2,
+  CheckCircle,
   AlertTriangle,
   DollarSign,
-  Info
-} from 'lucide-react';
+  Info,
+} from "lucide-react";
 
-type RefundReason = 'duplicate' | 'fraudulent' | 'requested_by_customer' | 'service_issue' | 'other';
+type RefundReason =
+  | "duplicate"
+  | "fraudulent"
+  | "requested_by_customer"
+  | "service_issue"
+  | "other";
 
 interface RefundRequestFormProps {
   open: boolean;
@@ -44,31 +49,35 @@ interface RefundRequestFormProps {
   onSuccess?: (refundId: string) => void;
 }
 
-const refundReasons: { value: RefundReason; label: string; description: string }[] = [
-  { 
-    value: 'duplicate', 
-    label: 'Duplicate Charge', 
-    description: 'I was charged multiple times for the same service'
+const refundReasons: {
+  value: RefundReason;
+  label: string;
+  description: string;
+}[] = [
+  {
+    value: "duplicate",
+    label: "Duplicate Charge",
+    description: "I was charged multiple times for the same service",
   },
-  { 
-    value: 'service_issue', 
-    label: 'Service Issue', 
-    description: 'The service did not work as expected'
+  {
+    value: "service_issue",
+    label: "Service Issue",
+    description: "The service did not work as expected",
   },
-  { 
-    value: 'requested_by_customer', 
-    label: 'Cancellation', 
-    description: 'I no longer need or want the service'
+  {
+    value: "requested_by_customer",
+    label: "Cancellation",
+    description: "I no longer need or want the service",
   },
-  { 
-    value: 'fraudulent', 
-    label: 'Unauthorized Transaction', 
-    description: 'I did not authorize this transaction'
+  {
+    value: "fraudulent",
+    label: "Unauthorized Transaction",
+    description: "I did not authorize this transaction",
   },
-  { 
-    value: 'other', 
-    label: 'Other Reason', 
-    description: 'Another reason not listed above'
+  {
+    value: "other",
+    label: "Other Reason",
+    description: "Another reason not listed above",
   },
 ];
 
@@ -86,21 +95,21 @@ export default function RefundRequestForm({
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  
+
   const [formData, setFormData] = useState({
-    reason: '' as RefundReason | '',
-    description: '',
+    reason: "" as RefundReason | "",
+    description: "",
     isPartialRefund: false,
-    partialAmount: '',
+    partialAmount: "",
     confirmUnderstand: false,
   });
 
   const resetForm = () => {
     setFormData({
-      reason: '',
-      description: '',
+      reason: "",
+      description: "",
       isPartialRefund: false,
-      partialAmount: '',
+      partialAmount: "",
       confirmUnderstand: false,
     });
     setError(null);
@@ -112,25 +121,29 @@ export default function RefundRequestForm({
     setError(null);
 
     if (!formData.reason) {
-      setError('Please select a reason for your refund request');
+      setError("Please select a reason for your refund request");
       return;
     }
 
     if (!formData.confirmUnderstand) {
-      setError('Please confirm you understand the refund policy');
+      setError("Please confirm you understand the refund policy");
       return;
     }
 
     if (formData.isPartialRefund && !formData.partialAmount) {
-      setError('Please enter the partial refund amount');
+      setError("Please enter the partial refund amount");
       return;
     }
 
-    const partialAmountCents = formData.isPartialRefund 
+    const partialAmountCents = formData.isPartialRefund
       ? Math.round(parseFloat(formData.partialAmount) * 100)
       : undefined;
 
-    if (partialAmountCents && maxRefundAmount && partialAmountCents > maxRefundAmount * 100) {
+    if (
+      partialAmountCents &&
+      maxRefundAmount &&
+      partialAmountCents > maxRefundAmount * 100
+    ) {
       setError(`Refund amount cannot exceed $${maxRefundAmount.toFixed(2)}`);
       return;
     }
@@ -138,7 +151,7 @@ export default function RefundRequestForm({
     setLoading(true);
 
     try {
-      const response = await apiRequest('POST', '/api/billing/refund/request', {
+      const response = await apiRequest("POST", "/api/billing/refund/request", {
         invoiceId,
         chargeId,
         reason: formData.reason,
@@ -150,11 +163,12 @@ export default function RefundRequestForm({
 
       if (data.success) {
         setSuccess(true);
-        queryClient.invalidateQueries({ queryKey: ['/api/billing/refunds'] });
+        queryClient.invalidateQueries({ queryKey: ["/api/billing/refunds"] });
 
         toast({
-          title: 'Refund Request Submitted',
-          description: 'Our team will review your request within 5-7 business days.',
+          title: "Refund Request Submitted",
+          description:
+            "Our team will review your request within 5-7 business days.",
         });
 
         onSuccess?.(data.refundRequest?.id);
@@ -168,12 +182,12 @@ export default function RefundRequestForm({
       }
     } catch (err) {
       const errorData = err.body || err;
-      setError(errorData.message || 'Failed to submit refund request');
+      setError(errorData.message || "Failed to submit refund request");
 
       toast({
-        title: 'Request Failed',
-        description: errorData.message || 'Please try again later.',
-        variant: 'destructive',
+        title: "Request Failed",
+        description: errorData.message || "Please try again later.",
+        variant: "destructive",
       });
     } finally {
       setLoading(false);
@@ -181,10 +195,13 @@ export default function RefundRequestForm({
   };
 
   return (
-    <Dialog open={open} onOpenChange={(open) => {
-      if (!open) resetForm();
-      onOpenChange(open);
-    }}>
+    <Dialog
+      open={open}
+      onOpenChange={(open) => {
+        if (!open) resetForm();
+        onOpenChange(open);
+      }}
+    >
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
@@ -192,7 +209,7 @@ export default function RefundRequestForm({
             Request a Refund
           </DialogTitle>
           <DialogDescription>
-            {description || 'Submit a refund request for your payment'}
+            {description || "Submit a refund request for your payment"}
           </DialogDescription>
         </DialogHeader>
 
@@ -203,7 +220,8 @@ export default function RefundRequestForm({
               Request Submitted!
             </h3>
             <p className="text-muted-foreground">
-              We'll review your refund request and get back to you within 5-7 business days.
+              We'll review your refund request and get back to you within 5-7
+              business days.
             </p>
           </div>
         ) : (
@@ -220,7 +238,8 @@ export default function RefundRequestForm({
               <div className="flex items-center gap-2 bg-muted/50 rounded-lg p-3">
                 <DollarSign className="h-4 w-4 text-muted-foreground" />
                 <span className="text-sm">
-                  Maximum refund amount: <strong>${maxRefundAmount.toFixed(2)}</strong>
+                  Maximum refund amount:{" "}
+                  <strong>${maxRefundAmount.toFixed(2)}</strong>
                 </span>
               </div>
             )}
@@ -229,8 +248,8 @@ export default function RefundRequestForm({
               <Label htmlFor="reason">Reason for Refund</Label>
               <Select
                 value={formData.reason}
-                onValueChange={(value: RefundReason) => 
-                  setFormData(prev => ({ ...prev, reason: value }))
+                onValueChange={(value: RefundReason) =>
+                  setFormData((prev) => ({ ...prev, reason: value }))
                 }
               >
                 <SelectTrigger>
@@ -257,8 +276,11 @@ export default function RefundRequestForm({
                 id="description"
                 placeholder="Please provide any additional context that might help us process your request..."
                 value={formData.description}
-                onChange={(e) => 
-                  setFormData(prev => ({ ...prev, description: e.target.value }))
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    description: e.target.value,
+                  }))
                 }
                 rows={3}
               />
@@ -271,14 +293,17 @@ export default function RefundRequestForm({
                     id="partialRefund"
                     checked={formData.isPartialRefund}
                     onCheckedChange={(checked) =>
-                      setFormData(prev => ({ 
-                        ...prev, 
+                      setFormData((prev) => ({
+                        ...prev,
                         isPartialRefund: checked === true,
-                        partialAmount: checked ? prev.partialAmount : ''
+                        partialAmount: checked ? prev.partialAmount : "",
                       }))
                     }
                   />
-                  <Label htmlFor="partialRefund" className="text-sm font-normal">
+                  <Label
+                    htmlFor="partialRefund"
+                    className="text-sm font-normal"
+                  >
                     Request a partial refund
                   </Label>
                 </div>
@@ -298,7 +323,10 @@ export default function RefundRequestForm({
                         className="pl-9"
                         value={formData.partialAmount}
                         onChange={(e) =>
-                          setFormData(prev => ({ ...prev, partialAmount: e.target.value }))
+                          setFormData((prev) => ({
+                            ...prev,
+                            partialAmount: e.target.value,
+                          }))
                         }
                       />
                     </div>
@@ -311,8 +339,9 @@ export default function RefundRequestForm({
               <Info className="h-4 w-4" />
               <AlertTitle>Refund Policy</AlertTitle>
               <AlertDescription className="text-sm">
-                Refunds are processed within 5-7 business days. Once approved, funds will 
-                be returned to your original payment method within 5-10 business days.
+                Refunds are processed within 5-7 business days. Once approved,
+                funds will be returned to your original payment method within
+                5-10 business days.
               </AlertDescription>
             </Alert>
 
@@ -321,12 +350,18 @@ export default function RefundRequestForm({
                 id="confirmUnderstand"
                 checked={formData.confirmUnderstand}
                 onCheckedChange={(checked) =>
-                  setFormData(prev => ({ ...prev, confirmUnderstand: checked === true }))
+                  setFormData((prev) => ({
+                    ...prev,
+                    confirmUnderstand: checked === true,
+                  }))
                 }
               />
-              <Label htmlFor="confirmUnderstand" className="text-sm font-normal leading-relaxed">
-                I understand that refunds are subject to review and approval. If approved, 
-                my subscription benefits may be affected.
+              <Label
+                htmlFor="confirmUnderstand"
+                className="text-sm font-normal leading-relaxed"
+              >
+                I understand that refunds are subject to review and approval. If
+                approved, my subscription benefits may be affected.
               </Label>
             </div>
 
@@ -339,9 +374,11 @@ export default function RefundRequestForm({
               >
                 Cancel
               </Button>
-              <Button 
-                type="submit" 
-                disabled={loading || !formData.reason || !formData.confirmUnderstand}
+              <Button
+                type="submit"
+                disabled={
+                  loading || !formData.reason || !formData.confirmUnderstand
+                }
               >
                 {loading ? (
                   <>
@@ -349,7 +386,7 @@ export default function RefundRequestForm({
                     Submitting...
                   </>
                 ) : (
-                  'Submit Request'
+                  "Submit Request"
                 )}
               </Button>
             </DialogFooter>

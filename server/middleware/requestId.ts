@@ -1,8 +1,11 @@
-import { Request, Response, NextFunction } from 'express';
-import { randomUUID } from 'crypto';
-import { requestContext, RequestContextData } from '../services/requestContext.js';
+import { Request, Response, NextFunction } from "express";
+import { randomUUID } from "crypto";
+import {
+  requestContext,
+  RequestContextData,
+} from "../services/requestContext.js";
 
-export const REQUEST_ID_HEADER = 'X-Request-ID';
+export const REQUEST_ID_HEADER = "X-Request-ID";
 
 declare global {
   namespace Express {
@@ -13,10 +16,14 @@ declare global {
   }
 }
 
-export function requestIdMiddleware(req: Request, res: Response, next: NextFunction): void {
+export function requestIdMiddleware(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): void {
   const requestId =
-    (req.headers['x-request-id'] as string) ||
-    (req.headers['x-correlation-id'] as string) ||
+    (req.headers["x-request-id"] as string) ||
+    (req.headers["x-correlation-id"] as string) ||
     randomUUID();
 
   const startTime = Date.now();
@@ -25,7 +32,7 @@ export function requestIdMiddleware(req: Request, res: Response, next: NextFunct
   req.startTime = startTime;
 
   res.setHeader(REQUEST_ID_HEADER, requestId);
-  res.setHeader('X-Correlation-ID', requestId);
+  res.setHeader("X-Correlation-ID", requestId);
 
   const contextData: RequestContextData = {
     requestId,
@@ -33,7 +40,7 @@ export function requestIdMiddleware(req: Request, res: Response, next: NextFunct
     path: req.originalUrl || req.url,
     method: req.method,
     ip: req.ip || req.socket.remoteAddress,
-    userAgent: req.get('user-agent'),
+    userAgent: req.get("user-agent"),
     sessionId: req.sessionID,
   };
 

@@ -1,21 +1,24 @@
-import { useRef, useState, useEffect, useCallback } from 'react';
-import { Button } from '@/components/ui/button';
-import { Slider } from '@/components/ui/slider';
-import { 
-  Play, 
-  Pause, 
-  Maximize, 
-  Minimize, 
-  Volume2, 
+import { useRef, useState, useEffect, useCallback } from "react";
+import { Button } from "@/components/ui/button";
+import { Slider } from "@/components/ui/slider";
+import {
+  Play,
+  Pause,
+  Maximize,
+  Minimize,
+  Volume2,
   VolumeX,
   SkipBack,
   SkipForward,
   RefreshCw,
   Music,
   Loader2,
-} from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
-import type { RenderOrchestrator, OrchestratorState } from '@/lib/video/RenderOrchestrator';
+} from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import type {
+  RenderOrchestrator,
+  OrchestratorState,
+} from "@/lib/video/RenderOrchestrator";
 
 interface VideoPreviewProps {
   orchestrator: RenderOrchestrator | null;
@@ -24,7 +27,7 @@ interface VideoPreviewProps {
   onStateChange?: (state: OrchestratorState) => void;
 }
 
-export function VideoPreview({ 
+export function VideoPreview({
   orchestrator,
   audioUrl,
   onTimeUpdate,
@@ -33,7 +36,7 @@ export function VideoPreview({
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasContainerRef = useRef<HTMLDivElement>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
-  
+
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(10);
@@ -42,21 +45,22 @@ export function VideoPreview({
   const [volume, setVolume] = useState(80);
   const [audioLoaded, setAudioLoaded] = useState(false);
   const [showControls, setShowControls] = useState(true);
-  const [orchestratorState, setOrchestratorState] = useState<OrchestratorState>('idle');
+  const [orchestratorState, setOrchestratorState] =
+    useState<OrchestratorState>("idle");
 
   useEffect(() => {
     if (!orchestrator) return;
 
     const canvas = orchestrator.getCanvas();
     if (canvas instanceof HTMLCanvasElement && canvasContainerRef.current) {
-      canvasContainerRef.current.innerHTML = '';
-      canvas.className = 'absolute inset-0 w-full h-full object-contain';
+      canvasContainerRef.current.innerHTML = "";
+      canvas.className = "absolute inset-0 w-full h-full object-contain";
       canvasContainerRef.current.appendChild(canvas);
     }
 
     setDuration(orchestrator.getDuration() || 10);
     setOrchestratorState(orchestrator.getState());
-    
+
     orchestrator.renderFrame(0);
   }, [orchestrator]);
 
@@ -64,17 +68,19 @@ export function VideoPreview({
     if (audioUrl) {
       audioRef.current = new Audio(audioUrl);
       audioRef.current.volume = volume / 100;
-      audioRef.current.addEventListener('loadeddata', () => setAudioLoaded(true));
-      audioRef.current.addEventListener('ended', () => {
+      audioRef.current.addEventListener("loadeddata", () =>
+        setAudioLoaded(true),
+      );
+      audioRef.current.addEventListener("ended", () => {
         setIsPlaying(false);
         setCurrentTime(0);
         orchestrator?.stop();
       });
-      
+
       if (orchestrator) {
         orchestrator.setAudioElement(audioRef.current);
       }
-      
+
       return () => {
         audioRef.current?.pause();
         audioRef.current = null;
@@ -94,20 +100,20 @@ export function VideoPreview({
     if (!orchestrator) return;
 
     let animationId: number;
-    
+
     const updateTime = () => {
       if (orchestrator) {
         const time = orchestrator.getCurrentTime();
         setCurrentTime(time);
         onTimeUpdate?.(time);
-        
+
         const state = orchestrator.getState();
         if (state !== orchestratorState) {
           setOrchestratorState(state);
           onStateChange?.(state);
         }
-        
-        if (state === 'playing') {
+
+        if (state === "playing") {
           animationId = requestAnimationFrame(updateTime);
         }
       }
@@ -141,19 +147,22 @@ export function VideoPreview({
     }
   }, [orchestrator, isPlaying, audioLoaded]);
 
-  const handleSeek = useCallback((value: number[]) => {
-    if (!orchestrator) return;
-    
-    const newTime = value[0];
-    orchestrator.seek(newTime);
-    setCurrentTime(newTime);
-    
-    if (audioRef.current) {
-      audioRef.current.currentTime = newTime;
-    }
-    
-    onTimeUpdate?.(newTime);
-  }, [orchestrator, onTimeUpdate]);
+  const handleSeek = useCallback(
+    (value: number[]) => {
+      if (!orchestrator) return;
+
+      const newTime = value[0];
+      orchestrator.seek(newTime);
+      setCurrentTime(newTime);
+
+      if (audioRef.current) {
+        audioRef.current.currentTime = newTime;
+      }
+
+      onTimeUpdate?.(newTime);
+    },
+    [orchestrator, onTimeUpdate],
+  );
 
   const handleSkipBack = useCallback(() => {
     const newTime = Math.max(0, currentTime - 5);
@@ -191,25 +200,28 @@ export function VideoPreview({
   const formatTime = (time: number) => {
     const minutes = Math.floor(time / 60);
     const seconds = Math.floor(time % 60);
-    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+    return `${minutes}:${seconds.toString().padStart(2, "0")}`;
   };
 
-  const isLoading = orchestratorState === 'loading';
-  const isReady = orchestratorState === 'ready' || orchestratorState === 'playing' || orchestratorState === 'paused';
+  const isLoading = orchestratorState === "loading";
+  const isReady =
+    orchestratorState === "ready" ||
+    orchestratorState === "playing" ||
+    orchestratorState === "paused";
 
   return (
-    <div 
+    <div
       ref={containerRef}
       className="relative bg-black rounded-lg overflow-hidden group h-full"
       onMouseEnter={() => setShowControls(true)}
       onMouseLeave={() => setShowControls(isPlaying ? false : true)}
     >
       <div className="aspect-video relative">
-        <div 
+        <div
           ref={canvasContainerRef}
           className="absolute inset-0 w-full h-full"
         />
-        
+
         {!orchestrator && (
           <div className="absolute inset-0 flex items-center justify-center bg-muted/50">
             <div className="text-center text-muted-foreground">
@@ -262,7 +274,7 @@ export function VideoPreview({
                 >
                   <RefreshCw className="w-4 h-4" />
                 </Button>
-                
+
                 <Button
                   variant="ghost"
                   size="icon"
@@ -278,7 +290,11 @@ export function VideoPreview({
                   onClick={handlePlayPause}
                   className="h-10 w-10 text-white hover:bg-white/20 bg-white/10"
                 >
-                  {isPlaying ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5 ml-0.5" />}
+                  {isPlaying ? (
+                    <Pause className="w-5 h-5" />
+                  ) : (
+                    <Play className="w-5 h-5 ml-0.5" />
+                  )}
                 </Button>
 
                 <Button
@@ -303,7 +319,11 @@ export function VideoPreview({
                     onClick={() => setIsMuted(!isMuted)}
                     className="h-8 w-8 text-white hover:bg-white/20"
                   >
-                    {isMuted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
+                    {isMuted ? (
+                      <VolumeX className="w-4 h-4" />
+                    ) : (
+                      <Volume2 className="w-4 h-4" />
+                    )}
                   </Button>
                   <div className="w-0 overflow-hidden group-hover/volume:w-20 transition-all duration-300">
                     <Slider
@@ -325,7 +345,11 @@ export function VideoPreview({
                   onClick={toggleFullscreen}
                   className="h-8 w-8 text-white hover:bg-white/20"
                 >
-                  {isFullscreen ? <Minimize className="w-4 h-4" /> : <Maximize className="w-4 h-4" />}
+                  {isFullscreen ? (
+                    <Minimize className="w-4 h-4" />
+                  ) : (
+                    <Maximize className="w-4 h-4" />
+                  )}
                 </Button>
               </div>
             </div>

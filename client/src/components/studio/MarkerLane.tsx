@@ -1,14 +1,14 @@
-import { useCallback, useState } from 'react';
-import { Plus, X, Edit2, Flag } from 'lucide-react';
-import { useStudioStore, type Marker } from '@/lib/studioStore';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { useCallback, useState } from "react";
+import { Plus, X, Edit2, Flag } from "lucide-react";
+import { useStudioStore, type Marker } from "@/lib/studioStore";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   ContextMenu,
   ContextMenuContent,
   ContextMenuItem,
   ContextMenuTrigger,
-} from '@/components/ui/context-menu';
+} from "@/components/ui/context-menu";
 
 interface MarkerLaneProps {
   duration: number;
@@ -16,13 +16,13 @@ interface MarkerLaneProps {
 }
 
 const MARKER_COLORS = [
-  '#ef4444', // red
-  '#f97316', // orange
-  '#eab308', // yellow
-  '#22c55e', // green
-  '#3b82f6', // blue
-  '#8b5cf6', // purple
-  '#ec4899', // pink
+  "#ef4444", // red
+  "#f97316", // orange
+  "#eab308", // yellow
+  "#22c55e", // green
+  "#3b82f6", // blue
+  "#8b5cf6", // purple
+  "#ec4899", // pink
 ];
 
 export function MarkerLane({ duration, onTimelineClick }: MarkerLaneProps) {
@@ -38,7 +38,7 @@ export function MarkerLane({ duration, onTimelineClick }: MarkerLaneProps) {
 
   const [isAdding, setIsAdding] = useState(false);
   const [editingMarkerId, setEditingMarkerId] = useState<string | null>(null);
-  const [editingName, setEditingName] = useState('');
+  const [editingName, setEditingName] = useState("");
 
   const handleAddMarker = useCallback(
     (e: React.MouseEvent<HTMLDivElement>) => {
@@ -54,13 +54,13 @@ export function MarkerLane({ duration, onTimelineClick }: MarkerLaneProps) {
         time: Math.max(0, Math.min(clickTime, duration)),
         position: Math.max(0, Math.min(clickTime, duration)),
         color: MARKER_COLORS[markers.length % MARKER_COLORS.length],
-        type: 'marker',
+        type: "marker",
       };
 
       addMarker(newMarker);
       setIsAdding(false);
     },
-    [isAdding, duration, markers.length, addMarker]
+    [isAdding, duration, markers.length, addMarker],
   );
 
   const handleMarkerClick = useCallback(
@@ -71,7 +71,7 @@ export function MarkerLane({ duration, onTimelineClick }: MarkerLaneProps) {
         onTimelineClick(marker.time);
       }
     },
-    [selectMarker, onTimelineClick]
+    [selectMarker, onTimelineClick],
   );
 
   const startEdit = useCallback((marker: Marker) => {
@@ -84,19 +84,19 @@ export function MarkerLane({ duration, onTimelineClick }: MarkerLaneProps) {
       updateMarker(editingMarkerId, { name: editingName.trim() });
     }
     setEditingMarkerId(null);
-    setEditingName('');
+    setEditingName("");
   }, [editingMarkerId, editingName, updateMarker]);
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
-      if (e.key === 'Enter') {
+      if (e.key === "Enter") {
         saveEdit();
-      } else if (e.key === 'Escape') {
+      } else if (e.key === "Escape") {
         setEditingMarkerId(null);
-        setEditingName('');
+        setEditingName("");
       }
     },
-    [saveEdit]
+    [saveEdit],
   );
 
   return (
@@ -105,13 +105,19 @@ export function MarkerLane({ duration, onTimelineClick }: MarkerLaneProps) {
       <div
         className="h-8 flex items-center justify-between px-3 border-b"
         style={{
-          background: 'var(--studio-bg-medium)',
-          borderColor: 'var(--studio-border)',
+          background: "var(--studio-bg-medium)",
+          borderColor: "var(--studio-border)",
         }}
       >
         <div className="flex items-center gap-2">
-          <Flag className="h-3.5 w-3.5" style={{ color: 'var(--studio-text-muted)' }} />
-          <span className="text-xs font-medium" style={{ color: 'var(--studio-text-muted)' }}>
+          <Flag
+            className="h-3.5 w-3.5"
+            style={{ color: "var(--studio-text-muted)" }}
+          />
+          <span
+            className="text-xs font-medium"
+            style={{ color: "var(--studio-text-muted)" }}
+          >
             MARKERS
           </span>
         </div>
@@ -120,22 +126,28 @@ export function MarkerLane({ duration, onTimelineClick }: MarkerLaneProps) {
           size="sm"
           className="h-6 w-6 p-0"
           onClick={() => setIsAdding(!isAdding)}
-          title={isAdding ? 'Cancel adding marker' : 'Add marker'}
+          title={isAdding ? "Cancel adding marker" : "Add marker"}
         >
           {isAdding ? (
-            <X className="h-3.5 w-3.5" style={{ color: 'var(--studio-text)' }} />
+            <X
+              className="h-3.5 w-3.5"
+              style={{ color: "var(--studio-text)" }}
+            />
           ) : (
-            <Plus className="h-3.5 w-3.5" style={{ color: 'var(--studio-text)' }} />
+            <Plus
+              className="h-3.5 w-3.5"
+              style={{ color: "var(--studio-text)" }}
+            />
           )}
         </Button>
       </div>
 
       {/* Marker Lane Content */}
       <div
-        className={`h-10 relative border-b ${isAdding ? 'cursor-crosshair' : ''}`}
+        className={`h-10 relative border-b ${isAdding ? "cursor-crosshair" : ""}`}
         style={{
-          background: 'var(--studio-bg-medium)',
-          borderColor: 'var(--studio-border)',
+          background: "var(--studio-bg-medium)",
+          borderColor: "var(--studio-border)",
         }}
         onClick={handleAddMarker}
       >
@@ -143,7 +155,7 @@ export function MarkerLane({ duration, onTimelineClick }: MarkerLaneProps) {
         {isAdding && markers.length === 0 && (
           <div
             className="absolute inset-0 flex items-center justify-center text-xs"
-            style={{ color: 'var(--studio-text-muted)' }}
+            style={{ color: "var(--studio-text-muted)" }}
           >
             Click to add marker
           </div>
@@ -160,23 +172,25 @@ export function MarkerLane({ duration, onTimelineClick }: MarkerLaneProps) {
               <ContextMenuTrigger>
                 <div
                   className={`absolute top-0 bottom-0 flex flex-col items-center cursor-pointer transition-all ${
-                    isSelected ? 'z-10' : 'z-0'
+                    isSelected ? "z-10" : "z-0"
                   }`}
                   style={{
                     left: `${position}%`,
-                    transform: 'translateX(-50%)',
+                    transform: "translateX(-50%)",
                   }}
                   onClick={(e) => handleMarkerClick(e, marker)}
                 >
                   {/* Marker Flag */}
                   <div
                     className={`h-full flex items-center justify-center transition-all ${
-                      isSelected ? 'scale-110' : 'hover:scale-105'
+                      isSelected ? "scale-110" : "hover:scale-105"
                     }`}
                     style={{
-                      width: '2px',
+                      width: "2px",
                       backgroundColor: marker.color,
-                      boxShadow: isSelected ? `0 0 8px ${marker.color}` : 'none',
+                      boxShadow: isSelected
+                        ? `0 0 8px ${marker.color}`
+                        : "none",
                     }}
                   >
                     <div
@@ -199,11 +213,11 @@ export function MarkerLane({ duration, onTimelineClick }: MarkerLaneProps) {
                   ) : (
                     <div
                       className={`absolute top-full mt-1 px-1.5 py-0.5 rounded text-[10px] font-medium whitespace-nowrap ${
-                        isSelected ? 'ring-1 ring-white/50' : ''
+                        isSelected ? "ring-1 ring-white/50" : ""
                       }`}
                       style={{
                         backgroundColor: marker.color,
-                        color: 'white',
+                        color: "white",
                       }}
                     >
                       {marker.name}

@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useState, useEffect, useCallback } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -9,20 +9,20 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
-import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
-import { useToast } from '@/hooks/use-toast';
-import { apiRequest } from '@/lib/queryClient';
-import { useAuth } from '@/hooks/useAuth';
-import { Clock, RefreshCw, LogOut, AlertTriangle } from 'lucide-react';
+} from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
+import { useAuth } from "@/hooks/useAuth";
+import { Clock, RefreshCw, LogOut, AlertTriangle } from "lucide-react";
 
 export type SessionOutcome =
-  | 'session_valid'
-  | 'session_extended'
-  | 'session_expired'
-  | 'session_invalidated'
-  | 'auto_logout';
+  | "session_valid"
+  | "session_extended"
+  | "session_expired"
+  | "session_invalidated"
+  | "auto_logout";
 
 interface SessionStatus {
   valid: boolean;
@@ -54,7 +54,7 @@ export function SessionExpiryWarning({
   const [countdown, setCountdown] = useState<number | null>(null);
 
   const { data: sessionStatus, refetch } = useQuery<SessionStatus>({
-    queryKey: ['/api/auth/session-status'],
+    queryKey: ["/api/auth/session-status"],
     enabled: !!user,
     refetchInterval: 30000,
     retry: false,
@@ -62,7 +62,9 @@ export function SessionExpiryWarning({
 
   const extendSessionMutation = useMutation({
     mutationFn: async (extendMinutes: number = 30) => {
-      const response = await apiRequest('POST', '/api/auth/extend-session', { extendMinutes });
+      const response = await apiRequest("POST", "/api/auth/extend-session", {
+        extendMinutes,
+      });
       return response.json();
     },
     onSuccess: (data) => {
@@ -71,7 +73,7 @@ export function SessionExpiryWarning({
         setCountdown(null);
         onSessionExtended?.(data.expiresAt);
         toast({
-          title: 'Session Extended',
+          title: "Session Extended",
           description: `Your session has been extended by ${data.extendedMinutes} minutes.`,
         });
         refetch();
@@ -79,9 +81,9 @@ export function SessionExpiryWarning({
     },
     onError: () => {
       toast({
-        title: 'Failed to Extend Session',
-        description: 'Please try again or log in again.',
-        variant: 'destructive',
+        title: "Failed to Extend Session",
+        description: "Please try again or log in again.",
+        variant: "destructive",
       });
     },
   });
@@ -115,7 +117,15 @@ export function SessionExpiryWarning({
       setShowWarning(true);
       setCountdown(remaining);
     }
-  }, [sessionStatus, user, warningThresholdSeconds, autoLogoutOnExpiry, handleLogout, onSessionExpired, showWarning]);
+  }, [
+    sessionStatus,
+    user,
+    warningThresholdSeconds,
+    autoLogoutOnExpiry,
+    handleLogout,
+    onSessionExpired,
+    showWarning,
+  ]);
 
   useEffect(() => {
     if (!showWarning || countdown === null) return;
@@ -139,13 +149,13 @@ export function SessionExpiryWarning({
   const formatTime = (seconds: number): string => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
+    return `${mins}:${secs.toString().padStart(2, "0")}`;
   };
 
-  const isCritical = countdown !== null && countdown <= criticalThresholdSeconds;
-  const progressValue = countdown !== null 
-    ? (countdown / warningThresholdSeconds) * 100 
-    : 100;
+  const isCritical =
+    countdown !== null && countdown <= criticalThresholdSeconds;
+  const progressValue =
+    countdown !== null ? (countdown / warningThresholdSeconds) * 100 : 100;
 
   if (!user || !showWarning) return null;
 
@@ -163,14 +173,16 @@ export function SessionExpiryWarning({
           </AlertDialogTitle>
           <AlertDialogDescription className="space-y-4">
             <p>
-              Your session will expire in{' '}
-              <span className={`font-bold ${isCritical ? 'text-red-500' : 'text-orange-500'}`}>
-                {countdown !== null ? formatTime(countdown) : '---'}
+              Your session will expire in{" "}
+              <span
+                className={`font-bold ${isCritical ? "text-red-500" : "text-orange-500"}`}
+              >
+                {countdown !== null ? formatTime(countdown) : "---"}
               </span>
             </p>
-            <Progress 
-              value={progressValue} 
-              className={`h-2 ${isCritical ? '[&>div]:bg-red-500' : '[&>div]:bg-orange-500'}`}
+            <Progress
+              value={progressValue}
+              className={`h-2 ${isCritical ? "[&>div]:bg-red-500" : "[&>div]:bg-orange-500"}`}
             />
             <p className="text-sm text-muted-foreground">
               Would you like to extend your session to continue working?
@@ -185,8 +197,8 @@ export function SessionExpiryWarning({
             </Button>
           </AlertDialogCancel>
           <AlertDialogAction asChild>
-            <Button 
-              onClick={handleExtendSession} 
+            <Button
+              onClick={handleExtendSession}
               disabled={extendSessionMutation.isPending}
               className="gap-2"
             >

@@ -1,8 +1,8 @@
-'use strict';
+"use strict";
 
-const { contextBridge } = require('electron');
+const { contextBridge } = require("electron");
 
-contextBridge.exposeInMainWorld('maxBoosterDesktop', {
+contextBridge.exposeInMainWorld("maxBoosterDesktop", {
   platform: process.platform,
   versions: {
     chrome: process.versions.chrome,

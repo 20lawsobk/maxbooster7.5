@@ -1,7 +1,7 @@
-import { useQuery } from '@tanstack/react-query';
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+import { useQuery } from "@tanstack/react-query";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import {
   Search,
   Lightbulb,
@@ -16,8 +16,8 @@ import {
   Zap,
   User,
   Hash,
-} from 'lucide-react';
-import { cn } from '@/lib/utils';
+} from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface NoResultsStateProps {
   query: string;
@@ -28,53 +28,62 @@ interface NoResultsStateProps {
   showTrending?: boolean;
   showGenres?: boolean;
   hasActiveFilters?: boolean;
-  context?: 'global' | 'marketplace' | 'analytics' | 'social' | 'distribution';
+  context?: "global" | "marketplace" | "analytics" | "social" | "distribution";
   className?: string;
 }
 
 const SEARCH_TIPS = [
-  { text: 'Try using fewer or more general keywords', icon: Search },
-  { text: 'Check for spelling mistakes', icon: HelpCircle },
-  { text: 'Try searching for a genre or mood instead', icon: Music },
+  { text: "Try using fewer or more general keywords", icon: Search },
+  { text: "Check for spelling mistakes", icon: HelpCircle },
+  { text: "Try searching for a genre or mood instead", icon: Music },
   { text: 'Use quotes for exact phrases: "trap beat"', icon: Zap },
-  { text: 'Filter by BPM range for more specific results', icon: Filter },
+  { text: "Filter by BPM range for more specific results", icon: Filter },
 ];
 
 const COMMON_CORRECTIONS: Record<string, string> = {
-  'tarp': 'trap',
-  'hiphop': 'hip-hop',
-  'lofi': 'lo-fi',
-  'rnb': 'r&b',
-  'dril': 'drill',
-  'drll': 'drill',
-  'beaat': 'beat',
-  'melodc': 'melodic',
-  'aggresive': 'aggressive',
-  'chil': 'chill',
-  'rythm': 'rhythm',
-  'acustic': 'acoustic',
+  tarp: "trap",
+  hiphop: "hip-hop",
+  lofi: "lo-fi",
+  rnb: "r&b",
+  dril: "drill",
+  drll: "drill",
+  beaat: "beat",
+  melodc: "melodic",
+  aggresive: "aggressive",
+  chil: "chill",
+  rythm: "rhythm",
+  acustic: "acoustic",
 };
 
-const CONTEXT_SUGGESTIONS: Record<string, { title: string; suggestions: string[] }> = {
+const CONTEXT_SUGGESTIONS: Record<
+  string,
+  { title: string; suggestions: string[] }
+> = {
   marketplace: {
-    title: 'Popular Searches',
-    suggestions: ['trap beat', 'lo-fi', 'drill type beat', 'r&b instrumental', 'melodic rap'],
+    title: "Popular Searches",
+    suggestions: [
+      "trap beat",
+      "lo-fi",
+      "drill type beat",
+      "r&b instrumental",
+      "melodic rap",
+    ],
   },
   social: {
-    title: 'Trending Topics',
-    suggestions: ['#newmusic', '#producer', '#beatmaker', '#hiphop', '#studio'],
+    title: "Trending Topics",
+    suggestions: ["#newmusic", "#producer", "#beatmaker", "#hiphop", "#studio"],
   },
   analytics: {
-    title: 'Common Metrics',
-    suggestions: ['revenue', 'streams', 'downloads', 'engagement', 'growth'],
+    title: "Common Metrics",
+    suggestions: ["revenue", "streams", "downloads", "engagement", "growth"],
   },
   distribution: {
-    title: 'Release Types',
-    suggestions: ['single', 'album', 'EP', 'pending', 'live'],
+    title: "Release Types",
+    suggestions: ["single", "album", "EP", "pending", "live"],
   },
   global: {
-    title: 'Explore',
-    suggestions: ['beats', 'producers', 'projects', 'releases', 'playlists'],
+    title: "Explore",
+    suggestions: ["beats", "producers", "projects", "releases", "playlists"],
   },
 };
 
@@ -87,14 +96,16 @@ export function NoResultsState({
   showTrending = true,
   showGenres = true,
   hasActiveFilters = false,
-  context = 'global',
+  context = "global",
   className,
 }: NoResultsStateProps) {
   const { data: trendingData } = useQuery({
-    queryKey: ['/api/search/trending'],
+    queryKey: ["/api/search/trending"],
     queryFn: async () => {
-      const res = await fetch('/api/search/trending', { credentials: 'include' });
-      if (!res.ok) throw new Error('Failed to fetch trending');
+      const res = await fetch("/api/search/trending", {
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error("Failed to fetch trending");
       return res.json();
     },
     enabled: showTrending,
@@ -114,13 +125,13 @@ export function NoResultsState({
   const findSimilar = (text: string): string[] => {
     const normalizedQuery = text.toLowerCase();
     const similar: string[] = [];
-    
+
     Object.entries(COMMON_CORRECTIONS).forEach(([typo, correct]) => {
       if (normalizedQuery.includes(typo.substring(0, 3))) {
         similar.push(correct);
       }
     });
-    
+
     return [...new Set(similar)].slice(0, 3);
   };
 
@@ -128,10 +139,11 @@ export function NoResultsState({
   const similarTerms = findSimilar(query);
   const trendingQueries = trendingData?.queries?.slice(0, 6) || [];
   const trendingGenres = trendingData?.genres?.slice(0, 8) || [];
-  const contextSuggestions = CONTEXT_SUGGESTIONS[context] || CONTEXT_SUGGESTIONS.global;
+  const contextSuggestions =
+    CONTEXT_SUGGESTIONS[context] || CONTEXT_SUGGESTIONS.global;
 
   return (
-    <div className={cn('py-12 px-4', className)}>
+    <div className={cn("py-12 px-4", className)}>
       <div className="max-w-2xl mx-auto text-center space-y-8">
         <div className="space-y-4">
           <div className="w-20 h-20 mx-auto rounded-full bg-slate-800 flex items-center justify-center">
@@ -140,7 +152,7 @@ export function NoResultsState({
           <h2 className="text-2xl font-bold text-white">No results found</h2>
           <p className="text-slate-400">
             We couldn't find anything matching "{query}"
-            {hasActiveFilters && ' with your current filters'}
+            {hasActiveFilters && " with your current filters"}
           </p>
         </div>
 
@@ -213,7 +225,10 @@ export function NoResultsState({
               </h3>
               <ul className="space-y-3">
                 {SEARCH_TIPS.map((tip, index) => (
-                  <li key={index} className="flex items-start gap-3 text-slate-400">
+                  <li
+                    key={index}
+                    className="flex items-start gap-3 text-slate-400"
+                  >
                     <tip.icon className="h-4 w-4 text-purple-400 mt-0.5 shrink-0" />
                     <span>{tip.text}</span>
                   </li>
@@ -250,20 +265,28 @@ export function NoResultsState({
               Trending Searches
             </h3>
             <div className="flex flex-wrap justify-center gap-2">
-              {trendingQueries.map((item: { query: string; searchCount: number }, index: number) => (
-                <Button
-                  key={index}
-                  variant="outline"
-                  size="sm"
-                  onClick={() => onSuggestionClick?.(item.query)}
-                  className="border-slate-600 text-slate-300 hover:bg-slate-700 hover:text-white"
-                >
-                  {item.query}
-                  <Badge variant="secondary" className="ml-2 text-[10px] bg-slate-700">
-                    {item.searchCount}
-                  </Badge>
-                </Button>
-              ))}
+              {trendingQueries.map(
+                (
+                  item: { query: string; searchCount: number },
+                  index: number,
+                ) => (
+                  <Button
+                    key={index}
+                    variant="outline"
+                    size="sm"
+                    onClick={() => onSuggestionClick?.(item.query)}
+                    className="border-slate-600 text-slate-300 hover:bg-slate-700 hover:text-white"
+                  >
+                    {item.query}
+                    <Badge
+                      variant="secondary"
+                      className="ml-2 text-[10px] bg-slate-700"
+                    >
+                      {item.searchCount}
+                    </Badge>
+                  </Button>
+                ),
+              )}
             </div>
           </div>
         )}
@@ -317,31 +340,37 @@ export function NoResultsState({
 export function NoResultsInline({
   query,
   onSuggestionClick,
-  context = 'global',
+  context = "global",
 }: {
   query: string;
   onSuggestionClick?: (suggestion: string) => void;
-  context?: 'global' | 'marketplace' | 'social' | 'analytics' | 'distribution';
+  context?: "global" | "marketplace" | "social" | "analytics" | "distribution";
 }) {
   const suggestedCorrection = Object.entries(COMMON_CORRECTIONS).find(
-    ([typo]) => query.toLowerCase().includes(typo)
+    ([typo]) => query.toLowerCase().includes(typo),
   );
 
   return (
     <div className="flex items-center gap-4 p-4 rounded-lg bg-slate-800/50 border border-slate-700">
       <Search className="h-5 w-5 text-slate-500" />
       <div className="flex-1">
-        <p className="text-slate-300">
-          No results for "{query}"
-        </p>
+        <p className="text-slate-300">No results for "{query}"</p>
         {suggestedCorrection && (
           <button
             className="text-sm text-purple-400 hover:text-purple-300 mt-1"
-            onClick={() => onSuggestionClick?.(
-              query.toLowerCase().replace(suggestedCorrection[0], suggestedCorrection[1])
-            )}
+            onClick={() =>
+              onSuggestionClick?.(
+                query
+                  .toLowerCase()
+                  .replace(suggestedCorrection[0], suggestedCorrection[1]),
+              )
+            }
           >
-            Did you mean "{query.toLowerCase().replace(suggestedCorrection[0], suggestedCorrection[1])}"?
+            Did you mean "
+            {query
+              .toLowerCase()
+              .replace(suggestedCorrection[0], suggestedCorrection[1])}
+            "?
           </button>
         )}
       </div>
@@ -363,7 +392,8 @@ export function FilterNoResultsState({
         No matching results
       </h3>
       <p className="text-slate-400 mb-6">
-        Your {activeFilterCount} active filter{activeFilterCount !== 1 ? 's' : ''} didn't match any items.
+        Your {activeFilterCount} active filter
+        {activeFilterCount !== 1 ? "s" : ""} didn't match any items.
         <br />
         Try adjusting or clearing your filters.
       </p>

@@ -1,7 +1,10 @@
 {
   "include": ["client/src/**/*", "shared/**/*", "server/**/*", "*.ts"],
   "exclude": [
-    "node_modules", "build", "dist", "**/*.test.ts",
+    "node_modules",
+    "build",
+    "dist",
+    "**/*.test.ts",
     "client/src/components/search/GlobalSearch.tsx",
     "client/src/components/studio/StudioOneLayout.tsx",
     "client/src/components/studio/StudioOneWrapper.tsx",

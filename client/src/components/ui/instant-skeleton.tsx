@@ -1,7 +1,7 @@
-import { cn } from '@/lib/utils';
+import { cn } from "@/lib/utils";
 
 interface InstantSkeletonProps {
-  variant?: 'card' | 'list' | 'page' | 'table';
+  variant?: "card" | "list" | "page" | "table";
   count?: number;
   className?: string;
 }
@@ -88,7 +88,11 @@ function TableSkeleton() {
   );
 }
 
-export function InstantSkeleton({ variant = 'page', count = 1, className }: InstantSkeletonProps) {
+export function InstantSkeleton({
+  variant = "page",
+  count = 1,
+  className,
+}: InstantSkeletonProps) {
   const Component = {
     card: CardSkeleton,
     list: ListSkeleton,
@@ -96,7 +100,7 @@ export function InstantSkeleton({ variant = 'page', count = 1, className }: Inst
     table: TableSkeleton,
   }[variant];
 
-  if (variant === 'page') {
+  if (variant === "page") {
     return (
       <div className={className}>
         <PageSkeleton />

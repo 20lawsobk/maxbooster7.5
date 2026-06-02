@@ -41,12 +41,20 @@ export function CountdownTimer({
       const diff = release.getTime() - now.getTime();
 
       if (diff <= 0) {
-        setTimeRemaining({ days: 0, hours: 0, minutes: 0, seconds: 0, isReleased: true });
+        setTimeRemaining({
+          days: 0,
+          hours: 0,
+          minutes: 0,
+          seconds: 0,
+          isReleased: true,
+        });
         return;
       }
 
       const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-      const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+      const hours = Math.floor(
+        (diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60),
+      );
       const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
       const seconds = Math.floor((diff % (1000 * 60)) / 1000);
 
@@ -61,12 +69,18 @@ export function CountdownTimer({
 
   if (timeRemaining.isReleased) {
     return (
-      <Card className={`bg-gradient-to-br from-green-500/10 to-emerald-500/10 border-green-500/20 ${className}`}>
+      <Card
+        className={`bg-gradient-to-br from-green-500/10 to-emerald-500/10 border-green-500/20 ${className}`}
+      >
         <CardContent className="p-6 flex items-center justify-center gap-3">
           <PartyPopper className="h-8 w-8 text-green-500 animate-bounce" />
           <div className="text-center">
             <p className="text-2xl font-bold text-green-500">Released!</p>
-            {title && <p className="text-sm text-muted-foreground">{title} is now live</p>}
+            {title && (
+              <p className="text-sm text-muted-foreground">
+                {title} is now live
+              </p>
+            )}
           </div>
           <PartyPopper className="h-8 w-8 text-green-500 animate-bounce" />
         </CardContent>
@@ -89,13 +103,17 @@ export function CountdownTimer({
     <div className="flex flex-col items-center">
       <div className="relative">
         <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-lg bg-gradient-to-br from-primary/20 to-primary/5 border border-primary/20 flex items-center justify-center">
-          <span className="text-2xl sm:text-3xl font-bold text-primary">{String(value).padStart(2, "0")}</span>
+          <span className="text-2xl sm:text-3xl font-bold text-primary">
+            {String(value).padStart(2, "0")}
+          </span>
         </div>
         <div className="absolute -top-1 -right-1">
           <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
         </div>
       </div>
-      <span className="text-xs sm:text-sm text-muted-foreground mt-2 uppercase tracking-wider">{label}</span>
+      <span className="text-xs sm:text-sm text-muted-foreground mt-2 uppercase tracking-wider">
+        {label}
+      </span>
     </div>
   );
 
@@ -104,31 +122,47 @@ export function CountdownTimer({
       <div className="relative">
         {artworkUrl && (
           <div className="absolute inset-0 opacity-10">
-            <img src={artworkUrl} alt="" className="w-full h-full object-cover blur-xl" />
+            <img
+              src={artworkUrl}
+              alt=""
+              className="w-full h-full object-cover blur-xl"
+            />
           </div>
         )}
         <CardContent className="p-6 sm:p-8 relative">
           <div className="flex items-center justify-center gap-2 mb-6">
             <Rocket className="h-5 w-5 text-primary" />
-            <Badge variant="secondary" className="bg-primary/10 text-primary border-primary/20">
+            <Badge
+              variant="secondary"
+              className="bg-primary/10 text-primary border-primary/20"
+            >
               Countdown Active
             </Badge>
           </div>
 
-          {title && <h3 className="text-xl font-bold text-center mb-6">{title}</h3>}
+          {title && (
+            <h3 className="text-xl font-bold text-center mb-6">{title}</h3>
+          )}
 
           <div className="flex items-center justify-center gap-3 sm:gap-4">
             <TimeUnit value={timeRemaining.days} label="Days" />
-            <span className="text-2xl sm:text-3xl font-bold text-muted-foreground self-start mt-4">:</span>
+            <span className="text-2xl sm:text-3xl font-bold text-muted-foreground self-start mt-4">
+              :
+            </span>
             <TimeUnit value={timeRemaining.hours} label="Hours" />
-            <span className="text-2xl sm:text-3xl font-bold text-muted-foreground self-start mt-4">:</span>
+            <span className="text-2xl sm:text-3xl font-bold text-muted-foreground self-start mt-4">
+              :
+            </span>
             <TimeUnit value={timeRemaining.minutes} label="Mins" />
-            <span className="text-2xl sm:text-3xl font-bold text-muted-foreground self-start mt-4">:</span>
+            <span className="text-2xl sm:text-3xl font-bold text-muted-foreground self-start mt-4">
+              :
+            </span>
             <TimeUnit value={timeRemaining.seconds} label="Secs" />
           </div>
 
           <p className="text-center text-sm text-muted-foreground mt-6">
-            Release Date: {new Date(releaseDate).toLocaleDateString("en-US", {
+            Release Date:{" "}
+            {new Date(releaseDate).toLocaleDateString("en-US", {
               weekday: "long",
               year: "numeric",
               month: "long",

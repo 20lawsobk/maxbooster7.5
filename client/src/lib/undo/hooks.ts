@@ -1,12 +1,12 @@
-import { useCallback, useMemo } from 'react';
-import { useUndo } from '@/contexts/UndoContext';
+import { useCallback, useMemo } from "react";
+import { useUndo } from "@/contexts/UndoContext";
 import {
   UndoableAction,
   ActionType,
   ActionCategory,
   ActionMetadata,
   isDestructiveAction,
-} from './types';
+} from "./types";
 
 export interface UseUndoableActionOptions {
   type: ActionType;
@@ -23,7 +23,7 @@ export function useUndoableAction<T, Args extends unknown[]>(
   options: UseUndoableActionOptions,
   execute: (...args: Args) => Promise<T>,
   undo: (result: T, ...args: Args) => Promise<void>,
-  redo?: (...args: Args) => Promise<T>
+  redo?: (...args: Args) => Promise<T>,
 ) {
   const { executeAction } = useUndo();
 
@@ -36,13 +36,14 @@ export function useUndoableAction<T, Args extends unknown[]>(
         category: options.category,
         entityId: options.entityId,
         entityType: options.entityType,
-        isDestructive: options.isDestructive ?? isDestructiveAction(options.type),
+        isDestructive:
+          options.isDestructive ?? isDestructiveAction(options.type),
         requiresConfirmation: options.requiresConfirmation,
       };
 
       let actionResult: T;
 
-      const action: Omit<UndoableAction<T>, 'id' | 'isUndone' | 'result'> = {
+      const action: Omit<UndoableAction<T>, "id" | "isUndone" | "result"> = {
         type: options.type,
         metadata,
         execute: async () => {
@@ -59,7 +60,7 @@ export function useUndoableAction<T, Args extends unknown[]>(
 
       return executeAction(action);
     },
-    [executeAction, execute, undo, redo, options]
+    [executeAction, execute, undo, redo, options],
   );
 
   return performAction;
@@ -70,12 +71,12 @@ export function useUndoableDelete<T>(
   entityType: string,
   deleteFn: (id: string) => Promise<T>,
   restoreFn: (id: string, data: T) => Promise<void>,
-  getDescription?: (id: string) => string
+  getDescription?: (id: string) => string,
 ) {
   return useUndoableAction<T, [string]>(
     {
-      type: 'delete',
-      category: 'CRUD',
+      type: "delete",
+      category: "CRUD",
       module,
       entityType,
       isDestructive: true,
@@ -83,34 +84,34 @@ export function useUndoableDelete<T>(
     },
     async (id: string) => deleteFn(id),
     async (result: T, id: string) => restoreFn(id, result),
-    undefined
+    undefined,
   );
 }
 
 export function useUndoableCreate<T extends { id: string }>(
   module: string,
   entityType: string,
-  createFn: (data: Omit<T, 'id'>) => Promise<T>,
+  createFn: (data: Omit<T, "id">) => Promise<T>,
   deleteFn: (id: string) => Promise<void>,
-  getDescription?: (data: Omit<T, 'id'>) => string
+  getDescription?: (data: Omit<T, "id">) => string,
 ) {
   const { executeAction } = useUndo();
 
   const performCreate = useCallback(
-    async (data: Omit<T, 'id'>): Promise<T> => {
+    async (data: Omit<T, "id">): Promise<T> => {
       let createdEntity: T;
 
       const metadata: ActionMetadata = {
         timestamp: Date.now(),
         module,
         description: getDescription?.(data) || `Create ${entityType}`,
-        category: 'CRUD',
+        category: "CRUD",
         entityType,
         newState: data,
       };
 
-      const action: Omit<UndoableAction<T>, 'id' | 'isUndone' | 'result'> = {
-        type: 'create',
+      const action: Omit<UndoableAction<T>, "id" | "isUndone" | "result"> = {
+        type: "create",
         metadata,
         execute: async () => {
           createdEntity = await createFn(data);
@@ -131,7 +132,7 @@ export function useUndoableCreate<T extends { id: string }>(
 
       return executeAction(action);
     },
-    [executeAction, createFn, deleteFn, module, entityType, getDescription]
+    [executeAction, createFn, deleteFn, module, entityType, getDescription],
   );
 
   return performCreate;
@@ -141,25 +142,29 @@ export function useUndoableMove<T>(
   module: string,
   entityType: string,
   moveFn: (id: string, newPosition: number) => Promise<T>,
-  getDescription?: (id: string, newPosition: number) => string
+  getDescription?: (id: string, newPosition: number) => string,
 ) {
   const { executeAction } = useUndo();
 
   const performMove = useCallback(
-    async (id: string, fromPosition: number, toPosition: number): Promise<T> => {
+    async (
+      id: string,
+      fromPosition: number,
+      toPosition: number,
+    ): Promise<T> => {
       const metadata: ActionMetadata = {
         timestamp: Date.now(),
         module,
         description: getDescription?.(id, toPosition) || `Move ${entityType}`,
-        category: 'CRUD',
+        category: "CRUD",
         entityId: id,
         entityType,
         previousState: { position: fromPosition },
         newState: { position: toPosition },
       };
 
-      const action: Omit<UndoableAction<T>, 'id' | 'isUndone' | 'result'> = {
-        type: 'move',
+      const action: Omit<UndoableAction<T>, "id" | "isUndone" | "result"> = {
+        type: "move",
         metadata,
         execute: async () => moveFn(id, toPosition),
         undo: async () => {
@@ -172,7 +177,7 @@ export function useUndoableMove<T>(
 
       return executeAction(action);
     },
-    [executeAction, moveFn, module, entityType, getDescription]
+    [executeAction, moveFn, module, entityType, getDescription],
   );
 
   return performMove;
@@ -182,7 +187,7 @@ export function useUndoableReorder<T>(
   module: string,
   entityType: string,
   reorderFn: (ids: string[]) => Promise<T>,
-  getDescription?: () => string
+  getDescription?: () => string,
 ) {
   const { executeAction } = useUndo();
 
@@ -192,14 +197,14 @@ export function useUndoableReorder<T>(
         timestamp: Date.now(),
         module,
         description: getDescription?.() || `Reorder ${entityType}`,
-        category: 'CRUD',
+        category: "CRUD",
         entityType,
         previousState: previousOrder,
         newState: newOrder,
       };
 
-      const action: Omit<UndoableAction<T>, 'id' | 'isUndone' | 'result'> = {
-        type: 'move',
+      const action: Omit<UndoableAction<T>, "id" | "isUndone" | "result"> = {
+        type: "move",
         metadata,
         execute: async () => reorderFn(newOrder),
         undo: async () => {
@@ -212,7 +217,7 @@ export function useUndoableReorder<T>(
 
       return executeAction(action);
     },
-    [executeAction, reorderFn, module, entityType, getDescription]
+    [executeAction, reorderFn, module, entityType, getDescription],
   );
 
   return performReorder;
@@ -223,7 +228,7 @@ export function useUndoableUpdate<T>(
   entityType: string,
   updateFn: (id: string, newData: Partial<T>) => Promise<T>,
   revertFn: (id: string, previousData: T) => Promise<void>,
-  getDescription?: (id: string) => string
+  getDescription?: (id: string) => string,
 ) {
   const { executeAction } = useUndo();
 
@@ -233,15 +238,15 @@ export function useUndoableUpdate<T>(
         timestamp: Date.now(),
         module,
         description: getDescription?.(id) || `Update ${entityType}`,
-        category: 'CRUD',
+        category: "CRUD",
         entityId: id,
         entityType,
         previousState: previousData,
         newState: newData,
       };
 
-      const action: Omit<UndoableAction<T>, 'id' | 'isUndone' | 'result'> = {
-        type: 'update',
+      const action: Omit<UndoableAction<T>, "id" | "isUndone" | "result"> = {
+        type: "update",
         metadata,
         execute: async () => updateFn(id, newData),
         undo: async () => revertFn(id, previousData),
@@ -252,7 +257,7 @@ export function useUndoableUpdate<T>(
 
       return executeAction(action);
     },
-    [executeAction, updateFn, revertFn, module, entityType, getDescription]
+    [executeAction, updateFn, revertFn, module, entityType, getDescription],
   );
 
   return performUpdate;
@@ -261,23 +266,27 @@ export function useUndoableUpdate<T>(
 export function useUndoableSettingsChange<T extends Record<string, unknown>>(
   module: string,
   updateSettingsFn: (settings: Partial<T>) => Promise<T>,
-  revertSettingsFn: (previousSettings: T) => Promise<void>
+  revertSettingsFn: (previousSettings: T) => Promise<void>,
 ) {
   const { executeAction } = useUndo();
 
   const changeSettings = useCallback(
-    async (newSettings: Partial<T>, previousSettings: T, description?: string): Promise<T> => {
+    async (
+      newSettings: Partial<T>,
+      previousSettings: T,
+      description?: string,
+    ): Promise<T> => {
       const metadata: ActionMetadata = {
         timestamp: Date.now(),
         module,
-        description: description || 'Settings changed',
-        category: 'settings',
+        description: description || "Settings changed",
+        category: "settings",
         previousState: previousSettings,
         newState: newSettings,
       };
 
-      const action: Omit<UndoableAction<T>, 'id' | 'isUndone' | 'result'> = {
-        type: 'settings_change',
+      const action: Omit<UndoableAction<T>, "id" | "isUndone" | "result"> = {
+        type: "settings_change",
         metadata,
         execute: async () => updateSettingsFn(newSettings),
         undo: async () => revertSettingsFn(previousSettings),
@@ -288,7 +297,7 @@ export function useUndoableSettingsChange<T extends Record<string, unknown>>(
 
       return executeAction(action);
     },
-    [executeAction, updateSettingsFn, revertSettingsFn, module]
+    [executeAction, updateSettingsFn, revertSettingsFn, module],
   );
 
   return changeSettings;
@@ -301,11 +310,11 @@ export interface WithUndoProps {
 
 export function createUndoableAction<T>(
   type: ActionType,
-  metadata: Omit<ActionMetadata, 'timestamp'>,
+  metadata: Omit<ActionMetadata, "timestamp">,
   execute: () => Promise<T>,
   undo: () => Promise<void>,
-  redo?: () => Promise<T>
-): Omit<UndoableAction<T>, 'id' | 'isUndone' | 'result'> {
+  redo?: () => Promise<T>,
+): Omit<UndoableAction<T>, "id" | "isUndone" | "result"> {
   return {
     type,
     metadata: {

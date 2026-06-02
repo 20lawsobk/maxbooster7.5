@@ -21,6 +21,7 @@ in prod until the user clicks Publish.
 
 **How to fix (do NOT script prod DDL — prod is a read-only replica via executeSql, and
 the database skill forbids prod migration scripts / deploy-time DDL / startup DDL):**
+
 1. Ensure the table is in the schema source of truth (`shared/schema.ts`) AND present in
    the dev DB.
 2. Tell the user to **re-publish**; the publish-time dev→prod diff creates the table.

@@ -1,5 +1,61 @@
-import type { PluginDefinition } from '../server/services/pluginHostService';
+import type { PluginDefinition } from "../server/services/pluginHostService";
 
-const MbOrganGospelPlugin: PluginDefinition = { id: 'mb-organ-gospel', slug: 'mb-organ-gospel', name: 'MB Gospel Organ', category: 'instrument', type: 'organ' as any, version: '1.0.0', description: 'Soulful gospel organ with full drawbar preset', author: 'Max Booster', grade: 'A', oscillators: [{ type: 'sine', detune: -1200, gain: 0.3 }, { type: 'sine', detune: 0, gain: 0.7 }, { type: 'sine', detune: 1200, gain: 0.5 }, { type: 'sine', detune: 2400, gain: 0.3 }], envelope: { attack: 0.005, decay: 0.05, sustain: 1.0, release: 0.08 }, parameters: [{ id: 'drive', name: 'Drive', type: 'float', defaultValue: 0.5, minValue: 0, maxValue: 1, automatable: true }, { id: 'leslie', name: 'Leslie', type: 'float', defaultValue: 0.6, minValue: 0, maxValue: 1, automatable: true }, { id: 'percussion', name: 'Percussion', type: 'float', defaultValue: 0.5, minValue: 0, maxValue: 1, automatable: true }, { id: 'volume', name: 'Volume', type: 'float', defaultValue: 0.8, minValue: 0, maxValue: 1, automatable: true }], defaultPreset: { drive: 0.5, leslie: 0.6, percussion: 0.5, volume: 0.8 } };
+const MbOrganGospelPlugin: PluginDefinition = {
+  id: "mb-organ-gospel",
+  slug: "mb-organ-gospel",
+  name: "MB Gospel Organ",
+  category: "instrument",
+  type: "organ" as any,
+  version: "1.0.0",
+  description: "Soulful gospel organ with full drawbar preset",
+  author: "Max Booster",
+  grade: "A",
+  oscillators: [
+    { type: "sine", detune: -1200, gain: 0.3 },
+    { type: "sine", detune: 0, gain: 0.7 },
+    { type: "sine", detune: 1200, gain: 0.5 },
+    { type: "sine", detune: 2400, gain: 0.3 },
+  ],
+  envelope: { attack: 0.005, decay: 0.05, sustain: 1.0, release: 0.08 },
+  parameters: [
+    {
+      id: "drive",
+      name: "Drive",
+      type: "float",
+      defaultValue: 0.5,
+      minValue: 0,
+      maxValue: 1,
+      automatable: true,
+    },
+    {
+      id: "leslie",
+      name: "Leslie",
+      type: "float",
+      defaultValue: 0.6,
+      minValue: 0,
+      maxValue: 1,
+      automatable: true,
+    },
+    {
+      id: "percussion",
+      name: "Percussion",
+      type: "float",
+      defaultValue: 0.5,
+      minValue: 0,
+      maxValue: 1,
+      automatable: true,
+    },
+    {
+      id: "volume",
+      name: "Volume",
+      type: "float",
+      defaultValue: 0.8,
+      minValue: 0,
+      maxValue: 1,
+      automatable: true,
+    },
+  ],
+  defaultPreset: { drive: 0.5, leslie: 0.6, percussion: 0.5, volume: 0.8 },
+};
 
 export default MbOrganGospelPlugin;

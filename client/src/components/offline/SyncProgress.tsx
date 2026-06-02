@@ -1,11 +1,11 @@
-import { RefreshCw, Check, AlertTriangle, Pause, Play } from 'lucide-react';
-import { Progress } from '@/components/ui/progress';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { cn } from '@/lib/utils';
-import { useOfflineStatus } from '@/hooks/useOfflineStatus';
-import { syncManager } from '@/lib/offline';
-import { formatDistanceToNow } from 'date-fns';
+import { RefreshCw, Check, AlertTriangle, Pause, Play } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
+import { useOfflineStatus } from "@/hooks/useOfflineStatus";
+import { syncManager } from "@/lib/offline";
+import { formatDistanceToNow } from "date-fns";
 
 interface SyncProgressProps {
   className?: string;
@@ -13,16 +13,22 @@ interface SyncProgressProps {
   compact?: boolean;
 }
 
-export function SyncProgress({ className, showPauseResume = false, compact = false }: SyncProgressProps) {
-  const { syncStatus, syncProgress, pendingCount, failedCount, lastSyncAt } = useOfflineStatus();
+export function SyncProgress({
+  className,
+  showPauseResume = false,
+  compact = false,
+}: SyncProgressProps) {
+  const { syncStatus, syncProgress, pendingCount, failedCount, lastSyncAt } =
+    useOfflineStatus();
 
-  const progressPercent = syncProgress.total > 0
-    ? Math.round((syncProgress.completed / syncProgress.total) * 100)
-    : 0;
+  const progressPercent =
+    syncProgress.total > 0
+      ? Math.round((syncProgress.completed / syncProgress.total) * 100)
+      : 0;
 
-  const isPaused = syncStatus === 'paused';
-  const isSyncing = syncStatus === 'syncing';
-  const hasError = syncStatus === 'error';
+  const isPaused = syncStatus === "paused";
+  const isSyncing = syncStatus === "syncing";
+  const hasError = syncStatus === "error";
 
   const handlePauseResume = () => {
     if (isPaused) {
@@ -42,7 +48,7 @@ export function SyncProgress({ className, showPauseResume = false, compact = fal
 
   if (compact) {
     return (
-      <div className={cn('flex items-center gap-2', className)}>
+      <div className={cn("flex items-center gap-2", className)}>
         {isSyncing ? (
           <>
             <RefreshCw className="h-4 w-4 animate-spin text-primary" />
@@ -53,7 +59,9 @@ export function SyncProgress({ className, showPauseResume = false, compact = fal
         ) : hasError ? (
           <>
             <AlertTriangle className="h-4 w-4 text-destructive" />
-            <span className="text-sm text-destructive">{failedCount} failed</span>
+            <span className="text-sm text-destructive">
+              {failedCount} failed
+            </span>
             <Button variant="ghost" size="sm" onClick={handleRetry}>
               Retry
             </Button>
@@ -61,7 +69,9 @@ export function SyncProgress({ className, showPauseResume = false, compact = fal
         ) : pendingCount > 0 ? (
           <>
             <RefreshCw className="h-4 w-4 text-muted-foreground" />
-            <span className="text-sm text-muted-foreground">{pendingCount} pending</span>
+            <span className="text-sm text-muted-foreground">
+              {pendingCount} pending
+            </span>
             <Button variant="ghost" size="sm" onClick={handleSync}>
               Sync
             </Button>
@@ -79,7 +89,7 @@ export function SyncProgress({ className, showPauseResume = false, compact = fal
   }
 
   return (
-    <Card className={cn('w-full', className)}>
+    <Card className={cn("w-full", className)}>
       <CardContent className="pt-4">
         <div className="space-y-3">
           <div className="flex items-center justify-between">
@@ -93,10 +103,10 @@ export function SyncProgress({ className, showPauseResume = false, compact = fal
               )}
               <span className="font-medium">
                 {isSyncing
-                  ? 'Syncing Changes'
+                  ? "Syncing Changes"
                   : hasError
-                  ? 'Sync Failed'
-                  : 'All Changes Synced'}
+                    ? "Sync Failed"
+                    : "All Changes Synced"}
               </span>
             </div>
 
@@ -122,7 +132,8 @@ export function SyncProgress({ className, showPauseResume = false, compact = fal
               </div>
               {syncProgress.estimatedTimeRemaining && (
                 <p className="text-xs text-muted-foreground">
-                  Estimated time remaining: {Math.ceil(syncProgress.estimatedTimeRemaining / 1000)}s
+                  Estimated time remaining:{" "}
+                  {Math.ceil(syncProgress.estimatedTimeRemaining / 1000)}s
                 </p>
               )}
             </div>
@@ -131,7 +142,7 @@ export function SyncProgress({ className, showPauseResume = false, compact = fal
           {hasError && (
             <div className="space-y-2">
               <p className="text-sm text-destructive">
-                {failedCount} item{failedCount !== 1 ? 's' : ''} failed to sync
+                {failedCount} item{failedCount !== 1 ? "s" : ""} failed to sync
               </p>
               <Button variant="outline" size="sm" onClick={handleRetry}>
                 <RefreshCw className="h-4 w-4 mr-2" />
@@ -143,7 +154,7 @@ export function SyncProgress({ className, showPauseResume = false, compact = fal
           {!isSyncing && !hasError && pendingCount > 0 && (
             <div className="flex items-center justify-between">
               <p className="text-sm text-muted-foreground">
-                {pendingCount} change{pendingCount !== 1 ? 's' : ''} pending
+                {pendingCount} change{pendingCount !== 1 ? "s" : ""} pending
               </p>
               <Button variant="outline" size="sm" onClick={handleSync}>
                 <RefreshCw className="h-4 w-4 mr-2" />

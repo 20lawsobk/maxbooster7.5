@@ -1,10 +1,11 @@
-import { RequestHandler, Request, Response, NextFunction } from 'express';
-import { logger } from '../logger.js';
-import { isProductionEnv } from '../lib/envHelpers.js';
+import { RequestHandler, Request, Response, NextFunction } from "express";
+import { logger } from "../logger.js";
+import { isProductionEnv } from "../lib/envHelpers.js";
 
 // ── Param validation helpers ──────────────────────────────────────────────────
 
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const SAFE_ID_RE = /^[a-zA-Z0-9_-]{1,128}$/;
 
 /**
@@ -12,7 +13,7 @@ const SAFE_ID_RE = /^[a-zA-Z0-9_-]{1,128}$/;
  * Use for params that must be database row IDs.
  */
 export function isValidUUID(value: unknown): value is string {
-  return typeof value === 'string' && UUID_RE.test(value);
+  return typeof value === "string" && UUID_RE.test(value);
 }
 
 /**
@@ -20,7 +21,7 @@ export function isValidUUID(value: unknown): value is string {
  * Use for params that may be slugs, numeric IDs, or short codes.
  */
 export function isSafeId(value: unknown): value is string {
-  return typeof value === 'string' && SAFE_ID_RE.test(value);
+  return typeof value === "string" && SAFE_ID_RE.test(value);
 }
 
 /**
@@ -34,7 +35,7 @@ export function requireUUIDParam(paramName: string): RequestHandler {
     const val = req.params[paramName];
     if (!isValidUUID(val)) {
       return res.status(400).json({
-        error: 'Invalid parameter',
+        error: "Invalid parameter",
         message: `Parameter '${paramName}' must be a valid UUID.`,
       });
     }
@@ -53,7 +54,7 @@ export function requireSafeParam(paramName: string): RequestHandler {
     const val = req.params[paramName];
     if (!isSafeId(val)) {
       return res.status(400).json({
-        error: 'Invalid parameter',
+        error: "Invalid parameter",
         message: `Parameter '${paramName}' contains invalid characters.`,
       });
     }
@@ -61,34 +62,36 @@ export function requireSafeParam(paramName: string): RequestHandler {
   };
 }
 
-const SAFE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS', 'TRACE']);
+const SAFE_METHODS = new Set(["GET", "HEAD", "OPTIONS", "TRACE"]);
 
 const EXEMPT_PATH_PREFIXES = [
-  '/api/webhooks/',
-  '/api/stripe/webhook',
-  '/api/auth/login',
-  '/api/auth/register',
-  '/api/auth/demo',
-  '/api/auth/forgot-password',
-  '/api/auth/reset-password',
-  '/api/auth/verify',
-  '/api/auth/token/refresh',
-  '/api/auth/google',
-  '/api/errors',
-  '/api/sendgrid/webhook',
-  '/health',
-  '/ready',
-  '/status',
+  "/api/webhooks/",
+  "/api/stripe/webhook",
+  "/api/auth/login",
+  "/api/auth/register",
+  "/api/auth/demo",
+  "/api/auth/forgot-password",
+  "/api/auth/reset-password",
+  "/api/auth/verify",
+  "/api/auth/token/refresh",
+  "/api/auth/google",
+  "/api/errors",
+  "/api/sendgrid/webhook",
+  "/health",
+  "/ready",
+  "/status",
   // Internal server-to-server routes — protected by BOOSTERSTATE_SECRET bearer
   // token at the proxy layer; no browser Origin header is present on these calls.
-  '/api/ai-service/',
-  '/api/training/internal/',
+  "/api/ai-service/",
+  "/api/training/internal/",
 ];
 
 function getAllowedOrigins(req: Request): string[] {
-  const host = req.headers.host || '';
+  const host = req.headers.host || "";
   const proto =
-    req.secure || req.headers['x-forwarded-proto'] === 'https' ? 'https' : 'http';
+    req.secure || req.headers["x-forwarded-proto"] === "https"
+      ? "https"
+      : "http";
 
   const origins: string[] = [`${proto}://${host}`];
 
@@ -104,12 +107,11 @@ function getAllowedOrigins(req: Request): string[] {
   if (appUrl) {
     try {
       origins.push(new URL(appUrl).origin);
-    } catch {
-    }
+    } catch {}
   }
 
   // Always allow the platform's own custom domain and artist storefront subdomains.
-  origins.push('https://max-booster.com', 'https://www.max-booster.com');
+  origins.push("https://max-booster.com", "https://www.max-booster.com");
 
   return origins;
 }
@@ -117,12 +119,12 @@ function getAllowedOrigins(req: Request): string[] {
 export const originValidation: RequestHandler = (
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   if (SAFE_METHODS.has(req.method)) return next();
 
   const isExempt = EXEMPT_PATH_PREFIXES.some((prefix) =>
-    req.path.startsWith(prefix)
+    req.path.startsWith(prefix),
   );
   if (isExempt) return next();
 
@@ -133,7 +135,7 @@ export const originValidation: RequestHandler = (
     if (!isProductionEnv()) return next();
     logger.warn(`Mutation without Origin: ${req.method} ${req.path}`, {
       ip: req.ip,
-      userAgent: req.get('user-agent'),
+      userAgent: req.get("user-agent"),
     });
     return next();
   }
@@ -159,8 +161,8 @@ export const originValidation: RequestHandler = (
       ip: req.ip,
     });
     return res.status(403).json({
-      error: 'Origin not allowed',
-      message: 'Request blocked: unexpected origin.',
+      error: "Origin not allowed",
+      message: "Request blocked: unexpected origin.",
     });
   }
 

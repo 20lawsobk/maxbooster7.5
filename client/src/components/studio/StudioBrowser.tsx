@@ -1,10 +1,19 @@
-import { useState, useMemo } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Input } from '@/components/ui/input';
-import { ChevronLeft, ChevronRight, Search, File, Music, Zap, Disc, Loader2 } from 'lucide-react';
+import { useState, useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Input } from "@/components/ui/input";
+import {
+  ChevronLeft,
+  ChevronRight,
+  Search,
+  File,
+  Music,
+  Zap,
+  Disc,
+  Loader2,
+} from "lucide-react";
 
 interface Plugin {
   id: string;
@@ -37,36 +46,37 @@ export function StudioBrowser({
   recentFiles = [],
   samples = [],
 }: StudioBrowserProps) {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [activeTab, setActiveTab] = useState('files');
+  const [searchQuery, setSearchQuery] = useState("");
+  const [activeTab, setActiveTab] = useState("files");
 
   // Fetch plugins from API
-  const { data: pluginCatalog, isLoading: isLoadingPlugins } = useQuery<PluginCatalogResponse>({
-    queryKey: ['/api/studio/plugins'],
-  });
+  const { data: pluginCatalog, isLoading: isLoadingPlugins } =
+    useQuery<PluginCatalogResponse>({
+      queryKey: ["/api/studio/plugins"],
+    });
 
   // Filter and combine effect plugins - includes all effect types from the 200 built-in plugins
   const effectPlugins = useMemo(() => {
     if (!pluginCatalog) return [];
 
     const effectKinds = [
-      'reverb',
-      'delay',
-      'compressor',
-      'eq',
-      'distortion',
-      'chorus',
-      'flanger',
-      'phaser',
-      'limiter',
-      'gate',
-      'vocal',
-      'microphone',
-      'modulation',
-      'dynamics',
-      'filter',
-      'utility',
-      'saturation',
+      "reverb",
+      "delay",
+      "compressor",
+      "eq",
+      "distortion",
+      "chorus",
+      "flanger",
+      "phaser",
+      "limiter",
+      "gate",
+      "vocal",
+      "microphone",
+      "modulation",
+      "dynamics",
+      "filter",
+      "utility",
+      "saturation",
     ];
     const plugins: Plugin[] = [];
 
@@ -84,21 +94,21 @@ export function StudioBrowser({
     if (!pluginCatalog) return [];
 
     const instrumentKinds = [
-      'piano',
-      'strings',
-      'drums',
-      'bass',
-      'pad',
-      'synth',
-      'analog',
-      'fm',
-      'wavetable',
-      'sampler',
-      'organ',
-      'lead',
-      'pluck',
-      'brass',
-      'woodwind',
+      "piano",
+      "strings",
+      "drums",
+      "bass",
+      "pad",
+      "synth",
+      "analog",
+      "fm",
+      "wavetable",
+      "sampler",
+      "organ",
+      "lead",
+      "pluck",
+      "brass",
+      "woodwind",
     ];
     const plugins: Plugin[] = [];
 
@@ -115,7 +125,7 @@ export function StudioBrowser({
     return (
       <div
         className="h-full flex flex-col items-center py-4"
-        style={{ backgroundColor: 'var(--studio-inspector)' }}
+        style={{ backgroundColor: "var(--studio-inspector)" }}
       >
         <Button
           size="sm"
@@ -123,15 +133,15 @@ export function StudioBrowser({
           className="h-8 w-8 p-0 mb-4"
           onClick={onToggleCollapse}
           data-testid="button-toggle-browser"
-          style={{ color: 'var(--studio-text)' }}
+          style={{ color: "var(--studio-text)" }}
         >
           <ChevronLeft className="h-4 w-4" />
         </Button>
         <div
           className="text-xs font-medium rotate-180 mb-auto mt-4"
           style={{
-            writingMode: 'vertical-rl',
-            color: 'var(--studio-text-muted)',
+            writingMode: "vertical-rl",
+            color: "var(--studio-text-muted)",
           }}
         >
           BROWSER
@@ -141,13 +151,19 @@ export function StudioBrowser({
   }
 
   return (
-    <div className="h-full flex flex-col" style={{ backgroundColor: 'var(--studio-inspector)' }}>
+    <div
+      className="h-full flex flex-col"
+      style={{ backgroundColor: "var(--studio-inspector)" }}
+    >
       {/* Header */}
       <div
         className="flex items-center justify-between p-3 border-b"
-        style={{ borderColor: 'var(--studio-border)' }}
+        style={{ borderColor: "var(--studio-border)" }}
       >
-        <h3 className="text-sm font-semibold" style={{ color: 'var(--studio-text)' }}>
+        <h3
+          className="text-sm font-semibold"
+          style={{ color: "var(--studio-text)" }}
+        >
           Browser
         </h3>
         <Button
@@ -156,7 +172,7 @@ export function StudioBrowser({
           className="h-6 w-6 p-0"
           onClick={onToggleCollapse}
           data-testid="button-toggle-browser"
-          style={{ color: 'var(--studio-text)' }}
+          style={{ color: "var(--studio-text)" }}
         >
           <ChevronRight className="h-4 w-4" />
         </Button>
@@ -167,7 +183,7 @@ export function StudioBrowser({
         <div className="relative">
           <Search
             className="absolute left-2 top-2.5 h-4 w-4"
-            style={{ color: 'var(--studio-text-muted)' }}
+            style={{ color: "var(--studio-text-muted)" }}
           />
           <Input
             placeholder="Search files..."
@@ -175,9 +191,9 @@ export function StudioBrowser({
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-8 h-9"
             style={{
-              backgroundColor: 'var(--studio-bg-deep)',
-              borderColor: 'var(--studio-border)',
-              color: 'var(--studio-text)',
+              backgroundColor: "var(--studio-bg-deep)",
+              borderColor: "var(--studio-border)",
+              color: "var(--studio-text)",
             }}
             data-testid="input-browser-search"
           />
@@ -185,19 +201,23 @@ export function StudioBrowser({
       </div>
 
       {/* Tabs */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
+      <Tabs
+        value={activeTab}
+        onValueChange={setActiveTab}
+        className="flex-1 flex flex-col"
+      >
         <TabsList
           className="w-full grid grid-cols-4 rounded-none border-b h-10"
           style={{
-            backgroundColor: 'var(--studio-bg-medium)',
-            borderColor: 'var(--studio-border)',
+            backgroundColor: "var(--studio-bg-medium)",
+            borderColor: "var(--studio-border)",
           }}
         >
           <TabsTrigger
             value="files"
             className="text-xs data-[state=active]:bg-transparent"
             style={{
-              color: 'var(--studio-text-muted)',
+              color: "var(--studio-text-muted)",
             }}
             data-testid="tab-files"
           >
@@ -208,7 +228,7 @@ export function StudioBrowser({
             value="plugins"
             className="text-xs data-[state=active]:bg-transparent"
             style={{
-              color: 'var(--studio-text-muted)',
+              color: "var(--studio-text-muted)",
             }}
             data-testid="tab-plugins"
           >
@@ -219,7 +239,7 @@ export function StudioBrowser({
             value="instruments"
             className="text-xs data-[state=active]:bg-transparent"
             style={{
-              color: 'var(--studio-text-muted)',
+              color: "var(--studio-text-muted)",
             }}
             data-testid="tab-instruments"
           >
@@ -230,7 +250,7 @@ export function StudioBrowser({
             value="loops"
             className="text-xs data-[state=active]:bg-transparent"
             style={{
-              color: 'var(--studio-text-muted)',
+              color: "var(--studio-text-muted)",
             }}
             data-testid="tab-loops"
           >
@@ -246,7 +266,10 @@ export function StudioBrowser({
                 recentFiles
                   .filter(
                     (file) =>
-                      !searchQuery || file.name?.toLowerCase().includes(searchQuery.toLowerCase())
+                      !searchQuery ||
+                      file.name
+                        ?.toLowerCase()
+                        .includes(searchQuery.toLowerCase()),
                   )
                   .map((file, index) => (
                     <button
@@ -254,26 +277,35 @@ export function StudioBrowser({
                       onClick={() => onFileSelect?.(file)}
                       className="w-full text-left px-3 py-2 rounded text-sm hover:bg-opacity-10 transition-colors"
                       style={{
-                        color: 'var(--studio-text)',
-                        backgroundColor: 'transparent',
+                        color: "var(--studio-text)",
+                        backgroundColor: "transparent",
                       }}
                       onMouseEnter={(e) => {
-                        e.currentTarget.style.backgroundColor = 'var(--studio-bg-light)';
+                        e.currentTarget.style.backgroundColor =
+                          "var(--studio-bg-light)";
                       }}
                       onMouseLeave={(e) => {
-                        e.currentTarget.style.backgroundColor = 'transparent';
+                        e.currentTarget.style.backgroundColor = "transparent";
                       }}
                       data-testid={`file-item-${index}`}
                     >
                       <div className="flex items-center gap-2">
-                        <File className="h-4 w-4" style={{ color: 'var(--studio-text-muted)' }} />
-                        <span className="truncate">{file.name || `File ${index + 1}`}</span>
+                        <File
+                          className="h-4 w-4"
+                          style={{ color: "var(--studio-text-muted)" }}
+                        />
+                        <span className="truncate">
+                          {file.name || `File ${index + 1}`}
+                        </span>
                       </div>
                     </button>
                   ))
               ) : (
                 <div className="text-center py-8">
-                  <p className="text-sm" style={{ color: 'var(--studio-text-muted)' }}>
+                  <p
+                    className="text-sm"
+                    style={{ color: "var(--studio-text-muted)" }}
+                  >
                     No files found
                   </p>
                 </div>
@@ -289,9 +321,12 @@ export function StudioBrowser({
                 <div className="flex items-center justify-center py-8">
                   <Loader2
                     className="h-5 w-5 animate-spin"
-                    style={{ color: 'var(--studio-text-muted)' }}
+                    style={{ color: "var(--studio-text-muted)" }}
                   />
-                  <span className="ml-2 text-sm" style={{ color: 'var(--studio-text-muted)' }}>
+                  <span
+                    className="ml-2 text-sm"
+                    style={{ color: "var(--studio-text-muted)" }}
+                  >
                     Loading effects...
                   </span>
                 </div>
@@ -300,9 +335,15 @@ export function StudioBrowser({
                   .filter(
                     (plugin) =>
                       !searchQuery ||
-                      plugin.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                      plugin.author?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                      plugin.type?.toLowerCase().includes(searchQuery.toLowerCase())
+                      plugin.name
+                        ?.toLowerCase()
+                        .includes(searchQuery.toLowerCase()) ||
+                      plugin.author
+                        ?.toLowerCase()
+                        .includes(searchQuery.toLowerCase()) ||
+                      plugin.type
+                        ?.toLowerCase()
+                        .includes(searchQuery.toLowerCase()),
                   )
                   .map((plugin, index) => (
                     <button
@@ -310,14 +351,15 @@ export function StudioBrowser({
                       onClick={() => onFileSelect?.(plugin)}
                       className="w-full text-left px-3 py-2 rounded text-sm hover:bg-opacity-10 transition-colors"
                       style={{
-                        color: 'var(--studio-text)',
-                        backgroundColor: 'transparent',
+                        color: "var(--studio-text)",
+                        backgroundColor: "transparent",
                       }}
                       onMouseEnter={(e) => {
-                        e.currentTarget.style.backgroundColor = 'var(--studio-bg-light)';
+                        e.currentTarget.style.backgroundColor =
+                          "var(--studio-bg-light)";
                       }}
                       onMouseLeave={(e) => {
-                        e.currentTarget.style.backgroundColor = 'transparent';
+                        e.currentTarget.style.backgroundColor = "transparent";
                       }}
                       data-testid={`plugin-item-${index}`}
                     >
@@ -325,19 +367,23 @@ export function StudioBrowser({
                         <div className="flex items-center gap-2">
                           <Zap
                             className="h-4 w-4 flex-shrink-0"
-                            style={{ color: 'var(--studio-text-muted)' }}
+                            style={{ color: "var(--studio-text-muted)" }}
                           />
-                          <span className="truncate font-medium">{plugin.name}</span>
+                          <span className="truncate font-medium">
+                            {plugin.name}
+                          </span>
                         </div>
                         <div
                           className="ml-6 flex items-center gap-2 text-xs"
-                          style={{ color: 'var(--studio-text-muted)' }}
+                          style={{ color: "var(--studio-text-muted)" }}
                         >
-                          <span>{plugin.author || 'Max Booster'}</span>
+                          <span>{plugin.author || "Max Booster"}</span>
                           {plugin.type && (
                             <>
                               <span>•</span>
-                              <span className="truncate capitalize">{plugin.type}</span>
+                              <span className="truncate capitalize">
+                                {plugin.type}
+                              </span>
                             </>
                           )}
                         </div>
@@ -346,7 +392,10 @@ export function StudioBrowser({
                   ))
               ) : (
                 <div className="text-center py-8">
-                  <p className="text-sm" style={{ color: 'var(--studio-text-muted)' }}>
+                  <p
+                    className="text-sm"
+                    style={{ color: "var(--studio-text-muted)" }}
+                  >
                     No effects available
                   </p>
                 </div>
@@ -362,9 +411,12 @@ export function StudioBrowser({
                 <div className="flex items-center justify-center py-8">
                   <Loader2
                     className="h-5 w-5 animate-spin"
-                    style={{ color: 'var(--studio-text-muted)' }}
+                    style={{ color: "var(--studio-text-muted)" }}
                   />
-                  <span className="ml-2 text-sm" style={{ color: 'var(--studio-text-muted)' }}>
+                  <span
+                    className="ml-2 text-sm"
+                    style={{ color: "var(--studio-text-muted)" }}
+                  >
                     Loading instruments...
                   </span>
                 </div>
@@ -373,9 +425,15 @@ export function StudioBrowser({
                   .filter(
                     (plugin) =>
                       !searchQuery ||
-                      plugin.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                      plugin.author?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                      plugin.type?.toLowerCase().includes(searchQuery.toLowerCase())
+                      plugin.name
+                        ?.toLowerCase()
+                        .includes(searchQuery.toLowerCase()) ||
+                      plugin.author
+                        ?.toLowerCase()
+                        .includes(searchQuery.toLowerCase()) ||
+                      plugin.type
+                        ?.toLowerCase()
+                        .includes(searchQuery.toLowerCase()),
                   )
                   .map((plugin, index) => (
                     <button
@@ -383,14 +441,15 @@ export function StudioBrowser({
                       onClick={() => onFileSelect?.(plugin)}
                       className="w-full text-left px-3 py-2 rounded text-sm hover:bg-opacity-10 transition-colors"
                       style={{
-                        color: 'var(--studio-text)',
-                        backgroundColor: 'transparent',
+                        color: "var(--studio-text)",
+                        backgroundColor: "transparent",
                       }}
                       onMouseEnter={(e) => {
-                        e.currentTarget.style.backgroundColor = 'var(--studio-bg-light)';
+                        e.currentTarget.style.backgroundColor =
+                          "var(--studio-bg-light)";
                       }}
                       onMouseLeave={(e) => {
-                        e.currentTarget.style.backgroundColor = 'transparent';
+                        e.currentTarget.style.backgroundColor = "transparent";
                       }}
                       data-testid={`instrument-item-${index}`}
                     >
@@ -398,19 +457,23 @@ export function StudioBrowser({
                         <div className="flex items-center gap-2">
                           <Music
                             className="h-4 w-4 flex-shrink-0"
-                            style={{ color: 'var(--studio-text-muted)' }}
+                            style={{ color: "var(--studio-text-muted)" }}
                           />
-                          <span className="truncate font-medium">{plugin.name}</span>
+                          <span className="truncate font-medium">
+                            {plugin.name}
+                          </span>
                         </div>
                         <div
                           className="ml-6 flex items-center gap-2 text-xs"
-                          style={{ color: 'var(--studio-text-muted)' }}
+                          style={{ color: "var(--studio-text-muted)" }}
                         >
-                          <span>{plugin.author || 'Max Booster'}</span>
+                          <span>{plugin.author || "Max Booster"}</span>
                           {plugin.type && (
                             <>
                               <span>•</span>
-                              <span className="truncate capitalize">{plugin.type}</span>
+                              <span className="truncate capitalize">
+                                {plugin.type}
+                              </span>
                             </>
                           )}
                         </div>
@@ -419,7 +482,10 @@ export function StudioBrowser({
                   ))
               ) : (
                 <div className="text-center py-8">
-                  <p className="text-sm" style={{ color: 'var(--studio-text-muted)' }}>
+                  <p
+                    className="text-sm"
+                    style={{ color: "var(--studio-text-muted)" }}
+                  >
                     No instruments available
                   </p>
                 </div>
@@ -435,7 +501,10 @@ export function StudioBrowser({
                 samples
                   .filter(
                     (sample) =>
-                      !searchQuery || sample.name?.toLowerCase().includes(searchQuery.toLowerCase())
+                      !searchQuery ||
+                      sample.name
+                        ?.toLowerCase()
+                        .includes(searchQuery.toLowerCase()),
                   )
                   .map((sample, index) => (
                     <button
@@ -443,26 +512,35 @@ export function StudioBrowser({
                       onClick={() => onFileSelect?.(sample)}
                       className="w-full text-left px-3 py-2 rounded text-sm hover:bg-opacity-10 transition-colors"
                       style={{
-                        color: 'var(--studio-text)',
-                        backgroundColor: 'transparent',
+                        color: "var(--studio-text)",
+                        backgroundColor: "transparent",
                       }}
                       onMouseEnter={(e) => {
-                        e.currentTarget.style.backgroundColor = 'var(--studio-bg-light)';
+                        e.currentTarget.style.backgroundColor =
+                          "var(--studio-bg-light)";
                       }}
                       onMouseLeave={(e) => {
-                        e.currentTarget.style.backgroundColor = 'transparent';
+                        e.currentTarget.style.backgroundColor = "transparent";
                       }}
                       data-testid={`loop-item-${index}`}
                     >
                       <div className="flex items-center gap-2">
-                        <Disc className="h-4 w-4" style={{ color: 'var(--studio-text-muted)' }} />
-                        <span className="truncate">{sample.name || `Sample ${index + 1}`}</span>
+                        <Disc
+                          className="h-4 w-4"
+                          style={{ color: "var(--studio-text-muted)" }}
+                        />
+                        <span className="truncate">
+                          {sample.name || `Sample ${index + 1}`}
+                        </span>
                       </div>
                     </button>
                   ))
               ) : (
                 <div className="text-center py-8">
-                  <p className="text-sm" style={{ color: 'var(--studio-text-muted)' }}>
+                  <p
+                    className="text-sm"
+                    style={{ color: "var(--studio-text-muted)" }}
+                  >
                     No loops found
                   </p>
                 </div>

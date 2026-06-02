@@ -1,4 +1,4 @@
-import { logger } from '../../server/logger.ts';
+import { logger } from "../../server/logger.ts";
 
 interface LoadTestConfig {
   duration: number;
@@ -6,7 +6,7 @@ interface LoadTestConfig {
   rampUpTime: number;
   endpoints: Array<{
     path: string;
-    method: 'GET' | 'POST';
+    method: "GET" | "POST";
     weight: number;
     body?: any;
   }>;
@@ -57,12 +57,13 @@ class LoadTester {
     `);
 
     this.startTime = Date.now();
-    const endTime = this.startTime + (this.config.duration * 1000);
+    const endTime = this.startTime + this.config.duration * 1000;
 
     const userIntervals: NodeJS.Timeout[] = [];
 
     for (let i = 0; i < this.config.concurrentUsers; i++) {
-      const delay = (this.config.rampUpTime * 1000 * i) / this.config.concurrentUsers;
+      const delay =
+        (this.config.rampUpTime * 1000 * i) / this.config.concurrentUsers;
 
       setTimeout(() => {
         const interval = setInterval(async () => {
@@ -78,12 +79,17 @@ class LoadTester {
       }, delay);
     }
 
-    await new Promise(resolve => setTimeout(resolve, this.config.duration * 1000 + this.config.rampUpTime * 1000));
+    await new Promise((resolve) =>
+      setTimeout(
+        resolve,
+        this.config.duration * 1000 + this.config.rampUpTime * 1000,
+      ),
+    );
 
-    userIntervals.forEach(interval => clearInterval(interval));
+    userIntervals.forEach((interval) => clearInterval(interval));
 
     while (this.activeRequests > 0) {
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await new Promise((resolve) => setTimeout(resolve, 100));
     }
 
     return this.generateResults();
@@ -98,7 +104,7 @@ class LoadTester {
     try {
       const response = await fetch(`http://localhost:5000${endpoint.path}`, {
         method: endpoint.method,
-        headers: endpoint.body ? { 'Content-Type': 'application/json' } : {},
+        headers: endpoint.body ? { "Content-Type": "application/json" } : {},
         body: endpoint.body ? JSON.stringify(endpoint.body) : undefined,
       });
 
@@ -114,19 +120,31 @@ class LoadTester {
         this.recordError(endpoint.path, `HTTP ${response.status}`);
       }
 
-      this.results.minResponseTime = Math.min(this.results.minResponseTime, responseTime);
-      this.results.maxResponseTime = Math.max(this.results.maxResponseTime, responseTime);
+      this.results.minResponseTime = Math.min(
+        this.results.minResponseTime,
+        responseTime,
+      );
+      this.results.maxResponseTime = Math.max(
+        this.results.maxResponseTime,
+        responseTime,
+      );
     } catch (error) {
       this.results.totalRequests++;
       this.results.failedRequests++;
-      this.recordError(endpoint.path, error instanceof Error ? error.message : 'Unknown error');
+      this.recordError(
+        endpoint.path,
+        error instanceof Error ? error.message : "Unknown error",
+      );
     } finally {
       this.activeRequests--;
     }
   }
 
   private selectEndpoint() {
-    const totalWeight = this.config.endpoints.reduce((sum, ep) => sum + ep.weight, 0);
+    const totalWeight = this.config.endpoints.reduce(
+      (sum, ep) => sum + ep.weight,
+      0,
+    );
     let random = Math.random() * totalWeight;
 
     for (const endpoint of this.config.endpoints) {
@@ -140,7 +158,9 @@ class LoadTester {
   }
 
   private recordError(endpoint: string, error: string): void {
-    const existing = this.results.errors.find(e => e.endpoint === endpoint && e.error === error);
+    const existing = this.results.errors.find(
+      (e) => e.endpoint === endpoint && e.error === error,
+    );
     if (existing) {
       existing.count++;
     } else {
@@ -151,9 +171,11 @@ class LoadTester {
   private generateResults(): LoadTestResult {
     const duration = (Date.now() - this.startTime) / 1000;
 
-    this.results.avgResponseTime = this.responseTimes.length > 0
-      ? this.responseTimes.reduce((a, b) => a + b, 0) / this.responseTimes.length
-      : 0;
+    this.results.avgResponseTime =
+      this.responseTimes.length > 0
+        ? this.responseTimes.reduce((a, b) => a + b, 0) /
+          this.responseTimes.length
+        : 0;
 
     this.results.requestsPerSecond = this.results.totalRequests / duration;
 
@@ -164,17 +186,17 @@ class LoadTester {
 ║  Total Requests:      ${this.results.totalRequests.toString().padEnd(35)}║
 ║  Successful:          ${this.results.successfulRequests.toString().padEnd(35)}║
 ║  Failed:              ${this.results.failedRequests.toString().padEnd(35)}║
-║  Success Rate:        ${((this.results.successfulRequests / this.results.totalRequests) * 100).toFixed(2)}%${' '.repeat(31)}║
+║  Success Rate:        ${((this.results.successfulRequests / this.results.totalRequests) * 100).toFixed(2)}%${" ".repeat(31)}║
 ║                                                               ║
-║  Avg Response Time:   ${this.results.avgResponseTime.toFixed(2)}ms${' '.repeat(31)}║
-║  Min Response Time:   ${this.results.minResponseTime.toFixed(2)}ms${' '.repeat(31)}║
-║  Max Response Time:   ${this.results.maxResponseTime.toFixed(2)}ms${' '.repeat(31)}║
-║  Requests/Second:     ${this.results.requestsPerSecond.toFixed(2)}${' '.repeat(31)}║
+║  Avg Response Time:   ${this.results.avgResponseTime.toFixed(2)}ms${" ".repeat(31)}║
+║  Min Response Time:   ${this.results.minResponseTime.toFixed(2)}ms${" ".repeat(31)}║
+║  Max Response Time:   ${this.results.maxResponseTime.toFixed(2)}ms${" ".repeat(31)}║
+║  Requests/Second:     ${this.results.requestsPerSecond.toFixed(2)}${" ".repeat(31)}║
 ╚═══════════════════════════════════════════════════════════════╝
     `);
 
     if (this.results.errors.length > 0) {
-      logger.warn('\nERRORS ENCOUNTERED:');
+      logger.warn("\nERRORS ENCOUNTERED:");
       for (const error of this.results.errors.slice(0, 10)) {
         logger.warn(`  ${error.endpoint}: ${error.error} (${error.count}x)`);
       }
@@ -187,16 +209,17 @@ class LoadTester {
   }
 
   private getVerdict(): string {
-    const successRate = (this.results.successfulRequests / this.results.totalRequests) * 100;
+    const successRate =
+      (this.results.successfulRequests / this.results.totalRequests) * 100;
 
     if (successRate >= 99.9 && this.results.avgResponseTime < 200) {
-      return '✅ EXCELLENT - System handles load with excellent performance';
+      return "✅ EXCELLENT - System handles load with excellent performance";
     } else if (successRate >= 99 && this.results.avgResponseTime < 500) {
-      return '✅ GOOD - System handles load with acceptable performance';
+      return "✅ GOOD - System handles load with acceptable performance";
     } else if (successRate >= 95) {
-      return '⚠️ ACCEPTABLE - Some performance degradation under load';
+      return "⚠️ ACCEPTABLE - Some performance degradation under load";
     } else {
-      return '❌ POOR - System struggles under load, optimization needed';
+      return "❌ POOR - System struggles under load, optimization needed";
     }
   }
 }
@@ -211,20 +234,24 @@ const defaultConfig: LoadTestConfig = {
   concurrentUsers: 50,
   rampUpTime: 10,
   endpoints: [
-    { path: '/api/health',              method: 'GET', weight: 15 },
-    { path: '/api/ping',                method: 'GET', weight: 10 },
-    { path: '/ready',                   method: 'GET', weight: 5  },
-    { path: '/api/auth/me',             method: 'GET', weight: 20 },
-    { path: '/api/marketplace/beats',   method: 'GET', weight: 15 },
-    { path: '/',                        method: 'GET', weight: 10 },
+    { path: "/api/health", method: "GET", weight: 15 },
+    { path: "/api/ping", method: "GET", weight: 10 },
+    { path: "/ready", method: "GET", weight: 5 },
+    { path: "/api/auth/me", method: "GET", weight: 20 },
+    { path: "/api/marketplace/beats", method: "GET", weight: 15 },
+    { path: "/", method: "GET", weight: 10 },
   ],
 };
 
 const tester = new LoadTester(defaultConfig);
-tester.run().then((results) => {
-  const successRate = (results.successfulRequests / results.totalRequests) * 100;
-  process.exit(successRate >= 95 ? 0 : 1);
-}).catch((error) => {
-  logger.error('Load test failed:', error);
-  process.exit(1);
-});
+tester
+  .run()
+  .then((results) => {
+    const successRate =
+      (results.successfulRequests / results.totalRequests) * 100;
+    process.exit(successRate >= 95 ? 0 : 1);
+  })
+  .catch((error) => {
+    logger.error("Load test failed:", error);
+    process.exit(1);
+  });

@@ -1,14 +1,18 @@
-import { useState } from 'react';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Slider } from '@/components/ui/slider';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Button } from '@/components/ui/button';
-import { Switch } from '@/components/ui/switch';
-import { Separator } from '@/components/ui/separator';
-import { Badge } from '@/components/ui/badge';
-import { useStudioStore, type AutomationMode, type EditTool } from '@/lib/studioStore';
-import { PluginRack, type PluginInstance } from './PluginRack';
+import { useState } from "react";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Slider } from "@/components/ui/slider";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
+import { Separator } from "@/components/ui/separator";
+import { Badge } from "@/components/ui/badge";
+import {
+  useStudioStore,
+  type AutomationMode,
+  type EditTool,
+} from "@/lib/studioStore";
+import { PluginRack, type PluginInstance } from "./PluginRack";
 import {
   Settings2,
   ChevronDown,
@@ -31,7 +35,7 @@ import {
   Scissors,
   Move,
   Pencil,
-} from 'lucide-react';
+} from "lucide-react";
 
 interface InspectorPanelProps {
   selectedTrack?: Record<string, unknown>;
@@ -59,21 +63,32 @@ function CollapsibleSection({
   const [isExpanded, setIsExpanded] = useState(defaultExpanded);
 
   return (
-    <div className="border-b" style={{ borderColor: 'var(--studio-border)' }}>
+    <div className="border-b" style={{ borderColor: "var(--studio-border)" }}>
       <button
         onClick={() => setIsExpanded(!isExpanded)}
         className="w-full px-4 py-3 flex items-center justify-between hover:bg-white/5 transition-colors"
       >
         <div className="flex items-center gap-2">
-          {icon && <div style={{ color: 'var(--studio-text-muted)' }}>{icon}</div>}
-          <span className="text-sm font-bold tracking-wide" style={{ color: 'var(--studio-text)' }}>
+          {icon && (
+            <div style={{ color: "var(--studio-text-muted)" }}>{icon}</div>
+          )}
+          <span
+            className="text-sm font-bold tracking-wide"
+            style={{ color: "var(--studio-text)" }}
+          >
             {title}
           </span>
         </div>
         {isExpanded ? (
-          <ChevronUp className="h-4 w-4" style={{ color: 'var(--studio-text-muted)' }} />
+          <ChevronUp
+            className="h-4 w-4"
+            style={{ color: "var(--studio-text-muted)" }}
+          />
         ) : (
-          <ChevronDown className="h-4 w-4" style={{ color: 'var(--studio-text-muted)' }} />
+          <ChevronDown
+            className="h-4 w-4"
+            style={{ color: "var(--studio-text-muted)" }}
+          />
         )}
       </button>
       {isExpanded && <div className="px-4 pb-4">{children}</div>}
@@ -97,16 +112,22 @@ function ParameterControl({
   min = 0,
   max = 100,
   step = 1,
-  unit = '',
+  unit = "",
   onChange,
 }: ParameterControlProps) {
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between">
-        <Label className="text-xs" style={{ color: 'var(--studio-text-muted)' }}>
+        <Label
+          className="text-xs"
+          style={{ color: "var(--studio-text-muted)" }}
+        >
           {label}
         </Label>
-        <span className="text-xs font-mono" style={{ color: 'var(--studio-text)' }}>
+        <span
+          className="text-xs font-mono"
+          style={{ color: "var(--studio-text)" }}
+        >
           {value}
           {unit}
         </span>
@@ -124,24 +145,44 @@ function ParameterControl({
 }
 
 const TRACK_COLORS = [
-  '#4ade80', '#f87171', '#60a5fa', '#facc15', '#c084fc', 
-  '#fb923c', '#2dd4bf', '#f472b6', '#a3e635', '#818cf8'
+  "#4ade80",
+  "#f87171",
+  "#60a5fa",
+  "#facc15",
+  "#c084fc",
+  "#fb923c",
+  "#2dd4bf",
+  "#f472b6",
+  "#a3e635",
+  "#818cf8",
 ];
 
-const AUTOMATION_MODES: { mode: AutomationMode; label: string; color: string }[] = [
-  { mode: 'off', label: 'OFF', color: '#6b7280' },
-  { mode: 'read', label: 'READ', color: '#22c55e' },
-  { mode: 'write', label: 'WRITE', color: '#ef4444' },
-  { mode: 'touch', label: 'TOUCH', color: '#f59e0b' },
-  { mode: 'latch', label: 'LATCH', color: '#a855f7' },
+const AUTOMATION_MODES: {
+  mode: AutomationMode;
+  label: string;
+  color: string;
+}[] = [
+  { mode: "off", label: "OFF", color: "#6b7280" },
+  { mode: "read", label: "READ", color: "#22c55e" },
+  { mode: "write", label: "WRITE", color: "#ef4444" },
+  { mode: "touch", label: "TOUCH", color: "#f59e0b" },
+  { mode: "latch", label: "LATCH", color: "#a855f7" },
 ];
 
 const EDIT_TOOLS: { tool: EditTool; label: string; icon: React.ReactNode }[] = [
-  { tool: 'pointer', label: 'Pointer', icon: <MousePointer2 className="h-3.5 w-3.5" /> },
-  { tool: 'range', label: 'Range', icon: <GripVertical className="h-3.5 w-3.5" /> },
-  { tool: 'split', label: 'Split', icon: <Scissors className="h-3.5 w-3.5" /> },
-  { tool: 'slip', label: 'Slip', icon: <Move className="h-3.5 w-3.5" /> },
-  { tool: 'draw', label: 'Draw', icon: <Pencil className="h-3.5 w-3.5" /> },
+  {
+    tool: "pointer",
+    label: "Pointer",
+    icon: <MousePointer2 className="h-3.5 w-3.5" />,
+  },
+  {
+    tool: "range",
+    label: "Range",
+    icon: <GripVertical className="h-3.5 w-3.5" />,
+  },
+  { tool: "split", label: "Split", icon: <Scissors className="h-3.5 w-3.5" /> },
+  { tool: "slip", label: "Slip", icon: <Move className="h-3.5 w-3.5" /> },
+  { tool: "draw", label: "Draw", icon: <Pencil className="h-3.5 w-3.5" /> },
 ];
 
 export function InspectorPanel({
@@ -153,14 +194,14 @@ export function InspectorPanel({
   onPluginsChange,
   onClose,
 }: InspectorPanelProps) {
-  const { 
-    selectedTrackId, 
+  const {
+    selectedTrackId,
     selectedClipId,
     automationMode,
     setAutomationMode,
     currentTool,
     setCurrentTool,
-    selectedAutomationParameter
+    selectedAutomationParameter,
   } = useStudioStore();
 
   const activePlugins = plugins;
@@ -173,15 +214,18 @@ export function InspectorPanel({
       <div
         className="h-full flex flex-col border-l"
         style={{
-          background: 'var(--studio-bg-medium)',
-          borderColor: 'var(--studio-border)',
+          background: "var(--studio-bg-medium)",
+          borderColor: "var(--studio-border)",
         }}
       >
         <div
           className="h-12 px-4 flex items-center justify-between border-b"
-          style={{ borderColor: 'var(--studio-border)' }}
+          style={{ borderColor: "var(--studio-border)" }}
         >
-          <h3 className="text-sm font-bold tracking-wide" style={{ color: 'var(--studio-text)' }}>
+          <h3
+            className="text-sm font-bold tracking-wide"
+            style={{ color: "var(--studio-text)" }}
+          >
             INSPECTOR
           </h3>
           {onClose && (
@@ -199,18 +243,23 @@ export function InspectorPanel({
                 onClose();
               }}
               title="Close Inspector"
-              style={{ WebkitTapHighlightColor: 'transparent' }}
+              style={{ WebkitTapHighlightColor: "transparent" }}
             >
-              <X className="h-5 w-5" style={{ color: 'var(--studio-text-muted)' }} />
+              <X
+                className="h-5 w-5"
+                style={{ color: "var(--studio-text-muted)" }}
+              />
             </button>
           )}
         </div>
         <div
           className="flex-1 flex flex-col items-center justify-center gap-3 p-6"
-          style={{ color: 'var(--studio-text-muted)' }}
+          style={{ color: "var(--studio-text-muted)" }}
         >
           <Settings2 className="h-16 w-16 opacity-30" />
-          <p className="text-sm text-center">Select a track or clip to view properties</p>
+          <p className="text-sm text-center">
+            Select a track or clip to view properties
+          </p>
         </div>
       </div>
     );
@@ -220,15 +269,18 @@ export function InspectorPanel({
     <div
       className="h-full flex flex-col border-l"
       style={{
-        background: 'var(--studio-bg-medium)',
-        borderColor: 'var(--studio-border)',
+        background: "var(--studio-bg-medium)",
+        borderColor: "var(--studio-border)",
       }}
     >
       <div
         className="h-12 px-4 flex items-center justify-between border-b"
-        style={{ borderColor: 'var(--studio-border)' }}
+        style={{ borderColor: "var(--studio-border)" }}
       >
-        <h3 className="text-sm font-bold tracking-wide" style={{ color: 'var(--studio-text)' }}>
+        <h3
+          className="text-sm font-bold tracking-wide"
+          style={{ color: "var(--studio-text)" }}
+        >
           INSPECTOR
         </h3>
         <div className="flex items-center gap-2">
@@ -236,11 +288,11 @@ export function InspectorPanel({
             variant="outline"
             className="text-[10px]"
             style={{
-              borderColor: 'var(--studio-accent)',
-              color: 'var(--studio-accent)',
+              borderColor: "var(--studio-accent)",
+              color: "var(--studio-accent)",
             }}
           >
-            {selectedTrackId ? 'Track' : 'Clip'}
+            {selectedTrackId ? "Track" : "Clip"}
           </Badge>
           {onClose && (
             <button
@@ -257,9 +309,12 @@ export function InspectorPanel({
                 onClose();
               }}
               title="Close Inspector"
-              style={{ WebkitTapHighlightColor: 'transparent' }}
+              style={{ WebkitTapHighlightColor: "transparent" }}
             >
-              <X className="h-5 w-5" style={{ color: 'var(--studio-text-muted)' }} />
+              <X
+                className="h-5 w-5"
+                style={{ color: "var(--studio-text-muted)" }}
+              />
             </button>
           )}
         </div>
@@ -267,7 +322,11 @@ export function InspectorPanel({
 
       <ScrollArea className="flex-1">
         {/* Edit Tools Quick Access */}
-        <CollapsibleSection title="EDIT TOOLS" icon={<MousePointer2 className="h-4 w-4" />} defaultExpanded={false}>
+        <CollapsibleSection
+          title="EDIT TOOLS"
+          icon={<MousePointer2 className="h-4 w-4" />}
+          defaultExpanded={false}
+        >
           <div className="flex flex-wrap gap-1">
             {EDIT_TOOLS.map(({ tool, label, icon }) => (
               <Button
@@ -276,9 +335,12 @@ export function InspectorPanel({
                 size="sm"
                 className="h-8 px-2 flex items-center gap-1.5"
                 style={{
-                  background: currentTool === tool ? 'var(--studio-accent)' : 'var(--studio-bg-deep)',
-                  color: currentTool === tool ? '#000' : 'var(--studio-text)',
-                  border: '1px solid var(--studio-border)',
+                  background:
+                    currentTool === tool
+                      ? "var(--studio-accent)"
+                      : "var(--studio-bg-deep)",
+                  color: currentTool === tool ? "#000" : "var(--studio-text)",
+                  border: "1px solid var(--studio-border)",
                 }}
                 onClick={() => setCurrentTool(tool)}
                 title={label}
@@ -293,51 +355,69 @@ export function InspectorPanel({
         {/* Track Properties */}
         {selectedTrackId && (
           <>
-            <CollapsibleSection title="TRACK PROPERTIES" icon={<Palette className="h-4 w-4" />}>
+            <CollapsibleSection
+              title="TRACK PROPERTIES"
+              icon={<Palette className="h-4 w-4" />}
+            >
               <div className="space-y-3">
                 <div className="space-y-1.5">
-                  <Label className="text-xs" style={{ color: 'var(--studio-text-muted)' }}>
+                  <Label
+                    className="text-xs"
+                    style={{ color: "var(--studio-text-muted)" }}
+                  >
                     Track Name
                   </Label>
                   <Input
-                    value={selectedTrack?.name || 'Untitled'}
+                    value={selectedTrack?.name || "Untitled"}
                     onChange={(e) => {
                       if (onTrackUpdate) {
-                        onTrackUpdate(selectedTrackId, { name: e.target.value });
+                        onTrackUpdate(selectedTrackId, {
+                          name: e.target.value,
+                        });
                       }
                     }}
                     className="h-8 text-sm"
                     style={{
-                      background: 'var(--studio-bg-deep)',
-                      borderColor: 'var(--studio-border)',
-                      color: 'var(--studio-text)',
+                      background: "var(--studio-bg-deep)",
+                      borderColor: "var(--studio-border)",
+                      color: "var(--studio-text)",
                     }}
                   />
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label className="text-xs" style={{ color: 'var(--studio-text-muted)' }}>
+                  <Label
+                    className="text-xs"
+                    style={{ color: "var(--studio-text-muted)" }}
+                  >
                     Track Color
                   </Label>
                   <div className="flex flex-wrap gap-1.5">
                     {TRACK_COLORS.map((color) => (
                       <button
                         key={color}
-                        onClick={() => onTrackUpdate?.(selectedTrackId, { color })}
+                        onClick={() =>
+                          onTrackUpdate?.(selectedTrackId, { color })
+                        }
                         className="w-6 h-6 rounded-sm border-2 transition-all hover:scale-110"
                         style={{
                           backgroundColor: color,
-                          borderColor: selectedTrack?.color === color ? '#fff' : 'transparent',
+                          borderColor:
+                            selectedTrack?.color === color
+                              ? "#fff"
+                              : "transparent",
                         }}
                         title={color}
                       />
                     ))}
                     <Input
                       type="color"
-                      value={selectedTrack?.color || '#4ade80'}
+                      value={selectedTrack?.color || "#4ade80"}
                       onChange={(e) => {
                         if (onTrackUpdate) {
-                          onTrackUpdate(selectedTrackId, { color: e.target.value });
+                          onTrackUpdate(selectedTrackId, {
+                            color: e.target.value,
+                          });
                         }
                       }}
                       className="w-6 h-6 p-0 border-0 cursor-pointer"
@@ -347,25 +427,45 @@ export function InspectorPanel({
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label className="text-xs" style={{ color: 'var(--studio-text-muted)' }}>
+                  <Label
+                    className="text-xs"
+                    style={{ color: "var(--studio-text-muted)" }}
+                  >
                     Track Type
                   </Label>
                   <div className="flex gap-1.5">
-                    {['Audio', 'MIDI', 'Instrument'].map((type) => (
+                    {["Audio", "MIDI", "Instrument"].map((type) => (
                       <Badge
                         key={type}
                         variant="outline"
                         className="text-[10px] cursor-pointer"
                         style={{
-                          borderColor: selectedTrack?.type === type.toLowerCase() ? 'var(--studio-accent)' : 'var(--studio-border)',
-                          color: selectedTrack?.type === type.toLowerCase() ? 'var(--studio-accent)' : 'var(--studio-text-muted)',
-                          background: selectedTrack?.type === type.toLowerCase() ? 'var(--studio-accent)/10' : 'transparent',
+                          borderColor:
+                            selectedTrack?.type === type.toLowerCase()
+                              ? "var(--studio-accent)"
+                              : "var(--studio-border)",
+                          color:
+                            selectedTrack?.type === type.toLowerCase()
+                              ? "var(--studio-accent)"
+                              : "var(--studio-text-muted)",
+                          background:
+                            selectedTrack?.type === type.toLowerCase()
+                              ? "var(--studio-accent)/10"
+                              : "transparent",
                         }}
-                        onClick={() => onTrackUpdate?.(selectedTrackId, { type: type.toLowerCase() })}
+                        onClick={() =>
+                          onTrackUpdate?.(selectedTrackId, {
+                            type: type.toLowerCase(),
+                          })
+                        }
                       >
-                        {type === 'Audio' && <AudioWaveform className="h-3 w-3 mr-1" />}
-                        {type === 'MIDI' && <Hash className="h-3 w-3 mr-1" />}
-                        {type === 'Instrument' && <Music className="h-3 w-3 mr-1" />}
+                        {type === "Audio" && (
+                          <AudioWaveform className="h-3 w-3 mr-1" />
+                        )}
+                        {type === "MIDI" && <Hash className="h-3 w-3 mr-1" />}
+                        {type === "Instrument" && (
+                          <Music className="h-3 w-3 mr-1" />
+                        )}
                         {type}
                       </Badge>
                     ))}
@@ -374,14 +474,19 @@ export function InspectorPanel({
               </div>
             </CollapsibleSection>
 
-            <CollapsibleSection title="TRACK CONTROLS" icon={<Volume2 className="h-4 w-4" />}>
+            <CollapsibleSection
+              title="TRACK CONTROLS"
+              icon={<Volume2 className="h-4 w-4" />}
+            >
               <div className="space-y-4">
                 <ParameterControl
                   label="Volume"
                   value={selectedTrack?.volume || 75}
                   min={0}
                   max={100}
-                  onChange={(val) => onTrackUpdate?.(selectedTrackId, { volume: val })}
+                  onChange={(val) =>
+                    onTrackUpdate?.(selectedTrackId, { volume: val })
+                  }
                   unit="%"
                 />
 
@@ -390,14 +495,19 @@ export function InspectorPanel({
                   value={selectedTrack?.pan || 0}
                   min={-100}
                   max={100}
-                  onChange={(val) => onTrackUpdate?.(selectedTrackId, { pan: val })}
+                  onChange={(val) =>
+                    onTrackUpdate?.(selectedTrackId, { pan: val })
+                  }
                   unit="%"
                 />
 
-                <Separator style={{ background: 'var(--studio-border)' }} />
+                <Separator style={{ background: "var(--studio-border)" }} />
 
                 <div className="flex items-center justify-between">
-                  <Label className="text-xs" style={{ color: 'var(--studio-text-muted)' }}>
+                  <Label
+                    className="text-xs"
+                    style={{ color: "var(--studio-text-muted)" }}
+                  >
                     Mute
                   </Label>
                   <Switch
@@ -409,7 +519,10 @@ export function InspectorPanel({
                 </div>
 
                 <div className="flex items-center justify-between">
-                  <Label className="text-xs" style={{ color: 'var(--studio-text-muted)' }}>
+                  <Label
+                    className="text-xs"
+                    style={{ color: "var(--studio-text-muted)" }}
+                  >
                     Solo
                   </Label>
                   <Switch
@@ -421,7 +534,10 @@ export function InspectorPanel({
                 </div>
 
                 <div className="flex items-center justify-between">
-                  <Label className="text-xs" style={{ color: 'var(--studio-text-muted)' }}>
+                  <Label
+                    className="text-xs"
+                    style={{ color: "var(--studio-text-muted)" }}
+                  >
                     Record Arm
                   </Label>
                   <Switch
@@ -435,10 +551,17 @@ export function InspectorPanel({
             </CollapsibleSection>
 
             {/* Quick Automation Controls */}
-            <CollapsibleSection title="AUTOMATION" icon={<Zap className="h-4 w-4" />} defaultExpanded={false}>
+            <CollapsibleSection
+              title="AUTOMATION"
+              icon={<Zap className="h-4 w-4" />}
+              defaultExpanded={false}
+            >
               <div className="space-y-3">
                 <div className="space-y-1.5">
-                  <Label className="text-xs" style={{ color: 'var(--studio-text-muted)' }}>
+                  <Label
+                    className="text-xs"
+                    style={{ color: "var(--studio-text-muted)" }}
+                  >
                     Mode
                   </Label>
                   <div className="flex flex-wrap gap-1">
@@ -449,9 +572,15 @@ export function InspectorPanel({
                         size="sm"
                         className="h-7 px-2 text-[10px] font-bold"
                         style={{
-                          background: automationMode === mode ? color : 'var(--studio-bg-deep)',
-                          color: automationMode === mode ? '#fff' : 'var(--studio-text-muted)',
-                          border: `1px solid ${automationMode === mode ? color : 'var(--studio-border)'}`,
+                          background:
+                            automationMode === mode
+                              ? color
+                              : "var(--studio-bg-deep)",
+                          color:
+                            automationMode === mode
+                              ? "#fff"
+                              : "var(--studio-text-muted)",
+                          border: `1px solid ${automationMode === mode ? color : "var(--studio-border)"}`,
                         }}
                         onClick={() => setAutomationMode(mode)}
                       >
@@ -463,15 +592,18 @@ export function InspectorPanel({
 
                 {selectedAutomationParameter && (
                   <div className="space-y-1.5">
-                    <Label className="text-xs" style={{ color: 'var(--studio-text-muted)' }}>
+                    <Label
+                      className="text-xs"
+                      style={{ color: "var(--studio-text-muted)" }}
+                    >
                       Current Parameter
                     </Label>
-                    <div 
+                    <div
                       className="text-xs font-mono px-2 py-1.5 rounded"
-                      style={{ 
-                        background: 'var(--studio-bg-deep)', 
-                        color: 'var(--studio-accent)',
-                        border: '1px solid var(--studio-border)'
+                      style={{
+                        background: "var(--studio-bg-deep)",
+                        color: "var(--studio-accent)",
+                        border: "1px solid var(--studio-border)",
                       }}
                     >
                       {selectedAutomationParameter}
@@ -481,32 +613,43 @@ export function InspectorPanel({
               </div>
             </CollapsibleSection>
 
-            <CollapsibleSection title="PLUGINS" icon={<Sliders className="h-4 w-4" />}>
+            <CollapsibleSection
+              title="PLUGINS"
+              icon={<Sliders className="h-4 w-4" />}
+            >
               <PluginRack
-                trackId={selectedTrackId || 'master'}
+                trackId={selectedTrackId || "master"}
                 plugins={activePlugins}
                 onPluginsChange={handlePluginsChange}
               />
             </CollapsibleSection>
 
             {/* Routing Section */}
-            <CollapsibleSection title="ROUTING" icon={<Radio className="h-4 w-4" />}>
+            <CollapsibleSection
+              title="ROUTING"
+              icon={<Radio className="h-4 w-4" />}
+            >
               <div className="space-y-3">
                 <div className="space-y-1.5">
-                  <Label className="text-xs" style={{ color: 'var(--studio-text-muted)' }}>
+                  <Label
+                    className="text-xs"
+                    style={{ color: "var(--studio-text-muted)" }}
+                  >
                     Input
                   </Label>
                   <select
-                    value={selectedTrack?.inputSource || 'none'}
+                    value={selectedTrack?.inputSource || "none"}
                     onChange={(e) =>
-                      onTrackUpdate?.(selectedTrackId, { inputSource: e.target.value })
+                      onTrackUpdate?.(selectedTrackId, {
+                        inputSource: e.target.value,
+                      })
                     }
                     className="w-full h-8 px-2 text-sm rounded-md"
                     style={{
-                      background: 'var(--studio-bg-deep)',
-                      borderColor: 'var(--studio-border)',
-                      color: 'var(--studio-text)',
-                      border: '1px solid var(--studio-border)',
+                      background: "var(--studio-bg-deep)",
+                      borderColor: "var(--studio-border)",
+                      color: "var(--studio-text)",
+                      border: "1px solid var(--studio-border)",
                     }}
                   >
                     <option value="none">No Input</option>
@@ -519,20 +662,25 @@ export function InspectorPanel({
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label className="text-xs" style={{ color: 'var(--studio-text-muted)' }}>
+                  <Label
+                    className="text-xs"
+                    style={{ color: "var(--studio-text-muted)" }}
+                  >
                     Output
                   </Label>
                   <select
-                    value={selectedTrack?.outputBus || 'master'}
+                    value={selectedTrack?.outputBus || "master"}
                     onChange={(e) =>
-                      onTrackUpdate?.(selectedTrackId, { outputBus: e.target.value })
+                      onTrackUpdate?.(selectedTrackId, {
+                        outputBus: e.target.value,
+                      })
                     }
                     className="w-full h-8 px-2 text-sm rounded-md"
                     style={{
-                      background: 'var(--studio-bg-deep)',
-                      borderColor: 'var(--studio-border)',
-                      color: 'var(--studio-text)',
-                      border: '1px solid var(--studio-border)',
+                      background: "var(--studio-bg-deep)",
+                      borderColor: "var(--studio-border)",
+                      color: "var(--studio-text)",
+                      border: "1px solid var(--studio-border)",
                     }}
                   >
                     <option value="master">Main Out</option>
@@ -545,28 +693,40 @@ export function InspectorPanel({
                   </select>
                 </div>
 
-                <Separator style={{ background: 'var(--studio-border)' }} />
+                <Separator style={{ background: "var(--studio-border)" }} />
 
                 <div className="space-y-1.5">
-                  <Label className="text-xs" style={{ color: 'var(--studio-text-muted)' }}>
+                  <Label
+                    className="text-xs"
+                    style={{ color: "var(--studio-text-muted)" }}
+                  >
                     Sends
                   </Label>
                   <div className="space-y-2">
                     {[1, 2, 3, 4].map((sendNum) => (
                       <div key={sendNum} className="flex items-center gap-2">
-                        <span className="text-[10px] w-12" style={{ color: 'var(--studio-text-muted)' }}>
+                        <span
+                          className="text-[10px] w-12"
+                          style={{ color: "var(--studio-text-muted)" }}
+                        >
                           Send {sendNum}
                         </span>
-                        <div className="flex-1 h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--studio-bg-deep)' }}>
-                          <div 
+                        <div
+                          className="flex-1 h-1.5 rounded-full overflow-hidden"
+                          style={{ background: "var(--studio-bg-deep)" }}
+                        >
+                          <div
                             className="h-full rounded-full transition-all"
-                            style={{ 
-                              width: `${(selectedTrack?.[`send${sendNum}`] || 0)}%`,
-                              background: 'var(--studio-accent)'
+                            style={{
+                              width: `${selectedTrack?.[`send${sendNum}`] || 0}%`,
+                              background: "var(--studio-accent)",
                             }}
                           />
                         </div>
-                        <span className="text-[10px] font-mono w-8 text-right" style={{ color: 'var(--studio-text)' }}>
+                        <span
+                          className="text-[10px] font-mono w-8 text-right"
+                          style={{ color: "var(--studio-text)" }}
+                        >
                           {selectedTrack?.[`send${sendNum}`] || 0}%
                         </span>
                       </div>
@@ -580,14 +740,20 @@ export function InspectorPanel({
 
         {/* Enhanced Clip Properties */}
         {selectedClipId && (
-          <CollapsibleSection title="CLIP PROPERTIES" icon={<FileAudio className="h-4 w-4" />}>
+          <CollapsibleSection
+            title="CLIP PROPERTIES"
+            icon={<FileAudio className="h-4 w-4" />}
+          >
             <div className="space-y-3">
               <div className="space-y-1.5">
-                <Label className="text-xs" style={{ color: 'var(--studio-text-muted)' }}>
+                <Label
+                  className="text-xs"
+                  style={{ color: "var(--studio-text-muted)" }}
+                >
                   Clip Name
                 </Label>
                 <Input
-                  value={selectedClip?.name || 'Untitled Clip'}
+                  value={selectedClip?.name || "Untitled Clip"}
                   onChange={(e) => {
                     if (onClipUpdate) {
                       onClipUpdate(selectedClipId, { name: e.target.value });
@@ -595,49 +761,63 @@ export function InspectorPanel({
                   }}
                   className="h-8 text-sm"
                   style={{
-                    background: 'var(--studio-bg-deep)',
-                    borderColor: 'var(--studio-border)',
-                    color: 'var(--studio-text)',
+                    background: "var(--studio-bg-deep)",
+                    borderColor: "var(--studio-border)",
+                    color: "var(--studio-text)",
                   }}
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-2">
                 <div className="space-y-1.5">
-                  <Label className="text-[10px] flex items-center gap-1" style={{ color: 'var(--studio-text-muted)' }}>
+                  <Label
+                    className="text-[10px] flex items-center gap-1"
+                    style={{ color: "var(--studio-text-muted)" }}
+                  >
                     <Clock className="h-3 w-3" />
                     Start Time
                   </Label>
                   <Input
-                    value={selectedClip?.start || '0.00'}
-                    onChange={(e) => onClipUpdate?.(selectedClipId, { start: parseFloat(e.target.value) || 0 })}
+                    value={selectedClip?.start || "0.00"}
+                    onChange={(e) =>
+                      onClipUpdate?.(selectedClipId, {
+                        start: parseFloat(e.target.value) || 0,
+                      })
+                    }
                     className="h-7 text-xs font-mono"
                     style={{
-                      background: 'var(--studio-bg-deep)',
-                      borderColor: 'var(--studio-border)',
-                      color: 'var(--studio-text)',
+                      background: "var(--studio-bg-deep)",
+                      borderColor: "var(--studio-border)",
+                      color: "var(--studio-text)",
                     }}
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <Label className="text-[10px] flex items-center gap-1" style={{ color: 'var(--studio-text-muted)' }}>
+                  <Label
+                    className="text-[10px] flex items-center gap-1"
+                    style={{ color: "var(--studio-text-muted)" }}
+                  >
                     <ArrowRight className="h-3 w-3" />
                     Duration
                   </Label>
                   <Input
-                    value={selectedClip?.duration || '0.00'}
-                    onChange={(e) => onClipUpdate?.(selectedClipId, { duration: parseFloat(e.target.value) || 0 })}
+                    value={selectedClip?.duration || "0.00"}
+                    onChange={(e) =>
+                      onClipUpdate?.(selectedClipId, {
+                        duration: parseFloat(e.target.value) || 0,
+                      })
+                    }
                     className="h-7 text-xs font-mono"
                     style={{
-                      background: 'var(--studio-bg-deep)',
-                      borderColor: 'var(--studio-border)',
-                      color: 'var(--studio-text)',
+                      background: "var(--studio-bg-deep)",
+                      borderColor: "var(--studio-border)",
+                      color: "var(--studio-text)",
                     }}
                   />
                 </div>
               </div>
 
-              <Separator style={{ background: 'var(--studio-border)' }} />
+              <Separator style={{ background: "var(--studio-border)" }} />
 
               <ParameterControl
                 label="Gain"
@@ -645,25 +825,42 @@ export function InspectorPanel({
                 min={-24}
                 max={12}
                 step={0.1}
-                onChange={(val) => onClipUpdate?.(selectedClipId, { gain: val })}
+                onChange={(val) =>
+                  onClipUpdate?.(selectedClipId, { gain: val })
+                }
                 unit=" dB"
               />
 
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <Label className="text-xs" style={{ color: 'var(--studio-text-muted)' }}>
+                  <Label
+                    className="text-xs"
+                    style={{ color: "var(--studio-text-muted)" }}
+                  >
                     Pitch Shift
                   </Label>
-                  <div className="text-xs font-mono" style={{ color: 'var(--studio-text)' }}>
+                  <div
+                    className="text-xs font-mono"
+                    style={{ color: "var(--studio-text)" }}
+                  >
                     {selectedClip?.pitchShift || 0} st
-                    <span className="text-[10px] ml-1" style={{ color: 'var(--studio-text-muted)' }}>
-                      ({((selectedClip?.pitchShift || 0) * 100 % 100).toFixed(0)} cents)
+                    <span
+                      className="text-[10px] ml-1"
+                      style={{ color: "var(--studio-text-muted)" }}
+                    >
+                      (
+                      {(((selectedClip?.pitchShift || 0) * 100) % 100).toFixed(
+                        0,
+                      )}{" "}
+                      cents)
                     </span>
                   </div>
                 </div>
                 <Slider
                   value={[selectedClip?.pitchShift || 0]}
-                  onValueChange={([val]) => onClipUpdate?.(selectedClipId, { pitchShift: val })}
+                  onValueChange={([val]) =>
+                    onClipUpdate?.(selectedClipId, { pitchShift: val })
+                  }
                   min={-12}
                   max={12}
                   step={0.01}
@@ -673,16 +870,24 @@ export function InspectorPanel({
 
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <Label className="text-xs" style={{ color: 'var(--studio-text-muted)' }}>
+                  <Label
+                    className="text-xs"
+                    style={{ color: "var(--studio-text-muted)" }}
+                  >
                     Time Stretch
                   </Label>
-                  <span className="text-xs font-mono" style={{ color: 'var(--studio-text)' }}>
+                  <span
+                    className="text-xs font-mono"
+                    style={{ color: "var(--studio-text)" }}
+                  >
                     {selectedClip?.timeStretch || 100}%
                   </span>
                 </div>
                 <Slider
                   value={[selectedClip?.timeStretch || 100]}
-                  onValueChange={([val]) => onClipUpdate?.(selectedClipId, { timeStretch: val })}
+                  onValueChange={([val]) =>
+                    onClipUpdate?.(selectedClipId, { timeStretch: val })
+                  }
                   min={50}
                   max={200}
                   step={1}
@@ -690,7 +895,7 @@ export function InspectorPanel({
                 />
               </div>
 
-              <Separator style={{ background: 'var(--studio-border)' }} />
+              <Separator style={{ background: "var(--studio-border)" }} />
 
               <ParameterControl
                 label="Fade In"
@@ -698,7 +903,9 @@ export function InspectorPanel({
                 min={0}
                 max={5}
                 step={0.01}
-                onChange={(val) => onClipUpdate?.(selectedClipId, { fadeIn: val })}
+                onChange={(val) =>
+                  onClipUpdate?.(selectedClipId, { fadeIn: val })
+                }
                 unit=" s"
               />
 
@@ -708,7 +915,9 @@ export function InspectorPanel({
                 min={0}
                 max={5}
                 step={0.01}
-                onChange={(val) => onClipUpdate?.(selectedClipId, { fadeOut: val })}
+                onChange={(val) =>
+                  onClipUpdate?.(selectedClipId, { fadeOut: val })
+                }
                 unit=" s"
               />
             </div>

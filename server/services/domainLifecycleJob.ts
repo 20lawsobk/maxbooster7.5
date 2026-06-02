@@ -19,24 +19,27 @@
  *   - Renewal failure
  */
 
-import { eq, sql, and, or, lte, lt, inArray } from 'drizzle-orm';
-import { db, pool }                            from '../db.js';
-import { claimedDomains }                      from '@shared/schema';
-import { logger }                              from '../logger.js';
-import { getRegistrarProvider }                from './registrar/index.js';
-import { emitDomainEvent }                     from './domainPolicyEngine.js';
+import { eq, sql, and, or, lte, lt, inArray } from "drizzle-orm";
+import { db, pool } from "../db.js";
+import { claimedDomains } from "@shared/schema";
+import { logger } from "../logger.js";
+import { getRegistrarProvider } from "./registrar/index.js";
+import { emitDomainEvent } from "./domainPolicyEngine.js";
 
 const GRACE_PERIOD_DAYS = 30;
 
 // ── Main lifecycle check ──────────────────────────────────────────────────────
 
 export async function runDomainLifecycleChecks(): Promise<void> {
-  const now    = new Date();
-  const in30d  = new Date(now); in30d.setDate(in30d.getDate() + 30);
-  const in7d   = new Date(now); in7d.setDate(in7d.getDate() + 7);
-  const ago30d = new Date(now); ago30d.setDate(ago30d.getDate() - GRACE_PERIOD_DAYS);
+  const now = new Date();
+  const in30d = new Date(now);
+  in30d.setDate(in30d.getDate() + 30);
+  const in7d = new Date(now);
+  in7d.setDate(in7d.getDate() + 7);
+  const ago30d = new Date(now);
+  ago30d.setDate(ago30d.getDate() - GRACE_PERIOD_DAYS);
 
-  logger.info({ now }, '[DomainLifecycle] starting lifecycle checks');
+  logger.info({ now }, "[DomainLifecycle] starting lifecycle checks");
 
   await Promise.allSettled([
     _markExpiringSoon(now, in30d),
@@ -46,7 +49,7 @@ export async function runDomainLifecycleChecks(): Promise<void> {
     _cleanUpExpiredZones(),
   ]);
 
-  logger.info('[DomainLifecycle] lifecycle checks complete');
+  logger.info("[DomainLifecycle] lifecycle checks complete");
 }
 
 // ── Step 1: active → expiring_soon ───────────────────────────────────────────
@@ -59,11 +62,11 @@ async function _markExpiringSoon(now: Date, threshold: Date): Promise<void> {
        AND expires_at IS NOT NULL
        AND expires_at > $1
        AND expires_at <= $2`,
-    [now, threshold]
+    [now, threshold],
   );
 
   if (rowCount && rowCount > 0) {
-    logger.info({ count: rowCount }, '[DomainLifecycle] marked expiring_soon');
+    logger.info({ count: rowCount }, "[DomainLifecycle] marked expiring_soon");
 
     // Emit events for each affected domain
     const { rows } = await pool.query(
@@ -71,10 +74,16 @@ async function _markExpiringSoon(now: Date, threshold: Date): Promise<void> {
        FROM claimed_domains
        WHERE status = 'expiring_soon'
          AND expires_at > $1 AND expires_at <= $2`,
-      [now, threshold]
+      [now, threshold],
     );
     for (const row of rows) {
-      await emitDomainEvent('DomainExpiringSoon', row.id, row.user_id, row.domain, { expiresAt: row.expires_at });
+      await emitDomainEvent(
+        "DomainExpiringSoon",
+        row.id,
+        row.user_id,
+        row.domain,
+        { expiresAt: row.expires_at },
+      );
     }
   }
 }
@@ -90,23 +99,29 @@ async function _autoRenewDueSoon(now: Date, threshold: Date): Promise<void> {
        AND expires_at IS NOT NULL
        AND expires_at > $1
        AND expires_at <= $2
-       AND registrar_name = 'maxbooster'`,   // only internally-managed domains
-    [now, threshold]
+       AND registrar_name = 'maxbooster'`, // only internally-managed domains
+    [now, threshold],
   );
 
   for (const row of rows) {
     try {
       const result = await getRegistrarProvider().renewDomain(row.domain, 1);
 
-      await emitDomainEvent('DomainRenewed', row.id, row.user_id, row.domain, {
+      await emitDomainEvent("DomainRenewed", row.id, row.user_id, row.domain, {
         newExpiresAt: result.expiresAt,
         years: 1,
         automatic: true,
       });
 
-      logger.info({ domain: row.domain, newExpiry: result.expiresAt }, '[DomainLifecycle] auto-renewed');
+      logger.info(
+        { domain: row.domain, newExpiry: result.expiresAt },
+        "[DomainLifecycle] auto-renewed",
+      );
     } catch (e) {
-      logger.warn({ domain: row.domain, err: e.message }, '[DomainLifecycle] auto-renewal failed');
+      logger.warn(
+        { domain: row.domain, err: e.message },
+        "[DomainLifecycle] auto-renewal failed",
+      );
       // If renewal fails, domain will naturally transition to grace on next run
     }
   }
@@ -121,18 +136,27 @@ async function _enterGracePeriod(now: Date): Promise<void> {
      WHERE status IN ('active', 'expiring_soon', 'non_renewing')
        AND expires_at IS NOT NULL
        AND expires_at <= $1`,
-    [now]
+    [now],
   );
 
   if (rowCount && rowCount > 0) {
-    logger.info({ count: rowCount }, '[DomainLifecycle] domains entered grace period (DNS still live)');
+    logger.info(
+      { count: rowCount },
+      "[DomainLifecycle] domains entered grace period (DNS still live)",
+    );
 
     const { rows } = await pool.query(
       `SELECT id, user_id, domain FROM claimed_domains WHERE status = 'grace' AND expires_at <= $1`,
-      [now]
+      [now],
     );
     for (const row of rows) {
-      await emitDomainEvent('DomainEnteredGrace', row.id, row.user_id, row.domain, { gracePeriodDays: GRACE_PERIOD_DAYS });
+      await emitDomainEvent(
+        "DomainEnteredGrace",
+        row.id,
+        row.user_id,
+        row.domain,
+        { gracePeriodDays: GRACE_PERIOD_DAYS },
+      );
     }
   }
 }
@@ -147,14 +171,17 @@ async function _expireGraceDomains(graceThreshold: Date): Promise<void> {
        AND expires_at IS NOT NULL
        AND expires_at <= $1
      RETURNING id, user_id, domain`,
-    [graceThreshold]
+    [graceThreshold],
   );
 
   for (const row of rows) {
-    await emitDomainEvent('DomainExpired', row.id, row.user_id, row.domain, {
+    await emitDomainEvent("DomainExpired", row.id, row.user_id, row.domain, {
       graceExpiredAt: graceThreshold,
     });
-    logger.info({ domain: row.domain }, '[DomainLifecycle] domain fully expired after grace period');
+    logger.info(
+      { domain: row.domain },
+      "[DomainLifecycle] domain fully expired after grace period",
+    );
   }
 }
 
@@ -165,18 +192,21 @@ async function _cleanUpExpiredZones(): Promise<void> {
     `SELECT cd.domain
      FROM claimed_domains cd
      JOIN dns_zones dz ON dz.domain = cd.domain
-     WHERE cd.status = 'expired'`
+     WHERE cd.status = 'expired'`,
   );
 
   for (const row of rows) {
     try {
-      await pool.query(
-        `DELETE FROM dns_zones WHERE domain = $1`,
-        [row.domain]
+      await pool.query(`DELETE FROM dns_zones WHERE domain = $1`, [row.domain]);
+      logger.info(
+        { domain: row.domain },
+        "[DomainLifecycle] removed DNS zone for expired domain",
       );
-      logger.info({ domain: row.domain }, '[DomainLifecycle] removed DNS zone for expired domain');
     } catch (e) {
-      logger.warn({ domain: row.domain, err: e.message }, '[DomainLifecycle] DNS zone removal failed (non-fatal)');
+      logger.warn(
+        { domain: row.domain, err: e.message },
+        "[DomainLifecycle] DNS zone removal failed (non-fatal)",
+      );
     }
   }
 }
@@ -195,19 +225,29 @@ export function startDomainLifecycleJob(): void {
   const INTERVAL_MS = 6 * 60 * 60 * 1000; // every 6 hours
 
   // Run once shortly after startup (stagger by 2 minutes to not block boot)
-  setTimeout(async () => {
-    try { await runDomainLifecycleChecks(); } catch (e) {
-      logger.warn({ err: e.message }, '[DomainLifecycle] startup run failed');
-    }
-  }, 2 * 60 * 1000);
+  setTimeout(
+    async () => {
+      try {
+        await runDomainLifecycleChecks();
+      } catch (e) {
+        logger.warn({ err: e.message }, "[DomainLifecycle] startup run failed");
+      }
+    },
+    2 * 60 * 1000,
+  );
 
   _lifecycleTimer = setInterval(async () => {
-    try { await runDomainLifecycleChecks(); } catch (e) {
-      logger.warn({ err: e.message }, '[DomainLifecycle] scheduled run failed');
+    try {
+      await runDomainLifecycleChecks();
+    } catch (e) {
+      logger.warn({ err: e.message }, "[DomainLifecycle] scheduled run failed");
     }
   }, INTERVAL_MS);
 
-  logger.info({ intervalHours: 6 }, '[DomainLifecycle] lifecycle job scheduled');
+  logger.info(
+    { intervalHours: 6 },
+    "[DomainLifecycle] lifecycle job scheduled",
+  );
 }
 
 export function stopDomainLifecycleJob(): void {

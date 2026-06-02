@@ -7,11 +7,8 @@ import { fileURLToPath } from "url";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 export default defineConfig({
-  base: '/',
-  plugins: [
-    react(),
-    tailwindcss(),
-  ],
+  base: "/",
+  plugins: [react(), tailwindcss()],
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "client", "src"),
@@ -43,78 +40,107 @@ export default defineConfig({
         assetFileNames: "assets/[name]-[hash].[ext]",
         manualChunks: (id) => {
           // Studio chunk (heaviest page) — includes DSP plugin processors
-          if (id.includes('/studio/') || id.includes('built-in plugins dsp') || id.includes('@plugins/')) {
-            return 'studio';
+          if (
+            id.includes("/studio/") ||
+            id.includes("built-in plugins dsp") ||
+            id.includes("@plugins/")
+          ) {
+            return "studio";
           }
 
-          if (id.includes('node_modules/')) {
+          if (id.includes("node_modules/")) {
             // React packages - check specific ones before generic 'react'
-            if (id.includes('react/jsx-runtime') || id.includes('react/jsx-dev-runtime')) {
-              return 'vendor-react';
+            if (
+              id.includes("react/jsx-runtime") ||
+              id.includes("react/jsx-dev-runtime")
+            ) {
+              return "vendor-react";
             }
-            if (id.includes('react-dom')) {
-              return 'vendor-react';
+            if (id.includes("react-dom")) {
+              return "vendor-react";
             }
-            if (id.includes('@tanstack/react-query')) {
-              return 'vendor-react';
+            if (id.includes("@tanstack/react-query")) {
+              return "vendor-react";
             }
-            if (id.includes('wouter')) {
-              return 'vendor-react';
+            if (id.includes("wouter")) {
+              return "vendor-react";
             }
-            if (id.includes('react')) {
-              return 'vendor-react';
+            if (id.includes("react")) {
+              return "vendor-react";
             }
 
             // UI packages
-            if (id.includes('@radix-ui')) {
-              return 'vendor-ui';
+            if (id.includes("@radix-ui")) {
+              return "vendor-ui";
             }
-            if (id.includes('class-variance-authority') || id.includes('clsx') || id.includes('tailwind-merge') || id.includes('lucide-react') || id.includes('cmdk')) {
-              return 'vendor-ui';
+            if (
+              id.includes("class-variance-authority") ||
+              id.includes("clsx") ||
+              id.includes("tailwind-merge") ||
+              id.includes("lucide-react") ||
+              id.includes("cmdk")
+            ) {
+              return "vendor-ui";
             }
 
             // Animation
-            if (id.includes('framer-motion')) {
-              return 'vendor-animation';
+            if (id.includes("framer-motion")) {
+              return "vendor-animation";
             }
 
             // State management
-            if (id.includes('zustand') || id.includes('i18next') || id.includes('react-i18next') || id.includes('immer')) {
-              return 'vendor-state';
+            if (
+              id.includes("zustand") ||
+              id.includes("i18next") ||
+              id.includes("react-i18next") ||
+              id.includes("immer")
+            ) {
+              return "vendor-state";
             }
 
             // Charts (depends on React, must be separate)
-            if (id.includes('recharts') || id.includes('d3-') || id.includes('victory')) {
-              return 'vendor-charts';
+            if (
+              id.includes("recharts") ||
+              id.includes("d3-") ||
+              id.includes("victory")
+            ) {
+              return "vendor-charts";
             }
 
             // Audio engine — Tone.js and Howler are heavy (~600KB+); isolate so
             // users who never visit the Studio page don't pay the download cost.
-            if (id.includes('/tone/') || id.includes('tone/build') || id.includes('howler')) {
-              return 'vendor-audio-engine';
+            if (
+              id.includes("/tone/") ||
+              id.includes("tone/build") ||
+              id.includes("howler")
+            ) {
+              return "vendor-audio-engine";
             }
 
             // Canvas / WebGL — Pixi.js is very large (~1MB+); lazy-loaded only
             // by the visualizer/studio canvas pages.
-            if (id.includes('pixi.js') || id.includes('@pixi/')) {
-              return 'vendor-canvas';
+            if (id.includes("pixi.js") || id.includes("@pixi/")) {
+              return "vendor-canvas";
             }
 
             // Forms — react-hook-form is medium weight, standalone
-            if (id.includes('react-hook-form') || id.includes('@hookform')) {
-              return 'vendor-forms';
+            if (id.includes("react-hook-form") || id.includes("@hookform")) {
+              return "vendor-forms";
             }
 
             // Icons — @icons-pack/react-simple-icons contains hundreds of SVG
             // brand icons and is only used on specific pages (social, marketplace).
             // Isolating it prevents it from bloating any route chunk.
-            if (id.includes('@icons-pack/react-simple-icons') || id.includes('simple-icons')) {
-              return 'vendor-icons';
+            if (
+              id.includes("@icons-pack/react-simple-icons") ||
+              id.includes("simple-icons")
+            ) {
+              return "vendor-icons";
             }
 
             // Utils (no React dependency)
-            if (id.includes('date-fns') || id.includes('zod')) {
-              return 'vendor-utils';
+            if (id.includes("date-fns") || id.includes("zod")) {
+              return "vendor-utils";
             }
           }
         },
@@ -127,18 +153,18 @@ export default defineConfig({
         // Never eagerly preload heavy or rarely-needed chunks — let them load
         // on demand when the relevant route or feature is first accessed.
         const HEAVY = [
-          'studio',
-          'vendor-charts',
-          'vendor-audio-engine',
-          'vendor-canvas',
-          'vendor-icons',
-          'vendor-forms',
-          'vendor-animation',
-          'jspdf',
-          'html2canvas',
-          'index.es',
+          "studio",
+          "vendor-charts",
+          "vendor-audio-engine",
+          "vendor-canvas",
+          "vendor-icons",
+          "vendor-forms",
+          "vendor-animation",
+          "jspdf",
+          "html2canvas",
+          "index.es",
         ];
-        return deps.filter(dep => !HEAVY.some(h => dep.includes(h)));
+        return deps.filter((dep) => !HEAVY.some((h) => dep.includes(h)));
       },
     },
   },
@@ -218,12 +244,6 @@ export default defineConfig({
       "recharts",
     ],
     // Exclude server-only or native packages from browser pre-bundling
-    exclude: [
-      "@tensorflow/tfjs-node",
-      "sharp",
-      "bcrypt",
-      "pg",
-      "drizzle-orm",
-    ],
+    exclude: ["@tensorflow/tfjs-node", "sharp", "bcrypt", "pg", "drizzle-orm"],
   },
 });

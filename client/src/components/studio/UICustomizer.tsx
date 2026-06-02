@@ -1,14 +1,14 @@
-import { useState, useEffect, useCallback } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Slider } from '@/components/ui/slider';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Button } from '@/components/ui/button';
-import { Switch } from '@/components/ui/switch';
-import { Separator } from '@/components/ui/separator';
-import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useState, useEffect, useCallback } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Slider } from "@/components/ui/slider";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
+import { Separator } from "@/components/ui/separator";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Dialog,
   DialogContent,
@@ -16,17 +16,17 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter,
-} from '@/components/ui/dialog';
+} from "@/components/ui/dialog";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { useStudioStore } from '@/lib/studioStore';
-import { useToast } from '@/hooks/use-toast';
-import { apiRequest } from '@/lib/queryClient';
+} from "@/components/ui/select";
+import { useStudioStore } from "@/lib/studioStore";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
 import {
   Settings2,
   ChevronDown,
@@ -49,7 +49,7 @@ import {
   Plus,
   Check,
   X,
-} from 'lucide-react';
+} from "lucide-react";
 import {
   DndContext,
   closestCenter,
@@ -58,17 +58,17 @@ import {
   useSensor,
   useSensors,
   DragEndEvent,
-} from '@dnd-kit/core';
+} from "@dnd-kit/core";
 import {
   arrayMove,
   SortableContext,
   sortableKeyboardCoordinates,
   useSortable,
   verticalListSortingStrategy,
-} from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
-const STORAGE_KEY = 'maxbooster_studio_ui_preferences';
+const STORAGE_KEY = "maxbooster_studio_ui_preferences";
 
 interface PanelConfig {
   id: string;
@@ -109,7 +109,7 @@ interface ThemeConfig {
 }
 
 interface MeterSettings {
-  ballistics: 'fast' | 'medium' | 'slow';
+  ballistics: "fast" | "medium" | "slow";
   peakHold: number;
   falloff: number;
 }
@@ -126,112 +126,112 @@ interface UIPreferences {
 }
 
 const DEFAULT_PANELS: PanelConfig[] = [
-  { id: 'browser', name: 'Browser', visible: true, order: 0 },
-  { id: 'inspector', name: 'Inspector', visible: true, order: 1 },
-  { id: 'mixer', name: 'Mixer', visible: true, order: 2 },
-  { id: 'timeline', name: 'Timeline', visible: true, order: 3 },
-  { id: 'transport', name: 'Transport', visible: true, order: 4 },
-  { id: 'routing', name: 'Routing Matrix', visible: false, order: 5 },
-  { id: 'aiAssistant', name: 'AI Assistant', visible: false, order: 6 },
-  { id: 'lyrics', name: 'Lyrics', visible: false, order: 7 },
-  { id: 'analysis', name: 'Analysis', visible: false, order: 8 },
+  { id: "browser", name: "Browser", visible: true, order: 0 },
+  { id: "inspector", name: "Inspector", visible: true, order: 1 },
+  { id: "mixer", name: "Mixer", visible: true, order: 2 },
+  { id: "timeline", name: "Timeline", visible: true, order: 3 },
+  { id: "transport", name: "Transport", visible: true, order: 4 },
+  { id: "routing", name: "Routing Matrix", visible: false, order: 5 },
+  { id: "aiAssistant", name: "AI Assistant", visible: false, order: 6 },
+  { id: "lyrics", name: "Lyrics", visible: false, order: 7 },
+  { id: "analysis", name: "Analysis", visible: false, order: 8 },
 ];
 
 const DEFAULT_TOOLBAR_BUTTONS: ToolbarButton[] = [
-  { id: 'save', name: 'Save', visible: true },
-  { id: 'undo', name: 'Undo', visible: true },
-  { id: 'redo', name: 'Redo', visible: true },
-  { id: 'addTrack', name: 'Add Track', visible: true },
-  { id: 'export', name: 'Export', visible: true },
-  { id: 'aiMix', name: 'AI Mix', visible: true },
-  { id: 'aiMaster', name: 'AI Master', visible: true },
-  { id: 'distribute', name: 'Distribute', visible: true },
-  { id: 'metronome', name: 'Metronome', visible: true },
-  { id: 'snap', name: 'Snap', visible: true },
-  { id: 'loop', name: 'Loop', visible: true },
+  { id: "save", name: "Save", visible: true },
+  { id: "undo", name: "Undo", visible: true },
+  { id: "redo", name: "Redo", visible: true },
+  { id: "addTrack", name: "Add Track", visible: true },
+  { id: "export", name: "Export", visible: true },
+  { id: "aiMix", name: "AI Mix", visible: true },
+  { id: "aiMaster", name: "AI Master", visible: true },
+  { id: "distribute", name: "Distribute", visible: true },
+  { id: "metronome", name: "Metronome", visible: true },
+  { id: "snap", name: "Snap", visible: true },
+  { id: "loop", name: "Loop", visible: true },
 ];
 
 const DEFAULT_THEME: ThemeConfig = {
-  accentColor: '#3b82f6',
-  backgroundColor: '#1a1a2e',
-  textColor: '#e5e5e5',
-  borderColor: '#2a2a4a',
+  accentColor: "#3b82f6",
+  backgroundColor: "#1a1a2e",
+  textColor: "#e5e5e5",
+  borderColor: "#2a2a4a",
 };
 
 const DEFAULT_SHORTCUTS: KeyboardShortcut[] = [
-  { id: 'playPause', name: 'Play/Pause', key: 'Space' },
-  { id: 'stop', name: 'Stop', key: 'S' },
-  { id: 'record', name: 'Record', key: 'R' },
-  { id: 'mute', name: 'Mute Track', key: 'M' },
-  { id: 'solo', name: 'Solo Track', key: 'O' },
-  { id: 'delete', name: 'Delete', key: 'Delete' },
-  { id: 'save', name: 'Save', key: 'S', ctrl: true },
-  { id: 'undo', name: 'Undo', key: 'Z', ctrl: true },
-  { id: 'redo', name: 'Redo', key: 'Y', ctrl: true },
-  { id: 'duplicate', name: 'Duplicate', key: 'D', ctrl: true },
-  { id: 'selectAll', name: 'Select All', key: 'A', ctrl: true },
-  { id: 'zoomIn', name: 'Zoom In', key: '=', ctrl: true },
-  { id: 'zoomOut', name: 'Zoom Out', key: '-', ctrl: true },
-  { id: 'loop', name: 'Toggle Loop', key: 'L' },
-  { id: 'metronome', name: 'Toggle Metronome', key: 'K' },
+  { id: "playPause", name: "Play/Pause", key: "Space" },
+  { id: "stop", name: "Stop", key: "S" },
+  { id: "record", name: "Record", key: "R" },
+  { id: "mute", name: "Mute Track", key: "M" },
+  { id: "solo", name: "Solo Track", key: "O" },
+  { id: "delete", name: "Delete", key: "Delete" },
+  { id: "save", name: "Save", key: "S", ctrl: true },
+  { id: "undo", name: "Undo", key: "Z", ctrl: true },
+  { id: "redo", name: "Redo", key: "Y", ctrl: true },
+  { id: "duplicate", name: "Duplicate", key: "D", ctrl: true },
+  { id: "selectAll", name: "Select All", key: "A", ctrl: true },
+  { id: "zoomIn", name: "Zoom In", key: "=", ctrl: true },
+  { id: "zoomOut", name: "Zoom Out", key: "-", ctrl: true },
+  { id: "loop", name: "Toggle Loop", key: "L" },
+  { id: "metronome", name: "Toggle Metronome", key: "K" },
 ];
 
 const DEFAULT_METER_SETTINGS: MeterSettings = {
-  ballistics: 'medium',
+  ballistics: "medium",
   peakHold: 2000,
   falloff: 12,
 };
 
 const WORKFLOW_PRESETS: LayoutPreset[] = [
   {
-    id: 'recording',
-    name: 'Recording',
+    id: "recording",
+    name: "Recording",
     panels: [
-      { id: 'browser', name: 'Browser', visible: false, order: 0 },
-      { id: 'inspector', name: 'Inspector', visible: true, order: 1 },
-      { id: 'mixer', name: 'Mixer', visible: false, order: 2 },
-      { id: 'timeline', name: 'Timeline', visible: true, order: 3 },
-      { id: 'transport', name: 'Transport', visible: true, order: 4 },
-      { id: 'routing', name: 'Routing Matrix', visible: true, order: 5 },
-      { id: 'aiAssistant', name: 'AI Assistant', visible: false, order: 6 },
-      { id: 'lyrics', name: 'Lyrics', visible: false, order: 7 },
-      { id: 'analysis', name: 'Analysis', visible: false, order: 8 },
+      { id: "browser", name: "Browser", visible: false, order: 0 },
+      { id: "inspector", name: "Inspector", visible: true, order: 1 },
+      { id: "mixer", name: "Mixer", visible: false, order: 2 },
+      { id: "timeline", name: "Timeline", visible: true, order: 3 },
+      { id: "transport", name: "Transport", visible: true, order: 4 },
+      { id: "routing", name: "Routing Matrix", visible: true, order: 5 },
+      { id: "aiAssistant", name: "AI Assistant", visible: false, order: 6 },
+      { id: "lyrics", name: "Lyrics", visible: false, order: 7 },
+      { id: "analysis", name: "Analysis", visible: false, order: 8 },
     ],
     toolbarButtons: DEFAULT_TOOLBAR_BUTTONS,
     theme: DEFAULT_THEME,
     zoomLevel: 1.0,
   },
   {
-    id: 'mixing',
-    name: 'Mixing',
+    id: "mixing",
+    name: "Mixing",
     panels: [
-      { id: 'browser', name: 'Browser', visible: true, order: 0 },
-      { id: 'inspector', name: 'Inspector', visible: true, order: 1 },
-      { id: 'mixer', name: 'Mixer', visible: true, order: 2 },
-      { id: 'timeline', name: 'Timeline', visible: true, order: 3 },
-      { id: 'transport', name: 'Transport', visible: true, order: 4 },
-      { id: 'routing', name: 'Routing Matrix', visible: true, order: 5 },
-      { id: 'aiAssistant', name: 'AI Assistant', visible: true, order: 6 },
-      { id: 'lyrics', name: 'Lyrics', visible: false, order: 7 },
-      { id: 'analysis', name: 'Analysis', visible: true, order: 8 },
+      { id: "browser", name: "Browser", visible: true, order: 0 },
+      { id: "inspector", name: "Inspector", visible: true, order: 1 },
+      { id: "mixer", name: "Mixer", visible: true, order: 2 },
+      { id: "timeline", name: "Timeline", visible: true, order: 3 },
+      { id: "transport", name: "Transport", visible: true, order: 4 },
+      { id: "routing", name: "Routing Matrix", visible: true, order: 5 },
+      { id: "aiAssistant", name: "AI Assistant", visible: true, order: 6 },
+      { id: "lyrics", name: "Lyrics", visible: false, order: 7 },
+      { id: "analysis", name: "Analysis", visible: true, order: 8 },
     ],
     toolbarButtons: DEFAULT_TOOLBAR_BUTTONS,
     theme: DEFAULT_THEME,
     zoomLevel: 1.5,
   },
   {
-    id: 'mastering',
-    name: 'Mastering',
+    id: "mastering",
+    name: "Mastering",
     panels: [
-      { id: 'browser', name: 'Browser', visible: false, order: 0 },
-      { id: 'inspector', name: 'Inspector', visible: true, order: 1 },
-      { id: 'mixer', name: 'Mixer', visible: true, order: 2 },
-      { id: 'timeline', name: 'Timeline', visible: true, order: 3 },
-      { id: 'transport', name: 'Transport', visible: true, order: 4 },
-      { id: 'routing', name: 'Routing Matrix', visible: false, order: 5 },
-      { id: 'aiAssistant', name: 'AI Assistant', visible: true, order: 6 },
-      { id: 'lyrics', name: 'Lyrics', visible: false, order: 7 },
-      { id: 'analysis', name: 'Analysis', visible: true, order: 8 },
+      { id: "browser", name: "Browser", visible: false, order: 0 },
+      { id: "inspector", name: "Inspector", visible: true, order: 1 },
+      { id: "mixer", name: "Mixer", visible: true, order: 2 },
+      { id: "timeline", name: "Timeline", visible: true, order: 3 },
+      { id: "transport", name: "Transport", visible: true, order: 4 },
+      { id: "routing", name: "Routing Matrix", visible: false, order: 5 },
+      { id: "aiAssistant", name: "AI Assistant", visible: true, order: 6 },
+      { id: "lyrics", name: "Lyrics", visible: false, order: 7 },
+      { id: "analysis", name: "Analysis", visible: true, order: 8 },
     ],
     toolbarButtons: DEFAULT_TOOLBAR_BUTTONS,
     theme: DEFAULT_THEME,
@@ -266,21 +266,32 @@ function CollapsibleSection({
   const [isExpanded, setIsExpanded] = useState(defaultExpanded);
 
   return (
-    <div className="border-b" style={{ borderColor: 'var(--studio-border)' }}>
+    <div className="border-b" style={{ borderColor: "var(--studio-border)" }}>
       <button
         onClick={() => setIsExpanded(!isExpanded)}
         className="w-full px-4 py-3 flex items-center justify-between hover:bg-white/5 transition-colors"
       >
         <div className="flex items-center gap-2">
-          {icon && <div style={{ color: 'var(--studio-text-muted)' }}>{icon}</div>}
-          <span className="text-sm font-bold tracking-wide" style={{ color: 'var(--studio-text)' }}>
+          {icon && (
+            <div style={{ color: "var(--studio-text-muted)" }}>{icon}</div>
+          )}
+          <span
+            className="text-sm font-bold tracking-wide"
+            style={{ color: "var(--studio-text)" }}
+          >
             {title}
           </span>
         </div>
         {isExpanded ? (
-          <ChevronUp className="h-4 w-4" style={{ color: 'var(--studio-text-muted)' }} />
+          <ChevronUp
+            className="h-4 w-4"
+            style={{ color: "var(--studio-text-muted)" }}
+          />
         ) : (
-          <ChevronDown className="h-4 w-4" style={{ color: 'var(--studio-text-muted)' }} />
+          <ChevronDown
+            className="h-4 w-4"
+            style={{ color: "var(--studio-text-muted)" }}
+          />
         )}
       </button>
       {isExpanded && <div className="px-4 pb-4">{children}</div>}
@@ -294,7 +305,14 @@ interface SortablePanelItemProps {
 }
 
 function SortablePanelItem({ panel, onToggle }: SortablePanelItemProps) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({
     id: panel.id,
   });
 
@@ -312,24 +330,35 @@ function SortablePanelItem({ panel, onToggle }: SortablePanelItemProps) {
       {...attributes}
     >
       <div {...listeners} className="cursor-grab">
-        <GripVertical className="h-4 w-4" style={{ color: 'var(--studio-text-subtle)' }} />
+        <GripVertical
+          className="h-4 w-4"
+          style={{ color: "var(--studio-text-subtle)" }}
+        />
       </div>
       <div className="flex-1 flex items-center gap-2">
         {panel.visible ? (
-          <Eye className="h-4 w-4" style={{ color: 'var(--studio-accent)' }} />
+          <Eye className="h-4 w-4" style={{ color: "var(--studio-accent)" }} />
         ) : (
-          <EyeOff className="h-4 w-4" style={{ color: 'var(--studio-text-subtle)' }} />
+          <EyeOff
+            className="h-4 w-4"
+            style={{ color: "var(--studio-text-subtle)" }}
+          />
         )}
         <span
           className="text-sm"
           style={{
-            color: panel.visible ? 'var(--studio-text)' : 'var(--studio-text-subtle)',
+            color: panel.visible
+              ? "var(--studio-text)"
+              : "var(--studio-text-subtle)",
           }}
         >
           {panel.name}
         </span>
       </div>
-      <Switch checked={panel.visible} onCheckedChange={() => onToggle(panel.id)} />
+      <Switch
+        checked={panel.visible}
+        onCheckedChange={() => onToggle(panel.id)}
+      />
     </div>
   );
 }
@@ -340,7 +369,11 @@ interface UICustomizerProps {
   onApplyPreferences?: (preferences: UIPreferences) => void;
 }
 
-export function UICustomizer({ open, onOpenChange, onApplyPreferences }: UICustomizerProps) {
+export function UICustomizer({
+  open,
+  onOpenChange,
+  onApplyPreferences,
+}: UICustomizerProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const {
@@ -354,17 +387,18 @@ export function UICustomizer({ open, onOpenChange, onApplyPreferences }: UICusto
     setZoom,
   } = useStudioStore();
 
-  const [preferences, setPreferences] = useState<UIPreferences>(DEFAULT_PREFERENCES);
-  const [activeTab, setActiveTab] = useState('panels');
+  const [preferences, setPreferences] =
+    useState<UIPreferences>(DEFAULT_PREFERENCES);
+  const [activeTab, setActiveTab] = useState("panels");
   const [editingShortcut, setEditingShortcut] = useState<string | null>(null);
-  const [newPresetName, setNewPresetName] = useState('');
+  const [newPresetName, setNewPresetName] = useState("");
   const [showSavePresetDialog, setShowSavePresetDialog] = useState(false);
 
   const sensors = useSensors(
     useSensor(PointerSensor),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
-    })
+    }),
   );
 
   useEffect(() => {
@@ -380,20 +414,25 @@ export function UICustomizer({ open, onOpenChange, onApplyPreferences }: UICusto
   }, []);
 
   const { data: serverPreferences } = useQuery({
-    queryKey: ['/api/user/preferences/studio'],
+    queryKey: ["/api/user/preferences/studio"],
     enabled: open,
   });
 
   const savePreferencesMutation = useMutation({
     mutationFn: async (prefs: UIPreferences) => {
-      return await apiRequest('PUT', '/api/user/preferences/studio', prefs);
+      return await apiRequest("PUT", "/api/user/preferences/studio", prefs);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/user/preferences/studio'] });
-      toast({ title: 'Preferences saved' });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/user/preferences/studio"],
+      });
+      toast({ title: "Preferences saved" });
     },
     onError: () => {
-      toast({ title: 'Failed to save preferences to server', variant: 'destructive' });
+      toast({
+        title: "Failed to save preferences to server",
+        variant: "destructive",
+      });
     },
   });
 
@@ -405,9 +444,9 @@ export function UICustomizer({ open, onOpenChange, onApplyPreferences }: UICusto
   }, [preferences, savePreferencesMutation, onApplyPreferences]);
 
   const applyPreferencesToStore = useCallback(() => {
-    const browserPanel = preferences.panels.find((p) => p.id === 'browser');
-    const inspectorPanel = preferences.panels.find((p) => p.id === 'inspector');
-    const routingPanel = preferences.panels.find((p) => p.id === 'routing');
+    const browserPanel = preferences.panels.find((p) => p.id === "browser");
+    const inspectorPanel = preferences.panels.find((p) => p.id === "inspector");
+    const routingPanel = preferences.panels.find((p) => p.id === "routing");
 
     if (browserPanel && browserPanel.visible !== browserVisible) {
       toggleBrowser();
@@ -436,7 +475,9 @@ export function UICustomizer({ open, onOpenChange, onApplyPreferences }: UICusto
   const handlePanelToggle = (panelId: string) => {
     setPreferences((prev) => ({
       ...prev,
-      panels: prev.panels.map((p) => (p.id === panelId ? { ...p, visible: !p.visible } : p)),
+      panels: prev.panels.map((p) =>
+        p.id === panelId ? { ...p, visible: !p.visible } : p,
+      ),
     }));
   };
 
@@ -459,7 +500,7 @@ export function UICustomizer({ open, onOpenChange, onApplyPreferences }: UICusto
     setPreferences((prev) => ({
       ...prev,
       toolbarButtons: prev.toolbarButtons.map((b) =>
-        b.id === buttonId ? { ...b, visible: !b.visible } : b
+        b.id === buttonId ? { ...b, visible: !b.visible } : b,
       ),
     }));
   };
@@ -474,12 +515,17 @@ export function UICustomizer({ open, onOpenChange, onApplyPreferences }: UICusto
   const handleShortcutEdit = (shortcutId: string, newKey: string) => {
     setPreferences((prev) => ({
       ...prev,
-      shortcuts: prev.shortcuts.map((s) => (s.id === shortcutId ? { ...s, key: newKey } : s)),
+      shortcuts: prev.shortcuts.map((s) =>
+        s.id === shortcutId ? { ...s, key: newKey } : s,
+      ),
     }));
     setEditingShortcut(null);
   };
 
-  const handleMeterSettingsChange = (key: keyof MeterSettings, value: Record<string, unknown>) => {
+  const handleMeterSettingsChange = (
+    key: keyof MeterSettings,
+    value: Record<string, unknown>,
+  ) => {
     setPreferences((prev) => ({
       ...prev,
       meterSettings: { ...prev.meterSettings, [key]: value },
@@ -523,14 +569,17 @@ export function UICustomizer({ open, onOpenChange, onApplyPreferences }: UICusto
       activePreset: newPreset.id,
     }));
 
-    setNewPresetName('');
+    setNewPresetName("");
     setShowSavePresetDialog(false);
-    toast({ title: 'Preset saved' });
+    toast({ title: "Preset saved" });
   };
 
   const deletePreset = (presetId: string) => {
     if (WORKFLOW_PRESETS.some((p) => p.id === presetId)) {
-      toast({ title: 'Cannot delete built-in presets', variant: 'destructive' });
+      toast({
+        title: "Cannot delete built-in presets",
+        variant: "destructive",
+      });
       return;
     }
 
@@ -539,13 +588,13 @@ export function UICustomizer({ open, onOpenChange, onApplyPreferences }: UICusto
       layoutPresets: prev.layoutPresets.filter((p) => p.id !== presetId),
       activePreset: prev.activePreset === presetId ? null : prev.activePreset,
     }));
-    toast({ title: 'Preset deleted' });
+    toast({ title: "Preset deleted" });
   };
 
   const resetToDefaults = () => {
     setPreferences(DEFAULT_PREFERENCES);
     localStorage.removeItem(STORAGE_KEY);
-    toast({ title: 'Reset to defaults' });
+    toast({ title: "Reset to defaults" });
   };
 
   return (
@@ -553,19 +602,19 @@ export function UICustomizer({ open, onOpenChange, onApplyPreferences }: UICusto
       <DialogContent
         className="max-w-3xl max-h-[85vh] overflow-hidden p-0"
         style={{
-          background: 'var(--studio-bg-medium)',
-          borderColor: 'var(--studio-border)',
+          background: "var(--studio-bg-medium)",
+          borderColor: "var(--studio-border)",
         }}
       >
         <DialogHeader className="px-6 pt-6 pb-0">
           <DialogTitle
             className="text-lg font-bold tracking-wide flex items-center gap-2"
-            style={{ color: 'var(--studio-text)' }}
+            style={{ color: "var(--studio-text)" }}
           >
             <Settings2 className="h-5 w-5" />
             UI Customizer
           </DialogTitle>
-          <DialogDescription style={{ color: 'var(--studio-text-muted)' }}>
+          <DialogDescription style={{ color: "var(--studio-text-muted)" }}>
             Customize your studio interface layout, theme, and shortcuts
           </DialogDescription>
         </DialogHeader>
@@ -574,14 +623,14 @@ export function UICustomizer({ open, onOpenChange, onApplyPreferences }: UICusto
           <TabsList
             className="w-full h-12 grid grid-cols-5 rounded-none border-b mx-0"
             style={{
-              background: 'var(--studio-bg-deep)',
-              borderColor: 'var(--studio-border)',
+              background: "var(--studio-bg-deep)",
+              borderColor: "var(--studio-border)",
             }}
           >
             <TabsTrigger
               value="panels"
               className="text-xs data-[state=active]:bg-white/10 gap-1.5"
-              style={{ color: 'var(--studio-text-muted)' }}
+              style={{ color: "var(--studio-text-muted)" }}
             >
               <Layout className="h-3.5 w-3.5" />
               Panels
@@ -589,7 +638,7 @@ export function UICustomizer({ open, onOpenChange, onApplyPreferences }: UICusto
             <TabsTrigger
               value="theme"
               className="text-xs data-[state=active]:bg-white/10 gap-1.5"
-              style={{ color: 'var(--studio-text-muted)' }}
+              style={{ color: "var(--studio-text-muted)" }}
             >
               <Palette className="h-3.5 w-3.5" />
               Theme
@@ -597,7 +646,7 @@ export function UICustomizer({ open, onOpenChange, onApplyPreferences }: UICusto
             <TabsTrigger
               value="shortcuts"
               className="text-xs data-[state=active]:bg-white/10 gap-1.5"
-              style={{ color: 'var(--studio-text-muted)' }}
+              style={{ color: "var(--studio-text-muted)" }}
             >
               <Keyboard className="h-3.5 w-3.5" />
               Shortcuts
@@ -605,7 +654,7 @@ export function UICustomizer({ open, onOpenChange, onApplyPreferences }: UICusto
             <TabsTrigger
               value="presets"
               className="text-xs data-[state=active]:bg-white/10 gap-1.5"
-              style={{ color: 'var(--studio-text-muted)' }}
+              style={{ color: "var(--studio-text-muted)" }}
             >
               <Layers className="h-3.5 w-3.5" />
               Presets
@@ -613,7 +662,7 @@ export function UICustomizer({ open, onOpenChange, onApplyPreferences }: UICusto
             <TabsTrigger
               value="meters"
               className="text-xs data-[state=active]:bg-white/10 gap-1.5"
-              style={{ color: 'var(--studio-text-muted)' }}
+              style={{ color: "var(--studio-text-muted)" }}
             >
               <Activity className="h-3.5 w-3.5" />
               Meters
@@ -622,8 +671,14 @@ export function UICustomizer({ open, onOpenChange, onApplyPreferences }: UICusto
 
           <ScrollArea className="h-[400px]">
             <TabsContent value="panels" className="mt-0 p-0">
-              <CollapsibleSection title="PANEL VISIBILITY & ORDER" icon={<Eye className="h-4 w-4" />}>
-                <p className="text-xs mb-3" style={{ color: 'var(--studio-text-muted)' }}>
+              <CollapsibleSection
+                title="PANEL VISIBILITY & ORDER"
+                icon={<Eye className="h-4 w-4" />}
+              >
+                <p
+                  className="text-xs mb-3"
+                  style={{ color: "var(--studio-text-muted)" }}
+                >
                   Drag to reorder panels. Toggle visibility with the switch.
                 </p>
                 <DndContext
@@ -637,7 +692,7 @@ export function UICustomizer({ open, onOpenChange, onApplyPreferences }: UICusto
                   >
                     <div
                       className="space-y-1 rounded-lg p-2"
-                      style={{ background: 'var(--studio-bg-deep)' }}
+                      style={{ background: "var(--studio-bg-deep)" }}
                     >
                       {preferences.panels
                         .sort((a, b) => a.order - b.order)
@@ -660,7 +715,7 @@ export function UICustomizer({ open, onOpenChange, onApplyPreferences }: UICusto
               >
                 <div
                   className="space-y-1 rounded-lg p-2"
-                  style={{ background: 'var(--studio-bg-deep)' }}
+                  style={{ background: "var(--studio-bg-deep)" }}
                 >
                   {preferences.toolbarButtons.map((button) => (
                     <div
@@ -670,14 +725,18 @@ export function UICustomizer({ open, onOpenChange, onApplyPreferences }: UICusto
                       <span
                         className="text-sm"
                         style={{
-                          color: button.visible ? 'var(--studio-text)' : 'var(--studio-text-subtle)',
+                          color: button.visible
+                            ? "var(--studio-text)"
+                            : "var(--studio-text-subtle)",
                         }}
                       >
                         {button.name}
                       </span>
                       <Switch
                         checked={button.visible}
-                        onCheckedChange={() => handleToolbarButtonToggle(button.id)}
+                        onCheckedChange={() =>
+                          handleToolbarButtonToggle(button.id)
+                        }
                       />
                     </div>
                   ))}
@@ -691,10 +750,16 @@ export function UICustomizer({ open, onOpenChange, onApplyPreferences }: UICusto
               >
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
-                    <Label className="text-xs" style={{ color: 'var(--studio-text-muted)' }}>
+                    <Label
+                      className="text-xs"
+                      style={{ color: "var(--studio-text-muted)" }}
+                    >
                       Zoom Level
                     </Label>
-                    <span className="text-xs font-mono" style={{ color: 'var(--studio-text)' }}>
+                    <span
+                      className="text-xs font-mono"
+                      style={{ color: "var(--studio-text)" }}
+                    >
                       {(preferences.zoomLevel * 100).toFixed(0)}%
                     </span>
                   </div>
@@ -711,105 +776,136 @@ export function UICustomizer({ open, onOpenChange, onApplyPreferences }: UICusto
             </TabsContent>
 
             <TabsContent value="theme" className="mt-0 p-0">
-              <CollapsibleSection title="COLOR THEME" icon={<Palette className="h-4 w-4" />}>
+              <CollapsibleSection
+                title="COLOR THEME"
+                icon={<Palette className="h-4 w-4" />}
+              >
                 <div className="space-y-4">
                   <div className="space-y-2">
-                    <Label className="text-xs" style={{ color: 'var(--studio-text-muted)' }}>
+                    <Label
+                      className="text-xs"
+                      style={{ color: "var(--studio-text-muted)" }}
+                    >
                       Accent Color
                     </Label>
                     <div className="flex gap-2">
                       <Input
                         type="color"
                         value={preferences.theme.accentColor}
-                        onChange={(e) => handleThemeChange('accentColor', e.target.value)}
+                        onChange={(e) =>
+                          handleThemeChange("accentColor", e.target.value)
+                        }
                         className="h-10 w-16 p-1 cursor-pointer"
                       />
                       <Input
                         value={preferences.theme.accentColor}
-                        onChange={(e) => handleThemeChange('accentColor', e.target.value)}
+                        onChange={(e) =>
+                          handleThemeChange("accentColor", e.target.value)
+                        }
                         className="flex-1 h-10 font-mono text-sm"
                         style={{
-                          background: 'var(--studio-bg-deep)',
-                          borderColor: 'var(--studio-border)',
-                          color: 'var(--studio-text)',
+                          background: "var(--studio-bg-deep)",
+                          borderColor: "var(--studio-border)",
+                          color: "var(--studio-text)",
                         }}
                       />
                     </div>
                   </div>
 
                   <div className="space-y-2">
-                    <Label className="text-xs" style={{ color: 'var(--studio-text-muted)' }}>
+                    <Label
+                      className="text-xs"
+                      style={{ color: "var(--studio-text-muted)" }}
+                    >
                       Background Color
                     </Label>
                     <div className="flex gap-2">
                       <Input
                         type="color"
                         value={preferences.theme.backgroundColor}
-                        onChange={(e) => handleThemeChange('backgroundColor', e.target.value)}
+                        onChange={(e) =>
+                          handleThemeChange("backgroundColor", e.target.value)
+                        }
                         className="h-10 w-16 p-1 cursor-pointer"
                       />
                       <Input
                         value={preferences.theme.backgroundColor}
-                        onChange={(e) => handleThemeChange('backgroundColor', e.target.value)}
+                        onChange={(e) =>
+                          handleThemeChange("backgroundColor", e.target.value)
+                        }
                         className="flex-1 h-10 font-mono text-sm"
                         style={{
-                          background: 'var(--studio-bg-deep)',
-                          borderColor: 'var(--studio-border)',
-                          color: 'var(--studio-text)',
+                          background: "var(--studio-bg-deep)",
+                          borderColor: "var(--studio-border)",
+                          color: "var(--studio-text)",
                         }}
                       />
                     </div>
                   </div>
 
                   <div className="space-y-2">
-                    <Label className="text-xs" style={{ color: 'var(--studio-text-muted)' }}>
+                    <Label
+                      className="text-xs"
+                      style={{ color: "var(--studio-text-muted)" }}
+                    >
                       Text Color
                     </Label>
                     <div className="flex gap-2">
                       <Input
                         type="color"
                         value={preferences.theme.textColor}
-                        onChange={(e) => handleThemeChange('textColor', e.target.value)}
+                        onChange={(e) =>
+                          handleThemeChange("textColor", e.target.value)
+                        }
                         className="h-10 w-16 p-1 cursor-pointer"
                       />
                       <Input
                         value={preferences.theme.textColor}
-                        onChange={(e) => handleThemeChange('textColor', e.target.value)}
+                        onChange={(e) =>
+                          handleThemeChange("textColor", e.target.value)
+                        }
                         className="flex-1 h-10 font-mono text-sm"
                         style={{
-                          background: 'var(--studio-bg-deep)',
-                          borderColor: 'var(--studio-border)',
-                          color: 'var(--studio-text)',
+                          background: "var(--studio-bg-deep)",
+                          borderColor: "var(--studio-border)",
+                          color: "var(--studio-text)",
                         }}
                       />
                     </div>
                   </div>
 
                   <div className="space-y-2">
-                    <Label className="text-xs" style={{ color: 'var(--studio-text-muted)' }}>
+                    <Label
+                      className="text-xs"
+                      style={{ color: "var(--studio-text-muted)" }}
+                    >
                       Border Color
                     </Label>
                     <div className="flex gap-2">
                       <Input
                         type="color"
                         value={preferences.theme.borderColor}
-                        onChange={(e) => handleThemeChange('borderColor', e.target.value)}
+                        onChange={(e) =>
+                          handleThemeChange("borderColor", e.target.value)
+                        }
                         className="h-10 w-16 p-1 cursor-pointer"
                       />
                       <Input
                         value={preferences.theme.borderColor}
-                        onChange={(e) => handleThemeChange('borderColor', e.target.value)}
+                        onChange={(e) =>
+                          handleThemeChange("borderColor", e.target.value)
+                        }
                         className="flex-1 h-10 font-mono text-sm"
                         style={{
-                          background: 'var(--studio-bg-deep)',
-                          borderColor: 'var(--studio-border)',
-                          color: 'var(--studio-text)',
+                          background: "var(--studio-bg-deep)",
+                          borderColor: "var(--studio-border)",
+                          color: "var(--studio-text)",
                         }}
                       />
                     </div>
                   </div>
 
-                  <Separator style={{ background: 'var(--studio-border)' }} />
+                  <Separator style={{ background: "var(--studio-border)" }} />
 
                   <div
                     className="p-4 rounded-lg"
@@ -818,14 +914,17 @@ export function UICustomizer({ open, onOpenChange, onApplyPreferences }: UICusto
                       border: `1px solid ${preferences.theme.borderColor}`,
                     }}
                   >
-                    <p className="text-sm mb-2" style={{ color: preferences.theme.textColor }}>
+                    <p
+                      className="text-sm mb-2"
+                      style={{ color: preferences.theme.textColor }}
+                    >
                       Theme Preview
                     </p>
                     <Button
                       size="sm"
                       style={{
                         background: preferences.theme.accentColor,
-                        color: '#ffffff',
+                        color: "#ffffff",
                       }}
                     >
                       Sample Button
@@ -836,20 +935,29 @@ export function UICustomizer({ open, onOpenChange, onApplyPreferences }: UICusto
             </TabsContent>
 
             <TabsContent value="shortcuts" className="mt-0 p-0">
-              <CollapsibleSection title="KEYBOARD SHORTCUTS" icon={<Keyboard className="h-4 w-4" />}>
-                <p className="text-xs mb-3" style={{ color: 'var(--studio-text-muted)' }}>
+              <CollapsibleSection
+                title="KEYBOARD SHORTCUTS"
+                icon={<Keyboard className="h-4 w-4" />}
+              >
+                <p
+                  className="text-xs mb-3"
+                  style={{ color: "var(--studio-text-muted)" }}
+                >
                   Click a shortcut to edit. Press a new key to assign.
                 </p>
                 <div
                   className="space-y-1 rounded-lg p-2"
-                  style={{ background: 'var(--studio-bg-deep)' }}
+                  style={{ background: "var(--studio-bg-deep)" }}
                 >
                   {preferences.shortcuts.map((shortcut) => (
                     <div
                       key={shortcut.id}
                       className="flex items-center justify-between p-2 rounded hover:bg-white/5"
                     >
-                      <span className="text-sm" style={{ color: 'var(--studio-text)' }}>
+                      <span
+                        className="text-sm"
+                        style={{ color: "var(--studio-text)" }}
+                      >
                         {shortcut.name}
                       </span>
                       <div className="flex items-center gap-2">
@@ -859,9 +967,9 @@ export function UICustomizer({ open, onOpenChange, onApplyPreferences }: UICusto
                             placeholder="Press key..."
                             className="w-32 h-8 text-center text-sm"
                             style={{
-                              background: 'var(--studio-bg-medium)',
-                              borderColor: 'var(--studio-accent)',
-                              color: 'var(--studio-text)',
+                              background: "var(--studio-bg-medium)",
+                              borderColor: "var(--studio-accent)",
+                              color: "var(--studio-text)",
                             }}
                             onKeyDown={(e) => {
                               e.preventDefault();
@@ -875,18 +983,18 @@ export function UICustomizer({ open, onOpenChange, onApplyPreferences }: UICusto
                             className="cursor-pointer hover:bg-white/10"
                             onClick={() => setEditingShortcut(shortcut.id)}
                             style={{
-                              borderColor: 'var(--studio-border)',
-                              color: 'var(--studio-text-muted)',
+                              borderColor: "var(--studio-border)",
+                              color: "var(--studio-text-muted)",
                             }}
                           >
                             {[
-                              shortcut.ctrl && 'Ctrl',
-                              shortcut.shift && 'Shift',
-                              shortcut.alt && 'Alt',
+                              shortcut.ctrl && "Ctrl",
+                              shortcut.shift && "Shift",
+                              shortcut.alt && "Alt",
                               shortcut.key,
                             ]
                               .filter(Boolean)
-                              .join(' + ')}
+                              .join(" + ")}
                           </Badge>
                         )}
                       </div>
@@ -897,30 +1005,45 @@ export function UICustomizer({ open, onOpenChange, onApplyPreferences }: UICusto
             </TabsContent>
 
             <TabsContent value="presets" className="mt-0 p-0">
-              <CollapsibleSection title="WORKFLOW LAYOUTS" icon={<Mic className="h-4 w-4" />}>
-                <p className="text-xs mb-3" style={{ color: 'var(--studio-text-muted)' }}>
-                  Quick-switch between optimized layouts for different workflows.
+              <CollapsibleSection
+                title="WORKFLOW LAYOUTS"
+                icon={<Mic className="h-4 w-4" />}
+              >
+                <p
+                  className="text-xs mb-3"
+                  style={{ color: "var(--studio-text-muted)" }}
+                >
+                  Quick-switch between optimized layouts for different
+                  workflows.
                 </p>
                 <div className="grid grid-cols-3 gap-2 mb-4">
-                  {['recording', 'mixing', 'mastering'].map((preset) => {
-                    const presetData = preferences.layoutPresets.find((p) => p.id === preset);
+                  {["recording", "mixing", "mastering"].map((preset) => {
+                    const presetData = preferences.layoutPresets.find(
+                      (p) => p.id === preset,
+                    );
                     const isActive = preferences.activePreset === preset;
                     return (
                       <Button
                         key={preset}
-                        variant={isActive ? 'default' : 'outline'}
+                        variant={isActive ? "default" : "outline"}
                         size="sm"
                         onClick={() => applyWorkflowPreset(preset)}
                         className="gap-1.5"
                         style={
                           isActive
-                            ? { background: 'var(--studio-accent)' }
-                            : { borderColor: 'var(--studio-border)' }
+                            ? { background: "var(--studio-accent)" }
+                            : { borderColor: "var(--studio-border)" }
                         }
                       >
-                        {preset === 'recording' && <Mic className="h-3.5 w-3.5" />}
-                        {preset === 'mixing' && <Sliders className="h-3.5 w-3.5" />}
-                        {preset === 'mastering' && <Headphones className="h-3.5 w-3.5" />}
+                        {preset === "recording" && (
+                          <Mic className="h-3.5 w-3.5" />
+                        )}
+                        {preset === "mixing" && (
+                          <Sliders className="h-3.5 w-3.5" />
+                        )}
+                        {preset === "mastering" && (
+                          <Headphones className="h-3.5 w-3.5" />
+                        )}
                         {presetData?.name || preset}
                       </Button>
                     );
@@ -935,16 +1058,22 @@ export function UICustomizer({ open, onOpenChange, onApplyPreferences }: UICusto
               >
                 <div
                   className="space-y-1 rounded-lg p-2 mb-3"
-                  style={{ background: 'var(--studio-bg-deep)' }}
+                  style={{ background: "var(--studio-bg-deep)" }}
                 >
                   {preferences.layoutPresets
-                    .filter((p) => !['recording', 'mixing', 'mastering'].includes(p.id))
+                    .filter(
+                      (p) =>
+                        !["recording", "mixing", "mastering"].includes(p.id),
+                    )
                     .map((preset) => (
                       <div
                         key={preset.id}
                         className="flex items-center justify-between p-2 rounded hover:bg-white/5"
                       >
-                        <span className="text-sm" style={{ color: 'var(--studio-text)' }}>
+                        <span
+                          className="text-sm"
+                          style={{ color: "var(--studio-text)" }}
+                        >
                           {preset.name}
                         </span>
                         <div className="flex items-center gap-1">
@@ -968,9 +1097,12 @@ export function UICustomizer({ open, onOpenChange, onApplyPreferences }: UICusto
                       </div>
                     ))}
                   {preferences.layoutPresets.filter(
-                    (p) => !['recording', 'mixing', 'mastering'].includes(p.id)
+                    (p) => !["recording", "mixing", "mastering"].includes(p.id),
                   ).length === 0 && (
-                    <p className="text-sm text-center py-4" style={{ color: 'var(--studio-text-muted)' }}>
+                    <p
+                      className="text-sm text-center py-4"
+                      style={{ color: "var(--studio-text-muted)" }}
+                    >
                       No custom presets saved
                     </p>
                   )}
@@ -988,31 +1120,42 @@ export function UICustomizer({ open, onOpenChange, onApplyPreferences }: UICusto
             </TabsContent>
 
             <TabsContent value="meters" className="mt-0 p-0">
-              <CollapsibleSection title="METER BALLISTICS" icon={<Activity className="h-4 w-4" />}>
+              <CollapsibleSection
+                title="METER BALLISTICS"
+                icon={<Activity className="h-4 w-4" />}
+              >
                 <div className="space-y-4">
                   <div className="space-y-2">
-                    <Label className="text-xs" style={{ color: 'var(--studio-text-muted)' }}>
+                    <Label
+                      className="text-xs"
+                      style={{ color: "var(--studio-text-muted)" }}
+                    >
                       Response Speed
                     </Label>
                     <Select
                       value={preferences.meterSettings.ballistics}
                       onValueChange={(val) =>
-                        handleMeterSettingsChange('ballistics', val as 'fast' | 'medium' | 'slow')
+                        handleMeterSettingsChange(
+                          "ballistics",
+                          val as "fast" | "medium" | "slow",
+                        )
                       }
                     >
                       <SelectTrigger
                         className="h-9"
                         style={{
-                          background: 'var(--studio-bg-deep)',
-                          borderColor: 'var(--studio-border)',
-                          color: 'var(--studio-text)',
+                          background: "var(--studio-bg-deep)",
+                          borderColor: "var(--studio-border)",
+                          color: "var(--studio-text)",
                         }}
                       >
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="fast">Fast (VU-like)</SelectItem>
-                        <SelectItem value="medium">Medium (Standard)</SelectItem>
+                        <SelectItem value="medium">
+                          Medium (Standard)
+                        </SelectItem>
                         <SelectItem value="slow">Slow (RMS-like)</SelectItem>
                       </SelectContent>
                     </Select>
@@ -1020,16 +1163,24 @@ export function UICustomizer({ open, onOpenChange, onApplyPreferences }: UICusto
 
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
-                      <Label className="text-xs" style={{ color: 'var(--studio-text-muted)' }}>
+                      <Label
+                        className="text-xs"
+                        style={{ color: "var(--studio-text-muted)" }}
+                      >
                         Peak Hold Time
                       </Label>
-                      <span className="text-xs font-mono" style={{ color: 'var(--studio-text)' }}>
+                      <span
+                        className="text-xs font-mono"
+                        style={{ color: "var(--studio-text)" }}
+                      >
                         {preferences.meterSettings.peakHold}ms
                       </span>
                     </div>
                     <Slider
                       value={[preferences.meterSettings.peakHold]}
-                      onValueChange={([val]) => handleMeterSettingsChange('peakHold', val)}
+                      onValueChange={([val]) =>
+                        handleMeterSettingsChange("peakHold", val)
+                      }
                       min={500}
                       max={5000}
                       step={100}
@@ -1039,16 +1190,24 @@ export function UICustomizer({ open, onOpenChange, onApplyPreferences }: UICusto
 
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
-                      <Label className="text-xs" style={{ color: 'var(--studio-text-muted)' }}>
+                      <Label
+                        className="text-xs"
+                        style={{ color: "var(--studio-text-muted)" }}
+                      >
                         Falloff Rate
                       </Label>
-                      <span className="text-xs font-mono" style={{ color: 'var(--studio-text)' }}>
+                      <span
+                        className="text-xs font-mono"
+                        style={{ color: "var(--studio-text)" }}
+                      >
                         {preferences.meterSettings.falloff} dB/s
                       </span>
                     </div>
                     <Slider
                       value={[preferences.meterSettings.falloff]}
-                      onValueChange={([val]) => handleMeterSettingsChange('falloff', val)}
+                      onValueChange={([val]) =>
+                        handleMeterSettingsChange("falloff", val)
+                      }
                       min={6}
                       max={30}
                       step={1}
@@ -1061,53 +1220,73 @@ export function UICustomizer({ open, onOpenChange, onApplyPreferences }: UICusto
           </ScrollArea>
         </Tabs>
 
-        <DialogFooter className="px-6 py-4 border-t" style={{ borderColor: 'var(--studio-border)' }}>
+        <DialogFooter
+          className="px-6 py-4 border-t"
+          style={{ borderColor: "var(--studio-border)" }}
+        >
           <Button
             variant="outline"
             onClick={resetToDefaults}
             className="gap-2"
-            style={{ borderColor: 'var(--studio-border)' }}
+            style={{ borderColor: "var(--studio-border)" }}
           >
             <RotateCcw className="h-4 w-4" />
             Reset to Defaults
           </Button>
-          <Button onClick={savePreferences} className="gap-2" style={{ background: 'var(--studio-accent)' }}>
+          <Button
+            onClick={savePreferences}
+            className="gap-2"
+            style={{ background: "var(--studio-accent)" }}
+          >
             <Save className="h-4 w-4" />
             Save & Apply
           </Button>
         </DialogFooter>
 
-        <Dialog open={showSavePresetDialog} onOpenChange={setShowSavePresetDialog}>
+        <Dialog
+          open={showSavePresetDialog}
+          onOpenChange={setShowSavePresetDialog}
+        >
           <DialogContent
             className="max-w-sm"
             style={{
-              background: 'var(--studio-bg-medium)',
-              borderColor: 'var(--studio-border)',
+              background: "var(--studio-bg-medium)",
+              borderColor: "var(--studio-border)",
             }}
           >
             <DialogHeader>
-              <DialogTitle style={{ color: 'var(--studio-text)' }}>Save Layout Preset</DialogTitle>
+              <DialogTitle style={{ color: "var(--studio-text)" }}>
+                Save Layout Preset
+              </DialogTitle>
             </DialogHeader>
             <div className="space-y-4 py-4">
               <div className="space-y-2">
-                <Label style={{ color: 'var(--studio-text-muted)' }}>Preset Name</Label>
+                <Label style={{ color: "var(--studio-text-muted)" }}>
+                  Preset Name
+                </Label>
                 <Input
                   value={newPresetName}
                   onChange={(e) => setNewPresetName(e.target.value)}
                   placeholder="My Custom Layout"
                   style={{
-                    background: 'var(--studio-bg-deep)',
-                    borderColor: 'var(--studio-border)',
-                    color: 'var(--studio-text)',
+                    background: "var(--studio-bg-deep)",
+                    borderColor: "var(--studio-border)",
+                    color: "var(--studio-text)",
                   }}
                 />
               </div>
             </div>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setShowSavePresetDialog(false)}>
+              <Button
+                variant="outline"
+                onClick={() => setShowSavePresetDialog(false)}
+              >
                 Cancel
               </Button>
-              <Button onClick={saveCurrentAsPreset} disabled={!newPresetName.trim()}>
+              <Button
+                onClick={saveCurrentAsPreset}
+                disabled={!newPresetName.trim()}
+              >
                 Save
               </Button>
             </DialogFooter>
@@ -1118,4 +1297,12 @@ export function UICustomizer({ open, onOpenChange, onApplyPreferences }: UICusto
   );
 }
 
-export type { UIPreferences, PanelConfig, ToolbarButton, KeyboardShortcut, ThemeConfig, MeterSettings, LayoutPreset };
+export type {
+  UIPreferences,
+  PanelConfig,
+  ToolbarButton,
+  KeyboardShortcut,
+  ThemeConfig,
+  MeterSettings,
+  LayoutPreset,
+};

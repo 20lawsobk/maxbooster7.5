@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Button } from '@/components/ui/button';
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -10,25 +10,25 @@ import {
   DropdownMenuSub,
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
-} from '@/components/ui/dropdown-menu';
+} from "@/components/ui/dropdown-menu";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogDescription,
-} from '@/components/ui/dialog';
-import { Label } from '@/components/ui/label';
-import { Checkbox } from '@/components/ui/checkbox';
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { Progress } from '@/components/ui/progress';
-import { Badge } from '@/components/ui/badge';
+} from "@/components/ui/select";
+import { Progress } from "@/components/ui/progress";
+import { Badge } from "@/components/ui/badge";
 import {
   Layers,
   ChevronDown,
@@ -41,7 +41,7 @@ import {
   Merge,
   Download,
   Loader2,
-} from 'lucide-react';
+} from "lucide-react";
 
 interface BounceMenuProps {
   selectedClipIds?: string[];
@@ -77,7 +77,9 @@ export function BounceMenu({
   disabled = false,
 }: BounceMenuProps) {
   const [showBounceDialog, setShowBounceDialog] = useState(false);
-  const [bounceMode, setBounceMode] = useState<'selection' | 'newTrack' | 'mixdown' | 'export'>('selection');
+  const [bounceMode, setBounceMode] = useState<
+    "selection" | "newTrack" | "mixdown" | "export"
+  >("selection");
   const [isProcessing, setIsProcessing] = useState(false);
   const [progress, setProgress] = useState(0);
 
@@ -104,16 +106,16 @@ export function BounceMenu({
 
     try {
       switch (bounceMode) {
-        case 'selection':
+        case "selection":
           await onBounceSelection?.(options);
           break;
-        case 'newTrack':
+        case "newTrack":
           await onBounceToNewTrack?.(options);
           break;
-        case 'mixdown':
+        case "mixdown":
           await onMixdownSelection?.(options);
           break;
-        case 'export':
+        case "export":
           await onExportSelection?.(options);
           break;
       }
@@ -128,34 +130,36 @@ export function BounceMenu({
     }
   };
 
-  const openBounceDialog = (mode: 'selection' | 'newTrack' | 'mixdown' | 'export') => {
+  const openBounceDialog = (
+    mode: "selection" | "newTrack" | "mixdown" | "export",
+  ) => {
     setBounceMode(mode);
     setShowBounceDialog(true);
   };
 
   const getModeTitle = () => {
     switch (bounceMode) {
-      case 'selection':
-        return 'Bounce Selection';
-      case 'newTrack':
-        return 'Bounce to New Track';
-      case 'mixdown':
-        return 'Mixdown Selection';
-      case 'export':
-        return 'Export Selection';
+      case "selection":
+        return "Bounce Selection";
+      case "newTrack":
+        return "Bounce to New Track";
+      case "mixdown":
+        return "Mixdown Selection";
+      case "export":
+        return "Export Selection";
     }
   };
 
   const getModeDescription = () => {
     switch (bounceMode) {
-      case 'selection':
-        return 'Combines selected events on track, replacing originals with rendered audio';
-      case 'newTrack':
-        return 'Creates a new audio track with all insert effects rendered';
-      case 'mixdown':
-        return 'Mixes selected events from multiple tracks into a single stereo file';
-      case 'export':
-        return 'Exports selected events as separate files without placing them in the song';
+      case "selection":
+        return "Combines selected events on track, replacing originals with rendered audio";
+      case "newTrack":
+        return "Creates a new audio track with all insert effects rendered";
+      case "mixdown":
+        return "Mixes selected events from multiple tracks into a single stereo file";
+      case "export":
+        return "Exports selected events as separate files without placing them in the song";
     }
   };
 
@@ -175,11 +179,13 @@ export function BounceMenu({
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent className="w-64 bg-[#252525] border-gray-700 text-white">
-          <DropdownMenuLabel className="text-gray-400 text-xs">Audio Rendering</DropdownMenuLabel>
+          <DropdownMenuLabel className="text-gray-400 text-xs">
+            Audio Rendering
+          </DropdownMenuLabel>
           <DropdownMenuSeparator className="bg-gray-700" />
 
           <DropdownMenuItem
-            onClick={() => openBounceDialog('selection')}
+            onClick={() => openBounceDialog("selection")}
             disabled={!hasSelection}
             className="gap-2 hover:bg-gray-700 focus:bg-gray-700"
           >
@@ -187,14 +193,21 @@ export function BounceMenu({
             <div className="flex-1">
               <div className="flex items-center justify-between">
                 Bounce Selection
-                <Badge variant="outline" className="text-[10px] ml-2 border-gray-600">Ctrl+B</Badge>
+                <Badge
+                  variant="outline"
+                  className="text-[10px] ml-2 border-gray-600"
+                >
+                  Ctrl+B
+                </Badge>
               </div>
-              <p className="text-[10px] text-gray-500">Combine events, replace originals</p>
+              <p className="text-[10px] text-gray-500">
+                Combine events, replace originals
+              </p>
             </div>
           </DropdownMenuItem>
 
           <DropdownMenuItem
-            onClick={() => openBounceDialog('newTrack')}
+            onClick={() => openBounceDialog("newTrack")}
             disabled={!hasTrack}
             className="gap-2 hover:bg-gray-700 focus:bg-gray-700"
           >
@@ -202,51 +215,68 @@ export function BounceMenu({
             <div className="flex-1">
               <div className="flex items-center justify-between">
                 Bounce to New Track
-                <Badge variant="outline" className="text-[10px] ml-2 border-gray-600">Ctrl+Alt+B</Badge>
+                <Badge
+                  variant="outline"
+                  className="text-[10px] ml-2 border-gray-600"
+                >
+                  Ctrl+Alt+B
+                </Badge>
               </div>
-              <p className="text-[10px] text-gray-500">Render with effects to new track</p>
+              <p className="text-[10px] text-gray-500">
+                Render with effects to new track
+              </p>
             </div>
           </DropdownMenuItem>
 
           <DropdownMenuSeparator className="bg-gray-700" />
 
           <DropdownMenuItem
-            onClick={() => openBounceDialog('mixdown')}
+            onClick={() => openBounceDialog("mixdown")}
             disabled={!hasSelection}
             className="gap-2 hover:bg-gray-700 focus:bg-gray-700"
           >
             <FileAudio className="h-4 w-4 text-purple-400" />
             <div className="flex-1">
               <div>Mixdown Selection</div>
-              <p className="text-[10px] text-gray-500">Mix multiple tracks to single file</p>
+              <p className="text-[10px] text-gray-500">
+                Mix multiple tracks to single file
+              </p>
             </div>
           </DropdownMenuItem>
 
           <DropdownMenuItem
-            onClick={() => openBounceDialog('export')}
+            onClick={() => openBounceDialog("export")}
             disabled={!hasSelection}
             className="gap-2 hover:bg-gray-700 focus:bg-gray-700"
           >
             <Download className="h-4 w-4 text-orange-400" />
             <div className="flex-1">
               <div>Export Selection</div>
-              <p className="text-[10px] text-gray-500">Export without placing in song</p>
+              <p className="text-[10px] text-gray-500">
+                Export without placing in song
+              </p>
             </div>
           </DropdownMenuItem>
 
           <DropdownMenuSeparator className="bg-gray-700" />
 
-          <DropdownMenuLabel className="text-gray-400 text-xs">Track Rendering</DropdownMenuLabel>
+          <DropdownMenuLabel className="text-gray-400 text-xs">
+            Track Rendering
+          </DropdownMenuLabel>
 
           <DropdownMenuItem
-            onClick={() => selectedTrackId && onTransformToRendered?.(selectedTrackId)}
+            onClick={() =>
+              selectedTrackId && onTransformToRendered?.(selectedTrackId)
+            }
             disabled={!hasTrack}
             className="gap-2 hover:bg-gray-700 focus:bg-gray-700"
           >
             <Snowflake className="h-4 w-4 text-cyan-400" />
             <div className="flex-1">
               <div>Transform to Rendered Audio</div>
-              <p className="text-[10px] text-gray-500">Freeze track (reversible)</p>
+              <p className="text-[10px] text-gray-500">
+                Freeze track (reversible)
+              </p>
             </div>
           </DropdownMenuItem>
 
@@ -277,7 +307,9 @@ export function BounceMenu({
             <DialogTitle className="flex items-center gap-2">
               <Layers className="h-5 w-5 text-blue-400" />
               {getModeTitle()}
-              <Badge variant="outline" className="ml-2 text-xs border-gray-600">Studio One Style</Badge>
+              <Badge variant="outline" className="ml-2 text-xs border-gray-600">
+                Studio One Style
+              </Badge>
             </DialogTitle>
             <DialogDescription className="text-gray-400">
               {getModeDescription()}
@@ -292,21 +324,26 @@ export function BounceMenu({
               <div className="space-y-2">
                 <Progress value={progress} className="h-2" />
                 <p className="text-center text-sm text-gray-400">
-                  {progress < 100 ? 'Rendering audio...' : 'Complete!'}
+                  {progress < 100 ? "Rendering audio..." : "Complete!"}
                 </p>
               </div>
             </div>
           ) : (
             <div className="space-y-6 py-4">
               <div className="space-y-4 p-4 bg-[#252525] rounded-lg border border-gray-700">
-                <div className="text-sm font-medium text-gray-300 mb-3">Processing Options</div>
+                <div className="text-sm font-medium text-gray-300 mb-3">
+                  Processing Options
+                </div>
 
                 <div className="space-y-3">
                   <label className="flex items-center gap-3 cursor-pointer hover:text-white text-gray-300">
                     <Checkbox
                       checked={options.includeInsertEffects}
                       onCheckedChange={(checked) =>
-                        setOptions({ ...options, includeInsertEffects: checked as boolean })
+                        setOptions({
+                          ...options,
+                          includeInsertEffects: checked as boolean,
+                        })
                       }
                     />
                     Include Insert Effects
@@ -316,7 +353,10 @@ export function BounceMenu({
                     <Checkbox
                       checked={options.includeSendEffects}
                       onCheckedChange={(checked) =>
-                        setOptions({ ...options, includeSendEffects: checked as boolean })
+                        setOptions({
+                          ...options,
+                          includeSendEffects: checked as boolean,
+                        })
                       }
                     />
                     Include Send Effects
@@ -326,7 +366,10 @@ export function BounceMenu({
                     <Checkbox
                       checked={options.includeAutomation}
                       onCheckedChange={(checked) =>
-                        setOptions({ ...options, includeAutomation: checked as boolean })
+                        setOptions({
+                          ...options,
+                          includeAutomation: checked as boolean,
+                        })
                       }
                     />
                     Include Automation
@@ -336,7 +379,10 @@ export function BounceMenu({
                     <Checkbox
                       checked={options.normalize}
                       onCheckedChange={(checked) =>
-                        setOptions({ ...options, normalize: checked as boolean })
+                        setOptions({
+                          ...options,
+                          normalize: checked as boolean,
+                        })
                       }
                     />
                     Normalize Output
@@ -346,10 +392,14 @@ export function BounceMenu({
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label className="text-xs text-gray-400">Tail Length (ms)</Label>
+                  <Label className="text-xs text-gray-400">
+                    Tail Length (ms)
+                  </Label>
                   <Select
                     value={options.tailLength.toString()}
-                    onValueChange={(v) => setOptions({ ...options, tailLength: parseInt(v) })}
+                    onValueChange={(v) =>
+                      setOptions({ ...options, tailLength: parseInt(v) })
+                    }
                   >
                     <SelectTrigger className="bg-[#1a1a1a] border-gray-600 h-9">
                       <SelectValue />
@@ -362,14 +412,18 @@ export function BounceMenu({
                       <SelectItem value="5000">5000 ms</SelectItem>
                     </SelectContent>
                   </Select>
-                  <p className="text-[10px] text-gray-500">For reverb/delay tails</p>
+                  <p className="text-[10px] text-gray-500">
+                    For reverb/delay tails
+                  </p>
                 </div>
 
                 <div className="space-y-2">
                   <Label className="text-xs text-gray-400">Bit Depth</Label>
                   <Select
                     value={options.bitDepth.toString()}
-                    onValueChange={(v) => setOptions({ ...options, bitDepth: parseInt(v) })}
+                    onValueChange={(v) =>
+                      setOptions({ ...options, bitDepth: parseInt(v) })
+                    }
                   >
                     <SelectTrigger className="bg-[#1a1a1a] border-gray-600 h-9">
                       <SelectValue />

@@ -1,6 +1,6 @@
-import { useState, useEffect, useCallback } from 'react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { getCsrfTokenFromCookie } from '@/lib/queryClient';
+import { useState, useEffect, useCallback } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { getCsrfTokenFromCookie } from "@/lib/queryClient";
 import {
   Dialog,
   DialogContent,
@@ -8,20 +8,20 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter,
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { useToast } from '@/hooks/use-toast';
-import { Settings, Loader2, Save } from 'lucide-react';
+} from "@/components/ui/select";
+import { useToast } from "@/hooks/use-toast";
+import { Settings, Loader2, Save } from "lucide-react";
 
 interface ProjectSettingsDialogProps {
   open: boolean;
@@ -48,33 +48,54 @@ interface ProjectSettingsDialogProps {
 }
 
 const GENRES = [
-  'Hip-Hop', 'R&B', 'Pop', 'Electronic', 'Rock', 'Jazz', 'Classical',
-  'Country', 'Latin', 'Afrobeat', 'Reggae', 'Blues', 'Soul', 'Funk',
-  'Metal', 'Indie', 'Alternative', 'Dance', 'House', 'Techno', 'Trap',
-  'Drill', 'Lo-Fi', 'Ambient', 'Other'
+  "Hip-Hop",
+  "R&B",
+  "Pop",
+  "Electronic",
+  "Rock",
+  "Jazz",
+  "Classical",
+  "Country",
+  "Latin",
+  "Afrobeat",
+  "Reggae",
+  "Blues",
+  "Soul",
+  "Funk",
+  "Metal",
+  "Indie",
+  "Alternative",
+  "Dance",
+  "House",
+  "Techno",
+  "Trap",
+  "Drill",
+  "Lo-Fi",
+  "Ambient",
+  "Other",
 ];
 
 const TIME_SIGNATURES = [
-  { value: '4/4', label: '4/4' },
-  { value: '3/4', label: '3/4' },
-  { value: '6/8', label: '6/8' },
-  { value: '2/4', label: '2/4' },
-  { value: '5/4', label: '5/4' },
-  { value: '7/8', label: '7/8' },
-  { value: '12/8', label: '12/8' },
+  { value: "4/4", label: "4/4" },
+  { value: "3/4", label: "3/4" },
+  { value: "6/8", label: "6/8" },
+  { value: "2/4", label: "2/4" },
+  { value: "5/4", label: "5/4" },
+  { value: "7/8", label: "7/8" },
+  { value: "12/8", label: "12/8" },
 ];
 
 const SAMPLE_RATES = [
-  { value: 44100, label: '44.1 kHz' },
-  { value: 48000, label: '48 kHz' },
-  { value: 88200, label: '88.2 kHz' },
-  { value: 96000, label: '96 kHz' },
+  { value: 44100, label: "44.1 kHz" },
+  { value: 48000, label: "48 kHz" },
+  { value: 88200, label: "88.2 kHz" },
+  { value: 96000, label: "96 kHz" },
 ];
 
 const BIT_DEPTHS = [
-  { value: 16, label: '16-bit' },
-  { value: 24, label: '24-bit' },
-  { value: 32, label: '32-bit float' },
+  { value: 16, label: "16-bit" },
+  { value: 24, label: "24-bit" },
+  { value: 32, label: "32-bit float" },
 ];
 
 export function ProjectSettingsDialog({
@@ -88,8 +109,8 @@ export function ProjectSettingsDialog({
   const queryClient = useQueryClient();
 
   const [form, setForm] = useState({
-    name: project.name || 'Untitled Project',
-    description: project.description || '',
+    name: project.name || "Untitled Project",
+    description: project.description || "",
     tempo: project.tempo || 120,
     timeSignature: `${project.timeSignatureNumerator || 4}/${project.timeSignatureDenominator || 4}`,
     sampleRate: project.sampleRate || 48000,
@@ -99,8 +120,8 @@ export function ProjectSettingsDialog({
   useEffect(() => {
     if (open) {
       setForm({
-        name: project.name || 'Untitled Project',
-        description: project.description || '',
+        name: project.name || "Untitled Project",
+        description: project.description || "",
         tempo: project.tempo || 120,
         timeSignature: `${project.timeSignatureNumerator || 4}/${project.timeSignatureDenominator || 4}`,
         sampleRate: project.sampleRate || 48000,
@@ -113,13 +134,18 @@ export function ProjectSettingsDialog({
     mutationFn: async () => {
       if (!projectId) return null;
 
-      const [numerator, denominator] = form.timeSignature.split('/').map(Number);
+      const [numerator, denominator] = form.timeSignature
+        .split("/")
+        .map(Number);
 
       const csrfToken = getCsrfTokenFromCookie();
       const response = await fetch(`/api/studio/projects/${projectId}`, {
-        method: 'PUT',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json', ...(csrfToken ? { 'x-csrf-token': csrfToken } : {}) },
+        method: "PUT",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+          ...(csrfToken ? { "x-csrf-token": csrfToken } : {}),
+        },
         body: JSON.stringify({
           title: form.name,
           description: form.description,
@@ -131,14 +157,14 @@ export function ProjectSettingsDialog({
       });
 
       if (!response.ok) {
-        throw new Error('Failed to update project settings');
+        throw new Error("Failed to update project settings");
       }
 
       return { numerator, denominator };
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['/api/projects'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/studio/projects'] });
+      queryClient.invalidateQueries({ queryKey: ["/api/projects"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/studio/projects"] });
 
       if (data) {
         onUpdate({
@@ -153,17 +179,17 @@ export function ProjectSettingsDialog({
       }
 
       toast({
-        title: 'Settings Saved',
-        description: 'Project settings have been updated.',
+        title: "Settings Saved",
+        description: "Project settings have been updated.",
       });
 
       onOpenChange(false);
     },
     onError: (error: Error) => {
       toast({
-        title: 'Error',
-        description: error.message || 'Failed to save project settings.',
-        variant: 'destructive',
+        title: "Error",
+        description: error.message || "Failed to save project settings.",
+        variant: "destructive",
       });
     },
   });
@@ -190,22 +216,30 @@ export function ProjectSettingsDialog({
 
         <form onSubmit={handleSubmit} className="space-y-4 mt-4">
           <div className="space-y-2">
-            <Label htmlFor="name" className="text-gray-300">Project Name</Label>
+            <Label htmlFor="name" className="text-gray-300">
+              Project Name
+            </Label>
             <Input
               id="name"
               value={form.name}
-              onChange={(e) => setForm(prev => ({ ...prev, name: e.target.value }))}
+              onChange={(e) =>
+                setForm((prev) => ({ ...prev, name: e.target.value }))
+              }
               placeholder="Enter project name"
               className="bg-[#2a2a2e] border-[#444] text-white placeholder:text-gray-500"
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="description" className="text-gray-300">Description</Label>
+            <Label htmlFor="description" className="text-gray-300">
+              Description
+            </Label>
             <Textarea
               id="description"
               value={form.description}
-              onChange={(e) => setForm(prev => ({ ...prev, description: e.target.value }))}
+              onChange={(e) =>
+                setForm((prev) => ({ ...prev, description: e.target.value }))
+              }
               placeholder="Brief description of your project"
               className="bg-[#2a2a2e] border-[#444] text-white placeholder:text-gray-500 resize-none h-20"
             />
@@ -213,14 +247,21 @@ export function ProjectSettingsDialog({
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="tempo" className="text-gray-300">Tempo (BPM)</Label>
+              <Label htmlFor="tempo" className="text-gray-300">
+                Tempo (BPM)
+              </Label>
               <Input
                 id="tempo"
                 type="number"
                 min={20}
                 max={300}
                 value={form.tempo}
-                onChange={(e) => setForm(prev => ({ ...prev, tempo: parseInt(e.target.value) || 120 }))}
+                onChange={(e) =>
+                  setForm((prev) => ({
+                    ...prev,
+                    tempo: parseInt(e.target.value) || 120,
+                  }))
+                }
                 className="bg-[#2a2a2e] border-[#444] text-white"
               />
             </div>
@@ -229,14 +270,20 @@ export function ProjectSettingsDialog({
               <Label className="text-gray-300">Time Signature</Label>
               <Select
                 value={form.timeSignature}
-                onValueChange={(value) => setForm(prev => ({ ...prev, timeSignature: value }))}
+                onValueChange={(value) =>
+                  setForm((prev) => ({ ...prev, timeSignature: value }))
+                }
               >
                 <SelectTrigger className="bg-[#2a2a2e] border-[#444] text-white">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent className="bg-[#2a2a2e] border-[#444]">
-                  {TIME_SIGNATURES.map(ts => (
-                    <SelectItem key={ts.value} value={ts.value} className="text-white hover:bg-[#333]">
+                  {TIME_SIGNATURES.map((ts) => (
+                    <SelectItem
+                      key={ts.value}
+                      value={ts.value}
+                      className="text-white hover:bg-[#333]"
+                    >
                       {ts.label}
                     </SelectItem>
                   ))}
@@ -250,14 +297,20 @@ export function ProjectSettingsDialog({
               <Label className="text-gray-300">Sample Rate</Label>
               <Select
                 value={form.sampleRate.toString()}
-                onValueChange={(value) => setForm(prev => ({ ...prev, sampleRate: parseInt(value) }))}
+                onValueChange={(value) =>
+                  setForm((prev) => ({ ...prev, sampleRate: parseInt(value) }))
+                }
               >
                 <SelectTrigger className="bg-[#2a2a2e] border-[#444] text-white">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent className="bg-[#2a2a2e] border-[#444]">
-                  {SAMPLE_RATES.map(sr => (
-                    <SelectItem key={sr.value} value={sr.value.toString()} className="text-white hover:bg-[#333]">
+                  {SAMPLE_RATES.map((sr) => (
+                    <SelectItem
+                      key={sr.value}
+                      value={sr.value.toString()}
+                      className="text-white hover:bg-[#333]"
+                    >
                       {sr.label}
                     </SelectItem>
                   ))}
@@ -269,14 +322,20 @@ export function ProjectSettingsDialog({
               <Label className="text-gray-300">Bit Depth</Label>
               <Select
                 value={form.bitDepth.toString()}
-                onValueChange={(value) => setForm(prev => ({ ...prev, bitDepth: parseInt(value) }))}
+                onValueChange={(value) =>
+                  setForm((prev) => ({ ...prev, bitDepth: parseInt(value) }))
+                }
               >
                 <SelectTrigger className="bg-[#2a2a2e] border-[#444] text-white">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent className="bg-[#2a2a2e] border-[#444]">
-                  {BIT_DEPTHS.map(bd => (
-                    <SelectItem key={bd.value} value={bd.value.toString()} className="text-white hover:bg-[#333]">
+                  {BIT_DEPTHS.map((bd) => (
+                    <SelectItem
+                      key={bd.value}
+                      value={bd.value.toString()}
+                      className="text-white hover:bg-[#333]"
+                    >
                       {bd.label}
                     </SelectItem>
                   ))}

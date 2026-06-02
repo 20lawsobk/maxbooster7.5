@@ -1,1 +1,162 @@
-import{r,f as l}from"./vendor-react-31oK5L0i.js";import{b as s}from"./studio-DOUfHW5v.js";const n=r.forwardRef(({className:e,...a},o)=>l.jsxDEV("div",{className:"relative w-full overflow-auto",children:l.jsxDEV("table",{ref:o,className:s("w-full caption-bottom text-sm",e),...a},void 0,!1,{fileName:"/home/runner/workspace/client/src/components/ui/table.tsx",lineNumber:8,columnNumber:7},void 0)},void 0,!1,{fileName:"/home/runner/workspace/client/src/components/ui/table.tsx",lineNumber:7,columnNumber:5},void 0));n.displayName="Table";const t=r.forwardRef(({className:e,...a},o)=>l.jsxDEV("thead",{ref:o,className:s("[&_tr]:border-b",e),...a},void 0,!1,{fileName:"/home/runner/workspace/client/src/components/ui/table.tsx",lineNumber:18,columnNumber:3},void 0));t.displayName="TableHeader";const m=r.forwardRef(({className:e,...a},o)=>l.jsxDEV("tbody",{ref:o,className:s("[&_tr:last-child]:border-0",e),...a},void 0,!1,{fileName:"/home/runner/workspace/client/src/components/ui/table.tsx",lineNumber:26,columnNumber:3},void 0));m.displayName="TableBody";const i=r.forwardRef(({className:e,...a},o)=>l.jsxDEV("tfoot",{ref:o,className:s("border-t bg-muted/50 font-medium [&>tr]:last:border-b-0",e),...a},void 0,!1,{fileName:"/home/runner/workspace/client/src/components/ui/table.tsx",lineNumber:34,columnNumber:3},void 0));i.displayName="TableFooter";const d=r.forwardRef(({className:e,...a},o)=>l.jsxDEV("tr",{ref:o,className:s("border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted",e),...a},void 0,!1,{fileName:"/home/runner/workspace/client/src/components/ui/table.tsx",lineNumber:44,columnNumber:5},void 0));d.displayName="TableRow";const c=r.forwardRef(({className:e,...a},o)=>l.jsxDEV("th",{ref:o,className:s("h-12 px-4 text-left align-middle font-medium text-muted-foreground [&:has([role=checkbox])]:pr-0",e),...a},void 0,!1,{fileName:"/home/runner/workspace/client/src/components/ui/table.tsx",lineNumber:60,columnNumber:3},void 0));c.displayName="TableHead";const u=r.forwardRef(({className:e,...a},o)=>l.jsxDEV("td",{ref:o,className:s("p-4 align-middle [&:has([role=checkbox])]:pr-0",e),...a},void 0,!1,{fileName:"/home/runner/workspace/client/src/components/ui/table.tsx",lineNumber:75,columnNumber:3},void 0));u.displayName="TableCell";const b=r.forwardRef(({className:e,...a},o)=>l.jsxDEV("caption",{ref:o,className:s("mt-4 text-sm text-muted-foreground",e),...a},void 0,!1,{fileName:"/home/runner/workspace/client/src/components/ui/table.tsx",lineNumber:87,columnNumber:3},void 0));b.displayName="TableCaption";export{n as T,t as a,d as b,c,m as d,u as e};
+import { r, f as l } from "./vendor-react-31oK5L0i.js";
+import { b as s } from "./studio-DOUfHW5v.js";
+const n = r.forwardRef(({ className: e, ...a }, o) =>
+  l.jsxDEV(
+    "div",
+    {
+      className: "relative w-full overflow-auto",
+      children: l.jsxDEV(
+        "table",
+        { ref: o, className: s("w-full caption-bottom text-sm", e), ...a },
+        void 0,
+        !1,
+        {
+          fileName: "/home/runner/workspace/client/src/components/ui/table.tsx",
+          lineNumber: 8,
+          columnNumber: 7,
+        },
+        void 0,
+      ),
+    },
+    void 0,
+    !1,
+    {
+      fileName: "/home/runner/workspace/client/src/components/ui/table.tsx",
+      lineNumber: 7,
+      columnNumber: 5,
+    },
+    void 0,
+  ),
+);
+n.displayName = "Table";
+const t = r.forwardRef(({ className: e, ...a }, o) =>
+  l.jsxDEV(
+    "thead",
+    { ref: o, className: s("[&_tr]:border-b", e), ...a },
+    void 0,
+    !1,
+    {
+      fileName: "/home/runner/workspace/client/src/components/ui/table.tsx",
+      lineNumber: 18,
+      columnNumber: 3,
+    },
+    void 0,
+  ),
+);
+t.displayName = "TableHeader";
+const m = r.forwardRef(({ className: e, ...a }, o) =>
+  l.jsxDEV(
+    "tbody",
+    { ref: o, className: s("[&_tr:last-child]:border-0", e), ...a },
+    void 0,
+    !1,
+    {
+      fileName: "/home/runner/workspace/client/src/components/ui/table.tsx",
+      lineNumber: 26,
+      columnNumber: 3,
+    },
+    void 0,
+  ),
+);
+m.displayName = "TableBody";
+const i = r.forwardRef(({ className: e, ...a }, o) =>
+  l.jsxDEV(
+    "tfoot",
+    {
+      ref: o,
+      className: s(
+        "border-t bg-muted/50 font-medium [&>tr]:last:border-b-0",
+        e,
+      ),
+      ...a,
+    },
+    void 0,
+    !1,
+    {
+      fileName: "/home/runner/workspace/client/src/components/ui/table.tsx",
+      lineNumber: 34,
+      columnNumber: 3,
+    },
+    void 0,
+  ),
+);
+i.displayName = "TableFooter";
+const d = r.forwardRef(({ className: e, ...a }, o) =>
+  l.jsxDEV(
+    "tr",
+    {
+      ref: o,
+      className: s(
+        "border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted",
+        e,
+      ),
+      ...a,
+    },
+    void 0,
+    !1,
+    {
+      fileName: "/home/runner/workspace/client/src/components/ui/table.tsx",
+      lineNumber: 44,
+      columnNumber: 5,
+    },
+    void 0,
+  ),
+);
+d.displayName = "TableRow";
+const c = r.forwardRef(({ className: e, ...a }, o) =>
+  l.jsxDEV(
+    "th",
+    {
+      ref: o,
+      className: s(
+        "h-12 px-4 text-left align-middle font-medium text-muted-foreground [&:has([role=checkbox])]:pr-0",
+        e,
+      ),
+      ...a,
+    },
+    void 0,
+    !1,
+    {
+      fileName: "/home/runner/workspace/client/src/components/ui/table.tsx",
+      lineNumber: 60,
+      columnNumber: 3,
+    },
+    void 0,
+  ),
+);
+c.displayName = "TableHead";
+const u = r.forwardRef(({ className: e, ...a }, o) =>
+  l.jsxDEV(
+    "td",
+    {
+      ref: o,
+      className: s("p-4 align-middle [&:has([role=checkbox])]:pr-0", e),
+      ...a,
+    },
+    void 0,
+    !1,
+    {
+      fileName: "/home/runner/workspace/client/src/components/ui/table.tsx",
+      lineNumber: 75,
+      columnNumber: 3,
+    },
+    void 0,
+  ),
+);
+u.displayName = "TableCell";
+const b = r.forwardRef(({ className: e, ...a }, o) =>
+  l.jsxDEV(
+    "caption",
+    { ref: o, className: s("mt-4 text-sm text-muted-foreground", e), ...a },
+    void 0,
+    !1,
+    {
+      fileName: "/home/runner/workspace/client/src/components/ui/table.tsx",
+      lineNumber: 87,
+      columnNumber: 3,
+    },
+    void 0,
+  ),
+);
+b.displayName = "TableCaption";
+export { n as T, t as a, d as b, c, m as d, u as e };

@@ -7,7 +7,7 @@
 - [Plugin catalog seeding path](plugin-catalog-seeding.md) — two seed paths existed; only `storage.seedPluginCatalog` is wired from init-admin, and Drizzle silently dropped fields written to columns that didn't exist
 - [PDIM direct parallel lanes](pdim-direct-parallel-lanes.md) — when chain pins at fast-fail boundary with gap at floor, the constraint is concurrency; split direct chain into N round-robin lanes
 - [Plugin enrichment rev marker](plugin-enrichment-rev.md) — built-in plugin parameter/preset bumps gate on `presets._rev` and `metadata._rev`; bump `MANIFEST_REV` to force re-upsert across all rows
-- [Admin route gating](admin-route-gating.md) — App.tsx doesn't role-gate routes; every /admin* page must self-gate with useRequireAdmin, and Sidebar adminOnly only hides links
+- [Admin route gating](admin-route-gating.md) — App.tsx doesn't role-gate routes; every /admin\* page must self-gate with useRequireAdmin, and Sidebar adminOnly only hides links
 - [App DB is NEON_DATABASE_URL](app-db-is-neon-database-url.md) — app uses self-managed NEON_DATABASE_URL (shared dev+prod); executeSql + Publish diff hit a DIFFERENT managed DATABASE_URL, so target NEON_DATABASE_URL for ALL schema/data work & existence checks
 - [psql tables need a Publish](psql-created-tables-need-publish.md) — CAVEAT: superseded for this repo by app-db-is-neon-database-url.md; Publish manages the wrong DB here
 - [storefront_hosts routing projection](storefront-hosts-routing-projection.md) — every active storefront domain MUST upsert storefront_hosts or the URL 404s despite showing "live"; multiTenantRouter reads only that table

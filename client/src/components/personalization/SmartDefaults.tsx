@@ -1,13 +1,20 @@
-import React, { useState, useCallback } from 'react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Label } from '@/components/ui/label';
-import { Checkbox } from '@/components/ui/checkbox';
-import { apiRequest } from '@/lib/queryClient';
+import React, { useState, useCallback } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardFooter,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
+import { apiRequest } from "@/lib/queryClient";
 import {
   User,
   Users,
@@ -28,11 +35,21 @@ import {
   Settings,
   Globe,
   Clock,
-} from 'lucide-react';
-import { cn } from '@/lib/utils';
+} from "lucide-react";
+import { cn } from "@/lib/utils";
 
-export type ArtistType = 'solo' | 'band' | 'producer' | 'label' | 'dj' | 'songwriter';
-export type CareerStage = 'emerging' | 'developing' | 'established' | 'professional';
+export type ArtistType =
+  | "solo"
+  | "band"
+  | "producer"
+  | "label"
+  | "dj"
+  | "songwriter";
+export type CareerStage =
+  | "emerging"
+  | "developing"
+  | "established"
+  | "professional";
 
 interface SmartDefaultsProps {
   onComplete?: (settings: SmartDefaultsResult) => void;
@@ -75,152 +92,178 @@ interface GoalOption {
 
 const artistTypeOptions: ArtistTypeOption[] = [
   {
-    id: 'solo',
-    label: 'Solo Artist',
-    description: 'Focus on distribution, social media, and growing your fanbase',
+    id: "solo",
+    label: "Solo Artist",
+    description:
+      "Focus on distribution, social media, and growing your fanbase",
     icon: User,
-    defaultFeatures: ['distribution', 'social-media', 'analytics', 'ai-coach'],
-    color: 'border-blue-500 bg-blue-50 dark:bg-blue-950/30',
+    defaultFeatures: ["distribution", "social-media", "analytics", "ai-coach"],
+    color: "border-blue-500 bg-blue-50 dark:bg-blue-950/30",
   },
   {
-    id: 'band',
-    label: 'Band / Group',
-    description: 'Collaborate with bandmates and manage shared projects',
+    id: "band",
+    label: "Band / Group",
+    description: "Collaborate with bandmates and manage shared projects",
     icon: Users,
-    defaultFeatures: ['collaboration', 'distribution', 'splits', 'tour-management'],
-    color: 'border-purple-500 bg-purple-50 dark:bg-purple-950/30',
+    defaultFeatures: [
+      "collaboration",
+      "distribution",
+      "splits",
+      "tour-management",
+    ],
+    color: "border-purple-500 bg-purple-50 dark:bg-purple-950/30",
   },
   {
-    id: 'producer',
-    label: 'Producer',
-    description: 'Sell beats, manage licensing, and work with artists',
+    id: "producer",
+    label: "Producer",
+    description: "Sell beats, manage licensing, and work with artists",
     icon: Mic2,
-    defaultFeatures: ['marketplace', 'studio', 'licensing', 'storefront'],
-    color: 'border-green-500 bg-green-50 dark:bg-green-950/30',
+    defaultFeatures: ["marketplace", "studio", "licensing", "storefront"],
+    color: "border-green-500 bg-green-50 dark:bg-green-950/30",
   },
   {
-    id: 'label',
-    label: 'Record Label',
-    description: 'Manage multiple artists, royalties, and distribution',
+    id: "label",
+    label: "Record Label",
+    description: "Manage multiple artists, royalties, and distribution",
     icon: Building2,
-    defaultFeatures: ['roster-management', 'analytics', 'contracts', 'royalties'],
-    color: 'border-orange-500 bg-orange-50 dark:bg-orange-950/30',
+    defaultFeatures: [
+      "roster-management",
+      "analytics",
+      "contracts",
+      "royalties",
+    ],
+    color: "border-orange-500 bg-orange-50 dark:bg-orange-950/30",
   },
   {
-    id: 'dj',
-    label: 'DJ',
-    description: 'Build your track library and promote events',
+    id: "dj",
+    label: "DJ",
+    description: "Build your track library and promote events",
     icon: Disc,
-    defaultFeatures: ['library', 'events', 'social-media', 'mixes'],
-    color: 'border-pink-500 bg-pink-50 dark:bg-pink-950/30',
+    defaultFeatures: ["library", "events", "social-media", "mixes"],
+    color: "border-pink-500 bg-pink-50 dark:bg-pink-950/30",
   },
   {
-    id: 'songwriter',
-    label: 'Songwriter',
-    description: 'Track publishing royalties and find sync opportunities',
+    id: "songwriter",
+    label: "Songwriter",
+    description: "Track publishing royalties and find sync opportunities",
     icon: PenTool,
-    defaultFeatures: ['publishing', 'sync', 'collaboration', 'royalties'],
-    color: 'border-cyan-500 bg-cyan-50 dark:bg-cyan-950/30',
+    defaultFeatures: ["publishing", "sync", "collaboration", "royalties"],
+    color: "border-cyan-500 bg-cyan-50 dark:bg-cyan-950/30",
   },
 ];
 
 const careerStageOptions: CareerStageOption[] = [
   {
-    id: 'emerging',
-    label: 'Emerging',
-    description: 'Just starting out, learning the ropes',
+    id: "emerging",
+    label: "Emerging",
+    description: "Just starting out, learning the ropes",
     icon: Sparkles,
   },
   {
-    id: 'developing',
-    label: 'Developing',
-    description: 'Building momentum, growing audience',
+    id: "developing",
+    label: "Developing",
+    description: "Building momentum, growing audience",
     icon: Target,
   },
   {
-    id: 'established',
-    label: 'Established',
-    description: 'Consistent releases, loyal fanbase',
+    id: "established",
+    label: "Established",
+    description: "Consistent releases, loyal fanbase",
     icon: CheckCircle,
   },
   {
-    id: 'professional',
-    label: 'Professional',
-    description: 'Full-time career, industry recognition',
+    id: "professional",
+    label: "Professional",
+    description: "Full-time career, industry recognition",
     icon: Zap,
   },
 ];
 
 const goalOptions: GoalOption[] = [
   {
-    id: 'grow-fanbase',
-    label: 'Grow My Fanbase',
-    description: 'Expand reach and gain new listeners',
+    id: "grow-fanbase",
+    label: "Grow My Fanbase",
+    description: "Expand reach and gain new listeners",
     icon: Users,
-    forArtistTypes: ['solo', 'band', 'dj'],
+    forArtistTypes: ["solo", "band", "dj"],
   },
   {
-    id: 'increase-revenue',
-    label: 'Increase Revenue',
-    description: 'Monetize music and earn more',
+    id: "increase-revenue",
+    label: "Increase Revenue",
+    description: "Monetize music and earn more",
     icon: DollarSign,
-    forArtistTypes: ['solo', 'band', 'producer', 'label', 'songwriter'],
+    forArtistTypes: ["solo", "band", "producer", "label", "songwriter"],
   },
   {
-    id: 'release-music',
-    label: 'Release More Music',
-    description: 'Streamline distribution process',
+    id: "release-music",
+    label: "Release More Music",
+    description: "Streamline distribution process",
     icon: Upload,
-    forArtistTypes: ['solo', 'band', 'producer'],
+    forArtistTypes: ["solo", "band", "producer"],
   },
   {
-    id: 'sell-beats',
-    label: 'Sell More Beats',
-    description: 'Grow beat marketplace presence',
+    id: "sell-beats",
+    label: "Sell More Beats",
+    description: "Grow beat marketplace presence",
     icon: Music,
-    forArtistTypes: ['producer'],
+    forArtistTypes: ["producer"],
   },
   {
-    id: 'find-collaborators',
-    label: 'Find Collaborators',
-    description: 'Connect with other artists',
+    id: "find-collaborators",
+    label: "Find Collaborators",
+    description: "Connect with other artists",
     icon: Users,
-    forArtistTypes: ['solo', 'producer', 'songwriter'],
+    forArtistTypes: ["solo", "producer", "songwriter"],
   },
   {
-    id: 'manage-artists',
-    label: 'Manage Artists',
-    description: 'Build and support your roster',
+    id: "manage-artists",
+    label: "Manage Artists",
+    description: "Build and support your roster",
     icon: Building2,
-    forArtistTypes: ['label'],
+    forArtistTypes: ["label"],
   },
   {
-    id: 'sync-placements',
-    label: 'Get Sync Placements',
-    description: 'License music for TV/film/ads',
+    id: "sync-placements",
+    label: "Get Sync Placements",
+    description: "License music for TV/film/ads",
     icon: Globe,
-    forArtistTypes: ['solo', 'songwriter', 'producer'],
+    forArtistTypes: ["solo", "songwriter", "producer"],
   },
   {
-    id: 'track-analytics',
-    label: 'Track Analytics',
-    description: 'Understand performance metrics',
+    id: "track-analytics",
+    label: "Track Analytics",
+    description: "Understand performance metrics",
     icon: BarChart3,
-    forArtistTypes: ['solo', 'band', 'producer', 'label'],
+    forArtistTypes: ["solo", "band", "producer", "label"],
   },
   {
-    id: 'automate-social',
-    label: 'Automate Social Media',
-    description: 'Save time on content posting',
+    id: "automate-social",
+    label: "Automate Social Media",
+    description: "Save time on content posting",
     icon: Clock,
-    forArtistTypes: ['solo', 'band', 'dj', 'producer'],
+    forArtistTypes: ["solo", "band", "dj", "producer"],
   },
 ];
 
 const genreOptions = [
-  'Hip-Hop', 'Pop', 'Electronic', 'Rock', 'R&B', 'Country',
-  'Jazz', 'Classical', 'Indie', 'Metal', 'Folk', 'Reggae',
-  'Latin', 'Soul', 'Funk', 'Blues', 'World', 'Ambient',
+  "Hip-Hop",
+  "Pop",
+  "Electronic",
+  "Rock",
+  "R&B",
+  "Country",
+  "Jazz",
+  "Classical",
+  "Indie",
+  "Metal",
+  "Folk",
+  "Reggae",
+  "Latin",
+  "Soul",
+  "Funk",
+  "Blues",
+  "World",
+  "Ambient",
 ];
 
 export function SmartDefaults({
@@ -241,12 +284,20 @@ export function SmartDefaults({
 
   const applyDefaultsMutation = useMutation({
     mutationFn: async (settings: SmartDefaultsResult) => {
-      const response = await apiRequest('PUT', '/api/personalization/defaults', settings);
+      const response = await apiRequest(
+        "PUT",
+        "/api/personalization/defaults",
+        settings,
+      );
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/personalization/preferences'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/personalization/dashboard-layout'] });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/personalization/preferences"],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/personalization/dashboard-layout"],
+      });
     },
   });
 
@@ -259,7 +310,9 @@ export function SmartDefaults({
         careerStage: careerStage!,
         primaryGoals: selectedGoals,
         genres: selectedGenres,
-        enabledFeatures: artistTypeOptions.find(o => o.id === artistType)?.defaultFeatures || [],
+        enabledFeatures:
+          artistTypeOptions.find((o) => o.id === artistType)?.defaultFeatures ||
+          [],
       };
       applyDefaultsMutation.mutate(result, {
         onSuccess: () => {
@@ -267,7 +320,15 @@ export function SmartDefaults({
         },
       });
     }
-  }, [currentStep, artistType, careerStage, selectedGoals, selectedGenres, applyDefaultsMutation, onComplete]);
+  }, [
+    currentStep,
+    artistType,
+    careerStage,
+    selectedGoals,
+    selectedGenres,
+    applyDefaultsMutation,
+    onComplete,
+  ]);
 
   const handleBack = useCallback(() => {
     if (currentStep > 0) {
@@ -291,23 +352,21 @@ export function SmartDefaults({
   };
 
   const toggleGoal = (goalId: string) => {
-    setSelectedGoals(prev =>
+    setSelectedGoals((prev) =>
       prev.includes(goalId)
-        ? prev.filter(g => g !== goalId)
-        : [...prev, goalId]
+        ? prev.filter((g) => g !== goalId)
+        : [...prev, goalId],
     );
   };
 
   const toggleGenre = (genre: string) => {
-    setSelectedGenres(prev =>
-      prev.includes(genre)
-        ? prev.filter(g => g !== genre)
-        : [...prev, genre]
+    setSelectedGenres((prev) =>
+      prev.includes(genre) ? prev.filter((g) => g !== genre) : [...prev, genre],
     );
   };
 
   const filteredGoals = goalOptions.filter(
-    goal => !artistType || goal.forArtistTypes.includes(artistType)
+    (goal) => !artistType || goal.forArtistTypes.includes(artistType),
   );
 
   return (
@@ -348,18 +407,22 @@ export function SmartDefaults({
                     <div
                       key={option.id}
                       className={cn(
-                        'p-4 rounded-lg border-2 cursor-pointer transition-all',
+                        "p-4 rounded-lg border-2 cursor-pointer transition-all",
                         isSelected
-                          ? option.color + ' border-2'
-                          : 'border-muted hover:border-primary/50'
+                          ? option.color + " border-2"
+                          : "border-muted hover:border-primary/50",
                       )}
                       onClick={() => setArtistType(option.id)}
                     >
                       <div className="flex items-start gap-3">
-                        <div className={cn(
-                          'p-2 rounded-lg',
-                          isSelected ? 'bg-white/80 dark:bg-black/30' : 'bg-muted'
-                        )}>
+                        <div
+                          className={cn(
+                            "p-2 rounded-lg",
+                            isSelected
+                              ? "bg-white/80 dark:bg-black/30"
+                              : "bg-muted",
+                          )}
+                        >
                           <Icon className="h-5 w-5" />
                         </div>
                         <div>
@@ -390,7 +453,7 @@ export function SmartDefaults({
             </CardHeader>
             <CardContent>
               <RadioGroup
-                value={careerStage || ''}
+                value={careerStage || ""}
                 onValueChange={(value) => setCareerStage(value as CareerStage)}
               >
                 <div className="space-y-3">
@@ -400,10 +463,10 @@ export function SmartDefaults({
                       <div
                         key={option.id}
                         className={cn(
-                          'flex items-center space-x-4 p-4 rounded-lg border-2 cursor-pointer transition-all',
+                          "flex items-center space-x-4 p-4 rounded-lg border-2 cursor-pointer transition-all",
                           careerStage === option.id
-                            ? 'border-primary bg-primary/5'
-                            : 'border-muted hover:border-primary/50'
+                            ? "border-primary bg-primary/5"
+                            : "border-muted hover:border-primary/50",
                         )}
                         onClick={() => setCareerStage(option.id)}
                       >
@@ -411,7 +474,10 @@ export function SmartDefaults({
                         <div className="p-2 rounded-lg bg-muted">
                           <Icon className="h-5 w-5" />
                         </div>
-                        <Label htmlFor={option.id} className="flex-1 cursor-pointer">
+                        <Label
+                          htmlFor={option.id}
+                          className="flex-1 cursor-pointer"
+                        >
                           <span className="font-semibold">{option.label}</span>
                           <p className="text-sm text-muted-foreground">
                             {option.description}
@@ -443,10 +509,10 @@ export function SmartDefaults({
                     <div
                       key={goal.id}
                       className={cn(
-                        'flex items-center space-x-3 p-3 rounded-lg border cursor-pointer transition-all',
+                        "flex items-center space-x-3 p-3 rounded-lg border cursor-pointer transition-all",
                         isSelected
-                          ? 'border-primary bg-primary/5'
-                          : 'border-muted hover:border-primary/50'
+                          ? "border-primary bg-primary/5"
+                          : "border-muted hover:border-primary/50",
                       )}
                       onClick={() => toggleGoal(goal.id)}
                     >
@@ -458,7 +524,9 @@ export function SmartDefaults({
                         <Icon className="h-4 w-4" />
                       </div>
                       <div className="flex-1">
-                        <span className="font-medium text-sm">{goal.label}</span>
+                        <span className="font-medium text-sm">
+                          {goal.label}
+                        </span>
                         <p className="text-xs text-muted-foreground">
                           {goal.description}
                         </p>
@@ -486,10 +554,10 @@ export function SmartDefaults({
                   return (
                     <Badge
                       key={genre}
-                      variant={isSelected ? 'default' : 'outline'}
+                      variant={isSelected ? "default" : "outline"}
                       className={cn(
-                        'cursor-pointer transition-all text-sm py-1.5 px-3',
-                        isSelected && 'bg-primary'
+                        "cursor-pointer transition-all text-sm py-1.5 px-3",
+                        isSelected && "bg-primary",
                       )}
                       onClick={() => toggleGenre(genre)}
                     >
@@ -501,7 +569,7 @@ export function SmartDefaults({
               </div>
               {selectedGenres.length > 0 && (
                 <p className="text-sm text-muted-foreground mt-4">
-                  Selected: {selectedGenres.join(', ')}
+                  Selected: {selectedGenres.join(", ")}
                 </p>
               )}
             </CardContent>
@@ -523,7 +591,9 @@ export function SmartDefaults({
           >
             {currentStep === totalSteps - 1 ? (
               <>
-                {applyDefaultsMutation.isPending ? 'Saving...' : 'Complete Setup'}
+                {applyDefaultsMutation.isPending
+                  ? "Saving..."
+                  : "Complete Setup"}
                 <CheckCircle className="h-4 w-4 ml-2" />
               </>
             ) : (
@@ -541,14 +611,16 @@ export function SmartDefaults({
           <CardContent className="pt-4">
             <div className="flex items-center gap-2 mb-2">
               <Sparkles className="h-4 w-4 text-yellow-500" />
-              <span className="text-sm font-medium">Preview: Features we'll enable</span>
+              <span className="text-sm font-medium">
+                Preview: Features we'll enable
+              </span>
             </div>
             <div className="flex flex-wrap gap-2">
               {artistTypeOptions
-                .find(o => o.id === artistType)
+                .find((o) => o.id === artistType)
                 ?.defaultFeatures.map((feature) => (
                   <Badge key={feature} variant="secondary" className="text-xs">
-                    {feature.replace('-', ' ')}
+                    {feature.replace("-", " ")}
                   </Badge>
                 ))}
             </div>

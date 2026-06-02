@@ -1,6 +1,6 @@
-import { useState, useMemo, useCallback } from 'react';
-import { useQuery, useMutation } from '@tanstack/react-query';
-import { useLocation } from 'wouter';
+import { useState, useMemo, useCallback } from "react";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { useLocation } from "wouter";
 import {
   Bell,
   CheckCheck,
@@ -22,21 +22,27 @@ import {
   FileText,
   BarChart2,
   MapPin,
-} from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Card, CardContent } from '@/components/ui/card';
-import { apiRequest, queryClient } from '@/lib/queryClient';
-import { useToast } from '@/hooks/use-toast';
-import { useAuth } from '@/hooks/useAuth';
-import { NotificationItem } from '@/components/notifications/NotificationItem';
-import type { Notification, NotificationCategory } from '@/components/notifications/types';
-import { categoryConfig, typeToCategory } from '@/components/notifications/types';
-import { AppLayout } from '@/components/layout/AppLayout';
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card, CardContent } from "@/components/ui/card";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
+import { NotificationItem } from "@/components/notifications/NotificationItem";
+import type {
+  Notification,
+  NotificationCategory,
+} from "@/components/notifications/types";
+import {
+  categoryConfig,
+  typeToCategory,
+} from "@/components/notifications/types";
+import { AppLayout } from "@/components/layout/AppLayout";
 
-type TabFilter = 'all' | 'unread' | NotificationCategory;
+type TabFilter = "all" | "unread" | NotificationCategory;
 
 const categoryIcons: Record<NotificationCategory, React.ElementType> = {
   account_security: Shield,
@@ -56,23 +62,27 @@ const categoryIcons: Record<NotificationCategory, React.ElementType> = {
 };
 
 export default function Notifications() {
-  const [activeTab, setActiveTab] = useState<TabFilter>('all');
+  const [activeTab, setActiveTab] = useState<TabFilter>("all");
   const { toast } = useToast();
   const { user } = useAuth();
   const [, navigate] = useLocation();
 
-  const { data: notifications = [], isLoading} = useQuery<Notification[]>({
-    queryKey: ['/api/notifications'],
+  const { data: notifications = [], isLoading } = useQuery<Notification[]>({
+    queryKey: ["/api/notifications"],
     enabled: !!user,
   });
 
-  const unreadCount = useMemo(() => notifications.filter((n) => !n.isRead).length, [notifications]);
+  const unreadCount = useMemo(
+    () => notifications.filter((n) => !n.isRead).length,
+    [notifications],
+  );
 
   const filteredNotifications = useMemo(() => {
     return notifications.filter((notification) => {
-      if (activeTab === 'all') return true;
-      if (activeTab === 'unread') return !notification.isRead;
-      const category = notification.category || typeToCategory[notification.type] || 'system';
+      if (activeTab === "all") return true;
+      if (activeTab === "unread") return !notification.isRead;
+      const category =
+        notification.category || typeToCategory[notification.type] || "system";
       return category === activeTab;
     });
   }, [notifications, activeTab]);
@@ -95,7 +105,9 @@ export default function Notifications() {
       platform_admin: [],
     };
     notifications.forEach((n) => {
-      const category = (n.category || typeToCategory[n.type] || 'system') as NotificationCategory;
+      const category = (n.category ||
+        typeToCategory[n.type] ||
+        "system") as NotificationCategory;
       if (groups[category]) {
         groups[category].push(n);
       } else {
@@ -106,77 +118,114 @@ export default function Notifications() {
   }, [notifications]);
 
   const markAsReadMutation = useMutation({
-    mutationFn: async (id: string) => apiRequest('PUT', `/api/notifications/${id}/read`),
+    mutationFn: async (id: string) =>
+      apiRequest("PUT", `/api/notifications/${id}/read`),
     onMutate: async (id) => {
-      await queryClient.cancelQueries({ queryKey: ['/api/notifications'] });
-      const previous = queryClient.getQueryData<Notification[]>(['/api/notifications']);
-      queryClient.setQueryData<Notification[]>(['/api/notifications'], (old = []) =>
-        old.map((n) => (n.id === id ? { ...n, isRead: true } : n))
+      await queryClient.cancelQueries({ queryKey: ["/api/notifications"] });
+      const previous = queryClient.getQueryData<Notification[]>([
+        "/api/notifications",
+      ]);
+      queryClient.setQueryData<Notification[]>(
+        ["/api/notifications"],
+        (old = []) =>
+          old.map((n) => (n.id === id ? { ...n, isRead: true } : n)),
       );
       return { previous };
     },
     onError: (_, __, context) => {
-      queryClient.setQueryData(['/api/notifications'], context?.previous);
-      toast({ title: 'Error', description: 'Failed to mark as read', variant: 'destructive' });
+      queryClient.setQueryData(["/api/notifications"], context?.previous);
+      toast({
+        title: "Error",
+        description: "Failed to mark as read",
+        variant: "destructive",
+      });
     },
-    onSettled: () => queryClient.invalidateQueries({ queryKey: ['/api/notifications'] }),
+    onSettled: () =>
+      queryClient.invalidateQueries({ queryKey: ["/api/notifications"] }),
   });
 
   const markAllAsReadMutation = useMutation({
-    mutationFn: async () => apiRequest('PUT', '/api/notifications/mark-all-read'),
+    mutationFn: async () =>
+      apiRequest("PUT", "/api/notifications/mark-all-read"),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/notifications'] });
-      toast({ title: 'All notifications marked as read' });
+      queryClient.invalidateQueries({ queryKey: ["/api/notifications"] });
+      toast({ title: "All notifications marked as read" });
     },
-    onError: () => toast({ title: 'Error', description: 'Failed to mark all as read', variant: 'destructive' }),
+    onError: () =>
+      toast({
+        title: "Error",
+        description: "Failed to mark all as read",
+        variant: "destructive",
+      }),
   });
 
   const deleteNotificationMutation = useMutation({
-    mutationFn: async (id: string) => apiRequest('DELETE', `/api/notifications/${id}`),
+    mutationFn: async (id: string) =>
+      apiRequest("DELETE", `/api/notifications/${id}`),
     onMutate: async (id) => {
-      await queryClient.cancelQueries({ queryKey: ['/api/notifications'] });
-      const previous = queryClient.getQueryData<Notification[]>(['/api/notifications']);
-      queryClient.setQueryData<Notification[]>(['/api/notifications'], (old = []) =>
-        old.filter((n) => n.id !== id)
+      await queryClient.cancelQueries({ queryKey: ["/api/notifications"] });
+      const previous = queryClient.getQueryData<Notification[]>([
+        "/api/notifications",
+      ]);
+      queryClient.setQueryData<Notification[]>(
+        ["/api/notifications"],
+        (old = []) => old.filter((n) => n.id !== id),
       );
       return { previous };
     },
-    onSuccess: () => toast({ title: 'Notification deleted' }),
+    onSuccess: () => toast({ title: "Notification deleted" }),
     onError: (_, __, context) => {
-      queryClient.setQueryData(['/api/notifications'], context?.previous);
-      toast({ title: 'Error', description: 'Failed to delete notification', variant: 'destructive' });
+      queryClient.setQueryData(["/api/notifications"], context?.previous);
+      toast({
+        title: "Error",
+        description: "Failed to delete notification",
+        variant: "destructive",
+      });
     },
-    onSettled: () => queryClient.invalidateQueries({ queryKey: ['/api/notifications'] }),
+    onSettled: () =>
+      queryClient.invalidateQueries({ queryKey: ["/api/notifications"] }),
   });
 
   const clearAllMutation = useMutation({
-    mutationFn: async () => apiRequest('DELETE', '/api/notifications/clear-all'),
+    mutationFn: async () =>
+      apiRequest("DELETE", "/api/notifications/clear-all"),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/notifications'] });
-      toast({ title: 'All notifications cleared' });
+      queryClient.invalidateQueries({ queryKey: ["/api/notifications"] });
+      toast({ title: "All notifications cleared" });
     },
-    onError: () => toast({ title: 'Error', description: 'Failed to clear notifications', variant: 'destructive' }),
+    onError: () =>
+      toast({
+        title: "Error",
+        description: "Failed to clear notifications",
+        variant: "destructive",
+      }),
   });
 
   const handleNavigate = useCallback(
     (url: string) => {
       navigate(url);
     },
-    [navigate]
+    [navigate],
   );
 
-return (
+  return (
     <AppLayout title="Notifications">
       <div className="max-w-3xl mx-auto">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">
-            <Button variant="ghost" size="icon" onClick={() => navigate('/dashboard')}>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => navigate("/dashboard")}
+            >
               <ArrowLeft className="h-5 w-5" />
             </Button>
             <div>
               <h1 className="text-2xl font-bold">Notifications</h1>
               {unreadCount > 0 && (
-                <p className="text-sm text-muted-foreground">{unreadCount} unread</p>
+                <p className="text-sm text-muted-foreground">
+                  {unreadCount} unread
+                </p>
               )}
             </div>
           </div>
@@ -198,7 +247,9 @@ return (
               variant="outline"
               size="sm"
               onClick={() => clearAllMutation.mutate()}
-              disabled={notifications.length === 0 || clearAllMutation.isPending}
+              disabled={
+                notifications.length === 0 || clearAllMutation.isPending
+              }
             >
               {clearAllMutation.isPending ? (
                 <Loader2 className="h-4 w-4 animate-spin mr-2" />
@@ -210,7 +261,7 @@ return (
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => navigate('/settings?tab=notifications')}
+              onClick={() => navigate("/settings?tab=notifications")}
               title="Notification settings"
             >
               <Settings className="h-4 w-4" />
@@ -218,7 +269,11 @@ return (
           </div>
         </div>
 
-        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as TabFilter)} className="mb-4">
+        <Tabs
+          value={activeTab}
+          onValueChange={(v) => setActiveTab(v as TabFilter)}
+          className="mb-4"
+        >
           <TabsList className="w-full justify-start flex-wrap h-auto gap-1 bg-transparent p-0">
             <TabsTrigger value="all" className="text-sm">
               All ({notifications.length})
@@ -231,22 +286,29 @@ return (
                 </Badge>
               )}
             </TabsTrigger>
-            {(Object.keys(categoryConfig) as NotificationCategory[]).map((cat) => {
-              const Icon = categoryIcons[cat];
-              const catCount = groupedByCategory[cat].filter((n) => !n.isRead).length;
-              const catLabel = categoryConfig[cat]?.label || cat;
-              return (
-                <TabsTrigger key={cat} value={cat} className="text-sm">
-                  <Icon className="h-3.5 w-3.5 mr-1.5" />
-                  {catLabel}
-                  {catCount > 0 && (
-                    <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-xs">
-                      {catCount}
-                    </Badge>
-                  )}
-                </TabsTrigger>
-              );
-            })}
+            {(Object.keys(categoryConfig) as NotificationCategory[]).map(
+              (cat) => {
+                const Icon = categoryIcons[cat];
+                const catCount = groupedByCategory[cat].filter(
+                  (n) => !n.isRead,
+                ).length;
+                const catLabel = categoryConfig[cat]?.label || cat;
+                return (
+                  <TabsTrigger key={cat} value={cat} className="text-sm">
+                    <Icon className="h-3.5 w-3.5 mr-1.5" />
+                    {catLabel}
+                    {catCount > 0 && (
+                      <Badge
+                        variant="secondary"
+                        className="ml-1 h-5 px-1.5 text-xs"
+                      >
+                        {catCount}
+                      </Badge>
+                    )}
+                  </TabsTrigger>
+                );
+              },
+            )}
           </TabsList>
         </Tabs>
 
@@ -263,11 +325,11 @@ return (
                 </div>
                 <h3 className="font-semibold text-lg mb-2">No notifications</h3>
                 <p className="text-sm text-muted-foreground max-w-[280px]">
-                  {activeTab === 'unread'
+                  {activeTab === "unread"
                     ? "You're all caught up! No unread notifications."
-                    : activeTab === 'all'
-                    ? "You don't have any notifications yet. They'll appear here when something happens."
-                    : `No ${categoryConfig[activeTab as NotificationCategory]?.label.toLowerCase() || activeTab} notifications.`}
+                    : activeTab === "all"
+                      ? "You don't have any notifications yet. They'll appear here when something happens."
+                      : `No ${categoryConfig[activeTab as NotificationCategory]?.label.toLowerCase() || activeTab} notifications.`}
                 </p>
               </div>
             ) : (

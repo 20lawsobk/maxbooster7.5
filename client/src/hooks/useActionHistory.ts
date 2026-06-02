@@ -1,6 +1,11 @@
-import { useMemo, useCallback } from 'react';
-import { useUndoHistory, useUndo } from '@/contexts/UndoContext';
-import { UndoableAction, ActionType, ActionCategory, getActionLabel } from '@/lib/undo/types';
+import { useMemo, useCallback } from "react";
+import { useUndoHistory, useUndo } from "@/contexts/UndoContext";
+import {
+  UndoableAction,
+  ActionType,
+  ActionCategory,
+  getActionLabel,
+} from "@/lib/undo/types";
 
 export interface ActionHistoryEntry {
   id: string;
@@ -67,17 +72,14 @@ function actionToEntry(action: UndoableAction): ActionHistoryEntry {
 }
 
 export function useActionHistory(
-  options: UseActionHistoryOptions = {}
+  options: UseActionHistoryOptions = {},
 ): UseActionHistoryResult {
   const { maxEntries = 100 } = options;
   const { history, redoStack } = useUndoHistory();
   const { undo, getActionById } = useUndo();
 
   const entries = useMemo<ActionHistoryEntry[]>(() => {
-    return history
-      .slice(-maxEntries)
-      .map(actionToEntry)
-      .reverse();
+    return history.slice(-maxEntries).map(actionToEntry).reverse();
   }, [history, maxEntries]);
 
   const modules = useMemo(() => {
@@ -112,7 +114,9 @@ export function useActionHistory(
       }
 
       if (filters.isDestructive !== undefined) {
-        filtered = filtered.filter((e) => e.isDestructive === filters.isDestructive);
+        filtered = filtered.filter(
+          (e) => e.isDestructive === filters.isDestructive,
+        );
       }
 
       if (filters.search) {
@@ -122,7 +126,7 @@ export function useActionHistory(
             e.label.toLowerCase().includes(term) ||
             e.description.toLowerCase().includes(term) ||
             e.module.toLowerCase().includes(term) ||
-            e.type.toLowerCase().includes(term)
+            e.type.toLowerCase().includes(term),
         );
       }
 
@@ -138,28 +142,28 @@ export function useActionHistory(
 
       return filtered;
     },
-    [entries]
+    [entries],
   );
 
   const getEntryById = useCallback(
     (id: string): ActionHistoryEntry | undefined => {
       return entries.find((e) => e.id === id);
     },
-    [entries]
+    [entries],
   );
 
   const getEntriesByModule = useCallback(
     (module: string): ActionHistoryEntry[] => {
       return entries.filter((e) => e.module === module);
     },
-    [entries]
+    [entries],
   );
 
   const getEntriesByType = useCallback(
     (type: ActionType): ActionHistoryEntry[] => {
       return entries.filter((e) => e.type === type);
     },
-    [entries]
+    [entries],
   );
 
   const getDestructiveEntries = useCallback((): ActionHistoryEntry[] => {
@@ -170,7 +174,7 @@ export function useActionHistory(
     (count: number): ActionHistoryEntry[] => {
       return entries.slice(0, count);
     },
-    [entries]
+    [entries],
   );
 
   const undoEntry = useCallback(
@@ -183,7 +187,7 @@ export function useActionHistory(
 
       await undo();
     },
-    [entries, undo, getActionById]
+    [entries, undo, getActionById],
   );
 
   const undoToEntry = useCallback(
@@ -198,7 +202,7 @@ export function useActionHistory(
         }
       }
     },
-    [entries, undo]
+    [entries, undo],
   );
 
   return {

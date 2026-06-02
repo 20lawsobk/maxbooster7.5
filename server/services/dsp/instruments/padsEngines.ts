@@ -1,9 +1,22 @@
 import {
-  AudioBuffer, DSPContext, createBuffer,
-  BiquadFilter, OnePoleFilter, DelayLine, AllPassFilter, CombFilter,
-  LFO, Oscillator, ADSR, EnvelopeFollower,
-  msToSamples, dbToLinear, clamp, softClip, hardClip
-} from '../core';
+  AudioBuffer,
+  DSPContext,
+  createBuffer,
+  BiquadFilter,
+  OnePoleFilter,
+  DelayLine,
+  AllPassFilter,
+  CombFilter,
+  LFO,
+  Oscillator,
+  ADSR,
+  EnvelopeFollower,
+  msToSamples,
+  dbToLinear,
+  clamp,
+  softClip,
+  hardClip,
+} from "../core";
 
 export interface SynthesizerEngine {
   noteOn(frequency: number, velocity: number, context: DSPContext): void;
@@ -87,7 +100,7 @@ export class WarmPadSynth implements SynthesizerEngine {
         const saw = this.oscillators[o].sawBandLimited(14);
         const pulse = this.oscillators[o].pulse(0.35 + lfo1Value * 0.15);
         const mixed = saw * 0.6 + pulse * 0.4;
-        
+
         const pan = (o - 2.5) / 2.5;
         sampleL += mixed * (1 - pan * 0.4);
         sampleR += mixed * (1 + pan * 0.4);
@@ -100,8 +113,13 @@ export class WarmPadSynth implements SynthesizerEngine {
       sampleL /= 6;
       sampleR /= 6;
 
-      const filterFreq = 400 + filterEnvValue * 1800 + lfo2Value * 200 + this.velocity * 1000;
-      this.lpFilter.setLowpass(clamp(filterFreq, 100, 8000), 1.5, this.sampleRate);
+      const filterFreq =
+        400 + filterEnvValue * 1800 + lfo2Value * 200 + this.velocity * 1000;
+      this.lpFilter.setLowpass(
+        clamp(filterFreq, 100, 8000),
+        1.5,
+        this.sampleRate,
+      );
 
       sampleL = this.hpFilter.process(sampleL);
       sampleR = this.hpFilter.process(sampleR);
@@ -125,7 +143,7 @@ export class WarmPadSynth implements SynthesizerEngine {
   }
 
   reset(): void {
-    this.oscillators.forEach(o => o.reset());
+    this.oscillators.forEach((o) => o.reset());
     this.subOsc.reset();
     this.lfo1.reset();
     this.lfo2.reset();
@@ -136,7 +154,7 @@ export class WarmPadSynth implements SynthesizerEngine {
 }
 
 export class StringPadSynth implements SynthesizerEngine {
-  private sections: { oscillators: Oscillator[], pan: number }[] = [];
+  private sections: { oscillators: Oscillator[]; pan: number }[] = [];
   private envelope: ADSR;
   private vibratoLFO: LFO;
   private expressionLFO: LFO;
@@ -181,7 +199,11 @@ export class StringPadSynth implements SynthesizerEngine {
       });
     });
 
-    this.lpFilter.setLowpass(3500 + this.velocity * 3000, 0.7, context.sampleRate);
+    this.lpFilter.setLowpass(
+      3500 + this.velocity * 3000,
+      0.7,
+      context.sampleRate,
+    );
     this.hpFilter.setHighpass(80, 0.7, context.sampleRate);
     this.bodyFilter.setPeaking(600, 1.5, 3, context.sampleRate);
     this.airFilter.setHighShelf(5000, 2, context.sampleRate);
@@ -209,7 +231,10 @@ export class StringPadSynth implements SynthesizerEngine {
         let sectionSample = 0;
         for (const osc of section.oscillators) {
           const currentFreq = this.frequency * (1 + vibrato);
-          osc.setFrequency(currentFreq * (1 + (Math.random() - 0.5) * 0.001), this.sampleRate);
+          osc.setFrequency(
+            currentFreq * (1 + (Math.random() - 0.5) * 0.001),
+            this.sampleRate,
+          );
           sectionSample += osc.sawBandLimited(12) * 0.4 + osc.sine() * 0.2;
         }
         sectionSample /= section.oscillators.length;
@@ -245,8 +270,8 @@ export class StringPadSynth implements SynthesizerEngine {
   }
 
   reset(): void {
-    this.sections.forEach(section => {
-      section.oscillators.forEach(o => o.reset());
+    this.sections.forEach((section) => {
+      section.oscillators.forEach((o) => o.reset());
     });
     this.vibratoLFO.reset();
     this.expressionLFO.reset();
@@ -302,10 +327,19 @@ export class ChoirPadSynth implements SynthesizerEngine {
     const formantQs = [10, 8, 6, 5, 4];
     const formantGains = [6, 4, 2, 1, 0.5];
     for (let i = 0; i < 5; i++) {
-      this.formantFilters[i].setPeaking(formantFreqs[i], formantQs[i], formantGains[i], context.sampleRate);
+      this.formantFilters[i].setPeaking(
+        formantFreqs[i],
+        formantQs[i],
+        formantGains[i],
+        context.sampleRate,
+      );
     }
 
-    this.lpFilter.setLowpass(6000 + this.velocity * 4000, 0.7, context.sampleRate);
+    this.lpFilter.setLowpass(
+      6000 + this.velocity * 4000,
+      0.7,
+      context.sampleRate,
+    );
     this.hpFilter.setHighpass(100, 0.7, context.sampleRate);
 
     this.envelope = new ADSR(0.45, 0.35, 0.82, 0.65, context.sampleRate);
@@ -333,8 +367,11 @@ export class ChoirPadSynth implements SynthesizerEngine {
 
       for (let o = 0; o < 8; o++) {
         const currentFreq = this.frequency * (1 + vibrato);
-        this.formantOscs[o].setFrequency(currentFreq * (1 + (o - 3.5) * 0.003), this.sampleRate);
-        
+        this.formantOscs[o].setFrequency(
+          currentFreq * (1 + (o - 3.5) * 0.003),
+          this.sampleRate,
+        );
+
         const saw = this.formantOscs[o].sawBandLimited(16);
         const pulse = this.formantOscs[o].pulse(0.3);
         let sample = saw * 0.5 + pulse * 0.3;
@@ -374,8 +411,8 @@ export class ChoirPadSynth implements SynthesizerEngine {
   }
 
   reset(): void {
-    this.formantOscs.forEach(o => o.reset());
-    this.formantFilters.forEach(f => f.clear());
+    this.formantOscs.forEach((o) => o.reset());
+    this.formantFilters.forEach((f) => f.clear());
     this.vibratoLFO.reset();
     this.formantLFO.reset();
     this.lpFilter.clear();
@@ -425,13 +462,20 @@ export class GlassPadSynth implements SynthesizerEngine {
 
     const bellRatios = [2, 3.5, 5.19, 7.23];
     for (let i = 0; i < 4; i++) {
-      this.bellOscs[i].setFrequency(frequency * bellRatios[i], context.sampleRate);
+      this.bellOscs[i].setFrequency(
+        frequency * bellRatios[i],
+        context.sampleRate,
+      );
     }
 
     this.shimmerLFO.setFrequency(3.5, context.sampleRate);
 
     this.hpFilter.setHighpass(200, 0.7, context.sampleRate);
-    this.lpFilter.setLowpass(8000 + this.velocity * 4000, 0.7, context.sampleRate);
+    this.lpFilter.setLowpass(
+      8000 + this.velocity * 4000,
+      0.7,
+      context.sampleRate,
+    );
     this.shimmerFilter.setHighShelf(4000, 4, context.sampleRate);
 
     this.envelope = new ADSR(0.18, 0.35, 0.78, 0.85, context.sampleRate);
@@ -476,7 +520,8 @@ export class GlassPadSynth implements SynthesizerEngine {
       sampleR = sampleR / 6 + bellSample;
 
       this.sparkleDelay.write((sampleL + sampleR) * 0.5);
-      const delayed = this.sparkleDelay.readInterpolated(1500 + shimmer * 200) * 0.2;
+      const delayed =
+        this.sparkleDelay.readInterpolated(1500 + shimmer * 200) * 0.2;
       sampleL += delayed;
       sampleR += delayed;
 
@@ -502,8 +547,8 @@ export class GlassPadSynth implements SynthesizerEngine {
   }
 
   reset(): void {
-    this.oscillators.forEach(o => o.reset());
-    this.bellOscs.forEach(o => o.reset());
+    this.oscillators.forEach((o) => o.reset());
+    this.bellOscs.forEach((o) => o.reset());
     this.shimmerLFO.reset();
     this.sparkleDelay.clear();
     this.hpFilter.clear();
@@ -605,7 +650,11 @@ export class DarkPadSynth implements SynthesizerEngine {
       sampleR = sampleR / 5 + sub + noise;
 
       const filterFreq = 300 + filterEnvValue * 600 + lfo2Value * 150;
-      this.lpFilter.setLowpass(clamp(filterFreq, 80, 2000), 2.5 + lfo1Value * 0.5, this.sampleRate);
+      this.lpFilter.setLowpass(
+        clamp(filterFreq, 80, 2000),
+        2.5 + lfo1Value * 0.5,
+        this.sampleRate,
+      );
 
       sampleL = this.hpFilter.process(sampleL);
       sampleR = this.hpFilter.process(sampleR);
@@ -631,7 +680,7 @@ export class DarkPadSynth implements SynthesizerEngine {
   }
 
   reset(): void {
-    this.oscillators.forEach(o => o.reset());
+    this.oscillators.forEach((o) => o.reset());
     this.subOsc.reset();
     this.noiseOsc.reset();
     this.lfo1.reset();
@@ -725,10 +774,11 @@ export class EvolvingPadSynth implements SynthesizerEngine {
         const triangle = this.oscillators[o].triangle();
         const sine = this.oscillators[o].sine();
 
-        const mixed = saw * (1 - morph) * 0.4 + 
-                      pulse * morph * 0.3 + 
-                      triangle * (1 - morph) * 0.2 + 
-                      sine * morph * 0.1;
+        const mixed =
+          saw * (1 - morph) * 0.4 +
+          pulse * morph * 0.3 +
+          triangle * (1 - morph) * 0.2 +
+          sine * morph * 0.1;
 
         const oscPan = (o - 3.5) / 4 + pan * 0.2;
         sampleL += mixed * (1 - oscPan * 0.4);
@@ -738,9 +788,14 @@ export class EvolvingPadSynth implements SynthesizerEngine {
       sampleL /= 8;
       sampleR /= 8;
 
-      const filterFreq = 400 + filterEnvValue * 2500 + filterMod * 800 + this.velocity * 1500;
+      const filterFreq =
+        400 + filterEnvValue * 2500 + filterMod * 800 + this.velocity * 1500;
       const resonance = 1.5 + morph * 2;
-      this.lpFilter.setLowpass(clamp(filterFreq, 100, 10000), resonance, this.sampleRate);
+      this.lpFilter.setLowpass(
+        clamp(filterFreq, 100, 10000),
+        resonance,
+        this.sampleRate,
+      );
       this.bpFilter.setBandpass(filterFreq * 1.5, 2, this.sampleRate);
 
       const lpL = this.lpFilter.process(sampleL);
@@ -771,7 +826,7 @@ export class EvolvingPadSynth implements SynthesizerEngine {
   }
 
   reset(): void {
-    this.oscillators.forEach(o => o.reset());
+    this.oscillators.forEach((o) => o.reset());
     this.morphLFO.reset();
     this.panLFO.reset();
     this.filterLFO.reset();
@@ -818,7 +873,12 @@ export class NoisePadSynth implements SynthesizerEngine {
     this.velocity = velocity / 127;
     this.sampleRate = context.sampleRate;
 
-    const filterFreqs = [frequency * 0.5, frequency, frequency * 2, frequency * 4];
+    const filterFreqs = [
+      frequency * 0.5,
+      frequency,
+      frequency * 2,
+      frequency * 4,
+    ];
     for (let i = 0; i < 4; i++) {
       this.lpFilters[i].setBandpass(filterFreqs[i], 8, context.sampleRate);
     }
@@ -861,7 +921,11 @@ export class NoisePadSynth implements SynthesizerEngine {
       for (let n = 0; n < 4; n++) {
         const noise = this.noiseOscs[n].noise();
         const filterMod = 1 + sweep * 0.3 + filterEnvValue * 0.5;
-        this.lpFilters[n].setBandpass(this.frequency * Math.pow(2, n - 1) * filterMod, 6 + modulation * 2, this.sampleRate);
+        this.lpFilters[n].setBandpass(
+          this.frequency * Math.pow(2, n - 1) * filterMod,
+          6 + modulation * 2,
+          this.sampleRate,
+        );
         const filtered = this.lpFilters[n].process(noise);
 
         const pan = (n - 1.5) / 2;
@@ -898,9 +962,9 @@ export class NoisePadSynth implements SynthesizerEngine {
   }
 
   reset(): void {
-    this.noiseOscs.forEach(o => o.reset());
-    this.toneOscs.forEach(o => o.reset());
-    this.lpFilters.forEach(f => f.clear());
+    this.noiseOscs.forEach((o) => o.reset());
+    this.toneOscs.forEach((o) => o.reset());
+    this.lpFilters.forEach((f) => f.clear());
     this.bpFilter.clear();
     this.hpFilter.clear();
     this.modulationLFO.reset();
@@ -979,7 +1043,10 @@ export class BrassPadSynth implements SynthesizerEngine {
 
       for (let o = 0; o < 6; o++) {
         const currentFreq = this.frequency * (1 + vibrato);
-        this.oscillators[o].setFrequency(currentFreq * (1 + (o - 2.5) * 0.002), this.sampleRate);
+        this.oscillators[o].setFrequency(
+          currentFreq * (1 + (o - 2.5) * 0.002),
+          this.sampleRate,
+        );
 
         const saw = this.oscillators[o].sawBandLimited(16);
         const square = this.oscillators[o].squareBandLimited(12);
@@ -997,7 +1064,11 @@ export class BrassPadSynth implements SynthesizerEngine {
       sampleR *= 1 + growl;
 
       const filterFreq = 800 + filterEnvValue * 4000 + this.velocity * 2000;
-      this.lpFilter.setLowpass(clamp(filterFreq, 200, 10000), 2 + filterEnvValue * 3, this.sampleRate);
+      this.lpFilter.setLowpass(
+        clamp(filterFreq, 200, 10000),
+        2 + filterEnvValue * 3,
+        this.sampleRate,
+      );
       this.resonanceFilter.setPeaking(filterFreq * 0.8, 3, 5, this.sampleRate);
 
       sampleL = this.hpFilter.process(sampleL);
@@ -1024,7 +1095,7 @@ export class BrassPadSynth implements SynthesizerEngine {
   }
 
   reset(): void {
-    this.oscillators.forEach(o => o.reset());
+    this.oscillators.forEach((o) => o.reset());
     this.vibratoLFO.reset();
     this.growlLFO.reset();
     this.lpFilter.clear();
@@ -1071,7 +1142,11 @@ export class DigitalPadSynth implements SynthesizerEngine {
     this.stereoLFO.setFrequency(0.5, context.sampleRate);
     this.phaseLFO.setFrequency(0.25, context.sampleRate);
 
-    this.lpFilter.setLowpass(8000 + this.velocity * 6000, 0.7, context.sampleRate);
+    this.lpFilter.setLowpass(
+      8000 + this.velocity * 6000,
+      0.7,
+      context.sampleRate,
+    );
     this.hpFilter.setHighpass(60, 0.7, context.sampleRate);
     this.notchFilter.setNotch(3000, 2, context.sampleRate);
 
@@ -1129,7 +1204,7 @@ export class DigitalPadSynth implements SynthesizerEngine {
   }
 
   reset(): void {
-    this.oscillators.forEach(o => o.reset());
+    this.oscillators.forEach((o) => o.reset());
     this.stereoLFO.reset();
     this.phaseLFO.reset();
     this.lpFilter.clear();
@@ -1186,7 +1261,11 @@ export class SpacePadSynth implements SynthesizerEngine {
     this.spaceLFO.setFrequency(0.05, context.sampleRate);
     this.driftLFO.setFrequency(0.02, context.sampleRate);
 
-    this.lpFilter.setLowpass(4000 + this.velocity * 3000, 0.7, context.sampleRate);
+    this.lpFilter.setLowpass(
+      4000 + this.velocity * 3000,
+      0.7,
+      context.sampleRate,
+    );
     this.hpFilter.setHighpass(50, 0.7, context.sampleRate);
     this.shimmerFilter.setHighShelf(3000, 3, context.sampleRate);
 
@@ -1231,15 +1310,17 @@ export class SpacePadSynth implements SynthesizerEngine {
       let reverbL = 0;
       let reverbR = 0;
       const delayTimes = [8000, 12000, 16000, 20000];
-      
+
       for (let c = 0; c < 4; c++) {
         const combOut = this.combFilters[c].process((sampleL + sampleR) * 0.25);
         const allpassOut = this.allpassFilters[c].process(combOut);
-        
+
         this.delayLines[c].write(allpassOut);
         const delayMod = 1 + spaceMod * 0.05;
-        const delayed = this.delayLines[c].readInterpolated(delayTimes[c] * delayMod);
-        
+        const delayed = this.delayLines[c].readInterpolated(
+          delayTimes[c] * delayMod,
+        );
+
         if (c % 2 === 0) {
           reverbL += delayed * 0.3;
         } else {
@@ -1272,10 +1353,10 @@ export class SpacePadSynth implements SynthesizerEngine {
   }
 
   reset(): void {
-    this.oscillators.forEach(o => o.reset());
-    this.combFilters.forEach(c => c.clear());
-    this.allpassFilters.forEach(a => a.clear());
-    this.delayLines.forEach(d => d.clear());
+    this.oscillators.forEach((o) => o.reset());
+    this.combFilters.forEach((c) => c.clear());
+    this.allpassFilters.forEach((a) => a.clear());
+    this.delayLines.forEach((d) => d.clear());
     this.spaceLFO.reset();
     this.driftLFO.reset();
     this.lpFilter.clear();
@@ -1285,14 +1366,14 @@ export class SpacePadSynth implements SynthesizerEngine {
 }
 
 export const PADS_SYNTHESIZERS: Record<string, new () => SynthesizerEngine> = {
-  'warm-pad': WarmPadSynth,
-  'string-pad': StringPadSynth,
-  'choir-pad': ChoirPadSynth,
-  'glass-pad': GlassPadSynth,
-  'dark-pad': DarkPadSynth,
-  'evolving-pad': EvolvingPadSynth,
-  'noise-pad': NoisePadSynth,
-  'brass-pad': BrassPadSynth,
-  'digital-pad': DigitalPadSynth,
-  'space-pad': SpacePadSynth,
+  "warm-pad": WarmPadSynth,
+  "string-pad": StringPadSynth,
+  "choir-pad": ChoirPadSynth,
+  "glass-pad": GlassPadSynth,
+  "dark-pad": DarkPadSynth,
+  "evolving-pad": EvolvingPadSynth,
+  "noise-pad": NoisePadSynth,
+  "brass-pad": BrassPadSynth,
+  "digital-pad": DigitalPadSynth,
+  "space-pad": SpacePadSynth,
 };

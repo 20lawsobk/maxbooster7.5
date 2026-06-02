@@ -1,16 +1,19 @@
-import type { Server as HttpServer, IncomingMessage } from 'http';
-import { WebSocketServer, WebSocket } from 'ws';
-import { parse as parseUrl } from 'url';
-import { parse as parseCookie } from 'cookie';
-import { logger } from '../logger.js';
+import type { Server as HttpServer, IncomingMessage } from "http";
+import { WebSocketServer, WebSocket } from "ws";
+import { parse as parseUrl } from "url";
+import { parse as parseCookie } from "cookie";
+import { logger } from "../logger.js";
 import {
   initRedisPubSub,
   registerHandlers,
   publishUserNotification,
   publishBroadcast,
-} from './redisPubSub.js';
+} from "./redisPubSub.js";
 
-export { studioCollabServer, StudioCollabServer } from './studioCollabServer.js';
+export {
+  studioCollabServer,
+  StudioCollabServer,
+} from "./studioCollabServer.js";
 export {
   presenceManager,
   PresenceManager,
@@ -19,7 +22,7 @@ export {
   type SelectionState,
   type PresenceStatus,
   type CollaboratorInfo,
-} from './presenceManager.js';
+} from "./presenceManager.js";
 
 // General notification WebSocket server
 let notificationWss: WebSocketServer | null = null;
@@ -28,15 +31,15 @@ const userConnections: Map<string, Set<WebSocket>> = new Map();
 
 // Connection limits — prevent FD exhaustion and memory runaway at scale.
 // At 90M registered users even a modest over-connection rate causes problems.
-const MAX_GLOBAL_WS_CONNECTIONS = 50_000;   // per process; multiply by # replicas
-const MAX_WS_CONNECTIONS_PER_USER = 5;      // tabs + mobile + desktop
+const MAX_GLOBAL_WS_CONNECTIONS = 50_000; // per process; multiply by # replicas
+const MAX_WS_CONNECTIONS_PER_USER = 5; // tabs + mobile + desktop
 
 // Session store reference - set by main server during initialization
 let sessionStore: Record<string, unknown> | null = null;
 
 export function setSessionStore(store: Record<string, unknown>): void {
   sessionStore = store;
-  logger.info('WebSocket session store configured');
+  logger.info("WebSocket session store configured");
 }
 
 interface AuthenticatedWebSocket extends WebSocket {
@@ -44,34 +47,39 @@ interface AuthenticatedWebSocket extends WebSocket {
   isAuthenticated?: boolean;
 }
 
-async function authenticateFromSession(request: IncomingMessage): Promise<string | null> {
+async function authenticateFromSession(
+  request: IncomingMessage,
+): Promise<string | null> {
   try {
-    const cookies = parseCookie(request.headers.cookie || '');
+    const cookies = parseCookie(request.headers.cookie || "");
     const sessionId = cookies.sessionId;
-    
+
     if (!sessionId || !sessionStore) {
       return null;
     }
 
     // Parse the signed session ID (format: s:<sessionId>.<signature> or just sessionId)
     let rawSessionId = sessionId;
-    if (sessionId.startsWith('s:')) {
-      rawSessionId = sessionId.slice(2).split('.')[0];
+    if (sessionId.startsWith("s:")) {
+      rawSessionId = sessionId.slice(2).split(".")[0];
     }
 
     return new Promise((resolve) => {
-      sessionStore.get(rawSessionId, (err: Record<string, unknown>, session: Record<string, unknown>) => {
-        if (err || !session) {
-          resolve(null);
-          return;
-        }
-        
-        const userId = session.passport?.user || session.userId;
-        resolve(userId || null);
-      });
+      sessionStore.get(
+        rawSessionId,
+        (err: Record<string, unknown>, session: Record<string, unknown>) => {
+          if (err || !session) {
+            resolve(null);
+            return;
+          }
+
+          const userId = session.passport?.user || session.userId;
+          resolve(userId || null);
+        },
+      );
     });
   } catch (error) {
-    logger.warn({ err: error }, 'WebSocket session auth error:');
+    logger.warn({ err: error }, "WebSocket session auth error:");
     return null;
   }
 }
@@ -80,23 +88,30 @@ function initializeNotificationServer(httpServer: HttpServer): void {
   // maxPayload: 64 KB is generous for all notification message types (JSON events).
   // Without this cap a single malicious client can send a 1 GB frame and OOM
   // the process — ws closes the connection automatically when the limit is hit.
-  notificationWss = new WebSocketServer({ noServer: true, maxPayload: 64 * 1024 });
+  notificationWss = new WebSocketServer({
+    noServer: true,
+    maxPayload: 64 * 1024,
+  });
 
   // Server-level error handler: prevents protocol/handshake errors from becoming
   // uncaughtExceptions that crash the process.
-  notificationWss.on('error', (err: Error) => {
-    logger.warn('[WS] Notification server error:', err.message);
+  notificationWss.on("error", (err: Error) => {
+    logger.warn("[WS] Notification server error:", err.message);
   });
 
-  httpServer.on('upgrade', async (request, socket, head) => {
-    const pathname = parseUrl(request.url || '').pathname;
+  httpServer.on("upgrade", async (request, socket, head) => {
+    const pathname = parseUrl(request.url || "").pathname;
 
     // Handle general /ws path for notifications
-    if (pathname === '/ws') {
+    if (pathname === "/ws") {
       // Global connection cap — reject before paying the upgrade cost
       if (notificationClients.size >= MAX_GLOBAL_WS_CONNECTIONS) {
-        logger.warn(`[WS] Global connection limit reached (${MAX_GLOBAL_WS_CONNECTIONS}) — rejecting upgrade`);
-        socket.write('HTTP/1.1 503 Service Unavailable\r\nRetry-After: 30\r\n\r\n');
+        logger.warn(
+          `[WS] Global connection limit reached (${MAX_GLOBAL_WS_CONNECTIONS}) — rejecting upgrade`,
+        );
+        socket.write(
+          "HTTP/1.1 503 Service Unavailable\r\nRetry-After: 30\r\n\r\n",
+        );
         socket.destroy();
         return;
       }
@@ -108,99 +123,124 @@ function initializeNotificationServer(httpServer: HttpServer): void {
       if (userId) {
         const existing = userConnections.get(userId);
         if (existing && existing.size >= MAX_WS_CONNECTIONS_PER_USER) {
-          logger.warn(`[WS] Per-user connection limit reached for user ${userId} (${MAX_WS_CONNECTIONS_PER_USER} max)`);
-          socket.write('HTTP/1.1 429 Too Many Requests\r\nRetry-After: 10\r\n\r\n');
+          logger.warn(
+            `[WS] Per-user connection limit reached for user ${userId} (${MAX_WS_CONNECTIONS_PER_USER} max)`,
+          );
+          socket.write(
+            "HTTP/1.1 429 Too Many Requests\r\nRetry-After: 10\r\n\r\n",
+          );
           socket.destroy();
           return;
         }
       }
-      
-      notificationWss!.handleUpgrade(request, socket, head, (ws: AuthenticatedWebSocket) => {
-        notificationClients.add(ws);
-        
-        // Set authenticated user from server-side session validation
-        if (userId) {
-          ws.userId = userId;
-          ws.isAuthenticated = true;
-          
-          if (!userConnections.has(userId)) {
-            userConnections.set(userId, new Set());
-          }
-          userConnections.get(userId)!.add(ws);
-          
-          ws.send(JSON.stringify({ type: 'auth_success', userId }));
-          logger.info(`WebSocket authenticated via session for user: ${userId}`);
-        }
-        
-        ws.on('message', (data) => {
-          try {
-            const message = JSON.parse(data.toString());
-            // Echo back pings with pong
-            if (message.type === 'ping') {
-              ws.send(JSON.stringify({ type: 'pong', timestamp: Date.now() }));
+
+      notificationWss!.handleUpgrade(
+        request,
+        socket,
+        head,
+        (ws: AuthenticatedWebSocket) => {
+          notificationClients.add(ws);
+
+          // Set authenticated user from server-side session validation
+          if (userId) {
+            ws.userId = userId;
+            ws.isAuthenticated = true;
+
+            if (!userConnections.has(userId)) {
+              userConnections.set(userId, new Set());
             }
-            // Ignore client-side auth attempts - authentication is server-side only
-            if (message.type === 'auth') {
-              if (!ws.isAuthenticated) {
-                ws.send(JSON.stringify({ 
-                  type: 'auth_error', 
-                  message: 'Authentication failed. Please refresh the page.' 
-                }));
+            userConnections.get(userId)!.add(ws);
+
+            ws.send(JSON.stringify({ type: "auth_success", userId }));
+            logger.info(
+              `WebSocket authenticated via session for user: ${userId}`,
+            );
+          }
+
+          ws.on("message", (data) => {
+            try {
+              const message = JSON.parse(data.toString());
+              // Echo back pings with pong
+              if (message.type === "ping") {
+                ws.send(
+                  JSON.stringify({ type: "pong", timestamp: Date.now() }),
+                );
+              }
+              // Ignore client-side auth attempts - authentication is server-side only
+              if (message.type === "auth") {
+                if (!ws.isAuthenticated) {
+                  ws.send(
+                    JSON.stringify({
+                      type: "auth_error",
+                      message:
+                        "Authentication failed. Please refresh the page.",
+                    }),
+                  );
+                }
+              }
+            } catch (e) {
+              // Ignore parse errors
+            }
+          });
+
+          ws.on("close", () => {
+            notificationClients.delete(ws);
+            if (ws.userId) {
+              const connections = userConnections.get(ws.userId);
+              if (connections) {
+                connections.delete(ws);
+                if (connections.size === 0) {
+                  userConnections.delete(ws.userId);
+                }
               }
             }
-          } catch (e) {
-            // Ignore parse errors
-          }
-        });
+          });
 
-        ws.on('close', () => {
-          notificationClients.delete(ws);
-          if (ws.userId) {
-            const connections = userConnections.get(ws.userId);
-            if (connections) {
-              connections.delete(ws);
-              if (connections.size === 0) {
-                userConnections.delete(ws.userId);
+          ws.on("error", () => {
+            notificationClients.delete(ws);
+            if (ws.userId) {
+              const connections = userConnections.get(ws.userId);
+              if (connections) {
+                connections.delete(ws);
+                if (connections.size === 0) {
+                  userConnections.delete(ws.userId);
+                }
               }
             }
-          }
-        });
+          });
 
-        ws.on('error', () => {
-          notificationClients.delete(ws);
-          if (ws.userId) {
-            const connections = userConnections.get(ws.userId);
-            if (connections) {
-              connections.delete(ws);
-              if (connections.size === 0) {
-                userConnections.delete(ws.userId);
-              }
-            }
-          }
-        });
-
-        // Send welcome message
-        ws.send(JSON.stringify({ 
-          type: 'connected', 
-          message: 'Connected to Max Booster notifications',
-          authenticated: !!userId,
-          timestamp: Date.now()
-        }));
-      });
+          // Send welcome message
+          ws.send(
+            JSON.stringify({
+              type: "connected",
+              message: "Connected to Max Booster notifications",
+              authenticated: !!userId,
+              timestamp: Date.now(),
+            }),
+          );
+        },
+      );
     }
   });
 
   // Register global broadcast function for notification service
-  (global as Record<string, unknown>).broadcastNotification = sendNotificationToUser;
+  (global as Record<string, unknown>).broadcastNotification =
+    sendNotificationToUser;
 
-  logger.info('General notification WebSocket server initialized at /ws');
+  logger.info("General notification WebSocket server initialized at /ws");
 }
 
 // Deliver a notification to connections on THIS instance only
-function deliverLocalUserNotification(userId: string, notification: object): void {
+function deliverLocalUserNotification(
+  userId: string,
+  notification: object,
+): void {
   const connections = userConnections.get(userId);
   if (connections && connections.size > 0) {
-    const message = JSON.stringify({ type: 'notification', data: notification });
+    const message = JSON.stringify({
+      type: "notification",
+      data: notification,
+    });
     connections.forEach((client) => {
       if (client.readyState === WebSocket.OPEN) {
         client.send(message);
@@ -210,7 +250,7 @@ function deliverLocalUserNotification(userId: string, notification: object): voi
 }
 
 function deliverLocalBroadcast(notification: object): void {
-  const message = JSON.stringify({ type: 'notification', data: notification });
+  const message = JSON.stringify({ type: "notification", data: notification });
   notificationClients.forEach((client) => {
     if (client.readyState === WebSocket.OPEN) {
       client.send(message);
@@ -219,7 +259,10 @@ function deliverLocalBroadcast(notification: object): void {
 }
 
 // Send notification to a specific user — publishes to Redis so ALL instances deliver it
-export function sendNotificationToUser(userId: string, notification: object): void {
+export function sendNotificationToUser(
+  userId: string,
+  notification: object,
+): void {
   // Publish cross-instance (Redis subscriber on every instance calls deliverLocalUserNotification)
   publishUserNotification(userId, notification).catch(() => {
     // Redis unavailable — fall back to local delivery only
@@ -239,7 +282,9 @@ export function broadcastNotification(notification: object): void {
 }
 
 // Initialize the realtime collaboration server
-export async function initializeRealtimeServer(httpServer: HttpServer): Promise<void> {
+export async function initializeRealtimeServer(
+  httpServer: HttpServer,
+): Promise<void> {
   try {
     // Initialize general notification WebSocket first
     initializeNotificationServer(httpServer);
@@ -248,23 +293,26 @@ export async function initializeRealtimeServer(httpServer: HttpServer): Promise<
     registerHandlers(deliverLocalUserNotification, deliverLocalBroadcast);
     await initRedisPubSub();
 
-    const { studioCollabServer } = await import('./studioCollabServer.js');
-    
+    const { studioCollabServer } = await import("./studioCollabServer.js");
+
     // Initialize the collaboration server with the HTTP server for WebSocket upgrades
-    if (studioCollabServer && typeof studioCollabServer.initialize === 'function') {
+    if (
+      studioCollabServer &&
+      typeof studioCollabServer.initialize === "function"
+    ) {
       await studioCollabServer.initialize(httpServer);
-      logger.info('Studio collaboration WebSocket server initialized');
+      logger.info("Studio collaboration WebSocket server initialized");
     } else {
       // The collaboration server may auto-initialize, just log status
-      logger.info('Studio collaboration server ready');
+      logger.info("Studio collaboration server ready");
     }
-    
+
     // Initialize presence manager
-    const { presenceManager } = await import('./presenceManager.js');
+    const { presenceManager } = await import("./presenceManager.js");
     if (presenceManager) {
-      logger.info('Presence manager ready');
+      logger.info("Presence manager ready");
     }
   } catch (error) {
-    logger.warn({ err: error }, 'Failed to initialize realtime server:');
+    logger.warn({ err: error }, "Failed to initialize realtime server:");
   }
 }

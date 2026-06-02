@@ -1,8 +1,8 @@
-import { db } from '../../../db.js';
-import { fabricObjects } from '@shared/schema';
-import { eq } from 'drizzle-orm';
-import { randomUUID } from 'crypto';
-import type { FabricObject, ObjectId, VolumeId, ChunkId } from '../types.js';
+import { db } from "../../../db.js";
+import { fabricObjects } from "@shared/schema";
+import { eq } from "drizzle-orm";
+import { randomUUID } from "crypto";
+import type { FabricObject, ObjectId, VolumeId, ChunkId } from "../types.js";
 
 export class ObjectIndex {
   async putObject(
@@ -26,16 +26,31 @@ export class ObjectIndex {
       contentHash,
       createdAt: now,
     });
-    return { id, volumeId, originalName, contentType, sizeBytes, chunkIds, contentHash, createdAt: now };
+    return {
+      id,
+      volumeId,
+      originalName,
+      contentType,
+      sizeBytes,
+      chunkIds,
+      contentHash,
+      createdAt: now,
+    };
   }
 
   async getObject(id: ObjectId): Promise<FabricObject | null> {
-    const rows = await db.select().from(fabricObjects).where(eq(fabricObjects.id, id));
+    const rows = await db
+      .select()
+      .from(fabricObjects)
+      .where(eq(fabricObjects.id, id));
     return rows[0] ? this.rowToObject(rows[0]) : null;
   }
 
   async listObjects(volumeId: VolumeId): Promise<FabricObject[]> {
-    const rows = await db.select().from(fabricObjects).where(eq(fabricObjects.volumeId, volumeId));
+    const rows = await db
+      .select()
+      .from(fabricObjects)
+      .where(eq(fabricObjects.volumeId, volumeId));
     return rows.map(this.rowToObject);
   }
 

@@ -1,6 +1,6 @@
-import { logger } from '../lib/logger';
-import { useState, useEffect, useCallback } from 'react';
-import { offlineQueue, syncManager, QueuedAction } from '@/lib/offline';
+import { logger } from "../lib/logger";
+import { useState, useEffect, useCallback } from "react";
+import { offlineQueue, syncManager, QueuedAction } from "@/lib/offline";
 
 export interface PendingSyncState {
   count: number;
@@ -39,14 +39,14 @@ export function usePendingSync(options?: {
       let actions: QueuedAction[] = [];
       if (loadActions) {
         const pending = await offlineQueue.getAllPending();
-        const failed = await offlineQueue.getByStatus('failed');
-        const conflicts = await offlineQueue.getByStatus('conflict');
+        const failed = await offlineQueue.getByStatus("failed");
+        const conflicts = await offlineQueue.getByStatus("conflict");
         actions = [...pending, ...failed, ...conflicts]
           .sort((a, b) => b.updatedAt - a.updatedAt)
           .slice(0, maxActions);
       }
 
-      setState(prev => ({
+      setState((prev) => ({
         ...prev,
         count: totalPending + stats.failed + stats.conflict,
         pendingCount: totalPending,
@@ -55,25 +55,25 @@ export function usePendingSync(options?: {
         actions,
       }));
     } catch (error) {
-      logger.error('[usePendingSync] Load stats error:', error);
+      logger.error("[usePendingSync] Load stats error:", error);
     }
   }, [loadActions, maxActions]);
 
   useEffect(() => {
     loadStats();
 
-    const unsubAdded = offlineQueue.on('action-added', loadStats);
-    const unsubRemoved = offlineQueue.on('action-removed', loadStats);
-    const unsubUpdated = offlineQueue.on('action-updated', loadStats);
+    const unsubAdded = offlineQueue.on("action-added", loadStats);
+    const unsubRemoved = offlineQueue.on("action-removed", loadStats);
+    const unsubUpdated = offlineQueue.on("action-updated", loadStats);
 
-    const unsubSyncStatus = syncManager.on('status-change', (event) => {
-      setState(prev => ({
+    const unsubSyncStatus = syncManager.on("status-change", (event) => {
+      setState((prev) => ({
         ...prev,
-        isSyncing: event.status === 'syncing',
+        isSyncing: event.status === "syncing",
       }));
     });
 
-    const unsubComplete = syncManager.on('sync-complete', loadStats);
+    const unsubComplete = syncManager.on("sync-complete", loadStats);
 
     return () => {
       unsubAdded();

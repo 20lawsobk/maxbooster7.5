@@ -1,6 +1,6 @@
-import { logger } from '../logger';
-import { transportEngine, TransportEngine } from './TransportEngine';
-import { timelineEngine, TimelineEngine } from './TimelineEngine';
+import { logger } from "../logger";
+import { transportEngine, TransportEngine } from "./TransportEngine";
+import { timelineEngine, TimelineEngine } from "./TimelineEngine";
 
 export interface MIDINote {
   id: string;
@@ -54,7 +54,7 @@ export interface QuantizeOptions {
 }
 
 export interface VelocityEditOptions {
-  mode: 'set' | 'add' | 'scale' | 'compress' | 'humanize';
+  mode: "set" | "add" | "scale" | "compress" | "humanize";
   value: number;
   min?: number;
   max?: number;
@@ -75,7 +75,12 @@ export interface MIDIEngineState {
   chordMode: boolean;
 }
 
-export type MIDIEventType = 'note-on' | 'note-off' | 'control-change' | 'pitch-bend' | 'program-change';
+export type MIDIEventType =
+  | "note-on"
+  | "note-off"
+  | "control-change"
+  | "pitch-bend"
+  | "program-change";
 
 export interface MIDIEvent {
   type: MIDIEventType;
@@ -128,16 +133,16 @@ export class MIDIEngine {
   }
 
   private async initWebMIDI(): Promise<void> {
-    if ('requestMIDIAccess' in navigator) {
+    if ("requestMIDIAccess" in navigator) {
       try {
         this.midiAccess = await navigator.requestMIDIAccess({ sysex: false });
-        this.midiAccess.inputs.forEach(input => {
+        this.midiAccess.inputs.forEach((input) => {
           input.onmidimessage = this.handleMIDIMessage.bind(this);
         });
-        localStorage.setItem('midi_access_prompted', '1');
+        localStorage.setItem("midi_access_prompted", "1");
       } catch (err) {
-        logger.info('Web MIDI not available:', err);
-        localStorage.setItem('midi_access_prompted', '1');
+        logger.info("Web MIDI not available:", err);
+        localStorage.setItem("midi_access_prompted", "1");
       }
     }
   }
@@ -146,17 +151,28 @@ export class MIDIEngine {
     const [status, data1, data2] = message.data || [];
     if (status === undefined) return;
 
-    const channel = status & 0x0F;
+    const channel = status & 0x0f;
     const command = status >> 4;
 
     let eventType: MIDIEventType;
     switch (command) {
-      case 0x9: eventType = data2 > 0 ? 'note-on' : 'note-off'; break;
-      case 0x8: eventType = 'note-off'; break;
-      case 0xB: eventType = 'control-change'; break;
-      case 0xE: eventType = 'pitch-bend'; break;
-      case 0xC: eventType = 'program-change'; break;
-      default: return;
+      case 0x9:
+        eventType = data2 > 0 ? "note-on" : "note-off";
+        break;
+      case 0x8:
+        eventType = "note-off";
+        break;
+      case 0xb:
+        eventType = "control-change";
+        break;
+      case 0xe:
+        eventType = "pitch-bend";
+        break;
+      case 0xc:
+        eventType = "program-change";
+        break;
+      default:
+        return;
     }
 
     const event: MIDIEvent = {
@@ -167,7 +183,7 @@ export class MIDIEngine {
       time: performance.now(),
     };
 
-    this.midiListeners.forEach(l => l(event));
+    this.midiListeners.forEach((l) => l(event));
 
     if (this.transport.getState().isRecording && this.state.editingClipId) {
       this.recordMIDIEvent(event);
@@ -175,13 +191,17 @@ export class MIDIEngine {
   }
 
   private recordMIDIEvent(event: MIDIEvent): void {
-    const clip = this.state.clips.find(c => c.id === this.state.editingClipId);
+    const clip = this.state.clips.find(
+      (c) => c.id === this.state.editingClipId,
+    );
     if (!clip) return;
 
-    const currentBeat = this.timeline.secondsToBeats(this.transport.getCurrentPosition().seconds);
+    const currentBeat = this.timeline.secondsToBeats(
+      this.transport.getCurrentPosition().seconds,
+    );
     const relativeBeat = currentBeat - clip.startBeat;
 
-    if (event.type === 'note-on') {
+    if (event.type === "note-on") {
       const noteId = `note_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       const note: MIDINote = {
         id: noteId,
@@ -194,7 +214,7 @@ export class MIDIEngine {
         muted: false,
       };
       this.activeNotes.set(event.data1, note);
-    } else if (event.type === 'note-off') {
+    } else if (event.type === "note-off") {
       const note = this.activeNotes.get(event.data1);
       if (note) {
         note.durationBeats = Math.max(0.0625, relativeBeat - note.startBeat);
@@ -202,7 +222,7 @@ export class MIDIEngine {
         this.activeNotes.delete(event.data1);
         this.notify();
       }
-    } else if (event.type === 'control-change') {
+    } else if (event.type === "control-change") {
       const cc: MIDIControlChange = {
         id: `cc_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
         controller: event.data1,
@@ -219,18 +239,23 @@ export class MIDIEngine {
     return { ...this.state };
   }
 
-  createClip(trackId: string, startBeat: number, durationBeats: number = 4, name?: string): string {
+  createClip(
+    trackId: string,
+    startBeat: number,
+    durationBeats: number = 4,
+    name?: string,
+  ): string {
     const id = `midi_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     const clip: MIDIClip = {
       id,
       trackId,
-      name: name || 'MIDI Clip',
+      name: name || "MIDI Clip",
       startBeat,
       durationBeats,
       notes: [],
       controlChanges: [],
       pitchBends: [],
-      color: '#8b5cf6',
+      color: "#8b5cf6",
       looped: false,
       loopLength: durationBeats,
       muted: false,
@@ -243,7 +268,7 @@ export class MIDIEngine {
   }
 
   removeClip(clipId: string): void {
-    const index = this.state.clips.findIndex(c => c.id === clipId);
+    const index = this.state.clips.findIndex((c) => c.id === clipId);
     if (index !== -1) {
       this.state.clips.splice(index, 1);
       if (this.state.selectedClipId === clipId) {
@@ -257,7 +282,7 @@ export class MIDIEngine {
   }
 
   duplicateClip(clipId: string, newStartBeat?: number): string | null {
-    const clip = this.state.clips.find(c => c.id === clipId);
+    const clip = this.state.clips.find((c) => c.id === clipId);
     if (!clip) return null;
 
     const newId = `midi_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
@@ -266,7 +291,7 @@ export class MIDIEngine {
       id: newId,
       name: `${clip.name} (Copy)`,
       startBeat: newStartBeat ?? clip.startBeat + clip.durationBeats,
-      notes: clip.notes.map(n => ({
+      notes: clip.notes.map((n) => ({
         ...n,
         id: `note_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       })),
@@ -288,8 +313,11 @@ export class MIDIEngine {
     this.notify();
   }
 
-  addNote(clipId: string, note: Omit<MIDINote, 'id' | 'selected' | 'muted'>): string | null {
-    const clip = this.state.clips.find(c => c.id === clipId);
+  addNote(
+    clipId: string,
+    note: Omit<MIDINote, "id" | "selected" | "muted">,
+  ): string | null {
+    const clip = this.state.clips.find((c) => c.id === clipId);
     if (!clip || clip.locked) return null;
 
     const id = `note_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
@@ -307,22 +335,29 @@ export class MIDIEngine {
   }
 
   removeNote(clipId: string, noteId: string): void {
-    const clip = this.state.clips.find(c => c.id === clipId);
+    const clip = this.state.clips.find((c) => c.id === clipId);
     if (!clip || clip.locked) return;
 
-    const index = clip.notes.findIndex(n => n.id === noteId);
+    const index = clip.notes.findIndex((n) => n.id === noteId);
     if (index !== -1) {
       clip.notes.splice(index, 1);
-      this.state.selectedNoteIds = this.state.selectedNoteIds.filter(id => id !== noteId);
+      this.state.selectedNoteIds = this.state.selectedNoteIds.filter(
+        (id) => id !== noteId,
+      );
       this.notify();
     }
   }
 
-  moveNote(clipId: string, noteId: string, newPitch: number, newStartBeat: number): void {
-    const clip = this.state.clips.find(c => c.id === clipId);
+  moveNote(
+    clipId: string,
+    noteId: string,
+    newPitch: number,
+    newStartBeat: number,
+  ): void {
+    const clip = this.state.clips.find((c) => c.id === clipId);
     if (!clip || clip.locked) return;
 
-    const note = clip.notes.find(n => n.id === noteId);
+    const note = clip.notes.find((n) => n.id === noteId);
     if (note) {
       note.pitch = Math.max(0, Math.min(127, newPitch));
       note.startBeat = Math.max(0, newStartBeat);
@@ -332,10 +367,10 @@ export class MIDIEngine {
   }
 
   resizeNote(clipId: string, noteId: string, newDuration: number): void {
-    const clip = this.state.clips.find(c => c.id === clipId);
+    const clip = this.state.clips.find((c) => c.id === clipId);
     if (!clip || clip.locked) return;
 
-    const note = clip.notes.find(n => n.id === noteId);
+    const note = clip.notes.find((n) => n.id === noteId);
     if (note) {
       note.durationBeats = Math.max(0.0625, newDuration);
       this.notify();
@@ -343,10 +378,10 @@ export class MIDIEngine {
   }
 
   setNoteVelocity(clipId: string, noteId: string, velocity: number): void {
-    const clip = this.state.clips.find(c => c.id === clipId);
+    const clip = this.state.clips.find((c) => c.id === clipId);
     if (!clip || clip.locked) return;
 
-    const note = clip.notes.find(n => n.id === noteId);
+    const note = clip.notes.find((n) => n.id === noteId);
     if (note) {
       note.velocity = Math.max(1, Math.min(127, velocity));
       this.notify();
@@ -355,22 +390,24 @@ export class MIDIEngine {
 
   selectNotes(noteIds: string[]): void {
     this.state.selectedNoteIds = noteIds;
-    
-    const clip = this.state.clips.find(c => c.id === this.state.editingClipId);
+
+    const clip = this.state.clips.find(
+      (c) => c.id === this.state.editingClipId,
+    );
     if (clip) {
       for (const note of clip.notes) {
         note.selected = noteIds.includes(note.id);
       }
     }
-    
+
     this.notify();
   }
 
   selectAllNotes(clipId: string): void {
-    const clip = this.state.clips.find(c => c.id === clipId);
+    const clip = this.state.clips.find((c) => c.id === clipId);
     if (!clip) return;
 
-    this.state.selectedNoteIds = clip.notes.map(n => n.id);
+    this.state.selectedNoteIds = clip.notes.map((n) => n.id);
     for (const note of clip.notes) {
       note.selected = true;
     }
@@ -378,19 +415,21 @@ export class MIDIEngine {
   }
 
   quantizeNotes(clipId: string, options: QuantizeOptions): void {
-    const clip = this.state.clips.find(c => c.id === clipId);
+    const clip = this.state.clips.find((c) => c.id === clipId);
     if (!clip || clip.locked) return;
 
-    const notesToQuantize = options.selectedOnly 
-      ? clip.notes.filter(n => n.selected)
+    const notesToQuantize = options.selectedOnly
+      ? clip.notes.filter((n) => n.selected)
       : clip.notes;
 
     for (const note of notesToQuantize) {
-      const quantized = Math.round(note.startBeat / options.value) * options.value;
+      const quantized =
+        Math.round(note.startBeat / options.value) * options.value;
       let offset = (quantized - note.startBeat) * options.strength;
 
       if (options.humanize > 0) {
-        const randomOffset = (Math.random() - 0.5) * 2 * options.humanize * options.value;
+        const randomOffset =
+          (Math.random() - 0.5) * 2 * options.humanize * options.value;
         offset += randomOffset;
       }
 
@@ -398,7 +437,8 @@ export class MIDIEngine {
 
       if (!options.startOnly) {
         const endBeat = note.startBeat + note.durationBeats;
-        const quantizedEnd = Math.round(endBeat / options.value) * options.value;
+        const quantizedEnd =
+          Math.round(endBeat / options.value) * options.value;
         note.durationBeats = Math.max(0.0625, quantizedEnd - note.startBeat);
       }
     }
@@ -408,49 +448,57 @@ export class MIDIEngine {
   }
 
   humanizeNotes(clipId: string, amount: number): void {
-    const clip = this.state.clips.find(c => c.id === clipId);
+    const clip = this.state.clips.find((c) => c.id === clipId);
     if (!clip || clip.locked) return;
 
-    const selectedNotes = clip.notes.filter(n => this.state.selectedNoteIds.includes(n.id));
-    const notesToHumanize = selectedNotes.length > 0 ? selectedNotes : clip.notes;
+    const selectedNotes = clip.notes.filter((n) =>
+      this.state.selectedNoteIds.includes(n.id),
+    );
+    const notesToHumanize =
+      selectedNotes.length > 0 ? selectedNotes : clip.notes;
 
     for (const note of notesToHumanize) {
       const timeOffset = (Math.random() - 0.5) * amount * 0.1;
       const velocityOffset = Math.round((Math.random() - 0.5) * amount * 20);
 
       note.startBeat = Math.max(0, note.startBeat + timeOffset);
-      note.velocity = Math.max(1, Math.min(127, note.velocity + velocityOffset));
+      note.velocity = Math.max(
+        1,
+        Math.min(127, note.velocity + velocityOffset),
+      );
     }
 
     this.notify();
   }
 
   editVelocity(clipId: string, options: VelocityEditOptions): void {
-    const clip = this.state.clips.find(c => c.id === clipId);
+    const clip = this.state.clips.find((c) => c.id === clipId);
     if (!clip || clip.locked) return;
 
-    const selectedNotes = clip.notes.filter(n => this.state.selectedNoteIds.includes(n.id));
+    const selectedNotes = clip.notes.filter((n) =>
+      this.state.selectedNoteIds.includes(n.id),
+    );
     const notesToEdit = selectedNotes.length > 0 ? selectedNotes : clip.notes;
 
     for (const note of notesToEdit) {
       switch (options.mode) {
-        case 'set':
+        case "set":
           note.velocity = options.value;
           break;
-        case 'add':
+        case "add":
           note.velocity += options.value;
           break;
-        case 'scale':
+        case "scale":
           note.velocity = Math.round(note.velocity * (options.value / 100));
           break;
-        case 'compress': {
+        case "compress": {
           const min = options.min ?? 60;
           const max = options.max ?? 100;
           const range = max - min;
           note.velocity = Math.round(min + (note.velocity / 127) * range);
           break;
         }
-        case 'humanize': {
+        case "humanize": {
           const offset = Math.round((Math.random() - 0.5) * options.value);
           note.velocity += offset;
           break;
@@ -463,11 +511,14 @@ export class MIDIEngine {
   }
 
   transposeNotes(clipId: string, semitones: number): void {
-    const clip = this.state.clips.find(c => c.id === clipId);
+    const clip = this.state.clips.find((c) => c.id === clipId);
     if (!clip || clip.locked) return;
 
-    const selectedNotes = clip.notes.filter(n => this.state.selectedNoteIds.includes(n.id));
-    const notesToTranspose = selectedNotes.length > 0 ? selectedNotes : clip.notes;
+    const selectedNotes = clip.notes.filter((n) =>
+      this.state.selectedNoteIds.includes(n.id),
+    );
+    const notesToTranspose =
+      selectedNotes.length > 0 ? selectedNotes : clip.notes;
 
     for (const note of notesToTranspose) {
       note.pitch = Math.max(0, Math.min(127, note.pitch + semitones));
@@ -477,18 +528,22 @@ export class MIDIEngine {
   }
 
   legato(clipId: string): void {
-    const clip = this.state.clips.find(c => c.id === clipId);
+    const clip = this.state.clips.find((c) => c.id === clipId);
     if (!clip || clip.locked) return;
 
-    const sortedNotes = [...clip.notes].sort((a, b) => a.startBeat - b.startBeat);
+    const sortedNotes = [...clip.notes].sort(
+      (a, b) => a.startBeat - b.startBeat,
+    );
 
     for (let i = 0; i < sortedNotes.length - 1; i++) {
       const currentNote = sortedNotes[i];
       const nextNote = sortedNotes[i + 1];
-      
+
       if (currentNote.pitch === nextNote.pitch) continue;
-      
-      const gap = nextNote.startBeat - (currentNote.startBeat + currentNote.durationBeats);
+
+      const gap =
+        nextNote.startBeat -
+        (currentNote.startBeat + currentNote.durationBeats);
       if (gap > 0 && gap < 0.5) {
         currentNote.durationBeats = nextNote.startBeat - currentNote.startBeat;
       }
@@ -497,8 +552,11 @@ export class MIDIEngine {
     this.notify();
   }
 
-  addControlChange(clipId: string, cc: Omit<MIDIControlChange, 'id'>): string | null {
-    const clip = this.state.clips.find(c => c.id === clipId);
+  addControlChange(
+    clipId: string,
+    cc: Omit<MIDIControlChange, "id">,
+  ): string | null {
+    const clip = this.state.clips.find((c) => c.id === clipId);
     if (!clip || clip.locked) return null;
 
     const id = `cc_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
@@ -510,10 +568,10 @@ export class MIDIEngine {
   }
 
   removeControlChange(clipId: string, ccId: string): void {
-    const clip = this.state.clips.find(c => c.id === clipId);
+    const clip = this.state.clips.find((c) => c.id === clipId);
     if (!clip || clip.locked) return;
 
-    const index = clip.controlChanges.findIndex(cc => cc.id === ccId);
+    const index = clip.controlChanges.findIndex((cc) => cc.id === ccId);
     if (index !== -1) {
       clip.controlChanges.splice(index, 1);
       this.notify();
@@ -521,7 +579,20 @@ export class MIDIEngine {
   }
 
   pitchToNoteName(pitch: number): string {
-    const noteNames = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+    const noteNames = [
+      "C",
+      "C#",
+      "D",
+      "D#",
+      "E",
+      "F",
+      "F#",
+      "G",
+      "G#",
+      "A",
+      "A#",
+      "B",
+    ];
     const octave = Math.floor(pitch / 12) - 1;
     const note = noteNames[pitch % 12];
     return `${note}${octave}`;
@@ -532,8 +603,18 @@ export class MIDIEngine {
     if (!match) return 60;
 
     const noteNames: Record<string, number> = {
-      'C': 0, 'C#': 1, 'D': 2, 'D#': 3, 'E': 4, 'F': 5,
-      'F#': 6, 'G': 7, 'G#': 8, 'A': 9, 'A#': 10, 'B': 11,
+      C: 0,
+      "C#": 1,
+      D: 2,
+      "D#": 3,
+      E: 4,
+      F: 5,
+      "F#": 6,
+      G: 7,
+      "G#": 8,
+      A: 9,
+      "A#": 10,
+      B: 11,
     };
 
     const note = match[1].toUpperCase();
@@ -552,7 +633,7 @@ export class MIDIEngine {
   }
 
   private notify(): void {
-    this.listeners.forEach(l => l());
+    this.listeners.forEach((l) => l());
   }
 
   serialize(): MIDIEngineState {

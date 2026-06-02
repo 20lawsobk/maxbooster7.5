@@ -12,19 +12,24 @@
  *   DNS_PORT=5353 tsx dns-node/src/index.ts
  */
 
-import 'dotenv/config';
+import "dotenv/config";
 
-import { initZone, getDomain }  from './zone.js';
-import { initDnssec }           from './dnssec.js';
-import { warmGeoDb }            from './geodns.js';
-import { startDnsServer, stopDnsServer, isDnsRunning, getQueryCount } from './server.js';
-import { startHealthServer }    from './health.js';
+import { initZone, getDomain } from "./zone.js";
+import { initDnssec } from "./dnssec.js";
+import { warmGeoDb } from "./geodns.js";
+import {
+  startDnsServer,
+  stopDnsServer,
+  isDnsRunning,
+  getQueryCount,
+} from "./server.js";
+import { startHealthServer } from "./health.js";
 
-const ROLE    = process.env.DNS_SERVER_ROLE || 'ns1';
-const PORT    = parseInt(process.env.DNS_PORT || '5353');
-const HEALTH  = parseInt(process.env.HEALTH_PORT || '5380');
-const DNSSEC_ENABLED = process.env.DNSSEC_ENABLED === 'true';
-const HEARTBEAT_MS   = 60_000;
+const ROLE = process.env.DNS_SERVER_ROLE || "ns1";
+const PORT = parseInt(process.env.DNS_PORT || "5353");
+const HEALTH = parseInt(process.env.HEALTH_PORT || "5380");
+const DNSSEC_ENABLED = process.env.DNSSEC_ENABLED === "true";
+const HEARTBEAT_MS = 60_000;
 
 const BANNER = `
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -46,7 +51,9 @@ async function main() {
     initDnssec(domain);
     console.log(`[${ROLE}] DNSSEC: enabled (ECDSAP256SHA256)`);
   } else {
-    console.log(`[${ROLE}] DNSSEC: disabled (set DNSSEC_ENABLED=true to enable)`);
+    console.log(
+      `[${ROLE}] DNSSEC: disabled (set DNSSEC_ENABLED=true to enable)`,
+    );
   }
 
   // 3. Warm GeoDNS database
@@ -56,18 +63,24 @@ async function main() {
   await startDnsServer();
 
   if (!isDnsRunning()) {
-    console.error(`[${ROLE}] ❌ DNS server failed to start on :${PORT}. Exiting.`);
+    console.error(
+      `[${ROLE}] ❌ DNS server failed to start on :${PORT}. Exiting.`,
+    );
     process.exit(1);
   }
 
   // 5. Start health + metrics HTTP server
   startHealthServer();
 
-  console.log(`[${ROLE}] ✅ Online — ${domain} UDP+TCP :${PORT}  Health: :${HEALTH}`);
+  console.log(
+    `[${ROLE}] ✅ Online — ${domain} UDP+TCP :${PORT}  Health: :${HEALTH}`,
+  );
 
   // 6. Heartbeat log
   setInterval(() => {
-    console.log(`[${ROLE}] 💓 alive — queries=${getQueryCount()} uptime=${Math.floor(process.uptime())}s`);
+    console.log(
+      `[${ROLE}] 💓 alive — queries=${getQueryCount()} uptime=${Math.floor(process.uptime())}s`,
+    );
   }, HEARTBEAT_MS);
 
   // 7. Graceful shutdown
@@ -76,17 +89,17 @@ async function main() {
     stopDnsServer();
     process.exit(0);
   };
-  process.once('SIGTERM', () => shutdown('SIGTERM'));
-  process.once('SIGINT',  () => shutdown('SIGINT'));
-  process.on('uncaughtException', (err) => {
+  process.once("SIGTERM", () => shutdown("SIGTERM"));
+  process.once("SIGINT", () => shutdown("SIGINT"));
+  process.on("uncaughtException", (err) => {
     console.error(`[${ROLE}] Uncaught exception:`, err.message);
   });
-  process.on('unhandledRejection', (reason) => {
+  process.on("unhandledRejection", (reason) => {
     console.error(`[${ROLE}] Unhandled rejection:`, reason);
   });
 }
 
-main().catch(err => {
-  console.error('[dns-node] Fatal startup error:', err);
+main().catch((err) => {
+  console.error("[dns-node] Fatal startup error:", err);
   process.exit(1);
 });

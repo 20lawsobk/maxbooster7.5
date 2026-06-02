@@ -1,7 +1,12 @@
-import { db } from '../db.js';
-import { userOnboarding, onboardingTasks, users, userStreaks } from '../../shared/schema.js';
-import { eq, asc, and, sql, desc } from 'drizzle-orm';
-import { logger } from '../logger.js';
+import { db } from "../db.js";
+import {
+  userOnboarding,
+  onboardingTasks,
+  users,
+  userStreaks,
+} from "../../shared/schema.js";
+import { eq, asc, and, sql, desc } from "drizzle-orm";
+import { logger } from "../logger.js";
 
 export interface OnboardingProgress {
   userId: string;
@@ -63,9 +68,10 @@ class OnboardingService {
       const completedSteps = (progress.completedSteps as string[]) || [];
       const completedCount = completedSteps.length;
       const totalSteps = tasks.length;
-      const completionPercentage = totalSteps > 0 ? Math.round((completedCount / totalSteps) * 100) : 0;
+      const completionPercentage =
+        totalSteps > 0 ? Math.round((completedCount / totalSteps) * 100) : 0;
 
-      const tasksWithStatus: OnboardingTaskWithStatus[] = tasks.map(task => ({
+      const tasksWithStatus: OnboardingTaskWithStatus[] = tasks.map((task) => ({
         id: task.id,
         name: task.name,
         description: task.description,
@@ -78,12 +84,20 @@ class OnboardingService {
         completed: completedSteps.includes(task.id),
       }));
 
-      const recommendedNextStep = await this.getRecommendedNextStep(userId, tasksWithStatus);
+      const recommendedNextStep = await this.getRecommendedNextStep(
+        userId,
+        tasksWithStatus,
+      );
 
       const loginStreakRow = await db
         .select()
         .from(userStreaks)
-        .where(and(eq(userStreaks.userId, userId), eq(userStreaks.streakType, 'login')))
+        .where(
+          and(
+            eq(userStreaks.userId, userId),
+            eq(userStreaks.streakType, "login"),
+          ),
+        )
         .limit(1);
       const loginStreak = loginStreakRow[0]?.currentStreak || 0;
 
@@ -102,12 +116,15 @@ class OnboardingService {
         recommendedNextStep,
       };
     } catch (error) {
-      logger.warn({ err: error }, 'Error getting onboarding progress:');
-      throw new Error('Failed to get onboarding progress');
+      logger.warn({ err: error }, "Error getting onboarding progress:");
+      throw new Error("Failed to get onboarding progress");
     }
   }
 
-  async completeStep(userId: string, stepId: string): Promise<{
+  async completeStep(
+    userId: string,
+    stepId: string,
+  ): Promise<{
     success: boolean;
     pointsAwarded: number;
     totalPoints: number;
@@ -127,7 +144,7 @@ class OnboardingService {
           pointsAwarded: 0,
           totalPoints: 0,
           allCompleted: false,
-          message: 'Task not found',
+          message: "Task not found",
         };
       }
 
@@ -160,7 +177,7 @@ class OnboardingService {
           pointsAwarded: 0,
           totalPoints: progress.totalPoints || 0,
           allCompleted: false,
-          message: 'Step already completed',
+          message: "Step already completed",
         };
       }
 
@@ -169,14 +186,18 @@ class OnboardingService {
       const newTotalPoints = (progress.totalPoints || 0) + pointsAwarded;
 
       const allTasks = await db.select().from(onboardingTasks).limit(200);
-      const allCompleted = allTasks.every(t => newCompletedSteps.includes(t.id));
+      const allCompleted = allTasks.every((t) =>
+        newCompletedSteps.includes(t.id),
+      );
 
       const today = new Date();
       const lastActivity = progress.lastActivityAt;
       let newDayStreak = progress.dayStreak || 0;
 
       if (lastActivity) {
-        const daysDiff = Math.floor((today.getTime() - lastActivity.getTime()) / (1000 * 60 * 60 * 24));
+        const daysDiff = Math.floor(
+          (today.getTime() - lastActivity.getTime()) / (1000 * 60 * 60 * 24),
+        );
         if (daysDiff === 1) {
           newDayStreak++;
         } else if (daysDiff > 1) {
@@ -215,16 +236,18 @@ class OnboardingService {
         totalPoints: newTotalPoints,
         allCompleted,
         message: allCompleted
-          ? 'Congratulations! You completed all onboarding tasks!'
+          ? "Congratulations! You completed all onboarding tasks!"
           : `Task completed! +${pointsAwarded} points`,
       };
     } catch (error) {
-      logger.warn({ err: error }, 'Error completing onboarding step:');
-      throw new Error('Failed to complete step');
+      logger.warn({ err: error }, "Error completing onboarding step:");
+      throw new Error("Failed to complete step");
     }
   }
 
-  async skipOnboarding(userId: string): Promise<{ success: boolean; message: string }> {
+  async skipOnboarding(
+    userId: string,
+  ): Promise<{ success: boolean; message: string }> {
     try {
       const existing = await db
         .select()
@@ -260,17 +283,17 @@ class OnboardingService {
 
       return {
         success: true,
-        message: 'Onboarding skipped. You can always complete tasks later!',
+        message: "Onboarding skipped. You can always complete tasks later!",
       };
     } catch (error) {
-      logger.warn({ err: error }, 'Error skipping onboarding:');
-      throw new Error('Failed to skip onboarding');
+      logger.warn({ err: error }, "Error skipping onboarding:");
+      throw new Error("Failed to skip onboarding");
     }
   }
 
   async getRecommendedNextStep(
     userId: string,
-    tasksWithStatus?: OnboardingTaskWithStatus[]
+    tasksWithStatus?: OnboardingTaskWithStatus[],
   ): Promise<OnboardingTaskWithStatus | null> {
     try {
       let tasks = tasksWithStatus;
@@ -287,9 +310,10 @@ class OnboardingService {
           .where(eq(userOnboarding.userId, userId))
           .limit(1);
 
-        const completedSteps = (userProgress[0]?.completedSteps as string[]) || [];
+        const completedSteps =
+          (userProgress[0]?.completedSteps as string[]) || [];
 
-        tasks = allTasks.map(task => ({
+        tasks = allTasks.map((task) => ({
           id: task.id,
           name: task.name,
           description: task.description,
@@ -303,22 +327,22 @@ class OnboardingService {
         }));
       }
 
-      const incompleteTasks = tasks.filter(t => !t.completed);
+      const incompleteTasks = tasks.filter((t) => !t.completed);
 
       if (incompleteTasks.length === 0) {
         return null;
       }
 
-      const requiredTasks = incompleteTasks.filter(t => t.isRequired);
+      const requiredTasks = incompleteTasks.filter((t) => t.isRequired);
       if (requiredTasks.length > 0) {
         return requiredTasks.sort((a, b) => a.order - b.order)[0];
       }
 
       const categoryPriority: Record<string, number> = {
-        'Profile Setup': 1,
-        'First Release': 2,
-        'Connect Socials': 3,
-        'Explore Features': 4,
+        "Profile Setup": 1,
+        "First Release": 2,
+        "Connect Socials": 3,
+        "Explore Features": 4,
       };
 
       const sortedByPriorityAndPoints = incompleteTasks.sort((a, b) => {
@@ -331,7 +355,7 @@ class OnboardingService {
 
       return sortedByPriorityAndPoints[0] || null;
     } catch (error) {
-      logger.warn({ err: error }, 'Error getting recommended next step:');
+      logger.warn({ err: error }, "Error getting recommended next step:");
       return null;
     }
   }
@@ -343,7 +367,7 @@ class OnboardingService {
         .from(onboardingTasks)
         .orderBy(asc(onboardingTasks.order));
 
-      return tasks.map(task => ({
+      return tasks.map((task) => ({
         id: task.id,
         name: task.name,
         description: task.description,
@@ -356,8 +380,8 @@ class OnboardingService {
         completed: false,
       }));
     } catch (error) {
-      logger.warn({ err: error }, 'Error getting onboarding tasks:');
-      throw new Error('Failed to get tasks');
+      logger.warn({ err: error }, "Error getting onboarding tasks:");
+      throw new Error("Failed to get tasks");
     }
   }
 
@@ -365,167 +389,184 @@ class OnboardingService {
     try {
       const existingTasks = await db.select().from(onboardingTasks);
       if (existingTasks.length > 0) {
-        logger.info('Onboarding tasks already seeded, skipping...');
+        logger.info("Onboarding tasks already seeded, skipping...");
         return;
       }
 
       const defaultTasks = [
         {
-          name: 'Complete your profile',
-          description: 'Add your bio, profile picture, and social links to let fans know who you are',
-          category: 'Profile Setup',
+          name: "Complete your profile",
+          description:
+            "Add your bio, profile picture, and social links to let fans know who you are",
+          category: "Profile Setup",
           points: 50,
           order: 1,
           isRequired: true,
-          actionUrl: '/settings',
-          icon: 'User',
+          actionUrl: "/settings",
+          icon: "User",
         },
         {
-          name: 'Upload first track',
-          description: 'Upload your first music track to the studio and start creating',
-          category: 'First Release',
+          name: "Upload first track",
+          description:
+            "Upload your first music track to the studio and start creating",
+          category: "First Release",
           points: 100,
           order: 2,
           isRequired: true,
-          actionUrl: '/studio',
-          icon: 'Music',
+          actionUrl: "/studio",
+          icon: "Music",
         },
         {
-          name: 'Try AI Music Generator',
-          description: 'Generate a custom melody, beat, or full track using AI — describe what you want or upload audio',
-          category: 'Explore Features',
+          name: "Try AI Music Generator",
+          description:
+            "Generate a custom melody, beat, or full track using AI — describe what you want or upload audio",
+          category: "Explore Features",
           points: 150,
           order: 3,
           isRequired: false,
-          actionUrl: '/studio',
-          icon: 'Sparkles',
+          actionUrl: "/studio",
+          icon: "Sparkles",
         },
         {
-          name: 'Connect a social account',
-          description: 'Link your Instagram, TikTok, or Twitter to enable automated posting',
-          category: 'Connect Socials',
+          name: "Connect a social account",
+          description:
+            "Link your Instagram, TikTok, or Twitter to enable automated posting",
+          category: "Connect Socials",
           points: 75,
           order: 4,
           isRequired: false,
-          actionUrl: '/social-media',
-          icon: 'Share2',
+          actionUrl: "/social-media",
+          icon: "Share2",
         },
         {
-          name: 'Activate Social Autopilot',
-          description: 'Turn on AI-powered auto-posting trained on viral music marketing strategies',
-          category: 'Connect Socials',
+          name: "Activate Social Autopilot",
+          description:
+            "Turn on AI-powered auto-posting trained on viral music marketing strategies",
+          category: "Connect Socials",
           points: 125,
           order: 5,
           isRequired: false,
-          actionUrl: '/social-media',
-          icon: 'Sparkles',
+          actionUrl: "/social-media",
+          icon: "Sparkles",
         },
         {
-          name: 'Set up your beat store',
-          description: 'Configure your storefront to start selling beats and licenses',
-          category: 'First Release',
+          name: "Set up your beat store",
+          description:
+            "Configure your storefront to start selling beats and licenses",
+          category: "First Release",
           points: 100,
           order: 6,
           isRequired: false,
-          actionUrl: '/storefront',
-          icon: 'ShoppingBag',
+          actionUrl: "/storefront",
+          icon: "ShoppingBag",
         },
         {
-          name: 'Schedule first post',
-          description: 'Create and schedule your first social media post using AI optimization',
-          category: 'Connect Socials',
+          name: "Schedule first post",
+          description:
+            "Create and schedule your first social media post using AI optimization",
+          category: "Connect Socials",
           points: 75,
           order: 7,
           isRequired: false,
-          actionUrl: '/social-media',
-          icon: 'Calendar',
+          actionUrl: "/social-media",
+          icon: "Calendar",
         },
         {
-          name: 'Explore Zero-Cost Advertising',
-          description: 'Learn how our AI creates viral organic content that outperforms paid ads',
-          category: 'Explore Features',
+          name: "Explore Zero-Cost Advertising",
+          description:
+            "Learn how our AI creates viral organic content that outperforms paid ads",
+          category: "Explore Features",
           points: 100,
           order: 8,
           isRequired: false,
-          actionUrl: '/advertising',
-          icon: 'Sparkles',
+          actionUrl: "/advertising",
+          icon: "Sparkles",
         },
         {
-          name: 'Explore analytics',
-          description: 'Check out your analytics dashboard to understand your audience',
-          category: 'Explore Features',
+          name: "Explore analytics",
+          description:
+            "Check out your analytics dashboard to understand your audience",
+          category: "Explore Features",
           points: 50,
           order: 9,
           isRequired: false,
-          actionUrl: '/analytics',
-          icon: 'BarChart3',
+          actionUrl: "/analytics",
+          icon: "BarChart3",
         },
         {
-          name: 'Invite a collaborator',
-          description: 'Invite a fellow artist or collaborator to work on projects together',
-          category: 'Explore Features',
+          name: "Invite a collaborator",
+          description:
+            "Invite a fellow artist or collaborator to work on projects together",
+          category: "Explore Features",
           points: 100,
           order: 10,
           isRequired: false,
-          actionUrl: '/settings',
-          icon: 'UserPlus',
+          actionUrl: "/settings",
+          icon: "UserPlus",
         },
       ];
 
       await db.insert(onboardingTasks).values(defaultTasks);
       logger.info(`Seeded ${defaultTasks.length} default onboarding tasks`);
     } catch (error) {
-      logger.warn({ err: error }, 'Error seeding onboarding tasks:');
-      throw new Error('Failed to seed onboarding tasks');
+      logger.warn({ err: error }, "Error seeding onboarding tasks:");
+      throw new Error("Failed to seed onboarding tasks");
     }
   }
 
   async ensureAITasksExist(): Promise<void> {
     try {
       const existingTasks = await db.select().from(onboardingTasks);
-      const existingNames = existingTasks.map(t => t.name);
-      
+      const existingNames = existingTasks.map((t) => t.name);
+
       const aiTasks = [
         {
-          name: 'Try AI Music Generator',
-          description: 'Generate a custom melody, beat, or full track using AI — describe what you want or upload audio',
-          category: 'Explore Features',
+          name: "Try AI Music Generator",
+          description:
+            "Generate a custom melody, beat, or full track using AI — describe what you want or upload audio",
+          category: "Explore Features",
           points: 150,
           order: 3,
           isRequired: false,
-          actionUrl: '/studio',
-          icon: 'Sparkles',
+          actionUrl: "/studio",
+          icon: "Sparkles",
         },
         {
-          name: 'Activate Social Autopilot',
-          description: 'Turn on AI-powered auto-posting trained on viral music marketing strategies',
-          category: 'Connect Socials',
+          name: "Activate Social Autopilot",
+          description:
+            "Turn on AI-powered auto-posting trained on viral music marketing strategies",
+          category: "Connect Socials",
           points: 125,
           order: 5,
           isRequired: false,
-          actionUrl: '/social-media',
-          icon: 'Sparkles',
+          actionUrl: "/social-media",
+          icon: "Sparkles",
         },
         {
-          name: 'Explore Zero-Cost Advertising',
-          description: 'Learn how our AI creates viral organic content that outperforms paid ads',
-          category: 'Explore Features',
+          name: "Explore Zero-Cost Advertising",
+          description:
+            "Learn how our AI creates viral organic content that outperforms paid ads",
+          category: "Explore Features",
           points: 100,
           order: 8,
           isRequired: false,
-          actionUrl: '/advertising',
-          icon: 'Sparkles',
+          actionUrl: "/advertising",
+          icon: "Sparkles",
         },
       ];
 
-      const tasksToInsert = aiTasks.filter(task => !existingNames.includes(task.name));
-      
+      const tasksToInsert = aiTasks.filter(
+        (task) => !existingNames.includes(task.name),
+      );
+
       if (tasksToInsert.length > 0) {
         await db.insert(onboardingTasks).values(tasksToInsert);
-        logger.info(`Added ${tasksToInsert.length} AI-related onboarding tasks`);
+        logger.info(
+          `Added ${tasksToInsert.length} AI-related onboarding tasks`,
+        );
       }
     } catch (error) {
-      logger.warn({ err: error }, 'Error ensuring AI tasks exist:');
+      logger.warn({ err: error }, "Error ensuring AI tasks exist:");
     }
   }
 }

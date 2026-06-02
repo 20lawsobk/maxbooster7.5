@@ -5,37 +5,40 @@
  * unavailable. These tests verify the fallback store's counting logic
  * without requiring a real Redis connection.
  */
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { readFileSync } from 'fs';
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import { readFileSync } from "fs";
 
-const LIMITER_PATH = 'server/middleware/globalRateLimiter.ts';
+const LIMITER_PATH = "server/middleware/globalRateLimiter.ts";
 
-describe('GlobalRateLimiter source analysis', () => {
-  it('has a Redis-backed store implementation', () => {
-    const src = readFileSync(LIMITER_PATH, 'utf8');
-    expect(src).toContain('RedisRateLimitStore');
+describe("GlobalRateLimiter source analysis", () => {
+  it("has a Redis-backed store implementation", () => {
+    const src = readFileSync(LIMITER_PATH, "utf8");
+    expect(src).toContain("RedisRateLimitStore");
   });
 
-  it('has an in-memory fallback for when Redis is unavailable', () => {
-    const src = readFileSync(LIMITER_PATH, 'utf8');
-    expect(src).toContain('fallbackStore');
-    expect(src).toContain('Map');
+  it("has an in-memory fallback for when Redis is unavailable", () => {
+    const src = readFileSync(LIMITER_PATH, "utf8");
+    expect(src).toContain("fallbackStore");
+    expect(src).toContain("Map");
   });
 
-  it('uses a pipeline timeout to guard against Redis hiccups', () => {
-    const src = readFileSync(LIMITER_PATH, 'utf8');
-    expect(src).toContain('timeout');
-    expect(src).toContain('400');
+  it("uses a pipeline timeout to guard against Redis hiccups", () => {
+    const src = readFileSync(LIMITER_PATH, "utf8");
+    expect(src).toContain("timeout");
+    expect(src).toContain("400");
   });
 
-  it('prunes stale entries from the fallback store', () => {
-    const src = readFileSync(LIMITER_PATH, 'utf8');
-    expect(src).toContain('fallbackPrunedAt');
+  it("prunes stale entries from the fallback store", () => {
+    const src = readFileSync(LIMITER_PATH, "utf8");
+    expect(src).toContain("fallbackPrunedAt");
   });
 });
 
-describe('In-memory rate limiter logic', () => {
-  interface MemEntry { hits: number; resetAt: number }
+describe("In-memory rate limiter logic", () => {
+  interface MemEntry {
+    hits: number;
+    resetAt: number;
+  }
 
   function createFallbackStore(windowMs: number) {
     const store = new Map<string, MemEntry>();
@@ -55,39 +58,39 @@ describe('In-memory rate limiter logic', () => {
     return { increment, store };
   }
 
-  it('first request returns totalHits=1', () => {
+  it("first request returns totalHits=1", () => {
     const { increment } = createFallbackStore(60_000);
-    const result = increment('user:1');
+    const result = increment("user:1");
     expect(result.totalHits).toBe(1);
   });
 
-  it('subsequent requests within window increment the counter', () => {
+  it("subsequent requests within window increment the counter", () => {
     const { increment } = createFallbackStore(60_000);
-    increment('user:2');
-    increment('user:2');
-    const third = increment('user:2');
+    increment("user:2");
+    increment("user:2");
+    const third = increment("user:2");
     expect(third.totalHits).toBe(3);
   });
 
-  it('different keys are tracked independently', () => {
+  it("different keys are tracked independently", () => {
     const { increment } = createFallbackStore(60_000);
-    increment('user:a');
-    increment('user:a');
-    const bResult = increment('user:b');
+    increment("user:a");
+    increment("user:a");
+    const bResult = increment("user:b");
     expect(bResult.totalHits).toBe(1);
   });
 
-  it('counter resets after the window expires', async () => {
+  it("counter resets after the window expires", async () => {
     const { increment } = createFallbackStore(50); // 50ms window
-    increment('user:reset');
-    await new Promise(r => setTimeout(r, 60));
-    const after = increment('user:reset');
+    increment("user:reset");
+    await new Promise((r) => setTimeout(r, 60));
+    const after = increment("user:reset");
     expect(after.totalHits).toBe(1);
   });
 
-  it('resetTime is in the future', () => {
+  it("resetTime is in the future", () => {
     const { increment } = createFallbackStore(60_000);
-    const { resetTime } = increment('user:time');
+    const { resetTime } = increment("user:time");
     expect(resetTime.getTime()).toBeGreaterThan(Date.now());
   });
 });

@@ -1,4 +1,4 @@
-type AnnouncementPriority = 'polite' | 'assertive';
+type AnnouncementPriority = "polite" | "assertive";
 
 interface Announcement {
   message: string;
@@ -22,23 +22,23 @@ class ScreenReaderAnnouncer {
   }
 
   constructor() {
-    if (typeof document !== 'undefined') {
+    if (typeof document !== "undefined") {
       this.initializeRegions();
     }
   }
 
   private initializeRegions(): void {
-    this.politeRegion = this.createLiveRegion('polite');
-    this.assertiveRegion = this.createLiveRegion('assertive');
+    this.politeRegion = this.createLiveRegion("polite");
+    this.assertiveRegion = this.createLiveRegion("assertive");
   }
 
   private createLiveRegion(priority: AnnouncementPriority): HTMLDivElement {
-    const region = document.createElement('div');
-    region.setAttribute('role', 'status');
-    region.setAttribute('aria-live', priority);
-    region.setAttribute('aria-atomic', 'true');
-    region.setAttribute('aria-relevant', 'additions text');
-    region.className = 'sr-only';
+    const region = document.createElement("div");
+    region.setAttribute("role", "status");
+    region.setAttribute("aria-live", priority);
+    region.setAttribute("aria-atomic", "true");
+    region.setAttribute("aria-relevant", "additions text");
+    region.className = "sr-only";
     region.style.cssText = `
       position: absolute;
       width: 1px;
@@ -54,7 +54,7 @@ class ScreenReaderAnnouncer {
     return region;
   }
 
-  announce(message: string, priority: AnnouncementPriority = 'polite'): void {
+  announce(message: string, priority: AnnouncementPriority = "polite"): void {
     if (!message.trim()) return;
 
     const announcement: Announcement = {
@@ -63,7 +63,7 @@ class ScreenReaderAnnouncer {
       timestamp: Date.now(),
     };
 
-    if (priority === 'assertive') {
+    if (priority === "assertive") {
       this.announceImmediately(announcement);
     } else {
       this.queueAnnouncement(announcement);
@@ -74,7 +74,7 @@ class ScreenReaderAnnouncer {
     const region = this.assertiveRegion;
     if (!region) return;
 
-    region.textContent = '';
+    region.textContent = "";
     requestAnimationFrame(() => {
       region.textContent = announcement.message;
     });
@@ -99,7 +99,7 @@ class ScreenReaderAnnouncer {
     const announcement = this.announcementQueue.shift();
 
     if (announcement && this.politeRegion) {
-      this.politeRegion.textContent = '';
+      this.politeRegion.textContent = "";
       requestAnimationFrame(() => {
         if (this.politeRegion) {
           this.politeRegion.textContent = announcement.message;
@@ -118,8 +118,8 @@ class ScreenReaderAnnouncer {
 
   clear(): void {
     this.announcementQueue = [];
-    if (this.politeRegion) this.politeRegion.textContent = '';
-    if (this.assertiveRegion) this.assertiveRegion.textContent = '';
+    if (this.politeRegion) this.politeRegion.textContent = "";
+    if (this.assertiveRegion) this.assertiveRegion.textContent = "";
     if (this.debounceTimer) {
       clearTimeout(this.debounceTimer);
       this.debounceTimer = null;
@@ -140,83 +140,94 @@ class ScreenReaderAnnouncer {
   }
 }
 
-const announcer = typeof document !== 'undefined' ? ScreenReaderAnnouncer.getInstance() : null;
+const announcer =
+  typeof document !== "undefined" ? ScreenReaderAnnouncer.getInstance() : null;
 
 export function announcePolite(message: string): void {
-  announcer?.announce(message, 'polite');
+  announcer?.announce(message, "polite");
 }
 
 export function announceAssertive(message: string): void {
-  announcer?.announce(message, 'assertive');
+  announcer?.announce(message, "assertive");
 }
 
 export function announcePageTransition(pageName: string): void {
   const message = `Navigated to ${pageName} page`;
-  announcer?.announce(message, 'polite');
+  announcer?.announce(message, "polite");
 }
 
 export function announceFormValidation(
   fieldName: string,
   isValid: boolean,
-  errorMessage?: string
+  errorMessage?: string,
 ): void {
   if (isValid) {
-    announcer?.announce(`${fieldName} is valid`, 'polite');
+    announcer?.announce(`${fieldName} is valid`, "polite");
   } else {
     const message = errorMessage
       ? `${fieldName}: ${errorMessage}`
       : `${fieldName} has an error`;
-    announcer?.announce(message, 'assertive');
+    announcer?.announce(message, "assertive");
   }
 }
 
 export function announceFormErrors(errors: Record<string, string>): void {
   const errorMessages = Object.entries(errors)
     .map(([field, message]) => `${field}: ${message}`)
-    .join('. ');
-  
+    .join(". ");
+
   if (errorMessages) {
-    announcer?.announce(`Form has errors: ${errorMessages}`, 'assertive');
+    announcer?.announce(`Form has errors: ${errorMessages}`, "assertive");
   }
 }
 
 export function announceToast(
   message: string,
-  type: 'success' | 'error' | 'warning' | 'info' = 'info'
+  type: "success" | "error" | "warning" | "info" = "info",
 ): void {
-  const prefix = type === 'error' ? 'Error: ' : type === 'warning' ? 'Warning: ' : '';
-  const priority: AnnouncementPriority = type === 'error' ? 'assertive' : 'polite';
+  const prefix =
+    type === "error" ? "Error: " : type === "warning" ? "Warning: " : "";
+  const priority: AnnouncementPriority =
+    type === "error" ? "assertive" : "polite";
   announcer?.announce(`${prefix}${message}`, priority);
 }
 
 export function announceLoadingStart(context?: string): void {
-  const message = context ? `Loading ${context}, please wait` : 'Loading, please wait';
-  announcer?.announce(message, 'polite');
+  const message = context
+    ? `Loading ${context}, please wait`
+    : "Loading, please wait";
+  announcer?.announce(message, "polite");
 }
 
 export function announceLoadingComplete(context?: string): void {
-  const message = context ? `${context} loaded` : 'Content loaded';
-  announcer?.announce(message, 'polite');
+  const message = context ? `${context} loaded` : "Content loaded";
+  announcer?.announce(message, "polite");
 }
 
-export function announceListUpdate(action: 'added' | 'removed', itemName: string): void {
-  const message = action === 'added' 
-    ? `${itemName} added to list`
-    : `${itemName} removed from list`;
-  announcer?.announce(message, 'polite');
+export function announceListUpdate(
+  action: "added" | "removed",
+  itemName: string,
+): void {
+  const message =
+    action === "added"
+      ? `${itemName} added to list`
+      : `${itemName} removed from list`;
+  announcer?.announce(message, "polite");
 }
 
 export function announceSelection(itemName: string, isSelected: boolean): void {
-  const message = isSelected ? `${itemName} selected` : `${itemName} deselected`;
-  announcer?.announce(message, 'polite');
+  const message = isSelected
+    ? `${itemName} selected`
+    : `${itemName} deselected`;
+  announcer?.announce(message, "polite");
 }
 
 export function announceDialogOpen(dialogName: string): void {
-  announcer?.announce(`${dialogName} dialog opened`, 'polite');
+  announcer?.announce(`${dialogName} dialog opened`, "polite");
 }
 
 export function announceDialogClose(dialogName: string): void {
-  announcer?.announce(`${dialogName} dialog closed`, 'polite');
+  announcer?.announce(`${dialogName} dialog closed`, "polite");
 }
 
 export function clearAnnouncements(): void {

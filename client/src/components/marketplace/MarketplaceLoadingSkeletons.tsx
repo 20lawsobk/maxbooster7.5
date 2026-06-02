@@ -1,16 +1,19 @@
-import { cn } from '@/lib/utils';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { Skeleton } from '@/components/ui/skeleton';
+import { cn } from "@/lib/utils";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface BeatCardSkeletonProps {
   className?: string;
-  viewMode?: 'grid' | 'list';
+  viewMode?: "grid" | "list";
 }
 
-export function BeatCardSkeleton({ className, viewMode = 'grid' }: BeatCardSkeletonProps) {
-  if (viewMode === 'list') {
+export function BeatCardSkeleton({
+  className,
+  viewMode = "grid",
+}: BeatCardSkeletonProps) {
+  if (viewMode === "list") {
     return (
-      <Card className={cn('overflow-hidden', className)}>
+      <Card className={cn("overflow-hidden", className)}>
         <CardContent className="p-4">
           <div className="flex items-center gap-4">
             <Skeleton className="w-16 h-16 rounded-lg flex-shrink-0" />
@@ -33,7 +36,7 @@ export function BeatCardSkeleton({ className, viewMode = 'grid' }: BeatCardSkele
   }
 
   return (
-    <Card className={cn('overflow-hidden group', className)}>
+    <Card className={cn("overflow-hidden group", className)}>
       <div className="relative">
         <Skeleton className="aspect-square w-full" />
         <div className="absolute inset-0 flex items-center justify-center">
@@ -63,20 +66,20 @@ export function BeatCardSkeleton({ className, viewMode = 'grid' }: BeatCardSkele
 
 export function BeatGridSkeleton({
   count = 12,
-  viewMode = 'grid',
+  viewMode = "grid",
   className,
 }: {
   count?: number;
-  viewMode?: 'grid' | 'list';
+  viewMode?: "grid" | "list";
   className?: string;
 }) {
   return (
     <div
       className={cn(
-        viewMode === 'grid'
-          ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4'
-          : 'space-y-4',
-        className
+        viewMode === "grid"
+          ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"
+          : "space-y-4",
+        className,
       )}
     >
       {Array.from({ length: count }).map((_, i) => (
@@ -88,7 +91,7 @@ export function BeatGridSkeleton({
 
 export function ProducerCardSkeleton({ className }: { className?: string }) {
   return (
-    <Card className={cn('overflow-hidden', className)}>
+    <Card className={cn("overflow-hidden", className)}>
       <CardContent className="p-6">
         <div className="flex items-center gap-4">
           <Skeleton className="w-16 h-16 rounded-full" />
@@ -115,7 +118,7 @@ export function ProducerGridSkeleton({
   className?: string;
 }) {
   return (
-    <div className={cn('grid grid-cols-1 md:grid-cols-2 gap-4', className)}>
+    <div className={cn("grid grid-cols-1 md:grid-cols-2 gap-4", className)}>
       {Array.from({ length: count }).map((_, i) => (
         <ProducerCardSkeleton key={i} />
       ))}
@@ -125,7 +128,7 @@ export function ProducerGridSkeleton({
 
 export function LicenseCardSkeleton({ className }: { className?: string }) {
   return (
-    <Card className={cn('overflow-hidden', className)}>
+    <Card className={cn("overflow-hidden", className)}>
       <CardHeader className="pb-2">
         <div className="flex items-center gap-3">
           <Skeleton className="w-10 h-10 rounded-lg" />
@@ -149,9 +152,18 @@ export function LicenseCardSkeleton({ className }: { className?: string }) {
   );
 }
 
-export function LicenseComparisonSkeleton({ className }: { className?: string }) {
+export function LicenseComparisonSkeleton({
+  className,
+}: {
+  className?: string;
+}) {
   return (
-    <div className={cn('grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4', className)}>
+    <div
+      className={cn(
+        "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4",
+        className,
+      )}
+    >
       {Array.from({ length: 4 }).map((_, i) => (
         <LicenseCardSkeleton key={i} />
       ))}
@@ -161,7 +173,7 @@ export function LicenseComparisonSkeleton({ className }: { className?: string })
 
 export function AudioPlayerSkeleton({ className }: { className?: string }) {
   return (
-    <Card className={cn('overflow-hidden', className)}>
+    <Card className={cn("overflow-hidden", className)}>
       <div className="flex flex-col md:flex-row">
         <Skeleton className="w-full md:w-48 h-48" />
         <div className="flex-1 p-4 space-y-4">
@@ -205,9 +217,13 @@ export function AudioPlayerSkeleton({ className }: { className?: string }) {
   );
 }
 
-export function AnalyticsDashboardSkeleton({ className }: { className?: string }) {
+export function AnalyticsDashboardSkeleton({
+  className,
+}: {
+  className?: string;
+}) {
   return (
-    <div className={cn('space-y-6', className)}>
+    <div className={cn("space-y-6", className)}>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {Array.from({ length: 4 }).map((_, i) => (
           <Card key={i}>
@@ -248,7 +264,7 @@ export function AnalyticsDashboardSkeleton({ className }: { className?: string }
 
 export function PurchaseHistorySkeleton({ className }: { className?: string }) {
   return (
-    <div className={cn('space-y-4', className)}>
+    <div className={cn("space-y-4", className)}>
       {Array.from({ length: 5 }).map((_, i) => (
         <Card key={i}>
           <CardContent className="p-4">
@@ -275,7 +291,7 @@ export function PurchaseHistorySkeleton({ className }: { className?: string }) {
 
 export function StorefrontSkeleton({ className }: { className?: string }) {
   return (
-    <div className={cn('space-y-6', className)}>
+    <div className={cn("space-y-6", className)}>
       <div className="relative">
         <Skeleton className="h-48 w-full rounded-lg" />
         <div className="absolute -bottom-16 left-6">
@@ -297,9 +313,13 @@ export function StorefrontSkeleton({ className }: { className?: string }) {
   );
 }
 
-export function MarketplaceHeaderSkeleton({ className }: { className?: string }) {
+export function MarketplaceHeaderSkeleton({
+  className,
+}: {
+  className?: string;
+}) {
   return (
-    <div className={cn('bg-card rounded-2xl p-8 border', className)}>
+    <div className={cn("bg-card rounded-2xl p-8 border", className)}>
       <div className="flex items-center justify-between">
         <div className="space-y-3">
           <Skeleton className="h-10 w-64" />
@@ -322,7 +342,7 @@ export function MarketplaceHeaderSkeleton({ className }: { className?: string })
 
 export function SearchFilterSkeleton({ className }: { className?: string }) {
   return (
-    <Card className={cn('', className)}>
+    <Card className={cn("", className)}>
       <CardContent className="p-6">
         <div className="flex flex-col lg:flex-row gap-4">
           <Skeleton className="h-10 flex-1" />

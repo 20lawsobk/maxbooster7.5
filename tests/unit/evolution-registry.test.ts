@@ -16,28 +16,28 @@
  *     (the real consumer autopilot-engine.getOptimalTimesForPlatform) when no
  *     per-artist learned timing exists.
  */
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from "vitest";
 
 // ── Mocks ─────────────────────────────────────────────────────────────────
 // The registry persists to storageService (PDIM) and logs via the pino logger.
 // Keep both inert so the registry runs fully in-memory with no network/IO.
 
-vi.mock('../../server/logger.js', () => ({
+vi.mock("../../server/logger.js", () => ({
   logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() },
 }));
 
-vi.mock('../../server/services/storageService.js', () => ({
+vi.mock("../../server/services/storageService.js", () => ({
   storageService: {
     // No prior registry on disk — downloadFile rejects so load() starts empty.
-    downloadFile: vi.fn().mockRejectedValue(new Error('not found')),
-    uploadFile: vi.fn().mockResolvedValue('ok'),
+    downloadFile: vi.fn().mockRejectedValue(new Error("not found")),
+    uploadFile: vi.fn().mockResolvedValue("ok"),
   },
 }));
 
 // No per-artist learned timing → the consumer falls through to the registry
 // override (then static defaults). Returning [] proves the override path.
 const mockGetOptimalPostingTimes = vi.fn().mockResolvedValue([]);
-vi.mock('../../server/services/autopilotLearningService.js', () => ({
+vi.mock("../../server/services/autopilotLearningService.js", () => ({
   autopilotLearningService: {
     getOptimalPostingTimes: mockGetOptimalPostingTimes,
   },
@@ -45,64 +45,76 @@ vi.mock('../../server/services/autopilotLearningService.js', () => ({
 
 // Heavy, unrelated imports pulled in transitively by autopilot-engine. Stub
 // them so importing the real consumer does not boot the whole server.
-vi.mock('../../server/platform-apis.js', () => ({ platformAPI: {} }));
+vi.mock("../../server/platform-apis.js", () => ({ platformAPI: {} }));
 
 // The autopilot content generator delegates to advancedSocialAIService. We spy
 // on it to observe the exact knobs (variantCount / includeEmojis) the engine
 // passes through from the registry's content_optimization override.
 const mockGenerateAdvancedContent = vi.fn().mockResolvedValue({
-  primary: { body: 'post body', hashtags: ['#music'], hook: 'hook', callToAction: 'cta' },
+  primary: {
+    body: "post body",
+    hashtags: ["#music"],
+    hook: "hook",
+    callToAction: "cta",
+  },
   scoring: { overall: 80 },
   viralPotential: { score: 70 },
 });
-vi.mock('../../server/services/advancedSocialAIService.js', () => ({
+vi.mock("../../server/services/advancedSocialAIService.js", () => ({
   advancedSocialAIService: {
     generateAdvancedContent: mockGenerateAdvancedContent,
   },
 }));
 
-import { evolutionRegistry } from '../../server/services/evolutionRegistry.js';
+import { evolutionRegistry } from "../../server/services/evolutionRegistry.js";
 
 // Reset the singleton's in-memory state between tests. Setting lastLoadedAt to
 // now keeps load() from re-reading (mocked) storage so each test starts clean.
 function resetRegistry(): void {
-  (evolutionRegistry as unknown as { enhancements: unknown[] }).enhancements = [];
-  (evolutionRegistry as unknown as { lastLoadedAt: number }).lastLoadedAt = Date.now();
+  (evolutionRegistry as unknown as { enhancements: unknown[] }).enhancements =
+    [];
+  (evolutionRegistry as unknown as { lastLoadedAt: number }).lastLoadedAt =
+    Date.now();
 }
 
-describe('evolutionRegistry.apply() — effective-field honesty rule', () => {
+describe("evolutionRegistry.apply() — effective-field honesty rule", () => {
   beforeEach(() => {
     resetRegistry();
     vi.clearAllMocks();
     mockGetOptimalPostingTimes.mockResolvedValue([]);
   });
 
-  it('reports applied=true for a consumed category WITH an effective field (posting_optimization + optimalHours)', async () => {
+  it("reports applied=true for a consumed category WITH an effective field (posting_optimization + optimalHours)", async () => {
     const result = await evolutionRegistry.apply({
-      upgradeId: 'up-1',
-      changeId: 'chg-1',
-      category: 'posting_optimization',
-      title: 'Detected evening engagement shift',
-      source: 'rss',
-      payload: { platform: 'tiktok', optimalHours: [11, 14, 17, 19, 21], engagementTargeting: 'high' },
+      upgradeId: "up-1",
+      changeId: "chg-1",
+      category: "posting_optimization",
+      title: "Detected evening engagement shift",
+      source: "rss",
+      payload: {
+        platform: "tiktok",
+        optimalHours: [11, 14, 17, 19, 21],
+        engagementTargeting: "high",
+      },
     });
 
     expect(result.consumed).toBe(true);
     expect(result.applied).toBe(true);
     expect(result.reason).toBeUndefined();
     expect(result.enhancement?.active).toBe(true);
-    expect((result.enhancement?.payload as { optimalHours?: number[] }).optimalHours)
-      .toEqual([11, 14, 17, 19, 21]);
+    expect(
+      (result.enhancement?.payload as { optimalHours?: number[] }).optimalHours,
+    ).toEqual([11, 14, 17, 19, 21]);
   });
 
-  it('reports applied=true for content_optimization WITH an effective field (variantCount)', async () => {
+  it("reports applied=true for content_optimization WITH an effective field (variantCount)", async () => {
     const result = await evolutionRegistry.apply({
-      upgradeId: 'up-2',
-      changeId: 'chg-2',
-      category: 'content_optimization',
-      title: 'Carousel format trending',
-      source: 'tavily',
-      payload: { platform: 'instagram', variantCount: 5, visualPriority: true },
+      upgradeId: "up-2",
+      changeId: "chg-2",
+      category: "content_optimization",
+      title: "Carousel format trending",
+      source: "tavily",
+      payload: { platform: "instagram", variantCount: 5, visualPriority: true },
     });
 
     expect(result.consumed).toBe(true);
@@ -110,36 +122,43 @@ describe('evolutionRegistry.apply() — effective-field honesty rule', () => {
     expect(result.reason).toBeUndefined();
   });
 
-  it('reports applied=true for posting_optimization with contentFormatPriority/engagementTargeting (now effective fields a live consumer reads)', async () => {
+  it("reports applied=true for posting_optimization with contentFormatPriority/engagementTargeting (now effective fields a live consumer reads)", async () => {
     const result = await evolutionRegistry.apply({
-      upgradeId: 'up-3',
-      changeId: 'chg-3',
-      category: 'posting_optimization',
-      title: 'Short-form video priority',
-      source: 'exa',
+      upgradeId: "up-3",
+      changeId: "chg-3",
+      category: "posting_optimization",
+      title: "Short-form video priority",
+      source: "exa",
       // These knobs are now read by live consumers (autopilot content-type
       // selection + generation objective), so they ARE applied behavior changes.
-      payload: { contentFormatPriority: ['video', 'reel'], engagementTargeting: 'high' },
+      payload: {
+        contentFormatPriority: ["video", "reel"],
+        engagementTargeting: "high",
+      },
     });
 
     expect(result.consumed).toBe(true);
     expect(result.applied).toBe(true);
     expect(result.reason).toBeUndefined();
     expect(result.enhancement).toBeDefined();
-    expect((result.enhancement?.payload as { contentFormatPriority?: string[] }).contentFormatPriority)
-      .toEqual(['video', 'reel']);
-    expect((result.enhancement?.payload as { engagementTargeting?: string }).engagementTargeting)
-      .toBe('high');
+    expect(
+      (result.enhancement?.payload as { contentFormatPriority?: string[] })
+        .contentFormatPriority,
+    ).toEqual(["video", "reel"]);
+    expect(
+      (result.enhancement?.payload as { engagementTargeting?: string })
+        .engagementTargeting,
+    ).toBe("high");
   });
 
-  it('reports applied=false when the payload sanitizes to nothing usable', async () => {
+  it("reports applied=false when the payload sanitizes to nothing usable", async () => {
     const result = await evolutionRegistry.apply({
-      upgradeId: 'up-4',
-      changeId: 'chg-4',
-      category: 'posting_optimization',
-      title: 'Empty payload',
-      source: 'rss',
-      payload: { optimalHours: ['not-a-number'] as unknown as number[] },
+      upgradeId: "up-4",
+      changeId: "chg-4",
+      category: "posting_optimization",
+      title: "Empty payload",
+      source: "rss",
+      payload: { optimalHours: ["not-a-number"] as unknown as number[] },
     });
 
     expect(result.applied).toBe(false);
@@ -147,108 +166,123 @@ describe('evolutionRegistry.apply() — effective-field honesty rule', () => {
   });
 });
 
-describe('evolutionRegistry.deactivateAll() — reversibility', () => {
+describe("evolutionRegistry.deactivateAll() — reversibility", () => {
   beforeEach(() => {
     resetRegistry();
     vi.clearAllMocks();
   });
 
-  it('flips active entries inactive so consumers fall back to defaults', async () => {
+  it("flips active entries inactive so consumers fall back to defaults", async () => {
     await evolutionRegistry.apply({
-      upgradeId: 'up-5',
-      changeId: 'chg-5',
-      category: 'posting_optimization',
-      title: 'Posting hours override',
-      source: 'rss',
-      payload: { platform: 'tiktok', optimalHours: [11, 14, 17, 19, 21] },
+      upgradeId: "up-5",
+      changeId: "chg-5",
+      category: "posting_optimization",
+      title: "Posting hours override",
+      source: "rss",
+      payload: { platform: "tiktok", optimalHours: [11, 14, 17, 19, 21] },
     });
 
     // Consumer sees the override while active.
-    expect(evolutionRegistry.getOptimalHoursOverride('tiktok')).toEqual([11, 14, 17, 19, 21]);
+    expect(evolutionRegistry.getOptimalHoursOverride("tiktok")).toEqual([
+      11, 14, 17, 19, 21,
+    ]);
     expect(evolutionRegistry.getStats().active).toBe(1);
 
     const reverted = await evolutionRegistry.deactivateAll();
     expect(reverted).toBe(1);
 
     // After rollback the consumer gets null → it will use its static defaults.
-    expect(evolutionRegistry.getOptimalHoursOverride('tiktok')).toBeNull();
+    expect(evolutionRegistry.getOptimalHoursOverride("tiktok")).toBeNull();
     expect(evolutionRegistry.getStats().active).toBe(0);
   });
 });
 
-describe('Self-Evolution → autopilot posting-window selection (integration-style)', () => {
+describe("Self-Evolution → autopilot posting-window selection (integration-style)", () => {
   beforeEach(() => {
     resetRegistry();
     vi.clearAllMocks();
     mockGetOptimalPostingTimes.mockResolvedValue([]);
   });
 
-  it('a generated posting_optimization optimalHours override changes the real autopilot getOptimalTimesForPlatform result when no learned timing exists', async () => {
-    const { AutopilotEngine } = await import('../../server/autopilot-engine.js');
-    const engine = new AutopilotEngine('test-user') as unknown as {
+  it("a generated posting_optimization optimalHours override changes the real autopilot getOptimalTimesForPlatform result when no learned timing exists", async () => {
+    const { AutopilotEngine } = await import(
+      "../../server/autopilot-engine.js"
+    );
+    const engine = new AutopilotEngine("test-user") as unknown as {
       getOptimalTimesForPlatform(platform: string): Promise<number[]>;
     };
 
     // Static default for tiktok (no learned data, no override) is [6,10,16,19].
     const STATIC_TIKTOK_DEFAULT = [6, 10, 16, 19];
-    const baseline = await engine.getOptimalTimesForPlatform('tiktok');
+    const baseline = await engine.getOptimalTimesForPlatform("tiktok");
     expect(baseline).toEqual(STATIC_TIKTOK_DEFAULT);
 
     // The engine generates this exact posting_optimization payload for a
     // high-impact detected change; apply it to the live registry.
     const overrideHours = [11, 14, 17, 19, 21];
     const applyResult = await evolutionRegistry.apply({
-      upgradeId: 'up-6',
-      changeId: 'chg-6',
-      category: 'posting_optimization',
-      title: 'High-impact evening engagement shift',
-      source: 'rss',
-      payload: { platform: 'tiktok', optimalHours: overrideHours, engagementTargeting: 'high' },
+      upgradeId: "up-6",
+      changeId: "chg-6",
+      category: "posting_optimization",
+      title: "High-impact evening engagement shift",
+      source: "rss",
+      payload: {
+        platform: "tiktok",
+        optimalHours: overrideHours,
+        engagementTargeting: "high",
+      },
     });
     expect(applyResult.applied).toBe(true);
 
     // The REAL consumer now returns the override instead of the static default.
-    const afterOverride = await engine.getOptimalTimesForPlatform('tiktok');
+    const afterOverride = await engine.getOptimalTimesForPlatform("tiktok");
     expect(afterOverride).toEqual(overrideHours);
     expect(afterOverride).not.toEqual(STATIC_TIKTOK_DEFAULT);
 
     // Deactivating the enhancement reverts the consumer to its static default.
     await evolutionRegistry.deactivateAll();
-    const afterRollback = await engine.getOptimalTimesForPlatform('tiktok');
+    const afterRollback = await engine.getOptimalTimesForPlatform("tiktok");
     expect(afterRollback).toEqual(STATIC_TIKTOK_DEFAULT);
   });
 
-  it('an advisory (non-effective) posting_optimization payload does NOT change autopilot selection', async () => {
-    const { AutopilotEngine } = await import('../../server/autopilot-engine.js');
-    const engine = new AutopilotEngine('test-user-2') as unknown as {
+  it("an advisory (non-effective) posting_optimization payload does NOT change autopilot selection", async () => {
+    const { AutopilotEngine } = await import(
+      "../../server/autopilot-engine.js"
+    );
+    const engine = new AutopilotEngine("test-user-2") as unknown as {
       getOptimalTimesForPlatform(platform: string): Promise<number[]>;
     };
     const STATIC_TIKTOK_DEFAULT = [6, 10, 16, 19];
 
     const applyResult = await evolutionRegistry.apply({
-      upgradeId: 'up-7',
-      changeId: 'chg-7',
-      category: 'posting_optimization',
-      title: 'Format priority only',
-      source: 'exa',
-      payload: { platform: 'tiktok', contentFormatPriority: ['video', 'reel'] },
+      upgradeId: "up-7",
+      changeId: "chg-7",
+      category: "posting_optimization",
+      title: "Format priority only",
+      source: "exa",
+      payload: { platform: "tiktok", contentFormatPriority: ["video", "reel"] },
     });
     // contentFormatPriority IS now an effective field (it changes content-type
     // selection), so this is applied — but it does NOT touch posting-HOUR
     // selection, which is driven solely by optimalHours.
     expect(applyResult.applied).toBe(true);
 
-    const after = await engine.getOptimalTimesForPlatform('tiktok');
+    const after = await engine.getOptimalTimesForPlatform("tiktok");
     expect(after).toEqual(STATIC_TIKTOK_DEFAULT);
   });
 });
 
-describe('Self-Evolution → autopilot content-format & engagement targeting (integration-style)', () => {
+describe("Self-Evolution → autopilot content-format & engagement targeting (integration-style)", () => {
   beforeEach(() => {
     resetRegistry();
     vi.clearAllMocks();
     mockGenerateAdvancedContent.mockResolvedValue({
-      primary: { body: 'post body', hashtags: ['#music'], hook: 'hook', callToAction: 'cta' },
+      primary: {
+        body: "post body",
+        hashtags: ["#music"],
+        hook: "hook",
+        callToAction: "cta",
+      },
       scoring: { overall: 80 },
       viralPotential: { score: 70 },
     });
@@ -266,106 +300,132 @@ describe('Self-Evolution → autopilot content-format & engagement targeting (in
     }): Promise<unknown>;
   };
 
-  it('a contentFormatPriority override biases the real selectContentType pick toward the prioritized format, and reverts on rollback', async () => {
-    const { AutopilotEngine } = await import('../../server/autopilot-engine.js');
+  it("a contentFormatPriority override biases the real selectContentType pick toward the prioritized format, and reverts on rollback", async () => {
+    const { AutopilotEngine } = await import(
+      "../../server/autopilot-engine.js"
+    );
     // Default config contentTypes: ['tips','insights','questions','announcements'].
     // Affinities: tips/insights→carousel, questions→text, announcements→image.
-    const engine = new AutopilotEngine('format-user-1') as unknown as FormatEngine;
+    const engine = new AutopilotEngine(
+      "format-user-1",
+    ) as unknown as FormatEngine;
 
     // Baseline (no override): the deterministic seeded pick, a configured type.
-    const baseline = engine.selectContentType('tiktok');
-    expect(['tips', 'insights', 'questions', 'announcements']).toContain(baseline);
+    const baseline = engine.selectContentType("tiktok");
+    expect(["tips", "insights", "questions", "announcements"]).toContain(
+      baseline,
+    );
 
     // Prioritize the 'text' format → picks the configured type whose affinity is
     // 'text' (questions). 'image' would pick 'announcements'. Two distinct
     // overrides yielding two distinct deterministic picks proves the knob drives
     // selection (independent of the seeded baseline).
     await evolutionRegistry.apply({
-      upgradeId: 'up-fmt-1',
-      changeId: 'chg-fmt-1',
-      category: 'posting_optimization',
-      title: 'Text-first format priority',
-      source: 'rss',
-      payload: { platform: 'tiktok', contentFormatPriority: ['text', 'carousel'] },
+      upgradeId: "up-fmt-1",
+      changeId: "chg-fmt-1",
+      category: "posting_optimization",
+      title: "Text-first format priority",
+      source: "rss",
+      payload: {
+        platform: "tiktok",
+        contentFormatPriority: ["text", "carousel"],
+      },
     });
-    expect(engine.selectContentType('tiktok')).toBe('questions');
+    expect(engine.selectContentType("tiktok")).toBe("questions");
 
     await evolutionRegistry.deactivateAll();
     await evolutionRegistry.apply({
-      upgradeId: 'up-fmt-2',
-      changeId: 'chg-fmt-2',
-      category: 'posting_optimization',
-      title: 'Image-first format priority',
-      source: 'rss',
-      payload: { platform: 'tiktok', contentFormatPriority: ['image'] },
+      upgradeId: "up-fmt-2",
+      changeId: "chg-fmt-2",
+      category: "posting_optimization",
+      title: "Image-first format priority",
+      source: "rss",
+      payload: { platform: "tiktok", contentFormatPriority: ["image"] },
     });
-    expect(engine.selectContentType('tiktok')).toBe('announcements');
+    expect(engine.selectContentType("tiktok")).toBe("announcements");
 
     // Deactivating reverts to the seeded baseline.
     await evolutionRegistry.deactivateAll();
-    expect(engine.selectContentType('tiktok')).toBe(baseline);
+    expect(engine.selectContentType("tiktok")).toBe(baseline);
   });
 
   it('an engagementTargeting=high override steers the real generation objective to "engagement", and reverts on rollback', async () => {
-    const { AutopilotEngine } = await import('../../server/autopilot-engine.js');
-    const engine = new AutopilotEngine('engagement-user-1') as unknown as FormatEngine;
+    const { AutopilotEngine } = await import(
+      "../../server/autopilot-engine.js"
+    );
+    const engine = new AutopilotEngine(
+      "engagement-user-1",
+    ) as unknown as FormatEngine;
 
     // businessGoals=['sales'] maps to objective 'conversions' (distinct from the
     // override's 'engagement'), so the override's effect is unambiguous.
     const PARAMS = {
-      topic: 'new single',
-      platform: 'instagram',
-      brandVoice: 'energetic',
-      contentType: 'announcements',
-      targetAudience: 'fans',
-      businessGoals: ['sales'],
+      topic: "new single",
+      platform: "instagram",
+      brandVoice: "energetic",
+      contentType: "announcements",
+      targetAudience: "fans",
+      businessGoals: ["sales"],
     };
 
     // Baseline: goal-derived objective is used.
     await engine.generateContentForAutopilot(PARAMS);
-    expect(mockGenerateAdvancedContent.mock.calls[0][0].objective).toBe('conversions');
+    expect(mockGenerateAdvancedContent.mock.calls[0][0].objective).toBe(
+      "conversions",
+    );
 
     await evolutionRegistry.apply({
-      upgradeId: 'up-eng-1',
-      changeId: 'chg-eng-1',
-      category: 'posting_optimization',
-      title: 'Prioritize engagement',
-      source: 'tavily',
-      payload: { platform: 'instagram', engagementTargeting: 'high' },
+      upgradeId: "up-eng-1",
+      changeId: "chg-eng-1",
+      category: "posting_optimization",
+      title: "Prioritize engagement",
+      source: "tavily",
+      payload: { platform: "instagram", engagementTargeting: "high" },
     });
 
     mockGenerateAdvancedContent.mockClear();
     await engine.generateContentForAutopilot(PARAMS);
-    expect(mockGenerateAdvancedContent.mock.calls[0][0].objective).toBe('engagement');
+    expect(mockGenerateAdvancedContent.mock.calls[0][0].objective).toBe(
+      "engagement",
+    );
 
     // engagementTargeting='standard' does NOT override the goal-derived objective.
     await evolutionRegistry.deactivateAll();
     await evolutionRegistry.apply({
-      upgradeId: 'up-eng-2',
-      changeId: 'chg-eng-2',
-      category: 'posting_optimization',
-      title: 'Standard engagement',
-      source: 'tavily',
-      payload: { platform: 'instagram', engagementTargeting: 'standard' },
+      upgradeId: "up-eng-2",
+      changeId: "chg-eng-2",
+      category: "posting_optimization",
+      title: "Standard engagement",
+      source: "tavily",
+      payload: { platform: "instagram", engagementTargeting: "standard" },
     });
     mockGenerateAdvancedContent.mockClear();
     await engine.generateContentForAutopilot(PARAMS);
-    expect(mockGenerateAdvancedContent.mock.calls[0][0].objective).toBe('conversions');
+    expect(mockGenerateAdvancedContent.mock.calls[0][0].objective).toBe(
+      "conversions",
+    );
 
     // Rollback fully reverts to the goal-derived objective.
     await evolutionRegistry.deactivateAll();
     mockGenerateAdvancedContent.mockClear();
     await engine.generateContentForAutopilot(PARAMS);
-    expect(mockGenerateAdvancedContent.mock.calls[0][0].objective).toBe('conversions');
+    expect(mockGenerateAdvancedContent.mock.calls[0][0].objective).toBe(
+      "conversions",
+    );
   });
 });
 
-describe('Self-Evolution → autopilot content generation (integration-style)', () => {
+describe("Self-Evolution → autopilot content generation (integration-style)", () => {
   beforeEach(() => {
     resetRegistry();
     vi.clearAllMocks();
     mockGenerateAdvancedContent.mockResolvedValue({
-      primary: { body: 'post body', hashtags: ['#music'], hook: 'hook', callToAction: 'cta' },
+      primary: {
+        body: "post body",
+        hashtags: ["#music"],
+        hook: "hook",
+        callToAction: "cta",
+      },
       scoring: { overall: 80 },
       viralPotential: { score: 70 },
     });
@@ -385,17 +445,21 @@ describe('Self-Evolution → autopilot content generation (integration-style)', 
   // generateContentForAutopilot is private; the tests below access it via cast,
   // the same way the posting-time tests cast getOptimalTimesForPlatform.
   const GEN_PARAMS = {
-    topic: 'new single',
-    platform: 'instagram',
-    brandVoice: 'energetic',
-    contentType: 'announcements',
-    targetAudience: 'fans',
-    businessGoals: ['growth'],
+    topic: "new single",
+    platform: "instagram",
+    brandVoice: "energetic",
+    contentType: "announcements",
+    targetAudience: "fans",
+    businessGoals: ["growth"],
   };
 
-  it('generates with the static defaults (variantCount=3, includeEmojis=true) when no content_optimization override exists', async () => {
-    const { AutopilotEngine } = await import('../../server/autopilot-engine.js');
-    const engine = new AutopilotEngine('content-user-1') as unknown as ContentEngine;
+  it("generates with the static defaults (variantCount=3, includeEmojis=true) when no content_optimization override exists", async () => {
+    const { AutopilotEngine } = await import(
+      "../../server/autopilot-engine.js"
+    );
+    const engine = new AutopilotEngine(
+      "content-user-1",
+    ) as unknown as ContentEngine;
 
     await engine.generateContentForAutopilot(GEN_PARAMS);
 
@@ -405,9 +469,13 @@ describe('Self-Evolution → autopilot content generation (integration-style)', 
     expect(callArg.includeEmojis).toBe(true);
   });
 
-  it('a generated content_optimization override (variantCount + visualPriority) changes the real generator inputs, and reverts on rollback', async () => {
-    const { AutopilotEngine } = await import('../../server/autopilot-engine.js');
-    const engine = new AutopilotEngine('content-user-2') as unknown as ContentEngine;
+  it("a generated content_optimization override (variantCount + visualPriority) changes the real generator inputs, and reverts on rollback", async () => {
+    const { AutopilotEngine } = await import(
+      "../../server/autopilot-engine.js"
+    );
+    const engine = new AutopilotEngine(
+      "content-user-2",
+    ) as unknown as ContentEngine;
 
     // Baseline: defaults.
     await engine.generateContentForAutopilot(GEN_PARAMS);
@@ -419,12 +487,16 @@ describe('Self-Evolution → autopilot content generation (integration-style)', 
     // change; apply it to the live registry. visualPriority=false flips
     // includeEmojis off, variantCount=5 raises the variant count.
     const applyResult = await evolutionRegistry.apply({
-      upgradeId: 'up-content-1',
-      changeId: 'chg-content-1',
-      category: 'content_optimization',
-      title: 'Carousel format trending',
-      source: 'tavily',
-      payload: { platform: 'instagram', variantCount: 5, visualPriority: false },
+      upgradeId: "up-content-1",
+      changeId: "chg-content-1",
+      category: "content_optimization",
+      title: "Carousel format trending",
+      source: "tavily",
+      payload: {
+        platform: "instagram",
+        variantCount: 5,
+        visualPriority: false,
+      },
     });
     expect(applyResult.applied).toBe(true);
 
@@ -444,9 +516,13 @@ describe('Self-Evolution → autopilot content generation (integration-style)', 
     expect(revertedArg.includeEmojis).toBe(true);
   });
 
-  it('baseline: hashtagStrategy / captionLength / callToActionStrength are undefined when no override exists', async () => {
-    const { AutopilotEngine } = await import('../../server/autopilot-engine.js');
-    const engine = new AutopilotEngine('content-user-3') as unknown as ContentEngine;
+  it("baseline: hashtagStrategy / captionLength / callToActionStrength are undefined when no override exists", async () => {
+    const { AutopilotEngine } = await import(
+      "../../server/autopilot-engine.js"
+    );
+    const engine = new AutopilotEngine(
+      "content-user-3",
+    ) as unknown as ContentEngine;
 
     await engine.generateContentForAutopilot(GEN_PARAMS);
     const callArg = mockGenerateAdvancedContent.mock.calls[0][0];
@@ -455,24 +531,28 @@ describe('Self-Evolution → autopilot content generation (integration-style)', 
     expect(callArg.callToActionStrength).toBeUndefined();
   });
 
-  it('a generated content_optimization override (hashtagStrategy + captionLength + callToActionStrength) reaches the real generator inputs, and reverts on rollback', async () => {
-    const { AutopilotEngine } = await import('../../server/autopilot-engine.js');
-    const engine = new AutopilotEngine('content-user-4') as unknown as ContentEngine;
+  it("a generated content_optimization override (hashtagStrategy + captionLength + callToActionStrength) reaches the real generator inputs, and reverts on rollback", async () => {
+    const { AutopilotEngine } = await import(
+      "../../server/autopilot-engine.js"
+    );
+    const engine = new AutopilotEngine(
+      "content-user-4",
+    ) as unknown as ContentEngine;
 
     // These three knobs are now EFFECTIVE fields — a live consumer
     // (generateContentForAutopilot → generateAdvancedContent) reads them — so
     // apply() must report applied=true and they must flow to the generator.
     const applyResult = await evolutionRegistry.apply({
-      upgradeId: 'up-content-2',
-      changeId: 'chg-content-2',
-      category: 'content_optimization',
-      title: 'Niche hashtags + short captions + strong CTA',
-      source: 'exa',
+      upgradeId: "up-content-2",
+      changeId: "chg-content-2",
+      category: "content_optimization",
+      title: "Niche hashtags + short captions + strong CTA",
+      source: "exa",
       payload: {
-        platform: 'instagram',
-        hashtagStrategy: 'niche',
-        captionLength: 'short',
-        callToActionStrength: 'high',
+        platform: "instagram",
+        hashtagStrategy: "niche",
+        captionLength: "short",
+        callToActionStrength: "high",
       },
     });
     expect(applyResult.applied).toBe(true);
@@ -480,9 +560,9 @@ describe('Self-Evolution → autopilot content generation (integration-style)', 
 
     await engine.generateContentForAutopilot(GEN_PARAMS);
     const overriddenArg = mockGenerateAdvancedContent.mock.calls[0][0];
-    expect(overriddenArg.hashtagStrategy).toBe('niche');
-    expect(overriddenArg.captionLength).toBe('short');
-    expect(overriddenArg.callToActionStrength).toBe('high');
+    expect(overriddenArg.hashtagStrategy).toBe("niche");
+    expect(overriddenArg.captionLength).toBe("short");
+    expect(overriddenArg.callToActionStrength).toBe("high");
 
     // Deactivating the enhancement reverts the generator to its prior behavior
     // (the three knobs become undefined again).
@@ -495,23 +575,27 @@ describe('Self-Evolution → autopilot content generation (integration-style)', 
     expect(revertedArg.callToActionStrength).toBeUndefined();
   });
 
-  it('each newly-wired knob is independently honored (hashtagStrategy only)', async () => {
-    const { AutopilotEngine } = await import('../../server/autopilot-engine.js');
-    const engine = new AutopilotEngine('content-user-5') as unknown as ContentEngine;
+  it("each newly-wired knob is independently honored (hashtagStrategy only)", async () => {
+    const { AutopilotEngine } = await import(
+      "../../server/autopilot-engine.js"
+    );
+    const engine = new AutopilotEngine(
+      "content-user-5",
+    ) as unknown as ContentEngine;
 
     const applyResult = await evolutionRegistry.apply({
-      upgradeId: 'up-content-3',
-      changeId: 'chg-content-3',
-      category: 'content_optimization',
-      title: 'Trending hashtag strategy',
-      source: 'tavily',
-      payload: { platform: 'instagram', hashtagStrategy: 'trending' },
+      upgradeId: "up-content-3",
+      changeId: "chg-content-3",
+      category: "content_optimization",
+      title: "Trending hashtag strategy",
+      source: "tavily",
+      payload: { platform: "instagram", hashtagStrategy: "trending" },
     });
     expect(applyResult.applied).toBe(true);
 
     await engine.generateContentForAutopilot(GEN_PARAMS);
     const callArg = mockGenerateAdvancedContent.mock.calls[0][0];
-    expect(callArg.hashtagStrategy).toBe('trending');
+    expect(callArg.hashtagStrategy).toBe("trending");
     expect(callArg.captionLength).toBeUndefined();
     expect(callArg.callToActionStrength).toBeUndefined();
     // The previously-wired knobs still fall back to their defaults.
@@ -520,57 +604,61 @@ describe('Self-Evolution → autopilot content generation (integration-style)', 
   });
 });
 
-describe('evolutionRegistry.getActivePostingFormatKnobs() — admin visibility', () => {
+describe("evolutionRegistry.getActivePostingFormatKnobs() — admin visibility", () => {
   beforeEach(() => {
     resetRegistry();
     vi.clearAllMocks();
   });
 
-  it('returns the active format/engagement knobs grouped per platform and reflects rollback', async () => {
+  it("returns the active format/engagement knobs grouped per platform and reflects rollback", async () => {
     // Empty registry → nothing to surface.
     expect(evolutionRegistry.getActivePostingFormatKnobs()).toEqual([]);
 
     await evolutionRegistry.apply({
-      upgradeId: 'up-knob-1',
-      changeId: 'chg-knob-1',
-      category: 'posting_optimization',
-      title: 'TikTok video-first',
-      source: 'rss',
-      payload: { platform: 'tiktok', contentFormatPriority: ['video', 'reel'] },
+      upgradeId: "up-knob-1",
+      changeId: "chg-knob-1",
+      category: "posting_optimization",
+      title: "TikTok video-first",
+      source: "rss",
+      payload: { platform: "tiktok", contentFormatPriority: ["video", "reel"] },
     });
     await evolutionRegistry.apply({
-      upgradeId: 'up-knob-2',
-      changeId: 'chg-knob-2',
-      category: 'posting_optimization',
-      title: 'Instagram engagement-first',
-      source: 'tavily',
-      payload: { platform: 'instagram', engagementTargeting: 'high' },
+      upgradeId: "up-knob-2",
+      changeId: "chg-knob-2",
+      category: "posting_optimization",
+      title: "Instagram engagement-first",
+      source: "tavily",
+      payload: { platform: "instagram", engagementTargeting: "high" },
     });
     // A global entry with no platform.
     await evolutionRegistry.apply({
-      upgradeId: 'up-knob-3',
-      changeId: 'chg-knob-3',
-      category: 'posting_optimization',
-      title: 'Global carousel priority',
-      source: 'rss',
-      payload: { contentFormatPriority: ['carousel'] },
+      upgradeId: "up-knob-3",
+      changeId: "chg-knob-3",
+      category: "posting_optimization",
+      title: "Global carousel priority",
+      source: "rss",
+      payload: { contentFormatPriority: ["carousel"] },
     });
     // An hours-only entry carries NO format/engagement knob → must be excluded.
     await evolutionRegistry.apply({
-      upgradeId: 'up-knob-4',
-      changeId: 'chg-knob-4',
-      category: 'posting_optimization',
-      title: 'Hours only',
-      source: 'rss',
-      payload: { platform: 'youtube', optimalHours: [9, 12, 18] },
+      upgradeId: "up-knob-4",
+      changeId: "chg-knob-4",
+      category: "posting_optimization",
+      title: "Hours only",
+      source: "rss",
+      payload: { platform: "youtube", optimalHours: [9, 12, 18] },
     });
 
     const knobs = evolutionRegistry.getActivePostingFormatKnobs();
     const byPlatform = Object.fromEntries(knobs.map((k) => [k.platform, k]));
 
-    expect(byPlatform.tiktok).toMatchObject({ contentFormatPriority: ['video', 'reel'] });
-    expect(byPlatform.instagram).toMatchObject({ engagementTargeting: 'high' });
-    expect(byPlatform.global).toMatchObject({ contentFormatPriority: ['carousel'] });
+    expect(byPlatform.tiktok).toMatchObject({
+      contentFormatPriority: ["video", "reel"],
+    });
+    expect(byPlatform.instagram).toMatchObject({ engagementTargeting: "high" });
+    expect(byPlatform.global).toMatchObject({
+      contentFormatPriority: ["carousel"],
+    });
     // The hours-only platform never carries a format/engagement knob.
     expect(byPlatform.youtube).toBeUndefined();
 
@@ -579,30 +667,30 @@ describe('evolutionRegistry.getActivePostingFormatKnobs() — admin visibility',
     expect(evolutionRegistry.getActivePostingFormatKnobs()).toEqual([]);
   });
 
-  it('merges format + engagement knobs into one entry per platform, most-recent wins', async () => {
+  it("merges format + engagement knobs into one entry per platform, most-recent wins", async () => {
     await evolutionRegistry.apply({
-      upgradeId: 'up-merge-1',
-      changeId: 'chg-merge-1',
-      category: 'posting_optimization',
-      title: 'TikTok format',
-      source: 'rss',
-      payload: { platform: 'tiktok', contentFormatPriority: ['image'] },
+      upgradeId: "up-merge-1",
+      changeId: "chg-merge-1",
+      category: "posting_optimization",
+      title: "TikTok format",
+      source: "rss",
+      payload: { platform: "tiktok", contentFormatPriority: ["image"] },
     });
     await evolutionRegistry.apply({
-      upgradeId: 'up-merge-2',
-      changeId: 'chg-merge-2',
-      category: 'posting_optimization',
-      title: 'TikTok engagement',
-      source: 'rss',
-      payload: { platform: 'tiktok', engagementTargeting: 'high' },
+      upgradeId: "up-merge-2",
+      changeId: "chg-merge-2",
+      category: "posting_optimization",
+      title: "TikTok engagement",
+      source: "rss",
+      payload: { platform: "tiktok", engagementTargeting: "high" },
     });
 
     const knobs = evolutionRegistry.getActivePostingFormatKnobs();
     expect(knobs).toHaveLength(1);
     expect(knobs[0]).toMatchObject({
-      platform: 'tiktok',
-      contentFormatPriority: ['image'],
-      engagementTargeting: 'high',
+      platform: "tiktok",
+      contentFormatPriority: ["image"],
+      engagementTargeting: "high",
     });
   });
 });

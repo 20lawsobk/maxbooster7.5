@@ -1,4 +1,4 @@
-import { BasePlugin } from './BasePlugin';
+import { BasePlugin } from "./BasePlugin";
 
 export class FlangerPlugin extends BasePlugin {
   private delayL: DelayNode;
@@ -26,13 +26,13 @@ export class FlangerPlugin extends BasePlugin {
 
     this.lfoL = context.createOscillator();
     this.lfoGainL = context.createGain();
-    this.lfoL.type = 'sine';
+    this.lfoL.type = "sine";
     this.lfoL.frequency.value = 0.25;
     this.lfoGainL.gain.value = 0.003;
 
     this.lfoR = context.createOscillator();
     this.lfoGainR = context.createGain();
-    this.lfoR.type = 'sine';
+    this.lfoR.type = "sine";
     this.lfoR.frequency.value = 0.25;
     this.lfoGainR.gain.value = 0.003;
 
@@ -108,24 +108,24 @@ export class FlangerPlugin extends BasePlugin {
     if (this.stereoWidth > 0) {
       this.lfoR.frequency.setValueAtTime(
         this.lfoL.frequency.value,
-        this.context.currentTime
+        this.context.currentTime,
       );
       const depth = this.lfoGainL.gain.value;
       this.lfoGainR.gain.setValueAtTime(-depth, this.context.currentTime);
     } else {
       this.lfoR.frequency.setValueAtTime(
         this.lfoL.frequency.value,
-        this.context.currentTime
+        this.context.currentTime,
       );
       this.lfoGainR.gain.setValueAtTime(
         this.lfoGainL.gain.value,
-        this.context.currentTime
+        this.context.currentTime,
       );
     }
   }
 
   getName(): string {
-    return 'Max Booster Flanger';
+    return "Max Booster Flanger";
   }
 
   getParameters(): Record<string, any> {
@@ -145,7 +145,8 @@ export class FlangerPlugin extends BasePlugin {
     if (params.depth !== undefined) this.setDepth(params.depth);
     if (params.feedback !== undefined) this.setFeedback(params.feedback);
     if (params.delayTime !== undefined) this.setDelayTime(params.delayTime);
-    if (params.stereoWidth !== undefined) this.setStereoWidth(params.stereoWidth);
+    if (params.stereoWidth !== undefined)
+      this.setStereoWidth(params.stereoWidth);
     if (params.mix !== undefined) this.setMix(params.mix);
     if (params.bypass !== undefined) this.setBypass(params.bypass);
   }

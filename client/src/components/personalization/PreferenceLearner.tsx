@@ -1,12 +1,12 @@
-import React, { useEffect, useCallback, useRef, useState } from 'react';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
-import { Switch } from '@/components/ui/switch';
-import { Skeleton } from '@/components/ui/skeleton';
-import { apiRequest } from '@/lib/queryClient';
+import React, { useEffect, useCallback, useRef, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
+import { Switch } from "@/components/ui/switch";
+import { Skeleton } from "@/components/ui/skeleton";
+import { apiRequest } from "@/lib/queryClient";
 import {
   Brain,
   TrendingUp,
@@ -19,11 +19,11 @@ import {
   Eye,
   MousePointerClick,
   Timer,
-} from 'lucide-react';
+} from "lucide-react";
 
 export interface InteractionPattern {
   id: string;
-  type: 'navigation' | 'action' | 'preference' | 'workflow';
+  type: "navigation" | "action" | "preference" | "workflow";
   pattern: string;
   frequency: number;
   confidence: number;
@@ -45,7 +45,7 @@ export interface LearningInsight {
   id: string;
   insight: string;
   confidence: number;
-  category: 'navigation' | 'content' | 'timing' | 'preferences';
+  category: "navigation" | "content" | "timing" | "preferences";
   suggestedAction: string;
   applied: boolean;
   createdAt: Date;
@@ -59,10 +59,10 @@ interface PreferenceLearnerProps {
 }
 
 const categoryColors: Record<string, string> = {
-  navigation: 'text-blue-500',
-  content: 'text-green-500',
-  timing: 'text-orange-500',
-  preferences: 'text-purple-500',
+  navigation: "text-blue-500",
+  content: "text-green-500",
+  timing: "text-orange-500",
+  preferences: "text-purple-500",
 };
 
 export function PreferenceLearner({
@@ -77,26 +77,33 @@ export function PreferenceLearner({
   const interactionQueueRef = useRef<any[]>([]);
   const flushTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  const { data: learningState, isLoading: stateLoading } = useQuery<LearningState>({
-    queryKey: ['/api/personalization/learning-state'],
-    staleTime: 5 * 60 * 1000,
-  });
+  const { data: learningState, isLoading: stateLoading } =
+    useQuery<LearningState>({
+      queryKey: ["/api/personalization/learning-state"],
+      staleTime: 5 * 60 * 1000,
+    });
 
-  const { data: insights = [], isLoading: insightsLoading } = useQuery<LearningInsight[]>({
-    queryKey: ['/api/personalization/learning-insights'],
+  const { data: insights = [], isLoading: insightsLoading } = useQuery<
+    LearningInsight[]
+  >({
+    queryKey: ["/api/personalization/learning-insights"],
     staleTime: 10 * 60 * 1000,
   });
 
   const { data: patterns = [] } = useQuery<InteractionPattern[]>({
-    queryKey: ['/api/personalization/interaction-patterns'],
+    queryKey: ["/api/personalization/interaction-patterns"],
     staleTime: 15 * 60 * 1000,
   });
 
   const trackInteractionMutation = useMutation({
     mutationFn: async (interactions: unknown[]) => {
-      const response = await apiRequest('POST', '/api/personalization/track-batch', {
-        interactions,
-      });
+      const response = await apiRequest(
+        "POST",
+        "/api/personalization/track-batch",
+        {
+          interactions,
+        },
+      );
       return response.json();
     },
     onError: () => {},
@@ -104,35 +111,56 @@ export function PreferenceLearner({
 
   const applyInsightMutation = useMutation({
     mutationFn: async (insightId: string) => {
-      const response = await apiRequest('POST', `/api/personalization/apply-insight/${insightId}`);
+      const response = await apiRequest(
+        "POST",
+        `/api/personalization/apply-insight/${insightId}`,
+      );
       return response.json();
     },
     onSuccess: (_, insightId) => {
-      queryClient.invalidateQueries({ queryKey: ['/api/personalization/learning-insights'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/personalization/preferences'] });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/personalization/learning-insights"],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/personalization/preferences"],
+      });
       onInsightApplied?.(insightId);
     },
   });
 
   const dismissInsightMutation = useMutation({
     mutationFn: async (insightId: string) => {
-      const response = await apiRequest('POST', `/api/personalization/dismiss-insight/${insightId}`);
+      const response = await apiRequest(
+        "POST",
+        `/api/personalization/dismiss-insight/${insightId}`,
+      );
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/personalization/learning-insights'] });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/personalization/learning-insights"],
+      });
     },
   });
 
   const resetLearningMutation = useMutation({
     mutationFn: async () => {
-      const response = await apiRequest('POST', '/api/personalization/reset-learning');
+      const response = await apiRequest(
+        "POST",
+        "/api/personalization/reset-learning",
+      );
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/personalization/learning-state'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/personalization/learning-insights'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/personalization/interaction-patterns'] });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/personalization/learning-state"],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/personalization/learning-insights"],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/personalization/interaction-patterns"],
+      });
     },
   });
 
@@ -143,26 +171,30 @@ export function PreferenceLearner({
     }
   }, [trackInteractionMutation]);
 
-  const queueInteraction = useCallback((interaction: Record<string, unknown>) => {
-    if (!isTrackingEnabled) return;
+  const queueInteraction = useCallback(
+    (interaction: Record<string, unknown>) => {
+      if (!isTrackingEnabled) return;
 
-    interactionQueueRef.current.push({
-      ...interaction,
-      timestamp: new Date(),
-      timeSinceLastInteraction: Date.now() - lastInteractionRef.current.getTime(),
-    });
-    lastInteractionRef.current = new Date();
+      interactionQueueRef.current.push({
+        ...interaction,
+        timestamp: new Date(),
+        timeSinceLastInteraction:
+          Date.now() - lastInteractionRef.current.getTime(),
+      });
+      lastInteractionRef.current = new Date();
 
-    if (flushTimeoutRef.current) {
-      clearTimeout(flushTimeoutRef.current);
-    }
+      if (flushTimeoutRef.current) {
+        clearTimeout(flushTimeoutRef.current);
+      }
 
-    if (interactionQueueRef.current.length >= 10) {
-      flushInteractions();
-    } else {
-      flushTimeoutRef.current = setTimeout(flushInteractions, 5000);
-    }
-  }, [isTrackingEnabled, flushInteractions]);
+      if (interactionQueueRef.current.length >= 10) {
+        flushInteractions();
+      } else {
+        flushTimeoutRef.current = setTimeout(flushInteractions, 5000);
+      }
+    },
+    [isTrackingEnabled, flushInteractions],
+  );
 
   useEffect(() => {
     if (!isTrackingEnabled) return;
@@ -170,15 +202,16 @@ export function PreferenceLearner({
     const handleClick = (e: MouseEvent) => {
       const target = e.target as HTMLElement;
       const closestButton = target.closest('button, a, [role="button"]');
-      
+
       if (closestButton) {
-        const label = closestButton.getAttribute('aria-label') || 
-                      closestButton.textContent?.trim().slice(0, 50) ||
-                      closestButton.getAttribute('data-testid') ||
-                      'unknown';
-        
+        const label =
+          closestButton.getAttribute("aria-label") ||
+          closestButton.textContent?.trim().slice(0, 50) ||
+          closestButton.getAttribute("data-testid") ||
+          "unknown";
+
         queueInteraction({
-          type: 'click',
+          type: "click",
           target: label,
           element: closestButton.tagName.toLowerCase(),
           path: window.location.pathname,
@@ -189,8 +222,8 @@ export function PreferenceLearner({
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key) {
         queueInteraction({
-          type: 'shortcut',
-          target: `${e.ctrlKey ? 'Ctrl' : 'Cmd'}+${e.key}`,
+          type: "shortcut",
+          target: `${e.ctrlKey ? "Ctrl" : "Cmd"}+${e.key}`,
           path: window.location.pathname,
         });
       }
@@ -201,37 +234,44 @@ export function PreferenceLearner({
       clearTimeout(scrollTimeout);
       scrollTimeout = setTimeout(() => {
         queueInteraction({
-          type: 'scroll',
-          target: 'page',
-          scrollDepth: Math.round((window.scrollY / (document.body.scrollHeight - window.innerHeight)) * 100),
+          type: "scroll",
+          target: "page",
+          scrollDepth: Math.round(
+            (window.scrollY /
+              (document.body.scrollHeight - window.innerHeight)) *
+              100,
+          ),
           path: window.location.pathname,
         });
       }, 500);
     };
 
-    document.addEventListener('click', handleClick, true);
-    document.addEventListener('keydown', handleKeyDown, true);
-    window.addEventListener('scroll', handleScroll, { passive: true });
+    document.addEventListener("click", handleClick, true);
+    document.addEventListener("keydown", handleKeyDown, true);
+    window.addEventListener("scroll", handleScroll, { passive: true });
 
     return () => {
-      document.removeEventListener('click', handleClick, true);
-      document.removeEventListener('keydown', handleKeyDown, true);
-      window.removeEventListener('scroll', handleScroll);
+      document.removeEventListener("click", handleClick, true);
+      document.removeEventListener("keydown", handleKeyDown, true);
+      window.removeEventListener("scroll", handleScroll);
       flushInteractions();
     };
   }, [isTrackingEnabled, queueInteraction, flushInteractions]);
 
-  const handleTrackingToggle = useCallback((enabled: boolean) => {
-    setIsTrackingEnabled(enabled);
-    onTrackingToggle?.(enabled);
-    
-    if (!enabled) {
-      flushInteractions();
-    }
-  }, [onTrackingToggle, flushInteractions]);
+  const handleTrackingToggle = useCallback(
+    (enabled: boolean) => {
+      setIsTrackingEnabled(enabled);
+      onTrackingToggle?.(enabled);
 
-  const pendingInsights = insights.filter(i => !i.applied);
-  const appliedInsights = insights.filter(i => i.applied);
+      if (!enabled) {
+        flushInteractions();
+      }
+    },
+    [onTrackingToggle, flushInteractions],
+  );
+
+  const pendingInsights = insights.filter((i) => !i.applied);
+  const appliedInsights = insights.filter((i) => i.applied);
 
   if (!showDashboard) {
     return null;
@@ -286,22 +326,30 @@ export function PreferenceLearner({
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <div className="text-center p-3 rounded-lg bg-muted/50">
             <MousePointerClick className="h-5 w-5 mx-auto mb-1 text-blue-500" />
-            <div className="text-2xl font-bold">{learningState?.interactionCount || 0}</div>
+            <div className="text-2xl font-bold">
+              {learningState?.interactionCount || 0}
+            </div>
             <div className="text-xs text-muted-foreground">Interactions</div>
           </div>
           <div className="text-center p-3 rounded-lg bg-muted/50">
             <Eye className="h-5 w-5 mx-auto mb-1 text-green-500" />
-            <div className="text-2xl font-bold">{learningState?.patternCount || 0}</div>
+            <div className="text-2xl font-bold">
+              {learningState?.patternCount || 0}
+            </div>
             <div className="text-xs text-muted-foreground">Patterns Found</div>
           </div>
           <div className="text-center p-3 rounded-lg bg-muted/50">
             <CheckCircle className="h-5 w-5 mx-auto mb-1 text-emerald-500" />
-            <div className="text-2xl font-bold">{learningState?.suggestionsApplied || 0}</div>
+            <div className="text-2xl font-bold">
+              {learningState?.suggestionsApplied || 0}
+            </div>
             <div className="text-xs text-muted-foreground">Applied</div>
           </div>
           <div className="text-center p-3 rounded-lg bg-muted/50">
             <Timer className="h-5 w-5 mx-auto mb-1 text-orange-500" />
-            <div className="text-2xl font-bold">{Math.round((learningState?.confidenceLevel || 0) * 100)}%</div>
+            <div className="text-2xl font-bold">
+              {Math.round((learningState?.confidenceLevel || 0) * 100)}%
+            </div>
             <div className="text-xs text-muted-foreground">Confidence</div>
           </div>
         </div>
@@ -310,9 +358,14 @@ export function PreferenceLearner({
           <div>
             <div className="flex items-center justify-between text-sm mb-2">
               <span>Learning Progress</span>
-              <span>{Math.round((learningState.confidenceLevel || 0) * 100)}%</span>
+              <span>
+                {Math.round((learningState.confidenceLevel || 0) * 100)}%
+              </span>
             </div>
-            <Progress value={(learningState.confidenceLevel || 0) * 100} className="h-2" />
+            <Progress
+              value={(learningState.confidenceLevel || 0) * 100}
+              className="h-2"
+            />
           </div>
         )}
 
@@ -357,7 +410,9 @@ export function PreferenceLearner({
                       <Button
                         size="sm"
                         variant="ghost"
-                        onClick={() => dismissInsightMutation.mutate(insight.id)}
+                        onClick={() =>
+                          dismissInsightMutation.mutate(insight.id)
+                        }
                         disabled={dismissInsightMutation.isPending}
                       >
                         Dismiss
@@ -395,9 +450,10 @@ export function PreferenceLearner({
         {isTrackingEnabled && (
           <div className="text-xs text-muted-foreground text-center">
             <Clock className="h-3 w-3 inline mr-1" />
-            Last analysis: {learningState?.lastAnalysis 
+            Last analysis:{" "}
+            {learningState?.lastAnalysis
               ? new Date(learningState.lastAnalysis).toLocaleString()
-              : 'Never'}
+              : "Never"}
           </div>
         )}
       </CardContent>

@@ -1,23 +1,35 @@
-import { useState, useEffect } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { useState, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { Label } from '@/components/ui/label';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Progress } from '@/components/ui/progress';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Separator } from '@/components/ui/separator';
-import { Download, Loader2, CheckCircle2, AlertCircle, ExternalLink } from 'lucide-react';
-import { apiRequest } from '@/lib/queryClient';
-import { useToast } from '@/hooks/use-toast';
-import { logger } from '@/lib/logger';
+} from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Progress } from "@/components/ui/progress";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Separator } from "@/components/ui/separator";
+import {
+  Download,
+  Loader2,
+  CheckCircle2,
+  AlertCircle,
+  ExternalLink,
+} from "lucide-react";
+import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
+import { logger } from "@/lib/logger";
 
 interface StemExportDialogProps {
   open: boolean;
@@ -34,7 +46,7 @@ interface Track {
 
 interface StemExport {
   id: string;
-  status: 'pending' | 'processing' | 'completed' | 'failed';
+  status: "pending" | "processing" | "completed" | "failed";
   progress: number;
   zipArchiveUrl?: string;
   errorMessage?: string;
@@ -42,7 +54,7 @@ interface StemExport {
 
 export interface StemExportOptions {
   trackIds: string[];
-  format: 'wav' | 'mp3' | 'flac';
+  format: "wav" | "mp3" | "flac";
   sampleRate: number;
   bitDepth: number;
   bitrate: number;
@@ -54,10 +66,16 @@ export interface StemExportOptions {
   addEffectTail: boolean;
 }
 
-export function StemExportDialog({ open, onOpenChange, projectId }: StemExportDialogProps) {
+export function StemExportDialog({
+  open,
+  onOpenChange,
+  projectId,
+}: StemExportDialogProps) {
   const { toast } = useToast();
   const [selectedTracks, setSelectedTracks] = useState<Set<string>>(new Set());
-  const [exportFormat, setExportFormat] = useState<'wav' | 'mp3' | 'flac'>('wav');
+  const [exportFormat, setExportFormat] = useState<"wav" | "mp3" | "flac">(
+    "wav",
+  );
   const [sampleRate, setSampleRate] = useState(48000);
   const [bitDepth, setBitDepth] = useState(24);
   const [bitrate, setBitrate] = useState(320);
@@ -72,7 +90,7 @@ export function StemExportDialog({ open, onOpenChange, projectId }: StemExportDi
   const [exportStatus, setExportStatus] = useState<StemExport | null>(null);
 
   const { data: tracksData, isLoading: isLoadingTracks } = useQuery<Track[]>({
-    queryKey: ['/api/studio/projects', projectId, 'tracks'],
+    queryKey: ["/api/studio/projects", projectId, "tracks"],
     enabled: !!projectId && open,
   });
   const tracks: Track[] = Array.isArray(tracksData) ? tracksData : [];
@@ -90,29 +108,33 @@ export function StemExportDialog({ open, onOpenChange, projectId }: StemExportDi
     if (exportJobId) {
       pollInterval = setInterval(async () => {
         try {
-          const res = await apiRequest('GET', `/api/studio/stem-exports/${exportJobId}`);
+          const res = await apiRequest(
+            "GET",
+            `/api/studio/stem-exports/${exportJobId}`,
+          );
           const data = await res.json();
           setExportStatus(data);
 
-          if (data.status === 'completed' || data.status === 'failed') {
+          if (data.status === "completed" || data.status === "failed") {
             if (pollInterval) clearInterval(pollInterval);
             setIsExporting(false);
 
-            if (data.status === 'completed') {
+            if (data.status === "completed") {
               toast({
-                title: 'Export completed!',
-                description: 'Your stems are ready to download.',
+                title: "Export completed!",
+                description: "Your stems are ready to download.",
               });
-            } else if (data.status === 'failed') {
+            } else if (data.status === "failed") {
               toast({
-                title: 'Export failed',
-                description: data.errorMessage || 'An error occurred during export.',
-                variant: 'destructive',
+                title: "Export failed",
+                description:
+                  data.errorMessage || "An error occurred during export.",
+                variant: "destructive",
               });
             }
           }
         } catch (error: unknown) {
-          logger.error('Error polling export status:', error);
+          logger.error("Error polling export status:", error);
           if (pollInterval) clearInterval(pollInterval);
           setIsExporting(false);
         }
@@ -147,12 +169,15 @@ export function StemExportDialog({ open, onOpenChange, projectId }: StemExportDi
 
   const handleExport = async () => {
     if (!projectId) {
-      toast({ title: 'No project selected', variant: 'destructive' });
+      toast({ title: "No project selected", variant: "destructive" });
       return;
     }
 
     if (selectedTracks.size === 0) {
-      toast({ title: 'Please select at least one track', variant: 'destructive' });
+      toast({
+        title: "Please select at least one track",
+        variant: "destructive",
+      });
       return;
     }
 
@@ -162,9 +187,9 @@ export function StemExportDialog({ open, onOpenChange, projectId }: StemExportDi
     const exportOptions: StemExportOptions = {
       trackIds: Array.from(selectedTracks),
       format: exportFormat,
-      sampleRate: exportFormat === 'wav' ? sampleRate : 44100,
-      bitDepth: exportFormat === 'wav' ? bitDepth : 16,
-      bitrate: exportFormat === 'mp3' ? bitrate : 320,
+      sampleRate: exportFormat === "wav" ? sampleRate : 44100,
+      bitDepth: exportFormat === "wav" ? bitDepth : 16,
+      bitrate: exportFormat === "mp3" ? bitrate : 320,
       normalize,
       includeEffects,
       keepSpeakerFormat,
@@ -174,16 +199,20 @@ export function StemExportDialog({ open, onOpenChange, projectId }: StemExportDi
     };
 
     try {
-      const res = await apiRequest('POST', `/api/studio/projects/${projectId}/export-stems`, exportOptions);
+      const res = await apiRequest(
+        "POST",
+        `/api/studio/projects/${projectId}/export-stems`,
+        exportOptions,
+      );
 
       const data = await res.json();
       setExportJobId(data.jobId);
     } catch (error: unknown) {
-      logger.error('Error starting stem export:', error);
+      logger.error("Error starting stem export:", error);
       toast({
-        title: 'Export failed',
-        description: 'Failed to start stem export. Please try again.',
-        variant: 'destructive',
+        title: "Export failed",
+        description: "Failed to start stem export. Please try again.",
+        variant: "destructive",
       });
       setIsExporting(false);
     }
@@ -199,20 +228,20 @@ export function StemExportDialog({ open, onOpenChange, projectId }: StemExportDi
 
   const handleDownload = () => {
     if (exportStatus?.zipArchiveUrl) {
-      window.open(exportStatus.zipArchiveUrl, '_blank');
+      window.open(exportStatus.zipArchiveUrl, "_blank");
     }
   };
 
   const getFormatDescription = () => {
     switch (exportFormat) {
-      case 'wav':
+      case "wav":
         return `WAV ${sampleRate / 1000}kHz / ${bitDepth}-bit (Lossless)`;
-      case 'mp3':
+      case "mp3":
         return `MP3 ${bitrate}kbps`;
-      case 'flac':
-        return 'FLAC (Lossless Compression)';
+      case "flac":
+        return "FLAC (Lossless Compression)";
       default:
-        return '';
+        return "";
     }
   };
 
@@ -232,7 +261,7 @@ export function StemExportDialog({ open, onOpenChange, projectId }: StemExportDi
         {isExporting && exportStatus ? (
           <div className="space-y-4 py-6">
             <div className="text-center space-y-4">
-              {exportStatus.status === 'completed' ? (
+              {exportStatus.status === "completed" ? (
                 <>
                   <CheckCircle2 className="h-16 w-16 text-green-500 mx-auto" />
                   <div>
@@ -249,16 +278,21 @@ export function StemExportDialog({ open, onOpenChange, projectId }: StemExportDi
                     Download Stems
                   </Button>
                 </>
-              ) : exportStatus.status === 'failed' ? (
+              ) : exportStatus.status === "failed" ? (
                 <>
                   <AlertCircle className="h-16 w-16 text-red-500 mx-auto" />
                   <div>
                     <h3 className="text-lg font-semibold">Export Failed</h3>
                     <p className="text-sm text-gray-400 mt-1">
-                      {exportStatus.errorMessage || 'An error occurred during export'}
+                      {exportStatus.errorMessage ||
+                        "An error occurred during export"}
                     </p>
                   </div>
-                  <Button onClick={handleClose} variant="outline" className="border-gray-600">
+                  <Button
+                    onClick={handleClose}
+                    variant="outline"
+                    className="border-gray-600"
+                  >
                     Close
                   </Button>
                 </>
@@ -267,15 +301,20 @@ export function StemExportDialog({ open, onOpenChange, projectId }: StemExportDi
                   <Loader2 className="h-16 w-16 text-green-400 mx-auto animate-spin" />
                   <div>
                     <h3 className="text-lg font-semibold">
-                      {exportStatus.status === 'pending' ? 'Preparing...' : 'Exporting Stems...'}
+                      {exportStatus.status === "pending"
+                        ? "Preparing..."
+                        : "Exporting Stems..."}
                     </h3>
                     <p className="text-sm text-gray-400 mt-1">
-                      Processing {selectedTracks.size} track{selectedTracks.size !== 1 ? 's' : ''}
+                      Processing {selectedTracks.size} track
+                      {selectedTracks.size !== 1 ? "s" : ""}
                     </p>
                   </div>
                   <div className="space-y-2">
                     <Progress value={exportStatus.progress} className="h-2" />
-                    <p className="text-sm text-gray-400">{exportStatus.progress}% complete</p>
+                    <p className="text-sm text-gray-400">
+                      {exportStatus.progress}% complete
+                    </p>
                   </div>
                 </>
               )}
@@ -335,7 +374,9 @@ export function StemExportDialog({ open, onOpenChange, projectId }: StemExportDi
                             />
                           )}
                           <span className="text-sm">{track.name}</span>
-                          <span className="text-xs text-gray-500 ml-auto">{track.trackType}</span>
+                          <span className="text-xs text-gray-500 ml-auto">
+                            {track.trackType}
+                          </span>
                         </div>
                       </div>
                     ))}
@@ -343,7 +384,8 @@ export function StemExportDialog({ open, onOpenChange, projectId }: StemExportDi
                 )}
               </ScrollArea>
               <p className="text-xs text-gray-400 mt-1">
-                {selectedTracks.size} track{selectedTracks.size !== 1 ? 's' : ''} selected
+                {selectedTracks.size} track
+                {selectedTracks.size !== 1 ? "s" : ""} selected
               </p>
             </div>
 
@@ -352,7 +394,10 @@ export function StemExportDialog({ open, onOpenChange, projectId }: StemExportDi
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Export Format</Label>
-                <Select value={exportFormat} onValueChange={(v: unknown) => setExportFormat(v)}>
+                <Select
+                  value={exportFormat}
+                  onValueChange={(v: unknown) => setExportFormat(v)}
+                >
                   <SelectTrigger className="bg-[#1a1a1a] border-gray-700">
                     <SelectValue />
                   </SelectTrigger>
@@ -362,10 +407,12 @@ export function StemExportDialog({ open, onOpenChange, projectId }: StemExportDi
                     <SelectItem value="flac">FLAC (Lossless)</SelectItem>
                   </SelectContent>
                 </Select>
-                <p className="text-xs text-gray-400">{getFormatDescription()}</p>
+                <p className="text-xs text-gray-400">
+                  {getFormatDescription()}
+                </p>
               </div>
 
-              {exportFormat === 'wav' ? (
+              {exportFormat === "wav" ? (
                 <>
                   <div className="space-y-2">
                     <Label>Sample Rate</Label>
@@ -403,7 +450,10 @@ export function StemExportDialog({ open, onOpenChange, projectId }: StemExportDi
               ) : (
                 <div className="space-y-2">
                   <Label>Bitrate</Label>
-                  <Select value={bitrate.toString()} onValueChange={(v) => setBitrate(parseInt(v))}>
+                  <Select
+                    value={bitrate.toString()}
+                    onValueChange={(v) => setBitrate(parseInt(v))}
+                  >
                     <SelectTrigger className="bg-[#1a1a1a] border-gray-700">
                       <SelectValue />
                     </SelectTrigger>
@@ -421,13 +471,17 @@ export function StemExportDialog({ open, onOpenChange, projectId }: StemExportDi
             <Separator className="bg-gray-700" />
 
             <div className="space-y-4">
-              <div className="text-sm font-medium text-gray-300">Studio One 7 Options</div>
+              <div className="text-sm font-medium text-gray-300">
+                Studio One 7 Options
+              </div>
               <div className="grid grid-cols-2 gap-3">
                 <div className="flex items-center space-x-2">
                   <Checkbox
                     id="normalize"
                     checked={normalize}
-                    onCheckedChange={(checked) => setNormalize(checked as boolean)}
+                    onCheckedChange={(checked) =>
+                      setNormalize(checked as boolean)
+                    }
                   />
                   <Label htmlFor="normalize" className="cursor-pointer text-sm">
                     Normalize audio levels
@@ -437,9 +491,14 @@ export function StemExportDialog({ open, onOpenChange, projectId }: StemExportDi
                   <Checkbox
                     id="includeEffects"
                     checked={includeEffects}
-                    onCheckedChange={(checked) => setIncludeEffects(checked as boolean)}
+                    onCheckedChange={(checked) =>
+                      setIncludeEffects(checked as boolean)
+                    }
                   />
-                  <Label htmlFor="includeEffects" className="cursor-pointer text-sm">
+                  <Label
+                    htmlFor="includeEffects"
+                    className="cursor-pointer text-sm"
+                  >
                     Include insert effects
                   </Label>
                 </div>
@@ -447,9 +506,14 @@ export function StemExportDialog({ open, onOpenChange, projectId }: StemExportDi
                   <Checkbox
                     id="keepSpeakerFormat"
                     checked={keepSpeakerFormat}
-                    onCheckedChange={(checked) => setKeepSpeakerFormat(checked as boolean)}
+                    onCheckedChange={(checked) =>
+                      setKeepSpeakerFormat(checked as boolean)
+                    }
                   />
-                  <Label htmlFor="keepSpeakerFormat" className="cursor-pointer text-sm">
+                  <Label
+                    htmlFor="keepSpeakerFormat"
+                    className="cursor-pointer text-sm"
+                  >
                     Keep Speaker Format
                   </Label>
                 </div>
@@ -457,9 +521,14 @@ export function StemExportDialog({ open, onOpenChange, projectId }: StemExportDi
                   <Checkbox
                     id="includeSends"
                     checked={includeSends}
-                    onCheckedChange={(checked) => setIncludeSends(checked as boolean)}
+                    onCheckedChange={(checked) =>
+                      setIncludeSends(checked as boolean)
+                    }
                   />
-                  <Label htmlFor="includeSends" className="cursor-pointer text-sm">
+                  <Label
+                    htmlFor="includeSends"
+                    className="cursor-pointer text-sm"
+                  >
                     Include Send Returns
                   </Label>
                 </div>
@@ -467,9 +536,14 @@ export function StemExportDialog({ open, onOpenChange, projectId }: StemExportDi
                   <Checkbox
                     id="preserveVolumePan"
                     checked={preserveVolumePan}
-                    onCheckedChange={(checked) => setPreserveVolumePan(checked as boolean)}
+                    onCheckedChange={(checked) =>
+                      setPreserveVolumePan(checked as boolean)
+                    }
                   />
-                  <Label htmlFor="preserveVolumePan" className="cursor-pointer text-sm">
+                  <Label
+                    htmlFor="preserveVolumePan"
+                    className="cursor-pointer text-sm"
+                  >
                     Preserve Volume/Pan
                   </Label>
                 </div>
@@ -477,7 +551,9 @@ export function StemExportDialog({ open, onOpenChange, projectId }: StemExportDi
                   <Checkbox
                     id="addTail"
                     checked={addEffectTail}
-                    onCheckedChange={(checked) => setAddEffectTail(checked as boolean)}
+                    onCheckedChange={(checked) =>
+                      setAddEffectTail(checked as boolean)
+                    }
                   />
                   <Label htmlFor="addTail" className="cursor-pointer text-sm">
                     Add Effect Tail (2s)
@@ -486,8 +562,9 @@ export function StemExportDialog({ open, onOpenChange, projectId }: StemExportDi
               </div>
               <div className="p-3 bg-blue-900/20 border border-blue-800/30 rounded-lg">
                 <p className="text-xs text-blue-300">
-                  <strong>Tip:</strong> Toggle "Include insert effects" off to export dry stems. 
-                  Use the power button on track headers to quickly disable all inserts before export.
+                  <strong>Tip:</strong> Toggle "Include insert effects" off to
+                  export dry stems. Use the power button on track headers to
+                  quickly disable all inserts before export.
                 </p>
               </div>
             </div>
@@ -495,7 +572,9 @@ export function StemExportDialog({ open, onOpenChange, projectId }: StemExportDi
             <Separator className="bg-gray-700" />
 
             <div className="pt-2 space-y-1 text-xs text-gray-400">
-              <p>• Each track exported as separate file (mono tracks stay mono)</p>
+              <p>
+                • Each track exported as separate file (mono tracks stay mono)
+              </p>
               <p>• Files packaged in ZIP archive with original track names</p>
               <p>• Insert effects rendered only if option enabled</p>
             </div>
@@ -505,7 +584,8 @@ export function StemExportDialog({ open, onOpenChange, projectId }: StemExportDi
               onClick={handleExport}
               disabled={selectedTracks.size === 0 || isLoadingTracks}
             >
-              Export {selectedTracks.size} Stem{selectedTracks.size !== 1 ? 's' : ''}
+              Export {selectedTracks.size} Stem
+              {selectedTracks.size !== 1 ? "s" : ""}
             </Button>
           </div>
         )}

@@ -1,29 +1,38 @@
-import { useState, useEffect } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { apiRequest } from '@/lib/queryClient';
-import { useToast } from '@/hooks/use-toast';
+import { useState, useEffect } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogDescription,
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { Progress } from '@/components/ui/progress';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Separator } from '@/components/ui/separator';
-import { Badge } from '@/components/ui/badge';
-import { Download, X, RefreshCw, FileAudio, Check, Loader2, Plus, AlertCircle } from 'lucide-react';
+} from "@/components/ui/select";
+import { Progress } from "@/components/ui/progress";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Separator } from "@/components/ui/separator";
+import { Badge } from "@/components/ui/badge";
+import {
+  Download,
+  X,
+  RefreshCw,
+  FileAudio,
+  Check,
+  Loader2,
+  Plus,
+  AlertCircle,
+} from "lucide-react";
 
 interface ConversionDialogProps {
   open: boolean;
@@ -41,7 +50,7 @@ interface Conversion {
   sourceFilePath: string;
   targetFormat: string;
   qualityPreset: string;
-  status: 'pending' | 'processing' | 'completed' | 'failed' | 'cancelled';
+  status: "pending" | "processing" | "completed" | "failed" | "cancelled";
   progress: number;
   outputFilePath?: string;
   errorMessage?: string;
@@ -50,38 +59,42 @@ interface Conversion {
 }
 
 const FORMAT_OPTIONS = [
-  { value: 'wav', label: 'WAV (Lossless)', description: 'Uncompressed audio' },
-  { value: 'flac', label: 'FLAC (Lossless)', description: 'Compressed lossless' },
-  { value: 'mp3', label: 'MP3', description: 'Universal compatibility' },
-  { value: 'aac', label: 'AAC', description: 'Better quality than MP3' },
-  { value: 'm4a', label: 'M4A (AAC)', description: 'Apple devices' },
-  { value: 'ogg', label: 'OGG Vorbis', description: 'Open source' },
+  { value: "wav", label: "WAV (Lossless)", description: "Uncompressed audio" },
+  {
+    value: "flac",
+    label: "FLAC (Lossless)",
+    description: "Compressed lossless",
+  },
+  { value: "mp3", label: "MP3", description: "Universal compatibility" },
+  { value: "aac", label: "AAC", description: "Better quality than MP3" },
+  { value: "m4a", label: "M4A (AAC)", description: "Apple devices" },
+  { value: "ogg", label: "OGG Vorbis", description: "Open source" },
 ];
 
 const QUALITY_OPTIONS = [
   {
-    value: 'low',
-    label: 'Low',
-    description: '128 kbps / 44.1 kHz',
-    formats: ['mp3', 'aac', 'm4a', 'ogg'],
+    value: "low",
+    label: "Low",
+    description: "128 kbps / 44.1 kHz",
+    formats: ["mp3", "aac", "m4a", "ogg"],
   },
   {
-    value: 'medium',
-    label: 'Medium',
-    description: '192 kbps / 44.1 kHz',
-    formats: ['mp3', 'aac', 'm4a', 'ogg'],
+    value: "medium",
+    label: "Medium",
+    description: "192 kbps / 44.1 kHz",
+    formats: ["mp3", "aac", "m4a", "ogg"],
   },
   {
-    value: 'high',
-    label: 'High',
-    description: '320 kbps / 48 kHz',
-    formats: ['mp3', 'aac', 'm4a', 'ogg'],
+    value: "high",
+    label: "High",
+    description: "320 kbps / 48 kHz",
+    formats: ["mp3", "aac", "m4a", "ogg"],
   },
   {
-    value: 'lossless',
-    label: 'Lossless',
-    description: '48 kHz uncompressed',
-    formats: ['wav', 'flac'],
+    value: "lossless",
+    label: "Lossless",
+    description: "48 kHz uncompressed",
+    formats: ["wav", "flac"],
   },
 ];
 
@@ -93,17 +106,23 @@ export function ConversionDialog({
 }: ConversionDialogProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [targetFormat, setTargetFormat] = useState<string>('mp3');
-  const [qualityPreset, setQualityPreset] = useState<string>('high');
+  const [targetFormat, setTargetFormat] = useState<string>("mp3");
+  const [qualityPreset, setQualityPreset] = useState<string>("high");
   const [selectedFiles, setSelectedFiles] = useState<Set<string>>(new Set());
 
   // Fetch conversion history
-  const { data: conversions = [], isLoading: conversionsLoading } = useQuery<Conversion[]>({
-    queryKey: projectId ? ['/api/studio/conversions', projectId] : ['/api/studio/conversions'],
+  const { data: conversions = [], isLoading: conversionsLoading } = useQuery<
+    Conversion[]
+  >({
+    queryKey: projectId
+      ? ["/api/studio/conversions", projectId]
+      : ["/api/studio/conversions"],
     queryFn: projectId
       ? async () => {
-          const response = await fetch(`/api/studio/conversions?projectId=${projectId}`);
-          if (!response.ok) throw new Error('Failed to fetch conversions');
+          const response = await fetch(
+            `/api/studio/conversions?projectId=${projectId}`,
+          );
+          if (!response.ok) throw new Error("Failed to fetch conversions");
           return response.json();
         }
       : undefined,
@@ -112,7 +131,7 @@ export function ConversionDialog({
       const data = query.state.data;
       const hasActive =
         Array.isArray(data) &&
-        data.some((c) => c.status === 'pending' || c.status === 'processing');
+        data.some((c) => c.status === "pending" || c.status === "processing");
       return hasActive ? 1000 : false;
     },
     enabled: open,
@@ -125,23 +144,23 @@ export function ConversionDialog({
       targetFormat: string;
       qualityPreset: string;
     }) => {
-      return await apiRequest('POST', '/api/studio/conversions', {
+      return await apiRequest("POST", "/api/studio/conversions", {
         ...data,
         projectId,
       });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/studio/conversions'] });
+      queryClient.invalidateQueries({ queryKey: ["/api/studio/conversions"] });
       toast({
-        title: 'Conversion started',
-        description: 'Your file is being converted in the background.',
+        title: "Conversion started",
+        description: "Your file is being converted in the background.",
       });
     },
     onError: (error: Error) => {
       toast({
-        title: 'Conversion failed',
-        description: error.message || 'Failed to start conversion',
-        variant: 'destructive',
+        title: "Conversion failed",
+        description: error.message || "Failed to start conversion",
+        variant: "destructive",
       });
     },
   });
@@ -149,19 +168,22 @@ export function ConversionDialog({
   // Cancel conversion mutation
   const cancelConversion = useMutation({
     mutationFn: async (conversionId: string) => {
-      return await apiRequest('POST', `/api/studio/conversions/${conversionId}/cancel`);
+      return await apiRequest(
+        "POST",
+        `/api/studio/conversions/${conversionId}/cancel`,
+      );
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/studio/conversions'] });
+      queryClient.invalidateQueries({ queryKey: ["/api/studio/conversions"] });
       toast({
-        title: 'Conversion cancelled',
+        title: "Conversion cancelled",
       });
     },
     onError: (error: Error) => {
       toast({
-        title: 'Cancellation failed',
+        title: "Cancellation failed",
         description: error.message,
-        variant: 'destructive',
+        variant: "destructive",
       });
     },
   });
@@ -190,9 +212,9 @@ export function ConversionDialog({
   const handleConvert = async () => {
     if (selectedFiles.size === 0) {
       toast({
-        title: 'No files selected',
-        description: 'Please select at least one file to convert.',
-        variant: 'destructive',
+        title: "No files selected",
+        description: "Please select at least one file to convert.",
+        variant: "destructive",
       });
       return;
     }
@@ -213,7 +235,7 @@ export function ConversionDialog({
   // Download file
   const handleDownload = (conversionId: string, filename: string) => {
     const downloadUrl = `/api/studio/conversions/${conversionId}/download`;
-    const link = document.createElement('a');
+    const link = document.createElement("a");
     link.href = downloadUrl;
     link.download = filename;
     document.body.appendChild(link);
@@ -225,7 +247,7 @@ export function ConversionDialog({
   const addToProject = useMutation({
     mutationFn: async (data: { outputFilePath: string; name: string }) => {
       // Create a new audio clip from the converted file
-      return await apiRequest('POST', '/api/studio/clips/audio', {
+      return await apiRequest("POST", "/api/studio/clips/audio", {
         projectId,
         name: data.name,
         filePath: data.outputFilePath,
@@ -234,30 +256,32 @@ export function ConversionDialog({
       });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/studio/projects', projectId, 'clips'] });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/studio/projects", projectId, "clips"],
+      });
       toast({
-        title: 'Added to project',
-        description: 'Converted file has been added as a clip.',
+        title: "Added to project",
+        description: "Converted file has been added as a clip.",
       });
     },
     onError: (error: Error) => {
       toast({
-        title: 'Failed to add to project',
+        title: "Failed to add to project",
         description: error.message,
-        variant: 'destructive',
+        variant: "destructive",
       });
     },
   });
 
   // Filter quality options based on selected format
   const availableQualityOptions = QUALITY_OPTIONS.filter((option) =>
-    option.formats.includes(targetFormat)
+    option.formats.includes(targetFormat),
   );
 
   // Auto-adjust quality preset when format changes
   useEffect(() => {
     if (!availableQualityOptions.some((opt) => opt.value === qualityPreset)) {
-      setQualityPreset(availableQualityOptions[0]?.value || 'high');
+      setQualityPreset(availableQualityOptions[0]?.value || "high");
     }
   }, [targetFormat, qualityPreset, availableQualityOptions]);
 
@@ -268,9 +292,12 @@ export function ConversionDialog({
         data-testid="dialog-conversion"
       >
         <DialogHeader>
-          <DialogTitle data-testid="text-conversion-title">Audio Format Conversion</DialogTitle>
+          <DialogTitle data-testid="text-conversion-title">
+            Audio Format Conversion
+          </DialogTitle>
           <DialogDescription data-testid="text-conversion-description">
-            Convert audio files to different formats with various quality presets
+            Convert audio files to different formats with various quality
+            presets
           </DialogDescription>
         </DialogHeader>
 
@@ -282,7 +309,10 @@ export function ConversionDialog({
                 Target Format
               </Label>
               <Select value={targetFormat} onValueChange={setTargetFormat}>
-                <SelectTrigger id="target-format" data-testid="select-target-format">
+                <SelectTrigger
+                  id="target-format"
+                  data-testid="select-target-format"
+                >
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent data-testid="select-content-format">
@@ -294,7 +324,9 @@ export function ConversionDialog({
                     >
                       <div>
                         <div className="font-medium">{format.label}</div>
-                        <div className="text-xs text-muted-foreground">{format.description}</div>
+                        <div className="text-xs text-muted-foreground">
+                          {format.description}
+                        </div>
                       </div>
                     </SelectItem>
                   ))}
@@ -303,11 +335,17 @@ export function ConversionDialog({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="quality-preset" data-testid="label-quality-preset">
+              <Label
+                htmlFor="quality-preset"
+                data-testid="label-quality-preset"
+              >
                 Quality Preset
               </Label>
               <Select value={qualityPreset} onValueChange={setQualityPreset}>
-                <SelectTrigger id="quality-preset" data-testid="select-quality-preset">
+                <SelectTrigger
+                  id="quality-preset"
+                  data-testid="select-quality-preset"
+                >
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent data-testid="select-content-quality">
@@ -319,7 +357,9 @@ export function ConversionDialog({
                     >
                       <div>
                         <div className="font-medium">{quality.label}</div>
-                        <div className="text-xs text-muted-foreground">{quality.description}</div>
+                        <div className="text-xs text-muted-foreground">
+                          {quality.description}
+                        </div>
                       </div>
                     </SelectItem>
                   ))}
@@ -333,7 +373,9 @@ export function ConversionDialog({
           {/* File Selection */}
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <Label data-testid="label-select-files">Select Files to Convert</Label>
+              <Label data-testid="label-select-files">
+                Select Files to Convert
+              </Label>
               <div className="flex gap-2">
                 <Button
                   variant="ghost"
@@ -353,9 +395,15 @@ export function ConversionDialog({
                 </Button>
               </div>
             </div>
-            <ScrollArea className="h-40 border rounded-md p-4" data-testid="scroll-file-list">
+            <ScrollArea
+              className="h-40 border rounded-md p-4"
+              data-testid="scroll-file-list"
+            >
               {availableFiles.length === 0 ? (
-                <div className="text-center text-muted-foreground py-8" data-testid="text-no-files">
+                <div
+                  className="text-center text-muted-foreground py-8"
+                  data-testid="text-no-files"
+                >
                   No audio files available in this project
                 </div>
               ) : (
@@ -373,7 +421,10 @@ export function ConversionDialog({
                         data-testid={`checkbox-file-${file.path}`}
                       />
                       <FileAudio className="w-4 h-4 text-muted-foreground" />
-                      <span className="flex-1 text-sm" data-testid={`text-filename-${file.path}`}>
+                      <span
+                        className="flex-1 text-sm"
+                        data-testid={`text-filename-${file.path}`}
+                      >
                         {file.name}
                       </span>
                       {file.size && (
@@ -404,9 +455,9 @@ export function ConversionDialog({
               </>
             ) : (
               <>
-                Convert{' '}
+                Convert{" "}
                 {selectedFiles.size > 0 &&
-                  `(${selectedFiles.size} file${selectedFiles.size > 1 ? 's' : ''})`}
+                  `(${selectedFiles.size} file${selectedFiles.size > 1 ? "s" : ""})`}
               </>
             )}
           </Button>
@@ -448,24 +499,25 @@ export function ConversionDialog({
                             className="text-sm font-medium truncate"
                             data-testid={`text-conversion-source-${conversion.id}`}
                           >
-                            {conversion.sourceFilePath.split('/').pop()}
+                            {conversion.sourceFilePath.split("/").pop()}
                           </div>
                           <div
                             className="text-xs text-muted-foreground"
                             data-testid={`text-conversion-format-${conversion.id}`}
                           >
-                            {conversion.targetFormat.toUpperCase()} · {conversion.qualityPreset}
+                            {conversion.targetFormat.toUpperCase()} ·{" "}
+                            {conversion.qualityPreset}
                           </div>
                         </div>
                         <Badge
                           variant={
-                            conversion.status === 'completed'
-                              ? 'default'
-                              : conversion.status === 'failed'
-                                ? 'destructive'
-                                : conversion.status === 'cancelled'
-                                  ? 'secondary'
-                                  : 'outline'
+                            conversion.status === "completed"
+                              ? "default"
+                              : conversion.status === "failed"
+                                ? "destructive"
+                                : conversion.status === "cancelled"
+                                  ? "secondary"
+                                  : "outline"
                           }
                           data-testid={`badge-status-${conversion.id}`}
                         >
@@ -473,20 +525,25 @@ export function ConversionDialog({
                         </Badge>
                       </div>
 
-                      {(conversion.status === 'pending' || conversion.status === 'processing') && (
+                      {(conversion.status === "pending" ||
+                        conversion.status === "processing") && (
                         <div className="space-y-1">
                           <Progress
                             value={conversion.progress}
                             data-testid={`progress-${conversion.id}`}
                           />
                           <div className="flex items-center justify-between text-xs text-muted-foreground">
-                            <span data-testid={`text-progress-${conversion.id}`}>
+                            <span
+                              data-testid={`text-progress-${conversion.id}`}
+                            >
                               {conversion.progress}%
                             </span>
                             <Button
                               variant="ghost"
                               size="sm"
-                              onClick={() => cancelConversion.mutate(conversion.id)}
+                              onClick={() =>
+                                cancelConversion.mutate(conversion.id)
+                              }
                               data-testid={`button-cancel-${conversion.id}`}
                             >
                               <X className="w-3 h-3 mr-1" />
@@ -496,50 +553,56 @@ export function ConversionDialog({
                         </div>
                       )}
 
-                      {conversion.status === 'completed' && conversion.outputFilePath && (
-                        <div className="flex gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() =>
-                              handleDownload(
-                                conversion.id,
-                                conversion.outputFilePath!.split('/').pop() || 'converted.mp3'
-                              )
-                            }
-                            data-testid={`button-download-${conversion.id}`}
-                          >
-                            <Download className="w-3 h-3 mr-1" />
-                            Download
-                          </Button>
-                          {projectId && (
+                      {conversion.status === "completed" &&
+                        conversion.outputFilePath && (
+                          <div className="flex gap-2">
                             <Button
                               variant="outline"
                               size="sm"
                               onClick={() =>
-                                addToProject.mutate({
-                                  outputFilePath: conversion.outputFilePath!,
-                                  name: conversion.outputFilePath!.split('/').pop() || 'converted',
-                                })
+                                handleDownload(
+                                  conversion.id,
+                                  conversion.outputFilePath!.split("/").pop() ||
+                                    "converted.mp3",
+                                )
                               }
-                              data-testid={`button-add-to-project-${conversion.id}`}
+                              data-testid={`button-download-${conversion.id}`}
                             >
-                              <Plus className="w-3 h-3 mr-1" />
-                              Add to Project
+                              <Download className="w-3 h-3 mr-1" />
+                              Download
                             </Button>
-                          )}
-                        </div>
-                      )}
+                            {projectId && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() =>
+                                  addToProject.mutate({
+                                    outputFilePath: conversion.outputFilePath!,
+                                    name:
+                                      conversion
+                                        .outputFilePath!.split("/")
+                                        .pop() || "converted",
+                                  })
+                                }
+                                data-testid={`button-add-to-project-${conversion.id}`}
+                              >
+                                <Plus className="w-3 h-3 mr-1" />
+                                Add to Project
+                              </Button>
+                            )}
+                          </div>
+                        )}
 
-                      {conversion.status === 'failed' && conversion.errorMessage && (
-                        <div
-                          className="flex items-start gap-2 text-xs text-destructive"
-                          data-testid={`error-message-${conversion.id}`}
-                        >
-                          <AlertCircle className="w-3 h-3 mt-0.5 flex-shrink-0" />
-                          <span>{conversion.errorMessage}</span>
-                        </div>
-                      )}
+                      {conversion.status === "failed" &&
+                        conversion.errorMessage && (
+                          <div
+                            className="flex items-start gap-2 text-xs text-destructive"
+                            data-testid={`error-message-${conversion.id}`}
+                          >
+                            <AlertCircle className="w-3 h-3 mt-0.5 flex-shrink-0" />
+                            <span>{conversion.errorMessage}</span>
+                          </div>
+                        )}
                     </div>
                   ))}
                 </div>

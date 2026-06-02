@@ -15,62 +15,76 @@
  * to sync scene cuts, transition timings, and visual effects to the music.
  */
 
-import { execFile, execFileSync, spawn } from 'child_process';
-import { promisify } from 'util';
-import { existsSync, readFileSync, unlinkSync } from 'fs';
-import { writeFile as fsWriteFile } from 'fs/promises';
-import path from 'path';
-import os from 'os';
-import { randomBytes } from 'crypto';
-import { PYTHON, PYTHON_AVAILABLE } from './pythonPath.js';
-import { logger } from '../logger.js';
+import { execFile, execFileSync, spawn } from "child_process";
+import { promisify } from "util";
+import { existsSync, readFileSync, unlinkSync } from "fs";
+import { writeFile as fsWriteFile } from "fs/promises";
+import path from "path";
+import os from "os";
+import { randomBytes } from "crypto";
+import { PYTHON, PYTHON_AVAILABLE } from "./pythonPath.js";
+import { logger } from "../logger.js";
 
 const execFileAsync = promisify(execFile);
 
 function resolveFFmpegPath(): string {
   if (process.env.FFMPEG_PATH) return process.env.FFMPEG_PATH;
   try {
-    const p = execFileSync('/bin/sh', ['-c', 'which ffmpeg'], { timeout: 3000 }).toString().trim();
+    const p = execFileSync("/bin/sh", ["-c", "which ffmpeg"], { timeout: 3000 })
+      .toString()
+      .trim();
     if (p) return p;
-  } catch { /* intentional: shell which-lookup fails → falls through to hardcoded candidates */ }
-  for (const c of ['/run/current-system/sw/bin/ffmpeg', '/usr/bin/ffmpeg', '/usr/local/bin/ffmpeg']) {
+  } catch {
+    /* intentional: shell which-lookup fails → falls through to hardcoded candidates */
+  }
+  for (const c of [
+    "/run/current-system/sw/bin/ffmpeg",
+    "/usr/bin/ffmpeg",
+    "/usr/local/bin/ffmpeg",
+  ]) {
     if (existsSync(c)) return c;
   }
-  return 'ffmpeg';
+  return "ffmpeg";
 }
 const FFMPEG = resolveFFmpegPath();
 
 // ── DATA TYPES ─────────────────────────────────────────────────────────────────
 export interface BeatAnalysis {
   bpm: number;
-  confidence: number;           // 0–1: how reliable the BPM estimate is
-  beats: number[];              // timestamps (seconds) of detected beats
-  downbeats: number[];          // every Nth beat = downbeat (start of measure)
-  beatsPerMeasure: number;      // typically 4 (4/4 time)
+  confidence: number; // 0–1: how reliable the BPM estimate is
+  beats: number[]; // timestamps (seconds) of detected beats
+  downbeats: number[]; // every Nth beat = downbeat (start of measure)
+  beatsPerMeasure: number; // typically 4 (4/4 time)
   durationSeconds: number;
-  energyEnvelope: number[];     // normalized loudness 0–1 at 10Hz resolution
-  peakPositions: number[];      // timestamps of major energy peaks (drop, chorus, etc.)
-  sections: AudioSection[];     // structurally distinct segments of the track
-  tier: 'librosa' | 'ffmpeg';   // which analysis tier was used
+  energyEnvelope: number[]; // normalized loudness 0–1 at 10Hz resolution
+  peakPositions: number[]; // timestamps of major energy peaks (drop, chorus, etc.)
+  sections: AudioSection[]; // structurally distinct segments of the track
+  tier: "librosa" | "ffmpeg"; // which analysis tier was used
 }
 
 export interface AudioSection {
   startTime: number;
   endTime: number;
-  type: 'intro' | 'verse' | 'chorus' | 'bridge' | 'outro' | 'unknown';
-  avgEnergy: number;            // 0–1
-  label: string;                // human-readable label
+  type: "intro" | "verse" | "chorus" | "bridge" | "outro" | "unknown";
+  avgEnergy: number; // 0–1
+  label: string; // human-readable label
 }
 
 // ── AUDIO DURATION VIA FFMPEG ──────────────────────────────────────────────────
 async function getAudioDuration(audioPath: string): Promise<number> {
   try {
-    const { stderr } = await execFileAsync(FFMPEG, ['-i', audioPath, '-f', 'null', '-'], { timeout: 15_000 });
+    const { stderr } = await execFileAsync(
+      FFMPEG,
+      ["-i", audioPath, "-f", "null", "-"],
+      { timeout: 15_000 },
+    );
     const m = stderr.match(/Duration:\s*(\d+):(\d+):([\d.]+)/);
-    if (m) return parseInt(m[1]) * 3600 + parseInt(m[2]) * 60 + parseFloat(m[3]);
+    if (m)
+      return parseInt(m[1]) * 3600 + parseInt(m[2]) * 60 + parseFloat(m[3]);
   } catch (e) {
-    const m = (e?.stderr || '').match(/Duration:\s*(\d+):(\d+):([\d.]+)/);
-    if (m) return parseInt(m[1]) * 3600 + parseInt(m[2]) * 60 + parseFloat(m[3]);
+    const m = (e?.stderr || "").match(/Duration:\s*(\d+):(\d+):([\d.]+)/);
+    if (m)
+      return parseInt(m[1]) * 3600 + parseInt(m[2]) * 60 + parseFloat(m[3]);
   }
   return 0;
 }
@@ -82,22 +96,30 @@ async function getAudioDuration(audioPath: string): Promise<number> {
  */
 async function analyzeBeatFFmpeg(audioPath: string): Promise<BeatAnalysis> {
   const duration = await getAudioDuration(audioPath);
-  if (duration <= 0) throw new Error('Could not determine audio duration');
+  if (duration <= 0) throw new Error("Could not determine audio duration");
 
   // Extract momentary loudness at 10 Hz using ebur128
   // ebur128=metadata=1 outputs per-frame stats to stderr
   const loudnessLog: number[] = [];
 
   try {
-    const { stderr } = await execFileAsync(FFMPEG, [
-      '-i', audioPath,
-      '-af', 'ebur128=peak=sample:framelog=quiet',
-      '-f', 'null', '-',
-    ], { timeout: Math.max(30_000, duration * 3000) });
+    const { stderr } = await execFileAsync(
+      FFMPEG,
+      [
+        "-i",
+        audioPath,
+        "-af",
+        "ebur128=peak=sample:framelog=quiet",
+        "-f",
+        "null",
+        "-",
+      ],
+      { timeout: Math.max(30_000, duration * 3000) },
+    );
 
     // Parse momentary loudness values from ebur128 output
     // Format: "M: -24.5" (momentary LUFS)
-    const lines = stderr.split('\n');
+    const lines = stderr.split("\n");
     for (const line of lines) {
       const m = line.match(/M:\s*([-\d.]+)/);
       if (m) {
@@ -132,13 +154,13 @@ async function analyzeBeatFFmpeg(audioPath: string): Promise<BeatAnalysis> {
   // Normalize to 0–1
   const maxVal = Math.max(...smoothed, 0.001);
   const minVal = Math.min(...smoothed);
-  const range  = maxVal - minVal || 1;
-  const normalized = smoothed.map(v => (v - minVal) / range);
+  const range = maxVal - minVal || 1;
+  const normalized = smoothed.map((v) => (v - minVal) / range);
 
   // Find local peaks (potential beat positions)
   // A sample is a peak if it exceeds both neighbors AND is above a threshold
-  const PEAK_THRESHOLD = 0.45;   // fraction of max energy
-  const MIN_BEAT_GAP   = 3;      // minimum samples between beats (= 300ms at 10Hz)
+  const PEAK_THRESHOLD = 0.45; // fraction of max energy
+  const MIN_BEAT_GAP = 3; // minimum samples between beats (= 300ms at 10Hz)
   const rawPeaks: number[] = [];
 
   for (let i = 1; i < normalized.length - 1; i++) {
@@ -156,7 +178,7 @@ async function analyzeBeatFFmpeg(audioPath: string): Promise<BeatAnalysis> {
   }
 
   // Convert peak sample indices to timestamps (samples are at 10Hz)
-  const beatTimestamps = rawPeaks.map(i => i / 10);
+  const beatTimestamps = rawPeaks.map((i) => i / 10);
 
   // Estimate BPM from median inter-beat interval
   let bpm = 120;
@@ -173,12 +195,17 @@ async function analyzeBeatFFmpeg(audioPath: string): Promise<BeatAnalysis> {
     if (medIbi > 0.2 && medIbi < 2.5) {
       bpm = Math.round(60 / medIbi);
       // Clamp to musical range
-      while (bpm < 60)  bpm *= 2;
+      while (bpm < 60) bpm *= 2;
       while (bpm > 200) bpm /= 2;
       // Confidence based on IBI consistency
       const avgIbi = ibiSamples.reduce((s, x) => s + x, 0) / ibiSamples.length;
-      const variance = ibiSamples.reduce((s, x) => s + (x - avgIbi) ** 2, 0) / ibiSamples.length;
-      confidence = Math.max(0.3, Math.min(0.9, 1 - Math.sqrt(variance) / avgIbi));
+      const variance =
+        ibiSamples.reduce((s, x) => s + (x - avgIbi) ** 2, 0) /
+        ibiSamples.length;
+      confidence = Math.max(
+        0.3,
+        Math.min(0.9, 1 - Math.sqrt(variance) / avgIbi),
+      );
     }
   } else {
     // Too few peaks — use a generic 120 BPM grid
@@ -195,7 +222,7 @@ async function analyzeBeatFFmpeg(audioPath: string): Promise<BeatAnalysis> {
 
   // Detect major energy peaks (choruses, drops) — top 15% of energy + large window
   const MAJOR_PEAK_THRESHOLD = 0.75;
-  const MAJOR_PEAK_GAP       = 30;    // 3 seconds minimum between major peaks
+  const MAJOR_PEAK_GAP = 30; // 3 seconds minimum between major peaks
   const peakPositions: number[] = [];
   let lastMajorPeak = -999;
 
@@ -210,7 +237,11 @@ async function analyzeBeatFFmpeg(audioPath: string): Promise<BeatAnalysis> {
   }
 
   // Estimate structural sections using energy-based segmentation
-  const sections: AudioSection[] = detectSections(normalized, duration, peakPositions);
+  const sections: AudioSection[] = detectSections(
+    normalized,
+    duration,
+    peakPositions,
+  );
 
   return {
     bpm,
@@ -222,7 +253,7 @@ async function analyzeBeatFFmpeg(audioPath: string): Promise<BeatAnalysis> {
     energyEnvelope: normalized,
     peakPositions,
     sections,
-    tier: 'ffmpeg',
+    tier: "ffmpeg",
   };
 }
 
@@ -231,39 +262,58 @@ function detectSections(
   duration: number,
   peakPositions: number[],
 ): AudioSection[] {
-  if (duration < 6) return [{ startTime: 0, endTime: duration, type: 'unknown', avgEnergy: 0.5, label: 'Full Track' }];
+  if (duration < 6)
+    return [
+      {
+        startTime: 0,
+        endTime: duration,
+        type: "unknown",
+        avgEnergy: 0.5,
+        label: "Full Track",
+      },
+    ];
 
   const sections: AudioSection[] = [];
-  const introEnd   = Math.min(duration * 0.15, 12);
+  const introEnd = Math.min(duration * 0.15, 12);
   const outroStart = Math.max(duration * 0.85, duration - 10);
 
   // Intro
   sections.push({
-    startTime: 0, endTime: introEnd, type: 'intro',
+    startTime: 0,
+    endTime: introEnd,
+    type: "intro",
     avgEnergy: sectionAvgEnergy(energyEnvelope, 0, introEnd, duration),
-    label: 'Intro',
+    label: "Intro",
   });
 
   // Build body sections around energy peaks (choruses)
-  const bodyPeaks = peakPositions.filter(p => p > introEnd && p < outroStart);
+  const bodyPeaks = peakPositions.filter((p) => p > introEnd && p < outroStart);
 
   if (bodyPeaks.length === 0) {
     // No detected peaks — treat as one section
     sections.push({
-      startTime: introEnd, endTime: outroStart, type: 'verse',
-      avgEnergy: sectionAvgEnergy(energyEnvelope, introEnd, outroStart, duration),
-      label: 'Main Body',
+      startTime: introEnd,
+      endTime: outroStart,
+      type: "verse",
+      avgEnergy: sectionAvgEnergy(
+        energyEnvelope,
+        introEnd,
+        outroStart,
+        duration,
+      ),
+      label: "Main Body",
     });
   } else {
     let prevEnd = introEnd;
     for (let i = 0; i < bodyPeaks.length; i++) {
       const peakCenter = bodyPeaks[i];
-      const segStart   = prevEnd;
-      const segEnd     = Math.min(peakCenter + 20, outroStart);
-      const avgE       = sectionAvgEnergy(energyEnvelope, segStart, segEnd, duration);
+      const segStart = prevEnd;
+      const segEnd = Math.min(peakCenter + 20, outroStart);
+      const avgE = sectionAvgEnergy(energyEnvelope, segStart, segEnd, duration);
       sections.push({
-        startTime: segStart, endTime: segEnd,
-        type: avgE > 0.6 ? 'chorus' : 'verse',
+        startTime: segStart,
+        endTime: segEnd,
+        type: avgE > 0.6 ? "chorus" : "verse",
         avgEnergy: avgE,
         label: avgE > 0.6 ? `Drop/Chorus ${i + 1}` : `Verse ${i + 1}`,
       });
@@ -271,27 +321,41 @@ function detectSections(
     }
     if (prevEnd < outroStart) {
       sections.push({
-        startTime: prevEnd, endTime: outroStart, type: 'verse',
-        avgEnergy: sectionAvgEnergy(energyEnvelope, prevEnd, outroStart, duration),
-        label: 'Bridge',
+        startTime: prevEnd,
+        endTime: outroStart,
+        type: "verse",
+        avgEnergy: sectionAvgEnergy(
+          energyEnvelope,
+          prevEnd,
+          outroStart,
+          duration,
+        ),
+        label: "Bridge",
       });
     }
   }
 
   // Outro
   sections.push({
-    startTime: outroStart, endTime: duration, type: 'outro',
+    startTime: outroStart,
+    endTime: duration,
+    type: "outro",
     avgEnergy: sectionAvgEnergy(energyEnvelope, outroStart, duration, duration),
-    label: 'Outro',
+    label: "Outro",
   });
 
   return sections;
 }
 
-function sectionAvgEnergy(envelope: number[], start: number, end: number, duration: number): number {
-  const rate  = envelope.length / duration;
+function sectionAvgEnergy(
+  envelope: number[],
+  start: number,
+  end: number,
+  duration: number,
+): number {
+  const rate = envelope.length / duration;
   const iStart = Math.floor(start * rate);
-  const iEnd   = Math.min(Math.ceil(end * rate), envelope.length);
+  const iEnd = Math.min(Math.ceil(end * rate), envelope.length);
   if (iEnd <= iStart) return 0.5;
   const slice = envelope.slice(iStart, iEnd);
   return slice.reduce((s, x) => s + x, 0) / slice.length;
@@ -350,68 +414,122 @@ except Exception as e:
     print(json.dumps({'error': str(e), 'tier': 'ffmpeg'}))
 `;
 
-async function analyzeBeatLibrosa(audioPath: string): Promise<BeatAnalysis | null> {
+async function analyzeBeatLibrosa(
+  audioPath: string,
+): Promise<BeatAnalysis | null> {
   if (!PYTHON_AVAILABLE) return null;
 
-  const scriptPath = path.join(os.tmpdir(), `beat_analysis_${randomBytes(4).toString('hex')}.py`);
+  const scriptPath = path.join(
+    os.tmpdir(),
+    `beat_analysis_${randomBytes(4).toString("hex")}.py`,
+  );
   try {
     await fsWriteFile(scriptPath, LIBROSA_SCRIPT);
 
     const raw = await new Promise<string>((resolve, reject) => {
       const proc = spawn(PYTHON, [scriptPath, audioPath]);
-      let out = '';
-      let err = '';
-      proc.stdout.on('data', (d: Buffer) => { out += d.toString(); });
-      proc.stderr.on('data', (d: Buffer) => { err += d.toString(); });
-      proc.on('close', (code) => {
-        if (out.trim()) resolve(out.trim());
-        else reject(new Error(`librosa script failed (exit ${code}): ${err.slice(-200)}`));
+      let out = "";
+      let err = "";
+      proc.stdout.on("data", (d: Buffer) => {
+        out += d.toString();
       });
-      proc.on('error', reject);
-      setTimeout(() => { proc.kill(); reject(new Error('librosa timeout')); }, 60_000);
+      proc.stderr.on("data", (d: Buffer) => {
+        err += d.toString();
+      });
+      proc.on("close", (code) => {
+        if (out.trim()) resolve(out.trim());
+        else
+          reject(
+            new Error(
+              `librosa script failed (exit ${code}): ${err.slice(-200)}`,
+            ),
+          );
+      });
+      proc.on("error", reject);
+      setTimeout(() => {
+        proc.kill();
+        reject(new Error("librosa timeout"));
+      }, 60_000);
     });
 
     const data = JSON.parse(raw);
-    if (data.error || data.tier === 'unavailable') {
-      logger.debug('[BeatSync] librosa unavailable:', data.error);
+    if (data.error || data.tier === "unavailable") {
+      logger.debug("[BeatSync] librosa unavailable:", data.error);
       return null;
     }
 
-    const duration         = data.duration as number;
-    const bpm              = Math.max(60, Math.min(220, data.bpm as number));
-    const beats            = (data.beats as number[]).filter(b => b >= 0 && b <= duration);
-    const beatsPerMeasure  = 4;
-    const downbeats        = beats.filter((_, i) => i % beatsPerMeasure === 0);
-    const energyEnvelope   = data.energy_envelope as number[];
-    const peakPositions    = findMajorPeaks(energyEnvelope, duration, 0.70, 30);
-    const sections         = detectSections(energyEnvelope, duration, peakPositions);
+    const duration = data.duration as number;
+    const bpm = Math.max(60, Math.min(220, data.bpm as number));
+    const beats = (data.beats as number[]).filter(
+      (b) => b >= 0 && b <= duration,
+    );
+    const beatsPerMeasure = 4;
+    const downbeats = beats.filter((_, i) => i % beatsPerMeasure === 0);
+    const energyEnvelope = data.energy_envelope as number[];
+    const peakPositions = findMajorPeaks(energyEnvelope, duration, 0.7, 30);
+    const sections = detectSections(energyEnvelope, duration, peakPositions);
 
     // Confidence: librosa is generally >0.85 for music with clear beats
     const ibiList: number[] = [];
-    for (let i = 1; i < beats.length; i++) ibiList.push(beats[i] - beats[i - 1]);
-    const avgIbi = ibiList.length ? ibiList.reduce((s, x) => s + x, 0) / ibiList.length : 60 / bpm;
+    for (let i = 1; i < beats.length; i++)
+      ibiList.push(beats[i] - beats[i - 1]);
+    const avgIbi = ibiList.length
+      ? ibiList.reduce((s, x) => s + x, 0) / ibiList.length
+      : 60 / bpm;
     const variance = ibiList.length
       ? ibiList.reduce((s, x) => s + (x - avgIbi) ** 2, 0) / ibiList.length
       : 1;
-    const confidence = Math.max(0.6, Math.min(0.98, 1 - Math.sqrt(variance) / avgIbi));
+    const confidence = Math.max(
+      0.6,
+      Math.min(0.98, 1 - Math.sqrt(variance) / avgIbi),
+    );
 
-    logger.info(`[BeatSync] librosa analysis — BPM=${bpm.toFixed(1)} beats=${beats.length} confidence=${(confidence * 100).toFixed(0)}%`);
+    logger.info(
+      `[BeatSync] librosa analysis — BPM=${bpm.toFixed(1)} beats=${beats.length} confidence=${(confidence * 100).toFixed(0)}%`,
+    );
 
-    return { bpm, confidence, beats, downbeats, beatsPerMeasure, durationSeconds: duration, energyEnvelope, peakPositions, sections, tier: 'librosa' };
+    return {
+      bpm,
+      confidence,
+      beats,
+      downbeats,
+      beatsPerMeasure,
+      durationSeconds: duration,
+      energyEnvelope,
+      peakPositions,
+      sections,
+      tier: "librosa",
+    };
   } catch (e) {
-    logger.debug('[BeatSync] librosa analysis failed:', e?.message?.slice(0, 100));
+    logger.debug(
+      "[BeatSync] librosa analysis failed:",
+      e?.message?.slice(0, 100),
+    );
     return null;
   } finally {
-    try { if (existsSync(scriptPath)) unlinkSync(scriptPath); } catch { /* intentional: temp-script cleanup */ }
+    try {
+      if (existsSync(scriptPath)) unlinkSync(scriptPath);
+    } catch {
+      /* intentional: temp-script cleanup */
+    }
   }
 }
 
-function findMajorPeaks(envelope: number[], duration: number, threshold: number, minGapSamples: number): number[] {
+function findMajorPeaks(
+  envelope: number[],
+  duration: number,
+  threshold: number,
+  minGapSamples: number,
+): number[] {
   const peaks: number[] = [];
   let lastPeak = -999;
   for (let i = 5; i < envelope.length - 5; i++) {
     const localMax = Math.max(...envelope.slice(i - 5, i + 5));
-    if (envelope[i] >= threshold && envelope[i] === localMax && i - lastPeak >= minGapSamples) {
+    if (
+      envelope[i] >= threshold &&
+      envelope[i] === localMax &&
+      i - lastPeak >= minGapSamples
+    ) {
       peaks.push(i / 10);
       lastPeak = i;
     }
@@ -421,13 +539,16 @@ function findMajorPeaks(envelope: number[], duration: number, threshold: number,
 
 // ── PUBLIC INTERFACE ──────────────────────────────────────────────────────────
 export async function analyzeAudio(audioPath: string): Promise<BeatAnalysis> {
-  if (!existsSync(audioPath)) throw new Error(`Audio file not found: ${audioPath}`);
+  if (!existsSync(audioPath))
+    throw new Error(`Audio file not found: ${audioPath}`);
 
   // Try Tier 2 first (librosa) — fallback to Tier 1 (FFmpeg)
   const librosaResult = await analyzeBeatLibrosa(audioPath);
   if (librosaResult) return librosaResult;
 
-  logger.info('[BeatSync] Using FFmpeg-based beat analysis (librosa unavailable)');
+  logger.info(
+    "[BeatSync] Using FFmpeg-based beat analysis (librosa unavailable)",
+  );
   return analyzeBeatFFmpeg(audioPath);
 }
 
@@ -476,11 +597,14 @@ export function getBeatAlignedCuts(
 /**
  * Convert beat-aligned cut timestamps to scene durations.
  */
-export function cutsToSceneDurations(cuts: number[], totalDuration: number): number[] {
+export function cutsToSceneDurations(
+  cuts: number[],
+  totalDuration: number,
+): number[] {
   const boundaries = [0, ...cuts, totalDuration];
-  return boundaries.slice(0, -1).map((start, i) =>
-    parseFloat((boundaries[i + 1] - start).toFixed(3))
-  );
+  return boundaries
+    .slice(0, -1)
+    .map((start, i) => parseFloat((boundaries[i + 1] - start).toFixed(3)));
 }
 
 /**
@@ -518,20 +642,20 @@ export function buildBeatSyncedXfadeChain(
   const cuts = getBeatAlignedCuts(analysis, scenePaths.length);
   const sceneDurations = cutsToSceneDurations(cuts, analysis.durationSeconds);
 
-  let filterComplex = '';
-  let prevLabel = '[0:v]';
+  let filterComplex = "";
+  let prevLabel = "[0:v]";
   let cumOffset = 0;
 
   for (let i = 0; i < scenePaths.length - 1; i++) {
     cumOffset += sceneDurations[i] - transitionDur;
-    const nextIn  = `[${i + 1}:v]`;
-    const outLbl  = i === scenePaths.length - 2 ? '[vout]' : `[v${i}]`;
+    const nextIn = `[${i + 1}:v]`;
+    const outLbl = i === scenePaths.length - 2 ? "[vout]" : `[v${i}]`;
     filterComplex += `${prevLabel}${nextIn}xfade=transition=${transitionType}:duration=${transitionDur}:offset=${cumOffset.toFixed(3)}${outLbl};`;
     prevLabel = outLbl;
   }
 
   return {
-    filterComplex: filterComplex.replace(/;$/, ''),
+    filterComplex: filterComplex.replace(/;$/, ""),
     sceneDurations,
   };
 }

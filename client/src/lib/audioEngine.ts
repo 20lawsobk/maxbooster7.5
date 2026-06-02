@@ -19,7 +19,11 @@
  * - Bus routing and groups
  */
 
-import type { SampleRate, BufferSize, AudioFormat } from '../../../shared/audioConstants';
+import type {
+  SampleRate,
+  BufferSize,
+  AudioFormat,
+} from "../../../shared/audioConstants";
 import {
   SAMPLE_RATES,
   BUFFER_SIZES,
@@ -27,8 +31,8 @@ import {
   PERFORMANCE_GUARANTEES,
   getRecommendedBufferSize,
   calculateLatencyMs,
-} from '../../../shared/audioConstants';
-import { logger } from '@/lib/logger';
+} from "../../../shared/audioConstants";
+import { logger } from "@/lib/logger";
 
 export type ExtendedSampleRate = 44100 | 48000 | 88200 | 96000 | 192000;
 export type ExtendedBufferSize = 64 | 128 | 256 | 512 | 1024 | 2048;
@@ -38,14 +42,14 @@ export interface AudioEngineConfig {
   bufferSize?: BufferSize | ExtendedBufferSize;
   audioFormat?: AudioFormat;
   maxTracks?: number;
-  latencyHint?: 'interactive' | 'balanced' | 'playback';
+  latencyHint?: "interactive" | "balanced" | "playback";
   channels?: number;
   bitDepth?: 16 | 24 | 32;
   enableLatencyCompensation?: boolean;
   enableAudioWorklet?: boolean;
 }
 
-export type PanLaw = 'linear' | 'constantPower' | 'compensated';
+export type PanLaw = "linear" | "constantPower" | "compensated";
 
 export interface LatencyCompensation {
   inputLatency: number;
@@ -165,7 +169,7 @@ export interface TrackEffects {
 // Modular effect slot for insert rack
 export interface EffectSlot {
   id: string;
-  type: 'delay' | 'distortion' | 'chorus' | 'flanger' | 'phaser';
+  type: "delay" | "distortion" | "chorus" | "flanger" | "phaser";
   enabled: boolean;
   bypass: boolean;
   order: number; // Position in effect chain
@@ -181,7 +185,7 @@ export interface AutomationPoint {
   id: string;
   time: number;
   value: number;
-  curve: 'linear' | 'bezier' | 'step';
+  curve: "linear" | "bezier" | "step";
   tension?: number;
   controlPoints?: { x1: number; y1: number; x2: number; y2: number };
 }
@@ -191,14 +195,14 @@ export interface AutomationLane {
   trackId: string;
   parameter: string;
   points: AutomationPoint[];
-  mode: 'read' | 'write' | 'touch' | 'latch';
+  mode: "read" | "write" | "touch" | "latch";
   enabled: boolean;
 }
 
 export interface SidechainConfig {
   sourceTrackId: string;
   targetTrackId: string;
-  parameter: 'compressor' | 'gate';
+  parameter: "compressor" | "gate";
   enabled: boolean;
 }
 
@@ -213,9 +217,9 @@ class AudioEngine {
   private config: AudioEngineConfig = {
     sampleRate: SAMPLE_RATES.SR_48000,
     bufferSize: BUFFER_SIZES.BALANCED,
-    audioFormat: 'float32',
+    audioFormat: "float32",
     maxTracks: TRACK_LIMITS.PROFESSIONAL,
-    latencyHint: 'interactive',
+    latencyHint: "interactive",
     channels: 2,
     bitDepth: 24,
     enableLatencyCompensation: true,
@@ -223,7 +227,7 @@ class AudioEngine {
   };
 
   private actualLatencyMs = 0;
-  private panLaw: PanLaw = 'constantPower';
+  private panLaw: PanLaw = "constantPower";
 
   // Latency compensation
   private latencyCompensation: LatencyCompensation = {
@@ -238,11 +242,14 @@ class AudioEngine {
   private meterWorkletNode: AudioWorkletNode | null = null;
 
   // Aux sends and returns
-  private auxBuses = new Map<string, {
-    gainNode: GainNode;
-    returnGain: GainNode;
-    effects: AudioNode[];
-  }>();
+  private auxBuses = new Map<
+    string,
+    {
+      gainNode: GainNode;
+      returnGain: GainNode;
+      effects: AudioNode[];
+    }
+  >();
 
   // Bus groups
   private busGroups = new Map<string, BusGroup>();
@@ -338,7 +345,9 @@ class AudioEngine {
    */
   static isSupported(): boolean {
     try {
-      const AudioContextClass = window.AudioContext || (window as Record<string, unknown>).webkitAudioContext;
+      const AudioContextClass =
+        window.AudioContext ||
+        (window as Record<string, unknown>).webkitAudioContext;
       return !!AudioContextClass;
     } catch {
       return false;
@@ -351,13 +360,18 @@ class AudioEngine {
   static canCreateContext(): boolean {
     try {
       if (!AudioEngine.isSupported()) return false;
-      const AudioContextClass = window.AudioContext || (window as Record<string, unknown>).webkitAudioContext;
+      const AudioContextClass =
+        window.AudioContext ||
+        (window as Record<string, unknown>).webkitAudioContext;
       const testContext = new AudioContextClass();
-      const canCreate = testContext.state !== 'suspended' || true;
+      const canCreate = testContext.state !== "suspended" || true;
       testContext.close().catch(() => {});
       return canCreate;
     } catch (e) {
-      logger.warn('AudioContext creation blocked (likely needs user gesture):', e);
+      logger.warn(
+        "AudioContext creation blocked (likely needs user gesture):",
+        e,
+      );
       return false;
     }
   }
@@ -371,13 +385,13 @@ class AudioEngine {
 
     try {
       // If already running, we're good
-      if (this.context.state === 'running') {
+      if (this.context.state === "running") {
         this.unlocked = true;
         return true;
       }
 
       // Try to resume first
-      if (this.context.state === 'suspended') {
+      if (this.context.state === "suspended") {
         await this.context.resume();
       }
 
@@ -391,28 +405,28 @@ class AudioEngine {
       source.stop(0.001);
 
       // Small delay to let the silent buffer complete
-      await new Promise(resolve => setTimeout(resolve, 10));
+      await new Promise((resolve) => setTimeout(resolve, 10));
 
       // Check if we're running now
-      if (this.context.state === 'running') {
+      if (this.context.state === "running") {
         this.unlocked = true;
-        logger.info('Audio context unlocked successfully');
+        logger.info("Audio context unlocked successfully");
         return true;
       }
 
       // Final attempt to resume
       await this.context.resume();
-      this.unlocked = this.context.state === 'running';
-      
+      this.unlocked = this.context.state === "running";
+
       if (this.unlocked) {
-        logger.info('Audio context unlocked via resume()');
+        logger.info("Audio context unlocked via resume()");
       } else {
-        logger.warn('Audio context still suspended after unlock attempts');
+        logger.warn("Audio context still suspended after unlock attempts");
       }
 
       return this.unlocked;
     } catch (error) {
-      logger.warn('Error unlocking audio context:', error);
+      logger.warn("Error unlocking audio context:", error);
       return false;
     }
   }
@@ -422,11 +436,11 @@ class AudioEngine {
    * This is the BeatStars/Spotify pattern - attach once, works everywhere
    */
   private attachUnlockListeners(): void {
-    if (this.unlockListenersAttached || typeof document === 'undefined') return;
+    if (this.unlockListenersAttached || typeof document === "undefined") return;
 
     const unlockHandler = async () => {
       if (this.unlocked) return;
-      
+
       try {
         await this.unlockAudioContext();
       } catch (e) {
@@ -435,13 +449,16 @@ class AudioEngine {
     };
 
     // Attach to multiple event types for maximum compatibility
-    const events = ['touchstart', 'touchend', 'mousedown', 'click', 'keydown'];
-    events.forEach(event => {
-      document.addEventListener(event, unlockHandler, { once: false, passive: true });
+    const events = ["touchstart", "touchend", "mousedown", "click", "keydown"];
+    events.forEach((event) => {
+      document.addEventListener(event, unlockHandler, {
+        once: false,
+        passive: true,
+      });
     });
 
     this.unlockListenersAttached = true;
-    logger.info('Audio unlock listeners attached');
+    logger.info("Audio unlock listeners attached");
   }
 
   /**
@@ -453,11 +470,11 @@ class AudioEngine {
   async initialize(config?: AudioEngineConfig): Promise<void> {
     // If already fully initialized, just ensure it's running
     if (this.initialized && this.context) {
-      if (this.context.state === 'suspended') {
+      if (this.context.state === "suspended") {
         try {
           await this.context.resume();
         } catch (e) {
-          logger.warn('Could not resume context:', e);
+          logger.warn("Could not resume context:", e);
         }
       }
       return;
@@ -470,59 +487,66 @@ class AudioEngine {
 
     // Step 1: Create AudioContext if not exists
     if (!this.context) {
-      const AudioContextClass = window.AudioContext || (window as Record<string, unknown>).webkitAudioContext;
-      
+      const AudioContextClass =
+        window.AudioContext ||
+        (window as Record<string, unknown>).webkitAudioContext;
+
       if (!AudioContextClass) {
-        throw new Error('Web Audio API is not supported in this browser');
+        throw new Error("Web Audio API is not supported in this browser");
       }
-      
+
       // Create with minimal options for maximum compatibility
       this.context = new AudioContextClass();
-      logger.info(`AudioContext created, state: ${this.context.state}, sampleRate: ${this.context.sampleRate}`);
+      logger.info(
+        `AudioContext created, state: ${this.context.state}, sampleRate: ${this.context.sampleRate}`,
+      );
     }
 
     // Step 2: Resume if suspended (this is the key step that requires user gesture)
-    if (this.context.state === 'suspended') {
-      logger.info('AudioContext suspended, attempting resume...');
+    if (this.context.state === "suspended") {
+      logger.info("AudioContext suspended, attempting resume...");
       try {
         await this.context.resume();
         logger.info(`AudioContext resumed, state: ${this.context.state}`);
       } catch (resumeError) {
-        logger.warn('Resume failed (may need user gesture):', resumeError);
+        logger.warn("Resume failed (may need user gesture):", resumeError);
       }
     }
 
     // Step 3: iOS Safari silent buffer trick
-    if (this.context.state !== 'running') {
+    if (this.context.state !== "running") {
       try {
         const silentBuffer = this.context.createBuffer(1, 1, 22050);
         const source = this.context.createBufferSource();
         source.buffer = silentBuffer;
         source.connect(this.context.destination);
         source.start(0);
-        
+
         // Try resume again after silent buffer
         await this.context.resume();
         logger.info(`After silent buffer, state: ${this.context.state}`);
       } catch (e) {
-        logger.warn('Silent buffer trick failed:', e);
+        logger.warn("Silent buffer trick failed:", e);
       }
     }
 
     // Step 4: Set up audio graph only if context is ready
-    if (this.context.state === 'running' && !this.initialized) {
+    if (this.context.state === "running" && !this.initialized) {
       try {
         // Update config with actual sample rate
         this.config.sampleRate = this.context.sampleRate as SampleRate;
-        this.actualLatencyMs = calculateLatencyMs(this.config.bufferSize!, this.config.sampleRate!);
+        this.actualLatencyMs = calculateLatencyMs(
+          this.config.bufferSize!,
+          this.config.sampleRate!,
+        );
 
         // Create master chain
         this.createMasterChain();
 
         // Create default master bus
         this.createBus({
-          id: 'master',
-          name: 'Master',
+          id: "master",
+          name: "Master",
           gain: 0.8,
           pan: 0,
           isMuted: false,
@@ -534,18 +558,20 @@ class AudioEngine {
 
         this.initialized = true;
         this.unlocked = true;
-        
+
         logger.info(`🎵 Audio Engine Ready:
   Sample Rate: ${this.context.sampleRate}Hz
   State: ${this.context.state}
   Initialized: ${this.initialized}`);
       } catch (setupError) {
-        logger.error('Failed to set up audio graph:', setupError);
+        logger.error("Failed to set up audio graph:", setupError);
         throw setupError;
       }
-    } else if (this.context.state !== 'running') {
+    } else if (this.context.state !== "running") {
       // Context created but not running - this is OK, will unlock on next user interaction
-      logger.info(`AudioContext created but suspended. Will resume on user interaction.`);
+      logger.info(
+        `AudioContext created but suspended. Will resume on user interaction.`,
+      );
       this.attachUnlockListeners();
     }
   }
@@ -557,51 +583,56 @@ class AudioEngine {
   async ensureReady(): Promise<boolean> {
     // Always try to initialize (it's idempotent)
     await this.initialize();
-    
+
     // If still not initialized after init attempt, try harder
     if (!this.initialized && this.context) {
       // Try resume one more time
       try {
         await this.context.resume();
-        
+
         // If running now, complete setup
-        if (this.context.state === 'running') {
+        if (this.context.state === "running") {
           this.config.sampleRate = this.context.sampleRate as SampleRate;
-          this.actualLatencyMs = calculateLatencyMs(this.config.bufferSize!, this.config.sampleRate!);
-          
+          this.actualLatencyMs = calculateLatencyMs(
+            this.config.bufferSize!,
+            this.config.sampleRate!,
+          );
+
           if (!this.masterGainNode) {
             this.createMasterChain();
           }
-          
-          if (!this.busNodes.has('master')) {
+
+          if (!this.busNodes.has("master")) {
             this.createBus({
-              id: 'master',
-              name: 'Master', 
+              id: "master",
+              name: "Master",
               gain: 0.8,
               pan: 0,
               isMuted: false,
               isSolo: false,
             });
           }
-          
+
           this.calculateLatencyCompensation();
           this.initialized = true;
           this.unlocked = true;
-          logger.info('Audio engine ready after ensureReady');
+          logger.info("Audio engine ready after ensureReady");
         }
       } catch (e) {
-        logger.warn('ensureReady resume failed:', e);
+        logger.warn("ensureReady resume failed:", e);
       }
     }
 
-    return this.initialized && this.context?.state === 'running';
+    return this.initialized && this.context?.state === "running";
   }
 
   /**
    * Check if audio is currently unlocked and ready
    */
   isReady(): boolean {
-    return this.initialized && this.unlocked && this.context?.state === 'running';
+    return (
+      this.initialized && this.unlocked && this.context?.state === "running"
+    );
   }
 
   /**
@@ -610,28 +641,38 @@ class AudioEngine {
    */
   private calculateLatencyCompensation(): void {
     if (!this.context) return;
-    
+
     let totalLatencySeconds = 0;
-    
+
     // Get base latency (time from scheduling to processing)
-    if ('baseLatency' in this.context) {
-      totalLatencySeconds += (this.context as AudioContext & { baseLatency?: number }).baseLatency || 0;
+    if ("baseLatency" in this.context) {
+      totalLatencySeconds +=
+        (this.context as AudioContext & { baseLatency?: number }).baseLatency ||
+        0;
     }
-    
+
     // Get output latency (time from processing to speakers)
-    if ('outputLatency' in this.context) {
-      totalLatencySeconds += (this.context as AudioContext & { outputLatency?: number }).outputLatency || 0;
+    if ("outputLatency" in this.context) {
+      totalLatencySeconds +=
+        (this.context as AudioContext & { outputLatency?: number })
+          .outputLatency || 0;
     }
-    
+
     // Fallback: estimate from buffer size if latency APIs not available
-    if (totalLatencySeconds === 0 && this.config.bufferSize && this.config.sampleRate) {
+    if (
+      totalLatencySeconds === 0 &&
+      this.config.bufferSize &&
+      this.config.sampleRate
+    ) {
       totalLatencySeconds = this.config.bufferSize / this.config.sampleRate;
     }
-    
+
     // Store latency in milliseconds
     this.actualLatencyMs = totalLatencySeconds * 1000;
-    
-    logger.info(`Latency compensation calculated: ${this.actualLatencyMs.toFixed(2)}ms`);
+
+    logger.info(
+      `Latency compensation calculated: ${this.actualLatencyMs.toFixed(2)}ms`,
+    );
   }
 
   /**
@@ -656,7 +697,7 @@ class AudioEngine {
     // Soft clipper (limiter) using WaveShaper
     this.masterLimiter = this.context.createWaveShaper();
     this.masterLimiter.curve = this.createSoftClipperCurve(-0.3); // -0.3 dB limit
-    this.masterLimiter.oversample = '4x';
+    this.masterLimiter.oversample = "4x";
 
     // Master analyser
     this.masterAnalyser = this.context.createAnalyser();
@@ -703,9 +744,11 @@ class AudioEngine {
     if (!this.context) {
       await this.ensureReady();
     }
-    
+
     if (!this.context) {
-      throw new Error('Cannot load audio buffer: AudioContext not available. Please interact with the page first.');
+      throw new Error(
+        "Cannot load audio buffer: AudioContext not available. Please interact with the page first.",
+      );
     }
 
     // Check cache first
@@ -729,12 +772,12 @@ class AudioEngine {
       try {
         // Normalize the URL to use proper API endpoint for audio files
         let normalizedUrl = url;
-        if (!url.startsWith('http') && !url.startsWith('/api/')) {
+        if (!url.startsWith("http") && !url.startsWith("/api/")) {
           // Handle relative paths like "uploads/..." or "/uploads/..."
-          const cleanPath = url.replace(/^\//, '');
+          const cleanPath = url.replace(/^\//, "");
           normalizedUrl = `/api/marketplace/audio/${cleanPath}`;
         }
-        
+
         const response = await fetch(normalizedUrl, {
           signal: abortController.signal,
         });
@@ -765,8 +808,8 @@ class AudioEngine {
 
         return audioBuffer;
       } catch (error: unknown) {
-        if (error instanceof Error && error.name === 'AbortError') {
-          throw new Error('Audio loading cancelled');
+        if (error instanceof Error && error.name === "AbortError") {
+          throw new Error("Audio loading cancelled");
         }
         throw error;
       } finally {
@@ -819,7 +862,10 @@ class AudioEngine {
     };
   }
 
-  private generateWaveform(audioBuffer: AudioBuffer, samples: number): number[] {
+  private generateWaveform(
+    audioBuffer: AudioBuffer,
+    samples: number,
+  ): number[] {
     const channelData = audioBuffer.getChannelData(0);
     const blockSize = Math.floor(channelData.length / samples);
     const waveform: number[] = [];
@@ -846,7 +892,7 @@ class AudioEngine {
 
     // Sort by last accessed time
     const entries = Array.from(this.bufferCache.entries()).sort(
-      (a, b) => a[1].lastAccessed - b[1].lastAccessed
+      (a, b) => a[1].lastAccessed - b[1].lastAccessed,
     );
 
     // Remove oldest entries
@@ -864,7 +910,9 @@ class AudioEngine {
    */
   createTrack(config: TrackConfig): void {
     if (!this.context || !this.initialized) {
-      logger.warn('Cannot create track: AudioContext not initialized. Track will be created when audio is ready.');
+      logger.warn(
+        "Cannot create track: AudioContext not initialized. Track will be created when audio is ready.",
+      );
       return;
     }
 
@@ -874,19 +922,19 @@ class AudioEngine {
 
     // Create 3-band EQ
     const eqLow = this.context.createBiquadFilter();
-    eqLow.type = 'lowshelf';
+    eqLow.type = "lowshelf";
     eqLow.frequency.value = 80;
     eqLow.Q.value = 0.707;
     eqLow.gain.value = 0;
 
     const eqMid = this.context.createBiquadFilter();
-    eqMid.type = 'peaking';
+    eqMid.type = "peaking";
     eqMid.frequency.value = 1000;
     eqMid.Q.value = 1.2;
     eqMid.gain.value = 0;
 
     const eqHigh = this.context.createBiquadFilter();
-    eqHigh.type = 'highshelf';
+    eqHigh.type = "highshelf";
     eqHigh.frequency.value = 8000;
     eqHigh.Q.value = 0.707;
     eqHigh.gain.value = 0;
@@ -917,12 +965,14 @@ class AudioEngine {
       } else {
         const sign = x > 0 ? 1 : -1;
         const excess = Math.abs(x) - limiterCeiling;
-        const softClip = limiterCeiling + (1 - limiterCeiling) * Math.tanh(excess / (1 - limiterCeiling));
+        const softClip =
+          limiterCeiling +
+          (1 - limiterCeiling) * Math.tanh(excess / (1 - limiterCeiling));
         limiterCurve[i] = sign * Math.min(softClip, 1);
       }
     }
     limiter.curve = limiterCurve;
-    limiter.oversample = '2x';
+    limiter.oversample = "2x";
 
     // Create modular effect insert rack (effectPre → [slots] → effectPost)
     const effectPre = this.context.createGain();
@@ -1019,17 +1069,51 @@ class AudioEngine {
       latencyCompensationDelay,
       sources: new Map(),
       effects: {
-        eq: { lowGain: 0, midGain: 0, highGain: 0, midFrequency: 1000, bypass: false },
-        compressor: { threshold: -24, ratio: 3, attack: 10, release: 200, knee: 6, bypass: false },
-        gate: { threshold: -40, attack: 1, hold: 50, release: 100, range: -80, bypass: true },
-        limiter: { threshold: -0.5, attack: 0.5, release: 100, lookahead: 5, bypass: false },
-        reverb: { mix: 0.2, decay: 2.0, preDelay: 0, irId: 'default', bypass: false },
+        eq: {
+          lowGain: 0,
+          midGain: 0,
+          highGain: 0,
+          midFrequency: 1000,
+          bypass: false,
+        },
+        compressor: {
+          threshold: -24,
+          ratio: 3,
+          attack: 10,
+          release: 200,
+          knee: 6,
+          bypass: false,
+        },
+        gate: {
+          threshold: -40,
+          attack: 1,
+          hold: 50,
+          release: 100,
+          range: -80,
+          bypass: true,
+        },
+        limiter: {
+          threshold: -0.5,
+          attack: 0.5,
+          release: 100,
+          lookahead: 5,
+          bypass: false,
+        },
+        reverb: {
+          mix: 0.2,
+          decay: 2.0,
+          preDelay: 0,
+          irId: "default",
+          bypass: false,
+        },
       },
       effectSlots: new Map(),
     });
 
     this.tracks.set(config.id, config);
-    logger.info(`[AudioEngine] Created track ${config.id} with full effect chain including insert rack`);
+    logger.info(
+      `[AudioEngine] Created track ${config.id} with full effect chain including insert rack`,
+    );
   }
 
   /**
@@ -1054,7 +1138,7 @@ class AudioEngine {
         slot.outputNode.disconnect();
         slot.dryNode.disconnect();
         slot.wetNode.disconnect();
-        slot.processingNodes.forEach(node => node.disconnect());
+        slot.processingNodes.forEach((node) => node.disconnect());
       });
 
       // Disconnect all effect nodes
@@ -1101,7 +1185,7 @@ class AudioEngine {
    */
   createBus(config: BusConfig): void {
     if (!this.context) {
-      logger.warn('Cannot create bus: AudioContext not initialized');
+      logger.warn("Cannot create bus: AudioContext not initialized");
       return;
     }
 
@@ -1143,14 +1227,14 @@ class AudioEngine {
     if (!this.context || !this.initialized) {
       await this.ensureReady();
     }
-    
+
     if (!this.context) {
-      logger.warn('Cannot play: AudioContext not available');
+      logger.warn("Cannot play: AudioContext not available");
       return;
     }
 
     // Resume context if suspended
-    if (this.context.state === 'suspended') {
+    if (this.context.state === "suspended") {
       await this.context.resume();
     }
 
@@ -1214,7 +1298,8 @@ class AudioEngine {
   pause(): void {
     if (!this.context || !this.transportState.isPlaying) return;
 
-    this.transportState.pauseTime = this.context.currentTime - this.transportState.startTime;
+    this.transportState.pauseTime =
+      this.context.currentTime - this.transportState.startTime;
     this.transportState.isPlaying = false;
 
     this.stopAllSources();
@@ -1238,17 +1323,17 @@ class AudioEngine {
    */
   async seek(time: number): Promise<void> {
     const wasPlaying = this.transportState.isPlaying;
-    
+
     // Stop current playback and reset state
     if (wasPlaying) {
       this.stopAllSources();
       this.transportState.isPlaying = false;
     }
-    
+
     // Update transport time
     this.transportState.currentTime = Math.max(0, time);
     this.transportState.pauseTime = this.transportState.currentTime;
-    
+
     // Restart if was playing
     if (wasPlaying) {
       await this.play(this.transportState.currentTime);
@@ -1280,7 +1365,11 @@ class AudioEngine {
 
     const trackNode = this.trackNodes.get(trackId);
     if (trackNode) {
-      trackNode.inputGain.gain.setTargetAtTime(gain, this.context.currentTime, 0.01);
+      trackNode.inputGain.gain.setTargetAtTime(
+        gain,
+        this.context.currentTime,
+        0.01,
+      );
     }
 
     const track = this.tracks.get(trackId);
@@ -1297,7 +1386,11 @@ class AudioEngine {
 
     const trackNode = this.trackNodes.get(trackId);
     if (trackNode) {
-      trackNode.panNode.pan.setTargetAtTime(pan, this.context.currentTime, 0.01);
+      trackNode.panNode.pan.setTargetAtTime(
+        pan,
+        this.context.currentTime,
+        0.01,
+      );
     }
 
     const track = this.tracks.get(trackId);
@@ -1321,7 +1414,11 @@ class AudioEngine {
         const trackNode = this.trackNodes.get(trackId);
         if (trackNode) {
           const targetGain = isMuted ? 0 : track.gain;
-          trackNode.inputGain.gain.setTargetAtTime(targetGain, this.context.currentTime, 0.01);
+          trackNode.inputGain.gain.setTargetAtTime(
+            targetGain,
+            this.context.currentTime,
+            0.01,
+          );
         }
       }
     }
@@ -1347,7 +1444,11 @@ class AudioEngine {
           if (trackNode) {
             const shouldPlay = !t.isMuted && (!hasSolo || t.isSolo);
             const targetGain = shouldPlay ? t.gain : 0;
-            trackNode.inputGain.gain.setTargetAtTime(targetGain, this.context.currentTime, 0.01);
+            trackNode.inputGain.gain.setTargetAtTime(
+              targetGain,
+              this.context.currentTime,
+              0.01,
+            );
           }
         }
       }
@@ -1360,7 +1461,11 @@ class AudioEngine {
   setMasterVolume(volume: number): void {
     if (!this.context || !this.masterGainNode) return;
 
-    this.masterGainNode.gain.setTargetAtTime(volume, this.context.currentTime, 0.01);
+    this.masterGainNode.gain.setTargetAtTime(
+      volume,
+      this.context.currentTime,
+      0.01,
+    );
   }
 
   /**
@@ -1397,21 +1502,27 @@ class AudioEngine {
   async loadTrack(trackId: string, clips: AudioClip[]): Promise<void> {
     // Store clips regardless of audio state
     this.trackClips.set(trackId, clips);
-    
+
     // If audio not ready, just store clips - they'll be loaded when we play
     if (!this.context || !this.initialized) {
-      logger.info(`Clips stored for track ${trackId}, will load audio when context is ready`);
+      logger.info(
+        `Clips stored for track ${trackId}, will load audio when context is ready`,
+      );
       return;
     }
 
     const trackNode = this.trackNodes.get(trackId);
     if (!trackNode) {
-      logger.warn(`Track ${trackId} not found in audio engine, clips stored but not preloaded`);
+      logger.warn(
+        `Track ${trackId} not found in audio engine, clips stored but not preloaded`,
+      );
       return;
     }
 
     // Preload buffers for all clips
-    const loadPromises = clips.map((clip) => this.loadBuffer(clip.id, clip.url));
+    const loadPromises = clips.map((clip) =>
+      this.loadBuffer(clip.id, clip.url),
+    );
     await Promise.all(loadPromises);
   }
 
@@ -1454,7 +1565,10 @@ class AudioEngine {
   /**
    * Analyze peak level from analyser node
    */
-  private analyzePeakLevel(analyser: AnalyserNode): { peak: number; rms: number } {
+  private analyzePeakLevel(analyser: AnalyserNode): {
+    peak: number;
+    rms: number;
+  } {
     const dataArray = new Uint8Array(analyser.frequencyBinCount);
     analyser.getByteTimeDomainData(dataArray);
 
@@ -1477,7 +1591,7 @@ class AudioEngine {
   /**
    * Get cached waveform data
    */
-  getWaveformData(clipId: string): BufferCacheEntry['waveformData'] | null {
+  getWaveformData(clipId: string): BufferCacheEntry["waveformData"] | null {
     const cached = this.bufferCache.get(clipId);
     return cached ? cached.waveformData : null;
   }
@@ -1541,48 +1655,92 @@ class AudioEngine {
     const timeConstant = 0.01; // 10ms smooth transition
 
     if (params.lowGain !== undefined) {
-      trackNode.eqLow.gain.setTargetAtTime(params.lowGain, currentTime, timeConstant);
+      trackNode.eqLow.gain.setTargetAtTime(
+        params.lowGain,
+        currentTime,
+        timeConstant,
+      );
       trackNode.effects.eq!.lowGain = params.lowGain;
     }
 
     if (params.midGain !== undefined) {
-      trackNode.eqMid.gain.setTargetAtTime(params.midGain, currentTime, timeConstant);
+      trackNode.eqMid.gain.setTargetAtTime(
+        params.midGain,
+        currentTime,
+        timeConstant,
+      );
       trackNode.effects.eq!.midGain = params.midGain;
     }
 
     if (params.highGain !== undefined) {
-      trackNode.eqHigh.gain.setTargetAtTime(params.highGain, currentTime, timeConstant);
+      trackNode.eqHigh.gain.setTargetAtTime(
+        params.highGain,
+        currentTime,
+        timeConstant,
+      );
       trackNode.effects.eq!.highGain = params.highGain;
     }
 
     if (params.midFrequency !== undefined) {
-      trackNode.eqMid.frequency.setTargetAtTime(params.midFrequency, currentTime, timeConstant);
+      trackNode.eqMid.frequency.setTargetAtTime(
+        params.midFrequency,
+        currentTime,
+        timeConstant,
+      );
       trackNode.effects.eq!.midFrequency = params.midFrequency;
     }
 
     if (params.bypass !== undefined) {
       trackNode.effects.eq!.bypass = params.bypass;
-      
+
       if (params.bypass) {
         // Disconnect all EQ chain connections (entry, internal, and exit)
-        try { trackNode.inputGain.disconnect(trackNode.eqLow); } catch (e) {}
-        try { trackNode.eqLow.disconnect(trackNode.eqMid); } catch (e) {}
-        try { trackNode.eqMid.disconnect(trackNode.eqHigh); } catch (e) {}
-        try { trackNode.eqHigh.disconnect(trackNode.gate); } catch (e) {}
-        try { trackNode.eqHigh.disconnect(trackNode.gateAnalyser); } catch (e) {}
+        try {
+          trackNode.inputGain.disconnect(trackNode.eqLow);
+        } catch (e) {}
+        try {
+          trackNode.eqLow.disconnect(trackNode.eqMid);
+        } catch (e) {}
+        try {
+          trackNode.eqMid.disconnect(trackNode.eqHigh);
+        } catch (e) {}
+        try {
+          trackNode.eqHigh.disconnect(trackNode.gate);
+        } catch (e) {}
+        try {
+          trackNode.eqHigh.disconnect(trackNode.gateAnalyser);
+        } catch (e) {}
         // Connect bypass path: inputGain directly to gate
-        try { trackNode.inputGain.connect(trackNode.gate); } catch (e) {}
-        try { trackNode.inputGain.connect(trackNode.gateAnalyser); } catch (e) {}
+        try {
+          trackNode.inputGain.connect(trackNode.gate);
+        } catch (e) {}
+        try {
+          trackNode.inputGain.connect(trackNode.gateAnalyser);
+        } catch (e) {}
       } else {
         // Disconnect bypass path first
-        try { trackNode.inputGain.disconnect(trackNode.gate); } catch (e) {}
-        try { trackNode.inputGain.disconnect(trackNode.gateAnalyser); } catch (e) {}
+        try {
+          trackNode.inputGain.disconnect(trackNode.gate);
+        } catch (e) {}
+        try {
+          trackNode.inputGain.disconnect(trackNode.gateAnalyser);
+        } catch (e) {}
         // Reconnect full EQ chain: inputGain → eqLow → eqMid → eqHigh → gate
-        try { trackNode.inputGain.connect(trackNode.eqLow); } catch (e) {}
-        try { trackNode.eqLow.connect(trackNode.eqMid); } catch (e) {}
-        try { trackNode.eqMid.connect(trackNode.eqHigh); } catch (e) {}
-        try { trackNode.eqHigh.connect(trackNode.gate); } catch (e) {}
-        try { trackNode.eqHigh.connect(trackNode.gateAnalyser); } catch (e) {}
+        try {
+          trackNode.inputGain.connect(trackNode.eqLow);
+        } catch (e) {}
+        try {
+          trackNode.eqLow.connect(trackNode.eqMid);
+        } catch (e) {}
+        try {
+          trackNode.eqMid.connect(trackNode.eqHigh);
+        } catch (e) {}
+        try {
+          trackNode.eqHigh.connect(trackNode.gate);
+        } catch (e) {}
+        try {
+          trackNode.eqHigh.connect(trackNode.gateAnalyser);
+        } catch (e) {}
       }
     }
   }
@@ -1590,7 +1748,10 @@ class AudioEngine {
   /**
    * Update track compressor parameters with smooth automation
    */
-  updateTrackCompressor(trackId: string, params: Partial<TrackCompressorParams>): void {
+  updateTrackCompressor(
+    trackId: string,
+    params: Partial<TrackCompressorParams>,
+  ): void {
     if (!this.context) return;
 
     const trackNode = this.trackNodes.get(trackId);
@@ -1600,17 +1761,29 @@ class AudioEngine {
     const timeConstant = 0.01; // 10ms smooth transition
 
     if (params.threshold !== undefined) {
-      trackNode.compressor.threshold.setTargetAtTime(params.threshold, currentTime, timeConstant);
+      trackNode.compressor.threshold.setTargetAtTime(
+        params.threshold,
+        currentTime,
+        timeConstant,
+      );
       trackNode.effects.compressor!.threshold = params.threshold;
     }
 
     if (params.ratio !== undefined) {
-      trackNode.compressor.ratio.setTargetAtTime(params.ratio, currentTime, timeConstant);
+      trackNode.compressor.ratio.setTargetAtTime(
+        params.ratio,
+        currentTime,
+        timeConstant,
+      );
       trackNode.effects.compressor!.ratio = params.ratio;
     }
 
     if (params.attack !== undefined) {
-      trackNode.compressor.attack.setTargetAtTime(params.attack / 1000, currentTime, timeConstant); // Convert ms to seconds
+      trackNode.compressor.attack.setTargetAtTime(
+        params.attack / 1000,
+        currentTime,
+        timeConstant,
+      ); // Convert ms to seconds
       trackNode.effects.compressor!.attack = params.attack;
     }
 
@@ -1618,34 +1791,54 @@ class AudioEngine {
       trackNode.compressor.release.setTargetAtTime(
         params.release / 1000,
         currentTime,
-        timeConstant
+        timeConstant,
       ); // Convert ms to seconds
       trackNode.effects.compressor!.release = params.release;
     }
 
     if (params.knee !== undefined) {
-      trackNode.compressor.knee.setTargetAtTime(params.knee, currentTime, timeConstant);
+      trackNode.compressor.knee.setTargetAtTime(
+        params.knee,
+        currentTime,
+        timeConstant,
+      );
       trackNode.effects.compressor!.knee = params.knee;
     }
 
     if (params.bypass !== undefined) {
       trackNode.effects.compressor!.bypass = params.bypass;
-      
+
       if (params.bypass) {
         // Disconnect full chain: gate→compressor and compressor→limiter
-        try { trackNode.gate.disconnect(trackNode.compressor); } catch (e) {}
-        try { trackNode.compressor.disconnect(trackNode.limiter); } catch (e) {}
+        try {
+          trackNode.gate.disconnect(trackNode.compressor);
+        } catch (e) {}
+        try {
+          trackNode.compressor.disconnect(trackNode.limiter);
+        } catch (e) {}
         // Connect bypass path: gate directly to limiter
-        try { trackNode.gate.connect(trackNode.limiter); } catch (e) {}
+        try {
+          trackNode.gate.connect(trackNode.limiter);
+        } catch (e) {}
       } else {
         // Disconnect bypass path first
-        try { trackNode.gate.disconnect(trackNode.limiter); } catch (e) {}
+        try {
+          trackNode.gate.disconnect(trackNode.limiter);
+        } catch (e) {}
         // Disconnect any existing connections to prevent duplicates
-        try { trackNode.gate.disconnect(trackNode.compressor); } catch (e) {}
-        try { trackNode.compressor.disconnect(trackNode.limiter); } catch (e) {}
+        try {
+          trackNode.gate.disconnect(trackNode.compressor);
+        } catch (e) {}
+        try {
+          trackNode.compressor.disconnect(trackNode.limiter);
+        } catch (e) {}
         // Reconnect full chain: gate→compressor→limiter
-        try { trackNode.gate.connect(trackNode.compressor); } catch (e) {}
-        try { trackNode.compressor.connect(trackNode.limiter); } catch (e) {}
+        try {
+          trackNode.gate.connect(trackNode.compressor);
+        } catch (e) {}
+        try {
+          trackNode.compressor.connect(trackNode.limiter);
+        } catch (e) {}
       }
     }
   }
@@ -1653,7 +1846,10 @@ class AudioEngine {
   /**
    * Update track reverb parameters
    */
-  async updateTrackReverb(trackId: string, params: Partial<TrackReverbParams>): Promise<void> {
+  async updateTrackReverb(
+    trackId: string,
+    params: Partial<TrackReverbParams>,
+  ): Promise<void> {
     if (!this.context) return;
 
     const trackNode = this.trackNodes.get(trackId);
@@ -1663,7 +1859,11 @@ class AudioEngine {
     const timeConstant = 0.01; // 10ms smooth transition
 
     if (params.mix !== undefined) {
-      trackNode.reverbSend.gain.setTargetAtTime(params.mix, currentTime, timeConstant);
+      trackNode.reverbSend.gain.setTargetAtTime(
+        params.mix,
+        currentTime,
+        timeConstant,
+      );
       trackNode.effects.reverb!.mix = params.mix;
     }
 
@@ -1671,7 +1871,7 @@ class AudioEngine {
       trackNode.reverbDelayNode.delayTime.setTargetAtTime(
         params.preDelay / 1000,
         currentTime,
-        timeConstant
+        timeConstant,
       ); // Convert ms to seconds
       trackNode.effects.reverb!.preDelay = params.preDelay;
     }
@@ -1680,12 +1880,18 @@ class AudioEngine {
       trackNode.effects.reverb!.decay = params.decay;
       // Regenerate IR with new decay
       if (trackNode.reverbConvolver) {
-        const newIR = this.generateImpulseResponse(params.decay, params.decay * 0.5);
+        const newIR = this.generateImpulseResponse(
+          params.decay,
+          params.decay * 0.5,
+        );
         trackNode.reverbConvolver.buffer = newIR;
       }
     }
 
-    if (params.irId !== undefined && params.irId !== trackNode.effects.reverb!.irId) {
+    if (
+      params.irId !== undefined &&
+      params.irId !== trackNode.effects.reverb!.irId
+    ) {
       trackNode.effects.reverb!.irId = params.irId;
       try {
         const irBuffer = await this.loadImpulseResponse(params.irId);
@@ -1700,102 +1906,176 @@ class AudioEngine {
         }
         trackNode.reverbConvolver.buffer = irBuffer;
       } catch (error: unknown) {
-        logger.error('Failed to load impulse response:', error);
+        logger.error("Failed to load impulse response:", error);
       }
     }
 
     if (params.bypass !== undefined) {
       trackNode.effects.reverb!.bypass = params.bypass;
-      
+
       if (params.bypass) {
         // Disconnect reverb wet path but maintain dry path (analyser→panNode is always connected)
-        try { trackNode.analyser.disconnect(trackNode.reverbSend); } catch (e) {}
-        try { trackNode.reverbSend.disconnect(trackNode.reverbDelayNode); } catch (e) {}
+        try {
+          trackNode.analyser.disconnect(trackNode.reverbSend);
+        } catch (e) {}
+        try {
+          trackNode.reverbSend.disconnect(trackNode.reverbDelayNode);
+        } catch (e) {}
         if (trackNode.reverbConvolver) {
-          try { trackNode.reverbDelayNode.disconnect(trackNode.reverbConvolver); } catch (e) {}
-          try { trackNode.reverbConvolver.disconnect(trackNode.reverbWetGain); } catch (e) {}
+          try {
+            trackNode.reverbDelayNode.disconnect(trackNode.reverbConvolver);
+          } catch (e) {}
+          try {
+            trackNode.reverbConvolver.disconnect(trackNode.reverbWetGain);
+          } catch (e) {}
         }
-        try { trackNode.reverbWetGain.disconnect(trackNode.panNode); } catch (e) {}
+        try {
+          trackNode.reverbWetGain.disconnect(trackNode.panNode);
+        } catch (e) {}
         // Ensure dry path remains connected (analyser→panNode should already be connected from track creation)
-        try { trackNode.analyser.connect(trackNode.panNode); } catch (e) {}
+        try {
+          trackNode.analyser.connect(trackNode.panNode);
+        } catch (e) {}
       } else {
         // Reconnect full reverb wet path
         // First disconnect any existing connections to prevent duplicates
-        try { trackNode.analyser.disconnect(trackNode.reverbSend); } catch (e) {}
-        try { trackNode.reverbSend.disconnect(trackNode.reverbDelayNode); } catch (e) {}
+        try {
+          trackNode.analyser.disconnect(trackNode.reverbSend);
+        } catch (e) {}
+        try {
+          trackNode.reverbSend.disconnect(trackNode.reverbDelayNode);
+        } catch (e) {}
         if (trackNode.reverbConvolver) {
-          try { trackNode.reverbDelayNode.disconnect(trackNode.reverbConvolver); } catch (e) {}
-          try { trackNode.reverbConvolver.disconnect(trackNode.reverbWetGain); } catch (e) {}
+          try {
+            trackNode.reverbDelayNode.disconnect(trackNode.reverbConvolver);
+          } catch (e) {}
+          try {
+            trackNode.reverbConvolver.disconnect(trackNode.reverbWetGain);
+          } catch (e) {}
         }
-        try { trackNode.reverbWetGain.disconnect(trackNode.panNode); } catch (e) {}
+        try {
+          trackNode.reverbWetGain.disconnect(trackNode.panNode);
+        } catch (e) {}
         // Connect full reverb chain: analyser→reverbSend→delayNode→convolver→wetGain→panNode
-        try { trackNode.analyser.connect(trackNode.reverbSend); } catch (e) {}
-        try { trackNode.reverbSend.connect(trackNode.reverbDelayNode); } catch (e) {}
+        try {
+          trackNode.analyser.connect(trackNode.reverbSend);
+        } catch (e) {}
+        try {
+          trackNode.reverbSend.connect(trackNode.reverbDelayNode);
+        } catch (e) {}
         if (trackNode.reverbConvolver) {
-          try { trackNode.reverbDelayNode.connect(trackNode.reverbConvolver); } catch (e) {}
-          try { trackNode.reverbConvolver.connect(trackNode.reverbWetGain); } catch (e) {}
+          try {
+            trackNode.reverbDelayNode.connect(trackNode.reverbConvolver);
+          } catch (e) {}
+          try {
+            trackNode.reverbConvolver.connect(trackNode.reverbWetGain);
+          } catch (e) {}
         }
-        try { trackNode.reverbWetGain.connect(trackNode.panNode); } catch (e) {}
+        try {
+          trackNode.reverbWetGain.connect(trackNode.panNode);
+        } catch (e) {}
         // Ensure dry path also remains connected
-        try { trackNode.analyser.connect(trackNode.panNode); } catch (e) {}
+        try {
+          trackNode.analyser.connect(trackNode.panNode);
+        } catch (e) {}
       }
     }
   }
 
-  private delayEffects = new Map<string, {
-    delayNode: DelayNode;
-    feedbackGain: GainNode;
-    wetGain: GainNode;
-    dryGain: GainNode;
-    params: { time: number; feedback: number; mix: number; bypass: boolean };
-  }>();
+  private delayEffects = new Map<
+    string,
+    {
+      delayNode: DelayNode;
+      feedbackGain: GainNode;
+      wetGain: GainNode;
+      dryGain: GainNode;
+      params: { time: number; feedback: number; mix: number; bypass: boolean };
+    }
+  >();
 
-  private distortionEffects = new Map<string, {
-    waveshaper: WaveShaperNode;
-    toneFilter: BiquadFilterNode;
-    wetGain: GainNode;
-    dryGain: GainNode;
-    params: { drive: number; tone: number; mix: number; bypass: boolean };
-  }>();
+  private distortionEffects = new Map<
+    string,
+    {
+      waveshaper: WaveShaperNode;
+      toneFilter: BiquadFilterNode;
+      wetGain: GainNode;
+      dryGain: GainNode;
+      params: { drive: number; tone: number; mix: number; bypass: boolean };
+    }
+  >();
 
-  private chorusEffects = new Map<string, {
-    delayNode: DelayNode;
-    lfo: OscillatorNode;
-    lfoGain: GainNode;
-    wetGain: GainNode;
-    dryGain: GainNode;
-    params: { rate: number; depth: number; mix: number; bypass: boolean };
-  }>();
+  private chorusEffects = new Map<
+    string,
+    {
+      delayNode: DelayNode;
+      lfo: OscillatorNode;
+      lfoGain: GainNode;
+      wetGain: GainNode;
+      dryGain: GainNode;
+      params: { rate: number; depth: number; mix: number; bypass: boolean };
+    }
+  >();
 
-  private flangerEffects = new Map<string, {
-    delayNode: DelayNode;
-    lfo: OscillatorNode;
-    lfoGain: GainNode;
-    feedbackGain: GainNode;
-    wetGain: GainNode;
-    dryGain: GainNode;
-    params: { rate: number; depth: number; feedback: number; mix: number; bypass: boolean };
-  }>();
+  private flangerEffects = new Map<
+    string,
+    {
+      delayNode: DelayNode;
+      lfo: OscillatorNode;
+      lfoGain: GainNode;
+      feedbackGain: GainNode;
+      wetGain: GainNode;
+      dryGain: GainNode;
+      params: {
+        rate: number;
+        depth: number;
+        feedback: number;
+        mix: number;
+        bypass: boolean;
+      };
+    }
+  >();
 
-  private phaserEffects = new Map<string, {
-    allpassFilters: BiquadFilterNode[];
-    lfo: OscillatorNode;
-    lfoGain: GainNode;
-    feedbackGain: GainNode;
-    wetGain: GainNode;
-    dryGain: GainNode;
-    params: { rate: number; depth: number; stages: number; feedback: number; mix: number; bypass: boolean };
-  }>();
+  private phaserEffects = new Map<
+    string,
+    {
+      allpassFilters: BiquadFilterNode[];
+      lfo: OscillatorNode;
+      lfoGain: GainNode;
+      feedbackGain: GainNode;
+      wetGain: GainNode;
+      dryGain: GainNode;
+      params: {
+        rate: number;
+        depth: number;
+        stages: number;
+        feedback: number;
+        mix: number;
+        bypass: boolean;
+      };
+    }
+  >();
 
-  private gateEffects = new Map<string, {
-    gateGain: GainNode;
-    params: { threshold: number; attack: number; release: number; range: number; bypass: boolean };
-  }>();
+  private gateEffects = new Map<
+    string,
+    {
+      gateGain: GainNode;
+      params: {
+        threshold: number;
+        attack: number;
+        release: number;
+        range: number;
+        bypass: boolean;
+      };
+    }
+  >();
 
-  private limiterEffects = new Map<string, {
-    waveshaper: WaveShaperNode;
-    params: { ceiling: number; release: number; bypass: boolean };
-  }>();
+  private limiterEffects = new Map<
+    string,
+    {
+      waveshaper: WaveShaperNode;
+      params: { ceiling: number; release: number; bypass: boolean };
+    }
+  >();
 
   // ===== SLOT MANAGER: Modular Effect Insert Rack =====
 
@@ -1803,14 +2083,20 @@ class AudioEngine {
    * Add an effect slot to the track's insert rack
    * Creates a proper insert with dry/wet blend and bypass capability
    */
-  addEffectSlot(trackId: string, slotId: string, effectType: EffectSlot['type']): EffectSlot | null {
+  addEffectSlot(
+    trackId: string,
+    slotId: string,
+    effectType: EffectSlot["type"],
+  ): EffectSlot | null {
     if (!this.context) return null;
     const trackNode = this.trackNodes.get(trackId);
     if (!trackNode) return null;
 
     // Check if slot already exists
     if (trackNode.effectSlots.has(slotId)) {
-      logger.warn(`[AudioEngine] Effect slot ${slotId} already exists on track ${trackId}`);
+      logger.warn(
+        `[AudioEngine] Effect slot ${slotId} already exists on track ${trackId}`,
+      );
       return trackNode.effectSlots.get(slotId) || null;
     }
 
@@ -1849,26 +2135,31 @@ class AudioEngine {
     // Rewire the insert rack
     this.rewireInsertRack(trackId);
 
-    logger.info(`[AudioEngine] Added ${effectType} effect slot ${slotId} to track ${trackId}`);
+    logger.info(
+      `[AudioEngine] Added ${effectType} effect slot ${slotId} to track ${trackId}`,
+    );
     return slot;
   }
 
   /**
    * Create the DSP processing chain for a specific effect type
    */
-  private createEffectProcessingChain(slot: EffectSlot, effectType: EffectSlot['type']): void {
+  private createEffectProcessingChain(
+    slot: EffectSlot,
+    effectType: EffectSlot["type"],
+  ): void {
     if (!this.context) return;
 
     // Clear existing nodes
     slot.processingNodes = [];
 
     switch (effectType) {
-      case 'delay': {
+      case "delay": {
         const delayNode = this.context.createDelay(2.0);
         const feedbackGain = this.context.createGain();
         delayNode.delayTime.value = 0.25;
         feedbackGain.gain.value = 0.4;
-        
+
         // Connect processing chain
         slot.inputNode.connect(delayNode);
         delayNode.connect(feedbackGain);
@@ -1882,10 +2173,10 @@ class AudioEngine {
         slot.params = { time: 250, feedback: 40, mix: 50, bypass: false };
         break;
       }
-      case 'distortion': {
+      case "distortion": {
         const waveshaper = this.context.createWaveShaper();
         const toneFilter = this.context.createBiquadFilter();
-        toneFilter.type = 'lowpass';
+        toneFilter.type = "lowpass";
         toneFilter.frequency.value = 8000;
 
         // Create distortion curve
@@ -1910,12 +2201,12 @@ class AudioEngine {
         slot.params = { drive: 50, tone: 50, mix: 50, bypass: false };
         break;
       }
-      case 'chorus': {
+      case "chorus": {
         const delayNode = this.context.createDelay(0.05);
         const lfo = this.context.createOscillator();
         const lfoGain = this.context.createGain();
-        
-        lfo.type = 'sine';
+
+        lfo.type = "sine";
         lfo.frequency.value = 1;
         lfoGain.gain.value = 0.003;
         delayNode.delayTime.value = 0.025;
@@ -1934,13 +2225,13 @@ class AudioEngine {
         slot.params = { rate: 1, depth: 50, mix: 50, bypass: false };
         break;
       }
-      case 'flanger': {
+      case "flanger": {
         const delayNode = this.context.createDelay(0.02);
         const lfo = this.context.createOscillator();
         const lfoGain = this.context.createGain();
         const feedbackGain = this.context.createGain();
 
-        lfo.type = 'sine';
+        lfo.type = "sine";
         lfo.frequency.value = 0.3;
         lfoGain.gain.value = 0.002;
         delayNode.delayTime.value = 0.005;
@@ -1959,14 +2250,20 @@ class AudioEngine {
         slot.wetNode.connect(slot.outputNode);
 
         slot.processingNodes = [delayNode, lfo, lfoGain, feedbackGain];
-        slot.params = { rate: 0.3, depth: 60, feedback: 50, mix: 50, bypass: false };
+        slot.params = {
+          rate: 0.3,
+          depth: 60,
+          feedback: 50,
+          mix: 50,
+          bypass: false,
+        };
         break;
       }
-      case 'phaser': {
+      case "phaser": {
         const allpassFilters: BiquadFilterNode[] = [];
         for (let i = 0; i < 6; i++) {
           const filter = this.context.createBiquadFilter();
-          filter.type = 'allpass';
+          filter.type = "allpass";
           filter.frequency.value = 1000 + i * 500;
           filter.Q.value = 0.5;
           allpassFilters.push(filter);
@@ -1980,13 +2277,13 @@ class AudioEngine {
         const lfoGain = this.context.createGain();
         const feedbackGain = this.context.createGain();
 
-        lfo.type = 'sine';
+        lfo.type = "sine";
         lfo.frequency.value = 0.5;
         lfoGain.gain.value = 500;
         feedbackGain.gain.value = 0.4;
 
         lfo.connect(lfoGain);
-        allpassFilters.forEach(filter => lfoGain.connect(filter.frequency));
+        allpassFilters.forEach((filter) => lfoGain.connect(filter.frequency));
         lfo.start();
 
         slot.inputNode.connect(allpassFilters[0]);
@@ -1998,7 +2295,14 @@ class AudioEngine {
         slot.wetNode.connect(slot.outputNode);
 
         slot.processingNodes = [...allpassFilters, lfo, lfoGain, feedbackGain];
-        slot.params = { rate: 0.5, depth: 60, stages: 6, feedback: 50, mix: 50, bypass: false };
+        slot.params = {
+          rate: 0.5,
+          depth: 60,
+          stages: 6,
+          feedback: 50,
+          mix: 50,
+          bypass: false,
+        };
         break;
       }
     }
@@ -2032,33 +2336,39 @@ class AudioEngine {
 
     // Get all enabled slots sorted by order (includes bypassed ones)
     const allEnabledSlots = Array.from(trackNode.effectSlots.values())
-      .filter(slot => slot.enabled)
+      .filter((slot) => slot.enabled)
       .sort((a, b) => a.order - b.order);
 
     if (allEnabledSlots.length === 0) {
       // No slots, connect effectPre directly to effectPost (bypass)
       trackNode.effectPre.connect(trackNode.effectPost);
-      logger.info(`[AudioEngine] Insert rack for track ${trackId}: bypass (no slots)`);
+      logger.info(
+        `[AudioEngine] Insert rack for track ${trackId}: bypass (no slots)`,
+      );
       return;
     }
 
     // Chain all enabled slots: effectPre → slot1 → slot2 → ... → effectPost
     trackNode.effectPre.connect(allEnabledSlots[0].inputNode);
-    
+
     for (let i = 0; i < allEnabledSlots.length - 1; i++) {
       allEnabledSlots[i].outputNode.connect(allEnabledSlots[i + 1].inputNode);
     }
-    
-    allEnabledSlots[allEnabledSlots.length - 1].outputNode.connect(trackNode.effectPost);
+
+    allEnabledSlots[allEnabledSlots.length - 1].outputNode.connect(
+      trackNode.effectPost,
+    );
 
     // Configure each slot's bypass state using gain control (keeps internal routing)
-    allEnabledSlots.forEach(slot => {
+    allEnabledSlots.forEach((slot) => {
       this.configureSlotBypassGains(slot);
     });
 
-    const activeCount = allEnabledSlots.filter(s => !s.bypass).length;
-    const bypassedCount = allEnabledSlots.filter(s => s.bypass).length;
-    logger.info(`[AudioEngine] Insert rack for track ${trackId}: ${activeCount} active, ${bypassedCount} bypassed`);
+    const activeCount = allEnabledSlots.filter((s) => !s.bypass).length;
+    const bypassedCount = allEnabledSlots.filter((s) => s.bypass).length;
+    logger.info(
+      `[AudioEngine] Insert rack for track ${trackId}: ${activeCount} active, ${bypassedCount} bypassed`,
+    );
   }
 
   /**
@@ -2097,10 +2407,10 @@ class AudioEngine {
     slot.outputNode.disconnect();
     slot.dryNode.disconnect();
     slot.wetNode.disconnect();
-    slot.processingNodes.forEach(node => {
+    slot.processingNodes.forEach((node) => {
       try {
         node.disconnect();
-        if ('stop' in node && typeof node.stop === 'function') {
+        if ("stop" in node && typeof node.stop === "function") {
           (node as OscillatorNode).stop();
         }
       } catch (e) {
@@ -2114,14 +2424,20 @@ class AudioEngine {
     // Rewire the insert rack
     this.rewireInsertRack(trackId);
 
-    logger.info(`[AudioEngine] Removed effect slot ${slotId} from track ${trackId}`);
+    logger.info(
+      `[AudioEngine] Removed effect slot ${slotId} from track ${trackId}`,
+    );
     return true;
   }
 
   /**
    * Update effect slot parameters with type-safe node access
    */
-  updateEffectSlot(trackId: string, slotId: string, params: Record<string, number | boolean>): void {
+  updateEffectSlot(
+    trackId: string,
+    slotId: string,
+    params: Record<string, number | boolean>,
+  ): void {
     if (!this.context) return;
     const trackNode = this.trackNodes.get(trackId);
     if (!trackNode) return;
@@ -2159,24 +2475,34 @@ class AudioEngine {
     // Update effect-specific parameters with validation
     const nodes = slot.processingNodes;
     if (!nodes || nodes.length === 0) {
-      logger.warn(`[AudioEngine] No processing nodes for slot ${slotId} on track ${trackId}`);
+      logger.warn(
+        `[AudioEngine] No processing nodes for slot ${slotId} on track ${trackId}`,
+      );
       return;
     }
 
     switch (slot.type) {
-      case 'delay': {
+      case "delay": {
         if (nodes.length < 2) break;
         const delayNode = nodes[0] as DelayNode;
         const feedbackGain = nodes[1] as GainNode;
         if (params.time !== undefined && delayNode.delayTime) {
-          delayNode.delayTime.setTargetAtTime((params.time as number) / 1000, currentTime, timeConstant);
+          delayNode.delayTime.setTargetAtTime(
+            (params.time as number) / 1000,
+            currentTime,
+            timeConstant,
+          );
         }
         if (params.feedback !== undefined && feedbackGain.gain) {
-          feedbackGain.gain.setTargetAtTime((params.feedback as number) / 100, currentTime, timeConstant);
+          feedbackGain.gain.setTargetAtTime(
+            (params.feedback as number) / 100,
+            currentTime,
+            timeConstant,
+          );
         }
         break;
       }
-      case 'distortion': {
+      case "distortion": {
         if (nodes.length < 2) break;
         const waveshaper = nodes[0] as WaveShaperNode;
         const toneFilter = nodes[1] as BiquadFilterNode;
@@ -2193,16 +2519,24 @@ class AudioEngine {
         }
         if (params.tone !== undefined && toneFilter.frequency) {
           const frequency = 500 + ((params.tone as number) / 100) * 15500;
-          toneFilter.frequency.setTargetAtTime(frequency, currentTime, timeConstant);
+          toneFilter.frequency.setTargetAtTime(
+            frequency,
+            currentTime,
+            timeConstant,
+          );
         }
         break;
       }
-      case 'chorus': {
+      case "chorus": {
         if (nodes.length < 3) break;
         const lfo = nodes[1] as OscillatorNode;
         const lfoGain = nodes[2] as GainNode;
         if (params.rate !== undefined && lfo.frequency) {
-          lfo.frequency.setTargetAtTime(params.rate as number, currentTime, timeConstant);
+          lfo.frequency.setTargetAtTime(
+            params.rate as number,
+            currentTime,
+            timeConstant,
+          );
         }
         if (params.depth !== undefined && lfoGain.gain) {
           const depthValue = ((params.depth as number) / 100) * 0.01;
@@ -2210,44 +2544,63 @@ class AudioEngine {
         }
         break;
       }
-      case 'flanger': {
+      case "flanger": {
         if (nodes.length < 4) break;
         const lfo = nodes[1] as OscillatorNode;
         const lfoGain = nodes[2] as GainNode;
         const feedbackGain = nodes[3] as GainNode;
         if (params.rate !== undefined && lfo.frequency) {
-          lfo.frequency.setTargetAtTime(params.rate as number, currentTime, timeConstant);
+          lfo.frequency.setTargetAtTime(
+            params.rate as number,
+            currentTime,
+            timeConstant,
+          );
         }
         if (params.depth !== undefined && lfoGain.gain) {
           const depthValue = ((params.depth as number) / 100) * 0.007;
           lfoGain.gain.setTargetAtTime(depthValue, currentTime, timeConstant);
         }
         if (params.feedback !== undefined && feedbackGain.gain) {
-          feedbackGain.gain.setTargetAtTime((params.feedback as number) / 100 * 0.9, currentTime, timeConstant);
+          feedbackGain.gain.setTargetAtTime(
+            ((params.feedback as number) / 100) * 0.9,
+            currentTime,
+            timeConstant,
+          );
         }
         break;
       }
-      case 'phaser': {
+      case "phaser": {
         // Phaser has: [allpassFilters..., lfo, lfoGain, feedbackGain]
         if (nodes.length < 3) break;
         const lfo = nodes[nodes.length - 3] as OscillatorNode;
         const lfoGain = nodes[nodes.length - 2] as GainNode;
         const feedbackGain = nodes[nodes.length - 1] as GainNode;
         if (params.rate !== undefined && lfo.frequency) {
-          lfo.frequency.setTargetAtTime(params.rate as number, currentTime, timeConstant);
+          lfo.frequency.setTargetAtTime(
+            params.rate as number,
+            currentTime,
+            timeConstant,
+          );
         }
         if (params.depth !== undefined && lfoGain.gain) {
           const depthValue = ((params.depth as number) / 100) * 1000;
           lfoGain.gain.setTargetAtTime(depthValue, currentTime, timeConstant);
         }
         if (params.feedback !== undefined && feedbackGain.gain) {
-          feedbackGain.gain.setTargetAtTime((params.feedback as number) / 100 * 0.8, currentTime, timeConstant);
+          feedbackGain.gain.setTargetAtTime(
+            ((params.feedback as number) / 100) * 0.8,
+            currentTime,
+            timeConstant,
+          );
         }
         break;
       }
     }
 
-    logger.info(`[AudioEngine] Updated effect slot ${slotId} on track ${trackId}:`, params);
+    logger.info(
+      `[AudioEngine] Updated effect slot ${slotId} on track ${trackId}:`,
+      params,
+    );
   }
 
   /**
@@ -2266,7 +2619,15 @@ class AudioEngine {
    * Uses the modular insert rack for proper signal flow
    * Creates slot if needed, then updates parameters
    */
-  updateTrackDelay(trackId: string, params: { time?: number; feedback?: number; mix?: number; bypass?: boolean }): void {
+  updateTrackDelay(
+    trackId: string,
+    params: {
+      time?: number;
+      feedback?: number;
+      mix?: number;
+      bypass?: boolean;
+    },
+  ): void {
     if (!this.context) return;
     const trackNode = this.trackNodes.get(trackId);
     if (!trackNode) return;
@@ -2275,15 +2636,21 @@ class AudioEngine {
     let slot = trackNode.effectSlots.get(slotId);
 
     if (!slot) {
-      slot = this.addEffectSlot(trackId, slotId, 'delay');
+      slot = this.addEffectSlot(trackId, slotId, "delay");
       if (!slot) {
-        logger.error(`[AudioEngine] Failed to create delay slot for track ${trackId}`);
+        logger.error(
+          `[AudioEngine] Failed to create delay slot for track ${trackId}`,
+        );
         return;
       }
     }
 
     // Update slot parameters
-    this.updateEffectSlot(trackId, slotId, params as Record<string, number | boolean>);
+    this.updateEffectSlot(
+      trackId,
+      slotId,
+      params as Record<string, number | boolean>,
+    );
     logger.info(`[AudioEngine] Updated delay for track ${trackId}:`, params);
   }
 
@@ -2291,7 +2658,10 @@ class AudioEngine {
    * Update distortion effect parameters for a track
    * Uses the modular insert rack for proper signal flow
    */
-  updateTrackDistortion(trackId: string, params: { drive?: number; tone?: number; mix?: number; bypass?: boolean }): void {
+  updateTrackDistortion(
+    trackId: string,
+    params: { drive?: number; tone?: number; mix?: number; bypass?: boolean },
+  ): void {
     if (!this.context) return;
     const trackNode = this.trackNodes.get(trackId);
     if (!trackNode) return;
@@ -2300,23 +2670,35 @@ class AudioEngine {
     let slot = trackNode.effectSlots.get(slotId);
 
     if (!slot) {
-      slot = this.addEffectSlot(trackId, slotId, 'distortion');
+      slot = this.addEffectSlot(trackId, slotId, "distortion");
       if (!slot) {
-        logger.error(`[AudioEngine] Failed to create distortion slot for track ${trackId}`);
+        logger.error(
+          `[AudioEngine] Failed to create distortion slot for track ${trackId}`,
+        );
         return;
       }
     }
 
     // Update slot parameters
-    this.updateEffectSlot(trackId, slotId, params as Record<string, number | boolean>);
-    logger.info(`[AudioEngine] Updated distortion for track ${trackId}:`, params);
+    this.updateEffectSlot(
+      trackId,
+      slotId,
+      params as Record<string, number | boolean>,
+    );
+    logger.info(
+      `[AudioEngine] Updated distortion for track ${trackId}:`,
+      params,
+    );
   }
 
   /**
    * Update chorus effect parameters for a track
    * Uses the modular insert rack for proper signal flow
    */
-  updateTrackChorus(trackId: string, params: { rate?: number; depth?: number; mix?: number; bypass?: boolean }): void {
+  updateTrackChorus(
+    trackId: string,
+    params: { rate?: number; depth?: number; mix?: number; bypass?: boolean },
+  ): void {
     if (!this.context) return;
     const trackNode = this.trackNodes.get(trackId);
     if (!trackNode) return;
@@ -2325,15 +2707,21 @@ class AudioEngine {
     let slot = trackNode.effectSlots.get(slotId);
 
     if (!slot) {
-      slot = this.addEffectSlot(trackId, slotId, 'chorus');
+      slot = this.addEffectSlot(trackId, slotId, "chorus");
       if (!slot) {
-        logger.error(`[AudioEngine] Failed to create chorus slot for track ${trackId}`);
+        logger.error(
+          `[AudioEngine] Failed to create chorus slot for track ${trackId}`,
+        );
         return;
       }
     }
 
     // Update slot parameters
-    this.updateEffectSlot(trackId, slotId, params as Record<string, number | boolean>);
+    this.updateEffectSlot(
+      trackId,
+      slotId,
+      params as Record<string, number | boolean>,
+    );
     logger.info(`[AudioEngine] Updated chorus for track ${trackId}:`, params);
   }
 
@@ -2341,7 +2729,16 @@ class AudioEngine {
    * Update flanger effect parameters for a track
    * Uses the modular insert rack for proper signal flow
    */
-  updateTrackFlanger(trackId: string, params: { rate?: number; depth?: number; feedback?: number; mix?: number; bypass?: boolean }): void {
+  updateTrackFlanger(
+    trackId: string,
+    params: {
+      rate?: number;
+      depth?: number;
+      feedback?: number;
+      mix?: number;
+      bypass?: boolean;
+    },
+  ): void {
     if (!this.context) return;
     const trackNode = this.trackNodes.get(trackId);
     if (!trackNode) return;
@@ -2350,15 +2747,21 @@ class AudioEngine {
     let slot = trackNode.effectSlots.get(slotId);
 
     if (!slot) {
-      slot = this.addEffectSlot(trackId, slotId, 'flanger');
+      slot = this.addEffectSlot(trackId, slotId, "flanger");
       if (!slot) {
-        logger.error(`[AudioEngine] Failed to create flanger slot for track ${trackId}`);
+        logger.error(
+          `[AudioEngine] Failed to create flanger slot for track ${trackId}`,
+        );
         return;
       }
     }
 
     // Update slot parameters
-    this.updateEffectSlot(trackId, slotId, params as Record<string, number | boolean>);
+    this.updateEffectSlot(
+      trackId,
+      slotId,
+      params as Record<string, number | boolean>,
+    );
     logger.info(`[AudioEngine] Updated flanger for track ${trackId}:`, params);
   }
 
@@ -2366,7 +2769,17 @@ class AudioEngine {
    * Update phaser effect parameters for a track
    * Uses the modular insert rack for proper signal flow
    */
-  updateTrackPhaser(trackId: string, params: { rate?: number; depth?: number; stages?: number; feedback?: number; mix?: number; bypass?: boolean }): void {
+  updateTrackPhaser(
+    trackId: string,
+    params: {
+      rate?: number;
+      depth?: number;
+      stages?: number;
+      feedback?: number;
+      mix?: number;
+      bypass?: boolean;
+    },
+  ): void {
     if (!this.context) return;
     const trackNode = this.trackNodes.get(trackId);
     if (!trackNode) return;
@@ -2375,15 +2788,21 @@ class AudioEngine {
     let slot = trackNode.effectSlots.get(slotId);
 
     if (!slot) {
-      slot = this.addEffectSlot(trackId, slotId, 'phaser');
+      slot = this.addEffectSlot(trackId, slotId, "phaser");
       if (!slot) {
-        logger.error(`[AudioEngine] Failed to create phaser slot for track ${trackId}`);
+        logger.error(
+          `[AudioEngine] Failed to create phaser slot for track ${trackId}`,
+        );
         return;
       }
     }
 
     // Update slot parameters
-    this.updateEffectSlot(trackId, slotId, params as Record<string, number | boolean>);
+    this.updateEffectSlot(
+      trackId,
+      slotId,
+      params as Record<string, number | boolean>,
+    );
     logger.info(`[AudioEngine] Updated phaser for track ${trackId}:`, params);
   }
 
@@ -2392,7 +2811,16 @@ class AudioEngine {
    * Uses the existing trackNode.gate GainNode for gating
    * Controls the gain based on threshold - open/close behavior
    */
-  updateTrackGate(trackId: string, params: { threshold?: number; attack?: number; release?: number; range?: number; bypass?: boolean }): void {
+  updateTrackGate(
+    trackId: string,
+    params: {
+      threshold?: number;
+      attack?: number;
+      release?: number;
+      range?: number;
+      bypass?: boolean;
+    },
+  ): void {
     if (!this.context) return;
     const trackNode = this.trackNodes.get(trackId);
     if (!trackNode) return;
@@ -2402,7 +2830,13 @@ class AudioEngine {
     if (!effect) {
       effect = {
         gateGain: trackNode.gate,
-        params: { threshold: -40, attack: 1, release: 100, range: -80, bypass: false },
+        params: {
+          threshold: -40,
+          attack: 1,
+          release: 100,
+          range: -80,
+          bypass: false,
+        },
       };
       this.gateEffects.set(trackId, effect);
       logger.info(`[AudioEngine] Gate effect configured for track ${trackId}`);
@@ -2427,10 +2861,17 @@ class AudioEngine {
     }
     if (params.bypass !== undefined) {
       effect.params.bypass = params.bypass;
-      trackNode.gate.gain.setTargetAtTime(params.bypass ? 1 : Math.pow(10, effect.params.range / 20), currentTime, timeConstant);
+      trackNode.gate.gain.setTargetAtTime(
+        params.bypass ? 1 : Math.pow(10, effect.params.range / 20),
+        currentTime,
+        timeConstant,
+      );
     }
 
-    logger.info(`[AudioEngine] Updated gate for track ${trackId}:`, effect.params);
+    logger.info(
+      `[AudioEngine] Updated gate for track ${trackId}:`,
+      effect.params,
+    );
   }
 
   /**
@@ -2438,7 +2879,10 @@ class AudioEngine {
    * Uses the existing trackNode.limiter WaveShaperNode for brickwall limiting
    * Creates soft-clipping curve based on ceiling parameter
    */
-  updateTrackLimiter(trackId: string, params: { ceiling?: number; release?: number; bypass?: boolean }): void {
+  updateTrackLimiter(
+    trackId: string,
+    params: { ceiling?: number; release?: number; bypass?: boolean },
+  ): void {
     if (!this.context) return;
     const trackNode = this.trackNodes.get(trackId);
     if (!trackNode) return;
@@ -2451,7 +2895,7 @@ class AudioEngine {
         params: { ceiling: -0.3, release: 100, bypass: false },
       };
       this.limiterEffects.set(trackId, effect);
-      
+
       const ceiling = Math.pow(10, -0.3 / 20);
       const samples = 44100;
       const curve = new Float32Array(samples);
@@ -2462,13 +2906,16 @@ class AudioEngine {
         } else {
           const sign = x > 0 ? 1 : -1;
           const excess = Math.abs(x) - ceiling;
-          const softClip = ceiling + (1 - ceiling) * Math.tanh(excess / (1 - ceiling));
+          const softClip =
+            ceiling + (1 - ceiling) * Math.tanh(excess / (1 - ceiling));
           curve[i] = sign * Math.min(softClip, 1);
         }
       }
       trackNode.limiter.curve = curve;
-      
-      logger.info(`[AudioEngine] Limiter effect configured for track ${trackId}`);
+
+      logger.info(
+        `[AudioEngine] Limiter effect configured for track ${trackId}`,
+      );
     }
 
     if (params.ceiling !== undefined) {
@@ -2482,7 +2929,8 @@ class AudioEngine {
         } else {
           const sign = x > 0 ? 1 : -1;
           const excess = Math.abs(x) - ceiling;
-          const softClip = ceiling + (1 - ceiling) * Math.tanh(excess / (1 - ceiling));
+          const softClip =
+            ceiling + (1 - ceiling) * Math.tanh(excess / (1 - ceiling));
           curve[i] = sign * Math.min(softClip, 1);
         }
       }
@@ -2512,7 +2960,8 @@ class AudioEngine {
           } else {
             const sign = x > 0 ? 1 : -1;
             const excess = Math.abs(x) - ceiling;
-            const softClip = ceiling + (1 - ceiling) * Math.tanh(excess / (1 - ceiling));
+            const softClip =
+              ceiling + (1 - ceiling) * Math.tanh(excess / (1 - ceiling));
             curve[i] = sign * Math.min(softClip, 1);
           }
         }
@@ -2520,7 +2969,10 @@ class AudioEngine {
       }
     }
 
-    logger.info(`[AudioEngine] Updated limiter for track ${trackId}:`, effect.params);
+    logger.info(
+      `[AudioEngine] Updated limiter for track ${trackId}:`,
+      effect.params,
+    );
   }
 
   /**
@@ -2528,20 +2980,20 @@ class AudioEngine {
    */
   enableEffect(
     trackId: string,
-    effectType: 'eq' | 'compressor' | 'reverb',
-    enabled: boolean
+    effectType: "eq" | "compressor" | "reverb",
+    enabled: boolean,
   ): void {
     const trackNode = this.trackNodes.get(trackId);
     if (!trackNode) return;
 
     switch (effectType) {
-      case 'eq':
+      case "eq":
         this.updateTrackEQ(trackId, { bypass: !enabled });
         break;
-      case 'compressor':
+      case "compressor":
         this.updateTrackCompressor(trackId, { bypass: !enabled });
         break;
-      case 'reverb':
+      case "reverb":
         this.updateTrackReverb(trackId, { bypass: !enabled });
         break;
     }
@@ -2553,7 +3005,9 @@ class AudioEngine {
    */
   generateImpulseResponse(duration: number, decay: number): AudioBuffer | null {
     if (!this.context) {
-      logger.warn('Cannot generate impulse response: AudioContext not initialized');
+      logger.warn(
+        "Cannot generate impulse response: AudioContext not initialized",
+      );
       return null;
     }
 
@@ -2581,7 +3035,7 @@ class AudioEngine {
    */
   async loadImpulseResponse(irId: string): Promise<AudioBuffer | null> {
     if (!this.context) {
-      logger.warn('Cannot load impulse response: AudioContext not initialized');
+      logger.warn("Cannot load impulse response: AudioContext not initialized");
       return null;
     }
 
@@ -2659,7 +3113,7 @@ class AudioEngine {
     this.bufferCache.clear();
 
     // Close context
-    if (this.context && this.context.state !== 'closed') {
+    if (this.context && this.context.state !== "closed") {
       await this.context.close();
     }
 
@@ -2705,7 +3159,11 @@ class AudioEngine {
   /**
    * Get performance guarantee info for current configuration
    */
-  getPerformanceGuarantee(): { maxTracks: number; description: string; requirements: Record<string, unknown> } | null {
+  getPerformanceGuarantee(): {
+    maxTracks: number;
+    description: string;
+    requirements: Record<string, unknown>;
+  } | null {
     const sampleRate = this.config.sampleRate!;
 
     if (sampleRate >= SAMPLE_RATES.SR_192000) {

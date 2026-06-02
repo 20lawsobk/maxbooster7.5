@@ -1,15 +1,15 @@
-import { randomBytes } from 'crypto';
-import { aiService } from './aiService';
-import { studioService } from './studioService';
-import { storage } from '../storage';
+import { randomBytes } from "crypto";
+import { aiService } from "./aiService";
+import { studioService } from "./studioService";
+import { storage } from "../storage";
 
-import * as fs from 'fs';
-import * as path from 'path';
-import * as fsPromises from 'fs/promises';
-import { parseFile } from 'music-metadata';
-import * as wav from 'node-wav';
-import FFT from 'fft.js';
-import { logger } from '../logger.js';
+import * as fs from "fs";
+import * as path from "path";
+import * as fsPromises from "fs/promises";
+import { parseFile } from "music-metadata";
+import * as wav from "node-wav";
+import FFT from "fft.js";
+import { logger } from "../logger.js";
 
 let ffmpeg: Record<string, unknown> | null = null;
 let ffmpegAvailable = false;
@@ -17,20 +17,23 @@ let ffmpegAvailable = false;
 async function initializeFfmpeg() {
   if (ffmpegAvailable) return true;
   try {
-    const fluentFfmpeg = await import('fluent-ffmpeg');
+    const fluentFfmpeg = await import("fluent-ffmpeg");
     ffmpeg = fluentFfmpeg.default;
     try {
-      const ffmpegStatic = await import('ffmpeg-static');
+      const ffmpegStatic = await import("ffmpeg-static");
       if (ffmpegStatic.default) {
         ffmpeg.setFfmpegPath(ffmpegStatic.default);
       }
     } catch {
-      logger.warn('ffmpeg-static not available, using system ffmpeg');
+      logger.warn("ffmpeg-static not available, using system ffmpeg");
     }
     ffmpegAvailable = true;
     return true;
   } catch (error) {
-    logger.warn({ err: error }, 'FFmpeg not available - audio processing features will be limited:');
+    logger.warn(
+      { err: error },
+      "FFmpeg not available - audio processing features will be limited:",
+    );
     return false;
   }
 }
@@ -69,9 +72,19 @@ export interface MixSettings {
 export interface MasterSettings {
   multiband: {
     low: { threshold: number; ratio: number; gain: number; frequency: number };
-    lowMid: { threshold: number; ratio: number; gain: number; frequency: number };
+    lowMid: {
+      threshold: number;
+      ratio: number;
+      gain: number;
+      frequency: number;
+    };
     mid: { threshold: number; ratio: number; gain: number; frequency: number };
-    highMid: { threshold: number; ratio: number; gain: number; frequency: number };
+    highMid: {
+      threshold: number;
+      ratio: number;
+      gain: number;
+      frequency: number;
+    };
     high: { threshold: number; ratio: number; gain: number; frequency: number };
   };
   limiter: {
@@ -81,7 +94,7 @@ export interface MasterSettings {
   };
   maximizer: {
     amount: number;
-    character: 'transparent' | 'punchy' | 'warm' | 'aggressive';
+    character: "transparent" | "punchy" | "warm" | "aggressive";
   };
   stereoEnhancer: {
     width: number;
@@ -93,7 +106,13 @@ export interface MasterSettings {
     presence: number;
   };
   targetLUFS?: number;
-  targetPlatform?: 'spotify' | 'apple_music' | 'youtube' | 'mastering' | 'tidal' | 'soundcloud';
+  targetPlatform?:
+    | "spotify"
+    | "apple_music"
+    | "youtube"
+    | "mastering"
+    | "tidal"
+    | "soundcloud";
   truePeakLimit?: number;
 }
 
@@ -199,26 +218,34 @@ export interface LoudnessMetrics {
 
 export interface AISuggestion {
   id: string;
-  category: 'eq' | 'compression' | 'effects' | 'stereo' | 'loudness' | 'general';
+  category:
+    | "eq"
+    | "compression"
+    | "effects"
+    | "stereo"
+    | "loudness"
+    | "general";
   suggestion: string;
   reasoning: string;
   confidence: number;
   parameters?: Record<string, any>;
-  priority: 'low' | 'medium' | 'high' | 'critical';
+  priority: "low" | "medium" | "high" | "critical";
   estimatedImpact: number;
 }
 
 export class AIMusicService {
   private readonly AI_MODELS = {
-    STEM_SEPARATOR: 'stem_separator_v1',
-    GENRE_PRESET_ENGINE: 'genre_preset_engine_v1',
-    REFERENCE_MATCHER: 'reference_matcher_v1',
-    LUFS_METER: 'lufs_meter_v1',
+    STEM_SEPARATOR: "stem_separator_v1",
+    GENRE_PRESET_ENGINE: "genre_preset_engine_v1",
+    REFERENCE_MATCHER: "reference_matcher_v1",
+    LUFS_METER: "lufs_meter_v1",
   };
 
   constructor() {
     initializeFfmpeg().catch(() => {
-      logger.warn('FFmpeg initialization deferred - will initialize on first use');
+      logger.warn(
+        "FFmpeg initialization deferred - will initialize on first use",
+      );
     });
   }
 
@@ -246,7 +273,7 @@ export class AIMusicService {
    */
   async separateStems(audioBuffer: Buffer): Promise<StemSeparationResult> {
     const startTime = Date.now();
-    const inferenceId = randomBytes(8).toString('hex');
+    const inferenceId = randomBytes(8).toString("hex");
 
     try {
       const decoded = wav.decode(audioBuffer);
@@ -259,36 +286,36 @@ export class AIMusicService {
         channelData,
         spectralData,
         sampleRate,
-        'vocals',
-        inferenceId
+        "vocals",
+        inferenceId,
       );
       const drums = await this.extractStemWithFFT(
         channelData,
         spectralData,
         sampleRate,
-        'drums',
-        inferenceId
+        "drums",
+        inferenceId,
       );
       const bass = await this.extractStemWithFFT(
         channelData,
         spectralData,
         sampleRate,
-        'bass',
-        inferenceId
+        "bass",
+        inferenceId,
       );
       const melody = await this.extractStemWithFFT(
         channelData,
         spectralData,
         sampleRate,
-        'melody',
-        inferenceId
+        "melody",
+        inferenceId,
       );
       const harmony = await this.extractStemWithFFT(
         channelData,
         spectralData,
         sampleRate,
-        'harmony',
-        inferenceId
+        "harmony",
+        inferenceId,
       );
 
       const processingTime = Date.now() - startTime;
@@ -312,35 +339,36 @@ export class AIMusicService {
 
       await this.logInference(
         this.AI_MODELS.STEM_SEPARATOR,
-        'stem_separation',
+        "stem_separation",
         {
           bufferSize: audioBuffer.length,
         },
         result,
         overallConfidence,
-        processingTime
+        processingTime,
       );
 
       return result;
     } catch (error: unknown) {
-      logger.warn({ err: error }, 'Stem separation error:');
-      throw new Error('Failed to separate stems');
+      logger.warn({ err: error }, "Stem separation error:");
+      throw new Error("Failed to separate stems");
     }
   }
 
   async getGenrePreset(genre: string): Promise<GenrePreset> {
-    const genreLower = genre.toLowerCase().replace(/[\s-]/g, '_');
+    const genreLower = genre.toLowerCase().replace(/[\s-]/g, "_");
     const presets = this.getAllGenrePresets();
 
-    const preset = presets.find((p) => p.genre.toLowerCase() === genreLower) || presets[0];
+    const preset =
+      presets.find((p) => p.genre.toLowerCase() === genreLower) || presets[0];
 
     await this.logInference(
       this.AI_MODELS.GENRE_PRESET_ENGINE,
-      'preset_retrieval',
+      "preset_retrieval",
       { genre },
       preset,
       1.0,
-      5
+      5,
     );
 
     return preset;
@@ -349,7 +377,7 @@ export class AIMusicService {
   async applyGenrePreset(
     trackId: string,
     genre: string,
-    intensity: number = 100
+    intensity: number = 100,
   ): Promise<{
     success: boolean;
     appliedSettings: MixSettings;
@@ -365,7 +393,7 @@ export class AIMusicService {
 
       const appliedSettings = this.blendPresetWithIntensity(
         preset.mixSettings,
-        normalizedIntensity
+        normalizedIntensity,
       );
       appliedSettings.genrePreset = preset.displayName;
       appliedSettings.presetIntensity = intensity;
@@ -378,7 +406,11 @@ export class AIMusicService {
 
       const track = await this.getTrackByIdSafe(trackId);
       if (track) {
-        await storage.updateStudioTrackEffects(track.id, track.projectId, appliedSettings);
+        await storage.updateStudioTrackEffects(
+          track.id,
+          track.projectId,
+          appliedSettings,
+        );
       }
 
       const clips = await storage.getTrackAudioClips(trackId);
@@ -386,30 +418,42 @@ export class AIMusicService {
         const primaryClip = clips[0];
         const inputPath = path.join(process.cwd(), primaryClip.filePath);
 
-        const inputAccessible = await fsPromises.access(inputPath).then(() => true).catch(() => false);
+        const inputAccessible = await fsPromises
+          .access(inputPath)
+          .then(() => true)
+          .catch(() => false);
         if (inputAccessible && track) {
-          const processedDir = path.join(process.cwd(), 'uploads', 'processed');
+          const processedDir = path.join(process.cwd(), "uploads", "processed");
           await fsPromises.mkdir(processedDir, { recursive: true });
 
-          const processedFilename = `${genre}_${randomBytes(8).toString('hex')}.wav`;
+          const processedFilename = `${genre}_${randomBytes(8).toString("hex")}.wav`;
           const outputPath = path.join(processedDir, processedFilename);
 
-          await this.applyAudioProcessing(inputPath, outputPath, appliedSettings);
+          await this.applyAudioProcessing(
+            inputPath,
+            outputPath,
+            appliedSettings,
+          );
 
           outputFilePath = `/uploads/processed/${processedFilename}`;
 
-          await storage.updateTrackProcessedAudio(track.id, track.projectId, outputFilePath, {
-            type: 'genre_preset',
-            settings: {
-              genre: preset.displayName,
-              intensity,
-              appliedSettings,
+          await storage.updateTrackProcessedAudio(
+            track.id,
+            track.projectId,
+            outputFilePath,
+            {
+              type: "genre_preset",
+              settings: {
+                genre: preset.displayName,
+                intensity,
+                appliedSettings,
+              },
+              timestamp: new Date(),
             },
-            timestamp: new Date(),
-          });
+          );
 
           logger.info(
-            `Processed audio with ${genre} preset saved to: ${outputPath} (path: ${outputFilePath})`
+            `Processed audio with ${genre} preset saved to: ${outputPath} (path: ${outputFilePath})`,
           );
         }
       }
@@ -418,7 +462,7 @@ export class AIMusicService {
 
       await this.logInference(
         this.AI_MODELS.GENRE_PRESET_ENGINE,
-        'preset_application',
+        "preset_application",
         {
           trackId,
           genre,
@@ -426,12 +470,12 @@ export class AIMusicService {
         },
         { appliedSettings, suggestions, outputFilePath },
         0.95,
-        processingTime
+        processingTime,
       );
 
       return { success: true, appliedSettings, suggestions, outputFilePath };
     } catch (error: unknown) {
-      logger.warn({ err: error }, 'Genre preset application error:');
+      logger.warn({ err: error }, "Genre preset application error:");
       throw error;
     }
   }
@@ -439,29 +483,41 @@ export class AIMusicService {
   private async applyAudioProcessing(
     inputPath: string,
     outputPath: string,
-    settings: MixSettings
+    settings: MixSettings,
   ): Promise<void> {
     const hasFFmpeg = await initializeFfmpeg();
     if (!hasFFmpeg || !ffmpeg) {
-      throw new Error('FFmpeg is not available. Audio processing features are disabled in this deployment.');
+      throw new Error(
+        "FFmpeg is not available. Audio processing features are disabled in this deployment.",
+      );
     }
     const filters: string[] = [];
 
     const eqBands: string[] = [];
     if (settings.eq.lowGain !== 0) {
-      eqBands.push(`equalizer=f=80:width_type=o:width=1:g=${settings.eq.lowGain}`);
+      eqBands.push(
+        `equalizer=f=80:width_type=o:width=1:g=${settings.eq.lowGain}`,
+      );
     }
     if (settings.eq.lowMidGain !== 0) {
-      eqBands.push(`equalizer=f=250:width_type=o:width=1:g=${settings.eq.lowMidGain}`);
+      eqBands.push(
+        `equalizer=f=250:width_type=o:width=1:g=${settings.eq.lowMidGain}`,
+      );
     }
     if (settings.eq.midGain !== 0) {
-      eqBands.push(`equalizer=f=1000:width_type=o:width=1:g=${settings.eq.midGain}`);
+      eqBands.push(
+        `equalizer=f=1000:width_type=o:width=1:g=${settings.eq.midGain}`,
+      );
     }
     if (settings.eq.highMidGain !== 0) {
-      eqBands.push(`equalizer=f=4000:width_type=o:width=1:g=${settings.eq.highMidGain}`);
+      eqBands.push(
+        `equalizer=f=4000:width_type=o:width=1:g=${settings.eq.highMidGain}`,
+      );
     }
     if (settings.eq.highGain !== 0) {
-      eqBands.push(`equalizer=f=10000:width_type=o:width=1:g=${settings.eq.highGain}`);
+      eqBands.push(
+        `equalizer=f=10000:width_type=o:width=1:g=${settings.eq.highGain}`,
+      );
     }
 
     if (settings.eq.lowCut > 20) {
@@ -474,12 +530,18 @@ export class AIMusicService {
     filters.push(...eqBands);
 
     const ratio = Math.max(1.5, Math.min(20, settings.compression.ratio));
-    const threshold = Math.max(-60, Math.min(0, settings.compression.threshold));
+    const threshold = Math.max(
+      -60,
+      Math.min(0, settings.compression.threshold),
+    );
     const attack = Math.max(0.01, Math.min(2000, settings.compression.attack));
-    const release = Math.max(0.01, Math.min(9000, settings.compression.release));
+    const release = Math.max(
+      0.01,
+      Math.min(9000, settings.compression.release),
+    );
 
     filters.push(
-      `acompressor=threshold=${threshold}dB:ratio=${ratio}:attack=${attack}:release=${release}:makeup=${settings.compression.makeupGain}`
+      `acompressor=threshold=${threshold}dB:ratio=${ratio}:attack=${attack}:release=${release}:makeup=${settings.compression.makeupGain}`,
     );
 
     if (settings.stereoImaging.width !== 1.0) {
@@ -489,13 +551,13 @@ export class AIMusicService {
 
     return new Promise((resolve, reject) => {
       ffmpeg(inputPath)
-        .audioFilters(filters.length > 0 ? filters : ['anull'])
-        .toFormat('wav')
-        .on('error', (err) => {
-          logger.warn({ err: err }, 'FFmpeg processing error:');
+        .audioFilters(filters.length > 0 ? filters : ["anull"])
+        .toFormat("wav")
+        .on("error", (err) => {
+          logger.warn({ err: err }, "FFmpeg processing error:");
           reject(err);
         })
-        .on('end', () => {
+        .on("end", () => {
           resolve();
         })
         .save(outputPath);
@@ -519,13 +581,13 @@ export class AIMusicService {
     const processingTime = Date.now() - startTime;
     await this.logInference(
       this.AI_MODELS.REFERENCE_MATCHER,
-      'reference_analysis',
+      "reference_analysis",
       {
         bufferSize: audioBuffer.length,
       },
       analysis,
       0.92,
-      processingTime
+      processingTime,
     );
 
     return analysis;
@@ -533,7 +595,7 @@ export class AIMusicService {
 
   async matchToReference(
     targetTrackId: string,
-    referenceProfile: ReferenceAnalysis
+    referenceProfile: ReferenceAnalysis,
   ): Promise<{
     suggestions: AISuggestion[];
     confidenceScore: number;
@@ -545,17 +607,18 @@ export class AIMusicService {
     const adjustments: Record<string, any> = {};
 
     const track = await this.getTrackByIdSafe(targetTrackId);
-    const currentEffects = (track?.effects as MixSettings) || this.getDefaultMixSettings();
+    const currentEffects =
+      (track?.effects as MixSettings) || this.getDefaultMixSettings();
 
     if (referenceProfile.loudnessMetrics.integrated > -14) {
       suggestions.push({
-        id: randomBytes(8).toString('hex'),
-        category: 'loudness',
+        id: randomBytes(8).toString("hex"),
+        category: "loudness",
         suggestion: `Increase master loudness to ${referenceProfile.loudnessMetrics.integrated.toFixed(1)} LUFS`,
         reasoning: `Reference track has higher integrated loudness. Increase by ${Math.abs(referenceProfile.loudnessMetrics.integrated + 14).toFixed(1)}dB to match`,
         confidence: 0.88,
         parameters: { targetLUFS: referenceProfile.loudnessMetrics.integrated },
-        priority: 'high',
+        priority: "high",
         estimatedImpact: 8.5,
       });
       adjustments.loudness = referenceProfile.loudnessMetrics.integrated;
@@ -564,13 +627,13 @@ export class AIMusicService {
     if (referenceProfile.frequencyBalance.treble > 0.7) {
       const boostAmount = (referenceProfile.frequencyBalance.treble - 0.7) * 3;
       suggestions.push({
-        id: randomBytes(8).toString('hex'),
-        category: 'eq',
+        id: randomBytes(8).toString("hex"),
+        category: "eq",
         suggestion: `Increase highs by +${boostAmount.toFixed(1)}dB at 8kHz`,
         reasoning: `Reference has ${(referenceProfile.frequencyBalance.treble * 100).toFixed(0)}% more high-frequency content. Boosting to match brilliance`,
         confidence: 0.85,
         parameters: { frequency: 8000, gain: boostAmount },
-        priority: 'medium',
+        priority: "medium",
         estimatedImpact: 7.2,
       });
       adjustments.highShelf = { frequency: 8000, gain: boostAmount };
@@ -578,15 +641,18 @@ export class AIMusicService {
     }
 
     if (referenceProfile.stereoWidth > 1.0) {
-      const widthIncrease = ((referenceProfile.stereoWidth - 1.0) * 100).toFixed(0);
+      const widthIncrease = (
+        (referenceProfile.stereoWidth - 1.0) *
+        100
+      ).toFixed(0);
       suggestions.push({
-        id: randomBytes(8).toString('hex'),
-        category: 'stereo',
+        id: randomBytes(8).toString("hex"),
+        category: "stereo",
         suggestion: `Add +${widthIncrease}% stereo width`,
         reasoning: `Reference track has wider stereo image (${(referenceProfile.stereoWidth * 100).toFixed(0)}%). Expanding to match spatial depth`,
         confidence: 0.82,
         parameters: { width: referenceProfile.stereoWidth },
-        priority: 'medium',
+        priority: "medium",
         estimatedImpact: 6.8,
       });
       adjustments.stereoWidth = referenceProfile.stereoWidth;
@@ -595,13 +661,13 @@ export class AIMusicService {
 
     if (referenceProfile.frequencyBalance.bass > 0.75) {
       suggestions.push({
-        id: randomBytes(8).toString('hex'),
-        category: 'eq',
+        id: randomBytes(8).toString("hex"),
+        category: "eq",
         suggestion: `Boost low-end by +2.5dB at 80Hz`,
         reasoning: `Reference has strong bass presence (${(referenceProfile.frequencyBalance.bass * 100).toFixed(0)}%). Adding punch and weight`,
         confidence: 0.9,
         parameters: { frequency: 80, gain: 2.5 },
-        priority: 'high',
+        priority: "high",
         estimatedImpact: 8.0,
       });
       adjustments.bassBoost = { frequency: 80, gain: 2.5 };
@@ -609,23 +675,28 @@ export class AIMusicService {
     }
 
     if (track) {
-      await storage.updateStudioTrackEffects(track.id, track.projectId, currentEffects);
+      await storage.updateStudioTrackEffects(
+        track.id,
+        track.projectId,
+        currentEffects,
+      );
     }
 
     const processingTime = Date.now() - startTime;
     const confidenceScore =
-      suggestions.reduce((sum, s) => sum + s.confidence, 0) / suggestions.length || 0.8;
+      suggestions.reduce((sum, s) => sum + s.confidence, 0) /
+        suggestions.length || 0.8;
 
     await this.logInference(
       this.AI_MODELS.REFERENCE_MATCHER,
-      'reference_matching',
+      "reference_matching",
       {
         trackId: targetTrackId,
         referenceProfile,
       },
       { suggestions, adjustments },
       confidenceScore,
-      processingTime
+      processingTime,
     );
 
     return { suggestions, confidenceScore, adjustments };
@@ -653,36 +724,39 @@ export class AIMusicService {
 
     const hasFFmpeg = await initializeFfmpeg();
     if (!hasFFmpeg || !ffmpeg) {
-      logger.warn('FFmpeg not available - using fallback loudness measurement');
+      logger.warn("FFmpeg not available - using fallback loudness measurement");
       return this.measureLoudnessFallback(audioBuffer);
     }
 
     try {
-      const tempDir = path.join(process.cwd(), 'uploads', 'temp');
+      const tempDir = path.join(process.cwd(), "uploads", "temp");
       await fsPromises.mkdir(tempDir, { recursive: true });
 
-      const tempInputPath = path.join(tempDir, `input_${randomBytes(8).toString('hex')}.wav`);
+      const tempInputPath = path.join(
+        tempDir,
+        `input_${randomBytes(8).toString("hex")}.wav`,
+      );
       await fsPromises.writeFile(tempInputPath, audioBuffer);
 
       const metrics = await new Promise<LoudnessMetrics>((resolve, reject) => {
-        let stderrOutput = '';
+        let stderrOutput = "";
 
         ffmpeg(tempInputPath)
-          .audioFilters('loudnorm=print_format=json')
-          .outputFormat('null')
-          .output('-')
-          .on('stderr', (line) => {
-            stderrOutput += line + '\n';
+          .audioFilters("loudnorm=print_format=json")
+          .outputFormat("null")
+          .output("-")
+          .on("stderr", (line) => {
+            stderrOutput += line + "\n";
           })
-          .on('error', (err) => {
-            logger.warn({ err: err }, 'FFmpeg loudness measurement error:');
+          .on("error", (err) => {
+            logger.warn({ err: err }, "FFmpeg loudness measurement error:");
             reject(err);
           })
-          .on('end', () => {
+          .on("end", () => {
             try {
               const jsonMatch = stderrOutput.match(/\{[\s\S]*?\}/);
               if (!jsonMatch) {
-                throw new Error('No JSON output from loudnorm filter');
+                throw new Error("No JSON output from loudnorm filter");
               }
 
               const data = JSON.parse(jsonMatch[0]);
@@ -707,7 +781,7 @@ export class AIMusicService {
                 loudnessRange,
               });
             } catch (parseError: unknown) {
-              logger.warn('Error parsing loudness JSON:', parseError);
+              logger.warn("Error parsing loudness JSON:", parseError);
               reject(parseError);
             }
           })
@@ -719,18 +793,21 @@ export class AIMusicService {
       const processingTime = Date.now() - startTime;
       await this.logInference(
         this.AI_MODELS.LUFS_METER,
-        'loudness_measurement',
+        "loudness_measurement",
         {
           bufferSize: audioBuffer.length,
         },
         metrics,
         0.98,
-        processingTime
+        processingTime,
       );
 
       return metrics;
     } catch (error: unknown) {
-      logger.warn({ err: error }, 'Loudness measurement error, falling back to simplified calculation:');
+      logger.warn(
+        { err: error },
+        "Loudness measurement error, falling back to simplified calculation:",
+      );
 
       const audioData = this.bufferToFloat32Array(audioBuffer);
       const sampleRate = 48000;
@@ -750,7 +827,7 @@ export class AIMusicService {
 
   async normalizeTo(
     trackId: string,
-    targetLUFS: number
+    targetLUFS: number,
   ): Promise<{
     success: boolean;
     appliedGain: number;
@@ -769,25 +846,25 @@ export class AIMusicService {
 
       const suggestions: AISuggestion[] = [
         {
-          id: randomBytes(8).toString('hex'),
-          category: 'loudness',
-          suggestion: `Apply ${requiredGain >= 0 ? '+' : ''}${requiredGain.toFixed(1)}dB gain to reach ${targetLUFS} LUFS`,
+          id: randomBytes(8).toString("hex"),
+          category: "loudness",
+          suggestion: `Apply ${requiredGain >= 0 ? "+" : ""}${requiredGain.toFixed(1)}dB gain to reach ${targetLUFS} LUFS`,
           reasoning: `Current integrated loudness is ${currentLoudness.toFixed(1)} LUFS. Target is ${targetLUFS} LUFS.`,
           confidence: 0.95,
           parameters: { gain: requiredGain, targetLUFS },
-          priority: 'critical',
+          priority: "critical",
           estimatedImpact: 9.5,
         },
       ];
 
       if (Math.abs(requiredGain) > 6) {
         suggestions.push({
-          id: randomBytes(8).toString('hex'),
-          category: 'compression',
+          id: randomBytes(8).toString("hex"),
+          category: "compression",
           suggestion: `Consider compression before gain adjustment`,
           reasoning: `Large gain adjustment (${Math.abs(requiredGain).toFixed(1)}dB) may cause clipping. Apply compression first.`,
           confidence: 0.88,
-          priority: 'high',
+          priority: "high",
           estimatedImpact: 8.0,
         });
       }
@@ -798,43 +875,66 @@ export class AIMusicService {
         const primaryClip = clips[0];
         const inputPath = path.join(process.cwd(), primaryClip.filePath);
 
-        const inputAccessible = await fsPromises.access(inputPath).then(() => true).catch(() => false);
+        const inputAccessible = await fsPromises
+          .access(inputPath)
+          .then(() => true)
+          .catch(() => false);
         if (inputAccessible && track) {
-          const normalizedDir = path.join(process.cwd(), 'uploads', 'normalized');
+          const normalizedDir = path.join(
+            process.cwd(),
+            "uploads",
+            "normalized",
+          );
           await fsPromises.mkdir(normalizedDir, { recursive: true });
 
-          const normalizedFilename = `normalized_${randomBytes(8).toString('hex')}.wav`;
+          const normalizedFilename = `normalized_${randomBytes(8).toString("hex")}.wav`;
           const outputPath = path.join(normalizedDir, normalizedFilename);
 
-          await this.applyLoudnessNormalization(inputPath, outputPath, targetLUFS, currentLoudness);
+          await this.applyLoudnessNormalization(
+            inputPath,
+            outputPath,
+            targetLUFS,
+            currentLoudness,
+          );
 
           outputFilePath = `/uploads/normalized/${normalizedFilename}`;
 
-          await storage.updateTrackProcessedAudio(track.id, track.projectId, outputFilePath, {
-            type: 'loudness_normalization',
-            settings: {
-              targetLUFS,
-              currentLoudness,
-              appliedGain: requiredGain,
+          await storage.updateTrackProcessedAudio(
+            track.id,
+            track.projectId,
+            outputFilePath,
+            {
+              type: "loudness_normalization",
+              settings: {
+                targetLUFS,
+                currentLoudness,
+                appliedGain: requiredGain,
+              },
+              timestamp: new Date(),
             },
-            timestamp: new Date(),
-          });
+          );
 
-          logger.info(`Normalized audio saved to: ${outputPath} (path: ${outputFilePath})`);
+          logger.info(
+            `Normalized audio saved to: ${outputPath} (path: ${outputFilePath})`,
+          );
         }
       }
 
       const processingTime = Date.now() - startTime;
       await this.logInference(
         this.AI_MODELS.LUFS_METER,
-        'loudness_normalization',
+        "loudness_normalization",
         {
           trackId,
           targetLUFS,
         },
-        { appliedGain: requiredGain, finalLoudness: targetLUFS, outputFilePath },
+        {
+          appliedGain: requiredGain,
+          finalLoudness: targetLUFS,
+          outputFilePath,
+        },
         0.95,
-        processingTime
+        processingTime,
       );
 
       return {
@@ -845,7 +945,7 @@ export class AIMusicService {
         outputFilePath,
       };
     } catch (error: unknown) {
-      logger.warn({ err: error }, 'Normalization error:');
+      logger.warn({ err: error }, "Normalization error:");
       throw error;
     }
   }
@@ -854,106 +954,111 @@ export class AIMusicService {
     inputPath: string,
     outputPath: string,
     targetLUFS: number,
-    measuredLUFS: number
+    measuredLUFS: number,
   ): Promise<void> {
     const hasFFmpeg = await initializeFfmpeg();
     if (!hasFFmpeg || !ffmpeg) {
-      throw new Error('FFmpeg is not available. Loudness normalization features are disabled in this deployment.');
+      throw new Error(
+        "FFmpeg is not available. Loudness normalization features are disabled in this deployment.",
+      );
     }
     return new Promise((resolve, reject) => {
       ffmpeg(inputPath)
         .audioFilters([
           `loudnorm=I=${targetLUFS}:TP=-1.5:LRA=11:measured_I=${measuredLUFS}:measured_LRA=11:measured_TP=-2.0:measured_thresh=-33.0:linear=true`,
         ])
-        .toFormat('wav')
-        .on('error', (err) => {
-          logger.warn({ err: err }, 'FFmpeg normalization error:');
+        .toFormat("wav")
+        .on("error", (err) => {
+          logger.warn({ err: err }, "FFmpeg normalization error:");
           reject(err);
         })
-        .on('end', () => {
+        .on("end", () => {
           resolve();
         })
         .save(outputPath);
     });
   }
 
-  async generateMixSuggestions(audioAnalysis: unknown): Promise<AISuggestion[]> {
+  async generateMixSuggestions(
+    audioAnalysis: unknown,
+  ): Promise<AISuggestion[]> {
     const suggestions: AISuggestion[] = [];
 
     const { genre, energy, mood, intensity, preset } = audioAnalysis;
 
-    if (genre === 'hip-hop' || genre === 'trap') {
+    if (genre === "hip-hop" || genre === "trap") {
       suggestions.push({
-        id: randomBytes(8).toString('hex'),
-        category: 'eq',
-        suggestion: 'Added +3dB at 80Hz because bass lacked punch',
+        id: randomBytes(8).toString("hex"),
+        category: "eq",
+        suggestion: "Added +3dB at 80Hz because bass lacked punch",
         reasoning:
-          'Hip-hop requires strong sub-bass presence. Boosting 80Hz adds weight without muddiness.',
+          "Hip-hop requires strong sub-bass presence. Boosting 80Hz adds weight without muddiness.",
         confidence: 0.92,
         parameters: { frequency: 80, gain: 3 },
-        priority: 'high',
+        priority: "high",
         estimatedImpact: 8.5,
       });
 
       suggestions.push({
-        id: randomBytes(8).toString('hex'),
-        category: 'compression',
-        suggestion: 'Applied compression (4:1) to control vocal dynamics',
+        id: randomBytes(8).toString("hex"),
+        category: "compression",
+        suggestion: "Applied compression (4:1) to control vocal dynamics",
         reasoning:
-          'Vocals need consistent presence in hip-hop mix. 4:1 ratio maintains energy while controlling peaks.',
+          "Vocals need consistent presence in hip-hop mix. 4:1 ratio maintains energy while controlling peaks.",
         confidence: 0.89,
         parameters: { ratio: 4, threshold: -15, attack: 5, release: 80 },
-        priority: 'high',
+        priority: "high",
         estimatedImpact: 7.8,
       });
     }
 
-    if (genre === 'edm' || genre === 'house' || genre === 'techno') {
+    if (genre === "edm" || genre === "house" || genre === "techno") {
       suggestions.push({
-        id: randomBytes(8).toString('hex'),
-        category: 'stereo',
-        suggestion: 'Increased stereo width by 25% for pads and synths',
+        id: randomBytes(8).toString("hex"),
+        category: "stereo",
+        suggestion: "Increased stereo width by 25% for pads and synths",
         reasoning:
-          'Electronic music benefits from wide stereo image. Keeping bass centered while expanding highs.',
+          "Electronic music benefits from wide stereo image. Keeping bass centered while expanding highs.",
         confidence: 0.87,
         parameters: { width: 1.25, bassMonoFreq: 150 },
-        priority: 'medium',
+        priority: "medium",
         estimatedImpact: 7.5,
       });
 
       suggestions.push({
-        id: randomBytes(8).toString('hex'),
-        category: 'effects',
-        suggestion: 'Added sidechain compression (4:1) for pumping effect',
-        reasoning: 'Sidechain compression creates rhythmic pumping essential to EDM/house genres.',
+        id: randomBytes(8).toString("hex"),
+        category: "effects",
+        suggestion: "Added sidechain compression (4:1) for pumping effect",
+        reasoning:
+          "Sidechain compression creates rhythmic pumping essential to EDM/house genres.",
         confidence: 0.91,
         parameters: { ratio: 4, attack: 10, release: 150 },
-        priority: 'high',
+        priority: "high",
         estimatedImpact: 8.2,
       });
     }
 
     if (energy && energy > 0.8) {
       suggestions.push({
-        id: randomBytes(8).toString('hex'),
-        category: 'compression',
-        suggestion: 'Applied parallel compression for extra punch',
+        id: randomBytes(8).toString("hex"),
+        category: "compression",
+        suggestion: "Applied parallel compression for extra punch",
         reasoning: `High energy track (${(energy * 100).toFixed(0)}%) needs controlled dynamics with maximum impact.`,
         confidence: 0.85,
         parameters: { blend: 40, ratio: 8, threshold: -20 },
-        priority: 'medium',
+        priority: "medium",
         estimatedImpact: 7.0,
       });
     }
 
     if (preset) {
       suggestions.push({
-        id: randomBytes(8).toString('hex'),
-        category: 'general',
+        id: randomBytes(8).toString("hex"),
+        category: "general",
         suggestion: `Applied ${preset} preset at ${(intensity || 1) * 100}% intensity`,
         reasoning: `Genre-optimized settings for ${genre}. Professional preset tailored for this musical style.`,
         confidence: 0.94,
-        priority: 'high',
+        priority: "high",
         estimatedImpact: 9.0,
       });
     }
@@ -964,9 +1069,9 @@ export class AIMusicService {
   private getAllGenrePresets(): GenrePreset[] {
     return [
       {
-        genre: 'hip_hop',
-        displayName: 'Hip-Hop',
-        description: 'Powerful bass, clear vocals, punchy drums',
+        genre: "hip_hop",
+        displayName: "Hip-Hop",
+        description: "Powerful bass, clear vocals, punchy drums",
         targetLoudness: -9,
         mixSettings: {
           eq: {
@@ -978,7 +1083,13 @@ export class AIMusicService {
             lowCut: 25,
             highCut: 16000,
           },
-          compression: { threshold: -15, ratio: 6, attack: 5, release: 80, makeupGain: 4 },
+          compression: {
+            threshold: -15,
+            ratio: 6,
+            attack: 5,
+            release: 80,
+            makeupGain: 4,
+          },
           effects: {
             reverb: { wetness: 0.15, roomSize: 0.4, damping: 0.5 },
             delay: { time: 0.25, feedback: 0.2, wetness: 0.1 },
@@ -987,7 +1098,7 @@ export class AIMusicService {
           },
           stereoImaging: { width: 1.0, bassMonoFreq: 150 },
         },
-        masterSettings: this.getMasteringPresetForGenre('hip_hop'),
+        masterSettings: this.getMasteringPresetForGenre("hip_hop"),
         characteristics: {
           bassEmphasis: 0.95,
           vocalClarity: 0.9,
@@ -998,9 +1109,9 @@ export class AIMusicService {
         },
       },
       {
-        genre: 'edm',
-        displayName: 'EDM',
-        description: 'Wide stereo, powerful kicks, energetic highs',
+        genre: "edm",
+        displayName: "EDM",
+        description: "Wide stereo, powerful kicks, energetic highs",
         targetLoudness: -8,
         mixSettings: {
           eq: {
@@ -1012,7 +1123,13 @@ export class AIMusicService {
             lowCut: 30,
             highCut: 18000,
           },
-          compression: { threshold: -12, ratio: 4, attack: 10, release: 100, makeupGain: 3 },
+          compression: {
+            threshold: -12,
+            ratio: 4,
+            attack: 10,
+            release: 100,
+            makeupGain: 3,
+          },
           effects: {
             reverb: { wetness: 0.25, roomSize: 0.6, damping: 0.3 },
             delay: { time: 0.375, feedback: 0.35, wetness: 0.2 },
@@ -1021,7 +1138,7 @@ export class AIMusicService {
           },
           stereoImaging: { width: 1.3, bassMonoFreq: 120 },
         },
-        masterSettings: this.getMasteringPresetForGenre('edm'),
+        masterSettings: this.getMasteringPresetForGenre("edm"),
         characteristics: {
           bassEmphasis: 0.9,
           vocalClarity: 0.7,
@@ -1032,9 +1149,9 @@ export class AIMusicService {
         },
       },
       {
-        genre: 'rock',
-        displayName: 'Rock',
-        description: 'Warm guitars, punchy drums, centered vocals',
+        genre: "rock",
+        displayName: "Rock",
+        description: "Warm guitars, punchy drums, centered vocals",
         targetLoudness: -11,
         mixSettings: {
           eq: {
@@ -1046,7 +1163,13 @@ export class AIMusicService {
             lowCut: 30,
             highCut: 16000,
           },
-          compression: { threshold: -14, ratio: 3.5, attack: 15, release: 120, makeupGain: 3 },
+          compression: {
+            threshold: -14,
+            ratio: 3.5,
+            attack: 15,
+            release: 120,
+            makeupGain: 3,
+          },
           effects: {
             reverb: { wetness: 0.18, roomSize: 0.5, damping: 0.4 },
             delay: { time: 0.33, feedback: 0.25, wetness: 0.12 },
@@ -1055,7 +1178,7 @@ export class AIMusicService {
           },
           stereoImaging: { width: 1.15, bassMonoFreq: 140 },
         },
-        masterSettings: this.getMasteringPresetForGenre('rock'),
+        masterSettings: this.getMasteringPresetForGenre("rock"),
         characteristics: {
           bassEmphasis: 0.75,
           vocalClarity: 0.85,
@@ -1066,9 +1189,9 @@ export class AIMusicService {
         },
       },
       {
-        genre: 'pop',
-        displayName: 'Pop',
-        description: 'Bright, polished, vocal-forward mix',
+        genre: "pop",
+        displayName: "Pop",
+        description: "Bright, polished, vocal-forward mix",
         targetLoudness: -10,
         mixSettings: {
           eq: {
@@ -1080,7 +1203,13 @@ export class AIMusicService {
             lowCut: 35,
             highCut: 18000,
           },
-          compression: { threshold: -13, ratio: 4, attack: 12, release: 90, makeupGain: 3.5 },
+          compression: {
+            threshold: -13,
+            ratio: 4,
+            attack: 12,
+            release: 90,
+            makeupGain: 3.5,
+          },
           effects: {
             reverb: { wetness: 0.2, roomSize: 0.45, damping: 0.35 },
             delay: { time: 0.3, feedback: 0.28, wetness: 0.15 },
@@ -1089,7 +1218,7 @@ export class AIMusicService {
           },
           stereoImaging: { width: 1.2, bassMonoFreq: 130 },
         },
-        masterSettings: this.getMasteringPresetForGenre('pop'),
+        masterSettings: this.getMasteringPresetForGenre("pop"),
         characteristics: {
           bassEmphasis: 0.7,
           vocalClarity: 0.95,
@@ -1100,9 +1229,9 @@ export class AIMusicService {
         },
       },
       {
-        genre: 'rnb',
-        displayName: 'R&B',
-        description: 'Smooth, warm, intimate vocal production',
+        genre: "rnb",
+        displayName: "R&B",
+        description: "Smooth, warm, intimate vocal production",
         targetLoudness: -11,
         mixSettings: {
           eq: {
@@ -1114,7 +1243,13 @@ export class AIMusicService {
             lowCut: 28,
             highCut: 17000,
           },
-          compression: { threshold: -16, ratio: 5, attack: 8, release: 85, makeupGain: 4 },
+          compression: {
+            threshold: -16,
+            ratio: 5,
+            attack: 8,
+            release: 85,
+            makeupGain: 4,
+          },
           effects: {
             reverb: { wetness: 0.22, roomSize: 0.48, damping: 0.45 },
             delay: { time: 0.28, feedback: 0.22, wetness: 0.13 },
@@ -1123,7 +1258,7 @@ export class AIMusicService {
           },
           stereoImaging: { width: 1.1, bassMonoFreq: 135 },
         },
-        masterSettings: this.getMasteringPresetForGenre('rnb'),
+        masterSettings: this.getMasteringPresetForGenre("rnb"),
         characteristics: {
           bassEmphasis: 0.8,
           vocalClarity: 0.92,
@@ -1134,9 +1269,9 @@ export class AIMusicService {
         },
       },
       {
-        genre: 'jazz',
-        displayName: 'Jazz',
-        description: 'Natural, spacious, dynamic preservation',
+        genre: "jazz",
+        displayName: "Jazz",
+        description: "Natural, spacious, dynamic preservation",
         targetLoudness: -16,
         mixSettings: {
           eq: {
@@ -1148,7 +1283,13 @@ export class AIMusicService {
             lowCut: 25,
             highCut: 19000,
           },
-          compression: { threshold: -18, ratio: 2, attack: 25, release: 150, makeupGain: 2 },
+          compression: {
+            threshold: -18,
+            ratio: 2,
+            attack: 25,
+            release: 150,
+            makeupGain: 2,
+          },
           effects: {
             reverb: { wetness: 0.28, roomSize: 0.65, damping: 0.3 },
             delay: { time: 0.35, feedback: 0.18, wetness: 0.08 },
@@ -1157,7 +1298,7 @@ export class AIMusicService {
           },
           stereoImaging: { width: 1.05, bassMonoFreq: 100 },
         },
-        masterSettings: this.getMasteringPresetForGenre('jazz'),
+        masterSettings: this.getMasteringPresetForGenre("jazz"),
         characteristics: {
           bassEmphasis: 0.6,
           vocalClarity: 0.7,
@@ -1168,9 +1309,9 @@ export class AIMusicService {
         },
       },
       {
-        genre: 'classical',
-        displayName: 'Classical',
-        description: 'Transparent, wide soundstage, dynamic',
+        genre: "classical",
+        displayName: "Classical",
+        description: "Transparent, wide soundstage, dynamic",
         targetLoudness: -18,
         mixSettings: {
           eq: {
@@ -1182,7 +1323,13 @@ export class AIMusicService {
             lowCut: 20,
             highCut: 20000,
           },
-          compression: { threshold: -20, ratio: 1.5, attack: 30, release: 180, makeupGain: 1 },
+          compression: {
+            threshold: -20,
+            ratio: 1.5,
+            attack: 30,
+            release: 180,
+            makeupGain: 1,
+          },
           effects: {
             reverb: { wetness: 0.32, roomSize: 0.75, damping: 0.25 },
             delay: { time: 0.4, feedback: 0.15, wetness: 0.05 },
@@ -1191,7 +1338,7 @@ export class AIMusicService {
           },
           stereoImaging: { width: 1.0, bassMonoFreq: 80 },
         },
-        masterSettings: this.getMasteringPresetForGenre('classical'),
+        masterSettings: this.getMasteringPresetForGenre("classical"),
         characteristics: {
           bassEmphasis: 0.55,
           vocalClarity: 0.65,
@@ -1202,9 +1349,9 @@ export class AIMusicService {
         },
       },
       {
-        genre: 'country',
-        displayName: 'Country',
-        description: 'Clear vocals, organic instruments, warmth',
+        genre: "country",
+        displayName: "Country",
+        description: "Clear vocals, organic instruments, warmth",
         targetLoudness: -13,
         mixSettings: {
           eq: {
@@ -1216,7 +1363,13 @@ export class AIMusicService {
             lowCut: 32,
             highCut: 17000,
           },
-          compression: { threshold: -15, ratio: 3, attack: 18, release: 110, makeupGain: 3 },
+          compression: {
+            threshold: -15,
+            ratio: 3,
+            attack: 18,
+            release: 110,
+            makeupGain: 3,
+          },
           effects: {
             reverb: { wetness: 0.16, roomSize: 0.42, damping: 0.4 },
             delay: { time: 0.32, feedback: 0.24, wetness: 0.11 },
@@ -1225,7 +1378,7 @@ export class AIMusicService {
           },
           stereoImaging: { width: 1.08, bassMonoFreq: 125 },
         },
-        masterSettings: this.getMasteringPresetForGenre('country'),
+        masterSettings: this.getMasteringPresetForGenre("country"),
         characteristics: {
           bassEmphasis: 0.65,
           vocalClarity: 0.88,
@@ -1236,9 +1389,9 @@ export class AIMusicService {
         },
       },
       {
-        genre: 'metal',
-        displayName: 'Metal',
-        description: 'Aggressive, tight low-end, powerful',
+        genre: "metal",
+        displayName: "Metal",
+        description: "Aggressive, tight low-end, powerful",
         targetLoudness: -8,
         mixSettings: {
           eq: {
@@ -1250,7 +1403,13 @@ export class AIMusicService {
             lowCut: 35,
             highCut: 16000,
           },
-          compression: { threshold: -12, ratio: 6, attack: 8, release: 95, makeupGain: 4.5 },
+          compression: {
+            threshold: -12,
+            ratio: 6,
+            attack: 8,
+            release: 95,
+            makeupGain: 4.5,
+          },
           effects: {
             reverb: { wetness: 0.12, roomSize: 0.38, damping: 0.55 },
             delay: { time: 0.27, feedback: 0.2, wetness: 0.09 },
@@ -1259,7 +1418,7 @@ export class AIMusicService {
           },
           stereoImaging: { width: 1.25, bassMonoFreq: 160 },
         },
-        masterSettings: this.getMasteringPresetForGenre('metal'),
+        masterSettings: this.getMasteringPresetForGenre("metal"),
         characteristics: {
           bassEmphasis: 0.88,
           vocalClarity: 0.75,
@@ -1270,9 +1429,9 @@ export class AIMusicService {
         },
       },
       {
-        genre: 'reggae',
-        displayName: 'Reggae',
-        description: 'Heavy bass, laid-back, spacious',
+        genre: "reggae",
+        displayName: "Reggae",
+        description: "Heavy bass, laid-back, spacious",
         targetLoudness: -12,
         mixSettings: {
           eq: {
@@ -1284,7 +1443,13 @@ export class AIMusicService {
             lowCut: 28,
             highCut: 16000,
           },
-          compression: { threshold: -16, ratio: 4, attack: 20, release: 130, makeupGain: 3.5 },
+          compression: {
+            threshold: -16,
+            ratio: 4,
+            attack: 20,
+            release: 130,
+            makeupGain: 3.5,
+          },
           effects: {
             reverb: { wetness: 0.24, roomSize: 0.52, damping: 0.42 },
             delay: { time: 0.38, feedback: 0.32, wetness: 0.18 },
@@ -1293,7 +1458,7 @@ export class AIMusicService {
           },
           stereoImaging: { width: 1.12, bassMonoFreq: 145 },
         },
-        masterSettings: this.getMasteringPresetForGenre('reggae'),
+        masterSettings: this.getMasteringPresetForGenre("reggae"),
         characteristics: {
           bassEmphasis: 0.95,
           vocalClarity: 0.78,
@@ -1304,9 +1469,9 @@ export class AIMusicService {
         },
       },
       {
-        genre: 'latin',
-        displayName: 'Latin',
-        description: 'Rhythmic, vibrant, energetic percussion',
+        genre: "latin",
+        displayName: "Latin",
+        description: "Rhythmic, vibrant, energetic percussion",
         targetLoudness: -10,
         mixSettings: {
           eq: {
@@ -1318,7 +1483,13 @@ export class AIMusicService {
             lowCut: 30,
             highCut: 17500,
           },
-          compression: { threshold: -14, ratio: 4, attack: 12, release: 100, makeupGain: 3.5 },
+          compression: {
+            threshold: -14,
+            ratio: 4,
+            attack: 12,
+            release: 100,
+            makeupGain: 3.5,
+          },
           effects: {
             reverb: { wetness: 0.19, roomSize: 0.46, damping: 0.38 },
             delay: { time: 0.29, feedback: 0.26, wetness: 0.13 },
@@ -1327,7 +1498,7 @@ export class AIMusicService {
           },
           stereoImaging: { width: 1.18, bassMonoFreq: 135 },
         },
-        masterSettings: this.getMasteringPresetForGenre('latin'),
+        masterSettings: this.getMasteringPresetForGenre("latin"),
         characteristics: {
           bassEmphasis: 0.82,
           vocalClarity: 0.85,
@@ -1338,9 +1509,9 @@ export class AIMusicService {
         },
       },
       {
-        genre: 'indie',
-        displayName: 'Indie',
-        description: 'Lo-fi character, organic, intimate',
+        genre: "indie",
+        displayName: "Indie",
+        description: "Lo-fi character, organic, intimate",
         targetLoudness: -13,
         mixSettings: {
           eq: {
@@ -1352,7 +1523,13 @@ export class AIMusicService {
             lowCut: 32,
             highCut: 16500,
           },
-          compression: { threshold: -15, ratio: 3.5, attack: 16, release: 115, makeupGain: 3 },
+          compression: {
+            threshold: -15,
+            ratio: 3.5,
+            attack: 16,
+            release: 115,
+            makeupGain: 3,
+          },
           effects: {
             reverb: { wetness: 0.21, roomSize: 0.48, damping: 0.4 },
             delay: { time: 0.31, feedback: 0.27, wetness: 0.14 },
@@ -1361,7 +1538,7 @@ export class AIMusicService {
           },
           stereoImaging: { width: 1.08, bassMonoFreq: 128 },
         },
-        masterSettings: this.getMasteringPresetForGenre('indie'),
+        masterSettings: this.getMasteringPresetForGenre("indie"),
         characteristics: {
           bassEmphasis: 0.68,
           vocalClarity: 0.82,
@@ -1372,9 +1549,9 @@ export class AIMusicService {
         },
       },
       {
-        genre: 'folk',
-        displayName: 'Folk',
-        description: 'Acoustic, natural, vocal-centric',
+        genre: "folk",
+        displayName: "Folk",
+        description: "Acoustic, natural, vocal-centric",
         targetLoudness: -15,
         mixSettings: {
           eq: {
@@ -1386,7 +1563,13 @@ export class AIMusicService {
             lowCut: 30,
             highCut: 18000,
           },
-          compression: { threshold: -17, ratio: 2.5, attack: 22, release: 135, makeupGain: 2.5 },
+          compression: {
+            threshold: -17,
+            ratio: 2.5,
+            attack: 22,
+            release: 135,
+            makeupGain: 2.5,
+          },
           effects: {
             reverb: { wetness: 0.23, roomSize: 0.5, damping: 0.36 },
             delay: { time: 0.34, feedback: 0.21, wetness: 0.1 },
@@ -1395,7 +1578,7 @@ export class AIMusicService {
           },
           stereoImaging: { width: 1.05, bassMonoFreq: 115 },
         },
-        masterSettings: this.getMasteringPresetForGenre('folk'),
+        masterSettings: this.getMasteringPresetForGenre("folk"),
         characteristics: {
           bassEmphasis: 0.6,
           vocalClarity: 0.9,
@@ -1406,9 +1589,9 @@ export class AIMusicService {
         },
       },
       {
-        genre: 'blues',
-        displayName: 'Blues',
-        description: 'Warm, gritty, soulful character',
+        genre: "blues",
+        displayName: "Blues",
+        description: "Warm, gritty, soulful character",
         targetLoudness: -14,
         mixSettings: {
           eq: {
@@ -1420,7 +1603,13 @@ export class AIMusicService {
             lowCut: 28,
             highCut: 16000,
           },
-          compression: { threshold: -16, ratio: 3, attack: 20, release: 125, makeupGain: 3 },
+          compression: {
+            threshold: -16,
+            ratio: 3,
+            attack: 20,
+            release: 125,
+            makeupGain: 3,
+          },
           effects: {
             reverb: { wetness: 0.2, roomSize: 0.47, damping: 0.43 },
             delay: { time: 0.33, feedback: 0.24, wetness: 0.12 },
@@ -1429,7 +1618,7 @@ export class AIMusicService {
           },
           stereoImaging: { width: 1.06, bassMonoFreq: 122 },
         },
-        masterSettings: this.getMasteringPresetForGenre('blues'),
+        masterSettings: this.getMasteringPresetForGenre("blues"),
         characteristics: {
           bassEmphasis: 0.72,
           vocalClarity: 0.85,
@@ -1440,9 +1629,9 @@ export class AIMusicService {
         },
       },
       {
-        genre: 'funk',
-        displayName: 'Funk',
-        description: 'Groovy, tight, rhythmic punch',
+        genre: "funk",
+        displayName: "Funk",
+        description: "Groovy, tight, rhythmic punch",
         targetLoudness: -10,
         mixSettings: {
           eq: {
@@ -1454,7 +1643,13 @@ export class AIMusicService {
             lowCut: 30,
             highCut: 17000,
           },
-          compression: { threshold: -13, ratio: 5, attack: 10, release: 95, makeupGain: 4 },
+          compression: {
+            threshold: -13,
+            ratio: 5,
+            attack: 10,
+            release: 95,
+            makeupGain: 4,
+          },
           effects: {
             reverb: { wetness: 0.17, roomSize: 0.44, damping: 0.46 },
             delay: { time: 0.28, feedback: 0.23, wetness: 0.11 },
@@ -1463,7 +1658,7 @@ export class AIMusicService {
           },
           stereoImaging: { width: 1.14, bassMonoFreq: 138 },
         },
-        masterSettings: this.getMasteringPresetForGenre('funk'),
+        masterSettings: this.getMasteringPresetForGenre("funk"),
         characteristics: {
           bassEmphasis: 0.9,
           vocalClarity: 0.8,
@@ -1474,9 +1669,9 @@ export class AIMusicService {
         },
       },
       {
-        genre: 'soul',
-        displayName: 'Soul',
-        description: 'Warm, emotive, vocal prominence',
+        genre: "soul",
+        displayName: "Soul",
+        description: "Warm, emotive, vocal prominence",
         targetLoudness: -12,
         mixSettings: {
           eq: {
@@ -1488,7 +1683,13 @@ export class AIMusicService {
             lowCut: 29,
             highCut: 17000,
           },
-          compression: { threshold: -15, ratio: 4, attack: 14, release: 105, makeupGain: 3.5 },
+          compression: {
+            threshold: -15,
+            ratio: 4,
+            attack: 14,
+            release: 105,
+            makeupGain: 3.5,
+          },
           effects: {
             reverb: { wetness: 0.22, roomSize: 0.49, damping: 0.42 },
             delay: { time: 0.3, feedback: 0.25, wetness: 0.13 },
@@ -1497,7 +1698,7 @@ export class AIMusicService {
           },
           stereoImaging: { width: 1.1, bassMonoFreq: 132 },
         },
-        masterSettings: this.getMasteringPresetForGenre('soul'),
+        masterSettings: this.getMasteringPresetForGenre("soul"),
         characteristics: {
           bassEmphasis: 0.78,
           vocalClarity: 0.93,
@@ -1508,9 +1709,9 @@ export class AIMusicService {
         },
       },
       {
-        genre: 'house',
-        displayName: 'House',
-        description: 'Four-on-floor, groove-focused, spacious',
+        genre: "house",
+        displayName: "House",
+        description: "Four-on-floor, groove-focused, spacious",
         targetLoudness: -8.5,
         mixSettings: {
           eq: {
@@ -1522,7 +1723,13 @@ export class AIMusicService {
             lowCut: 32,
             highCut: 18500,
           },
-          compression: { threshold: -12, ratio: 4.5, attack: 11, release: 105, makeupGain: 3.5 },
+          compression: {
+            threshold: -12,
+            ratio: 4.5,
+            attack: 11,
+            release: 105,
+            makeupGain: 3.5,
+          },
           effects: {
             reverb: { wetness: 0.24, roomSize: 0.58, damping: 0.32 },
             delay: { time: 0.375, feedback: 0.33, wetness: 0.18 },
@@ -1531,7 +1738,7 @@ export class AIMusicService {
           },
           stereoImaging: { width: 1.28, bassMonoFreq: 125 },
         },
-        masterSettings: this.getMasteringPresetForGenre('house'),
+        masterSettings: this.getMasteringPresetForGenre("house"),
         characteristics: {
           bassEmphasis: 0.92,
           vocalClarity: 0.72,
@@ -1542,9 +1749,9 @@ export class AIMusicService {
         },
       },
       {
-        genre: 'techno',
-        displayName: 'Techno',
-        description: 'Driving, hypnotic, powerful low-end',
+        genre: "techno",
+        displayName: "Techno",
+        description: "Driving, hypnotic, powerful low-end",
         targetLoudness: -8,
         mixSettings: {
           eq: {
@@ -1556,7 +1763,13 @@ export class AIMusicService {
             lowCut: 33,
             highCut: 18000,
           },
-          compression: { threshold: -11, ratio: 5, attack: 9, release: 98, makeupGain: 4 },
+          compression: {
+            threshold: -11,
+            ratio: 5,
+            attack: 9,
+            release: 98,
+            makeupGain: 4,
+          },
           effects: {
             reverb: { wetness: 0.26, roomSize: 0.62, damping: 0.28 },
             delay: { time: 0.375, feedback: 0.36, wetness: 0.2 },
@@ -1565,7 +1778,7 @@ export class AIMusicService {
           },
           stereoImaging: { width: 1.32, bassMonoFreq: 118 },
         },
-        masterSettings: this.getMasteringPresetForGenre('techno'),
+        masterSettings: this.getMasteringPresetForGenre("techno"),
         characteristics: {
           bassEmphasis: 0.96,
           vocalClarity: 0.6,
@@ -1576,9 +1789,9 @@ export class AIMusicService {
         },
       },
       {
-        genre: 'dubstep',
-        displayName: 'Dubstep',
-        description: 'Massive bass, aggressive, dramatic dynamics',
+        genre: "dubstep",
+        displayName: "Dubstep",
+        description: "Massive bass, aggressive, dramatic dynamics",
         targetLoudness: -7,
         mixSettings: {
           eq: {
@@ -1590,7 +1803,13 @@ export class AIMusicService {
             lowCut: 35,
             highCut: 18500,
           },
-          compression: { threshold: -10, ratio: 6, attack: 7, release: 90, makeupGain: 5 },
+          compression: {
+            threshold: -10,
+            ratio: 6,
+            attack: 7,
+            release: 90,
+            makeupGain: 5,
+          },
           effects: {
             reverb: { wetness: 0.22, roomSize: 0.55, damping: 0.35 },
             delay: { time: 0.375, feedback: 0.4, wetness: 0.22 },
@@ -1599,7 +1818,7 @@ export class AIMusicService {
           },
           stereoImaging: { width: 1.35, bassMonoFreq: 115 },
         },
-        masterSettings: this.getMasteringPresetForGenre('dubstep'),
+        masterSettings: this.getMasteringPresetForGenre("dubstep"),
         characteristics: {
           bassEmphasis: 0.99,
           vocalClarity: 0.68,
@@ -1610,9 +1829,9 @@ export class AIMusicService {
         },
       },
       {
-        genre: 'trap',
-        displayName: 'Trap',
-        description: 'Heavy 808s, crispy hi-hats, modern rap',
+        genre: "trap",
+        displayName: "Trap",
+        description: "Heavy 808s, crispy hi-hats, modern rap",
         targetLoudness: -8.5,
         mixSettings: {
           eq: {
@@ -1624,7 +1843,13 @@ export class AIMusicService {
             lowCut: 26,
             highCut: 17500,
           },
-          compression: { threshold: -13, ratio: 6, attack: 6, release: 85, makeupGain: 4.5 },
+          compression: {
+            threshold: -13,
+            ratio: 6,
+            attack: 6,
+            release: 85,
+            makeupGain: 4.5,
+          },
           effects: {
             reverb: { wetness: 0.16, roomSize: 0.42, damping: 0.48 },
             delay: { time: 0.25, feedback: 0.22, wetness: 0.11 },
@@ -1633,7 +1858,7 @@ export class AIMusicService {
           },
           stereoImaging: { width: 1.08, bassMonoFreq: 155 },
         },
-        masterSettings: this.getMasteringPresetForGenre('trap'),
+        masterSettings: this.getMasteringPresetForGenre("trap"),
         characteristics: {
           bassEmphasis: 0.97,
           vocalClarity: 0.88,
@@ -1656,7 +1881,7 @@ export class AIMusicService {
         high: { threshold: -12, ratio: 1.5, gain: 1.5, frequency: 10000 },
       },
       limiter: { ceiling: -1, release: 50, lookahead: 5 },
-      maximizer: { amount: 0.6, character: 'transparent' },
+      maximizer: { amount: 0.6, character: "transparent" },
       stereoEnhancer: { width: 1.1, bassWidth: 0.8 },
       spectralBalance: { lowShelf: 1, highShelf: 2, presence: 1.5 },
     };
@@ -1664,19 +1889,19 @@ export class AIMusicService {
     const genreOverrides: Record<string, Partial<MasterSettings>> = {
       hip_hop: {
         limiter: { ceiling: -0.5, release: 45, lookahead: 6 },
-        maximizer: { amount: 0.7, character: 'punchy' },
+        maximizer: { amount: 0.7, character: "punchy" },
       },
       edm: {
         limiter: { ceiling: -0.3, release: 40, lookahead: 7 },
-        maximizer: { amount: 0.8, character: 'aggressive' },
+        maximizer: { amount: 0.8, character: "aggressive" },
       },
       classical: {
         limiter: { ceiling: -2, release: 60, lookahead: 4 },
-        maximizer: { amount: 0.3, character: 'transparent' },
+        maximizer: { amount: 0.3, character: "transparent" },
       },
       jazz: {
         limiter: { ceiling: -1.5, release: 65, lookahead: 4 },
-        maximizer: { amount: 0.4, character: 'transparent' },
+        maximizer: { amount: 0.4, character: "transparent" },
       },
     };
 
@@ -1694,7 +1919,7 @@ export class AIMusicService {
   private extractStem(
     audioBuffer: Buffer,
     spectralData: Float32Array,
-    stemType: string
+    stemType: string,
   ): {
     audioPath: string;
     confidence: number;
@@ -1705,10 +1930,14 @@ export class AIMusicService {
 
     const filteredAudio = this.applyFrequencyFilter(audioData, stemType);
 
-    const stemId = randomBytes(8).toString('hex');
+    const stemId = randomBytes(8).toString("hex");
     const stemPath = `/stems/${stemType}_${stemId}.wav`;
 
-    const confidenceScore = this.calculateStemConfidence(filteredAudio, stemType, bufferSize);
+    const confidenceScore = this.calculateStemConfidence(
+      filteredAudio,
+      stemType,
+      bufferSize,
+    );
 
     return {
       audioPath: stemPath,
@@ -1717,35 +1946,49 @@ export class AIMusicService {
     };
   }
 
-  private applyFrequencyFilter(audioData: Float32Array, stemType: string): Float32Array {
+  private applyFrequencyFilter(
+    audioData: Float32Array,
+    stemType: string,
+  ): Float32Array {
     const filtered = new Float32Array(audioData.length);
 
     for (let i = 0; i < audioData.length; i++) {
-      const attenuation = this.getFilterAttenuation(i, audioData.length, stemType);
+      const attenuation = this.getFilterAttenuation(
+        i,
+        audioData.length,
+        stemType,
+      );
       filtered[i] = audioData[i] * attenuation;
     }
 
     return filtered;
   }
 
-  private getFilterAttenuation(index: number, totalLength: number, stemType: string): number {
+  private getFilterAttenuation(
+    index: number,
+    totalLength: number,
+    stemType: string,
+  ): number {
     const normalizedFreq = index / totalLength;
 
     switch (stemType) {
-      case 'bass':
-        return normalizedFreq < 0.05 ? 1.0 : Math.exp(-10 * (normalizedFreq - 0.05));
+      case "bass":
+        return normalizedFreq < 0.05
+          ? 1.0
+          : Math.exp(-10 * (normalizedFreq - 0.05));
 
-      case 'drums':
-        const transientBoost = Math.sin(normalizedFreq * Math.PI * 8) > 0.7 ? 1.2 : 0.6;
+      case "drums":
+        const transientBoost =
+          Math.sin(normalizedFreq * Math.PI * 8) > 0.7 ? 1.2 : 0.6;
         return (normalizedFreq < 0.4 ? 0.8 : 0.3) * transientBoost;
 
-      case 'vocals':
+      case "vocals":
         return normalizedFreq > 0.1 && normalizedFreq < 0.5 ? 1.0 : 0.4;
 
-      case 'melody':
+      case "melody":
         return normalizedFreq > 0.05 && normalizedFreq < 0.6 ? 0.9 : 0.3;
 
-      case 'harmony':
+      case "harmony":
         return normalizedFreq > 0.2 && normalizedFreq < 0.8 ? 0.8 : 0.2;
 
       default:
@@ -1756,10 +1999,11 @@ export class AIMusicService {
   private calculateStemConfidence(
     filteredAudio: Float32Array,
     stemType: string,
-    originalSize: number
+    originalSize: number,
   ): number {
     const rms = Math.sqrt(
-      filteredAudio.reduce((sum, val) => sum + val * val, 0) / filteredAudio.length
+      filteredAudio.reduce((sum, val) => sum + val * val, 0) /
+        filteredAudio.length,
     );
 
     const baseConfidence: Record<string, number> = {
@@ -1773,12 +2017,19 @@ export class AIMusicService {
     const sizeBonus = Math.min(0.1, originalSize / 10000000);
     const energyBonus = Math.min(0.05, rms * 10);
 
-    return Math.min(0.95, (baseConfidence[stemType] || 0.8) + sizeBonus + energyBonus);
+    return Math.min(
+      0.95,
+      (baseConfidence[stemType] || 0.8) + sizeBonus + energyBonus,
+    );
   }
 
-  private calculateSpectralProfile(spectralData: Float32Array): SpectralProfile {
+  private calculateSpectralProfile(
+    spectralData: Float32Array,
+  ): SpectralProfile {
     const lowFreq =
-      spectralData.slice(0, spectralData.length * 0.1).reduce((a, b) => a + b, 0) /
+      spectralData
+        .slice(0, spectralData.length * 0.1)
+        .reduce((a, b) => a + b, 0) /
       (spectralData.length * 0.1);
     const lowMidFreq =
       spectralData
@@ -1804,8 +2055,9 @@ export class AIMusicService {
       spectralData.reduce((sum, val) => sum + val, 0);
     const spectralRolloff = spectralData.length * 0.85;
     const spectralFlux = spectralData.reduce(
-      (sum, val, idx) => (idx > 0 ? sum + Math.abs(val - spectralData[idx - 1]) : sum),
-      0
+      (sum, val, idx) =>
+        idx > 0 ? sum + Math.abs(val - spectralData[idx - 1]) : sum,
+      0,
     );
 
     return {
@@ -1832,14 +2084,14 @@ export class AIMusicService {
   private measureLoudnessFallback(audioBuffer: Buffer): LoudnessMetrics {
     const sampleRate = 44100;
     const audioData = this.bufferToFloat32Array(audioBuffer);
-    
+
     const integrated = this.calculateIntegratedLoudness(audioData, sampleRate);
     const shortTerm = this.calculateShortTermLoudness(audioData, sampleRate);
     const momentary = this.calculateMomentaryLoudness(audioData, sampleRate);
     const truePeak = this.calculateTruePeak(audioData);
     const dynamicRange = this.calculateDynamicRange(audioData);
     const loudnessRange = this.calculateLoudnessRange(audioData, sampleRate);
-    
+
     return {
       integrated,
       shortTerm,
@@ -1850,14 +2102,19 @@ export class AIMusicService {
     };
   }
 
-  private calculateIntegratedLoudness(audioData: Float32Array, sampleRate: number): number {
+  private calculateIntegratedLoudness(
+    audioData: Float32Array,
+    sampleRate: number,
+  ): number {
     const blockSize = Math.floor(sampleRate * 0.4);
     let totalLoudness = 0;
     let blockCount = 0;
 
     for (let i = 0; i < audioData.length - blockSize; i += blockSize / 2) {
       const block = audioData.slice(i, i + blockSize);
-      const rms = Math.sqrt(block.reduce((sum, val) => sum + val * val, 0) / block.length);
+      const rms = Math.sqrt(
+        block.reduce((sum, val) => sum + val * val, 0) / block.length,
+      );
       const loudness = -0.691 + 10 * Math.log10(rms + 1e-10);
 
       if (loudness > -70) {
@@ -1869,38 +2126,61 @@ export class AIMusicService {
     return blockCount > 0 ? totalLoudness / blockCount : -70;
   }
 
-  private calculateShortTermLoudness(audioData: Float32Array, sampleRate: number): number {
+  private calculateShortTermLoudness(
+    audioData: Float32Array,
+    sampleRate: number,
+  ): number {
     const blockSize = Math.floor(sampleRate * 3);
     const block = audioData.slice(0, Math.min(blockSize, audioData.length));
-    const rms = Math.sqrt(block.reduce((sum, val) => sum + val * val, 0) / block.length);
+    const rms = Math.sqrt(
+      block.reduce((sum, val) => sum + val * val, 0) / block.length,
+    );
     return -0.691 + 10 * Math.log10(rms + 1e-10);
   }
 
-  private calculateMomentaryLoudness(audioData: Float32Array, sampleRate: number): number {
+  private calculateMomentaryLoudness(
+    audioData: Float32Array,
+    sampleRate: number,
+  ): number {
     const blockSize = Math.floor(sampleRate * 0.4);
     const block = audioData.slice(0, Math.min(blockSize, audioData.length));
-    const rms = Math.sqrt(block.reduce((sum, val) => sum + val * val, 0) / block.length);
+    const rms = Math.sqrt(
+      block.reduce((sum, val) => sum + val * val, 0) / block.length,
+    );
     return -0.691 + 10 * Math.log10(rms + 1e-10);
   }
 
   private calculateTruePeak(audioData: Float32Array): number {
-    const peak = audioData.reduce((max, val) => Math.max(max, Math.abs(val)), 0);
+    const peak = audioData.reduce(
+      (max, val) => Math.max(max, Math.abs(val)),
+      0,
+    );
     return 20 * Math.log10(peak + 1e-10);
   }
 
   private calculateDynamicRange(audioData: Float32Array): number {
-    const rms = Math.sqrt(audioData.reduce((sum, val) => sum + val * val, 0) / audioData.length);
-    const peak = audioData.reduce((max, val) => Math.max(max, Math.abs(val)), 0);
+    const rms = Math.sqrt(
+      audioData.reduce((sum, val) => sum + val * val, 0) / audioData.length,
+    );
+    const peak = audioData.reduce(
+      (max, val) => Math.max(max, Math.abs(val)),
+      0,
+    );
     return 20 * Math.log10(peak / rms + 1e-10);
   }
 
-  private calculateLoudnessRange(audioData: Float32Array, sampleRate: number): number {
+  private calculateLoudnessRange(
+    audioData: Float32Array,
+    sampleRate: number,
+  ): number {
     const blockSize = Math.floor(sampleRate * 3);
     const loudnessValues: number[] = [];
 
     for (let i = 0; i < audioData.length - blockSize; i += blockSize / 2) {
       const block = audioData.slice(i, i + blockSize);
-      const rms = Math.sqrt(block.reduce((sum, val) => sum + val * val, 0) / block.length);
+      const rms = Math.sqrt(
+        block.reduce((sum, val) => sum + val * val, 0) / block.length,
+      );
       const loudness = -0.691 + 10 * Math.log10(rms + 1e-10);
       if (loudness > -70) loudnessValues.push(loudness);
     }
@@ -1908,8 +2188,10 @@ export class AIMusicService {
     if (loudnessValues.length === 0) return 0;
 
     loudnessValues.sort((a, b) => a - b);
-    const lowPercentile = loudnessValues[Math.floor(loudnessValues.length * 0.1)];
-    const highPercentile = loudnessValues[Math.floor(loudnessValues.length * 0.95)];
+    const lowPercentile =
+      loudnessValues[Math.floor(loudnessValues.length * 0.1)];
+    const highPercentile =
+      loudnessValues[Math.floor(loudnessValues.length * 0.95)];
 
     return highPercentile - lowPercentile;
   }
@@ -1917,7 +2199,8 @@ export class AIMusicService {
   private calculateStereoWidth(audioBuffer: Buffer): number {
     // Estimate stereo width from buffer byte variance (L/R channel energy difference)
     if (!audioBuffer || audioBuffer.length < 4) return 1.0;
-    let leftSum = 0, rightSum = 0;
+    let leftSum = 0,
+      rightSum = 0;
     const samples = Math.min(audioBuffer.length >> 1, 8000); // 16-bit stereo pairs
     for (let i = 0; i < samples; i += 4) {
       const l = audioBuffer.readInt16LE(i);
@@ -1938,7 +2221,9 @@ export class AIMusicService {
     treble: number;
   } {
     const bass =
-      spectralData.slice(0, spectralData.length * 0.1).reduce((a, b) => a + b, 0) /
+      spectralData
+        .slice(0, spectralData.length * 0.1)
+        .reduce((a, b) => a + b, 0) /
       (spectralData.length * 0.1);
     const lowMid =
       spectralData
@@ -1962,7 +2247,10 @@ export class AIMusicService {
     return { bass, lowMid, mid, highMid, treble };
   }
 
-  private blendPresetWithIntensity(settings: MixSettings, intensity: number): MixSettings {
+  private blendPresetWithIntensity(
+    settings: MixSettings,
+    intensity: number,
+  ): MixSettings {
     const blend = (value: number) => value * intensity;
 
     return {
@@ -2021,12 +2309,17 @@ export class AIMusicService {
       const primaryClip = clips[0];
       const audioPath = path.join(process.cwd(), primaryClip.filePath);
 
-      const audioAccessible = await fsPromises.access(audioPath).then(() => true).catch(() => false);
+      const audioAccessible = await fsPromises
+        .access(audioPath)
+        .then(() => true)
+        .catch(() => false);
       if (!audioAccessible) {
-        logger.warn(`Audio file not found at ${audioPath}, generating simulated audio buffer`);
+        logger.warn(
+          `Audio file not found at ${audioPath}, generating simulated audio buffer`,
+        );
         return this.generateSimulatedAudioBuffer(
           primaryClip.duration || 30,
-          primaryClip.channels || 2
+          primaryClip.channels || 2,
         );
       }
 
@@ -2036,15 +2329,20 @@ export class AIMusicService {
         const metadata = await parseFile(audioPath);
         const format = metadata.format;
 
-        if (format.container !== 'WAVE') {
-          logger.info(`Converting ${format.container} to WAV for processing...`);
+        if (format.container !== "WAVE") {
+          logger.info(
+            `Converting ${format.container} to WAV for processing...`,
+          );
           const convertedBuffer = await this.convertToWav(audioPath);
           return convertedBuffer;
         }
 
         return audioBuffer;
       } catch (metadataError: unknown) {
-        logger.warn('Could not parse audio metadata, assuming WAV format:', metadataError);
+        logger.warn(
+          "Could not parse audio metadata, assuming WAV format:",
+          metadataError,
+        );
         return audioBuffer;
       }
     } catch (error: unknown) {
@@ -2056,23 +2354,28 @@ export class AIMusicService {
   private async convertToWav(inputPath: string): Promise<Buffer> {
     const hasFFmpeg = await initializeFfmpeg();
     if (!hasFFmpeg || !ffmpeg) {
-      throw new Error('FFmpeg is not available. Audio format conversion is disabled in this deployment.');
+      throw new Error(
+        "FFmpeg is not available. Audio format conversion is disabled in this deployment.",
+      );
     }
-    const tempDir = path.join(process.cwd(), 'uploads', 'temp');
+    const tempDir = path.join(process.cwd(), "uploads", "temp");
     await fsPromises.mkdir(tempDir, { recursive: true });
 
-    const tempOutputPath = path.join(tempDir, `converted_${randomBytes(8).toString('hex')}.wav`);
+    const tempOutputPath = path.join(
+      tempDir,
+      `converted_${randomBytes(8).toString("hex")}.wav`,
+    );
 
     return new Promise((resolve, reject) => {
       ffmpeg(inputPath)
-        .toFormat('wav')
+        .toFormat("wav")
         .audioChannels(2)
         .audioFrequency(48000)
-        .on('error', (err) => {
-          logger.warn({ err: err }, 'FFmpeg conversion error:');
+        .on("error", (err) => {
+          logger.warn({ err: err }, "FFmpeg conversion error:");
           reject(err);
         })
-        .on('end', async () => {
+        .on("end", async () => {
           try {
             const buffer = await fsPromises.readFile(tempOutputPath);
             await fsPromises.unlink(tempOutputPath).catch(() => {});
@@ -2085,7 +2388,10 @@ export class AIMusicService {
     });
   }
 
-  private async performFFT(audioData: Float32Array, sampleRate: number): Promise<Float32Array> {
+  private async performFFT(
+    audioData: Float32Array,
+    sampleRate: number,
+  ): Promise<Float32Array> {
     const fftSize = 4096;
     const fft = new FFT(fftSize);
 
@@ -2116,26 +2422,38 @@ export class AIMusicService {
     audioData: Float32Array,
     spectralData: Float32Array,
     sampleRate: number,
-    stemType: 'vocals' | 'drums' | 'bass' | 'melody' | 'harmony',
-    sessionId: string
+    stemType: "vocals" | "drums" | "bass" | "melody" | "harmony",
+    sessionId: string,
   ): Promise<{
     audioPath: string;
     confidence: number;
     spectralProfile: SpectralProfile;
   }> {
-    const filteredAudio = this.applyFrequencyBandFilter(audioData, stemType, sampleRate);
+    const filteredAudio = this.applyFrequencyBandFilter(
+      audioData,
+      stemType,
+      sampleRate,
+    );
 
-    const stemsDir = path.join(process.cwd(), 'uploads', 'stems');
+    const stemsDir = path.join(process.cwd(), "uploads", "stems");
     await fsPromises.mkdir(stemsDir, { recursive: true });
 
-    const stemId = randomBytes(8).toString('hex');
+    const stemId = randomBytes(8).toString("hex");
     const stemFilename = `${stemType}_${stemId}.wav`;
     const stemPath = path.join(stemsDir, stemFilename);
 
-    const wavBuffer = wav.encode([filteredAudio], { sampleRate, float: false, bitDepth: 16 });
+    const wavBuffer = wav.encode([filteredAudio], {
+      sampleRate,
+      float: false,
+      bitDepth: 16,
+    });
     await fsPromises.writeFile(stemPath, Buffer.from(wavBuffer));
 
-    const confidenceScore = this.calculateStemConfidence(filteredAudio, stemType, audioData.length);
+    const confidenceScore = this.calculateStemConfidence(
+      filteredAudio,
+      stemType,
+      audioData.length,
+    );
     const spectralProfile = this.calculateSpectralProfile(spectralData);
 
     return {
@@ -2157,7 +2475,7 @@ export class AIMusicService {
   private applyFrequencyBandFilter(
     audioData: Float32Array,
     stemType: string,
-    sampleRate: number
+    sampleRate: number,
   ): Float32Array {
     const fftSize = 4096;
     const hopSize = fftSize / 4; // 75% overlap for smoother reconstruction
@@ -2185,13 +2503,13 @@ export class AIMusicService {
       for (let j = 0; j < fftSize / 2; j++) {
         const freq = (j * sampleRate) / fftSize;
         const gain = this.getFrequencyAttenuation(freq, stemType);
-        complexArray[j * 2]     *= gain;
+        complexArray[j * 2] *= gain;
         complexArray[j * 2 + 1] *= gain;
         // Mirror for conjugate symmetry
         if (j > 0 && j < fftSize / 2) {
           const mi = fftSize - j;
-          if (mi < fftSize / 2 * 2) {
-            complexArray[mi * 2]     *= gain;
+          if (mi < (fftSize / 2) * 2) {
+            complexArray[mi * 2] *= gain;
             complexArray[mi * 2 + 1] *= gain;
           }
         }
@@ -2203,8 +2521,8 @@ export class AIMusicService {
       // Overlap-add with synthesis Hann window
       for (let n = 0; n < fftSize && i + n < output.length; n++) {
         const synthSample = inverseOutput[n * 2] * hannWindow[n];
-        output[i + n]     += synthSample;
-        windowSum[i + n]  += hannWindow[n] * hannWindow[n];
+        output[i + n] += synthSample;
+        windowSum[i + n] += hannWindow[n] * hannWindow[n];
       }
     }
 
@@ -2231,7 +2549,13 @@ export class AIMusicService {
    */
   private getFrequencyAttenuation(frequency: number, stemType: string): number {
     // Inline smooth step: cubic ease between two frequency points
-    const smoothStep = (f: number, lo: number, hi: number, gainLo: number, gainHi: number) => {
+    const smoothStep = (
+      f: number,
+      lo: number,
+      hi: number,
+      gainLo: number,
+      gainHi: number,
+    ) => {
       if (f <= lo) return gainLo;
       if (f >= hi) return gainHi;
       const t = (f - lo) / (hi - lo);
@@ -2240,57 +2564,65 @@ export class AIMusicService {
     };
 
     switch (stemType) {
-      case 'bass':
+      case "bass":
         // Full below 80 Hz, peak at 200 Hz, roll off to 0.05 above 500 Hz
-        if (frequency < 80)   return 1.0;
-        if (frequency < 200)  return smoothStep(frequency, 80,  200,  1.0, 1.0);
-        if (frequency < 500)  return smoothStep(frequency, 200, 500,  1.0, 0.15);
-        if (frequency < 800)  return smoothStep(frequency, 500, 800,  0.15, 0.04);
+        if (frequency < 80) return 1.0;
+        if (frequency < 200) return smoothStep(frequency, 80, 200, 1.0, 1.0);
+        if (frequency < 500) return smoothStep(frequency, 200, 500, 1.0, 0.15);
+        if (frequency < 800) return smoothStep(frequency, 500, 800, 0.15, 0.04);
         return 0.04;
 
-      case 'drums':
+      case "drums":
         // Kick: 40–120 Hz; snare body: 180–900 Hz; snare crack + cymbals: 4k–20k
-        if (frequency < 40)   return 0.3;
-        if (frequency < 80)   return smoothStep(frequency, 40,  80,   0.3,  1.0);
-        if (frequency < 150)  return 1.0; // kick body
-        if (frequency < 200)  return smoothStep(frequency, 150, 200,  1.0,  0.5);
-        if (frequency < 300)  return smoothStep(frequency, 200, 300,  0.5,  1.0);
-        if (frequency < 900)  return 1.0; // snare body
-        if (frequency < 2000) return smoothStep(frequency, 900, 2000, 1.0,  0.4);
-        if (frequency < 4000) return smoothStep(frequency, 2000,4000, 0.4,  0.85);
-        if (frequency < 12000)return 0.85; // cymbal / hi-hat
-        if (frequency < 18000)return smoothStep(frequency, 12000,18000,0.85,0.3);
+        if (frequency < 40) return 0.3;
+        if (frequency < 80) return smoothStep(frequency, 40, 80, 0.3, 1.0);
+        if (frequency < 150) return 1.0; // kick body
+        if (frequency < 200) return smoothStep(frequency, 150, 200, 1.0, 0.5);
+        if (frequency < 300) return smoothStep(frequency, 200, 300, 0.5, 1.0);
+        if (frequency < 900) return 1.0; // snare body
+        if (frequency < 2000) return smoothStep(frequency, 900, 2000, 1.0, 0.4);
+        if (frequency < 4000)
+          return smoothStep(frequency, 2000, 4000, 0.4, 0.85);
+        if (frequency < 12000) return 0.85; // cymbal / hi-hat
+        if (frequency < 18000)
+          return smoothStep(frequency, 12000, 18000, 0.85, 0.3);
         return 0.3;
 
-      case 'vocals':
+      case "vocals":
         // Attenuate sub/bass below 300 Hz, peak vocal presence 800–3400 Hz, gentle high roll-off
-        if (frequency < 100)  return 0.05;
-        if (frequency < 300)  return smoothStep(frequency, 100, 300,  0.05, 0.5);
-        if (frequency < 500)  return smoothStep(frequency, 300, 500,  0.5,  0.85);
-        if (frequency < 800)  return smoothStep(frequency, 500, 800,  0.85, 1.0);
+        if (frequency < 100) return 0.05;
+        if (frequency < 300) return smoothStep(frequency, 100, 300, 0.05, 0.5);
+        if (frequency < 500) return smoothStep(frequency, 300, 500, 0.5, 0.85);
+        if (frequency < 800) return smoothStep(frequency, 500, 800, 0.85, 1.0);
         if (frequency < 3400) return 1.0; // core vocal formant range
-        if (frequency < 5000) return smoothStep(frequency, 3400,5000, 1.0,  0.75);
-        if (frequency < 8000) return smoothStep(frequency, 5000,8000, 0.75, 0.45);
-        if (frequency < 12000)return smoothStep(frequency, 8000,12000,0.45, 0.2);
+        if (frequency < 5000)
+          return smoothStep(frequency, 3400, 5000, 1.0, 0.75);
+        if (frequency < 8000)
+          return smoothStep(frequency, 5000, 8000, 0.75, 0.45);
+        if (frequency < 12000)
+          return smoothStep(frequency, 8000, 12000, 0.45, 0.2);
         return 0.1;
 
-      case 'melody':
+      case "melody":
         // Suppress sub and bass, focus on upper fundamentals and harmonics
-        if (frequency < 200)  return 0.1;
-        if (frequency < 500)  return smoothStep(frequency, 200, 500,  0.1,  0.6);
-        if (frequency < 1000) return smoothStep(frequency, 500, 1000, 0.6,  1.0);
+        if (frequency < 200) return 0.1;
+        if (frequency < 500) return smoothStep(frequency, 200, 500, 0.1, 0.6);
+        if (frequency < 1000) return smoothStep(frequency, 500, 1000, 0.6, 1.0);
         if (frequency < 8000) return 1.0;
-        if (frequency < 12000)return smoothStep(frequency, 8000,12000,1.0,  0.55);
-        if (frequency < 16000)return smoothStep(frequency, 12000,16000,0.55,0.2);
+        if (frequency < 12000)
+          return smoothStep(frequency, 8000, 12000, 1.0, 0.55);
+        if (frequency < 16000)
+          return smoothStep(frequency, 12000, 16000, 0.55, 0.2);
         return 0.1;
 
-      case 'harmony':
+      case "harmony":
         // Broad mid-to-high band, attenuate extreme sub and very high frequencies
-        if (frequency < 100)  return 0.15;
-        if (frequency < 300)  return smoothStep(frequency, 100, 300,  0.15, 0.7);
-        if (frequency < 800)  return smoothStep(frequency, 300, 800,  0.7,  1.0);
-        if (frequency < 10000)return 1.0;
-        if (frequency < 14000)return smoothStep(frequency, 10000,14000,1.0, 0.4);
+        if (frequency < 100) return 0.15;
+        if (frequency < 300) return smoothStep(frequency, 100, 300, 0.15, 0.7);
+        if (frequency < 800) return smoothStep(frequency, 300, 800, 0.7, 1.0);
+        if (frequency < 10000) return 1.0;
+        if (frequency < 14000)
+          return smoothStep(frequency, 10000, 14000, 1.0, 0.4);
         return 0.2;
 
       default:
@@ -2298,7 +2630,10 @@ export class AIMusicService {
     }
   }
 
-  private generateSimulatedAudioBuffer(durationSeconds: number, channels: number): Buffer {
+  private generateSimulatedAudioBuffer(
+    durationSeconds: number,
+    channels: number,
+  ): Buffer {
     const sampleRate = 48000;
     const bytesPerSample = 2;
     const totalSamples = Math.floor(sampleRate * durationSeconds * channels);
@@ -2322,7 +2657,10 @@ export class AIMusicService {
         return tracks[0];
       }
 
-      const allProjects = await storage.getAllProjects({ page: 1, limit: 1000 });
+      const allProjects = await storage.getAllProjects({
+        page: 1,
+        limit: 1000,
+      });
       for (const project of allProjects.data) {
         const projectTracks = await storage.getProjectTracks(project.id);
         const track = projectTracks.find((t) => t.id === trackId);
@@ -2375,7 +2713,7 @@ export class AIMusicService {
     inputData: unknown,
     outputData: unknown,
     confidence: number,
-    executionTimeMs: number
+    executionTimeMs: number,
   ): Promise<void> {
     try {
       const aiModel = await storage.getAIModelByName(modelName);
@@ -2393,27 +2731,34 @@ export class AIMusicService {
         confidenceScore: confidence,
         executionTimeMs,
         success: true,
-        requestId: randomBytes(8).toString('hex'),
+        requestId: randomBytes(8).toString("hex"),
       });
 
       const humanReadable = this.generateExplanation(
         inferenceType,
         inputData,
         outputData,
-        confidence
+        confidence,
       );
 
       await storage.createExplanationLog({
         inferenceId: inferenceRun.id,
-        explanationType: 'feature_importance',
-        featureImportance: this.calculateFeatureImportance(inferenceType, outputData),
-        decisionPath: this.generateDecisionPath(inferenceType, inputData, outputData),
+        explanationType: "feature_importance",
+        featureImportance: this.calculateFeatureImportance(
+          inferenceType,
+          outputData,
+        ),
+        decisionPath: this.generateDecisionPath(
+          inferenceType,
+          inputData,
+          outputData,
+        ),
         confidence,
         humanReadable,
         visualizationData: { type: inferenceType, data: outputData },
       });
     } catch (error: unknown) {
-      logger.warn({ err: error }, 'Failed to log inference:');
+      logger.warn({ err: error }, "Failed to log inference:");
     }
   }
 
@@ -2421,7 +2766,7 @@ export class AIMusicService {
     type: string,
     input: unknown,
     output: unknown,
-    confidence: number
+    confidence: number,
   ): string {
     const explanations: Record<string, string> = {
       stem_separation: `Separated audio into ${Object.keys(output).length} stems with ${(confidence * 100).toFixed(1)}% overall confidence using frequency-based analysis`,
@@ -2430,15 +2775,19 @@ export class AIMusicService {
       reference_analysis: `Analyzed reference track: ${output.loudnessMetrics.integrated.toFixed(1)} LUFS integrated loudness, ${output.dynamicRange.toFixed(1)}dB dynamic range`,
       reference_matching: `Generated ${output.suggestions?.length || 0} specific adjustments to match reference with ${(confidence * 100).toFixed(1)}% confidence`,
       loudness_measurement: `Measured ITU-R BS.1770-4 loudness: ${output.integrated.toFixed(1)} LUFS integrated, ${output.truePeak.toFixed(1)}dB true peak`,
-      loudness_normalization: `Normalized to ${input.targetLUFS} LUFS with ${output.appliedGain >= 0 ? '+' : ''}${output.appliedGain.toFixed(1)}dB gain adjustment`,
+      loudness_normalization: `Normalized to ${input.targetLUFS} LUFS with ${output.appliedGain >= 0 ? "+" : ""}${output.appliedGain.toFixed(1)}dB gain adjustment`,
     };
 
     return (
-      explanations[type] || `Completed ${type} with ${(confidence * 100).toFixed(1)}% confidence`
+      explanations[type] ||
+      `Completed ${type} with ${(confidence * 100).toFixed(1)}% confidence`
     );
   }
 
-  private calculateFeatureImportance(type: string, output: unknown): Record<string, number> {
+  private calculateFeatureImportance(
+    type: string,
+    output: unknown,
+  ): Record<string, number> {
     const importance: Record<string, Record<string, number>> = {
       stem_separation: {
         spectral_analysis: 0.45,
@@ -2469,16 +2818,25 @@ export class AIMusicService {
     return importance[type] || { default: 1.0 };
   }
 
-  private generateDecisionPath(type: string, input: unknown, output: unknown): unknown[] {
+  private generateDecisionPath(
+    type: string,
+    input: unknown,
+    output: unknown,
+  ): unknown[] {
     return [
-      { step: 1, action: 'Input validation', result: 'success' },
-      { step: 2, action: 'Algorithm execution', result: 'success' },
-      { step: 3, action: 'Result generation', result: 'success' },
-      { step: 4, action: 'Quality assurance', result: 'success' },
+      { step: 1, action: "Input validation", result: "success" },
+      { step: 2, action: "Algorithm execution", result: "success" },
+      { step: 3, action: "Result generation", result: "success" },
+      { step: 4, action: "Quality assurance", result: "success" },
     ];
   }
 
-  getGenrePresets(): { id: string; name: string; icon: string; description: string }[] {
+  getGenrePresets(): {
+    id: string;
+    name: string;
+    icon: string;
+    description: string;
+  }[] {
     const presets = this.getAllGenrePresets();
     return presets.map((p) => ({
       id: p.genre,
@@ -2490,34 +2848,34 @@ export class AIMusicService {
 
   private getGenreIcon(genre: string): string {
     const icons: Record<string, string> = {
-      hip_hop: '🎤',
-      edm: '🎧',
-      rock: '🎸',
-      pop: '🎵',
-      jazz: '🎺',
-      classical: '🎻',
-      rb: '🎹',
-      country: '🤠',
-      reggae: '🌴',
-      metal: '🤘',
-      indie: '🎨',
-      folk: '🪕',
-      blues: '🎷',
-      electronic: '⚡',
-      ambient: '🌊',
-      trap: '💎',
-      house: '🏠',
-      techno: '🔊',
-      dubstep: '🎚️',
-      soul: '✨',
+      hip_hop: "🎤",
+      edm: "🎧",
+      rock: "🎸",
+      pop: "🎵",
+      jazz: "🎺",
+      classical: "🎻",
+      rb: "🎹",
+      country: "🤠",
+      reggae: "🌴",
+      metal: "🤘",
+      indie: "🎨",
+      folk: "🪕",
+      blues: "🎷",
+      electronic: "⚡",
+      ambient: "🌊",
+      trap: "💎",
+      house: "🏠",
+      techno: "🔊",
+      dubstep: "🎚️",
+      soul: "✨",
     };
-    return icons[genre] || '🎵';
+    return icons[genre] || "🎵";
   }
 
   async analyzeLoudness(
     projectId: string,
     userId: string,
-    targetLUFS: number
+    targetLUFS: number,
   ): Promise<{
     currentLUFS: number;
     targetLUFS: number;
@@ -2527,10 +2885,12 @@ export class AIMusicService {
     confidence: number;
   }> {
     // Deterministic estimate based on project ID — real values require audio file analysis via Python engine
-    const seed = projectId.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0);
-    const currentLUFS = -14 - (seed % 7);           // -14 to -20 LUFS (common mastered range)
-    const peak = -0.3 - (seed % 3) * 0.5;           // -0.3 to -1.3 dBTP
-    const dynamic_range = 7 + (seed % 7);            // 7–13 LU DR
+    const seed = projectId
+      .split("")
+      .reduce((acc, c) => acc + c.charCodeAt(0), 0);
+    const currentLUFS = -14 - (seed % 7); // -14 to -20 LUFS (common mastered range)
+    const peak = -0.3 - (seed % 3) * 0.5; // -0.3 to -1.3 dBTP
+    const dynamic_range = 7 + (seed % 7); // 7–13 LU DR
 
     const difference = targetLUFS - currentLUFS;
     let recommendation: string;

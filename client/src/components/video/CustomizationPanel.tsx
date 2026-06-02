@@ -1,32 +1,32 @@
-import { useState, useRef, useCallback } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Button } from '@/components/ui/button';
-import { Switch } from '@/components/ui/switch';
-import { Slider } from '@/components/ui/slider';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useState, useRef, useCallback } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
+import { Slider } from "@/components/ui/slider";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { 
-  Type, 
-  Palette, 
-  Sparkles, 
-  Music, 
-  Upload, 
+} from "@/components/ui/select";
+import {
+  Type,
+  Palette,
+  Sparkles,
+  Music,
+  Upload,
   X,
   Check,
   Wand2,
   RefreshCw,
-} from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
-import type { ColorPalette, AspectRatio } from '@/lib/video/templates';
-import { DEFAULT_PALETTES, ASPECT_RATIOS } from '@/lib/video/templates';
+} from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import type { ColorPalette, AspectRatio } from "@/lib/video/templates";
+import { DEFAULT_PALETTES, ASPECT_RATIOS } from "@/lib/video/templates";
 
 interface CustomizationPanelProps {
   onTitleChange: (title: string) => void;
@@ -47,23 +47,43 @@ interface CustomizationPanelProps {
 }
 
 const FONT_OPTIONS = [
-  { value: 'Inter', label: 'Inter (Modern)' },
-  { value: 'Roboto', label: 'Roboto (Clean)' },
-  { value: 'Poppins', label: 'Poppins (Friendly)' },
-  { value: 'Montserrat', label: 'Montserrat (Bold)' },
-  { value: 'Playfair Display', label: 'Playfair (Elegant)' },
-  { value: 'Oswald', label: 'Oswald (Condensed)' },
-  { value: 'Bebas Neue', label: 'Bebas Neue (Impact)' },
-  { value: 'Space Grotesk', label: 'Space Grotesk (Tech)' },
+  { value: "Inter", label: "Inter (Modern)" },
+  { value: "Roboto", label: "Roboto (Clean)" },
+  { value: "Poppins", label: "Poppins (Friendly)" },
+  { value: "Montserrat", label: "Montserrat (Bold)" },
+  { value: "Playfair Display", label: "Playfair (Elegant)" },
+  { value: "Oswald", label: "Oswald (Condensed)" },
+  { value: "Bebas Neue", label: "Bebas Neue (Impact)" },
+  { value: "Space Grotesk", label: "Space Grotesk (Tech)" },
 ];
 
 const EFFECT_OPTIONS = [
-  { id: 'audioReactive', label: 'Audio Reactive', description: 'Elements react to music' },
-  { id: 'particles', label: 'Particle Effects', description: 'Floating particles overlay' },
-  { id: 'glow', label: 'Glow Effect', description: 'Add neon glow to elements' },
-  { id: 'filmGrain', label: 'Film Grain', description: 'Vintage film texture' },
-  { id: 'parallax', label: 'Parallax Motion', description: '3D depth movement' },
-  { id: 'glitch', label: 'Glitch Effect', description: 'Digital glitch distortion' },
+  {
+    id: "audioReactive",
+    label: "Audio Reactive",
+    description: "Elements react to music",
+  },
+  {
+    id: "particles",
+    label: "Particle Effects",
+    description: "Floating particles overlay",
+  },
+  {
+    id: "glow",
+    label: "Glow Effect",
+    description: "Add neon glow to elements",
+  },
+  { id: "filmGrain", label: "Film Grain", description: "Vintage film texture" },
+  {
+    id: "parallax",
+    label: "Parallax Motion",
+    description: "3D depth movement",
+  },
+  {
+    id: "glitch",
+    label: "Glitch Effect",
+    description: "Digital glitch distortion",
+  },
 ];
 
 export function CustomizationPanel({
@@ -75,34 +95,37 @@ export function CustomizationPanel({
   onEffectToggle,
   onAudioUpload,
   onAudioRemove,
-  title = '',
-  subtitle = '',
+  title = "",
+  subtitle = "",
   palette = DEFAULT_PALETTES.modern,
-  font = 'Inter',
-  aspectRatio = '16:9',
+  font = "Inter",
+  aspectRatio = "16:9",
   effects = {},
   audioFile,
 }: CustomizationPanelProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [customColors, setCustomColors] = useState<Partial<ColorPalette>>({});
-  const [activePreset, setActivePreset] = useState('modern');
+  const [activePreset, setActivePreset] = useState("modern");
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file && file.type.startsWith('audio/')) {
+    if (file && file.type.startsWith("audio/")) {
       onAudioUpload(file);
     }
   };
 
-  const handleDrop = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(false);
-    const file = e.dataTransfer.files[0];
-    if (file && file.type.startsWith('audio/')) {
-      onAudioUpload(file);
-    }
-  }, [onAudioUpload]);
+  const handleDrop = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      setIsDragging(false);
+      const file = e.dataTransfer.files[0];
+      if (file && file.type.startsWith("audio/")) {
+        onAudioUpload(file);
+      }
+    },
+    [onAudioUpload],
+  );
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
@@ -139,7 +162,12 @@ export function CustomizationPanel({
       <CardHeader className="pb-3 border-b shrink-0">
         <div className="flex items-center justify-between">
           <CardTitle className="text-lg">Customize</CardTitle>
-          <Button variant="ghost" size="sm" onClick={handleRandomize} className="gap-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleRandomize}
+            className="gap-2"
+          >
             <Wand2 className="w-4 h-4" />
             Randomize
           </Button>
@@ -149,28 +177,28 @@ export function CustomizationPanel({
       <CardContent className="flex-1 overflow-y-auto p-0">
         <Tabs defaultValue="text" className="h-full">
           <TabsList className="w-full justify-start rounded-none border-b bg-transparent h-auto p-0">
-            <TabsTrigger 
-              value="text" 
+            <TabsTrigger
+              value="text"
               className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent py-3 px-4"
             >
               <Type className="w-4 h-4 mr-2" />
               Text
             </TabsTrigger>
-            <TabsTrigger 
+            <TabsTrigger
               value="colors"
               className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent py-3 px-4"
             >
               <Palette className="w-4 h-4 mr-2" />
               Colors
             </TabsTrigger>
-            <TabsTrigger 
+            <TabsTrigger
               value="effects"
               className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent py-3 px-4"
             >
               <Sparkles className="w-4 h-4 mr-2" />
               Effects
             </TabsTrigger>
-            <TabsTrigger 
+            <TabsTrigger
               value="audio"
               className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent py-3 px-4"
             >
@@ -220,7 +248,10 @@ export function CustomizationPanel({
 
               <div className="space-y-2">
                 <Label>Aspect Ratio</Label>
-                <Select value={aspectRatio} onValueChange={(v) => onAspectRatioChange(v as AspectRatio)}>
+                <Select
+                  value={aspectRatio}
+                  onValueChange={(v) => onAspectRatioChange(v as AspectRatio)}
+                >
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
@@ -228,14 +259,26 @@ export function CustomizationPanel({
                     {Object.entries(ASPECT_RATIOS).map(([ratio, config]) => (
                       <SelectItem key={ratio} value={ratio}>
                         <div className="flex items-center gap-2">
-                          <div 
+                          <div
                             className="border rounded"
                             style={{
-                              width: ratio === '9:16' ? 12 : ratio === '1:1' ? 16 : 20,
-                              height: ratio === '9:16' ? 20 : ratio === '1:1' ? 16 : 12,
+                              width:
+                                ratio === "9:16"
+                                  ? 12
+                                  : ratio === "1:1"
+                                    ? 16
+                                    : 20,
+                              height:
+                                ratio === "9:16"
+                                  ? 20
+                                  : ratio === "1:1"
+                                    ? 16
+                                    : 12,
                             }}
                           />
-                          <span>{ratio} - {config.name}</span>
+                          <span>
+                            {ratio} - {config.name}
+                          </span>
                         </div>
                       </SelectItem>
                     ))}
@@ -255,22 +298,22 @@ export function CustomizationPanel({
                       whileTap={{ scale: 0.95 }}
                       onClick={() => handlePresetSelect(key)}
                       className={`relative p-3 rounded-lg border-2 transition-colors ${
-                        activePreset === key 
-                          ? 'border-primary' 
-                          : 'border-transparent hover:border-muted-foreground/30'
+                        activePreset === key
+                          ? "border-primary"
+                          : "border-transparent hover:border-muted-foreground/30"
                       }`}
                     >
                       <div className="flex gap-1 justify-center mb-2">
-                        <div 
-                          className="w-4 h-4 rounded-full" 
+                        <div
+                          className="w-4 h-4 rounded-full"
                           style={{ backgroundColor: p.primary }}
                         />
-                        <div 
-                          className="w-4 h-4 rounded-full" 
+                        <div
+                          className="w-4 h-4 rounded-full"
                           style={{ backgroundColor: p.secondary }}
                         />
-                        <div 
-                          className="w-4 h-4 rounded-full" 
+                        <div
+                          className="w-4 h-4 rounded-full"
                           style={{ backgroundColor: p.accent }}
                         />
                       </div>
@@ -285,19 +328,24 @@ export function CustomizationPanel({
 
               <div className="space-y-4">
                 <Label>Custom Colors</Label>
-                
+
                 {[
-                  { key: 'primary', label: 'Primary' },
-                  { key: 'secondary', label: 'Secondary' },
-                  { key: 'accent', label: 'Accent' },
-                  { key: 'background', label: 'Background' },
-                  { key: 'text', label: 'Text' },
+                  { key: "primary", label: "Primary" },
+                  { key: "secondary", label: "Secondary" },
+                  { key: "accent", label: "Accent" },
+                  { key: "background", label: "Background" },
+                  { key: "text", label: "Text" },
                 ].map(({ key, label }) => (
                   <div key={key} className="flex items-center gap-3">
                     <input
                       type="color"
                       value={palette[key as keyof ColorPalette]}
-                      onChange={(e) => handleColorChange(key as keyof ColorPalette, e.target.value)}
+                      onChange={(e) =>
+                        handleColorChange(
+                          key as keyof ColorPalette,
+                          e.target.value,
+                        )
+                      }
                       className="w-10 h-10 rounded-lg cursor-pointer border-2 border-muted"
                     />
                     <div className="flex-1">
@@ -313,17 +361,21 @@ export function CustomizationPanel({
 
             <TabsContent value="effects" className="mt-0 space-y-4">
               {EFFECT_OPTIONS.map((effect) => (
-                <div 
+                <div
                   key={effect.id}
                   className="flex items-center justify-between p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
                 >
                   <div className="space-y-0.5">
                     <div className="text-sm font-medium">{effect.label}</div>
-                    <div className="text-xs text-muted-foreground">{effect.description}</div>
+                    <div className="text-xs text-muted-foreground">
+                      {effect.description}
+                    </div>
                   </div>
                   <Switch
                     checked={effects[effect.id] || false}
-                    onCheckedChange={(checked) => onEffectToggle(effect.id, checked)}
+                    onCheckedChange={(checked) =>
+                      onEffectToggle(effect.id, checked)
+                    }
                   />
                 </div>
               ))}
@@ -366,7 +418,9 @@ export function CustomizationPanel({
                         <Music className="w-6 h-6 text-primary" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className="text-sm font-medium truncate">{audioFile.name}</div>
+                        <div className="text-sm font-medium truncate">
+                          {audioFile.name}
+                        </div>
                         <div className="text-xs text-muted-foreground">
                           {(audioFile.size / (1024 * 1024)).toFixed(2)} MB
                         </div>
@@ -393,8 +447,8 @@ export function CustomizationPanel({
                     onClick={() => fileInputRef.current?.click()}
                     className={`p-8 rounded-lg border-2 border-dashed cursor-pointer transition-all ${
                       isDragging
-                        ? 'border-primary bg-primary/10'
-                        : 'border-muted-foreground/30 hover:border-primary hover:bg-accent/50'
+                        ? "border-primary bg-primary/10"
+                        : "border-muted-foreground/30 hover:border-primary hover:bg-accent/50"
                     }`}
                   >
                     <div className="text-center">
@@ -415,7 +469,9 @@ export function CustomizationPanel({
                 <h4 className="text-sm font-medium mb-2">Audio Tips</h4>
                 <ul className="text-xs text-muted-foreground space-y-1">
                   <li>• Use high-quality audio for best results</li>
-                  <li>• Enable "Audio Reactive" in Effects for dynamic visuals</li>
+                  <li>
+                    • Enable "Audio Reactive" in Effects for dynamic visuals
+                  </li>
                   <li>• Video duration will match audio length</li>
                   <li>• Supported formats: MP3, WAV, AAC, OGG</li>
                 </ul>

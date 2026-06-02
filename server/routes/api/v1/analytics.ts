@@ -1,11 +1,11 @@
-import { Router } from 'express';
-import { db } from '../../../db';
-import { analytics, projects, releases, users } from '@shared/schema';
-import { eq, and, desc, sql, gte, lte, between } from 'drizzle-orm';
-import { apiKeyService, ApiKeyRequest } from '../../../services/apiKeyService';
-import { logger } from '../../../logger.js';
-import { advancedAnalyticsService } from '../../../services/advancedAnalyticsService';
-import { distributedCache } from '../../../infrastructure/distributedCache.js';
+import { Router } from "express";
+import { db } from "../../../db";
+import { analytics, projects, releases, users } from "@shared/schema";
+import { eq, and, desc, sql, gte, lte, between } from "drizzle-orm";
+import { apiKeyService, ApiKeyRequest } from "../../../services/apiKeyService";
+import { logger } from "../../../logger.js";
+import { advancedAnalyticsService } from "../../../services/advancedAnalyticsService";
+import { distributedCache } from "../../../infrastructure/distributedCache.js";
 
 const router = Router();
 
@@ -16,12 +16,12 @@ router.use(apiKeyService.trackApiUsage);
 
 // IDOR protection: an API key can only access its own user's data.
 // If :artistId is provided and differs from the key owner, reject.
-router.param('artistId', (req: ApiKeyRequest, res, next, artistId) => {
+router.param("artistId", (req: ApiKeyRequest, res, next, artistId) => {
   const userId = req.apiKey?.userId;
   if (userId && artistId && artistId !== userId) {
     return res.status(403).json({
-      error: 'Forbidden',
-      message: 'API keys can only access data belonging to their owner',
+      error: "Forbidden",
+      message: "API keys can only access data belonging to their owner",
     });
   }
   next();
@@ -31,12 +31,14 @@ router.param('artistId', (req: ApiKeyRequest, res, next, artistId) => {
  * GET /api/v1/analytics/platforms
  * List all connected platforms for the authenticated user
  */
-router.get('/platforms', async (req: ApiKeyRequest, res) => {
+router.get("/platforms", async (req: ApiKeyRequest, res) => {
   try {
     const userId = req.apiKey?.userId;
 
     if (!userId) {
-      return res.status(401).json({ error: 'Unauthorized', message: 'User ID not found' });
+      return res
+        .status(401)
+        .json({ error: "Unauthorized", message: "User ID not found" });
     }
 
     // Get user's connected platform tokens
@@ -53,16 +55,20 @@ router.get('/platforms', async (req: ApiKeyRequest, res) => {
       .limit(1);
 
     if (!user) {
-      return res.status(404).json({ error: 'Not Found', message: 'User not found' });
+      return res
+        .status(404)
+        .json({ error: "Not Found", message: "User not found" });
     }
 
     // Build list of connected platforms (only includes platforms with OAuth tokens in the schema)
     const platforms = [];
-    if (user.youtube) platforms.push({ name: 'YouTube', status: 'connected' });
-    if (user.facebook) platforms.push({ name: 'Facebook', status: 'connected' });
-    if (user.instagram) platforms.push({ name: 'Instagram', status: 'connected' });
-    if (user.twitter) platforms.push({ name: 'Twitter', status: 'connected' });
-    if (user.tiktok) platforms.push({ name: 'TikTok', status: 'connected' });
+    if (user.youtube) platforms.push({ name: "YouTube", status: "connected" });
+    if (user.facebook)
+      platforms.push({ name: "Facebook", status: "connected" });
+    if (user.instagram)
+      platforms.push({ name: "Instagram", status: "connected" });
+    if (user.twitter) platforms.push({ name: "Twitter", status: "connected" });
+    if (user.tiktok) platforms.push({ name: "TikTok", status: "connected" });
 
     return res.json({
       success: true,
@@ -70,10 +76,13 @@ router.get('/platforms', async (req: ApiKeyRequest, res) => {
       totalConnected: platforms.length,
     });
   } catch (error: unknown) {
-    logger.warn({ err: error }, 'Error fetching platforms:');
+    logger.warn({ err: error }, "Error fetching platforms:");
     return res
       .status(500)
-      .json({ error: 'Internal Server Error', message: 'Failed to fetch platforms' });
+      .json({
+        error: "Internal Server Error",
+        message: "Failed to fetch platforms",
+      });
   }
 });
 
@@ -82,17 +91,19 @@ router.get('/platforms', async (req: ApiKeyRequest, res) => {
  * Get streaming statistics across all platforms
  * Query params: startDate, endDate, platform, timeRange
  */
-router.get('/streams{/:artistId}', async (req: ApiKeyRequest, res) => {
+router.get("/streams{/:artistId}", async (req: ApiKeyRequest, res) => {
   try {
     const userId = req.apiKey?.userId;
     const artistId = req.params.artistId || userId;
-    const { startDate, endDate, platform, timeRange = '30d' } = req.query;
+    const { startDate, endDate, platform, timeRange = "30d" } = req.query;
 
     if (!userId) {
-      return res.status(401).json({ error: 'Unauthorized', message: 'User ID not found' });
+      return res
+        .status(401)
+        .json({ error: "Unauthorized", message: "User ID not found" });
     }
 
-    const cacheKey = `v1:analytics:streams:${artistId}:${timeRange}:${startDate ?? ''}:${endDate ?? ''}:${platform ?? ''}`;
+    const cacheKey = `v1:analytics:streams:${artistId}:${timeRange}:${startDate ?? ""}:${endDate ?? ""}:${platform ?? ""}`;
     const payload = await distributedCache.getOrSet(
       cacheKey,
       async () => {
@@ -100,7 +111,10 @@ router.get('/streams{/:artistId}', async (req: ApiKeyRequest, res) => {
         const end = endDate ? new Date(endDate as string) : new Date();
         const start = startDate
           ? new Date(startDate as string)
-          : new Date(end.getTime() - (parseInt(timeRange as string) || 30) * 24 * 60 * 60 * 1000);
+          : new Date(
+              end.getTime() -
+                (parseInt(timeRange as string) || 30) * 24 * 60 * 60 * 1000,
+            );
 
         // Build query conditions
         const conditions = [
@@ -155,22 +169,25 @@ router.get('/streams{/:artistId}', async (req: ApiKeyRequest, res) => {
           },
           totals: {
             streams: totals?.totalStreams || 0,
-            revenue: parseFloat(totals?.totalRevenue?.toString() || '0'),
+            revenue: parseFloat(totals?.totalRevenue?.toString() || "0"),
             listeners: totals?.totalListeners || 0,
           },
           byPlatform,
           timeline: streamData,
         };
       },
-      60
+      60,
     );
 
     return res.json(payload);
   } catch (error: unknown) {
-    logger.warn({ err: error }, 'Error fetching stream data:');
+    logger.warn({ err: error }, "Error fetching stream data:");
     return res
       .status(500)
-      .json({ error: 'Internal Server Error', message: 'Failed to fetch stream data' });
+      .json({
+        error: "Internal Server Error",
+        message: "Failed to fetch stream data",
+      });
   }
 });
 
@@ -178,21 +195,26 @@ router.get('/streams{/:artistId}', async (req: ApiKeyRequest, res) => {
  * GET /api/v1/analytics/engagement{/:artistId}
  * Get engagement metrics (likes, shares, comments, etc.)
  */
-router.get('/engagement{/:artistId}', async (req: ApiKeyRequest, res) => {
+router.get("/engagement{/:artistId}", async (req: ApiKeyRequest, res) => {
   try {
     const userId = req.apiKey?.userId;
     const artistId = req.params.artistId || userId;
-    const { startDate, endDate, timeRange = '30d' } = req.query;
+    const { startDate, endDate, timeRange = "30d" } = req.query;
 
     if (!userId) {
-      return res.status(401).json({ error: 'Unauthorized', message: 'User ID not found' });
+      return res
+        .status(401)
+        .json({ error: "Unauthorized", message: "User ID not found" });
     }
 
     // Calculate date range
     const end = endDate ? new Date(endDate as string) : new Date();
     const start = startDate
       ? new Date(startDate as string)
-      : new Date(end.getTime() - (parseInt(timeRange as string) || 30) * 24 * 60 * 60 * 1000);
+      : new Date(
+          end.getTime() -
+            (parseInt(timeRange as string) || 30) * 24 * 60 * 60 * 1000,
+        );
 
     // Get engagement data from platformData JSONB field
     const engagementData = await db
@@ -206,8 +228,8 @@ router.get('/engagement{/:artistId}', async (req: ApiKeyRequest, res) => {
         and(
           eq(analytics.userId, artistId as string),
           gte(analytics.date, start),
-          lte(analytics.date, end)
-        )
+          lte(analytics.date, end),
+        ),
       )
       .orderBy(sql`DATE(${analytics.date})`);
 
@@ -233,7 +255,7 @@ router.get('/engagement{/:artistId}', async (req: ApiKeyRequest, res) => {
         comments: acc.comments + curr.comments,
         saves: acc.saves + curr.saves,
       }),
-      { likes: 0, shares: 0, comments: 0, saves: 0 }
+      { likes: 0, shares: 0, comments: 0, saves: 0 },
     );
 
     return res.json({
@@ -246,10 +268,13 @@ router.get('/engagement{/:artistId}', async (req: ApiKeyRequest, res) => {
       timeline: engagement,
     });
   } catch (error: unknown) {
-    logger.warn({ err: error }, 'Error fetching engagement data:');
+    logger.warn({ err: error }, "Error fetching engagement data:");
     return res
       .status(500)
-      .json({ error: 'Internal Server Error', message: 'Failed to fetch engagement data' });
+      .json({
+        error: "Internal Server Error",
+        message: "Failed to fetch engagement data",
+      });
   }
 });
 
@@ -257,21 +282,26 @@ router.get('/engagement{/:artistId}', async (req: ApiKeyRequest, res) => {
  * GET /api/v1/analytics/demographics{/:artistId}
  * Get audience demographics (age, gender, location)
  */
-router.get('/demographics{/:artistId}', async (req: ApiKeyRequest, res) => {
+router.get("/demographics{/:artistId}", async (req: ApiKeyRequest, res) => {
   try {
     const userId = req.apiKey?.userId;
     const artistId = req.params.artistId || userId;
-    const { startDate, endDate, timeRange = '30d' } = req.query;
+    const { startDate, endDate, timeRange = "30d" } = req.query;
 
     if (!userId) {
-      return res.status(401).json({ error: 'Unauthorized', message: 'User ID not found' });
+      return res
+        .status(401)
+        .json({ error: "Unauthorized", message: "User ID not found" });
     }
 
     // Calculate date range
     const end = endDate ? new Date(endDate as string) : new Date();
     const start = startDate
       ? new Date(startDate as string)
-      : new Date(end.getTime() - (parseInt(timeRange as string) || 30) * 24 * 60 * 60 * 1000);
+      : new Date(
+          end.getTime() -
+            (parseInt(timeRange as string) || 30) * 24 * 60 * 60 * 1000,
+        );
 
     // Get audience data from audienceData JSONB field
     const audienceData = await db
@@ -283,13 +313,16 @@ router.get('/demographics{/:artistId}', async (req: ApiKeyRequest, res) => {
         and(
           eq(analytics.userId, artistId as string),
           gte(analytics.date, start),
-          lte(analytics.date, end)
-        )
+          lte(analytics.date, end),
+        ),
       )
       .orderBy(desc(analytics.date))
       .limit(1);
 
-    const demographics = (audienceData[0]?.audienceData as Record<string, unknown>) || {
+    const demographics = (audienceData[0]?.audienceData as Record<
+      string,
+      unknown
+    >) || {
       age: [],
       gender: [],
       location: [],
@@ -310,10 +343,13 @@ router.get('/demographics{/:artistId}', async (req: ApiKeyRequest, res) => {
       },
     });
   } catch (error: unknown) {
-    logger.warn({ err: error }, 'Error fetching demographics data:');
+    logger.warn({ err: error }, "Error fetching demographics data:");
     return res
       .status(500)
-      .json({ error: 'Internal Server Error', message: 'Failed to fetch demographics data' });
+      .json({
+        error: "Internal Server Error",
+        message: "Failed to fetch demographics data",
+      });
   }
 });
 
@@ -321,21 +357,26 @@ router.get('/demographics{/:artistId}', async (req: ApiKeyRequest, res) => {
  * GET /api/v1/analytics/playlists{/:artistId}
  * Get playlist placement data
  */
-router.get('/playlists{/:artistId}', async (req: ApiKeyRequest, res) => {
+router.get("/playlists{/:artistId}", async (req: ApiKeyRequest, res) => {
   try {
     const userId = req.apiKey?.userId;
     const artistId = req.params.artistId || userId;
-    const { startDate, endDate, timeRange = '30d' } = req.query;
+    const { startDate, endDate, timeRange = "30d" } = req.query;
 
     if (!userId) {
-      return res.status(401).json({ error: 'Unauthorized', message: 'User ID not found' });
+      return res
+        .status(401)
+        .json({ error: "Unauthorized", message: "User ID not found" });
     }
 
     // Calculate date range
     const end = endDate ? new Date(endDate as string) : new Date();
     const start = startDate
       ? new Date(startDate as string)
-      : new Date(end.getTime() - (parseInt(timeRange as string) || 30) * 24 * 60 * 60 * 1000);
+      : new Date(
+          end.getTime() -
+            (parseInt(timeRange as string) || 30) * 24 * 60 * 60 * 1000,
+        );
 
     // Get playlist data from platformData JSONB field
     const playlistData = await db
@@ -349,8 +390,8 @@ router.get('/playlists{/:artistId}', async (req: ApiKeyRequest, res) => {
         and(
           eq(analytics.userId, artistId as string),
           gte(analytics.date, start),
-          lte(analytics.date, end)
-        )
+          lte(analytics.date, end),
+        ),
       )
       .orderBy(desc(sql`DATE(${analytics.date})`));
 
@@ -381,15 +422,21 @@ router.get('/playlists{/:artistId}', async (req: ApiKeyRequest, res) => {
       summary: {
         totalPlacements,
         totalFollowers,
-        avgFollowers: totalPlacements > 0 ? Math.round(totalFollowers / totalPlacements) : 0,
+        avgFollowers:
+          totalPlacements > 0
+            ? Math.round(totalFollowers / totalPlacements)
+            : 0,
       },
       playlists: playlists.slice(0, 50), // Limit to top 50
     });
   } catch (error: unknown) {
-    logger.warn({ err: error }, 'Error fetching playlist data:');
+    logger.warn({ err: error }, "Error fetching playlist data:");
     return res
       .status(500)
-      .json({ error: 'Internal Server Error', message: 'Failed to fetch playlist data' });
+      .json({
+        error: "Internal Server Error",
+        message: "Failed to fetch playlist data",
+      });
   }
 });
 
@@ -397,16 +444,21 @@ router.get('/playlists{/:artistId}', async (req: ApiKeyRequest, res) => {
  * GET /api/v1/analytics/tracks{/:artistId}
  * Get track performance data
  */
-router.get('/tracks{/:artistId}', async (req: ApiKeyRequest, res) => {
+router.get("/tracks{/:artistId}", async (req: ApiKeyRequest, res) => {
   try {
     const userId = req.apiKey?.userId;
     const artistId = req.params.artistId || userId;
-    const rawLimit = parseInt(String(req.query.limit ?? '50'), 10);
-    const limit = Math.min(Number.isFinite(rawLimit) && rawLimit > 0 ? rawLimit : 50, 500);
-    const { sortBy = 'streams' } = req.query;
+    const rawLimit = parseInt(String(req.query.limit ?? "50"), 10);
+    const limit = Math.min(
+      Number.isFinite(rawLimit) && rawLimit > 0 ? rawLimit : 50,
+      500,
+    );
+    const { sortBy = "streams" } = req.query;
 
     if (!userId) {
-      return res.status(401).json({ error: 'Unauthorized', message: 'User ID not found' });
+      return res
+        .status(401)
+        .json({ error: "Unauthorized", message: "User ID not found" });
     }
 
     // Get all projects/tracks for the user
@@ -424,7 +476,7 @@ router.get('/tracks{/:artistId}', async (req: ApiKeyRequest, res) => {
       })
       .from(projects)
       .where(eq(projects.userId, artistId as string))
-      .orderBy(desc(sortBy === 'revenue' ? projects.revenue : projects.streams))
+      .orderBy(desc(sortBy === "revenue" ? projects.revenue : projects.streams))
       .limit(limit);
 
     return res.json({
@@ -433,10 +485,13 @@ router.get('/tracks{/:artistId}', async (req: ApiKeyRequest, res) => {
       tracks,
     });
   } catch (error: unknown) {
-    logger.warn({ err: error }, 'Error fetching track data:');
+    logger.warn({ err: error }, "Error fetching track data:");
     return res
       .status(500)
-      .json({ error: 'Internal Server Error', message: 'Failed to fetch track data' });
+      .json({
+        error: "Internal Server Error",
+        message: "Failed to fetch track data",
+      });
   }
 });
 
@@ -444,20 +499,23 @@ router.get('/tracks{/:artistId}', async (req: ApiKeyRequest, res) => {
  * GET /api/v1/analytics/summary{/:artistId}
  * Get complete analytics summary
  */
-router.get('/summary{/:artistId}', async (req: ApiKeyRequest, res) => {
+router.get("/summary{/:artistId}", async (req: ApiKeyRequest, res) => {
   try {
     const userId = req.apiKey?.userId;
     const artistId = req.params.artistId || userId;
-    const { timeRange = '30d' } = req.query;
+    const { timeRange = "30d" } = req.query;
 
     if (!userId) {
-      return res.status(401).json({ error: 'Unauthorized', message: 'User ID not found' });
+      return res
+        .status(401)
+        .json({ error: "Unauthorized", message: "User ID not found" });
     }
 
     // Calculate date range
     const end = new Date();
     const start = new Date(
-      end.getTime() - (parseInt(timeRange as string) || 30) * 24 * 60 * 60 * 1000
+      end.getTime() -
+        (parseInt(timeRange as string) || 30) * 24 * 60 * 60 * 1000,
     );
 
     // Get aggregated analytics
@@ -473,8 +531,8 @@ router.get('/summary{/:artistId}', async (req: ApiKeyRequest, res) => {
         and(
           eq(analytics.userId, artistId as string),
           gte(analytics.date, start),
-          lte(analytics.date, end)
-        )
+          lte(analytics.date, end),
+        ),
       );
 
     // Get platform breakdown
@@ -489,8 +547,8 @@ router.get('/summary{/:artistId}', async (req: ApiKeyRequest, res) => {
         and(
           eq(analytics.userId, artistId as string),
           gte(analytics.date, start),
-          lte(analytics.date, end)
-        )
+          lte(analytics.date, end),
+        ),
       )
       .groupBy(analytics.platform);
 
@@ -502,17 +560,20 @@ router.get('/summary{/:artistId}', async (req: ApiKeyRequest, res) => {
       },
       summary: {
         totalStreams: summary?.totalStreams || 0,
-        totalRevenue: parseFloat(summary?.totalRevenue?.toString() || '0'),
+        totalRevenue: parseFloat(summary?.totalRevenue?.toString() || "0"),
         totalListeners: summary?.totalListeners || 0,
         avgStreamsPerDay: Math.round(summary?.avgStreamsPerDay || 0),
       },
       platforms,
     });
   } catch (error: unknown) {
-    logger.warn({ err: error }, 'Error fetching analytics summary:');
+    logger.warn({ err: error }, "Error fetching analytics summary:");
     return res
       .status(500)
-      .json({ error: 'Internal Server Error', message: 'Failed to fetch analytics summary' });
+      .json({
+        error: "Internal Server Error",
+        message: "Failed to fetch analytics summary",
+      });
   }
 });
 
@@ -520,18 +581,44 @@ router.get('/summary{/:artistId}', async (req: ApiKeyRequest, res) => {
  * POST /api/v1/analytics/playlist-journeys
  * Track playlist progression
  */
-router.post('/playlist-journeys', async (req: ApiKeyRequest, res) => {
+router.post("/playlist-journeys", async (req: ApiKeyRequest, res) => {
   try {
     const userId = req.apiKey?.userId;
 
     if (!userId) {
-      return res.status(401).json({ error: 'Unauthorized', message: 'User ID not found' });
+      return res
+        .status(401)
+        .json({ error: "Unauthorized", message: "User ID not found" });
     }
 
-    const { trackId, playlistId, playlistName, platform, playlistType, action, position, previousPosition, followerCount, curatorName } = req.body;
+    const {
+      trackId,
+      playlistId,
+      playlistName,
+      platform,
+      playlistType,
+      action,
+      position,
+      previousPosition,
+      followerCount,
+      curatorName,
+    } = req.body;
 
-    if (!trackId || !playlistId || !playlistName || !platform || !playlistType || !action) {
-      return res.status(400).json({ error: 'Bad Request', message: 'Missing required fields: trackId, playlistId, playlistName, platform, playlistType, action' });
+    if (
+      !trackId ||
+      !playlistId ||
+      !playlistName ||
+      !platform ||
+      !playlistType ||
+      !action
+    ) {
+      return res
+        .status(400)
+        .json({
+          error: "Bad Request",
+          message:
+            "Missing required fields: trackId, playlistId, playlistName, platform, playlistType, action",
+        });
     }
 
     await advancedAnalyticsService.trackPlaylistJourney(userId, {
@@ -547,18 +634,24 @@ router.post('/playlist-journeys', async (req: ApiKeyRequest, res) => {
       curatorName,
     });
 
-    const journeys = await advancedAnalyticsService.getPlaylistJourneys(userId, trackId);
+    const journeys = await advancedAnalyticsService.getPlaylistJourneys(
+      userId,
+      trackId,
+    );
 
     return res.json({
       success: true,
-      message: 'Playlist journey tracked successfully',
+      message: "Playlist journey tracked successfully",
       journeys,
     });
   } catch (error: unknown) {
-    logger.warn({ err: error }, 'Error tracking playlist journey:');
+    logger.warn({ err: error }, "Error tracking playlist journey:");
     return res
       .status(500)
-      .json({ error: 'Internal Server Error', message: 'Failed to track playlist journey' });
+      .json({
+        error: "Internal Server Error",
+        message: "Failed to track playlist journey",
+      });
   }
 });
 
@@ -566,18 +659,25 @@ router.post('/playlist-journeys', async (req: ApiKeyRequest, res) => {
  * GET /api/v1/analytics/global-ranking{/:artistId}
  * Unified ranking with Max Score
  */
-router.get('/global-ranking{/:artistId}', async (req: ApiKeyRequest, res) => {
+router.get("/global-ranking{/:artistId}", async (req: ApiKeyRequest, res) => {
   try {
     const userId = req.apiKey?.userId;
     const artistId = req.params.artistId || userId;
-    const { days = '30' } = req.query;
+    const { days = "30" } = req.query;
 
     if (!userId) {
-      return res.status(401).json({ error: 'Unauthorized', message: 'User ID not found' });
+      return res
+        .status(401)
+        .json({ error: "Unauthorized", message: "User ID not found" });
     }
 
-    const ranking = await advancedAnalyticsService.calculateGlobalRanking(artistId as string);
-    const history = await advancedAnalyticsService.getGlobalRankingHistory(artistId as string, parseInt(days as string));
+    const ranking = await advancedAnalyticsService.calculateGlobalRanking(
+      artistId as string,
+    );
+    const history = await advancedAnalyticsService.getGlobalRankingHistory(
+      artistId as string,
+      parseInt(days as string),
+    );
 
     return res.json({
       success: true,
@@ -585,10 +685,13 @@ router.get('/global-ranking{/:artistId}', async (req: ApiKeyRequest, res) => {
       history,
     });
   } catch (error: unknown) {
-    logger.warn({ err: error }, 'Error fetching global ranking:');
+    logger.warn({ err: error }, "Error fetching global ranking:");
     return res
       .status(500)
-      .json({ error: 'Internal Server Error', message: 'Failed to fetch global ranking' });
+      .json({
+        error: "Internal Server Error",
+        message: "Failed to fetch global ranking",
+      });
   }
 });
 
@@ -596,18 +699,22 @@ router.get('/global-ranking{/:artistId}', async (req: ApiKeyRequest, res) => {
  * POST /api/v1/analytics/ar-discovery
  * A&R talent discovery
  */
-router.post('/ar-discovery', async (req: ApiKeyRequest, res) => {
+router.post("/ar-discovery", async (req: ApiKeyRequest, res) => {
   try {
     const userId = req.apiKey?.userId;
 
     if (!userId) {
-      return res.status(401).json({ error: 'Unauthorized', message: 'User ID not found' });
+      return res
+        .status(401)
+        .json({ error: "Unauthorized", message: "User ID not found" });
     }
 
-    const { artistId, genre, country, minGrowthScore, minOverallScore, limit } = req.body;
+    const { artistId, genre, country, minGrowthScore, minOverallScore, limit } =
+      req.body;
 
     if (artistId) {
-      const analysis = await advancedAnalyticsService.analyzeArtistForAR(artistId);
+      const analysis =
+        await advancedAnalyticsService.analyzeArtistForAR(artistId);
       return res.json({
         success: true,
         analysis,
@@ -628,10 +735,13 @@ router.post('/ar-discovery', async (req: ApiKeyRequest, res) => {
       total: discoveries.length,
     });
   } catch (error: unknown) {
-    logger.warn({ err: error }, 'Error performing A&R discovery:');
+    logger.warn({ err: error }, "Error performing A&R discovery:");
     return res
       .status(500)
-      .json({ error: 'Internal Server Error', message: 'Failed to perform A&R discovery' });
+      .json({
+        error: "Internal Server Error",
+        message: "Failed to perform A&R discovery",
+      });
   }
 });
 
@@ -639,31 +749,44 @@ router.post('/ar-discovery', async (req: ApiKeyRequest, res) => {
  * POST /api/v1/analytics/nlp-query
  * Natural language analytics queries
  */
-router.post('/nlp-query', async (req: ApiKeyRequest, res) => {
+router.post("/nlp-query", async (req: ApiKeyRequest, res) => {
   try {
     const userId = req.apiKey?.userId;
 
     if (!userId) {
-      return res.status(401).json({ error: 'Unauthorized', message: 'User ID not found' });
+      return res
+        .status(401)
+        .json({ error: "Unauthorized", message: "User ID not found" });
     }
 
     const { query } = req.body;
 
-    if (!query || typeof query !== 'string') {
-      return res.status(400).json({ error: 'Bad Request', message: 'Query is required and must be a string' });
+    if (!query || typeof query !== "string") {
+      return res
+        .status(400)
+        .json({
+          error: "Bad Request",
+          message: "Query is required and must be a string",
+        });
     }
 
-    const result = await advancedAnalyticsService.processNlpQuery(userId, query);
+    const result = await advancedAnalyticsService.processNlpQuery(
+      userId,
+      query,
+    );
 
     return res.json({
       success: true,
       result,
     });
   } catch (error: unknown) {
-    logger.warn({ err: error }, 'Error processing NLP query:');
+    logger.warn({ err: error }, "Error processing NLP query:");
     return res
       .status(500)
-      .json({ error: 'Internal Server Error', message: 'Failed to process NLP query' });
+      .json({
+        error: "Internal Server Error",
+        message: "Failed to process NLP query",
+      });
   }
 });
 
@@ -671,41 +794,52 @@ router.post('/nlp-query', async (req: ApiKeyRequest, res) => {
  * GET /api/v1/analytics/historical{/:artistId}
  * Historical data with YoY comparisons
  */
-router.get('/historical{/:artistId}', async (req: ApiKeyRequest, res) => {
+router.get("/historical{/:artistId}", async (req: ApiKeyRequest, res) => {
   try {
     const userId = req.apiKey?.userId;
     const artistId = req.params.artistId || userId;
     const { startDate, endDate, period, trackId } = req.query;
 
     if (!userId) {
-      return res.status(401).json({ error: 'Unauthorized', message: 'User ID not found' });
+      return res
+        .status(401)
+        .json({ error: "Unauthorized", message: "User ID not found" });
     }
 
     const options: {
       trackId?: string;
       startDate?: Date;
       endDate?: Date;
-      period?: 'daily' | 'weekly' | 'monthly' | 'yearly';
+      period?: "daily" | "weekly" | "monthly" | "yearly";
     } = {};
 
     if (trackId) options.trackId = trackId as string;
     if (startDate) options.startDate = new Date(startDate as string);
     if (endDate) options.endDate = new Date(endDate as string);
-    if (period && ['daily', 'weekly', 'monthly', 'yearly'].includes(period as string)) {
-      options.period = period as 'daily' | 'weekly' | 'monthly' | 'yearly';
+    if (
+      period &&
+      ["daily", "weekly", "monthly", "yearly"].includes(period as string)
+    ) {
+      options.period = period as "daily" | "weekly" | "monthly" | "yearly";
     }
 
-    const historicalData = await advancedAnalyticsService.getHistoricalData(artistId as string, options);
+    const historicalData = await advancedAnalyticsService.getHistoricalData(
+      artistId as string,
+      options,
+    );
 
     return res.json({
       success: true,
       ...historicalData,
     });
   } catch (error: unknown) {
-    logger.warn({ err: error }, 'Error fetching historical data:');
+    logger.warn({ err: error }, "Error fetching historical data:");
     return res
       .status(500)
-      .json({ error: 'Internal Server Error', message: 'Failed to fetch historical data' });
+      .json({
+        error: "Internal Server Error",
+        message: "Failed to fetch historical data",
+      });
   }
 });
 
@@ -713,36 +847,53 @@ router.get('/historical{/:artistId}', async (req: ApiKeyRequest, res) => {
  * GET /api/v1/analytics/sync-impact{/:artistId}
  * Sync placement tracking
  */
-router.get('/sync-impact{/:artistId}', async (req: ApiKeyRequest, res) => {
+router.get("/sync-impact{/:artistId}", async (req: ApiKeyRequest, res) => {
   try {
     const userId = req.apiKey?.userId;
     const artistId = req.params.artistId || userId;
     const { trackId } = req.query;
 
     if (!userId) {
-      return res.status(401).json({ error: 'Unauthorized', message: 'User ID not found' });
+      return res
+        .status(401)
+        .json({ error: "Unauthorized", message: "User ID not found" });
     }
 
-    const syncImpact = await advancedAnalyticsService.getSyncImpact(artistId as string, trackId as string | undefined);
+    const syncImpact = await advancedAnalyticsService.getSyncImpact(
+      artistId as string,
+      trackId as string | undefined,
+    );
 
-    const totalStreamLift = syncImpact.reduce((sum, s) => sum + s.totalStreamLift, 0);
-    const totalRevenueLift = syncImpact.reduce((sum, s) => sum + s.totalRevenueLift, 0);
+    const totalStreamLift = syncImpact.reduce(
+      (sum, s) => sum + s.totalStreamLift,
+      0,
+    );
+    const totalRevenueLift = syncImpact.reduce(
+      (sum, s) => sum + s.totalRevenueLift,
+      0,
+    );
 
     return res.json({
       success: true,
       summary: {
         totalTracks: syncImpact.length,
-        totalPlacements: syncImpact.reduce((sum, s) => sum + s.placements.length, 0),
+        totalPlacements: syncImpact.reduce(
+          (sum, s) => sum + s.placements.length,
+          0,
+        ),
         totalStreamLift,
         totalRevenueLift,
       },
       tracks: syncImpact,
     });
   } catch (error: unknown) {
-    logger.warn({ err: error }, 'Error fetching sync impact:');
+    logger.warn({ err: error }, "Error fetching sync impact:");
     return res
       .status(500)
-      .json({ error: 'Internal Server Error', message: 'Failed to fetch sync impact' });
+      .json({
+        error: "Internal Server Error",
+        message: "Failed to fetch sync impact",
+      });
   }
 });
 
@@ -750,22 +901,32 @@ router.get('/sync-impact{/:artistId}', async (req: ApiKeyRequest, res) => {
  * GET /api/v1/analytics/cross-platform{/:artistId}
  * Cross-platform performance
  */
-router.get('/cross-platform{/:artistId}', async (req: ApiKeyRequest, res) => {
+router.get("/cross-platform{/:artistId}", async (req: ApiKeyRequest, res) => {
   try {
     const userId = req.apiKey?.userId;
     const artistId = req.params.artistId || userId;
-    const { startDate, endDate, timeRange = '30d' } = req.query;
+    const { startDate, endDate, timeRange = "30d" } = req.query;
 
     if (!userId) {
-      return res.status(401).json({ error: 'Unauthorized', message: 'User ID not found' });
+      return res
+        .status(401)
+        .json({ error: "Unauthorized", message: "User ID not found" });
     }
 
     const end = endDate ? new Date(endDate as string) : new Date();
     const start = startDate
       ? new Date(startDate as string)
-      : new Date(end.getTime() - (parseInt(timeRange as string) || 30) * 24 * 60 * 60 * 1000);
+      : new Date(
+          end.getTime() -
+            (parseInt(timeRange as string) || 30) * 24 * 60 * 60 * 1000,
+        );
 
-    const crossPlatform = await advancedAnalyticsService.getCrossPlatformAnalysis(artistId as string, start, end);
+    const crossPlatform =
+      await advancedAnalyticsService.getCrossPlatformAnalysis(
+        artistId as string,
+        start,
+        end,
+      );
 
     return res.json({
       success: true,
@@ -776,10 +937,13 @@ router.get('/cross-platform{/:artistId}', async (req: ApiKeyRequest, res) => {
       ...crossPlatform,
     });
   } catch (error: unknown) {
-    logger.warn({ err: error }, 'Error fetching cross-platform data:');
+    logger.warn({ err: error }, "Error fetching cross-platform data:");
     return res
       .status(500)
-      .json({ error: 'Internal Server Error', message: 'Failed to fetch cross-platform data' });
+      .json({
+        error: "Internal Server Error",
+        message: "Failed to fetch cross-platform data",
+      });
   }
 });
 
@@ -787,101 +951,141 @@ router.get('/cross-platform{/:artistId}', async (req: ApiKeyRequest, res) => {
  * GET /api/v1/analytics/data-sources/shazam{/:artistId}
  * Shazam data
  */
-router.get('/data-sources/shazam{/:artistId}', async (req: ApiKeyRequest, res) => {
-  try {
-    const userId = req.apiKey?.userId;
-    const artistId = req.params.artistId || userId;
-    const { startDate, endDate, timeRange = '30d' } = req.query;
+router.get(
+  "/data-sources/shazam{/:artistId}",
+  async (req: ApiKeyRequest, res) => {
+    try {
+      const userId = req.apiKey?.userId;
+      const artistId = req.params.artistId || userId;
+      const { startDate, endDate, timeRange = "30d" } = req.query;
 
-    if (!userId) {
-      return res.status(401).json({ error: 'Unauthorized', message: 'User ID not found' });
+      if (!userId) {
+        return res
+          .status(401)
+          .json({ error: "Unauthorized", message: "User ID not found" });
+      }
+
+      const end = endDate ? new Date(endDate as string) : new Date();
+      const start = startDate
+        ? new Date(startDate as string)
+        : new Date(
+            end.getTime() -
+              (parseInt(timeRange as string) || 30) * 24 * 60 * 60 * 1000,
+          );
+
+      const shazamData = await advancedAnalyticsService.getShazamData(
+        artistId as string,
+        start,
+        end,
+      );
+
+      return res.json({
+        success: true,
+        timeRange: {
+          start: start.toISOString(),
+          end: end.toISOString(),
+        },
+        ...shazamData,
+      });
+    } catch (error: unknown) {
+      logger.warn({ err: error }, "Error fetching Shazam data:");
+      return res
+        .status(500)
+        .json({
+          error: "Internal Server Error",
+          message: "Failed to fetch Shazam data",
+        });
     }
-
-    const end = endDate ? new Date(endDate as string) : new Date();
-    const start = startDate
-      ? new Date(startDate as string)
-      : new Date(end.getTime() - (parseInt(timeRange as string) || 30) * 24 * 60 * 60 * 1000);
-
-    const shazamData = await advancedAnalyticsService.getShazamData(artistId as string, start, end);
-
-    return res.json({
-      success: true,
-      timeRange: {
-        start: start.toISOString(),
-        end: end.toISOString(),
-      },
-      ...shazamData,
-    });
-  } catch (error: unknown) {
-    logger.warn({ err: error }, 'Error fetching Shazam data:');
-    return res
-      .status(500)
-      .json({ error: 'Internal Server Error', message: 'Failed to fetch Shazam data' });
-  }
-});
+  },
+);
 
 /**
  * GET /api/v1/analytics/data-sources/radio{/:artistId}
  * Radio airplay data
  */
-router.get('/data-sources/radio{/:artistId}', async (req: ApiKeyRequest, res) => {
-  try {
-    const userId = req.apiKey?.userId;
-    const artistId = req.params.artistId || userId;
-    const { startDate, endDate, timeRange = '30d' } = req.query;
+router.get(
+  "/data-sources/radio{/:artistId}",
+  async (req: ApiKeyRequest, res) => {
+    try {
+      const userId = req.apiKey?.userId;
+      const artistId = req.params.artistId || userId;
+      const { startDate, endDate, timeRange = "30d" } = req.query;
 
-    if (!userId) {
-      return res.status(401).json({ error: 'Unauthorized', message: 'User ID not found' });
+      if (!userId) {
+        return res
+          .status(401)
+          .json({ error: "Unauthorized", message: "User ID not found" });
+      }
+
+      const end = endDate ? new Date(endDate as string) : new Date();
+      const start = startDate
+        ? new Date(startDate as string)
+        : new Date(
+            end.getTime() -
+              (parseInt(timeRange as string) || 30) * 24 * 60 * 60 * 1000,
+          );
+
+      const radioData = await advancedAnalyticsService.getRadioAirplayData(
+        artistId as string,
+        start,
+        end,
+      );
+
+      return res.json({
+        success: true,
+        timeRange: {
+          start: start.toISOString(),
+          end: end.toISOString(),
+        },
+        ...radioData,
+      });
+    } catch (error: unknown) {
+      logger.warn({ err: error }, "Error fetching radio data:");
+      return res
+        .status(500)
+        .json({
+          error: "Internal Server Error",
+          message: "Failed to fetch radio data",
+        });
     }
-
-    const end = endDate ? new Date(endDate as string) : new Date();
-    const start = startDate
-      ? new Date(startDate as string)
-      : new Date(end.getTime() - (parseInt(timeRange as string) || 30) * 24 * 60 * 60 * 1000);
-
-    const radioData = await advancedAnalyticsService.getRadioAirplayData(artistId as string, start, end);
-
-    return res.json({
-      success: true,
-      timeRange: {
-        start: start.toISOString(),
-        end: end.toISOString(),
-      },
-      ...radioData,
-    });
-  } catch (error: unknown) {
-    logger.warn({ err: error }, 'Error fetching radio data:');
-    return res
-      .status(500)
-      .json({ error: 'Internal Server Error', message: 'Failed to fetch radio data' });
-  }
-});
+  },
+);
 
 /**
  * GET /api/v1/analytics/data-sources/tour{/:artistId}
  * Tour/concert data
  */
-router.get('/data-sources/tour{/:artistId}', async (req: ApiKeyRequest, res) => {
-  try {
-    const userId = req.apiKey?.userId;
-    const artistId = req.params.artistId || userId;
+router.get(
+  "/data-sources/tour{/:artistId}",
+  async (req: ApiKeyRequest, res) => {
+    try {
+      const userId = req.apiKey?.userId;
+      const artistId = req.params.artistId || userId;
 
-    if (!userId) {
-      return res.status(401).json({ error: 'Unauthorized', message: 'User ID not found' });
+      if (!userId) {
+        return res
+          .status(401)
+          .json({ error: "Unauthorized", message: "User ID not found" });
+      }
+
+      const tourData = await advancedAnalyticsService.getTourData(
+        artistId as string,
+      );
+
+      return res.json({
+        success: true,
+        ...tourData,
+      });
+    } catch (error: unknown) {
+      logger.warn({ err: error }, "Error fetching tour data:");
+      return res
+        .status(500)
+        .json({
+          error: "Internal Server Error",
+          message: "Failed to fetch tour data",
+        });
     }
-
-    const tourData = await advancedAnalyticsService.getTourData(artistId as string);
-
-    return res.json({
-      success: true,
-      ...tourData,
-    });
-  } catch (error: unknown) {
-    logger.warn({ err: error }, 'Error fetching tour data:');
-    return res
-      .status(500)
-      .json({ error: 'Internal Server Error', message: 'Failed to fetch tour data' });
-  }
-});
+  },
+);
 
 export default router;

@@ -1,7 +1,7 @@
-import { AIAnalyzer } from './AIAnalyzer';
-import { EQPlugin } from './plugins/EQPlugin';
-import { CompressorPlugin } from './plugins/CompressorPlugin';
-import { logger } from '@/lib/logger';
+import { AIAnalyzer } from "./AIAnalyzer";
+import { EQPlugin } from "./plugins/EQPlugin";
+import { CompressorPlugin } from "./plugins/CompressorPlugin";
+import { logger } from "@/lib/logger";
 
 /**
  * AI Mastering - Professional automated mastering
@@ -67,7 +67,7 @@ export class AIMastering {
    * Perform AI mastering on audio buffer
    */
   async performAIMastering(buffer: AudioBuffer): Promise<MasteringResult> {
-    logger.info('[AI MASTERING] Starting analysis...');
+    logger.info("[AI MASTERING] Starting analysis...");
 
     const result: MasteringResult = {
       success: true,
@@ -103,14 +103,17 @@ export class AIMastering {
     // Step 7: Final analysis
     this.performFinalAnalysis(buffer, result);
 
-    logger.info('[AI MASTERING] Mastering complete!', result);
+    logger.info("[AI MASTERING] Mastering complete!", result);
     return result;
   }
 
   /**
    * Analyze input audio
    */
-  private analyzeInput(buffer: AudioBuffer, result: MasteringResult): AudioAnalysis {
+  private analyzeInput(
+    buffer: AudioBuffer,
+    result: MasteringResult,
+  ): AudioAnalysis {
     const lufs = this.analyzer.calculateLUFS(buffer);
     const dynamics = this.analyzer.analyzeDynamicRange(buffer);
     const clipping = this.analyzer.detectClipping(buffer);
@@ -120,7 +123,7 @@ export class AIMastering {
     if (buffer.numberOfChannels === 2) {
       stereoAnalysis = this.analyzer.analyzeStereoImage(
         buffer.getChannelData(0),
-        buffer.getChannelData(1)
+        buffer.getChannelData(1),
       );
     }
 
@@ -131,7 +134,7 @@ export class AIMastering {
 
     if (clipping.hasClipping) {
       result.recommendations.push(
-        `Input has clipping (${clipping.clippingPercentage.toFixed(2)}% samples). Consider reducing input gain.`
+        `Input has clipping (${clipping.clippingPercentage.toFixed(2)}% samples). Consider reducing input gain.`,
       );
     }
 
@@ -152,7 +155,10 @@ export class AIMastering {
   /**
    * Apply tonal balance correction
    */
-  private applyTonalBalance(analysis: AudioAnalysis, result: MasteringResult): void {
+  private applyTonalBalance(
+    analysis: AudioAnalysis,
+    result: MasteringResult,
+  ): void {
     // Target tonal balance curve (pink noise reference)
     const targetCurve = {
       bass: 0, // 20-250 Hz
@@ -168,9 +174,9 @@ export class AIMastering {
       this.eq.setBand(5, 8000, 2); // High shelf
       this.eq.setBand(6, 12000, 3); // Air
       result.adjustments.push({
-        type: 'eq',
-        description: 'Added brightness to quiet mix',
-        value: '+2dB @ 8kHz, +3dB @ 12kHz',
+        type: "eq",
+        description: "Added brightness to quiet mix",
+        value: "+2dB @ 8kHz, +3dB @ 12kHz",
       });
     }
 
@@ -178,9 +184,9 @@ export class AIMastering {
       // Over-compressed - enhance transients
       this.eq.setBand(4, 3000, 1.5); // Presence
       result.adjustments.push({
-        type: 'eq',
-        description: 'Enhanced transients',
-        value: '+1.5dB @ 3kHz',
+        type: "eq",
+        description: "Enhanced transients",
+        value: "+1.5dB @ 3kHz",
       });
     }
 
@@ -189,16 +195,19 @@ export class AIMastering {
     this.eq.setBand(5, 10000, 1); // Subtle treble boost
 
     result.adjustments.push({
-      type: 'eq',
-      description: 'Applied mastering EQ curve',
-      value: 'Gentle smile curve with tonal balance correction',
+      type: "eq",
+      description: "Applied mastering EQ curve",
+      value: "Gentle smile curve with tonal balance correction",
     });
   }
 
   /**
    * Apply multiband compression
    */
-  private applyMultibandCompression(analysis: AudioAnalysis, result: MasteringResult): void {
+  private applyMultibandCompression(
+    analysis: AudioAnalysis,
+    result: MasteringResult,
+  ): void {
     // Configure bands based on dynamic range
     const needsControl = analysis.dynamicRange > 12;
 
@@ -236,9 +245,9 @@ export class AIMastering {
       });
 
       result.adjustments.push({
-        type: 'multiband',
-        description: 'Applied 4-band compression',
-        value: 'Gentle control across frequency spectrum',
+        type: "multiband",
+        description: "Applied 4-band compression",
+        value: "Gentle control across frequency spectrum",
       });
     } else {
       // Already compressed - use very gentle settings
@@ -248,9 +257,9 @@ export class AIMastering {
       this.multibandCompressors.setBand(3, { threshold: -6, ratio: 1.1 });
 
       result.adjustments.push({
-        type: 'multiband',
-        description: 'Applied gentle glue compression',
-        value: 'Minimal processing to preserve dynamics',
+        type: "multiband",
+        description: "Applied gentle glue compression",
+        value: "Minimal processing to preserve dynamics",
       });
     }
   }
@@ -258,24 +267,27 @@ export class AIMastering {
   /**
    * Apply stereo enhancement
    */
-  private applyStereoEnhancement(analysis: AudioAnalysis, result: MasteringResult): void {
+  private applyStereoEnhancement(
+    analysis: AudioAnalysis,
+    result: MasteringResult,
+  ): void {
     // Only enhance if not already wide
     if (analysis.stereoWidth < 0.5) {
       this.stereoEnhancer.setWidth(1.2); // 120% width
       this.stereoEnhancer.setBassMonoFrequency(120); // Mono below 120Hz
 
       result.adjustments.push({
-        type: 'stereo',
-        description: 'Enhanced stereo width',
-        value: '120% width, bass mono below 120Hz',
+        type: "stereo",
+        description: "Enhanced stereo width",
+        value: "120% width, bass mono below 120Hz",
       });
     } else if (analysis.stereoWidth > 0.8) {
       // Too wide - narrow slightly
       this.stereoEnhancer.setWidth(0.9);
       result.adjustments.push({
-        type: 'stereo',
-        description: 'Narrowed excessive width',
-        value: '90% width for better mono compatibility',
+        type: "stereo",
+        description: "Narrowed excessive width",
+        value: "90% width for better mono compatibility",
       });
     }
 
@@ -283,9 +295,9 @@ export class AIMastering {
     if (Math.abs(analysis.stereoBalance) > 0.1) {
       this.stereoEnhancer.setBalance(-analysis.stereoBalance);
       result.adjustments.push({
-        type: 'stereo',
-        description: 'Corrected stereo balance',
-        value: `Adjusted ${analysis.stereoBalance > 0 ? 'left' : 'right'} bias`,
+        type: "stereo",
+        description: "Corrected stereo balance",
+        value: `Adjusted ${analysis.stereoBalance > 0 ? "left" : "right"} bias`,
       });
     }
   }
@@ -293,7 +305,10 @@ export class AIMastering {
   /**
    * Apply loudness optimization for streaming
    */
-  private applyLoudnessOptimization(analysis: AudioAnalysis, result: MasteringResult): void {
+  private applyLoudnessOptimization(
+    analysis: AudioAnalysis,
+    result: MasteringResult,
+  ): void {
     // Calculate required gain to reach target LUFS
     const currentLUFS = analysis.lufs;
     const gainRequired = this.targetLUFS - currentLUFS;
@@ -302,16 +317,22 @@ export class AIMastering {
     const maxGain = 12; // Maximum 12dB boost
     const actualGain = Math.min(gainRequired, maxGain);
 
-    this.makeupGain.gain.setValueAtTime(Math.pow(10, actualGain / 20), this.context.currentTime);
+    this.makeupGain.gain.setValueAtTime(
+      Math.pow(10, actualGain / 20),
+      this.context.currentTime,
+    );
 
     result.adjustments.push({
-      type: 'loudness',
-      description: 'Optimized for streaming platforms',
+      type: "loudness",
+      description: "Optimized for streaming platforms",
       value: `+${actualGain.toFixed(1)}dB to reach -14 LUFS`,
     });
 
     // Update expected output LUFS
-    result.metrics.outputLUFS = Math.min(currentLUFS + actualGain, this.targetLUFS);
+    result.metrics.outputLUFS = Math.min(
+      currentLUFS + actualGain,
+      this.targetLUFS,
+    );
   }
 
   /**
@@ -326,16 +347,19 @@ export class AIMastering {
     this.limiter.release.value = 0.005; // Fast release
 
     result.adjustments.push({
-      type: 'limiting',
-      description: 'Applied true peak limiting',
-      value: 'Ceiling at -1 dBFS for streaming compliance',
+      type: "limiting",
+      description: "Applied true peak limiting",
+      value: "Ceiling at -1 dBFS for streaming compliance",
     });
   }
 
   /**
    * Perform final analysis and generate recommendations
    */
-  private performFinalAnalysis(buffer: AudioBuffer, result: MasteringResult): void {
+  private performFinalAnalysis(
+    buffer: AudioBuffer,
+    result: MasteringResult,
+  ): void {
     // Estimate output metrics (would need actual processed buffer in production)
     const outputDynamics = Math.max(3, result.metrics.dynamicRange - 3);
 
@@ -345,24 +369,24 @@ export class AIMastering {
     // Generate recommendations
     if (outputDynamics < 6) {
       result.recommendations.push(
-        'Consider preserving more dynamic range for better sound quality'
+        "Consider preserving more dynamic range for better sound quality",
       );
     }
 
     if (result.metrics.outputLUFS > -12) {
       result.recommendations.push(
-        'Master may be too loud and could be turned down by streaming services'
+        "Master may be too loud and could be turned down by streaming services",
       );
     }
 
     if (result.metrics.stereoWidth < 0.3) {
-      result.recommendations.push('Mix could benefit from wider stereo image');
+      result.recommendations.push("Mix could benefit from wider stereo image");
     }
 
     result.recommendations.push(
-      'Master optimized for Spotify, Apple Music, and YouTube (-14 LUFS)',
-      'Check translation on different playback systems',
-      'Consider A/B testing with reference tracks'
+      "Master optimized for Spotify, Apple Music, and YouTube (-14 LUFS)",
+      "Check translation on different playback systems",
+      "Consider A/B testing with reference tracks",
     );
   }
 
@@ -392,8 +416,8 @@ export class AIMastering {
    * Set target loudness
    */
   setTargetLoudness(
-    platform: 'spotify' | 'apple' | 'youtube' | 'soundcloud' | 'custom',
-    customLUFS?: number
+    platform: "spotify" | "apple" | "youtube" | "soundcloud" | "custom",
+    customLUFS?: number,
   ): void {
     const platformTargets = {
       spotify: -14,
@@ -470,7 +494,7 @@ class MultibandCompressor {
       const band = new CompressorBand(
         context,
         i === 0 ? 0 : frequencies[i - 1],
-        i === 3 ? 20000 : frequencies[i]
+        i === 3 ? 20000 : frequencies[i],
       );
       this.bands.push(band);
 
@@ -527,11 +551,11 @@ class CompressorBand {
 
     // Create bandpass filters
     this.lowFilter = context.createBiquadFilter();
-    this.lowFilter.type = lowFreq > 0 ? 'highpass' : 'lowshelf';
+    this.lowFilter.type = lowFreq > 0 ? "highpass" : "lowshelf";
     this.lowFilter.frequency.value = Math.max(20, lowFreq);
 
     this.highFilter = context.createBiquadFilter();
-    this.highFilter.type = highFreq < 20000 ? 'lowpass' : 'highshelf';
+    this.highFilter.type = highFreq < 20000 ? "lowpass" : "highshelf";
     this.highFilter.frequency.value = Math.min(20000, highFreq);
 
     // Create compressor
@@ -553,7 +577,8 @@ class CompressorBand {
   }
 
   setSettings(settings: unknown): void {
-    if (settings.threshold) this.compressor.threshold.value = settings.threshold;
+    if (settings.threshold)
+      this.compressor.threshold.value = settings.threshold;
     if (settings.ratio) this.compressor.ratio.value = settings.ratio;
     if (settings.attack) this.compressor.attack.value = settings.attack;
     if (settings.release) this.compressor.release.value = settings.release;
@@ -613,7 +638,7 @@ class StereoEnhancer {
 
     // Bass mono filter
     this.monoFilter = context.createBiquadFilter();
-    this.monoFilter.type = 'highpass';
+    this.monoFilter.type = "highpass";
     this.monoFilter.frequency.value = 100;
 
     // Connect M/S matrix

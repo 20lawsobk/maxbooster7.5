@@ -4,9 +4,9 @@
  */
 
 export const AUDIO_FORMATS = {
-  PCM16: 'pcm16',
-  PCM24: 'pcm24',
-  FLOAT32: 'float32',
+  PCM16: "pcm16",
+  PCM24: "pcm24",
+  FLOAT32: "float32",
 } as const;
 
 export type AudioFormat = (typeof AUDIO_FORMATS)[keyof typeof AUDIO_FORMATS];
@@ -81,7 +81,7 @@ export const TRACK_LIMITS = {
 export const PERFORMANCE_GUARANTEES = {
   TRACK_COUNT_256: {
     maxTracks: 256,
-    description: 'Guaranteed smooth playback for 256+ tracks',
+    description: "Guaranteed smooth playback for 256+ tracks",
     requirements: {
       sampleRate: SAMPLE_RATES.SR_48000,
       bufferSize: BUFFER_SIZES.BALANCED,
@@ -90,7 +90,8 @@ export const PERFORMANCE_GUARANTEES = {
   },
   TRACK_COUNT_128: {
     maxTracks: 128,
-    description: 'Guaranteed smooth playback for 128+ tracks at high sample rates',
+    description:
+      "Guaranteed smooth playback for 128+ tracks at high sample rates",
     requirements: {
       sampleRate: SAMPLE_RATES.SR_96000,
       bufferSize: BUFFER_SIZES.HIGH_QUALITY,
@@ -99,7 +100,8 @@ export const PERFORMANCE_GUARANTEES = {
   },
   TRACK_COUNT_64: {
     maxTracks: 64,
-    description: 'Guaranteed smooth playback for 64+ tracks at ultra-high sample rates',
+    description:
+      "Guaranteed smooth playback for 64+ tracks at ultra-high sample rates",
     requirements: {
       sampleRate: SAMPLE_RATES.SR_192000,
       bufferSize: BUFFER_SIZES.ULTRA_HIGH_QUALITY,
@@ -112,17 +114,17 @@ export const LATENCY_TARGETS = {
   RECORDING: {
     targetMs: 5,
     bufferSize: BUFFER_SIZES.ULTRA_LOW_LATENCY,
-    description: 'Ultra-low latency for live recording',
+    description: "Ultra-low latency for live recording",
   },
   MIXING: {
     targetMs: 10,
     bufferSize: BUFFER_SIZES.LOW_LATENCY,
-    description: 'Low latency for mixing and editing',
+    description: "Low latency for mixing and editing",
   },
   MASTERING: {
     targetMs: 20,
     bufferSize: BUFFER_SIZES.HIGH_QUALITY,
-    description: 'Higher quality for mastering',
+    description: "Higher quality for mastering",
   },
 } as const;
 
@@ -133,7 +135,11 @@ export const SUPPORTED_SAMPLE_RATES = [
   SAMPLE_RATES.SR_192000,
 ] as const;
 
-export const SUPPORTED_BIT_DEPTHS = [BIT_DEPTHS.BD_16, BIT_DEPTHS.BD_24, BIT_DEPTHS.BD_32] as const;
+export const SUPPORTED_BIT_DEPTHS = [
+  BIT_DEPTHS.BD_16,
+  BIT_DEPTHS.BD_24,
+  BIT_DEPTHS.BD_32,
+] as const;
 
 export const SUPPORTED_FORMATS = [
   AUDIO_FORMATS.PCM16,
@@ -143,32 +149,32 @@ export const SUPPORTED_FORMATS = [
 
 export const AUDIO_FORMAT_SPECS = {
   [AUDIO_FORMATS.PCM16]: {
-    name: '16-bit PCM',
+    name: "16-bit PCM",
     bitDepth: BIT_DEPTHS.BD_16,
     dynamicRange: 96,
-    description: 'Standard quality - ideal for podcasts and demos',
-    fileSize: 'Small',
+    description: "Standard quality - ideal for podcasts and demos",
+    fileSize: "Small",
   },
   [AUDIO_FORMATS.PCM24]: {
-    name: '24-bit PCM',
+    name: "24-bit PCM",
     bitDepth: BIT_DEPTHS.BD_24,
     dynamicRange: 144,
-    description: 'Professional quality - ideal for music production',
-    fileSize: 'Medium',
+    description: "Professional quality - ideal for music production",
+    fileSize: "Medium",
   },
   [AUDIO_FORMATS.FLOAT32]: {
-    name: '32-bit Float',
+    name: "32-bit Float",
     bitDepth: BIT_DEPTHS.BD_32,
     dynamicRange: 1680,
-    description: 'Studio reference quality - ideal for mastering and archival',
-    fileSize: 'Large',
+    description: "Studio reference quality - ideal for mastering and archival",
+    fileSize: "Large",
   },
 } as const;
 
 export const FFMPEG_CODECS = {
-  [AUDIO_FORMATS.PCM16]: 'pcm_s16le',
-  [AUDIO_FORMATS.PCM24]: 'pcm_s24le',
-  [AUDIO_FORMATS.FLOAT32]: 'pcm_f32le',
+  [AUDIO_FORMATS.PCM16]: "pcm_s16le",
+  [AUDIO_FORMATS.PCM24]: "pcm_s24le",
+  [AUDIO_FORMATS.FLOAT32]: "pcm_f32le",
 } as const;
 
 export function isSupportedSampleRate(rate: number): rate is SampleRate {
@@ -185,7 +191,7 @@ export function isSupportedFormat(format: string): format is AudioFormat {
 
 export function getRecommendedBufferSize(
   sampleRate: SampleRate,
-  latencyTarget: 'recording' | 'mixing' | 'mastering'
+  latencyTarget: "recording" | "mixing" | "mastering",
 ): BufferSize {
   const target = LATENCY_TARGETS[latencyTarget];
 
@@ -200,11 +206,17 @@ export function getRecommendedBufferSize(
   return target.bufferSize;
 }
 
-export function calculateLatencyMs(bufferSize: BufferSize, sampleRate: SampleRate): number {
+export function calculateLatencyMs(
+  bufferSize: BufferSize,
+  sampleRate: SampleRate,
+): number {
   return (bufferSize / sampleRate) * 1000;
 }
 
-export function getMaxTracksForConfig(sampleRate: SampleRate, bufferSize: BufferSize): number {
+export function getMaxTracksForConfig(
+  sampleRate: SampleRate,
+  bufferSize: BufferSize,
+): number {
   if (sampleRate >= SAMPLE_RATES.SR_192000) {
     return TRACK_LIMITS.STANDARD;
   } else if (sampleRate >= SAMPLE_RATES.SR_96000) {
@@ -225,19 +237,19 @@ export function validateAudioConfig(config: {
 
   if (config.format && !isSupportedFormat(config.format)) {
     errors.push(
-      `Unsupported audio format: ${config.format}. Supported: ${SUPPORTED_FORMATS.join(', ')}`
+      `Unsupported audio format: ${config.format}. Supported: ${SUPPORTED_FORMATS.join(", ")}`,
     );
   }
 
   if (config.sampleRate && !isSupportedSampleRate(config.sampleRate)) {
     errors.push(
-      `Unsupported sample rate: ${config.sampleRate}Hz. Supported: ${SUPPORTED_SAMPLE_RATES.join(', ')}Hz`
+      `Unsupported sample rate: ${config.sampleRate}Hz. Supported: ${SUPPORTED_SAMPLE_RATES.join(", ")}Hz`,
     );
   }
 
   if (config.bitDepth && !isSupportedBitDepth(config.bitDepth)) {
     errors.push(
-      `Unsupported bit depth: ${config.bitDepth}-bit. Supported: ${SUPPORTED_BIT_DEPTHS.join(', ')}-bit`
+      `Unsupported bit depth: ${config.bitDepth}-bit. Supported: ${SUPPORTED_BIT_DEPTHS.join(", ")}-bit`,
     );
   }
 
@@ -246,7 +258,7 @@ export function validateAudioConfig(config: {
     config.bitDepth &&
     config.bitDepth !== BIT_DEPTHS.BD_32
   ) {
-    errors.push('Float32 format requires 32-bit depth');
+    errors.push("Float32 format requires 32-bit depth");
   }
 
   if (
@@ -254,7 +266,7 @@ export function validateAudioConfig(config: {
     config.bitDepth &&
     config.bitDepth !== BIT_DEPTHS.BD_16
   ) {
-    errors.push('PCM16 format requires 16-bit depth');
+    errors.push("PCM16 format requires 16-bit depth");
   }
 
   if (
@@ -262,7 +274,7 @@ export function validateAudioConfig(config: {
     config.bitDepth &&
     config.bitDepth !== BIT_DEPTHS.BD_24
   ) {
-    errors.push('PCM24 format requires 24-bit depth');
+    errors.push("PCM24 format requires 24-bit depth");
   }
 
   return {

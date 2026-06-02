@@ -1,11 +1,11 @@
-import { useState, useCallback, useMemo } from 'react';
-import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Badge } from '@/components/ui/badge';
+import { useState, useCallback, useMemo } from "react";
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
   DialogContent,
@@ -13,22 +13,22 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog';
+} from "@/components/ui/dialog";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Separator } from '@/components/ui/separator';
-import { AlertCircle, CheckCircle2, Edit, Loader2 } from 'lucide-react';
+} from "@/components/ui/select";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Separator } from "@/components/ui/separator";
+import { AlertCircle, CheckCircle2, Edit, Loader2 } from "lucide-react";
 
 export interface EditableField {
   key: string;
   label: string;
-  type: 'text' | 'number' | 'select' | 'textarea' | 'checkbox' | 'date';
+  type: "text" | "number" | "select" | "textarea" | "checkbox" | "date";
   options?: Array<{ value: string; label: string }>;
   placeholder?: string;
   description?: string;
@@ -57,72 +57,81 @@ export function BulkEditDialog({
   fields,
   selectedCount,
   onApply,
-  title = 'Bulk Edit',
+  title = "Bulk Edit",
   description,
   isLoading = false,
 }: BulkEditDialogProps) {
   const [changes, setChanges] = useState<Record<string, FieldChange>>(() =>
-    fields.reduce((acc, field) => {
-      acc[field.key] = { enabled: false, value: getDefaultValue(field) };
-      return acc;
-    }, {} as Record<string, FieldChange>)
+    fields.reduce(
+      (acc, field) => {
+        acc[field.key] = { enabled: false, value: getDefaultValue(field) };
+        return acc;
+      },
+      {} as Record<string, FieldChange>,
+    ),
   );
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const enabledChangesCount = useMemo(
-    () => Object.values(changes).filter(c => c.enabled).length,
-    [changes]
+    () => Object.values(changes).filter((c) => c.enabled).length,
+    [changes],
   );
 
   const toggleField = useCallback((key: string) => {
-    setChanges(prev => ({
+    setChanges((prev) => ({
       ...prev,
       [key]: { ...prev[key], enabled: !prev[key].enabled },
     }));
-    setErrors(prev => {
+    setErrors((prev) => {
       const next = { ...prev };
       delete next[key];
       return next;
     });
   }, []);
 
-  const updateValue = useCallback((key: string, value: Record<string, unknown>) => {
-    setChanges(prev => ({
-      ...prev,
-      [key]: { ...prev[key], value },
-    }));
-    
-    const field = fields.find(f => f.key === key);
-    if (field?.validation) {
-      const error = field.validation(value);
-      setErrors(prev => {
-        if (error) {
-          return { ...prev, [key]: error };
-        }
-        const next = { ...prev };
-        delete next[key];
-        return next;
-      });
-    }
-  }, [fields]);
+  const updateValue = useCallback(
+    (key: string, value: Record<string, unknown>) => {
+      setChanges((prev) => ({
+        ...prev,
+        [key]: { ...prev[key], value },
+      }));
+
+      const field = fields.find((f) => f.key === key);
+      if (field?.validation) {
+        const error = field.validation(value);
+        setErrors((prev) => {
+          if (error) {
+            return { ...prev, [key]: error };
+          }
+          const next = { ...prev };
+          delete next[key];
+          return next;
+        });
+      }
+    },
+    [fields],
+  );
 
   const handleApply = useCallback(async () => {
     const enabledChanges = Object.entries(changes)
       .filter(([_, change]) => change.enabled)
-      .reduce((acc, [key, change]) => {
-        acc[key] = change.value;
-        return acc;
-      }, {} as Record<string, any>);
+      .reduce(
+        (acc, [key, change]) => {
+          acc[key] = change.value;
+          return acc;
+        },
+        {} as Record<string, any>,
+      );
 
     if (Object.keys(enabledChanges).length === 0) return;
 
     let hasErrors = false;
     for (const [key, value] of Object.entries(enabledChanges)) {
-      const field = fields.find(f => f.key === key);
+      const field = fields.find((f) => f.key === key);
       if (field?.validation) {
         const error = field.validation(value);
         if (error) {
-          setErrors(prev => ({ ...prev, [key]: error }));
+          setErrors((prev) => ({ ...prev, [key]: error }));
           hasErrors = true;
         }
       }
@@ -136,10 +145,13 @@ export function BulkEditDialog({
 
   const handleReset = useCallback(() => {
     setChanges(
-      fields.reduce((acc, field) => {
-        acc[field.key] = { enabled: false, value: getDefaultValue(field) };
-        return acc;
-      }, {} as Record<string, FieldChange>)
+      fields.reduce(
+        (acc, field) => {
+          acc[field.key] = { enabled: false, value: getDefaultValue(field) };
+          return acc;
+        },
+        {} as Record<string, FieldChange>,
+      ),
     );
     setErrors({});
   }, [fields]);
@@ -153,7 +165,8 @@ export function BulkEditDialog({
             {title}
           </DialogTitle>
           <DialogDescription>
-            {description || `Edit ${selectedCount} selected item${selectedCount > 1 ? 's' : ''}. Only enabled fields will be updated.`}
+            {description ||
+              `Edit ${selectedCount} selected item${selectedCount > 1 ? "s" : ""}. Only enabled fields will be updated.`}
           </DialogDescription>
         </DialogHeader>
 
@@ -174,8 +187,8 @@ export function BulkEditDialog({
                     <Label
                       htmlFor={`enable-${field.key}`}
                       className={cn(
-                        'cursor-pointer font-medium',
-                        !change.enabled && 'text-muted-foreground'
+                        "cursor-pointer font-medium",
+                        !change.enabled && "text-muted-foreground",
                       )}
                     >
                       {field.label}
@@ -190,11 +203,15 @@ export function BulkEditDialog({
                   {change.enabled && (
                     <div className="ml-7 space-y-2">
                       {field.description && (
-                        <p className="text-sm text-muted-foreground">{field.description}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {field.description}
+                        </p>
                       )}
-                      
-                      {renderFieldInput(field, change.value, (value) => updateValue(field.key, value))}
-                      
+
+                      {renderFieldInput(field, change.value, (value) =>
+                        updateValue(field.key, value),
+                      )}
+
                       {error && (
                         <p className="text-sm text-destructive flex items-center gap-1">
                           <AlertCircle className="h-3 w-3" />
@@ -213,18 +230,31 @@ export function BulkEditDialog({
 
         <DialogFooter className="flex items-center justify-between sm:justify-between">
           <div className="text-sm text-muted-foreground">
-            {enabledChangesCount} field{enabledChangesCount !== 1 ? 's' : ''} will be updated
+            {enabledChangesCount} field{enabledChangesCount !== 1 ? "s" : ""}{" "}
+            will be updated
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" onClick={handleReset} disabled={isLoading}>
+            <Button
+              variant="outline"
+              onClick={handleReset}
+              disabled={isLoading}
+            >
               Reset
             </Button>
-            <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isLoading}>
+            <Button
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+              disabled={isLoading}
+            >
               Cancel
             </Button>
             <Button
               onClick={handleApply}
-              disabled={isLoading || enabledChangesCount === 0 || Object.keys(errors).length > 0}
+              disabled={
+                isLoading ||
+                enabledChangesCount === 0 ||
+                Object.keys(errors).length > 0
+              }
             >
               {isLoading ? (
                 <>
@@ -234,7 +264,7 @@ export function BulkEditDialog({
               ) : (
                 <>
                   <CheckCircle2 className="h-4 w-4 mr-2" />
-                  Apply to {selectedCount} item{selectedCount > 1 ? 's' : ''}
+                  Apply to {selectedCount} item{selectedCount > 1 ? "s" : ""}
                 </>
               )}
             </Button>
@@ -247,28 +277,28 @@ export function BulkEditDialog({
 
 function getDefaultValue(field: EditableField): unknown {
   switch (field.type) {
-    case 'checkbox':
+    case "checkbox":
       return false;
-    case 'number':
+    case "number":
       return 0;
-    case 'select':
-      return field.options?.[0]?.value || '';
+    case "select":
+      return field.options?.[0]?.value || "";
     default:
-      return '';
+      return "";
   }
 }
 
 function renderFieldInput(
   field: EditableField,
   value: Record<string, unknown>,
-  onChange: (value: Record<string, unknown>) => void
+  onChange: (value: Record<string, unknown>) => void,
 ) {
   switch (field.type) {
-    case 'select':
+    case "select":
       return (
         <Select value={value} onValueChange={onChange}>
           <SelectTrigger>
-            <SelectValue placeholder={field.placeholder || 'Select...'} />
+            <SelectValue placeholder={field.placeholder || "Select..."} />
           </SelectTrigger>
           <SelectContent>
             {field.options?.map((option) => (
@@ -279,7 +309,7 @@ function renderFieldInput(
           </SelectContent>
         </Select>
       );
-    case 'textarea':
+    case "textarea":
       return (
         <Textarea
           value={value}
@@ -288,7 +318,7 @@ function renderFieldInput(
           rows={3}
         />
       );
-    case 'checkbox':
+    case "checkbox":
       return (
         <div className="flex items-center gap-2">
           <Checkbox
@@ -296,12 +326,15 @@ function renderFieldInput(
             onCheckedChange={onChange}
             id={`value-${field.key}`}
           />
-          <Label htmlFor={`value-${field.key}`} className="text-sm cursor-pointer">
-            {field.placeholder || 'Enabled'}
+          <Label
+            htmlFor={`value-${field.key}`}
+            className="text-sm cursor-pointer"
+          >
+            {field.placeholder || "Enabled"}
           </Label>
         </div>
       );
-    case 'number':
+    case "number":
       return (
         <Input
           type="number"
@@ -310,7 +343,7 @@ function renderFieldInput(
           placeholder={field.placeholder}
         />
       );
-    case 'date':
+    case "date":
       return (
         <Input
           type="date"
@@ -331,53 +364,93 @@ function renderFieldInput(
 }
 
 export const distributionEditFields: EditableField[] = [
-  { key: 'status', label: 'Status', type: 'select', options: [
-    { value: 'draft', label: 'Draft' },
-    { value: 'pending', label: 'Pending Review' },
-    { value: 'live', label: 'Live' },
-  ]},
-  { key: 'genre', label: 'Genre', type: 'select', options: [
-    { value: 'pop', label: 'Pop' },
-    { value: 'rock', label: 'Rock' },
-    { value: 'hiphop', label: 'Hip Hop' },
-    { value: 'electronic', label: 'Electronic' },
-  ]},
-  { key: 'explicit', label: 'Explicit Content', type: 'checkbox' },
-  { key: 'label', label: 'Label Name', type: 'text', placeholder: 'Enter label name' },
+  {
+    key: "status",
+    label: "Status",
+    type: "select",
+    options: [
+      { value: "draft", label: "Draft" },
+      { value: "pending", label: "Pending Review" },
+      { value: "live", label: "Live" },
+    ],
+  },
+  {
+    key: "genre",
+    label: "Genre",
+    type: "select",
+    options: [
+      { value: "pop", label: "Pop" },
+      { value: "rock", label: "Rock" },
+      { value: "hiphop", label: "Hip Hop" },
+      { value: "electronic", label: "Electronic" },
+    ],
+  },
+  { key: "explicit", label: "Explicit Content", type: "checkbox" },
+  {
+    key: "label",
+    label: "Label Name",
+    type: "text",
+    placeholder: "Enter label name",
+  },
 ];
 
 export const socialEditFields: EditableField[] = [
-  { key: 'status', label: 'Status', type: 'select', options: [
-    { value: 'draft', label: 'Draft' },
-    { value: 'scheduled', label: 'Scheduled' },
-    { value: 'published', label: 'Published' },
-  ]},
-  { key: 'scheduledDate', label: 'Schedule Date', type: 'date' },
-  { key: 'hashtags', label: 'Hashtags', type: 'text', placeholder: '#music #newrelease' },
+  {
+    key: "status",
+    label: "Status",
+    type: "select",
+    options: [
+      { value: "draft", label: "Draft" },
+      { value: "scheduled", label: "Scheduled" },
+      { value: "published", label: "Published" },
+    ],
+  },
+  { key: "scheduledDate", label: "Schedule Date", type: "date" },
+  {
+    key: "hashtags",
+    label: "Hashtags",
+    type: "text",
+    placeholder: "#music #newrelease",
+  },
 ];
 
 export const marketplaceEditFields: EditableField[] = [
-  { key: 'price', label: 'Price', type: 'number', placeholder: '0.00' },
-  { key: 'status', label: 'Listing Status', type: 'select', options: [
-    { value: 'active', label: 'Active' },
-    { value: 'paused', label: 'Paused' },
-    { value: 'sold', label: 'Sold' },
-  ]},
-  { key: 'featured', label: 'Featured', type: 'checkbox' },
-  { key: 'category', label: 'Category', type: 'select', options: [
-    { value: 'beats', label: 'Beats' },
-    { value: 'samples', label: 'Samples' },
-    { value: 'presets', label: 'Presets' },
-  ]},
+  { key: "price", label: "Price", type: "number", placeholder: "0.00" },
+  {
+    key: "status",
+    label: "Listing Status",
+    type: "select",
+    options: [
+      { value: "active", label: "Active" },
+      { value: "paused", label: "Paused" },
+      { value: "sold", label: "Sold" },
+    ],
+  },
+  { key: "featured", label: "Featured", type: "checkbox" },
+  {
+    key: "category",
+    label: "Category",
+    type: "select",
+    options: [
+      { value: "beats", label: "Beats" },
+      { value: "samples", label: "Samples" },
+      { value: "presets", label: "Presets" },
+    ],
+  },
 ];
 
 export const studioEditFields: EditableField[] = [
-  { key: 'tempo', label: 'Tempo (BPM)', type: 'number', placeholder: '120' },
-  { key: 'key', label: 'Key', type: 'select', options: [
-    { value: 'C', label: 'C Major' },
-    { value: 'Am', label: 'A Minor' },
-    { value: 'G', label: 'G Major' },
-    { value: 'Em', label: 'E Minor' },
-  ]},
-  { key: 'normalize', label: 'Normalize Audio', type: 'checkbox' },
+  { key: "tempo", label: "Tempo (BPM)", type: "number", placeholder: "120" },
+  {
+    key: "key",
+    label: "Key",
+    type: "select",
+    options: [
+      { value: "C", label: "C Major" },
+      { value: "Am", label: "A Minor" },
+      { value: "G", label: "G Major" },
+      { value: "Em", label: "E Minor" },
+    ],
+  },
+  { key: "normalize", label: "Normalize Audio", type: "checkbox" },
 ];

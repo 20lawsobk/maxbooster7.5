@@ -4,9 +4,11 @@ description: Why the per-worker BASE must sit between two empirical failure mode
 ---
 
 ## The rule
+
 `_PDIM_GAP_FLOOR_MS = clusterWorkers × _PDIM_GAP_FLOOR_BASE_MS`. The BASE must be picked from the **window between two production failure modes**, not from PDIM's documented capacity. Direct calls must fast-fail (drop to fallback storage) when the chain wait exceeds a small bound — never queue unbounded.
 
 ## Why
+
 There are two opposing failure modes and BASE must thread the needle between them:
 
 1. **Too low (combined rate > PDIM threshold):** every cluster worker has its own AIMD state; combined steady-state rate = `N × 1000/floor`. When that overruns PDIM's per-instance limit you get a permanent 429 sawtooth — workers recover to floor, combined load 429s them, multiplicative backoff fires, recovery resumes, repeat. Empirical: BASE=4ms (combined ~250 req/s with N=13) produced recurring 429 waves where the pre-multiplier gap was right at floor.
@@ -17,6 +19,7 @@ The working middle: BASE=6ms (combined ~167 req/s with N=13) — ~30 % below the
 A defensive second layer is essential because the safe window narrows under load: direct user-facing callers (sessions, distributed cache, rate-limiter) must **fast-fail** when the estimated chain wait exceeds a small bound (we use 2500 ms) so their PG / in-memory fallback actually runs. Without a fast-fail, a temporary throttling spike turns into a user-visible outage even when fallbacks exist in the code.
 
 ## How to apply
+
 - Always size BASE from **observed evidence**, not PDIM's documented capacity. There is a window, and PDIM's docs do not tell you where it is.
 - When 429s recur: divide `gap→Xms` in the 429 log lines by 2.5 (the AIMD multiplier). If the pre-429 gap ≈ per-worker floor, BASE is too low — raise it.
 - When chain depth grows unbounded with no 429s: BASE is too high — lower it.

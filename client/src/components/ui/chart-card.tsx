@@ -1,5 +1,5 @@
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { cn } from '@/lib/utils';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
 
 interface ChartCardProps {
   title: string;
@@ -19,8 +19,8 @@ export function ChartCard({
   return (
     <Card
       className={cn(
-        'bg-[var(--stat-card-bg)] border-[var(--stat-card-border)] shadow-sm',
-        className
+        "bg-[var(--stat-card-bg)] border-[var(--stat-card-border)] shadow-sm",
+        className,
       )}
     >
       <CardHeader className="pb-2">
@@ -30,7 +30,9 @@ export function ChartCard({
               {title}
             </CardTitle>
             {subtitle && (
-              <p className="text-sm text-[var(--stat-card-muted)] mt-1">{subtitle}</p>
+              <p className="text-sm text-[var(--stat-card-muted)] mt-1">
+                {subtitle}
+              </p>
             )}
           </div>
           {headerAction}
@@ -55,15 +57,15 @@ interface SimpleAreaChartProps {
 }
 
 const colorMap: Record<string, { fill: string; stroke: string }> = {
-  blue: { fill: '#3b82f6', stroke: '#60a5fa' },
-  cyan: { fill: '#06b6d4', stroke: '#22d3ee' },
-  emerald: { fill: '#10b981', stroke: '#34d399' },
-  purple: { fill: '#a855f7', stroke: '#c084fc' },
+  blue: { fill: "#3b82f6", stroke: "#60a5fa" },
+  cyan: { fill: "#06b6d4", stroke: "#22d3ee" },
+  emerald: { fill: "#10b981", stroke: "#34d399" },
+  purple: { fill: "#a855f7", stroke: "#c084fc" },
 };
 
 export function SimpleAreaChart({
   data,
-  color = 'blue',
+  color = "blue",
   height = 200,
   showLabels = true,
   formatValue = (v) => v.toLocaleString(),
@@ -80,7 +82,7 @@ export function SimpleAreaChart({
       const y = 100 - ((d.value - min) / range) * 80;
       return `${x},${y}`;
     })
-    .join(' ');
+    .join(" ");
 
   const areaPath = `M0,100 L0,${100 - ((data[0].value - min) / range) * 80} ${data
     .map((d, i) => {
@@ -88,7 +90,7 @@ export function SimpleAreaChart({
       const y = 100 - ((d.value - min) / range) * 80;
       return `L${x},${y}`;
     })
-    .join(' ')} L100,100 Z`;
+    .join(" ")} L100,100 Z`;
 
   const colors = colorMap[color] || colorMap.cyan;
   const gradientId = `area-gradient-${color}-${Math.random().toString(36).substr(2, 9)}`;
@@ -119,9 +121,11 @@ export function SimpleAreaChart({
       </svg>
       {showLabels && (
         <div className="absolute bottom-0 left-0 right-0 flex justify-between text-xs text-slate-500 pt-2">
-          {data.filter((_, i) => i % Math.ceil(data.length / 5) === 0).map((d, i) => (
-            <span key={i}>{d.label}</span>
-          ))}
+          {data
+            .filter((_, i) => i % Math.ceil(data.length / 5) === 0)
+            .map((d, i) => (
+              <span key={i}>{d.label}</span>
+            ))}
         </div>
       )}
     </div>
@@ -183,10 +187,14 @@ export function DonutChart({
       {(centerLabel || centerValue) && (
         <div className="absolute inset-0 flex flex-col items-center justify-center">
           {centerValue && (
-            <span className="text-2xl font-bold text-[var(--stat-card-text)]">{centerValue}</span>
+            <span className="text-2xl font-bold text-[var(--stat-card-text)]">
+              {centerValue}
+            </span>
           )}
           {centerLabel && (
-            <span className="text-xs text-[var(--stat-card-muted)]">{centerLabel}</span>
+            <span className="text-xs text-[var(--stat-card-muted)]">
+              {centerLabel}
+            </span>
           )}
         </div>
       )}
@@ -226,7 +234,11 @@ export function PlatformBreakdown({ platforms }: PlatformBreakdownProps) {
         }))}
         size={100}
         thickness={14}
-        centerValue={total > 0 ? `${Math.round((platforms[0]?.value / total) * 100)}%` : '0%'}
+        centerValue={
+          total > 0
+            ? `${Math.round((platforms[0]?.value / total) * 100)}%`
+            : "0%"
+        }
       />
       <div className="flex flex-col gap-2">
         {platforms.map((platform, i) => (
@@ -236,7 +248,9 @@ export function PlatformBreakdown({ platforms }: PlatformBreakdownProps) {
               style={{ backgroundColor: platform.color }}
             />
             {platform.icon}
-            <span className="text-sm text-[var(--stat-card-muted)]">{platform.name}</span>
+            <span className="text-sm text-[var(--stat-card-muted)]">
+              {platform.name}
+            </span>
             <span className="text-sm font-medium text-[var(--stat-card-text)] ml-auto">
               {platform.value.toLocaleString()}
             </span>

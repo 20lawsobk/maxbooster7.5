@@ -1,13 +1,13 @@
 /**
  * INPUT VALIDATION MIDDLEWARE
- * 
+ *
  * Consistent input validation across all routes.
  * Prevents injection attacks, malformed data, and unexpected input.
  */
 
-import { Request, Response, NextFunction } from 'express';
-import { z, ZodSchema, ZodError } from 'zod';
-import { logger } from '../logger.js';
+import { Request, Response, NextFunction } from "express";
+import { z, ZodSchema, ZodError } from "zod";
+import { logger } from "../logger.js";
 
 /**
  * Common validation schemas
@@ -24,33 +24,40 @@ export const schemas = {
   email: z.string().email().max(255).toLowerCase(),
 
   // Password (min 8 chars, at least 1 letter and 1 number)
-  password: z.string()
-    .min(8, 'Password must be at least 8 characters')
-    .max(128, 'Password too long')
-    .regex(/[a-zA-Z]/, 'Password must contain at least one letter')
-    .regex(/[0-9]/, 'Password must contain at least one number'),
+  password: z
+    .string()
+    .min(8, "Password must be at least 8 characters")
+    .max(128, "Password too long")
+    .regex(/[a-zA-Z]/, "Password must contain at least one letter")
+    .regex(/[0-9]/, "Password must contain at least one number"),
 
   // Username
-  username: z.string()
-    .min(3, 'Username must be at least 3 characters')
-    .max(32, 'Username too long')
-    .regex(/^[a-zA-Z0-9_-]+$/, 'Username can only contain letters, numbers, underscores, and hyphens'),
+  username: z
+    .string()
+    .min(3, "Username must be at least 3 characters")
+    .max(32, "Username too long")
+    .regex(
+      /^[a-zA-Z0-9_-]+$/,
+      "Username can only contain letters, numbers, underscores, and hyphens",
+    ),
 
   // Pagination
   pagination: z.object({
     page: z.coerce.number().int().min(1).default(1),
     limit: z.coerce.number().int().min(1).max(100).default(20),
     sortBy: z.string().optional(),
-    sortOrder: z.enum(['asc', 'desc']).default('desc'),
+    sortOrder: z.enum(["asc", "desc"]).default("desc"),
   }),
 
   // Date range
-  dateRange: z.object({
-    startDate: z.coerce.date(),
-    endDate: z.coerce.date(),
-  }).refine(data => data.startDate <= data.endDate, {
-    message: 'Start date must be before end date',
-  }),
+  dateRange: z
+    .object({
+      startDate: z.coerce.date(),
+      endDate: z.coerce.date(),
+    })
+    .refine((data) => data.startDate <= data.endDate, {
+      message: "Start date must be before end date",
+    }),
 
   // Currency amount (in cents)
   amount: z.number().int().min(0).max(100000000), // Max $1M
@@ -60,15 +67,30 @@ export const schemas = {
 
   // File upload metadata
   fileUpload: z.object({
-    filename: z.string().max(255).regex(/^[a-zA-Z0-9._-]+$/),
+    filename: z
+      .string()
+      .max(255)
+      .regex(/^[a-zA-Z0-9._-]+$/),
     mimetype: z.string().max(128),
-    size: z.number().int().min(1).max(100 * 1024 * 1024), // Max 100MB
+    size: z
+      .number()
+      .int()
+      .min(1)
+      .max(100 * 1024 * 1024), // Max 100MB
   }),
 
   // Social platform
   socialPlatform: z.enum([
-    'twitter', 'facebook', 'instagram', 'tiktok', 'youtube', 
-    'linkedin', 'threads', 'spotify', 'soundcloud', 'bandcamp'
+    "twitter",
+    "facebook",
+    "instagram",
+    "tiktok",
+    "youtube",
+    "linkedin",
+    "threads",
+    "spotify",
+    "soundcloud",
+    "bandcamp",
   ]),
 
   // Music release
@@ -78,17 +100,26 @@ export const schemas = {
     genre: z.string().max(64).optional(),
     releaseDate: z.coerce.date().optional(),
     isExplicit: z.boolean().default(false),
-    tracks: z.array(z.object({
-      title: z.string().min(1).max(255),
-      duration: z.number().int().min(1),
-      isrc: z.string().regex(/^[A-Z]{2}[A-Z0-9]{3}\d{7}$/).optional(),
-    })).min(1).max(100),
+    tracks: z
+      .array(
+        z.object({
+          title: z.string().min(1).max(255),
+          duration: z.number().int().min(1),
+          isrc: z
+            .string()
+            .regex(/^[A-Z]{2}[A-Z0-9]{3}\d{7}$/)
+            .optional(),
+        }),
+      )
+      .min(1)
+      .max(100),
   }),
 
   // Search query (sanitized)
-  searchQuery: z.string()
+  searchQuery: z
+    .string()
     .max(256)
-    .transform(s => s.replace(/[<>'"`;]/g, '')), // Remove potential injection chars
+    .transform((s) => s.replace(/[<>'"`;]/g, "")), // Remove potential injection chars
 };
 
 /**
@@ -96,41 +127,45 @@ export const schemas = {
  */
 export function validate<T extends ZodSchema>(
   schema: T,
-  source: 'body' | 'query' | 'params' = 'body'
+  source: "body" | "query" | "params" = "body",
 ) {
   return async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const data = source === 'body' ? req.body : 
-                   source === 'query' ? req.query : req.params;
-      
+      const data =
+        source === "body"
+          ? req.body
+          : source === "query"
+            ? req.query
+            : req.params;
+
       const validated = await schema.parseAsync(data);
-      
+
       // Replace original data with validated/transformed data
-      if (source === 'body') {
+      if (source === "body") {
         req.body = validated;
-      } else if (source === 'query') {
+      } else if (source === "query") {
         (req as Record<string, unknown>).validatedQuery = validated;
       } else {
         (req as Record<string, unknown>).validatedParams = validated;
       }
-      
+
       next();
     } catch (error) {
       if (error instanceof ZodError) {
-        const errors = error.errors.map(e => ({
-          field: e.path.join('.'),
+        const errors = error.errors.map((e) => ({
+          field: e.path.join("."),
           message: e.message,
         }));
-        
+
         logger.warn(`[Validation] Failed validation on ${req.path}:`, errors);
-        
+
         return res.status(400).json({
           success: false,
-          error: 'Validation failed',
+          error: "Validation failed",
           details: errors,
         });
       }
-      
+
       next(error);
     }
   };
@@ -141,9 +176,9 @@ export function validate<T extends ZodSchema>(
  */
 export function sanitizeString(input: string): string {
   return input
-    .replace(/[<>]/g, '') // Remove HTML brackets
-    .replace(/javascript:/gi, '') // Remove javascript: protocol
-    .replace(/on\w+=/gi, '') // Remove event handlers
+    .replace(/[<>]/g, "") // Remove HTML brackets
+    .replace(/javascript:/gi, "") // Remove javascript: protocol
+    .replace(/on\w+=/gi, "") // Remove event handlers
     .trim();
 }
 
@@ -152,22 +187,25 @@ export function sanitizeString(input: string): string {
  */
 export function sanitizeObject<T extends Record<string, any>>(obj: T): T {
   const result: Record<string, unknown> = {};
-  
+
   for (const [key, value] of Object.entries(obj)) {
-    if (typeof value === 'string') {
+    if (typeof value === "string") {
       result[key] = sanitizeString(value);
     } else if (Array.isArray(value)) {
-      result[key] = value.map(item => 
-        typeof item === 'string' ? sanitizeString(item) :
-        typeof item === 'object' && item !== null ? sanitizeObject(item) : item
+      result[key] = value.map((item) =>
+        typeof item === "string"
+          ? sanitizeString(item)
+          : typeof item === "object" && item !== null
+            ? sanitizeObject(item)
+            : item,
       );
-    } else if (typeof value === 'object' && value !== null) {
+    } else if (typeof value === "object" && value !== null) {
       result[key] = sanitizeObject(value);
     } else {
       result[key] = value;
     }
   }
-  
+
   return result as T;
 }
 
@@ -177,22 +215,23 @@ export function sanitizeObject<T extends Record<string, any>>(obj: T): T {
 export function sanitizationMiddleware(
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ): void {
   // Sanitize body
-  if (req.body && typeof req.body === 'object') {
+  if (req.body && typeof req.body === "object") {
     req.body = sanitizeObject(req.body);
   }
-  
+
   // Sanitize query params (in-place for Express 5 read-only req.query)
-  if (req.query && typeof req.query === 'object') {
+  if (req.query && typeof req.query === "object") {
     const sanitized = sanitizeObject(req.query as Record<string, any>);
     for (const key of Object.keys(req.query)) {
-      if (!(key in sanitized)) delete (req.query as Record<string, unknown>)[key];
+      if (!(key in sanitized))
+        delete (req.query as Record<string, unknown>)[key];
     }
     Object.assign(req.query, sanitized);
   }
-  
+
   next();
 }
 
@@ -210,25 +249,31 @@ export function escapeSqlIdentifier(identifier: string): string {
 /**
  * Rate limit by validation errors (prevent brute force)
  */
-const validationErrorCounts = new Map<string, { count: number; resetAt: Date }>();
+const validationErrorCounts = new Map<
+  string,
+  { count: number; resetAt: Date }
+>();
 
 export function trackValidationError(ip: string): boolean {
   const now = new Date();
   const entry = validationErrorCounts.get(ip);
-  
+
   if (!entry || entry.resetAt < now) {
-    validationErrorCounts.set(ip, { count: 1, resetAt: new Date(now.getTime() + 60000) });
+    validationErrorCounts.set(ip, {
+      count: 1,
+      resetAt: new Date(now.getTime() + 60000),
+    });
     return true;
   }
-  
+
   entry.count++;
-  
+
   // Block if too many validation errors (potential attack)
   if (entry.count > 20) {
     logger.warn(`[Validation] Blocking IP ${ip} - too many validation errors`);
     return false;
   }
-  
+
   return true;
 }
 
@@ -241,7 +286,7 @@ export const routeSchemas = {
     email: schemas.email,
     password: z.string().min(1),
   }),
-  
+
   register: z.object({
     email: schemas.email,
     password: schemas.password,
@@ -251,8 +296,8 @@ export const routeSchemas = {
 
   // Subscription routes
   subscribe: z.object({
-    tier: z.enum(['monthly', 'yearly', 'lifetime']),
-    interval: z.enum(['monthly', 'annual']).optional(),
+    tier: z.enum(["monthly", "yearly", "lifetime"]),
+    interval: z.enum(["monthly", "annual"]).optional(),
     couponCode: z.string().max(64).optional(),
   }),
 
@@ -270,6 +315,6 @@ export const routeSchemas = {
   // Payout routes
   requestPayout: z.object({
     amount: schemas.amount,
-    method: z.enum(['bank_transfer', 'paypal', 'stripe']),
+    method: z.enum(["bank_transfer", "paypal", "stripe"]),
   }),
 };

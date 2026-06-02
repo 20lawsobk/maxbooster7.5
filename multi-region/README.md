@@ -20,6 +20,7 @@ For each new region node:
     chmod +x setup-region.sh
     ./setup-region.sh US-EAST https://max-booster.com 34.111.179.208
     ```
+
     - `REGION_NAME`: A unique identifier for the node (e.g., `US-EAST`).
     - `APP_URL`: The URL of your central Max Booster API.
     - `ANYCAST_IP`: (Optional) The anycast IP if using BGP.
@@ -30,6 +31,7 @@ Each node exposes a health check endpoint via the central API:
 `GET /api/dns/health`
 
 It returns:
+
 - `ok`: Boolean status.
 - `region`: The `REGION_NAME` of the node.
 - `uptime`: Process uptime in seconds.

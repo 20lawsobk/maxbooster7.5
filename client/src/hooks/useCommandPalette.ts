@@ -1,6 +1,6 @@
-import { useCallback, useMemo } from 'react';
-import { useShortcuts } from '@/contexts/ShortcutContext';
-import { Command } from '@/lib/commands/CommandRegistry';
+import { useCallback, useMemo } from "react";
+import { useShortcuts } from "@/contexts/ShortcutContext";
+import { Command } from "@/lib/commands/CommandRegistry";
 
 export interface UseCommandPaletteReturn {
   isOpen: boolean;
@@ -34,7 +34,7 @@ export function useCommandPalette(): UseCommandPaletteReturn {
     (category: string) => {
       return commandRegistry?.getCommandsByCategory(category) || [];
     },
-    [commandRegistry]
+    [commandRegistry],
   );
 
   return {

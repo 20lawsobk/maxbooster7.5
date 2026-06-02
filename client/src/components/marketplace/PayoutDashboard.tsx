@@ -1,14 +1,20 @@
-import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useAuth } from '@/hooks/useAuth';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Badge } from '@/components/ui/badge';
-import { Skeleton } from '@/components/ui/skeleton';
-import { useToast } from '@/hooks/use-toast';
-import { apiRequest } from '@/lib/queryClient';
+import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useAuth } from "@/hooks/useAuth";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
 import {
   DollarSign,
   TrendingUp,
@@ -20,8 +26,8 @@ import {
   RefreshCw,
   ExternalLink,
   Info,
-} from 'lucide-react';
-import { formatDistanceToNow } from 'date-fns';
+} from "lucide-react";
+import { formatDistanceToNow } from "date-fns";
 
 interface PayoutBalance {
   availableBalance: number;
@@ -54,7 +60,7 @@ export function PayoutDashboard() {
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [payoutAmount, setPayoutAmount] = useState('');
+  const [payoutAmount, setPayoutAmount] = useState("");
 
   // Fetch payout balance
   const {
@@ -62,29 +68,32 @@ export function PayoutDashboard() {
     isLoading: balanceLoading,
     refetch: refetchBalance,
   } = useQuery<PayoutBalance>({
-    queryKey: ['/api/payouts/balance'],
+    queryKey: ["/api/payouts/balance"],
     enabled: !!user,
     staleTime: 30000, // 30 seconds
   });
 
   // Fetch payout history
-  const { data: payoutHistory, isLoading: historyLoading } = useQuery<{ payouts: Payout[] }>({
-    queryKey: ['/api/payouts/history'],
+  const { data: payoutHistory, isLoading: historyLoading } = useQuery<{
+    payouts: Payout[];
+  }>({
+    queryKey: ["/api/payouts/history"],
     enabled: !!user,
     staleTime: 60000, // 1 minute
   });
 
   // Fetch account verification status
-  const { data: verification, isLoading: verificationLoading } = useQuery<AccountVerification>({
-    queryKey: ['/api/payouts/verify'],
-    enabled: !!user,
-    staleTime: 60000, // 1 minute
-  });
+  const { data: verification, isLoading: verificationLoading } =
+    useQuery<AccountVerification>({
+      queryKey: ["/api/payouts/verify"],
+      enabled: !!user,
+      staleTime: 60000, // 1 minute
+    });
 
   // Setup Stripe Connect mutation
   const setupStripeMutation = useMutation({
     mutationFn: async () => {
-      const response = await apiRequest('POST', '/api/payouts/setup', {});
+      const response = await apiRequest("POST", "/api/payouts/setup", {});
       return response.json();
     },
     onSuccess: (data) => {
@@ -94,11 +103,14 @@ export function PayoutDashboard() {
       }
     },
     onError: (error: Error) => {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to setup payout account';
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "Failed to setup payout account";
       toast({
-        title: 'Setup Failed',
+        title: "Setup Failed",
         description: errorMessage,
-        variant: 'destructive',
+        variant: "destructive",
       });
     },
   });
@@ -106,28 +118,33 @@ export function PayoutDashboard() {
   // Request instant payout mutation
   const requestPayoutMutation = useMutation({
     mutationFn: async (amount: number) => {
-      const response = await apiRequest('POST', '/api/payouts/instant', {
+      const response = await apiRequest("POST", "/api/payouts/instant", {
         amount,
-        currency: 'usd',
+        currency: "usd",
       });
       return response.json();
     },
     onSuccess: (data) => {
       const responseData = data as { message?: string };
       toast({
-        title: 'Payout Initiated!',
-        description: responseData.message || 'Your payout has been initiated successfully.',
+        title: "Payout Initiated!",
+        description:
+          responseData.message ||
+          "Your payout has been initiated successfully.",
       });
-      setPayoutAmount('');
-      queryClient.invalidateQueries({ queryKey: ['/api/payouts/balance'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/payouts/history'] });
+      setPayoutAmount("");
+      queryClient.invalidateQueries({ queryKey: ["/api/payouts/balance"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/payouts/history"] });
     },
     onError: (error: Error) => {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to process payout request';
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "Failed to process payout request";
       toast({
-        title: 'Payout Failed',
+        title: "Payout Failed",
         description: errorMessage,
-        variant: 'destructive',
+        variant: "destructive",
       });
     },
   });
@@ -137,18 +154,18 @@ export function PayoutDashboard() {
 
     if (isNaN(amount) || amount <= 0) {
       toast({
-        title: 'Invalid Amount',
-        description: 'Please enter a valid payout amount',
-        variant: 'destructive',
+        title: "Invalid Amount",
+        description: "Please enter a valid payout amount",
+        variant: "destructive",
       });
       return;
     }
 
     if (balance && amount > balance.availableBalance) {
       toast({
-        title: 'Insufficient Balance',
+        title: "Insufficient Balance",
         description: `Available balance: $${balance.availableBalance.toFixed(2)}`,
-        variant: 'destructive',
+        variant: "destructive",
       });
       return;
     }
@@ -158,21 +175,21 @@ export function PayoutDashboard() {
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case 'completed':
+      case "completed":
         return (
           <Badge className="bg-green-500">
             <CheckCircle className="w-3 h-3 mr-1" />
             Completed
           </Badge>
         );
-      case 'pending':
+      case "pending":
         return (
           <Badge variant="secondary">
             <Clock className="w-3 h-3 mr-1" />
             Pending
           </Badge>
         );
-      case 'failed':
+      case "failed":
         return (
           <Badge variant="destructive">
             <XCircle className="w-3 h-3 mr-1" />
@@ -188,7 +205,9 @@ export function PayoutDashboard() {
     return (
       <Card>
         <CardContent className="pt-6">
-          <p className="text-center text-muted-foreground">Please login to view your payouts</p>
+          <p className="text-center text-muted-foreground">
+            Please login to view your payouts
+          </p>
         </CardContent>
       </Card>
     );
@@ -204,7 +223,8 @@ export function PayoutDashboard() {
             Setup Instant Payouts
           </CardTitle>
           <CardDescription>
-            Connect your bank account to receive instant payouts from marketplace sales
+            Connect your bank account to receive instant payouts from
+            marketplace sales
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -212,10 +232,12 @@ export function PayoutDashboard() {
             <div className="flex items-start gap-3">
               <Info className="w-5 h-5 text-blue-600 mt-0.5" />
               <div className="space-y-2">
-                <h4 className="font-semibold text-blue-900">Instant Payouts with Stripe Express</h4>
+                <h4 className="font-semibold text-blue-900">
+                  Instant Payouts with Stripe Express
+                </h4>
                 <p className="text-sm text-blue-700">
-                  Get paid instantly (T+0) from your marketplace sales. Funds typically arrive in
-                  your bank account within minutes.
+                  Get paid instantly (T+0) from your marketplace sales. Funds
+                  typically arrive in your bank account within minutes.
                 </p>
                 <ul className="text-sm text-blue-700 space-y-1 list-disc list-inside">
                   <li>Instant access to your earnings</li>
@@ -290,11 +312,16 @@ export function PayoutDashboard() {
           <CardContent>
             <div className="flex items-baseline gap-2">
               <span className="text-3xl font-bold">
-                ${balanceLoading ? '...' : balance?.availableBalance.toFixed(2) || '0.00'}
+                $
+                {balanceLoading
+                  ? "..."
+                  : balance?.availableBalance.toFixed(2) || "0.00"}
               </span>
               <span className="text-muted-foreground">USD</span>
             </div>
-            <p className="text-xs text-muted-foreground mt-2">Ready to withdraw</p>
+            <p className="text-xs text-muted-foreground mt-2">
+              Ready to withdraw
+            </p>
           </CardContent>
         </Card>
 
@@ -307,11 +334,16 @@ export function PayoutDashboard() {
           <CardContent>
             <div className="flex items-baseline gap-2">
               <span className="text-3xl font-bold">
-                ${balanceLoading ? '...' : balance?.pendingBalance.toFixed(2) || '0.00'}
+                $
+                {balanceLoading
+                  ? "..."
+                  : balance?.pendingBalance.toFixed(2) || "0.00"}
               </span>
               <span className="text-muted-foreground">USD</span>
             </div>
-            <p className="text-xs text-muted-foreground mt-2">From recent sales</p>
+            <p className="text-xs text-muted-foreground mt-2">
+              From recent sales
+            </p>
           </CardContent>
         </Card>
 
@@ -324,7 +356,10 @@ export function PayoutDashboard() {
           <CardContent>
             <div className="flex items-baseline gap-2">
               <span className="text-3xl font-bold text-green-600">
-                ${balanceLoading ? '...' : balance?.totalEarnings.toFixed(2) || '0.00'}
+                $
+                {balanceLoading
+                  ? "..."
+                  : balance?.totalEarnings.toFixed(2) || "0.00"}
               </span>
               <span className="text-muted-foreground">USD</span>
             </div>
@@ -367,7 +402,9 @@ export function PayoutDashboard() {
               <Button
                 onClick={handleRequestPayout}
                 disabled={
-                  requestPayoutMutation.isPending || !payoutAmount || parseFloat(payoutAmount) <= 0
+                  requestPayoutMutation.isPending ||
+                  !payoutAmount ||
+                  parseFloat(payoutAmount) <= 0
                 }
                 className="whitespace-nowrap"
               >
@@ -386,12 +423,14 @@ export function PayoutDashboard() {
             </div>
             <div className="flex items-center justify-between text-sm">
               <span className="text-muted-foreground">
-                Available: ${balance?.availableBalance.toFixed(2) || '0.00'}
+                Available: ${balance?.availableBalance.toFixed(2) || "0.00"}
               </span>
               <Button
                 variant="link"
                 size="sm"
-                onClick={() => setPayoutAmount(balance?.availableBalance.toString() || '0')}
+                onClick={() =>
+                  setPayoutAmount(balance?.availableBalance.toString() || "0")
+                }
                 className="h-auto p-0"
               >
                 Use max
@@ -422,7 +461,9 @@ export function PayoutDashboard() {
             variant="outline"
             size="sm"
             onClick={() => {
-              queryClient.invalidateQueries({ queryKey: ['/api/payouts/history'] });
+              queryClient.invalidateQueries({
+                queryKey: ["/api/payouts/history"],
+              });
               refetchBalance();
             }}
           >
@@ -434,7 +475,10 @@ export function PayoutDashboard() {
           {historyLoading ? (
             <div className="space-y-3 py-2">
               {[1, 2, 3].map((i) => (
-                <div key={i} className="flex items-center justify-between p-4 border rounded-lg">
+                <div
+                  key={i}
+                  className="flex items-center justify-between p-4 border rounded-lg"
+                >
                   <div className="space-y-1.5">
                     <Skeleton className="h-4 w-28" />
                     <Skeleton className="h-3 w-20" />
@@ -456,22 +500,29 @@ export function PayoutDashboard() {
                   <div className="space-y-1">
                     <div className="flex items-center gap-2">
                       <span className="font-semibold">
-                        ${parseFloat(payout.amount).toFixed(2)} {payout.currency.toUpperCase()}
+                        ${parseFloat(payout.amount).toFixed(2)}{" "}
+                        {payout.currency.toUpperCase()}
                       </span>
                       {getStatusBadge(payout.status)}
                     </div>
                     <p className="text-sm text-muted-foreground">
-                      Requested{' '}
-                      {formatDistanceToNow(new Date(payout.requestedAt), { addSuffix: true })}
+                      Requested{" "}
+                      {formatDistanceToNow(new Date(payout.requestedAt), {
+                        addSuffix: true,
+                      })}
                     </p>
                     {payout.completedAt && (
                       <p className="text-xs text-muted-foreground">
-                        Completed{' '}
-                        {formatDistanceToNow(new Date(payout.completedAt), { addSuffix: true })}
+                        Completed{" "}
+                        {formatDistanceToNow(new Date(payout.completedAt), {
+                          addSuffix: true,
+                        })}
                       </p>
                     )}
                     {payout.failureReason && (
-                      <p className="text-xs text-destructive">{payout.failureReason}</p>
+                      <p className="text-xs text-destructive">
+                        {payout.failureReason}
+                      </p>
                     )}
                   </div>
                   {payout.stripePayoutId && (

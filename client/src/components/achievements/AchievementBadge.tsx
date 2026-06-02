@@ -1,8 +1,22 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Lock, Trophy, Star, Award, Zap, Crown, Flame, Target } from "lucide-react";
+import {
+  Lock,
+  Trophy,
+  Star,
+  Award,
+  Zap,
+  Crown,
+  Flame,
+  Target,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface AchievementBadgeProps {
   name: string;
@@ -95,9 +109,11 @@ export function AchievementBadge({
               "relative rounded-full flex items-center justify-center cursor-pointer",
               sizeClasses[size],
               unlocked ? tierStyle.bg : "bg-gray-800",
-              unlocked ? `border-2 ${tierStyle.border}` : "border-2 border-gray-600",
+              unlocked
+                ? `border-2 ${tierStyle.border}`
+                : "border-2 border-gray-600",
               unlocked && isAnimating && `shadow-lg ${tierStyle.glow}`,
-              "transition-all duration-300"
+              "transition-all duration-300",
             )}
             initial={showAnimation ? { scale: 0, rotate: -180 } : { scale: 1 }}
             animate={
@@ -143,14 +159,22 @@ export function AchievementBadge({
                   alt={name}
                   className={cn(
                     "rounded-full object-cover",
-                    size === "sm" ? "w-8 h-8" : size === "md" ? "w-10 h-10" : "w-16 h-16"
+                    size === "sm"
+                      ? "w-8 h-8"
+                      : size === "md"
+                        ? "w-10 h-10"
+                        : "w-16 h-16",
                   )}
                 />
               ) : (
                 <Icon
                   className={cn(
                     "text-white",
-                    size === "sm" ? "w-5 h-5" : size === "md" ? "w-7 h-7" : "w-12 h-12"
+                    size === "sm"
+                      ? "w-5 h-5"
+                      : size === "md"
+                        ? "w-7 h-7"
+                        : "w-12 h-12",
                   )}
                 />
               )
@@ -159,13 +183,17 @@ export function AchievementBadge({
                 <Icon
                   className={cn(
                     "text-gray-600",
-                    size === "sm" ? "w-5 h-5" : size === "md" ? "w-7 h-7" : "w-12 h-12"
+                    size === "sm"
+                      ? "w-5 h-5"
+                      : size === "md"
+                        ? "w-7 h-7"
+                        : "w-12 h-12",
                   )}
                 />
                 <Lock
                   className={cn(
                     "absolute -bottom-1 -right-1 text-gray-500",
-                    size === "sm" ? "w-3 h-3" : "w-4 h-4"
+                    size === "sm" ? "w-3 h-3" : "w-4 h-4",
                   )}
                 />
               </div>
@@ -206,7 +234,9 @@ export function AchievementBadge({
           <div className="space-y-1">
             <div className="flex items-center gap-2">
               <span className="font-semibold">{name}</span>
-              <span className={cn("text-xs uppercase font-bold", tierStyle.text)}>
+              <span
+                className={cn("text-xs uppercase font-bold", tierStyle.text)}
+              >
                 {tier}
               </span>
             </div>

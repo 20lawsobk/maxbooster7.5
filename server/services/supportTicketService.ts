@@ -1,4 +1,4 @@
-import { db } from '../db';
+import { db } from "../db";
 import {
   supportTickets,
   supportTicketMessages,
@@ -8,11 +8,11 @@ import {
   type UpdateSupportTicket,
   type InsertSupportTicketMessage,
   type InsertSupportTicketTag,
-} from '@shared/schema';
-import { eq, and, desc, or, inArray, sql } from 'drizzle-orm';
-import { emailService } from './emailService';
-import { notificationService } from './notificationService';
-import { authUserSelection } from '../storage';
+} from "@shared/schema";
+import { eq, and, desc, or, inArray, sql } from "drizzle-orm";
+import { emailService } from "./emailService";
+import { notificationService } from "./notificationService";
+import { authUserSelection } from "../storage";
 
 export class SupportTicketService {
   async createTicket(userId: string, ticketData: InsertSupportTicket) {
@@ -26,20 +26,24 @@ export class SupportTicketService {
 
     await notificationService.createNotification({
       userId,
-      type: 'support',
-      title: 'Support Ticket Created',
+      type: "support",
+      title: "Support Ticket Created",
       message: `Your support ticket "${ticketData.subject}" has been created. Our team will respond shortly.`,
       link: `/support/tickets/${ticket.id}`,
     });
 
     // Lean auth query: Select ONLY essential columns for 5-10x faster lookups
-    const user = await db.select(authUserSelection).from(users).where(eq(users.id, userId)).limit(1);
+    const user = await db
+      .select(authUserSelection)
+      .from(users)
+      .where(eq(users.id, userId))
+      .limit(1);
     if (user[0]?.email) {
       await emailService.sendTicketCreatedEmail(
         user[0].email,
-        user[0].firstName || 'User',
+        user[0].firstName || "User",
         ticket.subject,
-        ticket.id
+        ticket.id,
       );
     }
 
@@ -69,9 +73,13 @@ export class SupportTicketService {
 
     if (userId && result[0].ticket.userId !== userId) {
       // Lean auth query: Select ONLY essential columns for 5-10x faster lookups
-      const userRecord = await db.select(authUserSelection).from(users).where(eq(users.id, userId)).limit(1);
+      const userRecord = await db
+        .select(authUserSelection)
+        .from(users)
+        .where(eq(users.id, userId))
+        .limit(1);
       if (!userRecord[0]?.isAdmin) {
-        throw new Error('Unauthorized to view this ticket');
+        throw new Error("Unauthorized to view this ticket");
       }
     }
 
@@ -92,16 +100,26 @@ export class SupportTicketService {
       status?: string[];
       priority?: string[];
       category?: string;
-    }
+    },
   ) {
     const conditions: unknown[] = [eq(supportTickets.userId, userId)];
 
     if (filters?.status && filters.status.length > 0) {
-      conditions.push(inArray(supportTickets.status, filters.status as Record<string, unknown>));
+      conditions.push(
+        inArray(
+          supportTickets.status,
+          filters.status as Record<string, unknown>,
+        ),
+      );
     }
 
     if (filters?.priority && filters.priority.length > 0) {
-      conditions.push(inArray(supportTickets.priority, filters.priority as Record<string, unknown>));
+      conditions.push(
+        inArray(
+          supportTickets.priority,
+          filters.priority as Record<string, unknown>,
+        ),
+      );
     }
 
     if (filters?.category) {
@@ -128,11 +146,21 @@ export class SupportTicketService {
     const conditions = [];
 
     if (filters?.status && filters.status.length > 0) {
-      conditions.push(inArray(supportTickets.status, filters.status as Record<string, unknown>));
+      conditions.push(
+        inArray(
+          supportTickets.status,
+          filters.status as Record<string, unknown>,
+        ),
+      );
     }
 
     if (filters?.priority && filters.priority.length > 0) {
-      conditions.push(inArray(supportTickets.priority, filters.priority as Record<string, unknown>));
+      conditions.push(
+        inArray(
+          supportTickets.priority,
+          filters.priority as Record<string, unknown>,
+        ),
+      );
     }
 
     if (filters?.assignedTo) {
@@ -143,8 +171,8 @@ export class SupportTicketService {
       conditions.push(
         or(
           sql`${supportTickets.subject} ILIKE ${`%${filters.search}%`}`,
-          sql`${supportTickets.description} ILIKE ${`%${filters.search}%`}`
-        )
+          sql`${supportTickets.description} ILIKE ${`%${filters.search}%`}`,
+        ),
       );
     }
 
@@ -154,13 +182,17 @@ export class SupportTicketService {
 
     const tickets = await query.orderBy(
       desc(supportTickets.priority),
-      desc(supportTickets.createdAt)
+      desc(supportTickets.createdAt),
     );
 
     return tickets;
   }
 
-  async updateTicket(ticketId: string, userId: string, updates: UpdateSupportTicket) {
+  async updateTicket(
+    ticketId: string,
+    userId: string,
+    updates: UpdateSupportTicket,
+  ) {
     const ticket = await db
       .select()
       .from(supportTickets)
@@ -168,14 +200,18 @@ export class SupportTicketService {
       .limit(1);
 
     if (!ticket.length) {
-      throw new Error('Ticket not found');
+      throw new Error("Ticket not found");
     }
 
     if (ticket[0].userId !== userId) {
       // Lean auth query: Select ONLY essential columns for 5-10x faster lookups
-      const userRecord = await db.select(authUserSelection).from(users).where(eq(users.id, userId)).limit(1);
+      const userRecord = await db
+        .select(authUserSelection)
+        .from(users)
+        .where(eq(users.id, userId))
+        .limit(1);
       if (!userRecord[0]?.isAdmin) {
-        throw new Error('Unauthorized to update this ticket');
+        throw new Error("Unauthorized to update this ticket");
       }
     }
 
@@ -184,11 +220,11 @@ export class SupportTicketService {
       updatedAt: new Date(),
     };
 
-    if (updates.status === 'resolved' && !ticket[0].resolvedAt) {
+    if (updates.status === "resolved" && !ticket[0].resolvedAt) {
       updateData.resolvedAt = new Date();
     }
 
-    if (updates.status === 'closed' && !ticket[0].closedAt) {
+    if (updates.status === "closed" && !ticket[0].closedAt) {
       updateData.closedAt = new Date();
     }
 
@@ -199,21 +235,25 @@ export class SupportTicketService {
       .returning();
 
     // Lean auth query: Select ONLY essential columns for 5-10x faster lookups
-    const user = await db.select(authUserSelection).from(users).where(eq(users.id, ticket[0].userId)).limit(1);
+    const user = await db
+      .select(authUserSelection)
+      .from(users)
+      .where(eq(users.id, ticket[0].userId))
+      .limit(1);
     if (user[0]?.email && updates.status) {
       await emailService.sendTicketStatusUpdateEmail(
         user[0].email,
-        user[0].firstName || 'User',
+        user[0].firstName || "User",
         ticket[0].subject,
         ticketId,
-        updates.status
+        updates.status,
       );
     }
 
     await notificationService.createNotification({
       userId: ticket[0].userId,
-      type: 'support',
-      title: 'Support Ticket Updated',
+      type: "support",
+      title: "Support Ticket Updated",
       message: `Your support ticket "${ticket[0].subject}" has been updated.`,
       link: `/support/tickets/${ticketId}`,
     });
@@ -226,7 +266,7 @@ export class SupportTicketService {
     userId: string,
     message: string,
     isStaffReply: boolean = false,
-    attachments?: unknown
+    attachments?: unknown,
   ) {
     const ticket = await db
       .select()
@@ -235,7 +275,7 @@ export class SupportTicketService {
       .limit(1);
 
     if (!ticket.length) {
-      throw new Error('Ticket not found');
+      throw new Error("Ticket not found");
     }
 
     const [messageRecord] = await db
@@ -256,21 +296,25 @@ export class SupportTicketService {
 
     if (isStaffReply) {
       // Lean auth query: Select ONLY essential columns for 5-10x faster lookups
-      const user = await db.select(authUserSelection).from(users).where(eq(users.id, ticket[0].userId)).limit(1);
+      const user = await db
+        .select(authUserSelection)
+        .from(users)
+        .where(eq(users.id, ticket[0].userId))
+        .limit(1);
       if (user[0]?.email) {
         await emailService.sendTicketReplyEmail(
           user[0].email,
-          user[0].firstName || 'User',
+          user[0].firstName || "User",
           ticket[0].subject,
           ticketId,
-          message
+          message,
         );
       }
 
       await notificationService.createNotification({
         userId: ticket[0].userId,
-        type: 'support',
-        title: 'New Support Reply',
+        type: "support",
+        title: "New Support Reply",
         message: `You have a new reply on your support ticket "${ticket[0].subject}"`,
         link: `/support/tickets/${ticketId}`,
       });

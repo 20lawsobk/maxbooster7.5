@@ -1,7 +1,7 @@
-import { EmptyState } from '@/components/ui/empty-state';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Card, CardContent } from '@/components/ui/card';
+import { EmptyState } from "@/components/ui/empty-state";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
 import {
   Music,
   Search,
@@ -20,8 +20,8 @@ import {
   Sparkles,
   Zap,
   Globe,
-} from 'lucide-react';
-import { cn } from '@/lib/utils';
+} from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface EmptyStateProps {
   onAction?: (action: string) => void;
@@ -36,28 +36,32 @@ interface SearchEmptyStateProps extends EmptyStateProps {
 
 export function NoBeatsFoundEmptyState({
   searchQuery,
-  suggestions = ['Trap', 'Hip-Hop', 'R&B', 'Lo-Fi', 'Pop'],
+  suggestions = ["Trap", "Hip-Hop", "R&B", "Lo-Fi", "Pop"],
   filterApplied = false,
   onAction,
   className,
 }: SearchEmptyStateProps) {
   return (
-    <div className={cn('py-12', className)}>
+    <div className={cn("py-12", className)}>
       <EmptyState
         icon={Search}
-        title={searchQuery ? `No beats found for "${searchQuery}"` : 'No beats found'}
+        title={
+          searchQuery ? `No beats found for "${searchQuery}"` : "No beats found"
+        }
         description={
           filterApplied
-            ? 'Try adjusting your filters or search with different keywords'
-            : 'Explore popular genres or try a different search term'
+            ? "Try adjusting your filters or search with different keywords"
+            : "Explore popular genres or try a different search term"
         }
         variant="card"
         size="lg"
       />
-      
+
       {suggestions.length > 0 && (
         <div className="mt-6 text-center">
-          <p className="text-sm text-muted-foreground mb-3">Popular searches:</p>
+          <p className="text-sm text-muted-foreground mb-3">
+            Popular searches:
+          </p>
           <div className="flex flex-wrap gap-2 justify-center">
             {suggestions.map((suggestion) => (
               <Button
@@ -76,7 +80,7 @@ export function NoBeatsFoundEmptyState({
 
       {filterApplied && (
         <div className="mt-4 text-center">
-          <Button variant="ghost" onClick={() => onAction?.('clear_filters')}>
+          <Button variant="ghost" onClick={() => onAction?.("clear_filters")}>
             <RefreshCw className="w-4 h-4 mr-2" />
             Clear all filters
           </Button>
@@ -88,13 +92,13 @@ export function NoBeatsFoundEmptyState({
 
 export function EmptyCartState({ onAction, className }: EmptyStateProps) {
   return (
-    <div className={cn('py-8', className)}>
+    <div className={cn("py-8", className)}>
       <EmptyState
         icon={ShoppingCart}
         title="Your cart is empty"
         description="Browse the marketplace and add some beats to get started"
         actionLabel="Browse Beats"
-        onAction={() => onAction?.('browse')}
+        onAction={() => onAction?.("browse")}
         variant="minimal"
         size="md"
       />
@@ -104,13 +108,13 @@ export function EmptyCartState({ onAction, className }: EmptyStateProps) {
 
 export function NoPurchasesState({ onAction, className }: EmptyStateProps) {
   return (
-    <div className={cn('py-12', className)}>
+    <div className={cn("py-12", className)}>
       <EmptyState
         icon={Download}
         title="No purchases yet"
         description="Your purchased beats and licenses will appear here"
         actionLabel="Browse Marketplace"
-        onAction={() => onAction?.('browse')}
+        onAction={() => onAction?.("browse")}
         variant="card"
         size="lg"
       />
@@ -120,19 +124,19 @@ export function NoPurchasesState({ onAction, className }: EmptyStateProps) {
 
 export function NoMyBeatsState({ onAction, className }: EmptyStateProps) {
   return (
-    <div className={cn('py-12', className)}>
+    <div className={cn("py-12", className)}>
       <EmptyState
         icon={Music}
         title="No beats uploaded yet"
         description="Start selling by uploading your first beat to the marketplace"
         actionLabel="Upload Beat"
-        onAction={() => onAction?.('upload')}
+        onAction={() => onAction?.("upload")}
         secondaryActionLabel="Bulk Upload"
-        onSecondaryAction={() => onAction?.('bulk_upload')}
+        onSecondaryAction={() => onAction?.("bulk_upload")}
         variant="card"
         size="lg"
       />
-      
+
       <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-4 max-w-3xl mx-auto">
         <Card className="bg-gradient-to-br from-purple-50 to-indigo-50 dark:from-purple-950/20 dark:to-indigo-950/20 border-purple-200 dark:border-purple-800">
           <CardContent className="p-4 text-center">
@@ -166,15 +170,18 @@ export function NoMyBeatsState({ onAction, className }: EmptyStateProps) {
   );
 }
 
-export function NoProducersFoundState({ onAction, className }: EmptyStateProps) {
+export function NoProducersFoundState({
+  onAction,
+  className,
+}: EmptyStateProps) {
   return (
-    <div className={cn('py-12', className)}>
+    <div className={cn("py-12", className)}>
       <EmptyState
         icon={Users}
         title="No producers found"
         description="Try adjusting your search or browse all producers"
         actionLabel="View All Producers"
-        onAction={() => onAction?.('view_all')}
+        onAction={() => onAction?.("view_all")}
         variant="card"
         size="md"
       />
@@ -184,13 +191,13 @@ export function NoProducersFoundState({ onAction, className }: EmptyStateProps) 
 
 export function NoFavoritesState({ onAction, className }: EmptyStateProps) {
   return (
-    <div className={cn('py-12', className)}>
+    <div className={cn("py-12", className)}>
       <EmptyState
         icon={Heart}
         title="No favorites yet"
         description="Like beats to save them to your favorites for easy access"
         actionLabel="Explore Beats"
-        onAction={() => onAction?.('browse')}
+        onAction={() => onAction?.("browse")}
         variant="card"
         size="md"
       />
@@ -200,7 +207,7 @@ export function NoFavoritesState({ onAction, className }: EmptyStateProps) {
 
 export function NoAnalyticsDataState({ className }: EmptyStateProps) {
   return (
-    <div className={cn('py-12', className)}>
+    <div className={cn("py-12", className)}>
       <EmptyState
         icon={TrendingUp}
         title="No analytics data yet"
@@ -214,13 +221,13 @@ export function NoAnalyticsDataState({ className }: EmptyStateProps) {
 
 export function NoStorefrontState({ onAction, className }: EmptyStateProps) {
   return (
-    <div className={cn('py-12', className)}>
+    <div className={cn("py-12", className)}>
       <EmptyState
         icon={Store}
         title="Create your storefront"
         description="Build a custom page to showcase your beats and connect with fans"
         actionLabel="Create Storefront"
-        onAction={() => onAction?.('create_storefront')}
+        onAction={() => onAction?.("create_storefront")}
         variant="card"
         size="lg"
       />
@@ -245,13 +252,13 @@ export function NoStorefrontState({ onAction, className }: EmptyStateProps) {
 
 export function NoStemsState({ onAction, className }: EmptyStateProps) {
   return (
-    <div className={cn('py-12', className)}>
+    <div className={cn("py-12", className)}>
       <EmptyState
         icon={FileAudio}
         title="No stems uploaded"
         description="Upload individual track stems to offer more value to your customers"
         actionLabel="Upload Stems"
-        onAction={() => onAction?.('upload_stems')}
+        onAction={() => onAction?.("upload_stems")}
         variant="card"
         size="md"
       />
@@ -261,7 +268,7 @@ export function NoStemsState({ onAction, className }: EmptyStateProps) {
 
 export function NoReviewsState({ className }: EmptyStateProps) {
   return (
-    <div className={cn('py-8', className)}>
+    <div className={cn("py-8", className)}>
       <EmptyState
         icon={Star}
         title="No reviews yet"
@@ -273,15 +280,18 @@ export function NoReviewsState({ className }: EmptyStateProps) {
   );
 }
 
-export function NoAIRecommendationsState({ onAction, className }: EmptyStateProps) {
+export function NoAIRecommendationsState({
+  onAction,
+  className,
+}: EmptyStateProps) {
   return (
-    <div className={cn('py-8', className)}>
+    <div className={cn("py-8", className)}>
       <EmptyState
         icon={Sparkles}
         title="No recommendations yet"
         description="Listen to more beats to get personalized AI recommendations"
         actionLabel="Explore Beats"
-        onAction={() => onAction?.('browse')}
+        onAction={() => onAction?.("browse")}
         variant="minimal"
         size="md"
       />
@@ -291,7 +301,7 @@ export function NoAIRecommendationsState({ onAction, className }: EmptyStateProp
 
 export function NoEscrowTransactionsState({ className }: EmptyStateProps) {
   return (
-    <div className={cn('py-12', className)}>
+    <div className={cn("py-12", className)}>
       <EmptyState
         icon={DollarSign}
         title="No escrow transactions"
@@ -305,13 +315,13 @@ export function NoEscrowTransactionsState({ className }: EmptyStateProps) {
 
 export function NoContractsState({ onAction, className }: EmptyStateProps) {
   return (
-    <div className={cn('py-12', className)}>
+    <div className={cn("py-12", className)}>
       <EmptyState
         icon={Music}
         title="No custom contracts"
         description="Create custom license templates for your beats"
         actionLabel="Create Contract"
-        onAction={() => onAction?.('create_contract')}
+        onAction={() => onAction?.("create_contract")}
         variant="card"
         size="md"
       />
@@ -319,15 +329,18 @@ export function NoContractsState({ onAction, className }: EmptyStateProps) {
   );
 }
 
-export function NoCollaborationsState({ onAction, className }: EmptyStateProps) {
+export function NoCollaborationsState({
+  onAction,
+  className,
+}: EmptyStateProps) {
   return (
-    <div className={cn('py-12', className)}>
+    <div className={cn("py-12", className)}>
       <EmptyState
         icon={Users}
         title="No collaborations yet"
         description="Connect with other producers and artists to create together"
         actionLabel="Find Collaborators"
-        onAction={() => onAction?.('find_collaborators')}
+        onAction={() => onAction?.("find_collaborators")}
         variant="card"
         size="md"
       />
@@ -347,12 +360,17 @@ export function FilterResultsHeader({
   className?: string;
 }) {
   return (
-    <div className={cn('flex items-center justify-between py-3', className)}>
+    <div className={cn("flex items-center justify-between py-3", className)}>
       <div className="flex items-center gap-2">
         <Filter className="w-4 h-4 text-muted-foreground" />
         <span className="text-sm text-muted-foreground">
-          {resultCount} {resultCount === 1 ? 'result' : 'results'}
-          {filterName && <span className="font-medium text-foreground"> for "{filterName}"</span>}
+          {resultCount} {resultCount === 1 ? "result" : "results"}
+          {filterName && (
+            <span className="font-medium text-foreground">
+              {" "}
+              for "{filterName}"
+            </span>
+          )}
         </span>
       </div>
       {onClear && (

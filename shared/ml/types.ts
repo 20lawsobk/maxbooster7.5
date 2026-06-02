@@ -7,7 +7,14 @@ export interface ModelMetadata {
   id: string;
   name: string;
   version: string;
-  type: 'timeseries' | 'classification' | 'regression' | 'clustering' | 'anomaly' | 'multimodal' | 'reinforcement';
+  type:
+    | "timeseries"
+    | "classification"
+    | "regression"
+    | "clustering"
+    | "anomaly"
+    | "multimodal"
+    | "reinforcement";
   inputShape: number[];
   outputShape: number[];
   createdAt: Date;
@@ -58,7 +65,7 @@ export interface TimeSeriesData {
 export interface AnomalyResult {
   isAnomaly: boolean;
   score: number;
-  severity: 'low' | 'medium' | 'high';
+  severity: "low" | "medium" | "high";
   expectedValue: number;
   actualValue: number;
   description: string;
@@ -97,11 +104,11 @@ export interface EngagementPrediction {
 }
 
 export interface BrandVoiceProfile {
-  tone: 'formal' | 'casual' | 'mixed';
-  emojiUsage: 'none' | 'light' | 'moderate' | 'heavy';
+  tone: "formal" | "casual" | "mixed";
+  emojiUsage: "none" | "light" | "moderate" | "heavy";
   hashtagFrequency: number;
   avgSentenceLength: number;
-  vocabularyComplexity: 'simple' | 'moderate' | 'advanced';
+  vocabularyComplexity: "simple" | "moderate" | "advanced";
   commonPhrases: string[];
   confidenceScore: number;
 }

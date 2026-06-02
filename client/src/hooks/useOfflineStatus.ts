@@ -1,12 +1,17 @@
-import { logger } from '../lib/logger';
-import { useState, useEffect, useCallback } from 'react';
-import { syncManager, offlineQueue, SyncStatus, SyncProgress } from '@/lib/offline';
+import { logger } from "../lib/logger";
+import { useState, useEffect, useCallback } from "react";
+import {
+  syncManager,
+  offlineQueue,
+  SyncStatus,
+  SyncProgress,
+} from "@/lib/offline";
 
 export interface OfflineStatusState {
   isOnline: boolean;
   isOffline: boolean;
   isReconnecting: boolean;
-  status: 'online' | 'offline' | 'slow' | 'reconnecting';
+  status: "online" | "offline" | "slow" | "reconnecting";
   syncStatus: SyncStatus;
   syncProgress: SyncProgress;
   pendingCount: number;
@@ -23,8 +28,8 @@ export function useOfflineStatus(): OfflineStatusState & {
     isOnline: navigator.onLine,
     isOffline: !navigator.onLine,
     isReconnecting: false,
-    status: navigator.onLine ? 'online' : 'offline',
-    syncStatus: 'idle',
+    status: navigator.onLine ? "online" : "offline",
+    syncStatus: "idle",
     syncProgress: {
       total: 0,
       completed: 0,
@@ -42,14 +47,14 @@ export function useOfflineStatus(): OfflineStatusState & {
   const loadStats = useCallback(async () => {
     try {
       const stats = await offlineQueue.getStats();
-      setState(prev => ({
+      setState((prev) => ({
         ...prev,
         pendingCount: stats.pending + stats.syncing,
         failedCount: stats.failed,
         conflictCount: stats.conflict,
       }));
     } catch (error) {
-      logger.error('[useOfflineStatus] Failed to load stats:', error);
+      logger.error("[useOfflineStatus] Failed to load stats:", error);
     }
   }, []);
 
@@ -57,59 +62,59 @@ export function useOfflineStatus(): OfflineStatusState & {
     loadStats();
 
     const handleOnline = () => {
-      setState(prev => ({
+      setState((prev) => ({
         ...prev,
         isOnline: true,
         isOffline: false,
-        status: 'online',
+        status: "online",
         isReconnecting: false,
       }));
     };
 
     const handleOffline = () => {
-      setState(prev => ({
+      setState((prev) => ({
         ...prev,
         isOnline: false,
         isOffline: true,
-        status: 'offline',
+        status: "offline",
       }));
     };
 
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
 
-    const unsubStatusChange = syncManager.on('status-change', (event) => {
-      setState(prev => ({
+    const unsubStatusChange = syncManager.on("status-change", (event) => {
+      setState((prev) => ({
         ...prev,
         syncStatus: event.status || prev.syncStatus,
-        isReconnecting: event.status === 'syncing',
+        isReconnecting: event.status === "syncing",
       }));
     });
 
-    const unsubProgress = syncManager.on('progress-update', (event) => {
+    const unsubProgress = syncManager.on("progress-update", (event) => {
       if (event.progress) {
-        setState(prev => ({
+        setState((prev) => ({
           ...prev,
           syncProgress: event.progress!,
         }));
       }
     });
 
-    const unsubComplete = syncManager.on('sync-complete', () => {
-      setState(prev => ({
+    const unsubComplete = syncManager.on("sync-complete", () => {
+      setState((prev) => ({
         ...prev,
         lastSyncAt: Date.now(),
       }));
       loadStats();
     });
 
-    const unsubQueueChange = offlineQueue.on('action-added', loadStats);
-    const unsubQueueRemove = offlineQueue.on('action-removed', loadStats);
-    const unsubQueueUpdate = offlineQueue.on('action-updated', loadStats);
+    const unsubQueueChange = offlineQueue.on("action-added", loadStats);
+    const unsubQueueRemove = offlineQueue.on("action-removed", loadStats);
+    const unsubQueueUpdate = offlineQueue.on("action-updated", loadStats);
 
     return () => {
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
       unsubStatusChange();
       unsubProgress();
       unsubComplete();

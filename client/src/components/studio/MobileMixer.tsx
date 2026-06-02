@@ -1,8 +1,8 @@
-import { useState, useRef, useCallback } from 'react';
-import { Volume2, VolumeX, Mic, Headphones, Plus } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { studioOneTheme } from '@/lib/studioOneTheme';
-import { TouchFader, TouchPanKnob } from './TouchFader';
+import { useState, useRef, useCallback } from "react";
+import { Volume2, VolumeX, Mic, Headphones, Plus } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { studioOneTheme } from "@/lib/studioOneTheme";
+import { TouchFader, TouchPanKnob } from "./TouchFader";
 
 interface MixerTrack {
   id: string;
@@ -45,38 +45,41 @@ export function MobileMixer({
 }: MobileMixerProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  const MixerButton = useCallback(({
-    onClick,
-    active,
-    activeColor,
-    children,
-    className: btnClassName,
-  }: {
-    onClick: () => void;
-    active?: boolean;
-    activeColor?: string;
-    children: React.ReactNode;
-    className?: string;
-  }) => (
-    <button
-      onClick={onClick}
-      className={cn(
-        'w-8 h-8 rounded flex items-center justify-center touch-manipulation transition-colors',
-        active ? '' : 'bg-white/5 hover:bg-white/10 active:bg-white/20',
-        btnClassName
-      )}
-      style={{
-        background: active ? activeColor : undefined,
-        color: active ? '#fff' : studioOneTheme.colors.text.secondary,
-      }}
-    >
-      {children}
-    </button>
-  ), []);
+  const MixerButton = useCallback(
+    ({
+      onClick,
+      active,
+      activeColor,
+      children,
+      className: btnClassName,
+    }: {
+      onClick: () => void;
+      active?: boolean;
+      activeColor?: string;
+      children: React.ReactNode;
+      className?: string;
+    }) => (
+      <button
+        onClick={onClick}
+        className={cn(
+          "w-8 h-8 rounded flex items-center justify-center touch-manipulation transition-colors",
+          active ? "" : "bg-white/5 hover:bg-white/10 active:bg-white/20",
+          btnClassName,
+        )}
+        style={{
+          background: active ? activeColor : undefined,
+          color: active ? "#fff" : studioOneTheme.colors.text.secondary,
+        }}
+      >
+        {children}
+      </button>
+    ),
+    [],
+  );
 
   return (
     <div
-      className={cn('flex flex-col h-full', className)}
+      className={cn("flex flex-col h-full", className)}
       style={{ background: studioOneTheme.colors.bg.panel }}
     >
       <div className="flex-1 flex overflow-hidden">
@@ -84,10 +87,7 @@ export function MobileMixer({
           ref={scrollRef}
           className="flex-1 overflow-x-auto overflow-y-hidden touch-pan-x"
         >
-          <div
-            className="flex gap-1 p-2"
-            style={{ minWidth: 'max-content' }}
-          >
+          <div className="flex gap-1 p-2" style={{ minWidth: "max-content" }}>
             {tracks.map((track) => (
               <div
                 key={track.id}
@@ -103,7 +103,7 @@ export function MobileMixer({
                   onChange={(v) => onTrackPanChange(track.id, v)}
                   size={36}
                 />
-                
+
                 <div className="my-2">
                   <TouchFader
                     value={track.volume}
@@ -114,7 +114,7 @@ export function MobileMixer({
                     color={track.color}
                   />
                 </div>
-                
+
                 <div className="flex gap-1">
                   <MixerButton
                     onClick={() => onTrackMuteToggle(track.id)}
@@ -131,17 +131,17 @@ export function MobileMixer({
                     <span className="text-[10px] font-bold">S</span>
                   </MixerButton>
                 </div>
-                
+
                 <button
                   onClick={() => onTrackArmedToggle(track.id)}
                   className={cn(
-                    'mt-1 w-full h-7 rounded flex items-center justify-center touch-manipulation',
-                    track.armed ? 'bg-red-500' : 'bg-white/5 hover:bg-white/10'
+                    "mt-1 w-full h-7 rounded flex items-center justify-center touch-manipulation",
+                    track.armed ? "bg-red-500" : "bg-white/5 hover:bg-white/10",
                   )}
                 >
                   <Mic className="w-3 h-3" />
                 </button>
-                
+
                 <span
                   className="mt-1 text-[10px] font-medium truncate w-full text-center"
                   style={{ color: studioOneTheme.colors.text.secondary }}
@@ -150,7 +150,7 @@ export function MobileMixer({
                 </span>
               </div>
             ))}
-            
+
             {onAddTrack && (
               <button
                 onClick={onAddTrack}
@@ -168,7 +168,7 @@ export function MobileMixer({
             )}
           </div>
         </div>
-        
+
         <div
           className="shrink-0 flex flex-col items-center p-2 border-l"
           style={{
@@ -183,7 +183,7 @@ export function MobileMixer({
           >
             MASTER
           </span>
-          
+
           <TouchFader
             value={masterVolume}
             onChange={onMasterVolumeChange}
@@ -192,7 +192,7 @@ export function MobileMixer({
             width={48}
             color={studioOneTheme.colors.accent.purple}
           />
-          
+
           <div
             className="mt-2 px-2 py-1 rounded font-mono text-xs"
             style={{
@@ -200,9 +200,12 @@ export function MobileMixer({
               color: studioOneTheme.colors.text.primary,
             }}
           >
-            {masterVolume > 75 ? `+${Math.round((masterVolume - 75) * 0.5)}` : 
-             masterVolume === 75 ? '0' : 
-             `-${Math.round((75 - masterVolume) * 0.5)}`}dB
+            {masterVolume > 75
+              ? `+${Math.round((masterVolume - 75) * 0.5)}`
+              : masterVolume === 75
+                ? "0"
+                : `-${Math.round((75 - masterVolume) * 0.5)}`}
+            dB
           </div>
         </div>
       </div>

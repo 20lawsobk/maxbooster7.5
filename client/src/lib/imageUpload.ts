@@ -1,4 +1,4 @@
-import { apiRequest } from './queryClient';
+import { apiRequest } from "./queryClient";
 
 /**
  * Upload an image file to a server endpoint.
@@ -11,16 +11,19 @@ import { apiRequest } from './queryClient';
 export async function uploadImageFile(
   file: File,
   endpoint: string,
-  fieldName = 'file'
+  fieldName = "file",
 ): Promise<string> {
   const formData = new FormData();
   formData.append(fieldName, file);
 
-  const response = await apiRequest('POST', endpoint, formData);
+  const response = await apiRequest("POST", endpoint, formData);
   if (!response.ok) {
     let message = `Upload failed (${response.status})`;
     try {
-      const body = await response.json() as { error?: string; message?: string };
+      const body = (await response.json()) as {
+        error?: string;
+        message?: string;
+      };
       message = body.error || body.message || message;
     } catch {
       // ignore parse errors
@@ -28,7 +31,7 @@ export async function uploadImageFile(
     throw new Error(message);
   }
 
-  const data = await response.json() as {
+  const data = (await response.json()) as {
     url?: string;
     avatarUrl?: string;
     imageUrl?: string;
@@ -36,7 +39,12 @@ export async function uploadImageFile(
     // /api/storage/upload nests the URL under `file`
     file?: { url?: string };
     // Some endpoints nest under `data`
-    data?: { url?: string; avatarUrl?: string; imageUrl?: string; fileUrl?: string };
+    data?: {
+      url?: string;
+      avatarUrl?: string;
+      imageUrl?: string;
+      fileUrl?: string;
+    };
   };
 
   const url =
@@ -51,7 +59,7 @@ export async function uploadImageFile(
     data.data?.fileUrl;
 
   if (!url) {
-    throw new Error('Server did not return a URL after upload');
+    throw new Error("Server did not return a URL after upload");
   }
   return url;
 }
@@ -69,7 +77,7 @@ export function createLocalPreview(file: File): string {
  * Release a local preview URL created with createLocalPreview().
  */
 export function revokeLocalPreview(url: string): void {
-  if (url.startsWith('blob:')) {
+  if (url.startsWith("blob:")) {
     URL.revokeObjectURL(url);
   }
 }

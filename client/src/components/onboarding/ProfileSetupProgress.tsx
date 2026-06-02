@@ -1,16 +1,20 @@
-import { useState, useEffect, useMemo } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { motion, AnimatePresence } from 'framer-motion';
-import { apiRequest } from '@/lib/queryClient';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
-import { Badge } from '@/components/ui/badge';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { useToast } from '@/hooks/use-toast';
-import { cn } from '@/lib/utils';
-import { Link } from 'wouter';
+import { useState, useEffect, useMemo } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { motion, AnimatePresence } from "framer-motion";
+import { apiRequest } from "@/lib/queryClient";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
+import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { useToast } from "@/hooks/use-toast";
+import { cn } from "@/lib/utils";
+import { Link } from "wouter";
 import {
   User,
   Music,
@@ -30,15 +34,15 @@ import {
   Shield,
   Settings,
   Zap,
-} from 'lucide-react';
+} from "lucide-react";
 
-export type ProfileSetupStep = 
-  | 'verify_email'
-  | 'artist_type'
-  | 'genres'
-  | 'photo'
-  | 'bio'
-  | 'social_links';
+export type ProfileSetupStep =
+  | "verify_email"
+  | "artist_type"
+  | "genres"
+  | "photo"
+  | "bio"
+  | "social_links";
 
 export interface ProfileSetupStatus {
   step: ProfileSetupStep;
@@ -63,7 +67,7 @@ export interface ProfileCompletionData {
 }
 
 interface ProfileSetupProgressProps {
-  variant?: 'compact' | 'detailed' | 'card' | 'inline';
+  variant?: "compact" | "detailed" | "card" | "inline";
   showIncomplete?: boolean;
   onStepClick?: (step: ProfileSetupStep) => void;
   className?: string;
@@ -71,62 +75,62 @@ interface ProfileSetupProgressProps {
 
 const PROFILE_STEPS: ProfileSetupStatus[] = [
   {
-    step: 'verify_email',
-    label: 'Verify Email',
-    description: 'Confirm your email address for account security',
+    step: "verify_email",
+    label: "Verify Email",
+    description: "Confirm your email address for account security",
     completed: false,
     required: true,
-    actionUrl: '/settings/email',
+    actionUrl: "/settings/email",
     icon: Mail,
     points: 25,
   },
   {
-    step: 'artist_type',
-    label: 'Select Artist Type',
-    description: 'Tell us who you are: solo artist, band, producer, or label',
+    step: "artist_type",
+    label: "Select Artist Type",
+    description: "Tell us who you are: solo artist, band, producer, or label",
     completed: false,
     required: true,
-    actionUrl: '/onboarding',
+    actionUrl: "/onboarding",
     icon: Music,
     points: 25,
   },
   {
-    step: 'genres',
-    label: 'Choose Genres',
-    description: 'Select your music genres to personalize recommendations',
+    step: "genres",
+    label: "Choose Genres",
+    description: "Select your music genres to personalize recommendations",
     completed: false,
     required: true,
-    actionUrl: '/settings/profile',
+    actionUrl: "/settings/profile",
     icon: Sparkles,
     points: 20,
   },
   {
-    step: 'photo',
-    label: 'Add Profile Photo',
-    description: 'Upload a photo to help fans recognize you',
+    step: "photo",
+    label: "Add Profile Photo",
+    description: "Upload a photo to help fans recognize you",
     completed: false,
     required: false,
-    actionUrl: '/settings/profile',
+    actionUrl: "/settings/profile",
     icon: Camera,
     points: 15,
   },
   {
-    step: 'bio',
-    label: 'Write Your Bio',
-    description: 'Tell your story and what makes your music unique',
+    step: "bio",
+    label: "Write Your Bio",
+    description: "Tell your story and what makes your music unique",
     completed: false,
     required: false,
-    actionUrl: '/settings/profile',
+    actionUrl: "/settings/profile",
     icon: FileText,
     points: 20,
   },
   {
-    step: 'social_links',
-    label: 'Connect Social Media',
-    description: 'Link your social accounts for cross-platform promotion',
+    step: "social_links",
+    label: "Connect Social Media",
+    description: "Link your social accounts for cross-platform promotion",
     completed: false,
     required: false,
-    actionUrl: '/social-media',
+    actionUrl: "/social-media",
     icon: Share2,
     points: 30,
   },
@@ -134,32 +138,32 @@ const PROFILE_STEPS: ProfileSetupStatus[] = [
 
 export function useProfileCompletion() {
   const { data, isLoading, refetch } = useQuery<ProfileCompletionData>({
-    queryKey: ['/api/profile/completion'],
+    queryKey: ["/api/profile/completion"],
     staleTime: 60000,
   });
 
   const completionSteps = useMemo(() => {
     if (!data) return PROFILE_STEPS;
 
-    return PROFILE_STEPS.map(step => {
+    return PROFILE_STEPS.map((step) => {
       let completed = false;
       switch (step.step) {
-        case 'verify_email':
+        case "verify_email":
           completed = data.emailVerified;
           break;
-        case 'artist_type':
+        case "artist_type":
           completed = !!data.artistType;
           break;
-        case 'genres':
+        case "genres":
           completed = data.genres.length > 0;
           break;
-        case 'photo':
+        case "photo":
           completed = data.hasPhoto;
           break;
-        case 'bio':
+        case "bio":
           completed = !!data.bio && data.bio.length > 20;
           break;
-        case 'social_links':
+        case "social_links":
           completed = data.socialLinks.length > 0;
           break;
       }
@@ -167,11 +171,13 @@ export function useProfileCompletion() {
     });
   }, [data]);
 
-  const completedCount = completionSteps.filter(s => s.completed).length;
+  const completedCount = completionSteps.filter((s) => s.completed).length;
   const totalCount = completionSteps.length;
   const percentage = Math.round((completedCount / totalCount) * 100);
-  const totalPoints = completionSteps.filter(s => s.completed).reduce((sum, s) => sum + s.points, 0);
-  const nextStep = completionSteps.find(s => !s.completed);
+  const totalPoints = completionSteps
+    .filter((s) => s.completed)
+    .reduce((sum, s) => sum + s.points, 0);
+  const nextStep = completionSteps.find((s) => !s.completed);
 
   return {
     steps: completionSteps,
@@ -186,16 +192,24 @@ export function useProfileCompletion() {
 }
 
 export default function ProfileSetupProgress({
-  variant = 'compact',
+  variant = "compact",
   showIncomplete = true,
   onStepClick,
   className,
 }: ProfileSetupProgressProps) {
-  const { steps, completedCount, totalCount, percentage, totalPoints, nextStep, isLoading } = useProfileCompletion();
+  const {
+    steps,
+    completedCount,
+    totalCount,
+    percentage,
+    totalPoints,
+    nextStep,
+    isLoading,
+  } = useProfileCompletion();
 
   if (isLoading) {
     return (
-      <div className={cn('animate-pulse', className)}>
+      <div className={cn("animate-pulse", className)}>
         <div className="h-20 bg-muted rounded-lg" />
       </div>
     );
@@ -205,12 +219,12 @@ export default function ProfileSetupProgress({
     return null;
   }
 
-  const incompleteSteps = steps.filter(s => !s.completed);
-  const requiredIncomplete = incompleteSteps.filter(s => s.required);
+  const incompleteSteps = steps.filter((s) => !s.completed);
+  const requiredIncomplete = incompleteSteps.filter((s) => s.required);
 
-  if (variant === 'inline') {
+  if (variant === "inline") {
     return (
-      <div className={cn('flex items-center gap-4', className)}>
+      <div className={cn("flex items-center gap-4", className)}>
         <div className="flex-1">
           <div className="flex items-center justify-between mb-1">
             <span className="text-sm font-medium">Profile Setup</span>
@@ -230,9 +244,9 @@ export default function ProfileSetupProgress({
     );
   }
 
-  if (variant === 'compact') {
+  if (variant === "compact") {
     return (
-      <div className={cn('bg-muted/50 rounded-lg p-4', className)}>
+      <div className={cn("bg-muted/50 rounded-lg p-4", className)}>
         <div className="flex items-center gap-4">
           <div className="relative">
             <svg className="w-14 h-14 -rotate-90">
@@ -256,7 +270,13 @@ export default function ProfileSetupProgress({
                 strokeDasharray={`${percentage * 1.51} 151`}
               />
               <defs>
-                <linearGradient id="profileGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                <linearGradient
+                  id="profileGradient"
+                  x1="0%"
+                  y1="0%"
+                  x2="100%"
+                  y2="0%"
+                >
                   <stop offset="0%" stopColor="#10B981" />
                   <stop offset="100%" stopColor="#3B82F6" />
                 </linearGradient>
@@ -293,9 +313,9 @@ export default function ProfileSetupProgress({
     );
   }
 
-  if (variant === 'card') {
+  if (variant === "card") {
     return (
-      <Card className={cn('overflow-hidden', className)}>
+      <Card className={cn("overflow-hidden", className)}>
         <CardHeader className="bg-gradient-to-r from-green-500 to-blue-500 text-white pb-8">
           <CardTitle className="flex items-center gap-2">
             <User className="w-5 h-5" />
@@ -333,19 +353,17 @@ export default function ProfileSetupProgress({
                   <button
                     onClick={() => onStepClick?.(step.step)}
                     className={cn(
-                      'w-full flex items-center gap-3 p-3 rounded-lg transition-all text-left',
+                      "w-full flex items-center gap-3 p-3 rounded-lg transition-all text-left",
                       step.completed
-                        ? 'bg-green-50 dark:bg-green-950/20'
-                        : 'hover:bg-muted/50',
-                      !step.completed && 'cursor-pointer'
+                        ? "bg-green-50 dark:bg-green-950/20"
+                        : "hover:bg-muted/50",
+                      !step.completed && "cursor-pointer",
                     )}
                   >
                     <div
                       className={cn(
-                        'w-10 h-10 rounded-full flex items-center justify-center shrink-0',
-                        step.completed
-                          ? 'bg-green-500 text-white'
-                          : 'bg-muted'
+                        "w-10 h-10 rounded-full flex items-center justify-center shrink-0",
+                        step.completed ? "bg-green-500 text-white" : "bg-muted",
                       )}
                     >
                       {step.completed ? (
@@ -359,14 +377,17 @@ export default function ProfileSetupProgress({
                       <div className="flex items-center gap-2">
                         <span
                           className={cn(
-                            'font-medium',
-                            step.completed && 'text-green-700 dark:text-green-400'
+                            "font-medium",
+                            step.completed &&
+                              "text-green-700 dark:text-green-400",
                           )}
                         >
                           {step.label}
                         </span>
                         {step.required && !step.completed && (
-                          <Badge variant="outline" className="text-xs">Required</Badge>
+                          <Badge variant="outline" className="text-xs">
+                            Required
+                          </Badge>
                         )}
                       </div>
                       <p className="text-sm text-muted-foreground truncate">
@@ -376,7 +397,9 @@ export default function ProfileSetupProgress({
 
                     {!step.completed && (
                       <div className="flex items-center gap-2 shrink-0">
-                        <span className="text-xs text-muted-foreground">+{step.points} XP</span>
+                        <span className="text-xs text-muted-foreground">
+                          +{step.points} XP
+                        </span>
                         <ArrowRight className="w-4 h-4 text-muted-foreground" />
                       </div>
                     )}
@@ -412,7 +435,7 @@ export default function ProfileSetupProgress({
   }
 
   return (
-    <div className={cn('space-y-4', className)}>
+    <div className={cn("space-y-4", className)}>
       <div className="flex items-center justify-between">
         <div>
           <h3 className="font-semibold text-lg">Profile Setup</h3>
@@ -439,10 +462,10 @@ export default function ProfileSetupProgress({
               <TooltipTrigger>
                 <div
                   className={cn(
-                    'w-10 h-10 rounded-full flex items-center justify-center transition-all',
+                    "w-10 h-10 rounded-full flex items-center justify-center transition-all",
                     step.completed
-                      ? 'bg-green-500 text-white'
-                      : 'bg-muted text-muted-foreground'
+                      ? "bg-green-500 text-white"
+                      : "bg-muted text-muted-foreground",
                   )}
                 >
                   {step.completed ? (
@@ -455,7 +478,7 @@ export default function ProfileSetupProgress({
               <TooltipContent>
                 <p className="font-medium">{step.label}</p>
                 <p className="text-xs text-muted-foreground">
-                  {step.completed ? 'Completed' : `+${step.points} XP`}
+                  {step.completed ? "Completed" : `+${step.points} XP`}
                 </p>
               </TooltipContent>
             </Tooltip>
@@ -482,7 +505,7 @@ export function EmailVerificationStatus({
   onResend,
   className,
 }: {
-  status: 'pending' | 'success' | 'failed' | 'expired';
+  status: "pending" | "success" | "failed" | "expired";
   email: string;
   onResend?: () => void;
   className?: string;
@@ -490,31 +513,33 @@ export function EmailVerificationStatus({
   const configs = {
     pending: {
       icon: Clock,
-      title: 'Verification Pending',
+      title: "Verification Pending",
       description: `We sent a verification link to ${email}`,
-      color: 'text-yellow-600 bg-yellow-50 dark:bg-yellow-950/20 border-yellow-200',
-      iconColor: 'text-yellow-600',
+      color:
+        "text-yellow-600 bg-yellow-50 dark:bg-yellow-950/20 border-yellow-200",
+      iconColor: "text-yellow-600",
     },
     success: {
       icon: CheckCircle,
-      title: 'Email Verified!',
-      description: 'Your email has been successfully verified',
-      color: 'text-green-600 bg-green-50 dark:bg-green-950/20 border-green-200',
-      iconColor: 'text-green-600',
+      title: "Email Verified!",
+      description: "Your email has been successfully verified",
+      color: "text-green-600 bg-green-50 dark:bg-green-950/20 border-green-200",
+      iconColor: "text-green-600",
     },
     failed: {
       icon: AlertCircle,
-      title: 'Verification Failed',
-      description: 'The verification link is invalid or has expired',
-      color: 'text-red-600 bg-red-50 dark:bg-red-950/20 border-red-200',
-      iconColor: 'text-red-600',
+      title: "Verification Failed",
+      description: "The verification link is invalid or has expired",
+      color: "text-red-600 bg-red-50 dark:bg-red-950/20 border-red-200",
+      iconColor: "text-red-600",
     },
     expired: {
       icon: Clock,
-      title: 'Link Expired',
-      description: 'Your verification link has expired. Request a new one.',
-      color: 'text-orange-600 bg-orange-50 dark:bg-orange-950/20 border-orange-200',
-      iconColor: 'text-orange-600',
+      title: "Link Expired",
+      description: "Your verification link has expired. Request a new one.",
+      color:
+        "text-orange-600 bg-orange-50 dark:bg-orange-950/20 border-orange-200",
+      iconColor: "text-orange-600",
     },
   };
 
@@ -525,27 +550,26 @@ export function EmailVerificationStatus({
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      className={cn(
-        'rounded-lg border p-4',
-        config.color,
-        className
-      )}
+      className={cn("rounded-lg border p-4", config.color, className)}
     >
       <div className="flex items-start gap-3">
-        <Icon className={cn('w-5 h-5 mt-0.5 shrink-0', config.iconColor)} />
+        <Icon className={cn("w-5 h-5 mt-0.5 shrink-0", config.iconColor)} />
         <div className="flex-1">
           <p className="font-medium">{config.title}</p>
           <p className="text-sm opacity-80">{config.description}</p>
-          {(status === 'pending' || status === 'failed' || status === 'expired') && onResend && (
-            <Button
-              variant="link"
-              size="sm"
-              onClick={onResend}
-              className="p-0 h-auto mt-2"
-            >
-              Resend verification email
-            </Button>
-          )}
+          {(status === "pending" ||
+            status === "failed" ||
+            status === "expired") &&
+            onResend && (
+              <Button
+                variant="link"
+                size="sm"
+                onClick={onResend}
+                className="p-0 h-auto mt-2"
+              >
+                Resend verification email
+              </Button>
+            )}
         </div>
       </div>
     </motion.div>
@@ -559,7 +583,14 @@ export function RegistrationOutcome({
   onAction,
   actionLabel,
 }: {
-  type: 'success' | 'email_exists' | 'username_exists' | 'password_weak' | 'invitation_invalid' | 'invitation_expired' | 'referral_applied';
+  type:
+    | "success"
+    | "email_exists"
+    | "username_exists"
+    | "password_weak"
+    | "invitation_invalid"
+    | "invitation_expired"
+    | "referral_applied";
   message: string;
   details?: string;
   onAction?: () => void;
@@ -568,38 +599,45 @@ export function RegistrationOutcome({
   const configs = {
     success: {
       icon: CheckCircle,
-      color: 'bg-green-50 dark:bg-green-950/20 border-green-200 text-green-800 dark:text-green-200',
-      iconColor: 'text-green-600',
+      color:
+        "bg-green-50 dark:bg-green-950/20 border-green-200 text-green-800 dark:text-green-200",
+      iconColor: "text-green-600",
     },
     email_exists: {
       icon: Mail,
-      color: 'bg-yellow-50 dark:bg-yellow-950/20 border-yellow-200 text-yellow-800 dark:text-yellow-200',
-      iconColor: 'text-yellow-600',
+      color:
+        "bg-yellow-50 dark:bg-yellow-950/20 border-yellow-200 text-yellow-800 dark:text-yellow-200",
+      iconColor: "text-yellow-600",
     },
     username_exists: {
       icon: User,
-      color: 'bg-yellow-50 dark:bg-yellow-950/20 border-yellow-200 text-yellow-800 dark:text-yellow-200',
-      iconColor: 'text-yellow-600',
+      color:
+        "bg-yellow-50 dark:bg-yellow-950/20 border-yellow-200 text-yellow-800 dark:text-yellow-200",
+      iconColor: "text-yellow-600",
     },
     password_weak: {
       icon: Shield,
-      color: 'bg-red-50 dark:bg-red-950/20 border-red-200 text-red-800 dark:text-red-200',
-      iconColor: 'text-red-600',
+      color:
+        "bg-red-50 dark:bg-red-950/20 border-red-200 text-red-800 dark:text-red-200",
+      iconColor: "text-red-600",
     },
     invitation_invalid: {
       icon: AlertCircle,
-      color: 'bg-red-50 dark:bg-red-950/20 border-red-200 text-red-800 dark:text-red-200',
-      iconColor: 'text-red-600',
+      color:
+        "bg-red-50 dark:bg-red-950/20 border-red-200 text-red-800 dark:text-red-200",
+      iconColor: "text-red-600",
     },
     invitation_expired: {
       icon: Clock,
-      color: 'bg-orange-50 dark:bg-orange-950/20 border-orange-200 text-orange-800 dark:text-orange-200',
-      iconColor: 'text-orange-600',
+      color:
+        "bg-orange-50 dark:bg-orange-950/20 border-orange-200 text-orange-800 dark:text-orange-200",
+      iconColor: "text-orange-600",
     },
     referral_applied: {
       icon: Zap,
-      color: 'bg-purple-50 dark:bg-purple-950/20 border-purple-200 text-purple-800 dark:text-purple-200',
-      iconColor: 'text-purple-600',
+      color:
+        "bg-purple-50 dark:bg-purple-950/20 border-purple-200 text-purple-800 dark:text-purple-200",
+      iconColor: "text-purple-600",
     },
   };
 
@@ -610,15 +648,20 @@ export function RegistrationOutcome({
     <motion.div
       initial={{ opacity: 0, scale: 0.95 }}
       animate={{ opacity: 1, scale: 1 }}
-      className={cn('rounded-lg border p-4', config.color)}
+      className={cn("rounded-lg border p-4", config.color)}
     >
       <div className="flex items-start gap-3">
-        <Icon className={cn('w-5 h-5 mt-0.5 shrink-0', config.iconColor)} />
+        <Icon className={cn("w-5 h-5 mt-0.5 shrink-0", config.iconColor)} />
         <div className="flex-1">
           <p className="font-medium">{message}</p>
           {details && <p className="text-sm opacity-80 mt-1">{details}</p>}
           {onAction && actionLabel && (
-            <Button variant="link" size="sm" onClick={onAction} className="p-0 h-auto mt-2">
+            <Button
+              variant="link"
+              size="sm"
+              onClick={onAction}
+              className="p-0 h-auto mt-2"
+            >
               {actionLabel}
             </Button>
           )}

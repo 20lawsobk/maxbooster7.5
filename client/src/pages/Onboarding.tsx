@@ -1,8 +1,8 @@
-import { useLocation } from 'wouter';
-import OnboardingWizard from '@/components/onboarding/OnboardingWizard';
-import { useAuth } from '@/hooks/useAuth';
-import { useEffect } from 'react';
-import { AppLayout } from '@/components/layout/AppLayout';
+import { useLocation } from "wouter";
+import OnboardingWizard from "@/components/onboarding/OnboardingWizard";
+import { useAuth } from "@/hooks/useAuth";
+import { useEffect } from "react";
+import { AppLayout } from "@/components/layout/AppLayout";
 
 export default function Onboarding() {
   const [, setLocation] = useLocation();
@@ -10,24 +10,21 @@ export default function Onboarding() {
 
   useEffect(() => {
     if (user?.hasCompletedOnboarding) {
-      setLocation('/dashboard');
+      setLocation("/dashboard");
     }
   }, [user?.hasCompletedOnboarding, setLocation]);
 
   const handleComplete = () => {
-    setLocation('/dashboard');
+    setLocation("/dashboard");
   };
 
   const handleSkip = () => {
-    setLocation('/dashboard');
+    setLocation("/dashboard");
   };
 
   return (
     <AppLayout noPadding>
-      <OnboardingWizard
-        onComplete={handleComplete}
-        onSkip={handleSkip}
-      />
+      <OnboardingWizard onComplete={handleComplete} onSkip={handleSkip} />
     </AppLayout>
   );
 }

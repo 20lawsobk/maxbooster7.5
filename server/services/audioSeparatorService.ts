@@ -14,21 +14,21 @@
  *   - listing_license_tiers    → audioUrls updated for any existing tier rows
  */
 
-import path from 'path';
-import fsPromises from 'fs/promises';
-import os from 'os';
-import { execFile } from 'child_process';
-import { promisify } from 'util';
-import { db } from '../db.js';
-import { listings, listingStems, listingLicenseTiers } from '@shared/schema';
-import { eq } from 'drizzle-orm';
-import { storageService } from './storageService.js';
-import { logger } from '../logger.js';
+import path from "path";
+import fsPromises from "fs/promises";
+import os from "os";
+import { execFile } from "child_process";
+import { promisify } from "util";
+import { db } from "../db.js";
+import { listings, listingStems, listingLicenseTiers } from "@shared/schema";
+import { eq } from "drizzle-orm";
+import { storageService } from "./storageService.js";
+import { logger } from "../logger.js";
 
 const execFileAsync = promisify(execFile);
 
-const LOCAL_STORAGE_DIR = path.resolve('./uploads/files');
-const PYTHON_SCRIPT = path.resolve('./server/services/audioSeparator.py');
+const LOCAL_STORAGE_DIR = path.resolve("./uploads/files");
+const PYTHON_SCRIPT = path.resolve("./server/services/audioSeparator.py");
 
 /** Resolve the on-disk path of a storage key. */
 function localFilePath(key: string): string {
@@ -42,20 +42,22 @@ async function runSeparator(
   stems: boolean,
 ): Promise<{ mp3: string | null; stems: Record<string, string> }> {
   const args = [PYTHON_SCRIPT, inputWav, outputDir];
-  if (stems) args.push('--stems');
+  if (stems) args.push("--stems");
 
-  const { stdout, stderr } = await execFileAsync('python3', args, {
+  const { stdout, stderr } = await execFileAsync("python3", args, {
     timeout: 10 * 60 * 1000, // 10 min hard limit
   });
 
   if (stderr) {
-    logger.warn('[AudioSeparator] Python stderr:', stderr.slice(0, 500));
+    logger.warn("[AudioSeparator] Python stderr:", stderr.slice(0, 500));
   }
 
   try {
     return JSON.parse(stdout.trim());
   } catch {
-    throw new Error(`[AudioSeparator] Invalid JSON from separator: ${stdout.slice(0, 200)}`);
+    throw new Error(
+      `[AudioSeparator] Invalid JSON from separator: ${stdout.slice(0, 200)}`,
+    );
   }
 }
 
@@ -67,7 +69,12 @@ async function uploadLocalFile(
 ): Promise<{ key: string; url: string }> {
   const buffer = await fsPromises.readFile(filePath);
   const filename = path.basename(filePath);
-  const key = await storageService.uploadFile(buffer, category, filename, contentType);
+  const key = await storageService.uploadFile(
+    buffer,
+    category,
+    filename,
+    contentType,
+  );
   return { key, url: `/api/marketplace/audio/${key}` };
 }
 
@@ -76,10 +83,10 @@ async function uploadLocalFile(
  * Aligned with the Unlimited/Exclusive license deliverable set.
  */
 const STEM_TYPES: Record<string, string> = {
-  drums: 'drums',
-  bass: 'bass',
-  melody: 'melody',
-  other: 'other',
+  drums: "drums",
+  bass: "bass",
+  melody: "melody",
+  other: "other",
 };
 
 /**
@@ -91,7 +98,7 @@ function resolveModes(licenseType?: string): { mp3: boolean; stems: boolean } {
   const lt = licenseType.toLowerCase();
   return {
     mp3: true, // all tiers get MP3
-    stems: lt === 'unlimited' || lt === 'exclusive',
+    stems: lt === "unlimited" || lt === "exclusive",
   };
 }
 
@@ -118,7 +125,12 @@ export async function processUploadedBeat(
 ): Promise<AudioSeparationResult> {
   const localWavPath = localFilePath(audioKey);
 
-  if (!(await fsPromises.access(localWavPath).then(() => true).catch(() => false))) {
+  if (
+    !(await fsPromises
+      .access(localWavPath)
+      .then(() => true)
+      .catch(() => false))
+  ) {
     logger.warn(`[AudioSeparator] WAV file not found on disk: ${localWavPath}`);
     return { stemsAvailable: false };
   }
@@ -127,7 +139,9 @@ export async function processUploadedBeat(
   const tmpDir = path.join(os.tmpdir(), `audio_sep_${listingId}`);
   await fsPromises.mkdir(tmpDir, { recursive: true });
 
-  logger.info(`[AudioSeparator] Processing beat ${listingId} — MP3=${modes.mp3} stems=${modes.stems}`);
+  logger.info(
+    `[AudioSeparator] Processing beat ${listingId} — MP3=${modes.mp3} stems=${modes.stems}`,
+  );
 
   try {
     const output = await runSeparator(localWavPath, tmpDir, modes.stems);
@@ -135,8 +149,18 @@ export async function processUploadedBeat(
     const result: AudioSeparationResult = { stemsAvailable: false };
 
     // ── Upload MP3 ─────────────────────────────────────────────────────────
-    if (output.mp3 && (await fsPromises.access(output.mp3).then(() => true).catch(() => false))) {
-      const { key, url } = await uploadLocalFile(output.mp3, 'beats-mp3', 'audio/mpeg');
+    if (
+      output.mp3 &&
+      (await fsPromises
+        .access(output.mp3)
+        .then(() => true)
+        .catch(() => false))
+    ) {
+      const { key, url } = await uploadLocalFile(
+        output.mp3,
+        "beats-mp3",
+        "audio/mpeg",
+      );
       result.mp3Key = key;
       result.mp3Url = url;
       logger.info(`[AudioSeparator] MP3 stored: ${key}`);
@@ -148,19 +172,29 @@ export async function processUploadedBeat(
       const stemInserts = [];
 
       for (const [name, filePath] of Object.entries(output.stems)) {
-        if (!(await fsPromises.access(filePath).then(() => true).catch(() => false))) continue;
+        if (
+          !(await fsPromises
+            .access(filePath)
+            .then(() => true)
+            .catch(() => false))
+        )
+          continue;
         const fileSize = (await fsPromises.stat(filePath)).size;
-        const { key, url } = await uploadLocalFile(filePath, 'beats-stems', 'audio/wav');
+        const { key, url } = await uploadLocalFile(
+          filePath,
+          "beats-stems",
+          "audio/wav",
+        );
         stemUrls[name] = url;
 
         stemInserts.push({
           listingId,
           userId,
           stemName: name.charAt(0).toUpperCase() + name.slice(1),
-          stemType: STEM_TYPES[name] ?? 'other',
+          stemType: STEM_TYPES[name] ?? "other",
           fileUrl: url,
           fileSize,
-          format: 'wav',
+          format: "wav",
         });
       }
 
@@ -170,7 +204,9 @@ export async function processUploadedBeat(
           .where(eq(listingStems.listingId, listingId));
 
         await db.insert(listingStems).values(stemInserts);
-        logger.info(`[AudioSeparator] Inserted ${stemInserts.length} stems for listing ${listingId}`);
+        logger.info(
+          `[AudioSeparator] Inserted ${stemInserts.length} stems for listing ${listingId}`,
+        );
       }
 
       result.stemUrls = stemUrls;
@@ -184,7 +220,8 @@ export async function processUploadedBeat(
       .where(eq(listings.id, listingId))
       .limit(1);
 
-    const existingMeta = (listingRow[0]?.metadata as Record<string, unknown>) ?? {};
+    const existingMeta =
+      (listingRow[0]?.metadata as Record<string, unknown>) ?? {};
     const updatedMeta = {
       ...existingMeta,
       mp3Key: result.mp3Key,
@@ -213,7 +250,7 @@ export async function processUploadedBeat(
         .where(eq(listingLicenseTiers.listingId, listingId));
 
       for (const tier of tiers) {
-        const lt = (tier.licenseType ?? '').toLowerCase();
+        const lt = (tier.licenseType ?? "").toLowerCase();
         const existingUrls = (tier.audioUrls as Record<string, string>) ?? {};
         const newUrls: Record<string, string> = { ...existingUrls };
 
@@ -222,7 +259,7 @@ export async function processUploadedBeat(
         if (
           result.stemsAvailable &&
           result.stemUrls &&
-          (lt === 'unlimited' || lt === 'exclusive')
+          (lt === "unlimited" || lt === "exclusive")
         ) {
           for (const [stemName, stemUrl] of Object.entries(result.stemUrls)) {
             newUrls[`stem_${stemName}`] = stemUrl;
@@ -236,7 +273,9 @@ export async function processUploadedBeat(
       }
 
       if (tiers.length > 0) {
-        logger.info(`[AudioSeparator] Updated audioUrls on ${tiers.length} license tier(s)`);
+        logger.info(
+          `[AudioSeparator] Updated audioUrls on ${tiers.length} license tier(s)`,
+        );
       }
     }
 
@@ -245,6 +284,8 @@ export async function processUploadedBeat(
     // Clean up temp files
     try {
       await fsPromises.rm(tmpDir, { recursive: true, force: true });
-    } catch { /* intentional: temp-dir cleanup, rmSync failure is non-fatal */ }
+    } catch {
+      /* intentional: temp-dir cleanup, rmSync failure is non-fatal */
+    }
   }
 }

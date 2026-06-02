@@ -1,17 +1,17 @@
-import React, { useEffect, useRef, useState, useCallback } from 'react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Skeleton } from '@/components/ui/skeleton';
+import React, { useEffect, useRef, useState, useCallback } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { apiRequest } from '@/lib/queryClient';
+} from "@/components/ui/dropdown-menu";
+import { apiRequest } from "@/lib/queryClient";
 import {
   MoreVertical,
   Maximize2,
@@ -27,10 +27,10 @@ import {
   ArrowUp,
   ArrowDown,
   GripVertical,
-} from 'lucide-react';
-import { cn } from '@/lib/utils';
+} from "lucide-react";
+import { cn } from "@/lib/utils";
 
-export type WidgetSize = 'small' | 'medium' | 'large';
+export type WidgetSize = "small" | "medium" | "large";
 
 export interface SmartWidgetConfig {
   id: string;
@@ -59,21 +59,21 @@ export interface SmartWidgetProps {
   loading?: boolean;
   className?: string;
   aiEnhanced?: boolean;
-  trend?: 'up' | 'down' | 'stable';
+  trend?: "up" | "down" | "stable";
   trendValue?: string;
   headerActions?: React.ReactNode;
 }
 
 const sizeStyles: Record<WidgetSize, string> = {
-  small: 'col-span-1',
-  medium: 'col-span-2',
-  large: 'col-span-3',
+  small: "col-span-1",
+  medium: "col-span-2",
+  large: "col-span-3",
 };
 
 const containerStyles: Record<WidgetSize, string> = {
-  small: '',
-  medium: '',
-  large: 'lg:col-span-2',
+  small: "",
+  medium: "",
+  large: "lg:col-span-2",
 };
 
 export function SmartWidget({
@@ -99,21 +99,31 @@ export function SmartWidget({
 
   const trackViewMutation = useMutation({
     mutationFn: async (duration: number) => {
-      const response = await apiRequest('POST', '/api/personalization/track-widget-view', {
-        widgetId: config.id,
-        duration,
-      });
+      const response = await apiRequest(
+        "POST",
+        "/api/personalization/track-widget-view",
+        {
+          widgetId: config.id,
+          duration,
+        },
+      );
       return response.json();
     },
   });
 
   const updateWidgetMutation = useMutation({
     mutationFn: async (updates: Partial<SmartWidgetConfig>) => {
-      const response = await apiRequest('PUT', `/api/personalization/widget/${config.id}`, updates);
+      const response = await apiRequest(
+        "PUT",
+        `/api/personalization/widget/${config.id}`,
+        updates,
+      );
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/personalization/dashboard-layout'] });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/personalization/dashboard-layout"],
+      });
     },
   });
 
@@ -132,7 +142,7 @@ export function SmartWidget({
           setIsVisible(false);
         }
       },
-      { threshold: 0.5 }
+      { threshold: 0.5 },
     );
 
     if (intersectionRef.current) {
@@ -150,10 +160,13 @@ export function SmartWidget({
     };
   }, [config.id]);
 
-  const handleSizeChange = useCallback((newSize: WidgetSize) => {
-    updateWidgetMutation.mutate({ size: newSize });
-    onSizeChange?.(newSize);
-  }, [updateWidgetMutation, onSizeChange]);
+  const handleSizeChange = useCallback(
+    (newSize: WidgetSize) => {
+      updateWidgetMutation.mutate({ size: newSize });
+      onSizeChange?.(newSize);
+    },
+    [updateWidgetMutation, onSizeChange],
+  );
 
   const handleVisibilityChange = useCallback(() => {
     const newVisible = !config.visible;
@@ -167,8 +180,10 @@ export function SmartWidget({
     onPinChange?.(newPinned);
   }, [config.pinned, updateWidgetMutation, onPinChange]);
 
-  const TrendIcon = trend === 'up' ? ArrowUp : trend === 'down' ? ArrowDown : null;
-  const trendColor = trend === 'up' ? 'text-green-500' : trend === 'down' ? 'text-red-500' : '';
+  const TrendIcon =
+    trend === "up" ? ArrowUp : trend === "down" ? ArrowDown : null;
+  const trendColor =
+    trend === "up" ? "text-green-500" : trend === "down" ? "text-red-500" : "";
 
   if (!config.visible) {
     return null;
@@ -180,15 +195,17 @@ export function SmartWidget({
       className={cn(
         sizeStyles[config.size],
         containerStyles[config.size],
-        'transition-all duration-200',
-        className
+        "transition-all duration-200",
+        className,
       )}
     >
-      <Card className={cn(
-        'h-full',
-        config.pinned && 'ring-2 ring-primary/20',
-        aiEnhanced && 'border-purple-200 dark:border-purple-800'
-      )}>
+      <Card
+        className={cn(
+          "h-full",
+          config.pinned && "ring-2 ring-primary/20",
+          aiEnhanced && "border-purple-200 dark:border-purple-800",
+        )}
+      >
         <CardHeader className="pb-2">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2 min-w-0">
@@ -214,7 +231,7 @@ export function SmartWidget({
                   {trendValue}
                 </div>
               )}
-              
+
               {headerActions}
 
               {showControls && (
@@ -225,24 +242,32 @@ export function SmartWidget({
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-48">
-                    <DropdownMenuItem onClick={() => handleSizeChange('small')}>
+                    <DropdownMenuItem onClick={() => handleSizeChange("small")}>
                       <Minimize2 className="h-4 w-4 mr-2" />
                       Small Size
-                      {config.size === 'small' && <Badge className="ml-auto">Active</Badge>}
+                      {config.size === "small" && (
+                        <Badge className="ml-auto">Active</Badge>
+                      )}
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => handleSizeChange('medium')}>
+                    <DropdownMenuItem
+                      onClick={() => handleSizeChange("medium")}
+                    >
                       <Maximize2 className="h-4 w-4 mr-2" />
                       Medium Size
-                      {config.size === 'medium' && <Badge className="ml-auto">Active</Badge>}
+                      {config.size === "medium" && (
+                        <Badge className="ml-auto">Active</Badge>
+                      )}
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => handleSizeChange('large')}>
+                    <DropdownMenuItem onClick={() => handleSizeChange("large")}>
                       <Maximize2 className="h-4 w-4 mr-2" />
                       Large Size
-                      {config.size === 'large' && <Badge className="ml-auto">Active</Badge>}
+                      {config.size === "large" && (
+                        <Badge className="ml-auto">Active</Badge>
+                      )}
                     </DropdownMenuItem>
-                    
+
                     <DropdownMenuSeparator />
-                    
+
                     <DropdownMenuItem onClick={handlePinChange}>
                       {config.pinned ? (
                         <>
@@ -256,16 +281,16 @@ export function SmartWidget({
                         </>
                       )}
                     </DropdownMenuItem>
-                    
+
                     {config.refreshable && onRefresh && (
                       <DropdownMenuItem onClick={onRefresh}>
                         <RefreshCw className="h-4 w-4 mr-2" />
                         Refresh Data
                       </DropdownMenuItem>
                     )}
-                    
+
                     <DropdownMenuSeparator />
-                    
+
                     <DropdownMenuItem onClick={handleVisibilityChange}>
                       <EyeOff className="h-4 w-4 mr-2" />
                       Hide Widget
@@ -275,11 +300,12 @@ export function SmartWidget({
               )}
             </div>
           </div>
-          
+
           {config.avgViewDuration > 0 && showControls && (
             <div className="text-xs text-muted-foreground flex items-center gap-2 mt-1">
               <Clock className="h-3 w-3" />
-              {config.viewCount} views • Avg {Math.round(config.avgViewDuration / 1000)}s
+              {config.viewCount} views • Avg{" "}
+              {Math.round(config.avgViewDuration / 1000)}s
             </div>
           )}
         </CardHeader>
@@ -300,7 +326,11 @@ export function SmartWidget({
   );
 }
 
-export function SmartWidgetSkeleton({ size = 'medium' }: { size?: WidgetSize }) {
+export function SmartWidgetSkeleton({
+  size = "medium",
+}: {
+  size?: WidgetSize;
+}) {
   return (
     <div className={cn(sizeStyles[size], containerStyles[size])}>
       <Card className="h-full">
@@ -336,18 +366,18 @@ export function SmartWidgetGrid({
   gap = 4,
 }: SmartWidgetGridProps) {
   const sortedWidgets = [...widgets]
-    .filter(w => w.visible)
+    .filter((w) => w.visible)
     .sort((a, b) => {
       if (a.pinned !== b.pinned) return a.pinned ? -1 : 1;
       return a.position - b.position;
     });
 
   return (
-    <div 
+    <div
       className={cn(
-        'grid',
+        "grid",
         `grid-cols-1 md:grid-cols-2 lg:grid-cols-${columns}`,
-        `gap-${gap}`
+        `gap-${gap}`,
       )}
       style={{
         gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))`,
@@ -355,9 +385,7 @@ export function SmartWidgetGrid({
       }}
     >
       {sortedWidgets.map((widget) => (
-        <React.Fragment key={widget.id}>
-          {renderWidget(widget)}
-        </React.Fragment>
+        <React.Fragment key={widget.id}>{renderWidget(widget)}</React.Fragment>
       ))}
     </div>
   );

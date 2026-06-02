@@ -1,10 +1,10 @@
-import { Router, Request, Response, RequestHandler } from 'express';
-import { db } from '../db.js';
-import { eq } from 'drizzle-orm';
-import { users } from '@shared/schema';
-import { logger } from '../logger.js';
-import crypto from 'crypto';
-import { requireAuth } from '../middleware/auth.js';
+import { Router, Request, Response, RequestHandler } from "express";
+import { db } from "../db.js";
+import { eq } from "drizzle-orm";
+import { users } from "@shared/schema";
+import { logger } from "../logger.js";
+import crypto from "crypto";
+import { requireAuth } from "../middleware/auth.js";
 
 const router = Router();
 
@@ -23,18 +23,21 @@ interface RecoveryCodeStore {
 }
 
 const generateRecoveryCode = (): string => {
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
   const bytes = crypto.randomBytes(8);
-  let code = '';
+  let code = "";
   for (let i = 0; i < 8; i++) {
-    if (i === 4) code += '-';
+    if (i === 4) code += "-";
     code += chars[bytes[i] % chars.length];
   }
   return code;
 };
 
 const hashCode = (code: string): string => {
-  return crypto.createHash('sha256').update(code.toUpperCase().replace(/-/g, '')).digest('hex');
+  return crypto
+    .createHash("sha256")
+    .update(code.toUpperCase().replace(/-/g, ""))
+    .digest("hex");
 };
 
 async function getStore(userId: string): Promise<RecoveryCodeStore | null> {
@@ -48,14 +51,17 @@ async function getStore(userId: string): Promise<RecoveryCodeStore | null> {
   return (prefs.twoFactorRecoveryCodes as RecoveryCodeStore) ?? null;
 }
 
-async function saveStore(userId: string, store: RecoveryCodeStore): Promise<void> {
+async function saveStore(
+  userId: string,
+  store: RecoveryCodeStore,
+): Promise<void> {
   const [row] = await db
     .select({ preferences: users.preferences })
     .from(users)
     .where(eq(users.id, userId))
     .limit(1);
 
-  const prefs = ((row?.preferences ?? {}) as Record<string, any>);
+  const prefs = (row?.preferences ?? {}) as Record<string, any>;
   prefs.twoFactorRecoveryCodes = store;
 
   await db
@@ -64,7 +70,7 @@ async function saveStore(userId: string, store: RecoveryCodeStore): Promise<void
     .where(eq(users.id, userId));
 }
 
-router.get('/status', async (req: Request, res: Response) => {
+router.get("/status", async (req: Request, res: Response) => {
   try {
     const userId = req.user.id;
     const store = await getStore(userId);
@@ -77,7 +83,7 @@ router.get('/status', async (req: Request, res: Response) => {
       });
     }
 
-    const codesRemaining = store.codes.filter(c => !c.used).length;
+    const codesRemaining = store.codes.filter((c) => !c.used).length;
 
     res.json({
       enabled: true,
@@ -87,12 +93,12 @@ router.get('/status', async (req: Request, res: Response) => {
       lastUsedAt: store.lastUsedAt ?? null,
     });
   } catch (error) {
-    logger.warn({ err: error }, 'Error fetching recovery codes status:');
-    res.status(500).json({ error: 'Failed to fetch recovery codes status' });
+    logger.warn({ err: error }, "Error fetching recovery codes status:");
+    res.status(500).json({ error: "Failed to fetch recovery codes status" });
   }
 });
 
-router.post('/generate', async (req: Request, res: Response) => {
+router.post("/generate", async (req: Request, res: Response) => {
   try {
     const userId = req.user.id;
 
@@ -102,7 +108,7 @@ router.post('/generate', async (req: Request, res: Response) => {
     }
 
     const store: RecoveryCodeStore = {
-      codes: rawCodes.map(code => ({
+      codes: rawCodes.map((code) => ({
         code: hashCode(code),
         used: false,
         usedAt: null,
@@ -118,30 +124,32 @@ router.post('/generate', async (req: Request, res: Response) => {
       generatedAt: store.generatedAt,
     });
   } catch (error) {
-    logger.warn({ err: error }, 'Error generating recovery codes:');
-    res.status(500).json({ error: 'Failed to generate recovery codes' });
+    logger.warn({ err: error }, "Error generating recovery codes:");
+    res.status(500).json({ error: "Failed to generate recovery codes" });
   }
 });
 
-router.post('/verify', async (req: Request, res: Response) => {
+router.post("/verify", async (req: Request, res: Response) => {
   try {
     const userId = req.user.id;
     const { code } = req.body;
 
-    if (!code || typeof code !== 'string') {
-      return res.status(400).json({ error: 'Recovery code is required' });
+    if (!code || typeof code !== "string") {
+      return res.status(400).json({ error: "Recovery code is required" });
     }
 
     const store = await getStore(userId);
     if (!store) {
-      return res.status(400).json({ error: 'No recovery codes set up' });
+      return res.status(400).json({ error: "No recovery codes set up" });
     }
 
     const codeHash = hashCode(code);
-    const match = store.codes.find(c => c.code === codeHash && !c.used);
+    const match = store.codes.find((c) => c.code === codeHash && !c.used);
 
     if (!match) {
-      return res.status(400).json({ error: 'Invalid or already used recovery code' });
+      return res
+        .status(400)
+        .json({ error: "Invalid or already used recovery code" });
     }
 
     match.used = true;
@@ -150,15 +158,15 @@ router.post('/verify', async (req: Request, res: Response) => {
 
     await saveStore(userId, store);
 
-    const codesRemaining = store.codes.filter(c => !c.used).length;
+    const codesRemaining = store.codes.filter((c) => !c.used).length;
 
     res.json({
       success: true,
       codesRemaining,
     });
   } catch (error) {
-    logger.warn({ err: error }, 'Error verifying recovery code:');
-    res.status(500).json({ error: 'Failed to verify recovery code' });
+    logger.warn({ err: error }, "Error verifying recovery code:");
+    res.status(500).json({ error: "Failed to verify recovery code" });
   }
 });
 

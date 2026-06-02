@@ -12,57 +12,76 @@
  *   Step 3 (Day 14): Win-back — "Account paused — come back with 20% off"
  */
 
-import { db } from '../db.js';
-import { dunningState, users } from '@shared/schema';
-import { eq, and, isNull, lte } from 'drizzle-orm';
-import { logger } from '../logger.js';
-import { emailService } from './emailService.js';
+import { db } from "../db.js";
+import { dunningState, users } from "@shared/schema";
+import { eq, and, isNull, lte } from "drizzle-orm";
+import { logger } from "../logger.js";
+import { emailService } from "./emailService.js";
 
 const DUNNING_STEPS: Array<{
   delayDays: number;
   subject: string;
-  urgency: 'low' | 'medium' | 'high' | 'winback';
+  urgency: "low" | "medium" | "high" | "winback";
 }> = [
-  { delayDays: 0, subject: 'Your payment failed — please update your card', urgency: 'low' },
-  { delayDays: 3, subject: 'Reminder: Payment still failing on your Max Booster account', urgency: 'medium' },
-  { delayDays: 7, subject: 'Action required: Your access pauses in 7 days', urgency: 'high' },
-  { delayDays: 14, subject: 'Your account is paused — come back with 20% off', urgency: 'winback' },
+  {
+    delayDays: 0,
+    subject: "Your payment failed — please update your card",
+    urgency: "low",
+  },
+  {
+    delayDays: 3,
+    subject: "Reminder: Payment still failing on your Max Booster account",
+    urgency: "medium",
+  },
+  {
+    delayDays: 7,
+    subject: "Action required: Your access pauses in 7 days",
+    urgency: "high",
+  },
+  {
+    delayDays: 14,
+    subject: "Your account is paused — come back with 20% off",
+    urgency: "winback",
+  },
 ];
 
 function buildDunningEmailHtml(
   firstName: string,
   step: number,
-  updateCardUrl: string
+  updateCardUrl: string,
 ): string {
-  const urgency = DUNNING_STEPS[step]?.urgency ?? 'low';
+  const urgency = DUNNING_STEPS[step]?.urgency ?? "low";
 
   const bannerColor: Record<string, string> = {
-    low: '#f59e0b',
-    medium: '#ef4444',
-    high: '#dc2626',
-    winback: '#7c3aed',
+    low: "#f59e0b",
+    medium: "#ef4444",
+    high: "#dc2626",
+    winback: "#7c3aed",
   };
 
-  const messages: Record<string, { heading: string; body: string; cta: string }> = {
+  const messages: Record<
+    string,
+    { heading: string; body: string; cta: string }
+  > = {
     low: {
       heading: `Hi ${firstName}, there was a problem with your payment`,
       body: `We were unable to process your subscription payment for Max Booster. This is often caused by an expired card or insufficient funds. Please update your payment details to keep your access uninterrupted.`,
-      cta: 'Update Payment Details',
+      cta: "Update Payment Details",
     },
     medium: {
       heading: `${firstName}, your payment is still failing`,
       body: `We've tried to collect your subscription payment again but couldn't complete it. Your account is still active right now — but we need you to update your card to avoid any disruption to your music career tools.`,
-      cta: 'Update My Card Now',
+      cta: "Update My Card Now",
     },
     high: {
       heading: `${firstName}, your access pauses in 7 days`,
       body: `This is an important notice. Your subscription payment has now failed multiple times. If we cannot collect payment in the next 7 days, your account will be paused and you'll lose access to your releases, analytics, and autopilot campaigns. Please act now.`,
-      cta: 'Keep My Access — Update Card',
+      cta: "Keep My Access — Update Card",
     },
     winback: {
       heading: `${firstName}, your account is paused`,
       body: `Your Max Booster account has been paused due to unpaid subscription fees. We'd love to have you back. Reactivate today and get <strong>20% off your first month back</strong> — no code needed, discount applied automatically.`,
-      cta: 'Reactivate My Account',
+      cta: "Reactivate My Account",
     },
   };
 
@@ -99,7 +118,9 @@ class DunningService {
         .limit(1);
 
       if (existing.length > 0) {
-        logger.info(`[Dunning] Sequence already started for invoice ${invoiceId}`);
+        logger.info(
+          `[Dunning] Sequence already started for invoice ${invoiceId}`,
+        );
         return;
       }
 
@@ -114,20 +135,25 @@ class DunningService {
 
       await this.sendStep(userId, invoiceId, 0);
     } catch (err) {
-      logger.warn({ err: err }, '[Dunning] Failed to start sequence:');
+      logger.warn({ err: err }, "[Dunning] Failed to start sequence:");
     }
   }
 
-  async resolveSequence(invoiceId: string, reason: 'paid' | 'cancelled'): Promise<void> {
+  async resolveSequence(
+    invoiceId: string,
+    reason: "paid" | "cancelled",
+  ): Promise<void> {
     try {
       await db
         .update(dunningState)
         .set({ resolvedAt: new Date(), resolvedReason: reason })
         .where(eq(dunningState.stripeInvoiceId, invoiceId));
 
-      logger.info(`[Dunning] Resolved sequence for invoice ${invoiceId} (${reason})`);
+      logger.info(
+        `[Dunning] Resolved sequence for invoice ${invoiceId} (${reason})`,
+      );
     } catch (err) {
-      logger.warn({ err: err }, '[Dunning] Failed to resolve sequence:');
+      logger.warn({ err: err }, "[Dunning] Failed to resolve sequence:");
     }
   }
 
@@ -136,7 +162,7 @@ class DunningService {
       // Keep existing entry point, call paged version
       await this.processPendingStepsPaged(50);
     } catch (err) {
-      logger.warn({ err: err }, '[Dunning] Failed to process pending steps:');
+      logger.warn({ err: err }, "[Dunning] Failed to process pending steps:");
     }
   }
 
@@ -150,8 +176,8 @@ class DunningService {
         .where(
           and(
             isNull(dunningState.resolvedAt),
-            lte(dunningState.nextEmailAt, now)
-          )
+            lte(dunningState.nextEmailAt, now),
+          ),
         )
         .limit(limit);
 
@@ -161,17 +187,26 @@ class DunningService {
         if (nextStep >= DUNNING_STEPS.length) {
           await db
             .update(dunningState)
-            .set({ resolvedAt: new Date(), resolvedReason: 'sequence_complete' })
+            .set({
+              resolvedAt: new Date(),
+              resolvedReason: "sequence_complete",
+            })
             .where(eq(dunningState.id, record.id));
           processed++;
           continue;
         }
 
-        await this.sendStep(record.userId, record.stripeInvoiceId, record.currentStep);
+        await this.sendStep(
+          record.userId,
+          record.stripeInvoiceId,
+          record.currentStep,
+        );
 
         const nextStepConfig = DUNNING_STEPS[nextStep];
         const nextEmailAt = new Date();
-        nextEmailAt.setDate(nextEmailAt.getDate() + (nextStepConfig?.delayDays ?? 0));
+        nextEmailAt.setDate(
+          nextEmailAt.getDate() + (nextStepConfig?.delayDays ?? 0),
+        );
 
         await db
           .update(dunningState)
@@ -181,17 +216,28 @@ class DunningService {
       }
       return processed;
     } catch (err) {
-      logger.warn({ err: err }, '[Dunning] Failed to process pending steps paged:');
+      logger.warn(
+        { err: err },
+        "[Dunning] Failed to process pending steps paged:",
+      );
       return 0;
     }
   }
 
-  private async sendStep(userId: string, invoiceId: string, step: number): Promise<void> {
+  private async sendStep(
+    userId: string,
+    invoiceId: string,
+    step: number,
+  ): Promise<void> {
     const stepConfig = DUNNING_STEPS[step];
     if (!stepConfig) return;
 
     const userRows = await db
-      .select({ email: users.email, firstName: users.firstName, subscriptionTier: users.subscriptionTier })
+      .select({
+        email: users.email,
+        firstName: users.firstName,
+        subscriptionTier: users.subscriptionTier,
+      })
       .from(users)
       .where(eq(users.id, userId))
       .limit(1);
@@ -199,18 +245,16 @@ class DunningService {
     if (!userRows.length || !userRows[0].email) return;
 
     const { email, firstName } = userRows[0];
-    const displayName = firstName ?? email.split('@')[0];
-    const updateCardUrl = `${process.env.APP_URL ?? 'https://maxbooster.app'}/settings/billing?utm_source=dunning&utm_step=${step}`;
+    const displayName = firstName ?? email.split("@")[0];
+    const updateCardUrl = `${process.env.APP_URL ?? "https://maxbooster.app"}/settings/billing?utm_source=dunning&utm_step=${step}`;
 
     const html = buildDunningEmailHtml(displayName, step, updateCardUrl);
 
-    await emailService.sendTransactional(
-      email,
-      stepConfig.subject,
-      html
-    );
+    await emailService.sendTransactional(email, stepConfig.subject, html);
 
-    logger.info(`[Dunning] Step ${step} email sent to ${email} for invoice ${invoiceId}`);
+    logger.info(
+      `[Dunning] Step ${step} email sent to ${email} for invoice ${invoiceId}`,
+    );
   }
 }
 

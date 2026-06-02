@@ -1,25 +1,42 @@
-import { useState, useEffect, useCallback } from 'react';
-import { Play, Square, Plus, ChevronDown, MoreHorizontal, Grid3X3 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { useState, useEffect, useCallback } from "react";
+import {
+  Play,
+  Square,
+  Plus,
+  ChevronDown,
+  MoreHorizontal,
+  Grid3X3,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+} from "@/components/ui/dropdown-menu";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Input } from '@/components/ui/input';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { studioOneTheme } from '@/lib/studioOneTheme';
-import { useStudioStore, type LauncherClip, type LauncherScene, type LauncherQuantize } from '@/lib/studioStore';
-import { cn } from '@/lib/utils';
+} from "@/components/ui/select";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Input } from "@/components/ui/input";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { studioOneTheme } from "@/lib/studioOneTheme";
+import {
+  useStudioStore,
+  type LauncherClip,
+  type LauncherScene,
+  type LauncherQuantize,
+} from "@/lib/studioStore";
+import { cn } from "@/lib/utils";
 
 interface Track {
   id: string;
@@ -78,8 +95,8 @@ function ClipCell({
       <button
         onClick={handleClick}
         className={cn(
-          'w-full h-full rounded-md transition-all relative overflow-hidden',
-          clip.isPlaying && 'ring-2 ring-green-500 animate-pulse'
+          "w-full h-full rounded-md transition-all relative overflow-hidden",
+          clip.isPlaying && "ring-2 ring-green-500 animate-pulse",
         )}
         style={{
           background: clip.isPlaying
@@ -87,8 +104,8 @@ function ClipCell({
             : `linear-gradient(180deg, ${clip.color}30 0%, ${clip.color}15 100%)`,
           border: clip.isQueued
             ? `2px solid ${studioOneTheme.colors.accent.yellow}`
-            : `1px solid ${clip.isPlaying ? clip.color : clip.color + '50'}`,
-          boxShadow: clip.isPlaying ? `0 0 12px ${clip.color}40` : 'none',
+            : `1px solid ${clip.isPlaying ? clip.color : clip.color + "50"}`,
+          boxShadow: clip.isPlaying ? `0 0 12px ${clip.color}40` : "none",
         }}
       >
         {clip.isPlaying && (
@@ -110,16 +127,19 @@ function ClipCell({
           >
             {clip.name}
           </span>
-          <span className="text-[8px]" style={{ color: studioOneTheme.colors.text.muted }}>
+          <span
+            className="text-[8px]"
+            style={{ color: studioOneTheme.colors.text.muted }}
+          >
             {clip.duration} beats
           </span>
         </div>
 
         <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 bg-black/40 transition-opacity">
           {clip.isPlaying ? (
-            <Square className="h-5 w-5" style={{ color: '#fff' }} />
+            <Square className="h-5 w-5" style={{ color: "#fff" }} />
           ) : (
-            <Play className="h-5 w-5" style={{ color: '#fff' }} />
+            <Play className="h-5 w-5" style={{ color: "#fff" }} />
           )}
         </div>
       </button>
@@ -173,7 +193,9 @@ function SceneRow({
   };
 
   const hasClips = clips.some((c) => c.slotIndex === scene.index);
-  const hasPlayingClips = clips.some((c) => c.slotIndex === scene.index && c.isPlaying);
+  const hasPlayingClips = clips.some(
+    (c) => c.slotIndex === scene.index && c.isPlaying,
+  );
 
   return (
     <div
@@ -199,7 +221,10 @@ function SceneRow({
                 size="sm"
                 onClick={onSceneTrigger}
                 disabled={!hasClips}
-                className={cn('h-6 w-6 p-0', hasPlayingClips && 'bg-green-500/20')}
+                className={cn(
+                  "h-6 w-6 p-0",
+                  hasPlayingClips && "bg-green-500/20",
+                )}
               >
                 <Play
                   className="h-3 w-3"
@@ -220,7 +245,7 @@ function SceneRow({
             value={editName}
             onChange={(e) => setEditName(e.target.value)}
             onBlur={handleNameSubmit}
-            onKeyDown={(e) => e.key === 'Enter' && handleNameSubmit()}
+            onKeyDown={(e) => e.key === "Enter" && handleNameSubmit()}
             className="h-5 text-[9px] px-1"
             autoFocus
           />
@@ -244,16 +269,24 @@ function SceneRow({
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent>
-            <DropdownMenuItem onClick={onRemoveScene}>Delete Scene</DropdownMenuItem>
+            <DropdownMenuItem onClick={onRemoveScene}>
+              Delete Scene
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
 
       <div className="flex flex-1">
         {tracks.map((track) => {
-          const clip = clips.find((c) => c.trackId === track.id && c.slotIndex === scene.index);
+          const clip = clips.find(
+            (c) => c.trackId === track.id && c.slotIndex === scene.index,
+          );
           return (
-            <div key={track.id} className="shrink-0 p-0.5" style={{ width: 80 }}>
+            <div
+              key={track.id}
+              className="shrink-0 p-0.5"
+              style={{ width: 80 }}
+            >
               <ClipCell
                 clip={clip}
                 trackColor={track.color}
@@ -279,13 +312,22 @@ function SceneRow({
           size="sm"
           onClick={() => {
             clips
-              .filter((c) => c.slotIndex === scene.index && (c.isPlaying || c.isQueued))
+              .filter(
+                (c) =>
+                  c.slotIndex === scene.index && (c.isPlaying || c.isQueued),
+              )
               .forEach((c) => onClipStop(c.id));
           }}
           className="h-6 w-6 p-0"
-          disabled={!hasPlayingClips && !clips.some((c) => c.slotIndex === scene.index && c.isQueued)}
+          disabled={
+            !hasPlayingClips &&
+            !clips.some((c) => c.slotIndex === scene.index && c.isQueued)
+          }
         >
-          <Square className="h-3 w-3" style={{ color: studioOneTheme.colors.text.muted }} />
+          <Square
+            className="h-3 w-3"
+            style={{ color: studioOneTheme.colors.text.muted }}
+          />
         </Button>
       </div>
     </div>
@@ -313,20 +355,21 @@ export function LauncherPanel({ tracks, className }: LauncherPanelProps) {
   const handleAddClip = useCallback(
     (trackId: string, slotIndex: number) => {
       const track = tracks.find((t) => t.id === trackId);
-      const clipNum = launcherClips.filter((c) => c.trackId === trackId).length + 1;
+      const clipNum =
+        launcherClips.filter((c) => c.trackId === trackId).length + 1;
       addLauncherClip({
         trackId,
         slotIndex,
         name: `Clip ${clipNum}`,
-        color: track?.color || '#4ade80',
+        color: track?.color || "#4ade80",
         duration: 4,
       });
     },
-    [tracks, launcherClips, addLauncherClip]
+    [tracks, launcherClips, addLauncherClip],
   );
 
   const handleAddScene = useCallback(() => {
-    const colors = ['#8b5cf6', '#ec4899', '#06b6d4', '#f59e0b', '#10b981'];
+    const colors = ["#8b5cf6", "#ec4899", "#06b6d4", "#f59e0b", "#10b981"];
     const color = colors[launcherScenes.length % colors.length];
     addLauncherScene({ color });
   }, [launcherScenes, addLauncherScene]);
@@ -334,27 +377,36 @@ export function LauncherPanel({ tracks, className }: LauncherPanelProps) {
   useEffect(() => {
     const interval = setInterval(() => {
       const state = useStudioStore.getState();
-      if (state.queuedLauncherClips.length > 0 && state.launcherQuantize !== '1beat') {
+      if (
+        state.queuedLauncherClips.length > 0 &&
+        state.launcherQuantize !== "1beat"
+      ) {
         state.queuedLauncherClips.forEach((clipId) => {
           const clip = state.launcherClips.find((c) => c.id === clipId);
           if (clip) {
             const trackClipsToStop = state.launcherClips.filter(
-              (c) => c.trackId === clip.trackId && c.id !== clipId && c.isPlaying
+              (c) =>
+                c.trackId === clip.trackId && c.id !== clipId && c.isPlaying,
             );
-            
+
             useStudioStore.setState((s) => ({
               launcherClips: s.launcherClips.map((c) => {
-                if (c.id === clipId) return { ...c, isPlaying: true, isQueued: false };
+                if (c.id === clipId)
+                  return { ...c, isPlaying: true, isQueued: false };
                 if (trackClipsToStop.map((tc) => tc.id).includes(c.id)) {
                   return { ...c, isPlaying: false, isQueued: false };
                 }
                 return c;
               }),
               activeLauncherClips: [
-                ...s.activeLauncherClips.filter((id) => !trackClipsToStop.map((c) => c.id).includes(id)),
+                ...s.activeLauncherClips.filter(
+                  (id) => !trackClipsToStop.map((c) => c.id).includes(id),
+                ),
                 clipId,
               ],
-              queuedLauncherClips: s.queuedLauncherClips.filter((id) => id !== clipId),
+              queuedLauncherClips: s.queuedLauncherClips.filter(
+                (id) => id !== clipId,
+              ),
             }));
           }
         });
@@ -368,7 +420,7 @@ export function LauncherPanel({ tracks, className }: LauncherPanelProps) {
 
   return (
     <div
-      className={cn('flex flex-col border-r', className)}
+      className={cn("flex flex-col border-r", className)}
       style={{
         width: Math.max(320, 70 + tracks.length * 80 + 40),
         background: studioOneTheme.colors.bg.primary,
@@ -384,7 +436,10 @@ export function LauncherPanel({ tracks, className }: LauncherPanelProps) {
         }}
       >
         <div className="flex items-center gap-2">
-          <Grid3X3 className="h-4 w-4" style={{ color: studioOneTheme.colors.text.muted }} />
+          <Grid3X3
+            className="h-4 w-4"
+            style={{ color: studioOneTheme.colors.text.muted }}
+          />
           <span
             className="text-xs font-medium"
             style={{ color: studioOneTheme.colors.text.primary }}
@@ -449,7 +504,10 @@ export function LauncherPanel({ tracks, className }: LauncherPanelProps) {
             borderColor: studioOneTheme.colors.border.primary,
           }}
         >
-          <span className="text-[9px]" style={{ color: studioOneTheme.colors.text.muted }}>
+          <span
+            className="text-[9px]"
+            style={{ color: studioOneTheme.colors.text.muted }}
+          >
             Scene
           </span>
         </div>
@@ -486,7 +544,10 @@ export function LauncherPanel({ tracks, className }: LauncherPanelProps) {
             borderColor: studioOneTheme.colors.border.primary,
           }}
         >
-          <span className="text-[8px]" style={{ color: studioOneTheme.colors.text.muted }}>
+          <span
+            className="text-[8px]"
+            style={{ color: studioOneTheme.colors.text.muted }}
+          >
             Stop
           </span>
         </div>
@@ -505,7 +566,9 @@ export function LauncherPanel({ tracks, className }: LauncherPanelProps) {
               onClipStop={stopClip}
               onAddClip={(trackId) => handleAddClip(trackId, scene.index)}
               onRemoveClip={removeLauncherClip}
-              onSceneNameChange={(name) => updateLauncherScene(scene.id, { name })}
+              onSceneNameChange={(name) =>
+                updateLauncherScene(scene.id, { name })
+              }
               onRemoveScene={() => removeLauncherScene(scene.index)}
             />
           ))}
@@ -515,8 +578,14 @@ export function LauncherPanel({ tracks, className }: LauncherPanelProps) {
             style={{ borderColor: studioOneTheme.colors.border.subtle }}
             onClick={handleAddScene}
           >
-            <Plus className="h-4 w-4 mr-2" style={{ color: studioOneTheme.colors.text.muted }} />
-            <span className="text-[10px]" style={{ color: studioOneTheme.colors.text.muted }}>
+            <Plus
+              className="h-4 w-4 mr-2"
+              style={{ color: studioOneTheme.colors.text.muted }}
+            />
+            <span
+              className="text-[10px]"
+              style={{ color: studioOneTheme.colors.text.muted }}
+            >
               Add Scene
             </span>
           </div>
@@ -528,13 +597,13 @@ export function LauncherPanel({ tracks, className }: LauncherPanelProps) {
 
 function getQuantizeDelayMs(quantize: LauncherQuantize): number {
   switch (quantize) {
-    case '1beat':
+    case "1beat":
       return 500;
-    case '1bar':
+    case "1bar":
       return 2000;
-    case '2bars':
+    case "2bars":
       return 4000;
-    case '4bars':
+    case "4bars":
       return 8000;
     default:
       return 2000;

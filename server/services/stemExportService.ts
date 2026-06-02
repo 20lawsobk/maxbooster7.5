@@ -1,6 +1,6 @@
 /**
  * Stem Export Service - Professional audio stem export system
- * 
+ *
  * Features:
  * - Per-track rendering to individual audio files
  * - Multi-track batch export with progress tracking
@@ -12,17 +12,22 @@
  * - Archive creation (ZIP with all stems)
  */
 
-import { randomUUID } from 'crypto';
-import path from 'path';
-import fs from 'fs';
-import fsPromises from 'fs/promises';
-import archiver from 'archiver';
-import os from 'os';
-import { db } from '../db.js';
-import { stemExports, studioTracks, projects, audioClips } from '@shared/schema';
-import { eq, and, inArray } from 'drizzle-orm';
-import { storageService } from './storageService.js';
-import { logger } from '../logger.js';
+import { randomUUID } from "crypto";
+import path from "path";
+import fs from "fs";
+import fsPromises from "fs/promises";
+import archiver from "archiver";
+import os from "os";
+import { db } from "../db.js";
+import {
+  stemExports,
+  studioTracks,
+  projects,
+  audioClips,
+} from "@shared/schema";
+import { eq, and, inArray } from "drizzle-orm";
+import { storageService } from "./storageService.js";
+import { logger } from "../logger.js";
 import {
   AUDIO_FORMATS,
   SAMPLE_RATES,
@@ -32,7 +37,7 @@ import {
   isSupportedBitDepth,
   type SampleRate,
   type BitDepth,
-} from '../../shared/audioConstants.js';
+} from "../../shared/audioConstants.js";
 
 let ffmpeg: Record<string, unknown> | null = null;
 let ffmpegAvailable = false;
@@ -40,27 +45,30 @@ let ffmpegAvailable = false;
 async function initializeFfmpeg() {
   if (ffmpegAvailable) return true;
   try {
-    const fluentFfmpeg = await import('fluent-ffmpeg');
+    const fluentFfmpeg = await import("fluent-ffmpeg");
     ffmpeg = fluentFfmpeg.default;
     try {
-      const ffmpegStatic = await import('ffmpeg-static');
+      const ffmpegStatic = await import("ffmpeg-static");
       if (ffmpegStatic.default) {
         ffmpeg.setFfmpegPath(ffmpegStatic.default);
       }
     } catch {
-      logger.warn('ffmpeg-static not available, using system ffmpeg');
+      logger.warn("ffmpeg-static not available, using system ffmpeg");
     }
     ffmpegAvailable = true;
     return true;
   } catch (error) {
-    logger.warn({ err: error }, 'FFmpeg not available - stem export features will be limited:');
+    logger.warn(
+      { err: error },
+      "FFmpeg not available - stem export features will be limited:",
+    );
     return false;
   }
 }
 
-export type ExportFormat = 'wav' | 'flac' | 'mp3' | 'aac';
-export type NormalizationType = 'peak' | 'rms' | 'lufs' | 'none';
-export type ExportQuality = 'low' | 'medium' | 'high' | 'lossless';
+export type ExportFormat = "wav" | "flac" | "mp3" | "aac";
+export type NormalizationType = "peak" | "rms" | "lufs" | "none";
+export type ExportQuality = "low" | "medium" | "high" | "lossless";
 
 export interface StemExportOptions {
   projectId: string;
@@ -81,7 +89,7 @@ export interface StemExportOptions {
 export interface StemExportResult {
   exportId: string;
   jobId: string;
-  status: 'pending' | 'processing' | 'completed' | 'failed';
+  status: "pending" | "processing" | "completed" | "failed";
   statusUrl: string;
 }
 
@@ -122,26 +130,31 @@ interface TrackAudioData {
 }
 
 class StemExportService {
-  private readonly SUPPORTED_FORMATS: ExportFormat[] = ['wav', 'flac', 'mp3', 'aac'];
+  private readonly SUPPORTED_FORMATS: ExportFormat[] = [
+    "wav",
+    "flac",
+    "mp3",
+    "aac",
+  ];
   private readonly FORMAT_EXTENSIONS: Record<ExportFormat, string> = {
-    wav: 'wav',
-    flac: 'flac',
-    mp3: 'mp3',
-    aac: 'm4a',
+    wav: "wav",
+    flac: "flac",
+    mp3: "mp3",
+    aac: "m4a",
   };
 
   private readonly FORMAT_CONTENT_TYPES: Record<ExportFormat, string> = {
-    wav: 'audio/wav',
-    flac: 'audio/flac',
-    mp3: 'audio/mpeg',
-    aac: 'audio/aac',
+    wav: "audio/wav",
+    flac: "audio/flac",
+    mp3: "audio/mpeg",
+    aac: "audio/aac",
   };
 
   private readonly DEFAULT_BITRATES: Record<ExportQuality, string> = {
-    low: '128k',
-    medium: '192k',
-    high: '256k',
-    lossless: '320k',
+    low: "128k",
+    medium: "192k",
+    high: "256k",
+    lossless: "320k",
   };
 
   async startStemExport(options: StemExportOptions): Promise<StemExportResult> {
@@ -153,23 +166,25 @@ class StemExportService {
       format,
       sampleRate = SAMPLE_RATES.SR_48000,
       bitDepth = BIT_DEPTHS.BD_24,
-      bitrate = '320k',
+      bitrate = "320k",
       normalize = false,
-      normalizationType = 'none',
+      normalizationType = "none",
       normalizeTargetLevel = -14,
       includeEffects = true,
       includeMasterBus = false,
     } = options;
 
     if (!this.SUPPORTED_FORMATS.includes(format)) {
-      throw new Error(`Unsupported format: ${format}. Supported: ${this.SUPPORTED_FORMATS.join(', ')}`);
+      throw new Error(
+        `Unsupported format: ${format}. Supported: ${this.SUPPORTED_FORMATS.join(", ")}`,
+      );
     }
 
     if (!isSupportedSampleRate(sampleRate)) {
       throw new Error(`Unsupported sample rate: ${sampleRate}`);
     }
 
-    if (format === 'wav' && !isSupportedBitDepth(bitDepth)) {
+    if (format === "wav" && !isSupportedBitDepth(bitDepth)) {
       throw new Error(`Unsupported bit depth: ${bitDepth}`);
     }
 
@@ -178,22 +193,24 @@ class StemExportService {
     });
 
     if (!project) {
-      throw new Error('Project not found or unauthorized');
+      throw new Error("Project not found or unauthorized");
     }
 
     const tracks = await db.query.studioTracks.findMany({
       where: and(
         eq(studioTracks.projectId, projectId),
-        trackIds.length > 0 ? inArray(studioTracks.id, trackIds) : undefined
+        trackIds.length > 0 ? inArray(studioTracks.id, trackIds) : undefined,
       ),
     });
 
     if (tracks.length === 0) {
-      throw new Error('No tracks found to export');
+      throw new Error("No tracks found to export");
     }
 
     const jobId = randomUUID();
-    const generatedExportName = exportName || `${project.title}_stems_${new Date().toISOString().slice(0, 10)}`;
+    const generatedExportName =
+      exportName ||
+      `${project.title}_stems_${new Date().toISOString().slice(0, 10)}`;
 
     const [exportRecord] = await db
       .insert(stemExports)
@@ -202,18 +219,18 @@ class StemExportService {
         userId,
         jobId,
         exportName: generatedExportName,
-        trackIds: trackIds.length > 0 ? trackIds : tracks.map(t => t.id),
+        trackIds: trackIds.length > 0 ? trackIds : tracks.map((t) => t.id),
         exportFormat: format,
         sampleRate,
         bitDepth,
-        bitrate: ['mp3', 'aac'].includes(format) ? bitrate : null,
+        bitrate: ["mp3", "aac"].includes(format) ? bitrate : null,
         normalize,
         normalizationType: normalize ? normalizationType : null,
         normalizeTargetLevel: normalize ? normalizeTargetLevel : null,
         includeEffects,
         includeMasterBus,
         fileCount: tracks.length + (includeMasterBus ? 1 : 0),
-        status: 'pending',
+        status: "pending",
         progress: 0,
         metadata: {
           projectTitle: project.title,
@@ -227,7 +244,7 @@ class StemExportService {
     return {
       exportId: exportRecord.id,
       jobId,
-      status: 'pending',
+      status: "pending",
       statusUrl: `/api/studio/projects/${projectId}/stems/status/${exportRecord.id}`,
     };
   }
@@ -235,16 +252,16 @@ class StemExportService {
   private async processExportAsync(
     exportId: string,
     options: StemExportOptions,
-    tracks: Record<string, unknown>[]
+    tracks: Record<string, unknown>[],
   ): Promise<void> {
     const tempDir = path.join(os.tmpdir(), `stem_export_${exportId}`);
-    
+
     try {
       await fsPromises.mkdir(tempDir, { recursive: true });
 
       await db
         .update(stemExports)
-        .set({ status: 'processing', progress: 0 })
+        .set({ status: "processing", progress: 0 })
         .where(eq(stemExports.id, exportId));
 
       const individualFiles: IndividualStemFile[] = [];
@@ -265,11 +282,7 @@ class StemExportService {
           .where(eq(stemExports.id, exportId));
 
         try {
-          const stemFile = await this.renderTrackStem(
-            track,
-            options,
-            tempDir
-          );
+          const stemFile = await this.renderTrackStem(track, options, tempDir);
 
           if (stemFile) {
             individualFiles.push(stemFile);
@@ -286,7 +299,7 @@ class StemExportService {
           .update(stemExports)
           .set({
             progress: 95,
-            currentTrack: 'Master Bus',
+            currentTrack: "Master Bus",
           })
           .where(eq(stemExports.id, exportId));
 
@@ -294,7 +307,7 @@ class StemExportService {
           const masterFile = await this.renderMasterBus(
             options.projectId,
             options,
-            tempDir
+            tempDir,
           );
 
           if (masterFile) {
@@ -303,7 +316,7 @@ class StemExportService {
             totalFileSize += masterFile.fileSize;
           }
         } catch (error: unknown) {
-          logger.warn({ err: error }, 'Error rendering master bus:');
+          logger.warn({ err: error }, "Error rendering master bus:");
         }
       }
 
@@ -311,13 +324,13 @@ class StemExportService {
         exportId,
         individualFiles,
         options,
-        tempDir
+        tempDir,
       );
 
       await db
         .update(stemExports)
         .set({
-          status: 'completed',
+          status: "completed",
           progress: 100,
           currentTrack: null,
           individualFiles,
@@ -329,15 +342,18 @@ class StemExportService {
         })
         .where(eq(stemExports.id, exportId));
 
-      logger.info(`✅ Stem export ${exportId} completed: ${individualFiles.length} files`);
+      logger.info(
+        `✅ Stem export ${exportId} completed: ${individualFiles.length} files`,
+      );
     } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      const errorMessage =
+        error instanceof Error ? error.message : "Unknown error occurred";
       logger.warn({ err: error }, `Stem export ${exportId} failed:`);
 
       await db
         .update(stemExports)
         .set({
-          status: 'failed',
+          status: "failed",
           errorMessage,
           progress: 0,
           currentTrack: null,
@@ -347,7 +363,7 @@ class StemExportService {
       try {
         await fsPromises.rm(tempDir, { recursive: true, force: true });
       } catch (cleanupError: unknown) {
-        logger.warn('Failed to cleanup temp directory:', cleanupError);
+        logger.warn("Failed to cleanup temp directory:", cleanupError);
       }
     }
   }
@@ -355,7 +371,7 @@ class StemExportService {
   private async renderTrackStem(
     track: Record<string, unknown>,
     options: StemExportOptions,
-    tempDir: string
+    tempDir: string,
   ): Promise<IndividualStemFile | null> {
     const clips = await db.query.audioClips.findMany({
       where: eq(audioClips.trackId, track.id),
@@ -378,16 +394,16 @@ class StemExportService {
         await this.mixAndRenderClips(clips, track, outputPath, options);
       }
 
-      if (options.normalize && options.normalizationType !== 'none') {
+      if (options.normalize && options.normalizationType !== "none") {
         await this.normalizeAudio(outputPath, options);
       }
 
       const fileBuffer = await fsPromises.readFile(outputPath);
       const storageKey = await storageService.uploadFile(
         fileBuffer,
-        'stems',
+        "stems",
         fileName,
-        this.FORMAT_CONTENT_TYPES[options.format]
+        this.FORMAT_CONTENT_TYPES[options.format],
       );
 
       const stats = await fsPromises.stat(outputPath);
@@ -402,7 +418,10 @@ class StemExportService {
         duration,
       };
     } catch (error: unknown) {
-      logger.warn({ err: error }, `Failed to render stem for track ${track.name}:`);
+      logger.warn(
+        { err: error },
+        `Failed to render stem for track ${track.name}:`,
+      );
       return null;
     }
   }
@@ -410,11 +429,13 @@ class StemExportService {
   private async createEmptyStem(
     track: Record<string, unknown>,
     options: StemExportOptions,
-    tempDir: string
+    tempDir: string,
   ): Promise<IndividualStemFile> {
     const hasFFmpeg = await initializeFfmpeg();
     if (!hasFFmpeg) {
-      throw new Error('FFmpeg is not available - stem export features are disabled');
+      throw new Error(
+        "FFmpeg is not available - stem export features are disabled",
+      );
     }
     const sanitizedName = this.sanitizeFileName(track.name);
     const extension = this.FORMAT_EXTENSIONS[options.format];
@@ -423,24 +444,24 @@ class StemExportService {
 
     await new Promise<void>((resolve, reject) => {
       ffmpeg()
-        .input('anullsrc=r=' + (options.sampleRate || 48000) + ':cl=stereo')
-        .inputFormat('lavfi')
+        .input("anullsrc=r=" + (options.sampleRate || 48000) + ":cl=stereo")
+        .inputFormat("lavfi")
         .duration(1)
         .audioCodec(this.getAudioCodec(options.format, options.bitDepth))
         .audioFrequency(options.sampleRate || 48000)
         .audioChannels(2)
         .outputOptions(this.getOutputOptions(options))
-        .on('end', () => resolve())
-        .on('error', reject)
+        .on("end", () => resolve())
+        .on("error", reject)
         .save(outputPath);
     });
 
     const fileBuffer = await fsPromises.readFile(outputPath);
     const storageKey = await storageService.uploadFile(
       fileBuffer,
-      'stems',
+      "stems",
       fileName,
-      this.FORMAT_CONTENT_TYPES[options.format]
+      this.FORMAT_CONTENT_TYPES[options.format],
     );
 
     const stats = await fsPromises.stat(outputPath);
@@ -458,22 +479,24 @@ class StemExportService {
   private async renderSingleClip(
     clip: Record<string, unknown>,
     outputPath: string,
-    options: StemExportOptions
+    options: StemExportOptions,
   ): Promise<void> {
     const hasFFmpeg = await initializeFfmpeg();
     if (!hasFFmpeg) {
-      throw new Error('FFmpeg is not available - stem export features are disabled');
+      throw new Error(
+        "FFmpeg is not available - stem export features are disabled",
+      );
     }
     let inputPath: string;
 
-    if (clip.filePath?.startsWith('/') || clip.filePath?.startsWith('./')) {
+    if (clip.filePath?.startsWith("/") || clip.filePath?.startsWith("./")) {
       inputPath = clip.filePath;
     } else if (clip.filePath) {
       const buffer = await storageService.downloadFile(clip.filePath);
       inputPath = path.join(os.tmpdir(), `clip_${clip.id}.wav`);
       await fsPromises.writeFile(inputPath, buffer);
     } else {
-      throw new Error('Clip has no audio file');
+      throw new Error("Clip has no audio file");
     }
 
     await new Promise<void>((resolve, reject) => {
@@ -488,8 +511,8 @@ class StemExportService {
       }
 
       command
-        .on('end', () => resolve())
-        .on('error', reject)
+        .on("end", () => resolve())
+        .on("error", reject)
         .save(outputPath);
     });
   }
@@ -498,23 +521,28 @@ class StemExportService {
     clips: unknown[],
     track: Record<string, unknown>,
     outputPath: string,
-    options: StemExportOptions
+    options: StemExportOptions,
   ): Promise<void> {
     const hasFFmpeg = await initializeFfmpeg();
     if (!hasFFmpeg) {
-      throw new Error('FFmpeg is not available - stem export features are disabled');
+      throw new Error(
+        "FFmpeg is not available - stem export features are disabled",
+      );
     }
     const tempClipPaths: string[] = [];
 
     for (const clip of clips) {
       if (clip.filePath) {
         let clipPath: string;
-        
-        if (clip.filePath.startsWith('/') || clip.filePath.startsWith('./')) {
+
+        if (clip.filePath.startsWith("/") || clip.filePath.startsWith("./")) {
           clipPath = clip.filePath;
         } else {
           const buffer = await storageService.downloadFile(clip.filePath);
-          clipPath = path.join(os.tmpdir(), `clip_${clip.id}_${randomUUID()}.wav`);
+          clipPath = path.join(
+            os.tmpdir(),
+            `clip_${clip.id}_${randomUUID()}.wav`,
+          );
           await fsPromises.writeFile(clipPath, buffer);
         }
         tempClipPaths.push(clipPath);
@@ -522,24 +550,28 @@ class StemExportService {
     }
 
     if (tempClipPaths.length === 0) {
-      throw new Error('No clip audio files found');
+      throw new Error("No clip audio files found");
     }
 
     if (tempClipPaths.length === 1) {
-      await this.renderSingleClip({ filePath: tempClipPaths[0] }, outputPath, options);
+      await this.renderSingleClip(
+        { filePath: tempClipPaths[0] },
+        outputPath,
+        options,
+      );
       return;
     }
 
     await new Promise<void>((resolve, reject) => {
       let command = ffmpeg();
 
-      tempClipPaths.forEach(clipPath => {
+      tempClipPaths.forEach((clipPath) => {
         command = command.input(clipPath);
       });
 
-      const filterComplex = tempClipPaths
-        .map((_, i) => `[${i}:a]`)
-        .join('') + `amix=inputs=${tempClipPaths.length}:duration=longest:dropout_transition=0`;
+      const filterComplex =
+        tempClipPaths.map((_, i) => `[${i}:a]`).join("") +
+        `amix=inputs=${tempClipPaths.length}:duration=longest:dropout_transition=0`;
 
       command
         .complexFilter(filterComplex)
@@ -547,8 +579,8 @@ class StemExportService {
         .audioFrequency(options.sampleRate || 48000)
         .audioChannels(2)
         .outputOptions(this.getOutputOptions(options))
-        .on('end', () => resolve())
-        .on('error', reject)
+        .on("end", () => resolve())
+        .on("error", reject)
         .save(outputPath);
     });
 
@@ -556,8 +588,7 @@ class StemExportService {
       if (tempPath.includes(os.tmpdir())) {
         try {
           await fsPromises.unlink(tempPath);
-        } catch {
-        }
+        } catch {}
       }
     }
   }
@@ -565,16 +596,18 @@ class StemExportService {
   private async renderMasterBus(
     projectId: string,
     options: StemExportOptions,
-    tempDir: string
+    tempDir: string,
   ): Promise<IndividualStemFile | null> {
     const hasFFmpeg = await initializeFfmpeg();
     if (!hasFFmpeg) {
-      throw new Error('FFmpeg is not available - stem export features are disabled');
+      throw new Error(
+        "FFmpeg is not available - stem export features are disabled",
+      );
     }
     const tracks = await db.query.studioTracks.findMany({
       where: and(
         eq(studioTracks.projectId, projectId),
-        eq(studioTracks.mute, false)
+        eq(studioTracks.mute, false),
       ),
     });
 
@@ -592,8 +625,11 @@ class StemExportService {
 
       if (clips.length > 0 && clips[0].filePath) {
         let clipPath: string;
-        
-        if (clips[0].filePath.startsWith('/') || clips[0].filePath.startsWith('./')) {
+
+        if (
+          clips[0].filePath.startsWith("/") ||
+          clips[0].filePath.startsWith("./")
+        ) {
           clipPath = clips[0].filePath;
         } else {
           try {
@@ -604,7 +640,7 @@ class StemExportService {
             continue;
           }
         }
-        
+
         trackStemPaths.push(clipPath);
         trackVolumes.push(track.volume || 0.8);
       }
@@ -621,39 +657,39 @@ class StemExportService {
     await new Promise<void>((resolve, reject) => {
       let command = ffmpeg();
 
-      trackStemPaths.forEach(stemPath => {
+      trackStemPaths.forEach((stemPath) => {
         command = command.input(stemPath);
       });
 
-      const filterParts = trackStemPaths.map((_, i) => 
-        `[${i}:a]volume=${trackVolumes[i]}[a${i}]`
+      const filterParts = trackStemPaths.map(
+        (_, i) => `[${i}:a]volume=${trackVolumes[i]}[a${i}]`,
       );
-      const mixInputs = trackStemPaths.map((_, i) => `[a${i}]`).join('');
+      const mixInputs = trackStemPaths.map((_, i) => `[a${i}]`).join("");
       const mixFilter = `${mixInputs}amix=inputs=${trackStemPaths.length}:duration=longest:normalize=0`;
-      
+
       filterParts.push(mixFilter);
 
       command
-        .complexFilter(filterParts.join(';'))
+        .complexFilter(filterParts.join(";"))
         .audioCodec(this.getAudioCodec(options.format, options.bitDepth))
         .audioFrequency(options.sampleRate || 48000)
         .audioChannels(2)
         .outputOptions(this.getOutputOptions(options))
-        .on('end', () => resolve())
-        .on('error', reject)
+        .on("end", () => resolve())
+        .on("error", reject)
         .save(outputPath);
     });
 
-    if (options.normalize && options.normalizationType !== 'none') {
+    if (options.normalize && options.normalizationType !== "none") {
       await this.normalizeAudio(outputPath, options);
     }
 
     const fileBuffer = await fsPromises.readFile(outputPath);
     const storageKey = await storageService.uploadFile(
       fileBuffer,
-      'stems',
+      "stems",
       fileName,
-      this.FORMAT_CONTENT_TYPES[options.format]
+      this.FORMAT_CONTENT_TYPES[options.format],
     );
 
     const stats = await fsPromises.stat(outputPath);
@@ -663,14 +699,13 @@ class StemExportService {
       if (tempPath.includes(os.tmpdir())) {
         try {
           await fsPromises.unlink(tempPath);
-        } catch {
-        }
+        } catch {}
       }
     }
 
     return {
-      trackId: 'master',
-      trackName: 'Master',
+      trackId: "master",
+      trackName: "Master",
       fileName,
       storageKey,
       fileSize: stats.size,
@@ -680,26 +715,26 @@ class StemExportService {
 
   private async normalizeAudio(
     filePath: string,
-    options: StemExportOptions
+    options: StemExportOptions,
   ): Promise<void> {
     const hasFFmpeg = await initializeFfmpeg();
     if (!hasFFmpeg) {
-      logger.warn('FFmpeg not available - skipping audio normalization');
+      logger.warn("FFmpeg not available - skipping audio normalization");
       return;
     }
     const { normalizationType, normalizeTargetLevel = -14 } = options;
-    const tempPath = filePath + '.normalized.tmp';
+    const tempPath = filePath + ".normalized.tmp";
 
     let filterOptions: string;
 
     switch (normalizationType) {
-      case 'peak':
+      case "peak":
         filterOptions = `loudnorm=I=${normalizeTargetLevel}:TP=-1.5:LRA=11`;
         break;
-      case 'rms':
+      case "rms":
         filterOptions = `volume=enable='1':volume=${Math.pow(10, normalizeTargetLevel / 20)}`;
         break;
-      case 'lufs':
+      case "lufs":
         filterOptions = `loudnorm=I=${normalizeTargetLevel}:TP=-1.5:LRA=7`;
         break;
       default:
@@ -712,8 +747,8 @@ class StemExportService {
         .audioCodec(this.getAudioCodec(options.format, options.bitDepth))
         .audioFrequency(options.sampleRate || 48000)
         .outputOptions(this.getOutputOptions(options))
-        .on('end', () => resolve())
-        .on('error', reject)
+        .on("end", () => resolve())
+        .on("error", reject)
         .save(tempPath);
     });
 
@@ -724,18 +759,18 @@ class StemExportService {
     exportId: string,
     files: IndividualStemFile[],
     options: StemExportOptions,
-    tempDir: string
+    tempDir: string,
   ): Promise<{ storageKey: string; downloadUrl: string; zipSize: number }> {
     const zipFileName = `stems_${exportId}.zip`;
     const zipPath = path.join(tempDir, zipFileName);
 
     await new Promise<void>((resolve, reject) => {
       const output = fs.createWriteStream(zipPath);
-      const archive = archiver('zip', { zlib: { level: 6 } });
+      const archive = archiver("zip", { zlib: { level: 6 } });
 
-      output.on('close', () => resolve());
-      output.on('error', reject);
-      archive.on('error', reject);
+      output.on("close", () => resolve());
+      output.on("error", reject);
+      archive.on("error", reject);
 
       archive.pipe(output);
 
@@ -752,9 +787,9 @@ class StemExportService {
     const zipBuffer = await fsPromises.readFile(zipPath);
     const storageKey = await storageService.uploadFile(
       zipBuffer,
-      'exports',
+      "exports",
       zipFileName,
-      'application/zip'
+      "application/zip",
     );
 
     const downloadUrl = await storageService.getDownloadUrl(storageKey);
@@ -769,30 +804,30 @@ class StemExportService {
 
   private getAudioCodec(format: ExportFormat, bitDepth?: BitDepth): string {
     switch (format) {
-      case 'wav':
-        if (bitDepth === 32) return 'pcm_f32le';
-        if (bitDepth === 24) return 'pcm_s24le';
-        return 'pcm_s16le';
-      case 'flac':
-        return 'flac';
-      case 'mp3':
-        return 'libmp3lame';
-      case 'aac':
-        return 'aac';
+      case "wav":
+        if (bitDepth === 32) return "pcm_f32le";
+        if (bitDepth === 24) return "pcm_s24le";
+        return "pcm_s16le";
+      case "flac":
+        return "flac";
+      case "mp3":
+        return "libmp3lame";
+      case "aac":
+        return "aac";
       default:
-        return 'pcm_s24le';
+        return "pcm_s24le";
     }
   }
 
   private getOutputOptions(options: StemExportOptions): string[] {
     const outputOptions: string[] = [];
 
-    if (options.format === 'mp3' || options.format === 'aac') {
-      outputOptions.push(`-b:a`, options.bitrate || '320k');
+    if (options.format === "mp3" || options.format === "aac") {
+      outputOptions.push(`-b:a`, options.bitrate || "320k");
     }
 
-    if (options.format === 'flac') {
-      outputOptions.push('-compression_level', '8');
+    if (options.format === "flac") {
+      outputOptions.push("-compression_level", "8");
     }
 
     return outputOptions;
@@ -801,7 +836,7 @@ class StemExportService {
   private async getAudioDuration(filePath: string): Promise<number> {
     const hasFFmpeg = await initializeFfmpeg();
     if (!hasFFmpeg || !ffmpeg) {
-      logger.warn('FFmpeg not available - returning default duration');
+      logger.warn("FFmpeg not available - returning default duration");
       return 0;
     }
     return new Promise((resolve, reject) => {
@@ -810,15 +845,15 @@ class StemExportService {
           resolve(0);
           return;
         }
-        resolve(parseFloat(metadata.format.duration || '0'));
+        resolve(parseFloat(metadata.format.duration || "0"));
       });
     });
   }
 
   private sanitizeFileName(name: string): string {
     return name
-      .replace(/[^a-zA-Z0-9\s\-_]/g, '')
-      .replace(/\s+/g, '_')
+      .replace(/[^a-zA-Z0-9\s\-_]/g, "")
+      .replace(/\s+/g, "_")
       .slice(0, 100);
   }
 
@@ -828,7 +863,7 @@ class StemExportService {
     });
 
     if (!exportRecord) {
-      throw new Error('Export not found');
+      throw new Error("Export not found");
     }
 
     return {
@@ -854,7 +889,10 @@ class StemExportService {
     };
   }
 
-  async getExportDownload(exportId: string, userId: string): Promise<{
+  async getExportDownload(
+    exportId: string,
+    userId: string,
+  ): Promise<{
     downloadUrl: string;
     fileName: string;
     fileSize: number;
@@ -864,22 +902,24 @@ class StemExportService {
     });
 
     if (!exportRecord) {
-      throw new Error('Export not found');
+      throw new Error("Export not found");
     }
 
-    if (exportRecord.status !== 'completed') {
-      throw new Error('Export is not ready for download');
+    if (exportRecord.status !== "completed") {
+      throw new Error("Export is not ready for download");
     }
 
     if (!exportRecord.zipStorageKey) {
-      throw new Error('Export file not found');
+      throw new Error("Export file not found");
     }
 
-    const downloadUrl = await storageService.getDownloadUrl(exportRecord.zipStorageKey);
+    const downloadUrl = await storageService.getDownloadUrl(
+      exportRecord.zipStorageKey,
+    );
 
     return {
       downloadUrl,
-      fileName: `${exportRecord.exportName || 'stems'}.zip`,
+      fileName: `${exportRecord.exportName || "stems"}.zip`,
       fileSize: Number(exportRecord.totalFileSize) || 0,
     };
   }
@@ -887,14 +927,14 @@ class StemExportService {
   async listExports(
     projectId: string,
     userId: string,
-    options?: { limit?: number; offset?: number }
+    options?: { limit?: number; offset?: number },
   ): Promise<{ exports: unknown[]; total: number }> {
     const { limit = 20, offset = 0 } = options || {};
 
     const exports = await db.query.stemExports.findMany({
       where: and(
         eq(stemExports.projectId, projectId),
-        eq(stemExports.userId, userId)
+        eq(stemExports.userId, userId),
       ),
       orderBy: (exports, { desc }) => [desc(exports.createdAt)],
       limit,
@@ -907,12 +947,12 @@ class StemExportService {
       .where(
         and(
           eq(stemExports.projectId, projectId),
-          eq(stemExports.userId, userId)
-        )
+          eq(stemExports.userId, userId),
+        ),
       );
 
     return {
-      exports: exports.map(exp => ({
+      exports: exports.map((exp) => ({
         id: exp.id,
         exportName: exp.exportName,
         status: exp.status,
@@ -933,14 +973,14 @@ class StemExportService {
     });
 
     if (!exportRecord) {
-      throw new Error('Export not found');
+      throw new Error("Export not found");
     }
 
     if (exportRecord.zipStorageKey) {
       try {
         await storageService.deleteFile(exportRecord.zipStorageKey);
       } catch (error: unknown) {
-        logger.warn({ err: error }, 'Failed to delete ZIP file:');
+        logger.warn({ err: error }, "Failed to delete ZIP file:");
       }
     }
 
@@ -950,7 +990,10 @@ class StemExportService {
         try {
           await storageService.deleteFile(file.storageKey);
         } catch (error: unknown) {
-          logger.warn({ err: error }, `Failed to delete stem file ${file.fileName}:`);
+          logger.warn(
+            { err: error },
+            `Failed to delete stem file ${file.fileName}:`,
+          );
         }
       }
     }
@@ -965,24 +1008,27 @@ class StemExportService {
     });
 
     if (!exportRecord) {
-      throw new Error('Export not found');
+      throw new Error("Export not found");
     }
 
-    if (exportRecord.status === 'completed' || exportRecord.status === 'failed') {
-      throw new Error('Cannot cancel a completed or failed export');
+    if (
+      exportRecord.status === "completed" ||
+      exportRecord.status === "failed"
+    ) {
+      throw new Error("Cannot cancel a completed or failed export");
     }
 
     await db
       .update(stemExports)
       .set({
-        status: 'failed',
-        errorMessage: 'Export cancelled by user',
+        status: "failed",
+        errorMessage: "Export cancelled by user",
         progress: 0,
       })
       .where(eq(stemExports.id, exportId));
   }
 }
 
-import { sql } from 'drizzle-orm';
+import { sql } from "drizzle-orm";
 
 export const stemExportService = new StemExportService();

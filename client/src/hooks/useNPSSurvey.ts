@@ -6,10 +6,10 @@
  * Stores dismissal/completion state in localStorage to avoid re-prompting.
  */
 
-import { useState, useEffect } from 'react';
-import { useAuth } from '@/hooks/useAuth';
+import { useState, useEffect } from "react";
+import { useAuth } from "@/hooks/useAuth";
 
-const STORAGE_KEY = 'nps_survey_state';
+const STORAGE_KEY = "nps_survey_state";
 const DAYS_BEFORE_FIRST_SHOW = 30;
 const DAYS_BETWEEN_SURVEYS = 90;
 
@@ -45,21 +45,26 @@ export function useNPSSurvey() {
 
     if (state.lastCompletedAt) {
       const completedAt = new Date(state.lastCompletedAt);
-      const daysSinceComplete = (now.getTime() - completedAt.getTime()) / (1000 * 60 * 60 * 24);
+      const daysSinceComplete =
+        (now.getTime() - completedAt.getTime()) / (1000 * 60 * 60 * 24);
       if (daysSinceComplete < DAYS_BETWEEN_SURVEYS) return;
     }
 
     if (state.dismissCount >= 3) return;
 
-    const accountCreated = user.createdAt ? new Date(user.createdAt as unknown as string) : null;
+    const accountCreated = user.createdAt
+      ? new Date(user.createdAt as unknown as string)
+      : null;
     if (!accountCreated) return;
 
-    const accountAgeDays = (now.getTime() - accountCreated.getTime()) / (1000 * 60 * 60 * 24);
+    const accountAgeDays =
+      (now.getTime() - accountCreated.getTime()) / (1000 * 60 * 60 * 24);
     if (accountAgeDays < DAYS_BEFORE_FIRST_SHOW) return;
 
     if (state.lastShownAt) {
       const shownAt = new Date(state.lastShownAt);
-      const daysSinceShown = (now.getTime() - shownAt.getTime()) / (1000 * 60 * 60 * 24);
+      const daysSinceShown =
+        (now.getTime() - shownAt.getTime()) / (1000 * 60 * 60 * 24);
       if (daysSinceShown < DAYS_BETWEEN_SURVEYS) return;
     }
 
@@ -79,7 +84,11 @@ export function useNPSSurvey() {
 
   const complete = () => {
     const state = getState();
-    saveState({ ...state, lastCompletedAt: new Date().toISOString(), dismissCount: 0 });
+    saveState({
+      ...state,
+      lastCompletedAt: new Date().toISOString(),
+      dismissCount: 0,
+    });
     setVisible(false);
   };
 

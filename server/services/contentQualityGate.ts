@@ -22,20 +22,24 @@
  * ─────────────────────────────────────────────────────────────────────────────
  */
 
-import { logger } from '../logger.js';
-import { db } from '../db.js';
-import { autopilotPreferences } from '@shared/schema';
-import { eq } from 'drizzle-orm';
+import { logger } from "../logger.js";
+import { db } from "../db.js";
+import { autopilotPreferences } from "@shared/schema";
+import { eq } from "drizzle-orm";
 import {
   contentQualityPipeline,
   type ContentVariant,
   type ContentContext,
-} from './contentQualityPipeline.js';
-import { pocketManager } from '../pocket-dimension/index.js';
-import { isPdimConfigured, getPdimClient } from '../lib/pdimClient.js';
-import { pushTrainingFeedback } from './maxcoreSync.js';
-import { getCalibratedThresholds, isCalibrated, runCalibration } from './maxcoreScoreCalibrator.js';
-import { modelWeightStorage } from './modelWeightStorage.js';
+} from "./contentQualityPipeline.js";
+import { pocketManager } from "../pocket-dimension/index.js";
+import { isPdimConfigured, getPdimClient } from "../lib/pdimClient.js";
+import { pushTrainingFeedback } from "./maxcoreSync.js";
+import {
+  getCalibratedThresholds,
+  isCalibrated,
+  runCalibration,
+} from "./maxcoreScoreCalibrator.js";
+import { modelWeightStorage } from "./modelWeightStorage.js";
 
 export interface QualityGateResult {
   winner: ContentVariant;
@@ -46,23 +50,25 @@ export interface QualityGateResult {
   storedKey: string | null;
 }
 
-const _DEFAULT_THRESHOLD    = 81;   // 90% of Veo's ~90 baseline score (overridden by calibrator)
-const _VEO_PRESSURE_FLOOR   = 65;   // absolute minimum — matches calibrator floor so best-available
-                                    // fallback fires instead of returning null when PDIM is degraded
-                                    // (previous value 73 caused all 65–68 content to be rejected)
-const DEFAULT_THRESHOLD  = () => getCalibratedThresholds().gate  ?? _DEFAULT_THRESHOLD;
-const VEO_PRESSURE_FLOOR = () => getCalibratedThresholds().floor ?? _VEO_PRESSURE_FLOOR;
-const MAX_ROUNDS           = 10;   // A/B retry budget
-const VARIANTS_PER_ROUND   = 30;   // 30+ variants per batch — maximises quality hit rate
-                                   // and shortens the time to reach the 81/100 threshold
+const _DEFAULT_THRESHOLD = 81; // 90% of Veo's ~90 baseline score (overridden by calibrator)
+const _VEO_PRESSURE_FLOOR = 65; // absolute minimum — matches calibrator floor so best-available
+// fallback fires instead of returning null when PDIM is degraded
+// (previous value 73 caused all 65–68 content to be rejected)
+const DEFAULT_THRESHOLD = () =>
+  getCalibratedThresholds().gate ?? _DEFAULT_THRESHOLD;
+const VEO_PRESSURE_FLOOR = () =>
+  getCalibratedThresholds().floor ?? _VEO_PRESSURE_FLOOR;
+const MAX_ROUNDS = 10; // A/B retry budget
+const VARIANTS_PER_ROUND = 30; // 30+ variants per batch — maximises quality hit rate
+// and shortens the time to reach the 81/100 threshold
 
 // ── Training readiness awareness ──────────────────────────────────────────────
 
 const BASE_MODEL_NAMES = [
-  'social_base',
-  'advertising_base',
-  'content_base',
-  'engagement_base',
+  "social_base",
+  "advertising_base",
+  "content_base",
+  "engagement_base",
 ] as const;
 
 /**
@@ -76,11 +82,11 @@ export interface ReadinessProfile {
   calibrated: boolean;
   calibratedGate: number;
   calibratedFloor: number;
-  level: 'cold' | 'warming' | 'ready' | 'optimal';
+  level: "cold" | "warming" | "ready" | "optimal";
   summary: string;
 }
 
-let _lastReadinessTs  = 0;
+let _lastReadinessTs = 0;
 let _cachedReadiness: ReadinessProfile | null = null;
 const READINESS_CACHE_MS = 60_000; // re-check every 60 s — cheap but not on every variant
 
@@ -91,31 +97,34 @@ async function computeReadinessProfile(): Promise<ReadinessProfile> {
   }
 
   const checks = await Promise.all(
-    BASE_MODEL_NAMES.map(n => modelWeightStorage.exists(n).catch(() => false))
+    BASE_MODEL_NAMES.map((n) =>
+      modelWeightStorage.exists(n).catch(() => false),
+    ),
   );
-  const modelsReady  = checks.filter(Boolean).length;
-  const calibrated   = isCalibrated();
-  const thresholds   = getCalibratedThresholds();
+  const modelsReady = checks.filter(Boolean).length;
+  const calibrated = isCalibrated();
+  const thresholds = getCalibratedThresholds();
 
-  let level: ReadinessProfile['level'];
+  let level: ReadinessProfile["level"];
   let summary: string;
 
   if (modelsReady === 0 && !calibrated) {
-    level   = 'cold';
-    summary = 'No MaxCore base weights synced yet and calibration has not run — system is starting up';
+    level = "cold";
+    summary =
+      "No MaxCore base weights synced yet and calibration has not run — system is starting up";
   } else if (modelsReady < BASE_MODEL_NAMES.length || !calibrated) {
-    level   = 'warming';
+    level = "warming";
     summary =
       `${modelsReady}/${BASE_MODEL_NAMES.length} MaxCore base models present, ` +
-      `calibration ${calibrated ? 'complete' : 'pending'} — scores will improve as the ` +
+      `calibration ${calibrated ? "complete" : "pending"} — scores will improve as the ` +
       `training simulator and memory sync complete their first cycle`;
   } else if (calibrated && thresholds.gate > _DEFAULT_THRESHOLD) {
-    level   = 'optimal';
+    level = "optimal";
     summary =
       `All ${BASE_MODEL_NAMES.length} MaxCore base models synced and training-calibrated ` +
       `(gate=${thresholds.gate}, floor=${thresholds.floor}) — maximum quality capability active`;
   } else {
-    level   = 'ready';
+    level = "ready";
     summary =
       `All ${BASE_MODEL_NAMES.length} MaxCore base models synced, calibrated at defaults ` +
       `(gate=${thresholds.gate}, floor=${thresholds.floor}) — ` +
@@ -126,7 +135,7 @@ async function computeReadinessProfile(): Promise<ReadinessProfile> {
     modelsReady,
     modelsTotal: BASE_MODEL_NAMES.length,
     calibrated,
-    calibratedGate:  thresholds.gate,
+    calibratedGate: thresholds.gate,
     calibratedFloor: thresholds.floor,
     level,
     summary,
@@ -164,9 +173,10 @@ export class ContentQualityGate {
   async run(
     userId: string,
     baseContext: Partial<ContentContext>,
-    overrideThreshold?: number
+    overrideThreshold?: number,
   ): Promise<QualityGateResult | null> {
-    const threshold = overrideThreshold ?? (await this.getUserThreshold(userId));
+    const threshold =
+      overrideThreshold ?? (await this.getUserThreshold(userId));
 
     // ── Awareness layer ─────────────────────────────────────────────────────
     // Check training infrastructure readiness before running the gate.
@@ -174,24 +184,24 @@ export class ContentQualityGate {
     // so the next cycle benefits from MaxCore-calibrated thresholds.
     const readiness = await computeReadinessProfile();
 
-    if (readiness.level === 'cold' || readiness.level === 'warming') {
+    if (readiness.level === "cold" || readiness.level === "warming") {
       logger.info(
-        `[QualityGate] Training readiness: ${readiness.level.toUpperCase()} — ${readiness.summary}`
+        `[QualityGate] Training readiness: ${readiness.level.toUpperCase()} — ${readiness.summary}`,
       );
       if (!readiness.calibrated) {
         // Non-blocking: kick off calibration so subsequent gate runs see
         // MaxCore-calibrated thresholds rather than static defaults.
         runCalibration().catch(() => {});
         logger.info(
-          '[QualityGate] Calibration triggered — MaxCore dataset + training simulator ' +
-          'will update gate/floor thresholds for subsequent runs'
+          "[QualityGate] Calibration triggered — MaxCore dataset + training simulator " +
+            "will update gate/floor thresholds for subsequent runs",
         );
       }
     } else {
       logger.info(
         `[QualityGate] Training readiness: ${readiness.level.toUpperCase()} — ` +
-        `models=${readiness.modelsReady}/${readiness.modelsTotal} ` +
-        `gate=${readiness.calibratedGate} floor=${readiness.calibratedFloor}`
+          `models=${readiness.modelsReady}/${readiness.modelsTotal} ` +
+          `gate=${readiness.calibratedGate} floor=${readiness.calibratedFloor}`,
       );
     }
     // ────────────────────────────────────────────────────────────────────────
@@ -209,14 +219,17 @@ export class ContentQualityGate {
         try {
           const advResult = await contentQualityPipeline.generateWithAdvancedAI(
             userId,
-            { ...baseContext, objective: baseContext.objective || 'engagement' },
-            VARIANTS_PER_ROUND
+            {
+              ...baseContext,
+              objective: baseContext.objective || "engagement",
+            },
+            VARIANTS_PER_ROUND,
           );
           variants = advResult.variants;
           logger.info(
             `[QualityGate] user=${userId} round 1/${MAX_ROUNDS} [AdvancedAI] ` +
-            `— generated ${variants.length} variants, ` +
-            `best=${variants[0]?.scores.overall.toFixed(1) ?? 'N/A'}`
+              `— generated ${variants.length} variants, ` +
+              `best=${variants[0]?.scores.overall.toFixed(1) ?? "N/A"}`,
           );
         } catch (err) {
           // MaxCore is always running — any AdvancedAI failure is a real signal
@@ -228,30 +241,44 @@ export class ContentQualityGate {
           const gateErrMsg = (err as Error)?.message ?? String(err);
           let inRegistration = false;
           try {
-            const { isLuaRegistrationMode } = await import('../lib/luaExecutor.js');
+            const { isLuaRegistrationMode } = await import(
+              "../lib/luaExecutor.js"
+            );
             inRegistration = isLuaRegistrationMode();
-          } catch { /* non-fatal */ }
+          } catch {
+            /* non-fatal */
+          }
           if (inRegistration) {
-            logger.debug(`[QualityGate] AdvancedAI deferred (registration in progress): ${gateErrMsg}`);
+            logger.debug(
+              `[QualityGate] AdvancedAI deferred (registration in progress): ${gateErrMsg}`,
+            );
           } else {
-            logger.warn(`[QualityGate] AdvancedAI round failed, falling back to template: ${gateErrMsg}`);
+            logger.warn(
+              `[QualityGate] AdvancedAI round failed, falling back to template: ${gateErrMsg}`,
+            );
           }
           const res = await contentQualityPipeline.generateAndSelect(
             userId,
-            { ...baseContext, objective: this.rotateObjective(baseContext.objective, round) },
+            {
+              ...baseContext,
+              objective: this.rotateObjective(baseContext.objective, round),
+            },
             VARIANTS_PER_ROUND,
-            threshold
+            threshold,
           );
           variants = res.variants;
         }
       } else {
         // ── Rounds 2+: Template / Python AI with rotated objective ────────────
-        const variantCount = VARIANTS_PER_ROUND + round;   // more variants each retry
+        const variantCount = VARIANTS_PER_ROUND + round; // more variants each retry
         const res = await contentQualityPipeline.generateAndSelect(
           userId,
-          { ...baseContext, objective: this.rotateObjective(baseContext.objective, round) },
+          {
+            ...baseContext,
+            objective: this.rotateObjective(baseContext.objective, round),
+          },
           variantCount,
-          threshold
+          threshold,
         );
         variants = res.variants;
       }
@@ -266,7 +293,7 @@ export class ContentQualityGate {
         rejectedVariants.push(...variants.slice(1));
         logger.info(
           `[QualityGate] user=${userId} PASSED round ${round}/${MAX_ROUNDS} ` +
-          `— score=${candidate.scores.overall.toFixed(1)} threshold=${threshold}`
+            `— score=${candidate.scores.overall.toFixed(1)} threshold=${threshold}`,
         );
         break;
       }
@@ -274,27 +301,32 @@ export class ContentQualityGate {
       rejectedVariants.push(...variants);
       logger.info(
         `[QualityGate] user=${userId} round ${round}/${MAX_ROUNDS} ` +
-        `— best score=${candidate?.scores.overall.toFixed(1) ?? 'N/A'} ` +
-        `below threshold=${threshold}, A/B testing next round...`
+          `— best score=${candidate?.scores.overall.toFixed(1) ?? "N/A"} ` +
+          `below threshold=${threshold}, A/B testing next round...`,
       );
     }
 
     if (!winner) {
-      const best = allTriedVariants.sort((a, b) => b.scores.overall - a.scores.overall)[0];
+      const best = allTriedVariants.sort(
+        (a, b) => b.scores.overall - a.scores.overall,
+      )[0];
 
       const pressureFloor = VEO_PRESSURE_FLOOR();
       if (!best || best.scores.overall < pressureFloor) {
         const readinessHint =
-          readiness.level === 'cold'    ? 'System is still starting up — MaxCore sync + calibration not yet complete.' :
-          readiness.level === 'warming' ? 'Training requirements not yet fully met — scores will improve once the MaxCore training simulator and memory sync complete their first cycle.' :
-          readiness.level === 'ready'   ? 'System is ready; the training simulator is still accumulating sessions that will raise content scores over time.' :
-                                          'System is fully calibrated — the model is producing its best available content.';
+          readiness.level === "cold"
+            ? "System is still starting up — MaxCore sync + calibration not yet complete."
+            : readiness.level === "warming"
+              ? "Training requirements not yet fully met — scores will improve once the MaxCore training simulator and memory sync complete their first cycle."
+              : readiness.level === "ready"
+                ? "System is ready; the training simulator is still accumulating sessions that will raise content scores over time."
+                : "System is fully calibrated — the model is producing its best available content.";
         logger.info(
           `[QualityGate] user=${userId} exhausted ${MAX_ROUNDS} rounds — ` +
-          `best score ${best?.scores.overall.toFixed(1) ?? 'N/A'} is below ` +
-          `VEO_PRESSURE_FLOOR (${pressureFloor}). Content rejected to protect quality. ` +
-          `Training readiness: ${readiness.level} (${readiness.modelsReady}/${readiness.modelsTotal} models, ` +
-          `calibrated=${readiness.calibrated}). ${readinessHint}`
+            `best score ${best?.scores.overall.toFixed(1) ?? "N/A"} is below ` +
+            `VEO_PRESSURE_FLOOR (${pressureFloor}). Content rejected to protect quality. ` +
+            `Training readiness: ${readiness.level} (${readiness.modelsReady}/${readiness.modelsTotal} models, ` +
+            `calibrated=${readiness.calibrated}). ${readinessHint}`,
         );
         return null;
       }
@@ -303,9 +335,9 @@ export class ContentQualityGate {
       passedOnAttempt = MAX_ROUNDS;
       logger.info(
         `[QualityGate] user=${userId} exhausted ${MAX_ROUNDS} rounds — ` +
-        `using best available: score=${winner.scores.overall.toFixed(1)} ` +
-        `(above pressure floor ${pressureFloor}, below threshold ${threshold}). ` +
-        `Training readiness: ${readiness.level} (${readiness.modelsReady}/${readiness.modelsTotal} models)`
+          `using best available: score=${winner.scores.overall.toFixed(1)} ` +
+          `(above pressure floor ${pressureFloor}, below threshold ${threshold}). ` +
+          `Training readiness: ${readiness.level} (${readiness.modelsReady}/${readiness.modelsTotal} models)`,
       );
     }
 
@@ -341,13 +373,17 @@ export class ContentQualityGate {
         }
       }
     } catch (e) {
-      logger.debug(`[QualityGate] PDIM threshold read failed (non-fatal): ${e.message}`);
+      logger.debug(
+        `[QualityGate] PDIM threshold read failed (non-fatal): ${e.message}`,
+      );
     }
 
     // 2. DB fallback — user-configured threshold
     try {
       const [prefs] = await db
-        .select({ contentQualityThreshold: autopilotPreferences.contentQualityThreshold })
+        .select({
+          contentQualityThreshold: autopilotPreferences.contentQualityThreshold,
+        })
         .from(autopilotPreferences)
         .where(eq(autopilotPreferences.userId, userId))
         .limit(1);
@@ -382,17 +418,20 @@ export class ContentQualityGate {
    * inference model learns what actually resonated on each platform.
    */
 
-  private getPlatformEngagementBenchmarks(platform: string): { high: number; low: number } {
-    const p = platform.toLowerCase().replace(/[^a-z]/g, '');
+  private getPlatformEngagementBenchmarks(platform: string): {
+    high: number;
+    low: number;
+  } {
+    const p = platform.toLowerCase().replace(/[^a-z]/g, "");
     const benchmarks: Record<string, { high: number; low: number }> = {
-      twitter:   { high: 2.0, low: 0.5 },
-      x:         { high: 2.0, low: 0.5 },
+      twitter: { high: 2.0, low: 0.5 },
+      x: { high: 2.0, low: 0.5 },
       instagram: { high: 5.0, low: 1.0 },
-      tiktok:    { high: 8.0, low: 3.0 },
-      linkedin:  { high: 4.0, low: 1.0 },
-      facebook:  { high: 2.0, low: 0.5 },
-      threads:   { high: 3.0, low: 1.0 },
-      youtube:   { high: 4.0, low: 1.0 },
+      tiktok: { high: 8.0, low: 3.0 },
+      linkedin: { high: 4.0, low: 1.0 },
+      facebook: { high: 2.0, low: 0.5 },
+      threads: { high: 3.0, low: 1.0 },
+      youtube: { high: 4.0, low: 1.0 },
     };
     return benchmarks[p] ?? { high: 5.0, low: 2.0 };
   }
@@ -403,7 +442,7 @@ export class ContentQualityGate {
     contentType: string,
     hookType: string,
     engagementRate: number,
-    qualityScore: number
+    qualityScore: number,
   ): Promise<void> {
     try {
       const { high, low } = this.getPlatformEngagementBenchmarks(platform);
@@ -423,36 +462,46 @@ export class ContentQualityGate {
         await pdim.set(
           `mbs:quality:threshold:${userId}`,
           String(newThreshold),
-          'EX',
-          60 * 60 * 24 * 30   // 30-day TTL — persists across restarts
+          "EX",
+          60 * 60 * 24 * 30, // 30-day TTL — persists across restarts
         );
         logger.info(
           `[QualityGate] Threshold adapted for user ${userId} on ${platform}: ` +
-          `${currentThreshold} → ${newThreshold} ` +
-          `(engagement=${engagementRate.toFixed(2)}% vs high=${high}%/low=${low}%, ` +
-          `qualityScore=${qualityScore.toFixed(1)})`
+            `${currentThreshold} → ${newThreshold} ` +
+            `(engagement=${engagementRate.toFixed(2)}% vs high=${high}%/low=${low}%, ` +
+            `qualityScore=${qualityScore.toFixed(1)})`,
         );
       }
 
       // Push training signal to MaxCore + PDIM training queue
       const isHigh = engagementRate >= high;
-      const isLow  = engagementRate < low;
-      const curriculum = isHigh ? 'reinforce_winner' : isLow ? 'improve_weak' : 'neutral';
+      const isLow = engagementRate < low;
+      const curriculum = isHigh
+        ? "reinforce_winner"
+        : isLow
+          ? "improve_weak"
+          : "neutral";
 
       await pushTrainingFeedback({
-        content:         `${contentType} post on ${platform}`,
-        source:          'quality_gate_outcome',
-        trigger:         isHigh ? 'high_engagement' : isLow ? 'low_engagement' : 'normal',
+        content: `${contentType} post on ${platform}`,
+        source: "quality_gate_outcome",
+        trigger: isHigh
+          ? "high_engagement"
+          : isLow
+            ? "low_engagement"
+            : "normal",
         engagement_rate: engagementRate,
         platform,
-        content_type:    contentType,
-        hook_type:       hookType,
-        media_type:      'text',
+        content_type: contentType,
+        hook_type: hookType,
+        media_type: "text",
         curriculum_hint: curriculum,
-        dispatched_at:   new Date().toISOString(),
+        dispatched_at: new Date().toISOString(),
       });
     } catch (e) {
-      logger.warn(`[QualityGate] recordEngagementOutcome failed (non-fatal): ${e.message}`);
+      logger.warn(
+        `[QualityGate] recordEngagementOutcome failed (non-fatal): ${e.message}`,
+      );
     }
   }
 
@@ -468,10 +517,10 @@ export class ContentQualityGate {
     userId: string,
     existingContent: string,
     platform: string,
-    baseContext: Partial<ContentContext>
+    baseContext: Partial<ContentContext>,
   ): Promise<QualityGateResult | null> {
     const threshold = await this.getUserThreshold(userId);
-    const context   = await contentQualityPipeline.buildContext(userId, {
+    const context = await contentQualityPipeline.buildContext(userId, {
       ...baseContext,
       platform,
     });
@@ -479,42 +528,42 @@ export class ContentQualityGate {
     const platformOpt = contentQualityPipeline.validatePlatformConstraints(
       existingContent,
       [],
-      platform
+      platform,
     );
     const scores = contentQualityPipeline.scoreContent(
       existingContent,
-      existingContent.split('\n')[0] || existingContent.substring(0, 80),
-      '',
+      existingContent.split("\n")[0] || existingContent.substring(0, 80),
+      "",
       context,
-      platformOpt
+      platformOpt,
     );
 
     if (scores.overall >= threshold) {
       logger.info(
-        `[QualityGate] Trained-model content passed gate — score=${scores.overall.toFixed(1)} threshold=${threshold} platform=${platform}`
+        `[QualityGate] Trained-model content passed gate — score=${scores.overall.toFixed(1)} threshold=${threshold} platform=${platform}`,
       );
       // Wrap in a synthetic QualityGateResult so callers have a uniform interface
       return {
         winner: {
-          id:                  `trained_model_${Date.now()}`,
-          content:             existingContent,
-          headline:            existingContent.split('\n')[0] || '',
-          hashtags:            [],
-          callToAction:        '',
+          id: `trained_model_${Date.now()}`,
+          content: existingContent,
+          headline: existingContent.split("\n")[0] || "",
+          hashtags: [],
+          callToAction: "",
           scores,
           platformOptimizations: platformOpt,
         },
-        passedOnAttempt:    0,
+        passedOnAttempt: 0,
         totalVariantsTried: 1,
-        rejectedVariants:   [],
-        thresholdUsed:      threshold,
-        storedKey:          null,
+        rejectedVariants: [],
+        thresholdUsed: threshold,
+        storedKey: null,
       };
     }
 
     logger.info(
       `[QualityGate] Trained-model content scored ${scores.overall.toFixed(1)} < threshold ${threshold} ` +
-      `— handing off to A/B gate for ${platform}`
+        `— handing off to A/B gate for ${platform}`,
     );
     // Content didn't clear the bar — run the full A/B generation gate
     return this.run(userId, baseContext, threshold);
@@ -526,18 +575,20 @@ export class ContentQualityGate {
    */
   private rotateObjective(
     base: string | undefined,
-    round: number
-  ): 'awareness' | 'engagement' | 'conversions' | 'viral' {
-    const rotation: Array<'awareness' | 'engagement' | 'conversions' | 'viral'> = [
-      'engagement',
-      'viral',
-      'awareness',
-      'conversions',
-      'engagement',
-      'viral',
-      'awareness',
-      'conversions',
-      'engagement',
+    round: number,
+  ): "awareness" | "engagement" | "conversions" | "viral" {
+    const rotation: Array<
+      "awareness" | "engagement" | "conversions" | "viral"
+    > = [
+      "engagement",
+      "viral",
+      "awareness",
+      "conversions",
+      "engagement",
+      "viral",
+      "awareness",
+      "conversions",
+      "engagement",
     ];
     if (round === 1 && base) return base as Record<string, unknown>;
     return rotation[(round - 1) % rotation.length];
@@ -556,10 +607,10 @@ export class ContentQualityGate {
       passedOnAttempt: number;
       totalVariantsTried: number;
       rejectedVariants: ContentVariant[];
-    }
+    },
   ): Promise<string | null> {
     try {
-      const pocket = await pocketManager.openPocket('content-quality-gate', {
+      const pocket = await pocketManager.openPocket("content-quality-gate", {
         compressionLevel: 9,
         enableDeduplication: true,
       });
@@ -578,18 +629,23 @@ export class ContentQualityGate {
             headline: data.winner.headline,
             scores: data.winner.scores,
           },
-          rejected: data.rejectedVariants.map(v => ({
+          rejected: data.rejectedVariants.map((v) => ({
             id: v.id,
             headline: v.headline,
             scores: v.scores,
           })),
-        })
+        }),
       );
 
-      logger.info(`[QualityGate] Archived session to Pocket Dimension: quality-gate/${key}`);
+      logger.info(
+        `[QualityGate] Archived session to Pocket Dimension: quality-gate/${key}`,
+      );
       return `quality-gate/${key}`;
     } catch (err) {
-      logger.warn({ err: err }, '[QualityGate] Pocket Dimension archive failed (non-fatal):');
+      logger.warn(
+        { err: err },
+        "[QualityGate] Pocket Dimension archive failed (non-fatal):",
+      );
       return null;
     }
   }

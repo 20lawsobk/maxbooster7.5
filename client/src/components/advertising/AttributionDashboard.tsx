@@ -1,24 +1,30 @@
-import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
+} from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import {
   ChartContainer,
   ChartTooltip,
   ChartTooltipContent,
-} from '@/components/ui/chart';
+} from "@/components/ui/chart";
 import {
   BarChart,
   Bar,
@@ -36,7 +42,7 @@ import {
   Line,
   ComposedChart,
   Area,
-} from 'recharts';
+} from "recharts";
 import {
   GitBranch,
   Target,
@@ -59,9 +65,14 @@ import {
   Share2,
   Filter,
   Info,
-} from 'lucide-react';
+} from "lucide-react";
 
-type AttributionModel = 'first-click' | 'last-click' | 'linear' | 'time-decay' | 'position-based';
+type AttributionModel =
+  | "first-click"
+  | "last-click"
+  | "linear"
+  | "time-decay"
+  | "position-based";
 
 interface ChannelAttribution {
   channel: string;
@@ -83,20 +94,27 @@ interface ConversionPath {
   avgDaysToConvert: number;
 }
 
-
-const COLORS = ['#3b82f6', '#22c55e', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4'];
+const COLORS = [
+  "#3b82f6",
+  "#22c55e",
+  "#f59e0b",
+  "#ef4444",
+  "#8b5cf6",
+  "#06b6d4",
+];
 
 export function AttributionDashboard() {
-  const [selectedModel, setSelectedModel] = useState<AttributionModel>('position-based');
-  const [attributionWindow, setAttributionWindow] = useState('30');
+  const [selectedModel, setSelectedModel] =
+    useState<AttributionModel>("position-based");
+  const [attributionWindow, setAttributionWindow] = useState("30");
   const [showAssisted, setShowAssisted] = useState(true);
 
   const { data: attributionData } = useQuery({
-    queryKey: ['/api/advertising/dashboard/attribution', attributionWindow],
+    queryKey: ["/api/advertising/dashboard/attribution", attributionWindow],
   });
 
   const { data: pathsData } = useQuery({
-    queryKey: ['/api/advertising/dashboard/paths', attributionWindow],
+    queryKey: ["/api/advertising/dashboard/paths", attributionWindow],
   });
 
   const channelData: ChannelAttribution[] = attributionData?.channels || [];
@@ -104,20 +122,23 @@ export function AttributionDashboard() {
 
   const getModelValue = (channel: ChannelAttribution) => {
     switch (selectedModel) {
-      case 'first-click':
+      case "first-click":
         return channel.firstClick;
-      case 'last-click':
+      case "last-click":
         return channel.lastClick;
-      case 'linear':
+      case "linear":
         return channel.linear;
-      case 'time-decay':
+      case "time-decay":
         return channel.timeDecay;
-      case 'position-based':
+      case "position-based":
         return channel.positionBased;
     }
   };
 
-  const totalConversions = channelData.reduce((acc, c) => acc + c.conversions, 0);
+  const totalConversions = channelData.reduce(
+    (acc, c) => acc + c.conversions,
+    0,
+  );
   const totalRevenue = channelData.reduce((acc, c) => acc + c.revenue, 0);
   const totalAssists = channelData.reduce((acc, c) => acc + c.assists, 0);
 
@@ -127,21 +148,22 @@ export function AttributionDashboard() {
   }));
 
   const chartConfig = {
-    paidSocial: { label: 'Paid Social', color: '#3b82f6' },
-    organic: { label: 'Organic', color: '#22c55e' },
-    email: { label: 'Email', color: '#f59e0b' },
-    direct: { label: 'Direct', color: '#ef4444' },
-    display: { label: 'Display', color: '#8b5cf6' },
-    conversions: { label: 'Conversions', color: '#3b82f6' },
-    value: { label: 'Value', color: '#22c55e' },
+    paidSocial: { label: "Paid Social", color: "#3b82f6" },
+    organic: { label: "Organic", color: "#22c55e" },
+    email: { label: "Email", color: "#f59e0b" },
+    direct: { label: "Direct", color: "#ef4444" },
+    display: { label: "Display", color: "#8b5cf6" },
+    conversions: { label: "Conversions", color: "#3b82f6" },
+    value: { label: "Value", color: "#22c55e" },
   };
 
   const modelDescriptions: Record<AttributionModel, string> = {
-    'first-click': 'Gives 100% credit to the first touchpoint',
-    'last-click': 'Gives 100% credit to the last touchpoint before conversion',
-    linear: 'Distributes credit equally across all touchpoints',
-    'time-decay': 'Gives more credit to touchpoints closer to conversion',
-    'position-based': 'Gives 40% to first, 40% to last, 20% distributed to middle',
+    "first-click": "Gives 100% credit to the first touchpoint",
+    "last-click": "Gives 100% credit to the last touchpoint before conversion",
+    linear: "Distributes credit equally across all touchpoints",
+    "time-decay": "Gives more credit to touchpoints closer to conversion",
+    "position-based":
+      "Gives 40% to first, 40% to last, 20% distributed to middle",
   };
 
   if (channelData.length === 0) {
@@ -158,9 +180,12 @@ export function AttributionDashboard() {
         </CardHeader>
         <CardContent className="flex flex-col items-center justify-center py-12">
           <Target className="h-12 w-12 text-muted-foreground mb-4" />
-          <h3 className="text-lg font-medium mb-2">No Attribution Data Available</h3>
+          <h3 className="text-lg font-medium mb-2">
+            No Attribution Data Available
+          </h3>
           <p className="text-muted-foreground text-center max-w-md">
-            Attribution data will appear here once you have tracked conversions across your marketing channels.
+            Attribution data will appear here once you have tracked conversions
+            across your marketing channels.
           </p>
         </CardContent>
       </Card>
@@ -180,7 +205,10 @@ export function AttributionDashboard() {
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <Select value={attributionWindow} onValueChange={setAttributionWindow}>
+          <Select
+            value={attributionWindow}
+            onValueChange={setAttributionWindow}
+          >
             <SelectTrigger className="w-40">
               <SelectValue placeholder="Attribution Window" />
             </SelectTrigger>
@@ -204,8 +232,12 @@ export function AttributionDashboard() {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Total Conversions</p>
-                <p className="text-2xl font-bold">{totalConversions.toLocaleString()}</p>
+                <p className="text-sm text-muted-foreground">
+                  Total Conversions
+                </p>
+                <p className="text-2xl font-bold">
+                  {totalConversions.toLocaleString()}
+                </p>
               </div>
               <div className="w-10 h-10 rounded-full bg-blue-500/10 flex items-center justify-center">
                 <Target className="w-5 h-5 text-blue-500" />
@@ -219,7 +251,9 @@ export function AttributionDashboard() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Total Revenue</p>
-                <p className="text-2xl font-bold">${totalRevenue.toLocaleString()}</p>
+                <p className="text-2xl font-bold">
+                  ${totalRevenue.toLocaleString()}
+                </p>
               </div>
               <div className="w-10 h-10 rounded-full bg-green-500/10 flex items-center justify-center">
                 <DollarSign className="w-5 h-5 text-green-500" />
@@ -232,8 +266,12 @@ export function AttributionDashboard() {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Assisted Conversions</p>
-                <p className="text-2xl font-bold">{totalAssists.toLocaleString()}</p>
+                <p className="text-sm text-muted-foreground">
+                  Assisted Conversions
+                </p>
+                <p className="text-2xl font-bold">
+                  {totalAssists.toLocaleString()}
+                </p>
               </div>
               <div className="w-10 h-10 rounded-full bg-purple-500/10 flex items-center justify-center">
                 <Share2 className="w-5 h-5 text-purple-500" />
@@ -287,8 +325,15 @@ export function AttributionDashboard() {
           <div className="mt-2 p-3 rounded-lg bg-blue-500/10 border border-blue-500/20">
             <div className="flex items-center gap-2 text-sm">
               <Info className="w-4 h-4 text-blue-500" />
-              <span className="font-medium">{selectedModel.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase())}:</span>
-              <span className="text-muted-foreground">{modelDescriptions[selectedModel]}</span>
+              <span className="font-medium">
+                {selectedModel
+                  .replace("-", " ")
+                  .replace(/\b\w/g, (l) => l.toUpperCase())}
+                :
+              </span>
+              <span className="text-muted-foreground">
+                {modelDescriptions[selectedModel]}
+              </span>
             </div>
           </div>
         </CardHeader>
@@ -298,19 +343,24 @@ export function AttributionDashboard() {
               <BarChart data={channelData} layout="vertical">
                 <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                 <XAxis type="number" className="text-xs" />
-                <YAxis dataKey="channel" type="category" className="text-xs" width={100} />
+                <YAxis
+                  dataKey="channel"
+                  type="category"
+                  className="text-xs"
+                  width={100}
+                />
                 <ChartTooltip content={<ChartTooltipContent />} />
                 <Bar
                   dataKey={
-                    selectedModel === 'first-click'
-                      ? 'firstClick'
-                      : selectedModel === 'last-click'
-                        ? 'lastClick'
-                        : selectedModel === 'linear'
-                          ? 'linear'
-                          : selectedModel === 'time-decay'
-                            ? 'timeDecay'
-                            : 'positionBased'
+                    selectedModel === "first-click"
+                      ? "firstClick"
+                      : selectedModel === "last-click"
+                        ? "lastClick"
+                        : selectedModel === "linear"
+                          ? "linear"
+                          : selectedModel === "time-decay"
+                            ? "timeDecay"
+                            : "positionBased"
                   }
                   fill="#3b82f6"
                   radius={[0, 4, 4, 0]}
@@ -330,7 +380,10 @@ export function AttributionDashboard() {
                   labelLine
                 >
                   {chartData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    <Cell
+                      key={`cell-${index}`}
+                      fill={COLORS[index % COLORS.length]}
+                    />
                   ))}
                 </Pie>
                 <ChartTooltip content={<ChartTooltipContent />} />
@@ -374,7 +427,10 @@ export function AttributionDashboard() {
                   </thead>
                   <tbody>
                     {channelData.map((channel, idx) => (
-                      <tr key={channel.channel} className="border-b hover:bg-muted/50">
+                      <tr
+                        key={channel.channel}
+                        className="border-b hover:bg-muted/50"
+                      >
                         <td className="py-3 px-4 font-medium">
                           <div className="flex items-center gap-2">
                             <div
@@ -384,13 +440,27 @@ export function AttributionDashboard() {
                             {channel.channel}
                           </div>
                         </td>
-                        <td className="text-center py-3 px-4">{channel.firstClick}%</td>
-                        <td className="text-center py-3 px-4">{channel.lastClick}%</td>
-                        <td className="text-center py-3 px-4">{channel.linear}%</td>
-                        <td className="text-center py-3 px-4">{channel.timeDecay}%</td>
-                        <td className="text-center py-3 px-4">{channel.positionBased}%</td>
-                        <td className="text-center py-3 px-4">{channel.conversions}</td>
-                        <td className="text-center py-3 px-4">${channel.revenue.toLocaleString()}</td>
+                        <td className="text-center py-3 px-4">
+                          {channel.firstClick}%
+                        </td>
+                        <td className="text-center py-3 px-4">
+                          {channel.lastClick}%
+                        </td>
+                        <td className="text-center py-3 px-4">
+                          {channel.linear}%
+                        </td>
+                        <td className="text-center py-3 px-4">
+                          {channel.timeDecay}%
+                        </td>
+                        <td className="text-center py-3 px-4">
+                          {channel.positionBased}%
+                        </td>
+                        <td className="text-center py-3 px-4">
+                          {channel.conversions}
+                        </td>
+                        <td className="text-center py-3 px-4">
+                          ${channel.revenue.toLocaleString()}
+                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -420,12 +490,14 @@ export function AttributionDashboard() {
                         <Badge variant="outline" className="text-xs">
                           #{idx + 1}
                         </Badge>
-                        <span className="font-medium">{path.conversions} conversions</span>
+                        <span className="font-medium">
+                          {path.conversions} conversions
+                        </span>
                       </div>
                       <div className="flex items-center gap-4 text-sm">
                         <span className="text-muted-foreground">
-                          <DollarSign className="w-4 h-4 inline mr-1" />
-                          ${path.revenue.toLocaleString()}
+                          <DollarSign className="w-4 h-4 inline mr-1" />$
+                          {path.revenue.toLocaleString()}
                         </span>
                         <span className="text-muted-foreground">
                           <Clock className="w-4 h-4 inline mr-1" />
@@ -437,9 +509,7 @@ export function AttributionDashboard() {
                     <div className="flex items-center gap-2 flex-wrap">
                       {path.path.map((step, stepIdx) => (
                         <div key={stepIdx} className="flex items-center gap-2">
-                          <Badge
-                            className="bg-gradient-to-r from-blue-500/20 to-purple-500/20 border-blue-500/30"
-                          >
+                          <Badge className="bg-gradient-to-r from-blue-500/20 to-purple-500/20 border-blue-500/30">
                             {step}
                           </Badge>
                           {stepIdx < path.path.length - 1 && (
@@ -451,10 +521,20 @@ export function AttributionDashboard() {
 
                     <div className="mt-3">
                       <div className="flex justify-between text-sm mb-1">
-                        <span className="text-muted-foreground">Share of conversions</span>
-                        <span>{((path.conversions / totalConversions) * 100).toFixed(1)}%</span>
+                        <span className="text-muted-foreground">
+                          Share of conversions
+                        </span>
+                        <span>
+                          {(
+                            (path.conversions / totalConversions) *
+                            100
+                          ).toFixed(1)}
+                          %
+                        </span>
                       </div>
-                      <Progress value={(path.conversions / totalConversions) * 100} />
+                      <Progress
+                        value={(path.conversions / totalConversions) * 100}
+                      />
                     </div>
                   </div>
                 ))}
@@ -477,7 +557,10 @@ export function AttributionDashboard() {
             <CardContent>
               <ChartContainer config={chartConfig} className="h-[350px]">
                 <ComposedChart data={journeyTimelineData}>
-                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                  <CartesianGrid
+                    strokeDasharray="3 3"
+                    className="stroke-muted"
+                  />
                   <XAxis
                     dataKey="touchpoint"
                     className="text-xs"
@@ -525,11 +608,11 @@ export function AttributionDashboard() {
 
               <div className="flex justify-center gap-6 mt-4">
                 {[
-                  { label: 'Paid Social', color: '#3b82f6' },
-                  { label: 'Organic', color: '#22c55e' },
-                  { label: 'Email', color: '#f59e0b' },
-                  { label: 'Direct', color: '#ef4444' },
-                  { label: 'Display', color: '#8b5cf6' },
+                  { label: "Paid Social", color: "#3b82f6" },
+                  { label: "Organic", color: "#22c55e" },
+                  { label: "Email", color: "#f59e0b" },
+                  { label: "Direct", color: "#ef4444" },
+                  { label: "Display", color: "#8b5cf6" },
                 ].map((item) => (
                   <div key={item.label} className="flex items-center gap-2">
                     <div
@@ -638,10 +721,17 @@ export function AttributionDashboard() {
             <CardContent>
               <ChartContainer config={chartConfig} className="h-[300px]">
                 <ComposedChart data={windowComparisonData}>
-                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                  <CartesianGrid
+                    strokeDasharray="3 3"
+                    className="stroke-muted"
+                  />
                   <XAxis dataKey="window" className="text-xs" />
                   <YAxis yAxisId="left" className="text-xs" />
-                  <YAxis yAxisId="right" orientation="right" className="text-xs" />
+                  <YAxis
+                    yAxisId="right"
+                    orientation="right"
+                    className="text-xs"
+                  />
                   <ChartTooltip content={<ChartTooltipContent />} />
                   <Bar
                     yAxisId="left"
@@ -672,7 +762,9 @@ export function AttributionDashboard() {
                   <div className="p-3 rounded-lg bg-blue-500/10 border border-blue-500/20">
                     <div className="flex items-center gap-2 mb-1">
                       <Zap className="w-4 h-4 text-blue-500" />
-                      <span className="font-medium">Recommended Window: 30 Days</span>
+                      <span className="font-medium">
+                        Recommended Window: 30 Days
+                      </span>
                     </div>
                     <p className="text-sm text-muted-foreground">
                       Captures 88% of conversions while maintaining accuracy
@@ -686,7 +778,9 @@ export function AttributionDashboard() {
                     </div>
                     <div className="flex justify-between items-center">
                       <span className="text-sm">Medium Window (30 days)</span>
-                      <Badge className="bg-green-500/10 text-green-500">88% coverage</Badge>
+                      <Badge className="bg-green-500/10 text-green-500">
+                        88% coverage
+                      </Badge>
                     </div>
                     <div className="flex justify-between items-center">
                       <span className="text-sm">Long Window (90 days)</span>
@@ -707,9 +801,11 @@ export function AttributionDashboard() {
                     <div key={channel.channel} className="space-y-1">
                       <div className="flex justify-between text-sm">
                         <span>{channel.channel}</span>
-                        <span className="font-medium">{(idx + 2) * 1.5} days</span>
+                        <span className="font-medium">
+                          {(idx + 2) * 1.5} days
+                        </span>
                       </div>
-                      <Progress value={((idx + 2) * 1.5 / 15) * 100} />
+                      <Progress value={(((idx + 2) * 1.5) / 15) * 100} />
                     </div>
                   ))}
                 </div>
@@ -728,11 +824,15 @@ export function AttributionDashboard() {
                     Assisted Conversions Tracking
                   </CardTitle>
                   <CardDescription>
-                    Channels that assist in the conversion journey without being the final touchpoint
+                    Channels that assist in the conversion journey without being
+                    the final touchpoint
                   </CardDescription>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Switch checked={showAssisted} onCheckedChange={setShowAssisted} />
+                  <Switch
+                    checked={showAssisted}
+                    onCheckedChange={setShowAssisted}
+                  />
                   <Label className="text-sm">Include Assists</Label>
                 </div>
               </div>
@@ -742,7 +842,10 @@ export function AttributionDashboard() {
                 {channelData.map((channel, idx) => {
                   const assistRatio = channel.assists / channel.conversions;
                   return (
-                    <div key={channel.channel} className="p-4 rounded-lg border">
+                    <div
+                      key={channel.channel}
+                      className="p-4 rounded-lg border"
+                    >
                       <div className="flex items-center justify-between mb-3">
                         <div className="flex items-center gap-2">
                           <div
@@ -754,8 +857,8 @@ export function AttributionDashboard() {
                         <Badge
                           className={
                             assistRatio >= 1.5
-                              ? 'bg-purple-500/10 text-purple-500'
-                              : 'bg-gray-500/10 text-gray-500'
+                              ? "bg-purple-500/10 text-purple-500"
+                              : "bg-gray-500/10 text-gray-500"
                           }
                         >
                           {assistRatio.toFixed(1)}x assist ratio
@@ -764,15 +867,25 @@ export function AttributionDashboard() {
 
                       <div className="grid grid-cols-3 gap-4 mb-3">
                         <div>
-                          <p className="text-xs text-muted-foreground">Last-Click Conversions</p>
-                          <p className="text-lg font-bold">{channel.conversions}</p>
+                          <p className="text-xs text-muted-foreground">
+                            Last-Click Conversions
+                          </p>
+                          <p className="text-lg font-bold">
+                            {channel.conversions}
+                          </p>
                         </div>
                         <div>
-                          <p className="text-xs text-muted-foreground">Assisted Conversions</p>
-                          <p className="text-lg font-bold text-purple-500">{channel.assists}</p>
+                          <p className="text-xs text-muted-foreground">
+                            Assisted Conversions
+                          </p>
+                          <p className="text-lg font-bold text-purple-500">
+                            {channel.assists}
+                          </p>
                         </div>
                         <div>
-                          <p className="text-xs text-muted-foreground">Total Impact</p>
+                          <p className="text-xs text-muted-foreground">
+                            Total Impact
+                          </p>
                           <p className="text-lg font-bold">
                             {channel.conversions + channel.assists}
                           </p>
@@ -781,16 +894,26 @@ export function AttributionDashboard() {
 
                       <div className="flex gap-2">
                         <div className="flex-1">
-                          <div className="text-xs text-muted-foreground mb-1">Last-Click</div>
-                          <div className="h-2 rounded-full bg-blue-500" style={{
-                            width: `${(channel.conversions / (channel.conversions + channel.assists)) * 100}%`
-                          }} />
+                          <div className="text-xs text-muted-foreground mb-1">
+                            Last-Click
+                          </div>
+                          <div
+                            className="h-2 rounded-full bg-blue-500"
+                            style={{
+                              width: `${(channel.conversions / (channel.conversions + channel.assists)) * 100}%`,
+                            }}
+                          />
                         </div>
                         <div className="flex-1">
-                          <div className="text-xs text-muted-foreground mb-1">Assisted</div>
-                          <div className="h-2 rounded-full bg-purple-500" style={{
-                            width: `${(channel.assists / (channel.conversions + channel.assists)) * 100}%`
-                          }} />
+                          <div className="text-xs text-muted-foreground mb-1">
+                            Assisted
+                          </div>
+                          <div
+                            className="h-2 rounded-full bg-purple-500"
+                            style={{
+                              width: `${(channel.assists / (channel.conversions + channel.assists)) * 100}%`,
+                            }}
+                          />
                         </div>
                       </div>
                     </div>
@@ -811,28 +934,36 @@ export function AttributionDashboard() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="p-4 rounded-lg bg-purple-500/10 border border-purple-500/20">
                   <h4 className="font-medium mb-2">Top Assisting Channel</h4>
-                  <p className="text-2xl font-bold text-purple-500">Email Marketing</p>
+                  <p className="text-2xl font-bold text-purple-500">
+                    Email Marketing
+                  </p>
                   <p className="text-sm text-muted-foreground mt-1">
                     234 assists (1.31x ratio) - Critical for nurturing
                   </p>
                 </div>
                 <div className="p-4 rounded-lg bg-blue-500/10 border border-blue-500/20">
                   <h4 className="font-medium mb-2">Best Closer</h4>
-                  <p className="text-2xl font-bold text-blue-500">Organic Search</p>
+                  <p className="text-2xl font-bold text-blue-500">
+                    Organic Search
+                  </p>
                   <p className="text-sm text-muted-foreground mt-1">
                     312 last-click conversions - Strong purchase intent
                   </p>
                 </div>
                 <div className="p-4 rounded-lg bg-yellow-500/10 border border-yellow-500/20">
                   <h4 className="font-medium mb-2">Hidden Value</h4>
-                  <p className="text-2xl font-bold text-yellow-500">Display Ads</p>
+                  <p className="text-2xl font-bold text-yellow-500">
+                    Display Ads
+                  </p>
                   <p className="text-sm text-muted-foreground mt-1">
                     2.73x assist ratio - Undervalued by last-click
                   </p>
                 </div>
                 <div className="p-4 rounded-lg bg-green-500/10 border border-green-500/20">
                   <h4 className="font-medium mb-2">Recommendation</h4>
-                  <p className="text-2xl font-bold text-green-500">+15% Display</p>
+                  <p className="text-2xl font-bold text-green-500">
+                    +15% Display
+                  </p>
                   <p className="text-sm text-muted-foreground mt-1">
                     Increase display budget to boost assisted conversions
                   </p>

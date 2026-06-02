@@ -1,7 +1,7 @@
-import type { Request, Response, NextFunction, RequestHandler } from 'express';
-import v8 from 'v8';
-import { randomBytes } from 'crypto';
-import { logger } from '../logger.js';
+import type { Request, Response, NextFunction, RequestHandler } from "express";
+import v8 from "v8";
+import { randomBytes } from "crypto";
+import { logger } from "../logger.js";
 
 interface QueuedRequest {
   id: string;
@@ -46,7 +46,7 @@ class RequestQueue {
   }
 
   private generateId(): string {
-    return `${Date.now()}-${randomBytes(4).toString('hex')}`;
+    return `${Date.now()}-${randomBytes(4).toString("hex")}`;
   }
 
   private getTotalQueueSize(): number {
@@ -90,13 +90,13 @@ class RequestQueue {
 
   private determinePriority(req: Request): number {
     const user = (req as Record<string, unknown>).user;
-    
-    if (user?.role === 'admin') return 0;
-    if (user?.subscriptionTier === 'lifetime') return 0;
-    if (user?.subscriptionTier === 'yearly') return 1;
-    
-    if (req.path.includes('/health') || req.path.includes('/status')) return 0;
-    
+
+    if (user?.role === "admin") return 0;
+    if (user?.subscriptionTier === "lifetime") return 0;
+    if (user?.subscriptionTier === "yearly") return 1;
+
+    if (req.path.includes("/health") || req.path.includes("/status")) return 0;
+
     return 2;
   }
 
@@ -107,7 +107,7 @@ class RequestQueue {
 
     for (let priority = 0; priority < this.config.priorityLevels; priority++) {
       const queue = this.queues.get(priority)!;
-      
+
       while (queue.length > 0 && this.processing < this.config.maxConcurrent) {
         const request = queue.shift()!;
         this.processRequest(request);
@@ -118,19 +118,21 @@ class RequestQueue {
   // Routes that produce long-running or streamed responses — exempt from the
   // active-processing hard timeout.
   private static readonly STREAMING_PATH_PATTERNS = [
-    '/api/ai/',
-    '/api/stream',
-    '/api/studio/export',
-    '/api/export',
-    '/api/download',
-    '/api/upload',
-    '/api/multipart',
-    '/api/sse',
-    '/api/events',
+    "/api/ai/",
+    "/api/stream",
+    "/api/studio/export",
+    "/api/export",
+    "/api/download",
+    "/api/upload",
+    "/api/multipart",
+    "/api/sse",
+    "/api/events",
   ];
 
   private isStreamingRoute(path: string): boolean {
-    return RequestQueue.STREAMING_PATH_PATTERNS.some(p => path.startsWith(p) || path.includes(p));
+    return RequestQueue.STREAMING_PATH_PATTERNS.some(
+      (p) => path.startsWith(p) || path.includes(p),
+    );
   }
 
   private processRequest(queuedRequest: QueuedRequest): void {
@@ -158,7 +160,7 @@ class RequestQueue {
 
     // Client disconnect path: socket 'close' fires when the TCP connection drops
     // before the response is sent (e.g. browser tab closed, network timeout).
-    queuedRequest.req.on('close', () => {
+    queuedRequest.req.on("close", () => {
       if (!released) {
         this.stats.timedOut++;
         release();
@@ -174,10 +176,13 @@ class RequestQueue {
       const activeTimeout = setTimeout(() => {
         if (!queuedRequest.res.headersSent) {
           this.stats.timedOut++;
-          logger.warn(`[RequestQueue] Active handler timeout on ${queuedRequest.req.method} ${queuedRequest.req.path}`);
+          logger.warn(
+            `[RequestQueue] Active handler timeout on ${queuedRequest.req.method} ${queuedRequest.req.path}`,
+          );
           queuedRequest.res.status(503).json({
-            error: 'Gateway Timeout',
-            message: 'The server took too long to process your request. Please try again.',
+            error: "Gateway Timeout",
+            message:
+              "The server took too long to process your request. Please try again.",
             retryAfter: 5,
           });
         }
@@ -185,28 +190,28 @@ class RequestQueue {
         release();
       }, 60_000);
 
-      queuedRequest.res.on('finish', () => clearTimeout(activeTimeout));
-      queuedRequest.res.on('close', () => clearTimeout(activeTimeout));
+      queuedRequest.res.on("finish", () => clearTimeout(activeTimeout));
+      queuedRequest.res.on("close", () => clearTimeout(activeTimeout));
     }
 
     const waitTime = Date.now() - queuedRequest.timestamp;
-    queuedRequest.res.setHeader('X-Queue-Wait-Ms', waitTime);
+    queuedRequest.res.setHeader("X-Queue-Wait-Ms", waitTime);
 
     queuedRequest.next();
   }
 
   private handleTimeout(id: string, priority: number): void {
     const queue = this.queues.get(priority)!;
-    const index = queue.findIndex(r => r.id === id);
-    
+    const index = queue.findIndex((r) => r.id === id);
+
     if (index !== -1) {
       const request = queue.splice(index, 1)[0];
       this.stats.timedOut++;
-      
+
       if (!request.res.headersSent) {
         request.res.status(503).json({
-          error: 'Service temporarily unavailable',
-          message: 'Request timed out in queue. Please try again.',
+          error: "Service temporarily unavailable",
+          message: "Request timed out in queue. Please try again.",
           retryAfter: 5,
         });
       }
@@ -233,8 +238,8 @@ class RequestQueue {
         clearTimeout(request.timeout);
         if (!request.res.headersSent) {
           request.res.status(503).json({
-            error: 'Queue cleared',
-            message: 'The request queue was cleared.',
+            error: "Queue cleared",
+            message: "The request queue was cleared.",
           });
         }
       }
@@ -250,15 +255,17 @@ const globalRequestQueue = new RequestQueue({
   priorityLevels: 3,
 });
 
-export const createQueueMiddleware = (queueInstance?: RequestQueue): RequestHandler => {
+export const createQueueMiddleware = (
+  queueInstance?: RequestQueue,
+): RequestHandler => {
   const queue = queueInstance || globalRequestQueue;
 
   return (req: Request, res: Response, next: NextFunction): void => {
-    const shouldSkipQueue = 
-      req.path.startsWith('/api/health') ||
-      req.path === '/api/version' ||
-      req.path.startsWith('/api/monitoring') ||
-      req.method === 'OPTIONS';
+    const shouldSkipQueue =
+      req.path.startsWith("/api/health") ||
+      req.path === "/api/version" ||
+      req.path.startsWith("/api/monitoring") ||
+      req.method === "OPTIONS";
 
     if (shouldSkipQueue) {
       next();
@@ -266,11 +273,11 @@ export const createQueueMiddleware = (queueInstance?: RequestQueue): RequestHand
     }
 
     const enqueued = queue.enqueue(req, res, next);
-    
+
     if (!enqueued) {
       res.status(503).json({
-        error: 'Service overloaded',
-        message: 'Too many requests. Please try again in a few seconds.',
+        error: "Service overloaded",
+        message: "Too many requests. Please try again in a few seconds.",
         retryAfter: 5,
       });
     }
@@ -299,20 +306,26 @@ export class LoadShedder {
     // Memory pressure check: use heap_size_limit (the configured --max-old-space-size)
     // so the percentage is accurate against the true cap, not just the JIT-grown heap.
     const heapStats = v8.getHeapStatistics();
-    const heapUtil = heapStats.heap_size_limit > 0
-      ? heapStats.used_heap_size / heapStats.heap_size_limit
-      : process.memoryUsage().heapUsed / process.memoryUsage().heapTotal;
+    const heapUtil =
+      heapStats.heap_size_limit > 0
+        ? heapStats.used_heap_size / heapStats.heap_size_limit
+        : process.memoryUsage().heapUsed / process.memoryUsage().heapTotal;
 
     // Activate shedding when either concurrency OR memory breaches the threshold.
     const utilization = Math.max(concurrencyUtil, heapUtil);
 
     if (!this.shedding && utilization > this.threshold) {
       this.shedding = true;
-      const reason = concurrencyUtil >= heapUtil ? 'concurrency' : 'memory pressure';
-      logger.warn(`Load shedding ACTIVATED (${reason}) — util at ${(utilization * 100).toFixed(1)}%`);
+      const reason =
+        concurrencyUtil >= heapUtil ? "concurrency" : "memory pressure";
+      logger.warn(
+        `Load shedding ACTIVATED (${reason}) — util at ${(utilization * 100).toFixed(1)}%`,
+      );
     } else if (this.shedding && utilization < this.recoveryThreshold) {
       this.shedding = false;
-      logger.info(`Load shedding DEACTIVATED — util at ${(utilization * 100).toFixed(1)}%`);
+      logger.info(
+        `Load shedding DEACTIVATED — util at ${(utilization * 100).toFixed(1)}%`,
+      );
     }
   }
 
@@ -320,9 +333,10 @@ export class LoadShedder {
     if (!this.shedding) return false;
 
     const user = (req as Record<string, unknown>).user;
-    if (user?.role === 'admin') return false;
-    if (user?.subscriptionTier === 'lifetime') return false;
-    if (req.path.includes('/health') || req.path.includes('/critical')) return false;
+    if (user?.role === "admin") return false;
+    if (user?.subscriptionTier === "lifetime") return false;
+    if (req.path.includes("/health") || req.path.includes("/critical"))
+      return false;
 
     return Math.random() > 0.5;
   }
@@ -331,8 +345,8 @@ export class LoadShedder {
     return (req: Request, res: Response, next: NextFunction): void => {
       if (this.shouldShed(req)) {
         res.status(503).json({
-          error: 'Service overloaded',
-          message: 'Server is under heavy load. Please try again shortly.',
+          error: "Service overloaded",
+          message: "Server is under heavy load. Please try again shortly.",
           retryAfter: 10,
         });
         return;

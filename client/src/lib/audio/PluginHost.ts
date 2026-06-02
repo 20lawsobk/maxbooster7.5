@@ -1,15 +1,15 @@
-import { BasePlugin } from '@plugins/BasePlugin';
-import { CompressorPlugin } from '@plugins/CompressorPlugin';
-import { EQPlugin } from '@plugins/EQPlugin';
-import { ReverbPlugin } from '@plugins/ReverbPlugin';
-import { DelayPlugin } from '@plugins/DelayPlugin';
-import { DistortionPlugin } from '@plugins/DistortionPlugin';
-import { ChorusPlugin } from '@plugins/ChorusPlugin';
-import { FlangerPlugin } from '@plugins/FlangerPlugin';
-import { PhaserPlugin } from '@plugins/PhaserPlugin';
-import { DeEsserPlugin } from '@plugins/DeEsserPlugin';
-import { VocoderPlugin } from '@plugins/VocoderPlugin';
-import { DynamicEQPlugin } from '@plugins/DynamicEQPlugin';
+import { BasePlugin } from "@plugins/BasePlugin";
+import { CompressorPlugin } from "@plugins/CompressorPlugin";
+import { EQPlugin } from "@plugins/EQPlugin";
+import { ReverbPlugin } from "@plugins/ReverbPlugin";
+import { DelayPlugin } from "@plugins/DelayPlugin";
+import { DistortionPlugin } from "@plugins/DistortionPlugin";
+import { ChorusPlugin } from "@plugins/ChorusPlugin";
+import { FlangerPlugin } from "@plugins/FlangerPlugin";
+import { PhaserPlugin } from "@plugins/PhaserPlugin";
+import { DeEsserPlugin } from "@plugins/DeEsserPlugin";
+import { VocoderPlugin } from "@plugins/VocoderPlugin";
+import { DynamicEQPlugin } from "@plugins/DynamicEQPlugin";
 
 /**
  * Plugin Host - Manages audio plugin chains
@@ -28,17 +28,17 @@ export class PluginHost {
    */
   getAvailablePlugins(): PluginInfo[] {
     return [
-      { type: 'compressor', name: 'Compressor', category: 'dynamics' },
-      { type: 'eq', name: '8-Band EQ', category: 'eq' },
-      { type: 'reverb', name: 'Convolution Reverb', category: 'spatial' },
-      { type: 'delay', name: 'Stereo Delay', category: 'time' },
-      { type: 'distortion', name: 'Distortion', category: 'saturation' },
-      { type: 'chorus', name: 'Chorus', category: 'modulation' },
-      { type: 'flanger', name: 'Flanger', category: 'modulation' },
-      { type: 'phaser', name: 'Phaser', category: 'modulation' },
-      { type: 'deesser', name: 'De-Esser', category: 'dynamics' },
-      { type: 'vocoder', name: 'Vocoder', category: 'vocal' },
-      { type: 'dynamiceq', name: 'Dynamic EQ', category: 'eq' },
+      { type: "compressor", name: "Compressor", category: "dynamics" },
+      { type: "eq", name: "8-Band EQ", category: "eq" },
+      { type: "reverb", name: "Convolution Reverb", category: "spatial" },
+      { type: "delay", name: "Stereo Delay", category: "time" },
+      { type: "distortion", name: "Distortion", category: "saturation" },
+      { type: "chorus", name: "Chorus", category: "modulation" },
+      { type: "flanger", name: "Flanger", category: "modulation" },
+      { type: "phaser", name: "Phaser", category: "modulation" },
+      { type: "deesser", name: "De-Esser", category: "dynamics" },
+      { type: "vocoder", name: "Vocoder", category: "vocal" },
+      { type: "dynamiceq", name: "Dynamic EQ", category: "eq" },
     ];
   }
 
@@ -47,63 +47,119 @@ export class PluginHost {
    * mb-* slugs embed the type in their id: mb-reverb-hall → reverb, mb-comp-studio → compressor, etc.
    */
   private resolveType(type: string): string {
-    if (type.startsWith('mb-')) {
+    if (type.startsWith("mb-")) {
       // Reverb variants — all route to convolution/algorithmic reverb
-      if (type.includes('reverb') || type.includes('plate') || type.includes('hall') ||
-          type.includes('spring') || type.includes('shimmer') || type.includes('ambient') ||
-          type.includes('cathedral') || type.includes('chamber') || type.includes('gated-reverb'))
-        return 'reverb';
+      if (
+        type.includes("reverb") ||
+        type.includes("plate") ||
+        type.includes("hall") ||
+        type.includes("spring") ||
+        type.includes("shimmer") ||
+        type.includes("ambient") ||
+        type.includes("cathedral") ||
+        type.includes("chamber") ||
+        type.includes("gated-reverb")
+      )
+        return "reverb";
 
       // Delay
-      if (type.includes('delay'))   return 'delay';
+      if (type.includes("delay")) return "delay";
 
       // EQ variants — dynamic EQ and mid-side EQ use the dynamic EQ processor
-      if (type.includes('dynamic-eq') || type.includes('mid-side-eq') || type.includes('midside') ||
-          type.includes('surgical'))
-        return 'dynamiceq';
-      if (type.includes('eq') || type.includes('parametric') || type.includes('linear-phase'))
-        return 'eq';
+      if (
+        type.includes("dynamic-eq") ||
+        type.includes("mid-side-eq") ||
+        type.includes("midside") ||
+        type.includes("surgical")
+      )
+        return "dynamiceq";
+      if (
+        type.includes("eq") ||
+        type.includes("parametric") ||
+        type.includes("linear-phase")
+      )
+        return "eq";
 
       // Compressor variants
-      if (type.includes('vca') || type.includes('optical') || type.includes('fet') ||
-          type.includes('tube-comp') || type.includes('bus-comp') || type.includes('glue') ||
-          type.includes('mastering-comp') || type.includes('vintage-comp') || type.includes('parallel'))
-        return 'compressor';
-      if (type.includes('multiband'))     return 'compressor';
-      if (type.includes('comp'))          return 'compressor';
+      if (
+        type.includes("vca") ||
+        type.includes("optical") ||
+        type.includes("fet") ||
+        type.includes("tube-comp") ||
+        type.includes("bus-comp") ||
+        type.includes("glue") ||
+        type.includes("mastering-comp") ||
+        type.includes("vintage-comp") ||
+        type.includes("parallel")
+      )
+        return "compressor";
+      if (type.includes("multiband")) return "compressor";
+      if (type.includes("comp")) return "compressor";
 
       // Limiters & loudness
-      if (type.includes('limiter') || type.includes('maximizer') || type.includes('leveler'))
-        return 'compressor';
+      if (
+        type.includes("limiter") ||
+        type.includes("maximizer") ||
+        type.includes("leveler")
+      )
+        return "compressor";
 
       // Dynamics — gate, expander, transient shaper use dynamic EQ processor
-      if (type.includes('gate') || type.includes('expander') || type.includes('transient') ||
-          type.includes('ducker') || type.includes('pumper'))
-        return 'dynamiceq';
+      if (
+        type.includes("gate") ||
+        type.includes("expander") ||
+        type.includes("transient") ||
+        type.includes("ducker") ||
+        type.includes("pumper")
+      )
+        return "dynamiceq";
 
       // De-esser
-      if (type.includes('deesser') || type.includes('de-ess') || type.includes('de_ess'))
-        return 'deesser';
+      if (
+        type.includes("deesser") ||
+        type.includes("de-ess") ||
+        type.includes("de_ess")
+      )
+        return "deesser";
 
       // Distortion & saturation
-      if (type.includes('dist') || type.includes('fuzz') || type.includes('overdrive') ||
-          type.includes('bitcrush') || type.includes('ring-mod') || type.includes('ringmod'))
-        return 'distortion';
+      if (
+        type.includes("dist") ||
+        type.includes("fuzz") ||
+        type.includes("overdrive") ||
+        type.includes("bitcrush") ||
+        type.includes("ring-mod") ||
+        type.includes("ringmod")
+      )
+        return "distortion";
 
       // Modulation — each type routes to the most appropriate processor
-      if (type.includes('flanger'))   return 'flanger';
-      if (type.includes('phaser'))    return 'phaser';
-      if (type.includes('chorus') || type.includes('ensemble') || type.includes('dimension'))
-        return 'chorus';
+      if (type.includes("flanger")) return "flanger";
+      if (type.includes("phaser")) return "phaser";
+      if (
+        type.includes("chorus") ||
+        type.includes("ensemble") ||
+        type.includes("dimension")
+      )
+        return "chorus";
       // Tremolo, vibrato, rotary, auto-pan use chorus (LFO modulation) processor
-      if (type.includes('tremolo') || type.includes('vibrato') || type.includes('rotary') ||
-          type.includes('auto-pan') || type.includes('autopan'))
-        return 'chorus';
+      if (
+        type.includes("tremolo") ||
+        type.includes("vibrato") ||
+        type.includes("rotary") ||
+        type.includes("auto-pan") ||
+        type.includes("autopan")
+      )
+        return "chorus";
 
       // Vocal / vocoder
-      if (type.includes('vocoder') || type.includes('vocal') || type.includes('harmony') ||
-          type.includes('formant'))
-        return 'vocoder';
+      if (
+        type.includes("vocoder") ||
+        type.includes("vocal") ||
+        type.includes("harmony") ||
+        type.includes("formant")
+      )
+        return "vocoder";
     }
     return type;
   }
@@ -115,27 +171,27 @@ export class PluginHost {
   createPlugin(type: string): BasePlugin | null {
     const resolved = this.resolveType(type);
     switch (resolved) {
-      case 'compressor':
+      case "compressor":
         return new CompressorPlugin(this.context);
-      case 'eq':
+      case "eq":
         return new EQPlugin(this.context);
-      case 'reverb':
+      case "reverb":
         return new ReverbPlugin(this.context);
-      case 'delay':
+      case "delay":
         return new DelayPlugin(this.context);
-      case 'distortion':
+      case "distortion":
         return new DistortionPlugin(this.context);
-      case 'chorus':
+      case "chorus":
         return new ChorusPlugin(this.context);
-      case 'flanger':
+      case "flanger":
         return new FlangerPlugin(this.context);
-      case 'phaser':
+      case "phaser":
         return new PhaserPlugin(this.context);
-      case 'deesser':
+      case "deesser":
         return new DeEsserPlugin(this.context);
-      case 'vocoder':
+      case "vocoder":
         return new VocoderPlugin(this.context);
-      case 'dynamiceq':
+      case "dynamiceq":
         return new DynamicEQPlugin(this.context);
       default:
         return null;
@@ -161,7 +217,11 @@ export class PluginHost {
   /**
    * Add plugin to chain
    */
-  addPluginToChain(trackId: string, pluginType: string, position?: number): BasePlugin | null {
+  addPluginToChain(
+    trackId: string,
+    pluginType: string,
+    position?: number,
+  ): BasePlugin | null {
     const chain = this.chains.get(trackId);
     if (!chain) return null;
 
@@ -218,7 +278,11 @@ export class PluginChain {
     this.reconnectChain();
 
     // Add plugin at position
-    if (position !== undefined && position >= 0 && position < this.plugins.length) {
+    if (
+      position !== undefined &&
+      position >= 0 &&
+      position < this.plugins.length
+    ) {
       this.plugins.splice(position, 0, plugin);
     } else {
       this.plugins.push(plugin);

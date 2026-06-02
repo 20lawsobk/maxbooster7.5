@@ -1,12 +1,18 @@
-import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Table,
   TableBody,
@@ -14,7 +20,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
+} from "@/components/ui/table";
 import {
   Dialog,
   DialogContent,
@@ -23,19 +29,19 @@ import {
   DialogTitle,
   DialogTrigger,
   DialogFooter,
-} from '@/components/ui/dialog';
+} from "@/components/ui/dialog";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Progress } from '@/components/ui/progress';
-import { Checkbox } from '@/components/ui/checkbox';
-import { useToast } from '@/hooks/use-toast';
-import { apiRequest } from '@/lib/queryClient';
+} from "@/components/ui/select";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Progress } from "@/components/ui/progress";
+import { Checkbox } from "@/components/ui/checkbox";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
 import {
   Trash2,
   Plus,
@@ -58,7 +64,7 @@ import {
   RotateCcw,
   Ban,
   Gavel,
-} from 'lucide-react';
+} from "lucide-react";
 import {
   SpotifyIcon,
   AppleMusicIcon,
@@ -67,21 +73,34 @@ import {
   TidalIcon,
   SoundCloudIcon,
   TikTokIcon,
-} from '@/components/ui/brand-icons';
+} from "@/components/ui/brand-icons";
 
 interface TakedownRequest {
   id: string;
   releaseId: string;
   releaseTitle: string;
   artistName: string;
-  reason: 'artist_request' | 'copyright' | 'legal' | 'licensing' | 'duplicate' | 'quality' | 'other';
+  reason:
+    | "artist_request"
+    | "copyright"
+    | "legal"
+    | "licensing"
+    | "duplicate"
+    | "quality"
+    | "other";
   description: string;
   platforms: string[];
-  status: 'pending' | 'processing' | 'completed' | 'partial' | 'failed' | 'cancelled';
+  status:
+    | "pending"
+    | "processing"
+    | "completed"
+    | "partial"
+    | "failed"
+    | "cancelled";
   progress: number;
   platformStatuses: {
     platform: string;
-    status: 'pending' | 'completed' | 'failed';
+    status: "pending" | "completed" | "failed";
     completedAt?: string;
     error?: string;
   }[];
@@ -96,11 +115,11 @@ interface CopyrightClaim {
   releaseTitle: string;
   trackTitle: string;
   platform: string;
-  claimType: 'audio' | 'composition' | 'both';
+  claimType: "audio" | "composition" | "both";
   claimant: string;
-  claimantType: 'label' | 'publisher' | 'artist' | 'distributor' | 'other';
-  status: 'active' | 'disputed' | 'resolved' | 'released';
-  impact: 'monetized' | 'blocked' | 'tracked' | 'none';
+  claimantType: "label" | "publisher" | "artist" | "distributor" | "other";
+  status: "active" | "disputed" | "resolved" | "released";
+  impact: "monetized" | "blocked" | "tracked" | "none";
   claimedAt: string;
   disputeDeadline?: string;
   revenue?: {
@@ -115,10 +134,16 @@ interface Dispute {
   releaseTitle: string;
   trackTitle: string;
   platform: string;
-  reason: 'fair_use' | 'license' | 'original' | 'public_domain' | 'permission' | 'other';
+  reason:
+    | "fair_use"
+    | "license"
+    | "original"
+    | "public_domain"
+    | "permission"
+    | "other";
   explanation: string;
   supportingDocs: string[];
-  status: 'submitted' | 'under_review' | 'escalated' | 'approved' | 'rejected';
+  status: "submitted" | "under_review" | "escalated" | "approved" | "rejected";
   submittedAt: string;
   lastUpdateAt: string;
   resolution?: string;
@@ -130,130 +155,150 @@ interface ReinstatementRequest {
   releaseTitle: string;
   platforms: string[];
   reason: string;
-  status: 'pending' | 'approved' | 'rejected' | 'processing' | 'completed';
+  status: "pending" | "approved" | "rejected" | "processing" | "completed";
   requestedAt: string;
   processedAt?: string;
 }
 
 const PLATFORM_ICONS: Record<string, React.ElementType> = {
   spotify: SpotifyIcon,
-  'apple-music': AppleMusicIcon,
-  'youtube-music': YouTubeIcon,
-  'amazon-music': AmazonIcon,
+  "apple-music": AppleMusicIcon,
+  "youtube-music": YouTubeIcon,
+  "amazon-music": AmazonIcon,
   tidal: TidalIcon,
   soundcloud: SoundCloudIcon,
   tiktok: TikTokIcon,
 };
 
 const TAKEDOWN_REASONS = [
-  { value: 'artist_request', label: 'Artist Request' },
-  { value: 'copyright', label: 'Copyright Issue' },
-  { value: 'legal', label: 'Legal Requirement' },
-  { value: 'licensing', label: 'Licensing Expired' },
-  { value: 'duplicate', label: 'Duplicate Release' },
-  { value: 'quality', label: 'Quality Issues' },
-  { value: 'other', label: 'Other' },
+  { value: "artist_request", label: "Artist Request" },
+  { value: "copyright", label: "Copyright Issue" },
+  { value: "legal", label: "Legal Requirement" },
+  { value: "licensing", label: "Licensing Expired" },
+  { value: "duplicate", label: "Duplicate Release" },
+  { value: "quality", label: "Quality Issues" },
+  { value: "other", label: "Other" },
 ];
 
 const DISPUTE_REASONS = [
-  { value: 'fair_use', label: 'Fair Use' },
-  { value: 'license', label: 'Valid License' },
-  { value: 'original', label: 'Original Work' },
-  { value: 'public_domain', label: 'Public Domain' },
-  { value: 'permission', label: 'Permission Granted' },
-  { value: 'other', label: 'Other' },
+  { value: "fair_use", label: "Fair Use" },
+  { value: "license", label: "Valid License" },
+  { value: "original", label: "Original Work" },
+  { value: "public_domain", label: "Public Domain" },
+  { value: "permission", label: "Permission Granted" },
+  { value: "other", label: "Other" },
 ];
 
 export function TakedownManager() {
-  const [activeTab, setActiveTab] = useState('takedowns');
-  const [searchQuery, setSearchQuery] = useState('');
+  const [activeTab, setActiveTab] = useState("takedowns");
+  const [searchQuery, setSearchQuery] = useState("");
   const [isNewTakedownOpen, setIsNewTakedownOpen] = useState(false);
   const [isNewDisputeOpen, setIsNewDisputeOpen] = useState(false);
   const [isReinstatementOpen, setIsReinstatementOpen] = useState(false);
-  const [selectedTakedown, setSelectedTakedown] = useState<TakedownRequest | null>(null);
-  const [selectedClaim, setSelectedClaim] = useState<CopyrightClaim | null>(null);
+  const [selectedTakedown, setSelectedTakedown] =
+    useState<TakedownRequest | null>(null);
+  const [selectedClaim, setSelectedClaim] = useState<CopyrightClaim | null>(
+    null,
+  );
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
   const [newTakedown, setNewTakedown] = useState({
-    releaseId: '',
-    reason: 'artist_request',
-    description: '',
-    platforms: ['spotify', 'apple-music', 'youtube-music'],
+    releaseId: "",
+    reason: "artist_request",
+    description: "",
+    platforms: ["spotify", "apple-music", "youtube-music"],
   });
 
   const [newDispute, setNewDispute] = useState({
-    claimId: '',
-    reason: 'original',
-    explanation: '',
+    claimId: "",
+    reason: "original",
+    explanation: "",
     supportingDocs: [] as string[],
   });
 
-  const { data: takedowns = [], isLoading: takedownsLoading } = useQuery<TakedownRequest[]>({
-    queryKey: ['/api/distribution/takedowns'],
-  });
-
-  const { data: claims = [], isLoading: claimsLoading } = useQuery<CopyrightClaim[]>({
-    queryKey: ['/api/distribution/claims'],
-  });
-
-  const { data: disputes = [], isLoading: disputesLoading } = useQuery<Dispute[]>({
-    queryKey: ['/api/distribution/disputes'],
-  });
-
-  const { data: reinstatements = [], isLoading: reinstatementsLoading } = useQuery<
-    ReinstatementRequest[]
+  const { data: takedowns = [], isLoading: takedownsLoading } = useQuery<
+    TakedownRequest[]
   >({
-    queryKey: ['/api/distribution/reinstatements'],
+    queryKey: ["/api/distribution/takedowns"],
   });
+
+  const { data: claims = [], isLoading: claimsLoading } = useQuery<
+    CopyrightClaim[]
+  >({
+    queryKey: ["/api/distribution/claims"],
+  });
+
+  const { data: disputes = [], isLoading: disputesLoading } = useQuery<
+    Dispute[]
+  >({
+    queryKey: ["/api/distribution/disputes"],
+  });
+
+  const { data: reinstatements = [], isLoading: reinstatementsLoading } =
+    useQuery<ReinstatementRequest[]>({
+      queryKey: ["/api/distribution/reinstatements"],
+    });
 
   const submitTakedownMutation = useMutation({
     mutationFn: async (data: typeof newTakedown) => {
-      const response = await apiRequest('POST', '/api/distribution/takedowns', data);
+      const response = await apiRequest(
+        "POST",
+        "/api/distribution/takedowns",
+        data,
+      );
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/distribution/takedowns'] });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/distribution/takedowns"],
+      });
       setIsNewTakedownOpen(false);
       setNewTakedown({
-        releaseId: '',
-        reason: 'artist_request',
-        description: '',
-        platforms: ['spotify', 'apple-music', 'youtube-music'],
+        releaseId: "",
+        reason: "artist_request",
+        description: "",
+        platforms: ["spotify", "apple-music", "youtube-music"],
       });
       toast({
-        title: 'Takedown Requested',
-        description: 'Your takedown request has been submitted',
+        title: "Takedown Requested",
+        description: "Your takedown request has been submitted",
       });
     },
     onError: () => {
       toast({
-        title: 'Request Failed',
-        description: 'Unable to submit takedown request',
-        variant: 'destructive',
+        title: "Request Failed",
+        description: "Unable to submit takedown request",
+        variant: "destructive",
       });
     },
   });
 
   const submitDisputeMutation = useMutation({
     mutationFn: async (data: typeof newDispute) => {
-      const response = await apiRequest('POST', '/api/distribution/disputes', data);
+      const response = await apiRequest(
+        "POST",
+        "/api/distribution/disputes",
+        data,
+      );
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/distribution/disputes'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/distribution/claims'] });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/distribution/disputes"],
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/distribution/claims"] });
       setIsNewDisputeOpen(false);
       toast({
-        title: 'Dispute Submitted',
-        description: 'Your dispute has been submitted for review',
+        title: "Dispute Submitted",
+        description: "Your dispute has been submitted for review",
       });
     },
     onError: () => {
       toast({
-        title: 'Submission Failed',
-        description: 'Unable to submit dispute',
-        variant: 'destructive',
+        title: "Submission Failed",
+        description: "Unable to submit dispute",
+        variant: "destructive",
       });
     },
   });
@@ -266,18 +311,24 @@ export function TakedownManager() {
       takedownId: string;
       reason: string;
     }) => {
-      const response = await apiRequest('POST', '/api/distribution/reinstatements', {
-        takedownId,
-        reason,
-      });
+      const response = await apiRequest(
+        "POST",
+        "/api/distribution/reinstatements",
+        {
+          takedownId,
+          reason,
+        },
+      );
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/distribution/reinstatements'] });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/distribution/reinstatements"],
+      });
       setIsReinstatementOpen(false);
       toast({
-        title: 'Reinstatement Requested',
-        description: 'Your reinstatement request has been submitted',
+        title: "Reinstatement Requested",
+        description: "Your reinstatement request has been submitted",
       });
     },
   });
@@ -285,45 +336,94 @@ export function TakedownManager() {
   const cancelTakedownMutation = useMutation({
     mutationFn: async (takedownId: string) => {
       const response = await apiRequest(
-        'POST',
-        `/api/distribution/takedowns/${takedownId}/cancel`
+        "POST",
+        `/api/distribution/takedowns/${takedownId}/cancel`,
       );
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/distribution/takedowns'] });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/distribution/takedowns"],
+      });
       toast({
-        title: 'Takedown Cancelled',
-        description: 'The takedown request has been cancelled',
+        title: "Takedown Cancelled",
+        description: "The takedown request has been cancelled",
       });
     },
   });
 
-
   const getStatusBadge = (status: string) => {
-    const styles: Record<string, { className: string; icon: React.ElementType }> = {
-      pending: { className: 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20', icon: Clock },
-      processing: { className: 'bg-blue-500/10 text-blue-500 border-blue-500/20', icon: RefreshCw },
-      completed: { className: 'bg-green-500/10 text-green-500 border-green-500/20', icon: CheckCircle },
-      partial: { className: 'bg-orange-500/10 text-orange-500 border-orange-500/20', icon: AlertCircle },
-      failed: { className: 'bg-red-500/10 text-red-500 border-red-500/20', icon: XCircle },
-      cancelled: { className: 'bg-gray-500/10 text-gray-500 border-gray-500/20', icon: Ban },
-      active: { className: 'bg-red-500/10 text-red-500 border-red-500/20', icon: AlertTriangle },
-      disputed: { className: 'bg-blue-500/10 text-blue-500 border-blue-500/20', icon: Scale },
-      resolved: { className: 'bg-green-500/10 text-green-500 border-green-500/20', icon: CheckCircle },
-      released: { className: 'bg-green-500/10 text-green-500 border-green-500/20', icon: CheckCircle },
-      submitted: { className: 'bg-blue-500/10 text-blue-500 border-blue-500/20', icon: Send },
-      under_review: { className: 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20', icon: Eye },
-      escalated: { className: 'bg-orange-500/10 text-orange-500 border-orange-500/20', icon: AlertTriangle },
-      approved: { className: 'bg-green-500/10 text-green-500 border-green-500/20', icon: CheckCircle },
-      rejected: { className: 'bg-red-500/10 text-red-500 border-red-500/20', icon: XCircle },
+    const styles: Record<
+      string,
+      { className: string; icon: React.ElementType }
+    > = {
+      pending: {
+        className: "bg-yellow-500/10 text-yellow-500 border-yellow-500/20",
+        icon: Clock,
+      },
+      processing: {
+        className: "bg-blue-500/10 text-blue-500 border-blue-500/20",
+        icon: RefreshCw,
+      },
+      completed: {
+        className: "bg-green-500/10 text-green-500 border-green-500/20",
+        icon: CheckCircle,
+      },
+      partial: {
+        className: "bg-orange-500/10 text-orange-500 border-orange-500/20",
+        icon: AlertCircle,
+      },
+      failed: {
+        className: "bg-red-500/10 text-red-500 border-red-500/20",
+        icon: XCircle,
+      },
+      cancelled: {
+        className: "bg-gray-500/10 text-gray-500 border-gray-500/20",
+        icon: Ban,
+      },
+      active: {
+        className: "bg-red-500/10 text-red-500 border-red-500/20",
+        icon: AlertTriangle,
+      },
+      disputed: {
+        className: "bg-blue-500/10 text-blue-500 border-blue-500/20",
+        icon: Scale,
+      },
+      resolved: {
+        className: "bg-green-500/10 text-green-500 border-green-500/20",
+        icon: CheckCircle,
+      },
+      released: {
+        className: "bg-green-500/10 text-green-500 border-green-500/20",
+        icon: CheckCircle,
+      },
+      submitted: {
+        className: "bg-blue-500/10 text-blue-500 border-blue-500/20",
+        icon: Send,
+      },
+      under_review: {
+        className: "bg-yellow-500/10 text-yellow-500 border-yellow-500/20",
+        icon: Eye,
+      },
+      escalated: {
+        className: "bg-orange-500/10 text-orange-500 border-orange-500/20",
+        icon: AlertTriangle,
+      },
+      approved: {
+        className: "bg-green-500/10 text-green-500 border-green-500/20",
+        icon: CheckCircle,
+      },
+      rejected: {
+        className: "bg-red-500/10 text-red-500 border-red-500/20",
+        icon: XCircle,
+      },
     };
     const config = styles[status] || styles.pending;
     const Icon = config.icon;
     return (
       <Badge className={`gap-1 ${config.className}`}>
         <Icon className="h-3 w-3" />
-        {status.replace('_', ' ')}
+        {status.replace("_", " ")}
       </Badge>
     );
   };
@@ -335,19 +435,21 @@ export function TakedownManager() {
 
   const getImpactBadge = (impact: string) => {
     const styles: Record<string, string> = {
-      monetized: 'bg-red-500/10 text-red-500 border-red-500/20',
-      blocked: 'bg-red-700/10 text-red-700 border-red-700/20',
-      tracked: 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20',
-      none: 'bg-green-500/10 text-green-500 border-green-500/20',
+      monetized: "bg-red-500/10 text-red-500 border-red-500/20",
+      blocked: "bg-red-700/10 text-red-700 border-red-700/20",
+      tracked: "bg-yellow-500/10 text-yellow-500 border-yellow-500/20",
+      none: "bg-green-500/10 text-green-500 border-green-500/20",
     };
     return <Badge className={styles[impact] || styles.none}>{impact}</Badge>;
   };
 
   const pendingTakedowns = takedowns.filter(
-    (t) => t.status === 'pending' || t.status === 'processing'
+    (t) => t.status === "pending" || t.status === "processing",
   ).length;
-  const activeClaims = claims.filter((c) => c.status === 'active').length;
-  const pendingDisputes = disputes.filter((d) => d.status !== 'approved' && d.status !== 'rejected').length;
+  const activeClaims = claims.filter((c) => c.status === "active").length;
+  const pendingDisputes = disputes.filter(
+    (d) => d.status !== "approved" && d.status !== "rejected",
+  ).length;
 
   return (
     <Card>
@@ -372,26 +474,32 @@ export function TakedownManager() {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <Card className="p-4">
             <div className="text-center">
-              <div className="text-2xl font-bold text-yellow-500">{pendingTakedowns}</div>
+              <div className="text-2xl font-bold text-yellow-500">
+                {pendingTakedowns}
+              </div>
               <p className="text-xs text-muted-foreground">Pending Takedowns</p>
             </div>
           </Card>
           <Card className="p-4">
             <div className="text-center">
-              <div className="text-2xl font-bold text-red-500">{activeClaims}</div>
+              <div className="text-2xl font-bold text-red-500">
+                {activeClaims}
+              </div>
               <p className="text-xs text-muted-foreground">Active Claims</p>
             </div>
           </Card>
           <Card className="p-4">
             <div className="text-center">
-              <div className="text-2xl font-bold text-blue-500">{pendingDisputes}</div>
+              <div className="text-2xl font-bold text-blue-500">
+                {pendingDisputes}
+              </div>
               <p className="text-xs text-muted-foreground">Open Disputes</p>
             </div>
           </Card>
           <Card className="p-4">
             <div className="text-center">
               <div className="text-2xl font-bold text-green-500">
-                {takedowns.filter((t) => t.status === 'completed').length}
+                {takedowns.filter((t) => t.status === "completed").length}
               </div>
               <p className="text-xs text-muted-foreground">Completed</p>
             </div>
@@ -436,17 +544,23 @@ export function TakedownManager() {
                     <div>
                       <h3 className="font-medium">{takedown.releaseTitle}</h3>
                       <p className="text-sm text-muted-foreground">
-                        {takedown.artistName} •{' '}
-                        {TAKEDOWN_REASONS.find((r) => r.value === takedown.reason)?.label}
+                        {takedown.artistName} •{" "}
+                        {
+                          TAKEDOWN_REASONS.find(
+                            (r) => r.value === takedown.reason,
+                          )?.label
+                        }
                       </p>
                     </div>
                     <div className="flex items-center gap-2">
                       {getStatusBadge(takedown.status)}
-                      {takedown.status === 'pending' && (
+                      {takedown.status === "pending" && (
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => cancelTakedownMutation.mutate(takedown.id)}
+                          onClick={() =>
+                            cancelTakedownMutation.mutate(takedown.id)
+                          }
                         >
                           <XCircle className="h-4 w-4" />
                         </Button>
@@ -454,11 +568,13 @@ export function TakedownManager() {
                     </div>
                   </div>
 
-                  {takedown.status === 'processing' && (
+                  {takedown.status === "processing" && (
                     <div className="space-y-2">
                       <div className="flex items-center justify-between text-sm">
                         <span className="text-muted-foreground">Progress</span>
-                        <span className="font-medium">{takedown.progress}%</span>
+                        <span className="font-medium">
+                          {takedown.progress}%
+                        </span>
                       </div>
                       <Progress value={takedown.progress} className="h-2" />
                     </div>
@@ -469,32 +585,51 @@ export function TakedownManager() {
                       <div
                         key={ps.platform}
                         className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-sm ${
-                          ps.status === 'completed'
-                            ? 'bg-green-500/10 text-green-500'
-                            : ps.status === 'failed'
-                              ? 'bg-red-500/10 text-red-500'
-                              : 'bg-muted text-muted-foreground'
+                          ps.status === "completed"
+                            ? "bg-green-500/10 text-green-500"
+                            : ps.status === "failed"
+                              ? "bg-red-500/10 text-red-500"
+                              : "bg-muted text-muted-foreground"
                         }`}
                       >
                         {getPlatformIcon(ps.platform)}
-                        <span className="capitalize">{ps.platform.replace('-', ' ')}</span>
-                        {ps.status === 'completed' && <CheckCircle className="h-3 w-3" />}
-                        {ps.status === 'failed' && <XCircle className="h-3 w-3" />}
-                        {ps.status === 'pending' && <Clock className="h-3 w-3" />}
+                        <span className="capitalize">
+                          {ps.platform.replace("-", " ")}
+                        </span>
+                        {ps.status === "completed" && (
+                          <CheckCircle className="h-3 w-3" />
+                        )}
+                        {ps.status === "failed" && (
+                          <XCircle className="h-3 w-3" />
+                        )}
+                        {ps.status === "pending" && (
+                          <Clock className="h-3 w-3" />
+                        )}
                       </div>
                     ))}
                   </div>
 
                   <div className="flex items-center justify-between text-xs text-muted-foreground">
-                    <span>Requested: {new Date(takedown.requestedAt).toLocaleString()}</span>
+                    <span>
+                      Requested:{" "}
+                      {new Date(takedown.requestedAt).toLocaleString()}
+                    </span>
                     {takedown.completedAt ? (
-                      <span>Completed: {new Date(takedown.completedAt).toLocaleString()}</span>
+                      <span>
+                        Completed:{" "}
+                        {new Date(takedown.completedAt).toLocaleString()}
+                      </span>
                     ) : takedown.estimatedCompletion ? (
-                      <span>Est. completion: {new Date(takedown.estimatedCompletion).toLocaleDateString()}</span>
+                      <span>
+                        Est. completion:{" "}
+                        {new Date(
+                          takedown.estimatedCompletion,
+                        ).toLocaleDateString()}
+                      </span>
                     ) : null}
                   </div>
 
-                  {takedown.status === 'completed' && (
+                  {takedown.status === "completed" && (
                     <Button
                       variant="outline"
                       size="sm"
@@ -539,13 +674,17 @@ export function TakedownManager() {
                     <TableCell>
                       <div>
                         <p className="font-medium">{claim.trackTitle}</p>
-                        <p className="text-sm text-muted-foreground">{claim.releaseTitle}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {claim.releaseTitle}
+                        </p>
                       </div>
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
                         {getPlatformIcon(claim.platform)}
-                        <span className="capitalize">{claim.platform.replace('-', ' ')}</span>
+                        <span className="capitalize">
+                          {claim.platform.replace("-", " ")}
+                        </span>
                       </div>
                     </TableCell>
                     <TableCell>
@@ -569,11 +708,11 @@ export function TakedownManager() {
                           {new Date(claim.disputeDeadline).toLocaleDateString()}
                         </span>
                       ) : (
-                        '-'
+                        "-"
                       )}
                     </TableCell>
                     <TableCell className="text-right">
-                      {claim.status === 'active' && (
+                      {claim.status === "active" && (
                         <Button
                           variant="outline"
                           size="sm"
@@ -587,7 +726,7 @@ export function TakedownManager() {
                           Dispute
                         </Button>
                       )}
-                      {claim.status === 'disputed' && (
+                      {claim.status === "disputed" && (
                         <Badge variant="outline">Under Review</Badge>
                       )}
                     </TableCell>
@@ -620,9 +759,15 @@ export function TakedownManager() {
 
                   <div className="bg-muted/50 p-3 rounded-lg">
                     <p className="text-sm font-medium mb-1">
-                      Reason: {DISPUTE_REASONS.find((r) => r.value === dispute.reason)?.label}
+                      Reason:{" "}
+                      {
+                        DISPUTE_REASONS.find((r) => r.value === dispute.reason)
+                          ?.label
+                      }
                     </p>
-                    <p className="text-sm text-muted-foreground">{dispute.explanation}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {dispute.explanation}
+                    </p>
                   </div>
 
                   {dispute.supportingDocs.length > 0 && (
@@ -644,8 +789,14 @@ export function TakedownManager() {
                   )}
 
                   <div className="flex items-center justify-between text-xs text-muted-foreground">
-                    <span>Submitted: {new Date(dispute.submittedAt).toLocaleString()}</span>
-                    <span>Last update: {new Date(dispute.lastUpdateAt).toLocaleString()}</span>
+                    <span>
+                      Submitted:{" "}
+                      {new Date(dispute.submittedAt).toLocaleString()}
+                    </span>
+                    <span>
+                      Last update:{" "}
+                      {new Date(dispute.lastUpdateAt).toLocaleString()}
+                    </span>
                   </div>
                 </div>
               </Card>
@@ -664,8 +815,12 @@ export function TakedownManager() {
               <Card key={reinstatement.id} className="p-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h3 className="font-medium">{reinstatement.releaseTitle}</h3>
-                    <p className="text-sm text-muted-foreground">{reinstatement.reason}</p>
+                    <h3 className="font-medium">
+                      {reinstatement.releaseTitle}
+                    </h3>
+                    <p className="text-sm text-muted-foreground">
+                      {reinstatement.reason}
+                    </p>
                     <div className="flex gap-2 mt-2">
                       {reinstatement.platforms.map((p) => (
                         <Badge key={p} variant="outline" className="gap-1">
@@ -699,7 +854,8 @@ export function TakedownManager() {
             <DialogHeader>
               <DialogTitle>Request Content Takedown</DialogTitle>
               <DialogDescription>
-                Remove your content from streaming platforms. This action may take 2-14 days.
+                Remove your content from streaming platforms. This action may
+                take 2-14 days.
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4 py-4">
@@ -707,15 +863,23 @@ export function TakedownManager() {
                 <Label>Select Release</Label>
                 <Select
                   value={newTakedown.releaseId}
-                  onValueChange={(v) => setNewTakedown({ ...newTakedown, releaseId: v })}
+                  onValueChange={(v) =>
+                    setNewTakedown({ ...newTakedown, releaseId: v })
+                  }
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Choose a release" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="rel-1">Midnight Dreams - John Doe</SelectItem>
-                    <SelectItem value="rel-2">Summer Vibes - John Doe</SelectItem>
-                    <SelectItem value="rel-3">Urban Stories - Jane Smith</SelectItem>
+                    <SelectItem value="rel-1">
+                      Midnight Dreams - John Doe
+                    </SelectItem>
+                    <SelectItem value="rel-2">
+                      Summer Vibes - John Doe
+                    </SelectItem>
+                    <SelectItem value="rel-3">
+                      Urban Stories - Jane Smith
+                    </SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -724,7 +888,9 @@ export function TakedownManager() {
                 <Label>Reason for Takedown</Label>
                 <Select
                   value={newTakedown.reason}
-                  onValueChange={(v) => setNewTakedown({ ...newTakedown, reason: v })}
+                  onValueChange={(v) =>
+                    setNewTakedown({ ...newTakedown, reason: v })
+                  }
                 >
                   <SelectTrigger>
                     <SelectValue />
@@ -745,7 +911,10 @@ export function TakedownManager() {
                   placeholder="Provide additional details..."
                   value={newTakedown.description}
                   onChange={(e) =>
-                    setNewTakedown({ ...newTakedown, description: e.target.value })
+                    setNewTakedown({
+                      ...newTakedown,
+                      description: e.target.value,
+                    })
                   }
                   rows={3}
                 />
@@ -754,52 +923,65 @@ export function TakedownManager() {
               <div className="space-y-2">
                 <Label>Platforms</Label>
                 <div className="flex flex-wrap gap-2">
-                  {['spotify', 'apple-music', 'youtube-music', 'amazon-music', 'tidal'].map(
-                    (platform) => (
-                      <div
-                        key={platform}
-                        className={`flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer border ${
-                          newTakedown.platforms.includes(platform)
-                            ? 'border-primary bg-primary/10'
-                            : 'border-muted hover:border-primary/50'
-                        }`}
-                        onClick={() => {
-                          if (newTakedown.platforms.includes(platform)) {
-                            setNewTakedown({
-                              ...newTakedown,
-                              platforms: newTakedown.platforms.filter((p) => p !== platform),
-                            });
-                          } else {
-                            setNewTakedown({
-                              ...newTakedown,
-                              platforms: [...newTakedown.platforms, platform],
-                            });
-                          }
-                        }}
-                      >
-                        {getPlatformIcon(platform)}
-                        <span className="text-sm capitalize">{platform.replace('-', ' ')}</span>
-                      </div>
-                    )
-                  )}
+                  {[
+                    "spotify",
+                    "apple-music",
+                    "youtube-music",
+                    "amazon-music",
+                    "tidal",
+                  ].map((platform) => (
+                    <div
+                      key={platform}
+                      className={`flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer border ${
+                        newTakedown.platforms.includes(platform)
+                          ? "border-primary bg-primary/10"
+                          : "border-muted hover:border-primary/50"
+                      }`}
+                      onClick={() => {
+                        if (newTakedown.platforms.includes(platform)) {
+                          setNewTakedown({
+                            ...newTakedown,
+                            platforms: newTakedown.platforms.filter(
+                              (p) => p !== platform,
+                            ),
+                          });
+                        } else {
+                          setNewTakedown({
+                            ...newTakedown,
+                            platforms: [...newTakedown.platforms, platform],
+                          });
+                        }
+                      }}
+                    >
+                      {getPlatformIcon(platform)}
+                      <span className="text-sm capitalize">
+                        {platform.replace("-", " ")}
+                      </span>
+                    </div>
+                  ))}
                 </div>
               </div>
 
               <Alert>
                 <AlertTriangle className="h-4 w-4" />
                 <AlertDescription>
-                  Takedowns typically take 2-14 days to complete across all platforms.
-                  Some platforms may require additional verification.
+                  Takedowns typically take 2-14 days to complete across all
+                  platforms. Some platforms may require additional verification.
                 </AlertDescription>
               </Alert>
             </div>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setIsNewTakedownOpen(false)}>
+              <Button
+                variant="outline"
+                onClick={() => setIsNewTakedownOpen(false)}
+              >
                 Cancel
               </Button>
               <Button
                 onClick={() => submitTakedownMutation.mutate(newTakedown)}
-                disabled={!newTakedown.releaseId || submitTakedownMutation.isPending}
+                disabled={
+                  !newTakedown.releaseId || submitTakedownMutation.isPending
+                }
               >
                 {submitTakedownMutation.isPending ? (
                   <>
@@ -824,7 +1006,7 @@ export function TakedownManager() {
               <DialogDescription>
                 {selectedClaim
                   ? `Dispute claim on "${selectedClaim.trackTitle}" by ${selectedClaim.claimant}`
-                  : 'Submit a dispute for a copyright claim'}
+                  : "Submit a dispute for a copyright claim"}
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4 py-4">
@@ -832,7 +1014,9 @@ export function TakedownManager() {
                 <Label>Dispute Reason</Label>
                 <Select
                   value={newDispute.reason}
-                  onValueChange={(v) => setNewDispute({ ...newDispute, reason: v })}
+                  onValueChange={(v) =>
+                    setNewDispute({ ...newDispute, reason: v })
+                  }
                 >
                   <SelectTrigger>
                     <SelectValue />
@@ -853,7 +1037,10 @@ export function TakedownManager() {
                   placeholder="Explain why you believe this claim is incorrect..."
                   value={newDispute.explanation}
                   onChange={(e) =>
-                    setNewDispute({ ...newDispute, explanation: e.target.value })
+                    setNewDispute({
+                      ...newDispute,
+                      explanation: e.target.value,
+                    })
                   }
                   rows={4}
                 />
@@ -876,18 +1063,23 @@ export function TakedownManager() {
               <Alert>
                 <AlertCircle className="h-4 w-4" />
                 <AlertDescription>
-                  False disputes may result in account penalties. Only submit if you
-                  have legitimate rights to the content.
+                  False disputes may result in account penalties. Only submit if
+                  you have legitimate rights to the content.
                 </AlertDescription>
               </Alert>
             </div>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setIsNewDisputeOpen(false)}>
+              <Button
+                variant="outline"
+                onClick={() => setIsNewDisputeOpen(false)}
+              >
                 Cancel
               </Button>
               <Button
                 onClick={() => submitDisputeMutation.mutate(newDispute)}
-                disabled={!newDispute.explanation || submitDisputeMutation.isPending}
+                disabled={
+                  !newDispute.explanation || submitDisputeMutation.isPending
+                }
               >
                 {submitDisputeMutation.isPending ? (
                   <>
@@ -905,14 +1097,17 @@ export function TakedownManager() {
           </DialogContent>
         </Dialog>
 
-        <Dialog open={isReinstatementOpen} onOpenChange={setIsReinstatementOpen}>
+        <Dialog
+          open={isReinstatementOpen}
+          onOpenChange={setIsReinstatementOpen}
+        >
           <DialogContent>
             <DialogHeader>
               <DialogTitle>Request Reinstatement</DialogTitle>
               <DialogDescription>
                 {selectedTakedown
                   ? `Request to restore "${selectedTakedown.releaseTitle}"`
-                  : 'Request to restore removed content'}
+                  : "Request to restore removed content"}
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4 py-4">
@@ -941,20 +1136,23 @@ export function TakedownManager() {
               <Alert>
                 <AlertCircle className="h-4 w-4" />
                 <AlertDescription>
-                  Reinstatement typically takes 2-7 days. You may need to provide
-                  additional documentation.
+                  Reinstatement typically takes 2-7 days. You may need to
+                  provide additional documentation.
                 </AlertDescription>
               </Alert>
             </div>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setIsReinstatementOpen(false)}>
+              <Button
+                variant="outline"
+                onClick={() => setIsReinstatementOpen(false)}
+              >
                 Cancel
               </Button>
               <Button
                 onClick={() =>
                   requestReinstatementMutation.mutate({
-                    takedownId: selectedTakedown?.id || '',
-                    reason: 'Reinstatement request',
+                    takedownId: selectedTakedown?.id || "",
+                    reason: "Reinstatement request",
                   })
                 }
                 disabled={requestReinstatementMutation.isPending}

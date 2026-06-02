@@ -1,7 +1,7 @@
 UNITED STATES PATENT APPLICATION
 
-APPLICANT/ASSIGNEE:  B-Lawz Music LLC
-CORRESPONDENCE ADDRESS:  B-Lawz Music LLC
+APPLICANT/ASSIGNEE: B-Lawz Music LLC
+CORRESPONDENCE ADDRESS: B-Lawz Music LLC
 
 TITLE OF INVENTION
 
@@ -35,24 +35,24 @@ I. Scenario Library Structure
 
 The scenario library (SCENARIO_LIBRARY) is a three-level nested dictionary organized as:
 
-  job_family → event_type → {seeds, intensity, platforms, visuals}
+job_family → event_type → {seeds, intensity, platforms, visuals}
 
 Eight job families are defined, each mapping to a MaxCore model target:
 
-  content_creator   → content model
-  social_strategist → social model
-  ads_manager       → advertising model
-  fan_engagement    → engagement model
-  visual_director   → UNetV4 visual generation model (primary)
-  release_architect → all four models simultaneously
-  touring_pro       → content + social models
-  sync_composer     → advertising + content models
+content_creator → content model
+social_strategist → social model
+ads_manager → advertising model
+fan_engagement → engagement model
+visual_director → UNetV4 visual generation model (primary)
+release_architect → all four models simultaneously
+touring_pro → content + social models
+sync_composer → advertising + content models
 
 Each event type contains four fields:
-  seeds:     list of seed type strings that this event propagates to future steps
-  intensity: (low, high) tuple defining the uniform sampling range for scenario intensity
-  platforms: list of applicable social/distribution platforms for context
-  visuals:   list of visual conditioning text templates for the diffusion model
+seeds: list of seed type strings that this event propagates to future steps
+intensity: (low, high) tuple defining the uniform sampling range for scenario intensity
+platforms: list of applicable social/distribution platforms for context
+visuals: list of visual conditioning text templates for the diffusion model
 
 In the preferred embodiment, the library contains at least 56 event types across 8 job families, with at least 4 visual conditioning templates per event type, yielding a minimum of 224 distinct visual conditioning strings.
 
@@ -60,12 +60,12 @@ II. Consequence Seed Mechanism
 
 Each fired scenario produces a set of consequence seeds from its event type's seed list. Seeds are stored in an in-memory seed queue with the following fields per entry:
 
-  seed_type:      string identifying the type of consequential event
-  chain_id:       UUID identifying the narrative chain this seed belongs to
-  compound_depth: integer depth of this seed within the chain (0 = fresh, 1+ = follow-up)
-  weight:         float weight = 1.0 + 0.5 × compound_depth (deeper seeds are preferred)
-  planted_at:     wall-clock timestamp for TTL enforcement
-  planted_step:   training step number when the seed was planted
+seed_type: string identifying the type of consequential event
+chain_id: UUID identifying the narrative chain this seed belongs to
+compound_depth: integer depth of this seed within the chain (0 = fresh, 1+ = follow-up)
+weight: float weight = 1.0 + 0.5 × compound_depth (deeper seeds are preferred)
+planted_at: wall-clock timestamp for TTL enforcement
+planted_step: training step number when the seed was planted
 
 Seeds are claimed by sampling the queue weighted by the weight field. This ensures that deeper consequence chains are more likely to be continued than shallow or fresh chains, creating narrative momentum within the training signal.
 
@@ -76,14 +76,14 @@ The SEED_RESOLUTION table maps each seed_type to a (job_family, event_type) pair
 III. Compound Depth and YE-Step Premium
 
 The compound_depth of a scenario tracks how deep within a consequence chain the current scenario sits:
-  depth 0: fresh scenario, not the result of any seed
-  depth 1: direct consequence of a depth-0 scenario
-  depth 2+: deeper follow-up in an established narrative chain
+depth 0: fresh scenario, not the result of any seed
+depth 1: direct consequence of a depth-0 scenario
+depth 2+: deeper follow-up in an established narrative chain
 
 Year-equivalent step credits are assigned as follows:
-  depth 0: SCENARIO_YE_WEIGHT_BASE = 18 YE-steps (1.5× priority replay)
-  depth 1: SCENARIO_YE_WEIGHT_COMPOUND_1 = 24 YE-steps (2× priority replay)
-  depth 2+: SCENARIO_YE_WEIGHT_COMPOUND_2 = 30 YE-steps (2.5× priority replay)
+depth 0: SCENARIO_YE_WEIGHT_BASE = 18 YE-steps (1.5× priority replay)
+depth 1: SCENARIO_YE_WEIGHT_COMPOUND_1 = 24 YE-steps (2× priority replay)
+depth 2+: SCENARIO_YE_WEIGHT_COMPOUND_2 = 30 YE-steps (2.5× priority replay)
 
 This tiered premium reflects the observation that a contextually situated training example — one that logically follows from a preceding scenario — carries more informational density per gradient update than a randomly sampled scene, because it reinforces not only the visual content of the frame but also the causal business logic connecting events in the domain.
 
@@ -91,20 +91,20 @@ IV. Career Stage Modeling
 
 The engine samples career stages from a discrete distribution reflecting the realistic population of artists at each stage of professional development:
 
-  unsigned_indie:  12% (bedroom musician, no team, no budget)
-  emerging:        25% (first traction, small loyal audience)
-  breaking:        28% (fast-rising, industry attention, first deals)
-  established:     20% (proven chart/streaming success, touring income)
-  mainstream:      10% (household name, radio, stadium tours)
-  legacy:           5% (catalogue value, nostalgia tours)
+unsigned_indie: 12% (bedroom musician, no team, no budget)
+emerging: 25% (first traction, small loyal audience)
+breaking: 28% (fast-rising, industry attention, first deals)
+established: 20% (proven chart/streaming success, touring income)
+mainstream: 10% (household name, radio, stadium tours)
+legacy: 5% (catalogue value, nostalgia tours)
 
-Each career stage applies a visual modifier string to the conditioning prompt (_STAGE_MODS), shifting the aesthetic vocabulary from "underground indie raw bedroom authentic" at the unsigned level to "legendary iconic timeless classic historic" at the legacy level.
+Each career stage applies a visual modifier string to the conditioning prompt (\_STAGE_MODS), shifting the aesthetic vocabulary from "underground indie raw bedroom authentic" at the unsigned level to "legendary iconic timeless classic historic" at the legacy level.
 
 V. Job Family Selection
 
 When no seed is available in the queue (or the 40% seed-claim probability roll fails), the engine selects a job family using inverse-exposure weighting:
 
-  weight(family) = 1.0 / (exposure_count(family) + 1)
+weight(family) = 1.0 / (exposure_count(family) + 1)
 
 This base weight is optionally biased by gradient health signals: if the gradient memory reports that scenes associated with a particular job family have vanishing or exploding gradient norms, the weight for that family is multiplied by max(0.2, 2.0 − health_score), directing training attention toward underperforming visual domains.
 
@@ -117,23 +117,23 @@ The visual conditioning prompt is constructed by selecting one of the event type
 VII. State Persistence
 
 The engine serializes the following state fields to a JSON file at session end:
-  active_seeds:   the current seed queue
-  job_exposure:   per-family firing counts
-  scene_exposure: per-scene firing counts
-  total_fired:    total scenarios fired across all sessions
-  chain_counter:  global chain ID counter
+active_seeds: the current seed queue
+job_exposure: per-family firing counts
+scene_exposure: per-scene firing counts
+total_fired: total scenarios fired across all sessions
+chain_counter: global chain ID counter
 
 On initialization, the engine deserializes this state and removes expired seeds (older than SEED_TTL_SECONDS), enabling multi-session narrative chains that span process restarts.
 
 VIII. Public API
 
 The engine exposes four public methods:
-  roll_scenario(scene_hint, gradient_health) → ScenarioSpec | None
-  plant_seeds(spec, step_count) → None
-  build_spec_for_family(job_family, scene_hint) → ScenarioSpec
-  commit_spec(spec) → None
-  save() / load()
-  status() → dict
+roll_scenario(scene_hint, gradient_health) → ScenarioSpec | None
+plant_seeds(spec, step_count) → None
+build_spec_for_family(job_family, scene_hint) → ScenarioSpec
+commit_spec(spec) → None
+save() / load()
+status() → dict
 
 The ScenarioSpec dataclass contains: scenario_id, chain_id, job_family, model_target, career_stage, platform, event_type, intensity, compound_depth, consequence_seeds, scene_category, scene_prompt, ye_weight, and context_description. This structured output enables downstream training loop integration without requiring the training loop to understand the scenario library format.
 
@@ -171,11 +171,11 @@ CLAIMS
 12. The system of claim 11, wherein at least one job family maps to a model target of all available component models simultaneously, and wherein said job family earns a higher year-equivalent step credit premium than job families targeting a single component model.
 
 13. A method of generating compounding training signals for a domain-specific generative model, the method comprising:
-   firing a first training scenario from a structured scenario library, the first scenario belonging to a first professional domain job family and event type;
-   extracting consequence seed types from the fired scenario and storing them in a persistent seed queue with a compound depth value incremented from the fired scenario's depth;
-   firing a second training scenario by claiming one of the stored consequence seeds, wherein the second scenario's job family and event type are resolved from the claimed seed type;
-   assigning a higher year-equivalent training credit to the second scenario than to the first scenario, based on the increased compound depth of the second scenario; and
-   continuing the chain by extracting consequence seeds from the second scenario and storing them with a further incremented compound depth.
+    firing a first training scenario from a structured scenario library, the first scenario belonging to a first professional domain job family and event type;
+    extracting consequence seed types from the fired scenario and storing them in a persistent seed queue with a compound depth value incremented from the fired scenario's depth;
+    firing a second training scenario by claiming one of the stored consequence seeds, wherein the second scenario's job family and event type are resolved from the claimed seed type;
+    assigning a higher year-equivalent training credit to the second scenario than to the first scenario, based on the increased compound depth of the second scenario; and
+    continuing the chain by extracting consequence seeds from the second scenario and storing them with a further incremented compound depth.
 
 14. The method of claim 13, further comprising persisting the seed queue to non-volatile storage between training sessions, enabling narrative chains to span multiple training runs separated by process restarts.
 
@@ -184,14 +184,14 @@ CLAIMS
 16. The method of claim 13, further comprising associating each scenario with a career stage selected from a distribution of career stages weighted to reflect the realistic population distribution of professionals in the target domain.
 
 17. A non-transitory computer-readable medium storing instructions that, when executed by a processor, implement a scenario specification structure comprising:
-   a job family field identifying a professional role category within a target domain;
-   an event type field identifying a specific business event within the job family;
-   a compound depth field recording the depth of the scenario within a consequence chain;
-   a consequence seeds field listing seed types that should be propagated to future training scenarios;
-   a scene category field identifying the visual environment associated with the scenario;
-   a scene prompt field containing a ready-to-use visual conditioning string for a diffusion model;
-   a year-equivalent weight field specifying the informational density credit for the training step; and
-   a chain identifier field linking the scenario to its narrative chain for multi-session tracking.
+    a job family field identifying a professional role category within a target domain;
+    an event type field identifying a specific business event within the job family;
+    a compound depth field recording the depth of the scenario within a consequence chain;
+    a consequence seeds field listing seed types that should be propagated to future training scenarios;
+    a scene category field identifying the visual environment associated with the scenario;
+    a scene prompt field containing a ready-to-use visual conditioning string for a diffusion model;
+    a year-equivalent weight field specifying the informational density credit for the training step; and
+    a chain identifier field linking the scenario to its narrative chain for multi-session tracking.
 
 18. The computer-readable medium of claim 17, further storing instructions that implement a seed resolution table mapping each consequence seed type to a target job family and event type pair, enabling direct resolution of a seed into a specific trainable scenario without library search.
 

@@ -30,7 +30,7 @@ export {
   compileSplitScreen,
   compileSocialTeaser,
   compileTemplate,
-} from './PromoTemplates';
+} from "./PromoTemplates";
 
 export {
   type TemplateType,
@@ -41,4 +41,4 @@ export {
   type ExportedTemplateConfig,
   TemplateManager,
   templateManager,
-} from './TemplateManager';
+} from "./TemplateManager";

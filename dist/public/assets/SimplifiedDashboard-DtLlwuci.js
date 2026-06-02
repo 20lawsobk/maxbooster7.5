@@ -1,1 +1,126 @@
-import{ag as l,ah as m,aH as p,aI as c,r as f,f as a}from"./vendor-react-31oK5L0i.js";import{c as b}from"./useRequireAuth-K5x5riUd.js";import{u as h,a as g}from"./studio-DOUfHW5v.js";import{S as v}from"./SimplifiedDashboard-BRljbqyu.js";import{A as D}from"./AppLayout-D2pri0rw.js";import"./vendor-utils-C_Rs6IXs.js";import"./vendor-ui-Ds7F22HT.js";import"./vendor-state-Bxk_Qy8r.js";import"./index-D5xLbTBZ.js";import"./vendor-animation-CFQslDag.js";import"./TopBar-jcH3P98k.js";function F(){const{user:i,isLoading:t}=b(),[,r]=l(),o=m(),{toast:s}=h(),{data:e}=p({queryKey:["/api/auth/onboarding-status"],enabled:!!i}),n=c({mutationFn:async()=>(await g("POST","/api/auth/update-onboarding",{hasCompletedOnboarding:!0,onboardingData:{userLevel:"intermediate",preferSimplifiedView:!1}})).json(),onSuccess:()=>{o.invalidateQueries({queryKey:["/api/auth/onboarding-status"]}),r("/dashboard"),s({title:"Upgraded Successfully",description:"You now have access to all advanced features!"})},onError:()=>{s({title:"Upgrade Failed",description:"Failed to upgrade to full mode. Please try again.",variant:"destructive"})}}),u=()=>{n.mutate()};if(f.useEffect(()=>{e?.hasCompletedOnboarding&&e?.onboardingData?.preferSimplifiedView===!1&&r("/dashboard")},[e,r]),t||!i)return a.jsxDEV("div",{className:"min-h-screen flex items-center justify-center",children:a.jsxDEV("div",{className:"animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full"},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/SimplifiedDashboard.tsx",lineNumber:65,columnNumber:9},this)},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/SimplifiedDashboard.tsx",lineNumber:64,columnNumber:7},this);const d=e?.onboardingData?.userLevel||"beginner";return a.jsxDEV(D,{children:a.jsxDEV(v,{onUpgrade:u,userLevel:d},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/SimplifiedDashboard.tsx",lineNumber:74,columnNumber:7},this)},void 0,!1,{fileName:"/home/runner/workspace/client/src/pages/SimplifiedDashboard.tsx",lineNumber:73,columnNumber:5},this)}export{F as default};
+import {
+  ag as l,
+  ah as m,
+  aH as p,
+  aI as c,
+  r as f,
+  f as a,
+} from "./vendor-react-31oK5L0i.js";
+import { c as b } from "./useRequireAuth-K5x5riUd.js";
+import { u as h, a as g } from "./studio-DOUfHW5v.js";
+import { S as v } from "./SimplifiedDashboard-BRljbqyu.js";
+import { A as D } from "./AppLayout-D2pri0rw.js";
+import "./vendor-utils-C_Rs6IXs.js";
+import "./vendor-ui-Ds7F22HT.js";
+import "./vendor-state-Bxk_Qy8r.js";
+import "./index-D5xLbTBZ.js";
+import "./vendor-animation-CFQslDag.js";
+import "./TopBar-jcH3P98k.js";
+function F() {
+  const { user: i, isLoading: t } = b(),
+    [, r] = l(),
+    o = m(),
+    { toast: s } = h(),
+    { data: e } = p({
+      queryKey: ["/api/auth/onboarding-status"],
+      enabled: !!i,
+    }),
+    n = c({
+      mutationFn: async () =>
+        (
+          await g("POST", "/api/auth/update-onboarding", {
+            hasCompletedOnboarding: !0,
+            onboardingData: {
+              userLevel: "intermediate",
+              preferSimplifiedView: !1,
+            },
+          })
+        ).json(),
+      onSuccess: () => {
+        (o.invalidateQueries({ queryKey: ["/api/auth/onboarding-status"] }),
+          r("/dashboard"),
+          s({
+            title: "Upgraded Successfully",
+            description: "You now have access to all advanced features!",
+          }));
+      },
+      onError: () => {
+        s({
+          title: "Upgrade Failed",
+          description: "Failed to upgrade to full mode. Please try again.",
+          variant: "destructive",
+        });
+      },
+    }),
+    u = () => {
+      n.mutate();
+    };
+  if (
+    (f.useEffect(() => {
+      e?.hasCompletedOnboarding &&
+        e?.onboardingData?.preferSimplifiedView === !1 &&
+        r("/dashboard");
+    }, [e, r]),
+    t || !i)
+  )
+    return a.jsxDEV(
+      "div",
+      {
+        className: "min-h-screen flex items-center justify-center",
+        children: a.jsxDEV(
+          "div",
+          {
+            className:
+              "animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full",
+          },
+          void 0,
+          !1,
+          {
+            fileName:
+              "/home/runner/workspace/client/src/pages/SimplifiedDashboard.tsx",
+            lineNumber: 65,
+            columnNumber: 9,
+          },
+          this,
+        ),
+      },
+      void 0,
+      !1,
+      {
+        fileName:
+          "/home/runner/workspace/client/src/pages/SimplifiedDashboard.tsx",
+        lineNumber: 64,
+        columnNumber: 7,
+      },
+      this,
+    );
+  const d = e?.onboardingData?.userLevel || "beginner";
+  return a.jsxDEV(
+    D,
+    {
+      children: a.jsxDEV(
+        v,
+        { onUpgrade: u, userLevel: d },
+        void 0,
+        !1,
+        {
+          fileName:
+            "/home/runner/workspace/client/src/pages/SimplifiedDashboard.tsx",
+          lineNumber: 74,
+          columnNumber: 7,
+        },
+        this,
+      ),
+    },
+    void 0,
+    !1,
+    {
+      fileName:
+        "/home/runner/workspace/client/src/pages/SimplifiedDashboard.tsx",
+      lineNumber: 73,
+      columnNumber: 5,
+    },
+    this,
+  );
+}
+export { F as default };

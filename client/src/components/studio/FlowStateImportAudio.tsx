@@ -1,47 +1,50 @@
-import { useState, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { getCsrfTokenFromCookie } from '@/lib/queryClient';
-import { 
-  Upload, 
-  X, 
+import { useState, useCallback } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { getCsrfTokenFromCookie } from "@/lib/queryClient";
+import {
+  Upload,
+  X,
   FileAudio,
   Music,
   Loader2,
   CheckCircle,
-  AlertCircle
-} from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { useToast } from '@/hooks/use-toast';
-import { Button } from '@/components/ui/button';
+  AlertCircle,
+} from "lucide-react";
+import { cn } from "@/lib/utils";
+import { useToast } from "@/hooks/use-toast";
+import { Button } from "@/components/ui/button";
 
 interface UploadedFile {
   id: string;
   name: string;
   size: number;
-  status: 'pending' | 'uploading' | 'success' | 'error';
+  status: "pending" | "uploading" | "success" | "error";
   progress?: number;
   url?: string;
   duration?: number;
   error?: string;
 }
 
-async function uploadAudioFile(file: File, projectId: string): Promise<{ fileId: string; url: string; duration: number }> {
+async function uploadAudioFile(
+  file: File,
+  projectId: string,
+): Promise<{ fileId: string; url: string; duration: number }> {
   const formData = new FormData();
-  formData.append('audioFile', file);
-  formData.append('projectId', projectId);
+  formData.append("audioFile", file);
+  formData.append("projectId", projectId);
 
   const csrfToken = getCsrfTokenFromCookie();
-  const response = await fetch('/api/studio/upload', {
-    method: 'POST',
-    credentials: 'include',
-    headers: csrfToken ? { 'x-csrf-token': csrfToken } : {},
+  const response = await fetch("/api/studio/upload", {
+    method: "POST",
+    credentials: "include",
+    headers: csrfToken ? { "x-csrf-token": csrfToken } : {},
     body: formData,
   });
 
   if (!response.ok) {
     const error = await response.json();
-    throw new Error(error.error || 'Failed to upload audio file');
+    throw new Error(error.error || "Failed to upload audio file");
   }
 
   return response.json();
@@ -50,7 +53,9 @@ async function uploadAudioFile(file: File, projectId: string): Promise<{ fileId:
 interface FlowStateImportAudioProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onImportComplete: (files: { id: string; name: string; url: string; duration?: number }[]) => void;
+  onImportComplete: (
+    files: { id: string; name: string; url: string; duration?: number }[],
+  ) => void;
   projectId?: string;
 }
 
@@ -67,60 +72,79 @@ export function FlowStateImportAudio({
 
   const uploadMutation = useMutation({
     mutationFn: async ({ file, fileId }: { file: File; fileId: string }) => {
-      if (!projectId) throw new Error('No project selected');
+      if (!projectId) throw new Error("No project selected");
       return uploadAudioFile(file, projectId);
     },
     onSuccess: (result, variables) => {
-      setFiles(prev => prev.map(f => 
-        f.id === variables.fileId 
-          ? { ...f, status: 'success' as const, url: result.url, duration: result.duration }
-          : f
-      ));
+      setFiles((prev) =>
+        prev.map((f) =>
+          f.id === variables.fileId
+            ? {
+                ...f,
+                status: "success" as const,
+                url: result.url,
+                duration: result.duration,
+              }
+            : f,
+        ),
+      );
     },
     onError: (error: Error, variables) => {
-      setFiles(prev => prev.map(f => 
-        f.id === variables.fileId 
-          ? { ...f, status: 'error' as const, error: error.message }
-          : f
-      ));
+      setFiles((prev) =>
+        prev.map((f) =>
+          f.id === variables.fileId
+            ? { ...f, status: "error" as const, error: error.message }
+            : f,
+        ),
+      );
     },
   });
 
-  const handleFiles = useCallback((acceptedFiles: File[]) => {
-    const audioFiles = acceptedFiles.filter(file => 
-      file.type.startsWith('audio/') || 
-      ['.mp3', '.wav', '.flac', '.aiff', '.m4a', '.ogg'].some(ext => file.name.toLowerCase().endsWith(ext))
-    );
+  const handleFiles = useCallback(
+    (acceptedFiles: File[]) => {
+      const audioFiles = acceptedFiles.filter(
+        (file) =>
+          file.type.startsWith("audio/") ||
+          [".mp3", ".wav", ".flac", ".aiff", ".m4a", ".ogg"].some((ext) =>
+            file.name.toLowerCase().endsWith(ext),
+          ),
+      );
 
-    if (audioFiles.length === 0) {
-      toast({
-        title: 'Invalid Files',
-        description: 'Please select audio files (MP3, WAV, FLAC, AIFF, M4A, OGG)',
-        variant: 'destructive',
+      if (audioFiles.length === 0) {
+        toast({
+          title: "Invalid Files",
+          description:
+            "Please select audio files (MP3, WAV, FLAC, AIFF, M4A, OGG)",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const newFiles: UploadedFile[] = audioFiles.map((file) => ({
+        id: `file_${Date.now()}_${Math.random().toString(36).slice(2)}`,
+        name: file.name,
+        size: file.size,
+        status: "uploading" as const,
+      }));
+
+      setFiles((prev) => [...prev, ...newFiles]);
+
+      audioFiles.forEach((file, index) => {
+        uploadMutation.mutate({ file, fileId: newFiles[index].id });
       });
-      return;
-    }
+    },
+    [uploadMutation, toast],
+  );
 
-    const newFiles: UploadedFile[] = audioFiles.map(file => ({
-      id: `file_${Date.now()}_${Math.random().toString(36).slice(2)}`,
-      name: file.name,
-      size: file.size,
-      status: 'uploading' as const,
-    }));
-
-    setFiles(prev => [...prev, ...newFiles]);
-
-    audioFiles.forEach((file, index) => {
-      uploadMutation.mutate({ file, fileId: newFiles[index].id });
-    });
-  }, [uploadMutation, toast]);
-
-  const handleDrop = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(false);
-    const droppedFiles = Array.from(e.dataTransfer.files);
-    handleFiles(droppedFiles);
-  }, [handleFiles]);
+  const handleDrop = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      setIsDragging(false);
+      const droppedFiles = Array.from(e.dataTransfer.files);
+      handleFiles(droppedFiles);
+    },
+    [handleFiles],
+  );
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -132,32 +156,40 @@ export function FlowStateImportAudio({
     setIsDragging(false);
   }, []);
 
-  const handleFileInput = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) {
-      handleFiles(Array.from(e.target.files));
-    }
-  }, [handleFiles]);
+  const handleFileInput = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      if (e.target.files) {
+        handleFiles(Array.from(e.target.files));
+      }
+    },
+    [handleFiles],
+  );
 
   const handleComplete = () => {
     const successfulFiles = files
-      .filter(f => f.status === 'success' && f.url)
-      .map(f => ({ id: f.id, name: f.name, url: f.url!, duration: f.duration }));
-    
+      .filter((f) => f.status === "success" && f.url)
+      .map((f) => ({
+        id: f.id,
+        name: f.name,
+        url: f.url!,
+        duration: f.duration,
+      }));
+
     if (successfulFiles.length > 0) {
       onImportComplete(successfulFiles);
-      queryClient.invalidateQueries({ queryKey: ['studio-tracks', projectId] });
+      queryClient.invalidateQueries({ queryKey: ["studio-tracks", projectId] });
       toast({
-        title: 'Import Complete',
+        title: "Import Complete",
         description: `Successfully imported ${successfulFiles.length} file(s)`,
       });
     }
-    
+
     setFiles([]);
     onOpenChange(false);
   };
 
   const removeFile = (fileId: string) => {
-    setFiles(prev => prev.filter(f => f.id !== fileId));
+    setFiles((prev) => prev.filter((f) => f.id !== fileId));
   };
 
   const formatFileSize = (bytes: number) => {
@@ -166,8 +198,10 @@ export function FlowStateImportAudio({
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   };
 
-  const allComplete = files.length > 0 && files.every(f => f.status === 'success' || f.status === 'error');
-  const hasSuccessful = files.some(f => f.status === 'success');
+  const allComplete =
+    files.length > 0 &&
+    files.every((f) => f.status === "success" || f.status === "error");
+  const hasSuccessful = files.some((f) => f.status === "success");
 
   return (
     <AnimatePresence>
@@ -192,8 +226,12 @@ export function FlowStateImportAudio({
                   <Upload className="w-5 h-5 text-white" />
                 </div>
                 <div>
-                  <h2 className="text-lg font-semibold text-white">Import Audio</h2>
-                  <p className="text-xs text-white/50">Drag and drop or browse files</p>
+                  <h2 className="text-lg font-semibold text-white">
+                    Import Audio
+                  </h2>
+                  <p className="text-xs text-white/50">
+                    Drag and drop or browse files
+                  </p>
                 </div>
               </div>
               <motion.button
@@ -215,7 +253,7 @@ export function FlowStateImportAudio({
                   "border-2 border-dashed rounded-xl p-8 text-center transition-all",
                   isDragging
                     ? "border-emerald-500 bg-emerald-500/10"
-                    : "border-white/10 hover:border-white/20 hover:bg-white/5"
+                    : "border-white/10 hover:border-white/20 hover:bg-white/5",
                 )}
               >
                 <input
@@ -226,21 +264,28 @@ export function FlowStateImportAudio({
                   className="hidden"
                   id="audio-file-input"
                 />
-                <label htmlFor="audio-file-input" className="cursor-pointer block">
+                <label
+                  htmlFor="audio-file-input"
+                  className="cursor-pointer block"
+                >
                   <motion.div
                     className={cn(
                       "w-16 h-16 mx-auto rounded-2xl flex items-center justify-center mb-4",
-                      isDragging ? "bg-emerald-500/20" : "bg-white/5"
+                      isDragging ? "bg-emerald-500/20" : "bg-white/5",
                     )}
                     animate={isDragging ? { scale: 1.1 } : { scale: 1 }}
                   >
-                    <FileAudio className={cn(
-                      "w-8 h-8",
-                      isDragging ? "text-emerald-400" : "text-white/40"
-                    )} />
+                    <FileAudio
+                      className={cn(
+                        "w-8 h-8",
+                        isDragging ? "text-emerald-400" : "text-white/40",
+                      )}
+                    />
                   </motion.div>
                   <p className="text-white/70 mb-2">
-                    {isDragging ? 'Drop files here' : 'Drag and drop audio files'}
+                    {isDragging
+                      ? "Drop files here"
+                      : "Drag and drop audio files"}
                   </p>
                   <p className="text-xs text-white/40">
                     or click to browse • MP3, WAV, FLAC, AIFF, M4A, OGG
@@ -257,29 +302,37 @@ export function FlowStateImportAudio({
                       animate={{ opacity: 1, y: 0 }}
                       className="flex items-center gap-3 p-3 rounded-lg bg-white/5"
                     >
-                      <div className={cn(
-                        "w-8 h-8 rounded-lg flex items-center justify-center",
-                        file.status === 'success' ? "bg-emerald-500/20" :
-                        file.status === 'error' ? "bg-red-500/20" :
-                        "bg-white/10"
-                      )}>
-                        {file.status === 'uploading' && (
+                      <div
+                        className={cn(
+                          "w-8 h-8 rounded-lg flex items-center justify-center",
+                          file.status === "success"
+                            ? "bg-emerald-500/20"
+                            : file.status === "error"
+                              ? "bg-red-500/20"
+                              : "bg-white/10",
+                        )}
+                      >
+                        {file.status === "uploading" && (
                           <Loader2 className="w-4 h-4 text-white/60 animate-spin" />
                         )}
-                        {file.status === 'success' && (
+                        {file.status === "success" && (
                           <CheckCircle className="w-4 h-4 text-emerald-400" />
                         )}
-                        {file.status === 'error' && (
+                        {file.status === "error" && (
                           <AlertCircle className="w-4 h-4 text-red-400" />
                         )}
-                        {file.status === 'pending' && (
+                        {file.status === "pending" && (
                           <Music className="w-4 h-4 text-white/40" />
                         )}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm text-white truncate">{file.name}</p>
+                        <p className="text-sm text-white truncate">
+                          {file.name}
+                        </p>
                         <p className="text-xs text-white/40">
-                          {file.status === 'error' ? file.error : formatFileSize(file.size)}
+                          {file.status === "error"
+                            ? file.error
+                            : formatFileSize(file.size)}
                         </p>
                       </div>
                       <button

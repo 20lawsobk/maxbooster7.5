@@ -1,14 +1,14 @@
-import { logger } from '../lib/logger';
-import { useCallback } from 'react';
-import { useUndo } from '@/contexts/UndoContext';
+import { logger } from "../lib/logger";
+import { useCallback } from "react";
+import { useUndo } from "@/contexts/UndoContext";
 import {
   UndoableAction,
   ActionType,
   ActionCategory,
   ActionMetadata,
   isDestructiveAction,
-} from '@/lib/undo/types';
-import { apiRequest } from '@/lib/queryClient';
+} from "@/lib/undo/types";
+import { apiRequest } from "@/lib/queryClient";
 
 export interface UseUndoableActionOptions {
   type: ActionType;
@@ -26,7 +26,7 @@ export function useUndoableAction<T, Args extends unknown[]>(
   options: UseUndoableActionOptions,
   execute: (...args: Args) => Promise<T>,
   undo: (result: T, ...args: Args) => Promise<void>,
-  redo?: (...args: Args) => Promise<T>
+  redo?: (...args: Args) => Promise<T>,
 ) {
   const { executeAction } = useUndo();
 
@@ -39,13 +39,14 @@ export function useUndoableAction<T, Args extends unknown[]>(
         category: options.category,
         entityId: options.entityId,
         entityType: options.entityType,
-        isDestructive: options.isDestructive ?? isDestructiveAction(options.type),
+        isDestructive:
+          options.isDestructive ?? isDestructiveAction(options.type),
         requiresConfirmation: options.requiresConfirmation,
       };
 
       let actionResult: T;
 
-      const action: Omit<UndoableAction<T>, 'id' | 'isUndone' | 'result'> = {
+      const action: Omit<UndoableAction<T>, "id" | "isUndone" | "result"> = {
         type: options.type,
         metadata,
         execute: async () => {
@@ -64,7 +65,7 @@ export function useUndoableAction<T, Args extends unknown[]>(
 
       if (options.syncToBackend) {
         try {
-          await apiRequest('POST', '/api/undo/track-action', {
+          await apiRequest("POST", "/api/undo/track-action", {
             type: options.type,
             category: options.category,
             module: options.module,
@@ -74,13 +75,13 @@ export function useUndoableAction<T, Args extends unknown[]>(
             isDestructive: metadata.isDestructive,
           });
         } catch (error) {
-          logger.warn('Failed to sync action to backend:', error);
+          logger.warn("Failed to sync action to backend:", error);
         }
       }
 
       return result;
     },
-    [executeAction, execute, undo, redo, options]
+    [executeAction, execute, undo, redo, options],
   );
 
   return performAction;
@@ -91,12 +92,15 @@ export function useUndoableDelete<T>(
   entityType: string,
   deleteFn: (id: string) => Promise<T>,
   restoreFn: (id: string, data: T) => Promise<void>,
-  options?: { syncToBackend?: boolean; getDescription?: (id: string) => string }
+  options?: {
+    syncToBackend?: boolean;
+    getDescription?: (id: string) => string;
+  },
 ) {
   return useUndoableAction<T, [string]>(
     {
-      type: 'delete',
-      category: 'CRUD',
+      type: "delete",
+      category: "CRUD",
       module,
       entityType,
       isDestructive: true,
@@ -105,34 +109,37 @@ export function useUndoableDelete<T>(
     },
     async (id: string) => deleteFn(id),
     async (result: T, id: string) => restoreFn(id, result),
-    undefined
+    undefined,
   );
 }
 
 export function useUndoableCreate<T extends { id: string }>(
   module: string,
   entityType: string,
-  createFn: (data: Omit<T, 'id'>) => Promise<T>,
+  createFn: (data: Omit<T, "id">) => Promise<T>,
   deleteFn: (id: string) => Promise<void>,
-  options?: { syncToBackend?: boolean; getDescription?: (data: Omit<T, 'id'>) => string }
+  options?: {
+    syncToBackend?: boolean;
+    getDescription?: (data: Omit<T, "id">) => string;
+  },
 ) {
   const { executeAction } = useUndo();
 
   const performCreate = useCallback(
-    async (data: Omit<T, 'id'>): Promise<T> => {
+    async (data: Omit<T, "id">): Promise<T> => {
       let createdEntity: T;
 
       const metadata: ActionMetadata = {
         timestamp: Date.now(),
         module,
         description: options?.getDescription?.(data) || `Create ${entityType}`,
-        category: 'CRUD',
+        category: "CRUD",
         entityType,
         newState: data,
       };
 
-      const action: Omit<UndoableAction<T>, 'id' | 'isUndone' | 'result'> = {
-        type: 'create',
+      const action: Omit<UndoableAction<T>, "id" | "isUndone" | "result"> = {
+        type: "create",
         metadata,
         execute: async () => {
           createdEntity = await createFn(data);
@@ -155,21 +162,21 @@ export function useUndoableCreate<T extends { id: string }>(
 
       if (options?.syncToBackend) {
         try {
-          await apiRequest('POST', '/api/undo/track-action', {
-            type: 'create',
-            category: 'CRUD',
+          await apiRequest("POST", "/api/undo/track-action", {
+            type: "create",
+            category: "CRUD",
             module,
             description: metadata.description,
             entityType,
           });
         } catch (error) {
-          logger.warn('Failed to sync action to backend:', error);
+          logger.warn("Failed to sync action to backend:", error);
         }
       }
 
       return result;
     },
-    [executeAction, createFn, deleteFn, module, entityType, options]
+    [executeAction, createFn, deleteFn, module, entityType, options],
   );
 
   return performCreate;
@@ -180,7 +187,10 @@ export function useUndoableUpdate<T>(
   entityType: string,
   updateFn: (id: string, newData: Partial<T>) => Promise<T>,
   revertFn: (id: string, previousData: T) => Promise<void>,
-  options?: { syncToBackend?: boolean; getDescription?: (id: string) => string }
+  options?: {
+    syncToBackend?: boolean;
+    getDescription?: (id: string) => string;
+  },
 ) {
   const { executeAction } = useUndo();
 
@@ -190,15 +200,15 @@ export function useUndoableUpdate<T>(
         timestamp: Date.now(),
         module,
         description: options?.getDescription?.(id) || `Update ${entityType}`,
-        category: 'CRUD',
+        category: "CRUD",
         entityId: id,
         entityType,
         previousState: previousData,
         newState: newData,
       };
 
-      const action: Omit<UndoableAction<T>, 'id' | 'isUndone' | 'result'> = {
-        type: 'update',
+      const action: Omit<UndoableAction<T>, "id" | "isUndone" | "result"> = {
+        type: "update",
         metadata,
         execute: async () => updateFn(id, newData),
         undo: async () => revertFn(id, previousData),
@@ -211,9 +221,9 @@ export function useUndoableUpdate<T>(
 
       if (options?.syncToBackend) {
         try {
-          await apiRequest('POST', '/api/undo/track-action', {
-            type: 'update',
-            category: 'CRUD',
+          await apiRequest("POST", "/api/undo/track-action", {
+            type: "update",
+            category: "CRUD",
             module,
             description: metadata.description,
             entityId: id,
@@ -222,13 +232,13 @@ export function useUndoableUpdate<T>(
             newState: newData,
           });
         } catch (error) {
-          logger.warn('Failed to sync action to backend:', error);
+          logger.warn("Failed to sync action to backend:", error);
         }
       }
 
       return result;
     },
-    [executeAction, updateFn, revertFn, module, entityType, options]
+    [executeAction, updateFn, revertFn, module, entityType, options],
   );
 
   return performUpdate;
@@ -238,23 +248,27 @@ export function useUndoableSettingsChange<T extends Record<string, unknown>>(
   module: string,
   updateSettingsFn: (settings: Partial<T>) => Promise<T>,
   revertSettingsFn: (previousSettings: T) => Promise<void>,
-  options?: { syncToBackend?: boolean }
+  options?: { syncToBackend?: boolean },
 ) {
   const { executeAction } = useUndo();
 
   const changeSettings = useCallback(
-    async (newSettings: Partial<T>, previousSettings: T, description?: string): Promise<T> => {
+    async (
+      newSettings: Partial<T>,
+      previousSettings: T,
+      description?: string,
+    ): Promise<T> => {
       const metadata: ActionMetadata = {
         timestamp: Date.now(),
         module,
-        description: description || 'Settings changed',
-        category: 'settings',
+        description: description || "Settings changed",
+        category: "settings",
         previousState: previousSettings,
         newState: newSettings,
       };
 
-      const action: Omit<UndoableAction<T>, 'id' | 'isUndone' | 'result'> = {
-        type: 'settings_change',
+      const action: Omit<UndoableAction<T>, "id" | "isUndone" | "result"> = {
+        type: "settings_change",
         metadata,
         execute: async () => updateSettingsFn(newSettings),
         undo: async () => revertSettingsFn(previousSettings),
@@ -267,22 +281,22 @@ export function useUndoableSettingsChange<T extends Record<string, unknown>>(
 
       if (options?.syncToBackend) {
         try {
-          await apiRequest('POST', '/api/undo/track-action', {
-            type: 'settings_change',
-            category: 'settings',
+          await apiRequest("POST", "/api/undo/track-action", {
+            type: "settings_change",
+            category: "settings",
             module,
             description: metadata.description,
             previousState: previousSettings,
             newState: newSettings,
           });
         } catch (error) {
-          logger.warn('Failed to sync action to backend:', error);
+          logger.warn("Failed to sync action to backend:", error);
         }
       }
 
       return result;
     },
-    [executeAction, updateSettingsFn, revertSettingsFn, module, options]
+    [executeAction, updateSettingsFn, revertSettingsFn, module, options],
   );
 
   return changeSettings;
@@ -298,7 +312,7 @@ export function useUndoableBatch(module: string) {
         execute: () => Promise<T>;
         undo: () => Promise<void>;
         redo?: () => Promise<T>;
-      }>
+      }>,
     ): Promise<T[]> => {
       const groupId = startGroup(description);
       const results: T[] = [];
@@ -309,11 +323,14 @@ export function useUndoableBatch(module: string) {
             timestamp: Date.now(),
             module,
             description,
-            category: 'CRUD',
+            category: "CRUD",
           };
 
-          const action: Omit<UndoableAction<T>, 'id' | 'isUndone' | 'result'> = {
-            type: 'batch',
+          const action: Omit<
+            UndoableAction<T>,
+            "id" | "isUndone" | "result"
+          > = {
+            type: "batch",
             metadata,
             execute: op.execute,
             undo: op.undo,
@@ -332,72 +349,77 @@ export function useUndoableBatch(module: string) {
 
       return results;
     },
-    [executeAction, startGroup, endGroup, module]
+    [executeAction, startGroup, endGroup, module],
   );
 
   return executeBatch;
 }
 
 export function useUndoableFileDelete(
-  deleteFn: (fileId: string) => Promise<{ id: string; name: string; data: unknown }>,
+  deleteFn: (
+    fileId: string,
+  ) => Promise<{ id: string; name: string; data: unknown }>,
   restoreFn: (fileId: string, fileData: unknown) => Promise<void>,
-  options?: { syncToBackend?: boolean }
+  options?: { syncToBackend?: boolean },
 ) {
-  return useUndoableAction<{ id: string; name: string; data: unknown }, [string]>(
+  return useUndoableAction<
+    { id: string; name: string; data: unknown },
+    [string]
+  >(
     {
-      type: 'file_delete',
-      category: 'file',
-      module: 'files',
-      entityType: 'file',
+      type: "file_delete",
+      category: "file",
+      module: "files",
+      entityType: "file",
       isDestructive: true,
       requiresConfirmation: true,
       syncToBackend: options?.syncToBackend,
     },
     async (fileId: string) => deleteFn(fileId),
     async (result, fileId: string) => restoreFn(fileId, result.data),
-    undefined
+    undefined,
   );
 }
 
 export function useUndoablePostDelete(
   deleteFn: (postId: string) => Promise<{ id: string; content: unknown }>,
   restoreFn: (postId: string, postData: unknown) => Promise<void>,
-  options?: { syncToBackend?: boolean }
+  options?: { syncToBackend?: boolean },
 ) {
   return useUndoableAction<{ id: string; content: unknown }, [string]>(
     {
-      type: 'post_delete',
-      category: 'social',
-      module: 'social',
-      entityType: 'post',
+      type: "post_delete",
+      category: "social",
+      module: "social",
+      entityType: "post",
       isDestructive: true,
       requiresConfirmation: true,
       syncToBackend: options?.syncToBackend,
     },
     async (postId: string) => deleteFn(postId),
     async (result, postId: string) => restoreFn(postId, result.content),
-    undefined
+    undefined,
   );
 }
 
 export function useUndoableTrackRemove(
   removeFn: (trackId: string) => Promise<{ id: string; data: unknown }>,
   restoreFn: (trackId: string, trackData: unknown) => Promise<void>,
-  options?: { syncToBackend?: boolean }
+  options?: { syncToBackend?: boolean },
 ) {
   return useUndoableAction<{ id: string; data: unknown }, [string]>(
     {
-      type: 'track_remove',
-      category: 'track',
-      module: 'studio',
-      entityType: 'track',
+      type: "track_remove",
+      category: "track",
+      module: "studio",
+      entityType: "track",
       isDestructive: true,
       requiresConfirmation: true,
       syncToBackend: options?.syncToBackend,
     },
     async (trackId: string) => removeFn(trackId),
     async (result, trackId: string) => restoreFn(trackId, result.data),
-    undefined
+    undefined,
   );
 }
 

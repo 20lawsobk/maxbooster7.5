@@ -17,57 +17,57 @@
  *   getPlatformCapabilities()   → map of feature availability flags
  */
 
-export type EnvironmentType = 'electron' | 'web' | 'capacitor';
+export type EnvironmentType = "electron" | "web" | "capacitor";
 
 export function getEnvironmentType(): EnvironmentType {
-  if (typeof window === 'undefined') {
-    return 'web';
+  if (typeof window === "undefined") {
+    return "web";
   }
-  
+
   const userAgent = window.navigator.userAgent.toLowerCase();
-  
-  if (userAgent.includes('electron')) {
-    return 'electron';
+
+  if (userAgent.includes("electron")) {
+    return "electron";
   }
-  
+
   if (
     (window as Record<string, unknown>).Capacitor !== undefined ||
-    userAgent.includes('capacitor')
+    userAgent.includes("capacitor")
   ) {
-    return 'capacitor';
+    return "capacitor";
   }
-  
-  return 'web';
+
+  return "web";
 }
 
 export function isElectron(): boolean {
-  return getEnvironmentType() === 'electron';
+  return getEnvironmentType() === "electron";
 }
 
 export function isCapacitor(): boolean {
-  return getEnvironmentType() === 'capacitor';
+  return getEnvironmentType() === "capacitor";
 }
 
 export function isWeb(): boolean {
-  return getEnvironmentType() === 'web';
+  return getEnvironmentType() === "web";
 }
 
 export function isNativeApp(): boolean {
   const env = getEnvironmentType();
-  return env === 'electron' || env === 'capacitor';
+  return env === "electron" || env === "capacitor";
 }
 
 export function getPlatformCapabilities() {
   const env = getEnvironmentType();
-  
+
   return {
-    hasFileSystemAccess: env === 'electron',
-    hasNativeMenus: env === 'electron',
-    hasSystemNotifications: env === 'electron' || env === 'capacitor',
+    hasFileSystemAccess: env === "electron",
+    hasNativeMenus: env === "electron",
+    hasSystemNotifications: env === "electron" || env === "capacitor",
     hasDeepLinking: true,
-    hasPushNotifications: env === 'capacitor',
+    hasPushNotifications: env === "capacitor",
     hasOfflineSupport: true,
-    hasWindowControls: env === 'electron',
-    hasTouchSupport: env === 'capacitor' || 'ontouchstart' in window,
+    hasWindowControls: env === "electron",
+    hasTouchSupport: env === "capacitor" || "ontouchstart" in window,
   };
 }

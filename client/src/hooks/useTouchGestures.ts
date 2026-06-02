@@ -1,6 +1,6 @@
-import { useEffect, useRef, useState, useCallback, RefObject } from 'react';
+import { useEffect, useRef, useState, useCallback, RefObject } from "react";
 
-export type SwipeDirection = 'left' | 'right' | 'up' | 'down' | null;
+export type SwipeDirection = "left" | "right" | "up" | "down" | null;
 
 interface TouchPosition {
   x: number;
@@ -20,7 +20,7 @@ interface SwipeConfig {
 
 export function useSwipeGesture<T extends HTMLElement = HTMLElement>(
   ref: RefObject<T>,
-  config: SwipeConfig = {}
+  config: SwipeConfig = {},
 ) {
   const {
     threshold = 50,
@@ -66,30 +66,39 @@ export function useSwipeGesture<T extends HTMLElement = HTMLElement>(
       let direction: SwipeDirection = null;
 
       if (absX > absY && absX > threshold) {
-        direction = deltaX > 0 ? 'right' : 'left';
+        direction = deltaX > 0 ? "right" : "left";
       } else if (absY > absX && absY > threshold) {
-        direction = deltaY > 0 ? 'down' : 'up';
+        direction = deltaY > 0 ? "down" : "up";
       }
 
       if (direction) {
         onSwipe?.(direction);
-        if (direction === 'left') onSwipeLeft?.();
-        if (direction === 'right') onSwipeRight?.();
-        if (direction === 'up') onSwipeUp?.();
-        if (direction === 'down') onSwipeDown?.();
+        if (direction === "left") onSwipeLeft?.();
+        if (direction === "right") onSwipeRight?.();
+        if (direction === "up") onSwipeUp?.();
+        if (direction === "down") onSwipeDown?.();
       }
 
       startPos.current = null;
     };
 
-    element.addEventListener('touchstart', handleTouchStart, { passive: true });
-    element.addEventListener('touchend', handleTouchEnd, { passive: true });
+    element.addEventListener("touchstart", handleTouchStart, { passive: true });
+    element.addEventListener("touchend", handleTouchEnd, { passive: true });
 
     return () => {
-      element.removeEventListener('touchstart', handleTouchStart);
-      element.removeEventListener('touchend', handleTouchEnd);
+      element.removeEventListener("touchstart", handleTouchStart);
+      element.removeEventListener("touchend", handleTouchEnd);
     };
-  }, [ref, threshold, maxTime, onSwipe, onSwipeLeft, onSwipeRight, onSwipeUp, onSwipeDown]);
+  }, [
+    ref,
+    threshold,
+    maxTime,
+    onSwipe,
+    onSwipeLeft,
+    onSwipeRight,
+    onSwipeUp,
+    onSwipeDown,
+  ]);
 }
 
 interface PullToRefreshConfig {
@@ -100,7 +109,7 @@ interface PullToRefreshConfig {
 
 export function usePullToRefresh<T extends HTMLElement = HTMLElement>(
   ref: RefObject<T>,
-  config: PullToRefreshConfig
+  config: PullToRefreshConfig,
 ) {
   const { threshold = 80, onRefresh, disabled = false } = config;
   const [isPulling, setIsPulling] = useState(false);
@@ -145,18 +154,31 @@ export function usePullToRefresh<T extends HTMLElement = HTMLElement>(
       setPullDistance(0);
     };
 
-    element.addEventListener('touchstart', handleTouchStart, { passive: true });
-    element.addEventListener('touchmove', handleTouchMove, { passive: true });
-    element.addEventListener('touchend', handleTouchEnd, { passive: true });
+    element.addEventListener("touchstart", handleTouchStart, { passive: true });
+    element.addEventListener("touchmove", handleTouchMove, { passive: true });
+    element.addEventListener("touchend", handleTouchEnd, { passive: true });
 
     return () => {
-      element.removeEventListener('touchstart', handleTouchStart);
-      element.removeEventListener('touchmove', handleTouchMove);
-      element.removeEventListener('touchend', handleTouchEnd);
+      element.removeEventListener("touchstart", handleTouchStart);
+      element.removeEventListener("touchmove", handleTouchMove);
+      element.removeEventListener("touchend", handleTouchEnd);
     };
-  }, [ref, threshold, onRefresh, disabled, isPulling, pullDistance, isRefreshing]);
+  }, [
+    ref,
+    threshold,
+    onRefresh,
+    disabled,
+    isPulling,
+    pullDistance,
+    isRefreshing,
+  ]);
 
-  return { isPulling, pullDistance, isRefreshing, progress: Math.min(pullDistance / threshold, 1) };
+  return {
+    isPulling,
+    pullDistance,
+    isRefreshing,
+    progress: Math.min(pullDistance / threshold, 1),
+  };
 }
 
 interface LongPressConfig {
@@ -167,7 +189,7 @@ interface LongPressConfig {
 
 export function useLongPress<T extends HTMLElement = HTMLElement>(
   ref: RefObject<T>,
-  config: LongPressConfig
+  config: LongPressConfig,
 ) {
   const { duration = 500, onLongPress, onPress } = config;
   const [isLongPressing, setIsLongPressing] = useState(false);
@@ -184,7 +206,7 @@ export function useLongPress<T extends HTMLElement = HTMLElement>(
         isLongPressedRef.current = true;
         setIsLongPressing(true);
         onLongPress();
-        triggerHapticFeedback('heavy');
+        triggerHapticFeedback("heavy");
       }, duration);
     };
 
@@ -207,17 +229,17 @@ export function useLongPress<T extends HTMLElement = HTMLElement>(
       setIsLongPressing(false);
     };
 
-    element.addEventListener('touchstart', handleTouchStart, { passive: true });
-    element.addEventListener('touchend', handleTouchEnd, { passive: true });
-    element.addEventListener('touchmove', handleTouchMove, { passive: true });
+    element.addEventListener("touchstart", handleTouchStart, { passive: true });
+    element.addEventListener("touchend", handleTouchEnd, { passive: true });
+    element.addEventListener("touchmove", handleTouchMove, { passive: true });
 
     return () => {
       if (timerRef.current) {
         clearTimeout(timerRef.current);
       }
-      element.removeEventListener('touchstart', handleTouchStart);
-      element.removeEventListener('touchend', handleTouchEnd);
-      element.removeEventListener('touchmove', handleTouchMove);
+      element.removeEventListener("touchstart", handleTouchStart);
+      element.removeEventListener("touchend", handleTouchEnd);
+      element.removeEventListener("touchmove", handleTouchMove);
     };
   }, [ref, duration, onLongPress, onPress]);
 
@@ -232,7 +254,7 @@ interface PinchZoomConfig {
 
 export function usePinchZoom<T extends HTMLElement = HTMLElement>(
   ref: RefObject<T>,
-  config: PinchZoomConfig = {}
+  config: PinchZoomConfig = {},
 ) {
   const { minScale = 0.5, maxScale = 3, onZoomChange } = config;
   const [scale, setScale] = useState(1);
@@ -261,7 +283,10 @@ export function usePinchZoom<T extends HTMLElement = HTMLElement>(
       if (e.touches.length === 2 && initialDistance.current > 0) {
         const currentDistance = getDistance(e.touches);
         const scaleChange = currentDistance / initialDistance.current;
-        const newScale = Math.min(maxScale, Math.max(minScale, initialScale.current * scaleChange));
+        const newScale = Math.min(
+          maxScale,
+          Math.max(minScale, initialScale.current * scaleChange),
+        );
         setScale(newScale);
         onZoomChange?.(newScale);
       }
@@ -271,14 +296,14 @@ export function usePinchZoom<T extends HTMLElement = HTMLElement>(
       initialDistance.current = 0;
     };
 
-    element.addEventListener('touchstart', handleTouchStart, { passive: true });
-    element.addEventListener('touchmove', handleTouchMove, { passive: true });
-    element.addEventListener('touchend', handleTouchEnd, { passive: true });
+    element.addEventListener("touchstart", handleTouchStart, { passive: true });
+    element.addEventListener("touchmove", handleTouchMove, { passive: true });
+    element.addEventListener("touchend", handleTouchEnd, { passive: true });
 
     return () => {
-      element.removeEventListener('touchstart', handleTouchStart);
-      element.removeEventListener('touchmove', handleTouchMove);
-      element.removeEventListener('touchend', handleTouchEnd);
+      element.removeEventListener("touchstart", handleTouchStart);
+      element.removeEventListener("touchmove", handleTouchMove);
+      element.removeEventListener("touchend", handleTouchEnd);
     };
   }, [ref, minScale, maxScale, scale, onZoomChange]);
 
@@ -290,8 +315,10 @@ export function usePinchZoom<T extends HTMLElement = HTMLElement>(
   return { scale, resetZoom };
 }
 
-export function triggerHapticFeedback(type: 'light' | 'medium' | 'heavy' = 'light') {
-  if ('vibrate' in navigator) {
+export function triggerHapticFeedback(
+  type: "light" | "medium" | "heavy" = "light",
+) {
+  if ("vibrate" in navigator) {
     const patterns: Record<string, number | number[]> = {
       light: 10,
       medium: 25,
@@ -304,7 +331,7 @@ export function triggerHapticFeedback(type: 'light' | 'medium' | 'heavy' = 'ligh
 export function useHorizontalSwipeNavigation(
   sections: string[],
   currentIndex: number,
-  onChange: (index: number) => void
+  onChange: (index: number) => void,
 ) {
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -312,13 +339,13 @@ export function useHorizontalSwipeNavigation(
     onSwipeLeft: () => {
       if (currentIndex < sections.length - 1) {
         onChange(currentIndex + 1);
-        triggerHapticFeedback('light');
+        triggerHapticFeedback("light");
       }
     },
     onSwipeRight: () => {
       if (currentIndex > 0) {
         onChange(currentIndex - 1);
-        triggerHapticFeedback('light');
+        triggerHapticFeedback("light");
       }
     },
   });

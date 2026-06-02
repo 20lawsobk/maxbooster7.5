@@ -1,5 +1,5 @@
-import { useEffect, useRef } from 'react';
-import { motion } from 'framer-motion';
+import { useEffect, useRef } from "react";
+import { motion } from "framer-motion";
 
 interface SpectrumAnalyzerProps {
   analyserNode?: AnalyserNode | null;
@@ -9,7 +9,7 @@ interface SpectrumAnalyzerProps {
   minFreq?: number;
   maxFreq?: number;
   smoothing?: number;
-  style?: 'bars' | 'line' | 'waterfall';
+  style?: "bars" | "line" | "waterfall";
   showGrid?: boolean;
   showLabels?: boolean;
   color?: string;
@@ -24,11 +24,11 @@ export function SpectrumAnalyzer({
   minFreq = 20,
   maxFreq = 20000,
   smoothing = 0.8,
-  style = 'bars',
+  style = "bars",
   showGrid = true,
   showLabels = true,
-  color = 'var(--studio-accent)',
-  className = '',
+  color = "var(--studio-accent)",
+  className = "",
 }: SpectrumAnalyzerProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationFrameRef = useRef<number>();
@@ -42,7 +42,7 @@ export function SpectrumAnalyzer({
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    const ctx = canvas.getContext('2d');
+    const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
     // Set canvas resolution
@@ -65,11 +65,23 @@ export function SpectrumAnalyzer({
 
     // Resolve CSS variables to actual colors (Canvas API can't parse CSS vars)
     const resolvedColors = {
-      background: getComputedStyle(canvas).getPropertyValue('--meter-background').trim() || '#1a1a2e',
-      green: getComputedStyle(canvas).getPropertyValue('--meter-green').trim() || '#22c55e',
-      yellow: getComputedStyle(canvas).getPropertyValue('--meter-yellow').trim() || '#eab308',
-      red: getComputedStyle(canvas).getPropertyValue('--meter-red').trim() || '#ef4444',
-      textMuted: getComputedStyle(canvas).getPropertyValue('--studio-text-muted').trim() || '#888888',
+      background:
+        getComputedStyle(canvas)
+          .getPropertyValue("--meter-background")
+          .trim() || "#1a1a2e",
+      green:
+        getComputedStyle(canvas).getPropertyValue("--meter-green").trim() ||
+        "#22c55e",
+      yellow:
+        getComputedStyle(canvas).getPropertyValue("--meter-yellow").trim() ||
+        "#eab308",
+      red:
+        getComputedStyle(canvas).getPropertyValue("--meter-red").trim() ||
+        "#ef4444",
+      textMuted:
+        getComputedStyle(canvas)
+          .getPropertyValue("--studio-text-muted")
+          .trim() || "#888888",
     };
 
     const draw = () => {
@@ -85,17 +97,41 @@ export function SpectrumAnalyzer({
       }
 
       // Draw spectrum based on style
-      if (style === 'bars') {
-        drawBars(ctx, dataArray, minBin, binsPerBar, barCount, width, height, resolvedColors);
-      } else if (style === 'line') {
+      if (style === "bars") {
+        drawBars(
+          ctx,
+          dataArray,
+          minBin,
+          binsPerBar,
+          barCount,
+          width,
+          height,
+          resolvedColors,
+        );
+      } else if (style === "line") {
         drawLine(ctx, dataArray, minBin, binsPerBar, barCount, width, height);
-      } else if (style === 'waterfall') {
-        drawWaterfall(ctx, dataArray, minBin, binsPerBar, barCount, width, height);
+      } else if (style === "waterfall") {
+        drawWaterfall(
+          ctx,
+          dataArray,
+          minBin,
+          binsPerBar,
+          barCount,
+          width,
+          height,
+        );
       }
 
       // Draw frequency labels
       if (showLabels) {
-        drawFrequencyLabels(ctx, width, height, minFreq, maxFreq, resolvedColors);
+        drawFrequencyLabels(
+          ctx,
+          width,
+          height,
+          minFreq,
+          maxFreq,
+          resolvedColors,
+        );
       }
 
       animationFrameRef.current = requestAnimationFrame(draw);
@@ -123,7 +159,7 @@ export function SpectrumAnalyzer({
   ]);
 
   const drawGrid = (ctx: CanvasRenderingContext2D, w: number, h: number) => {
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
+    ctx.strokeStyle = "rgba(255, 255, 255, 0.05)";
     ctx.lineWidth = 1;
 
     // Horizontal lines (dB scale)
@@ -139,7 +175,8 @@ export function SpectrumAnalyzer({
     // Vertical lines (frequency scale - logarithmic)
     const freqLines = [100, 1000, 10000];
     freqLines.forEach((freq) => {
-      const x = (Math.log10(freq / minFreq) / Math.log10(maxFreq / minFreq)) * w;
+      const x =
+        (Math.log10(freq / minFreq) / Math.log10(maxFreq / minFreq)) * w;
       ctx.beginPath();
       ctx.moveTo(x, 0);
       ctx.lineTo(x, h);
@@ -155,7 +192,7 @@ export function SpectrumAnalyzer({
     bars: number,
     w: number,
     h: number,
-    colors: { green: string; yellow: string; red: string }
+    colors: { green: string; yellow: string; red: string },
   ) => {
     const barWidth = w / bars;
     const barGap = 1;
@@ -183,7 +220,10 @@ export function SpectrumAnalyzer({
         peakHoldTimeRef.current[i] = currentTime;
       } else if (currentTime - peakHoldTimeRef.current[i] > 1000) {
         // Decay peak after 1 second
-        peakHoldRef.current[i] = Math.max(peakHoldRef.current[i] - 0.01, normalizedValue);
+        peakHoldRef.current[i] = Math.max(
+          peakHoldRef.current[i] - 0.01,
+          normalizedValue,
+        );
       }
 
       // Calculate color based on level (using resolved colors)
@@ -202,11 +242,16 @@ export function SpectrumAnalyzer({
       gradient.addColorStop(1, `${barColor}88`);
 
       ctx.fillStyle = gradient;
-      ctx.fillRect(i * barWidth + barGap, h - barHeight, barWidth - barGap * 2, barHeight);
+      ctx.fillRect(
+        i * barWidth + barGap,
+        h - barHeight,
+        barWidth - barGap * 2,
+        barHeight,
+      );
 
       // Draw peak hold line
       const peakY = h - peakHoldRef.current[i] * h;
-      ctx.fillStyle = '#ffffff';
+      ctx.fillStyle = "#ffffff";
       ctx.fillRect(i * barWidth + barGap, peakY, barWidth - barGap * 2, 2);
     }
   };
@@ -218,7 +263,7 @@ export function SpectrumAnalyzer({
     binsPerBar: number,
     bars: number,
     w: number,
-    h: number
+    h: number,
   ) => {
     ctx.strokeStyle = color;
     ctx.lineWidth = 2;
@@ -269,7 +314,7 @@ export function SpectrumAnalyzer({
     binsPerBar: number,
     bars: number,
     w: number,
-    h: number
+    h: number,
   ) => {
     // Create new line of spectrum data
     const imageData = ctx.createImageData(w, 1);
@@ -302,10 +347,10 @@ export function SpectrumAnalyzer({
     }
 
     // Shift existing waterfall data down
-    const tempCanvas = document.createElement('canvas');
+    const tempCanvas = document.createElement("canvas");
     tempCanvas.width = w;
     tempCanvas.height = h;
-    const tempCtx = tempCanvas.getContext('2d');
+    const tempCtx = tempCanvas.getContext("2d");
 
     if (tempCtx) {
       tempCtx.drawImage(canvas, 0, 0);
@@ -321,16 +366,16 @@ export function SpectrumAnalyzer({
     h: number,
     minF: number,
     maxF: number,
-    colors: { textMuted: string }
+    colors: { textMuted: string },
   ) => {
     ctx.fillStyle = colors.textMuted;
-    ctx.font = '8px monospace';
-    ctx.textAlign = 'center';
+    ctx.font = "8px monospace";
+    ctx.textAlign = "center";
 
     const labels = [
-      { freq: 100, label: '100' },
-      { freq: 1000, label: '1k' },
-      { freq: 10000, label: '10k' },
+      { freq: 100, label: "100" },
+      { freq: 1000, label: "1k" },
+      { freq: 10000, label: "10k" },
     ];
 
     labels.forEach(({ freq, label }) => {
@@ -341,12 +386,16 @@ export function SpectrumAnalyzer({
     });
 
     // Draw dB scale on the left
-    ctx.textAlign = 'left';
-    ctx.fillText('0dB', 2, 10);
-    ctx.fillText('-60dB', 2, h - 2);
+    ctx.textAlign = "left";
+    ctx.fillText("0dB", 2, 10);
+    ctx.fillText("-60dB", 2, h - 2);
   };
 
-  const hslToRgb = (h: number, s: number, l: number): [number, number, number] => {
+  const hslToRgb = (
+    h: number,
+    s: number,
+    l: number,
+  ): [number, number, number] => {
     let r, g, b;
 
     if (s === 0) {
@@ -379,19 +428,25 @@ export function SpectrumAnalyzer({
         style={{
           width: `${width}px`,
           height: `${height}px`,
-          background: 'var(--meter-background)',
+          background: "var(--meter-background)",
         }}
       />
 
       {/* Style selector */}
       <div className="absolute top-1 right-1 flex gap-1">
-        {(['bars', 'line', 'waterfall'] as const).map((s) => (
+        {(["bars", "line", "waterfall"] as const).map((s) => (
           <motion.button
             key={s}
             className="px-2 py-0.5 text-[8px] rounded"
             style={{
-              background: style === s ? 'var(--studio-accent)' : 'var(--studio-bg-medium)',
-              color: style === s ? 'var(--studio-bg-deep)' : 'var(--studio-text-muted)',
+              background:
+                style === s
+                  ? "var(--studio-accent)"
+                  : "var(--studio-bg-medium)",
+              color:
+                style === s
+                  ? "var(--studio-bg-deep)"
+                  : "var(--studio-text-muted)",
             }}
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}

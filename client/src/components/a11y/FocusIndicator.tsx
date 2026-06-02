@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef } from "react";
 
 export interface FocusIndicatorProps {
   color?: string;
@@ -11,12 +11,12 @@ export interface FocusIndicatorProps {
 }
 
 export function FocusIndicator({
-  color = 'hsl(var(--primary))',
+  color = "hsl(var(--primary))",
   width = 2,
   offset = 2,
   borderRadius = 4,
   transitionDuration = 150,
-  className = '',
+  className = "",
   enabled = true,
 }: FocusIndicatorProps) {
   const [position, setPosition] = useState<{
@@ -33,7 +33,7 @@ export function FocusIndicator({
     if (!enabled) return;
 
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Tab') {
+      if (e.key === "Tab") {
         isKeyboardRef.current = true;
       }
     };
@@ -50,7 +50,7 @@ export function FocusIndicator({
       if (!target || target === document.body) return;
 
       const rect = target.getBoundingClientRect();
-      
+
       setPosition({
         top: rect.top + window.scrollY - offset,
         left: rect.left + window.scrollX - offset,
@@ -66,7 +66,9 @@ export function FocusIndicator({
 
     const handleScroll = () => {
       if (isVisible && document.activeElement) {
-        const rect = (document.activeElement as HTMLElement).getBoundingClientRect();
+        const rect = (
+          document.activeElement as HTMLElement
+        ).getBoundingClientRect();
         setPosition({
           top: rect.top + window.scrollY - offset,
           left: rect.left + window.scrollX - offset,
@@ -76,20 +78,20 @@ export function FocusIndicator({
       }
     };
 
-    document.addEventListener('keydown', handleKeyDown);
-    document.addEventListener('mousedown', handleMouseDown);
-    document.addEventListener('focusin', handleFocusIn);
-    document.addEventListener('focusout', handleFocusOut);
-    window.addEventListener('scroll', handleScroll, true);
-    window.addEventListener('resize', handleScroll);
+    document.addEventListener("keydown", handleKeyDown);
+    document.addEventListener("mousedown", handleMouseDown);
+    document.addEventListener("focusin", handleFocusIn);
+    document.addEventListener("focusout", handleFocusOut);
+    window.addEventListener("scroll", handleScroll, true);
+    window.addEventListener("resize", handleScroll);
 
     return () => {
-      document.removeEventListener('keydown', handleKeyDown);
-      document.removeEventListener('mousedown', handleMouseDown);
-      document.removeEventListener('focusin', handleFocusIn);
-      document.removeEventListener('focusout', handleFocusOut);
-      window.removeEventListener('scroll', handleScroll, true);
-      window.removeEventListener('resize', handleScroll);
+      document.removeEventListener("keydown", handleKeyDown);
+      document.removeEventListener("mousedown", handleMouseDown);
+      document.removeEventListener("focusin", handleFocusIn);
+      document.removeEventListener("focusout", handleFocusOut);
+      window.removeEventListener("scroll", handleScroll, true);
+      window.removeEventListener("resize", handleScroll);
     };
   }, [enabled, offset, isVisible]);
 
@@ -123,8 +125,8 @@ export interface FocusRingProps {
 
 export function FocusRing({
   children,
-  className = '',
-  focusClassName = 'ring-2 ring-primary ring-offset-2',
+  className = "",
+  focusClassName = "ring-2 ring-primary ring-offset-2",
 }: FocusRingProps) {
   const [isFocusVisible, setIsFocusVisible] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -136,7 +138,7 @@ export function FocusRing({
     let isKeyboard = false;
 
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Tab') {
+      if (e.key === "Tab") {
         isKeyboard = true;
       }
     };
@@ -155,23 +157,23 @@ export function FocusRing({
       setIsFocusVisible(false);
     };
 
-    document.addEventListener('keydown', handleKeyDown);
-    document.addEventListener('mousedown', handleMouseDown);
-    element.addEventListener('focus', handleFocus, true);
-    element.addEventListener('blur', handleBlur, true);
+    document.addEventListener("keydown", handleKeyDown);
+    document.addEventListener("mousedown", handleMouseDown);
+    element.addEventListener("focus", handleFocus, true);
+    element.addEventListener("blur", handleBlur, true);
 
     return () => {
-      document.removeEventListener('keydown', handleKeyDown);
-      document.removeEventListener('mousedown', handleMouseDown);
-      element.removeEventListener('focus', handleFocus, true);
-      element.removeEventListener('blur', handleBlur, true);
+      document.removeEventListener("keydown", handleKeyDown);
+      document.removeEventListener("mousedown", handleMouseDown);
+      element.removeEventListener("focus", handleFocus, true);
+      element.removeEventListener("blur", handleBlur, true);
     };
   }, []);
 
   return (
     <div
       ref={ref}
-      className={`${className} ${isFocusVisible ? focusClassName : ''}`}
+      className={`${className} ${isFocusVisible ? focusClassName : ""}`}
     >
       {children}
     </div>

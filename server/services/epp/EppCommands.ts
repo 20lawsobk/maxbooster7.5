@@ -44,7 +44,7 @@ export class EppCommands {
   <command>
     <check>
       <domain:check xmlns:domain="urn:ietf:params:xml:ns:domain-1.0">
-        ${fqdns.map(f => `<domain:name>${f}</domain:name>`).join('')}
+        ${fqdns.map((f) => `<domain:name>${f}</domain:name>`).join("")}
       </domain:check>
     </check>
     <clTRID>${trid}</clTRID>
@@ -66,7 +66,11 @@ export class EppCommands {
 </epp>`;
   }
 
-  static contactCreate(id: string, contact: Record<string, unknown>, trid: string) {
+  static contactCreate(
+    id: string,
+    contact: Record<string, unknown>,
+    trid: string,
+  ) {
     return `<?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <epp xmlns="urn:ietf:params:xml:ns:epp-1.0">
   <command>
@@ -75,7 +79,7 @@ export class EppCommands {
         <contact:id>${id}</contact:id>
         <contact:postalInfo type="int">
           <contact:name>${contact.name}</contact:name>
-          ${contact.org ? `<contact:org>${contact.org}</contact:org>` : ''}
+          ${contact.org ? `<contact:org>${contact.org}</contact:org>` : ""}
           <contact:addr>
             <contact:street>${contact.address.street}</contact:street>
             <contact:city>${contact.address.city}</contact:city>
@@ -84,7 +88,7 @@ export class EppCommands {
             <contact:cc>${contact.address.country}</contact:cc>
           </contact:addr>
         </contact:postalInfo>
-        <contact:voice>${contact.phone || '+1.0000000000'}</contact:voice>
+        <contact:voice>${contact.phone || "+1.0000000000"}</contact:voice>
         <contact:email>${contact.email}</contact:email>
         <contact:authInfo>
           <contact:pw>pw-${Math.random().toString(36).slice(2)}</contact:pw>
@@ -105,13 +109,13 @@ export class EppCommands {
         <domain:name>${params.fqdn}</domain:name>
         <domain:period unit="y">${params.years}</domain:period>
         <domain:ns>
-          ${params.nameservers.map((ns: string) => `<domain:hostObj>${ns}</domain:hostObj>`).join('')}
+          ${params.nameservers.map((ns: string) => `<domain:hostObj>${ns}</domain:hostObj>`).join("")}
         </domain:ns>
         <domain:registrant>${params.registrantId}</domain:registrant>
         <domain:contact type="admin">${params.adminId}</domain:contact>
         <domain:contact type="tech">${params.techId}</domain:contact>
         <domain:authInfo>
-          <domain:pw>${params.authInfo || 'pw-' + Math.random().toString(36).slice(2)}</domain:pw>
+          <domain:pw>${params.authInfo || "pw-" + Math.random().toString(36).slice(2)}</domain:pw>
         </domain:authInfo>
       </domain:create>
     </create>
@@ -120,17 +124,22 @@ export class EppCommands {
 </epp>`;
   }
 
-  static domainUpdate(fqdn: string, addNs: string[], remNs: string[], trid: string) {
-      let addSection = '';
-      if (addNs.length > 0) {
-          addSection = `<domain:add><domain:ns>${addNs.map(ns => `<domain:hostObj>${ns}</domain:hostObj>`).join('')}</domain:ns></domain:add>`;
-      }
-      let remSection = '';
-      if (remNs.length > 0) {
-          remSection = `<domain:rem><domain:ns>${remNs.map(ns => `<domain:hostObj>${ns}</domain:hostObj>`).join('')}</domain:ns></domain:rem>`;
-      }
+  static domainUpdate(
+    fqdn: string,
+    addNs: string[],
+    remNs: string[],
+    trid: string,
+  ) {
+    let addSection = "";
+    if (addNs.length > 0) {
+      addSection = `<domain:add><domain:ns>${addNs.map((ns) => `<domain:hostObj>${ns}</domain:hostObj>`).join("")}</domain:ns></domain:add>`;
+    }
+    let remSection = "";
+    if (remNs.length > 0) {
+      remSection = `<domain:rem><domain:ns>${remNs.map((ns) => `<domain:hostObj>${ns}</domain:hostObj>`).join("")}</domain:ns></domain:rem>`;
+    }
 
-      return `<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+    return `<?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <epp xmlns="urn:ietf:params:xml:ns:epp-1.0">
   <command>
     <update>
@@ -145,8 +154,13 @@ export class EppCommands {
 </epp>`;
   }
 
-  static domainRenew(fqdn: string, curExpDate: string, years: number, trid: string) {
-      return `<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+  static domainRenew(
+    fqdn: string,
+    curExpDate: string,
+    years: number,
+    trid: string,
+  ) {
+    return `<?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <epp xmlns="urn:ietf:params:xml:ns:epp-1.0">
   <command>
     <renew>
@@ -167,7 +181,7 @@ export class EppCommands {
   <command>
     <check>
       <contact:check xmlns:contact="urn:ietf:params:xml:ns:contact-1.0">
-        ${ids.map(id => `<contact:id>${id}</contact:id>`).join('\n        ')}
+        ${ids.map((id) => `<contact:id>${id}</contact:id>`).join("\n        ")}
       </contact:check>
     </check>
     <clTRID>${trid}</clTRID>
@@ -189,8 +203,13 @@ export class EppCommands {
 </epp>`;
   }
 
-  static domainTransfer(fqdn: string, authCode: string, op: 'request' | 'query' | 'approve' | 'reject' | 'cancel', trid: string) {
-      return `<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+  static domainTransfer(
+    fqdn: string,
+    authCode: string,
+    op: "request" | "query" | "approve" | "reject" | "cancel",
+    trid: string,
+  ) {
+    return `<?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <epp xmlns="urn:ietf:params:xml:ns:epp-1.0">
   <command>
     <transfer op="${op}">

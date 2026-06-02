@@ -1,5 +1,61 @@
-import type { PluginDefinition } from '../server/services/pluginHostService';
+import type { PluginDefinition } from "../server/services/pluginHostService";
 
-const MbBellTibetanPlugin: PluginDefinition = { id: 'mb-bell-tibetan', slug: 'mb-bell-tibetan', name: 'MB Tibetan Bowl', category: 'instrument', type: 'bell' as any, version: '1.0.0', description: 'Singing bowl with meditative overtone harmonics', author: 'Max Booster', grade: 'A', oscillators: [{ type: 'sine', detune: 0, gain: 0.4 }, { type: 'sine', detune: 1550, gain: 0.25 }, { type: 'sine', detune: 2400, gain: 0.2 }, { type: 'sine', detune: 3100, gain: 0.15 }], envelope: { attack: 0.5, decay: 5.0, sustain: 0.3, release: 3.0 }, parameters: [{ id: 'strike', name: 'Strike/Rim', type: 'float', defaultValue: 0.5, minValue: 0, maxValue: 1, automatable: true }, { id: 'overtones', name: 'Overtones', type: 'float', defaultValue: 0.6, minValue: 0, maxValue: 1, automatable: true }, { id: 'size', name: 'Bowl Size', type: 'float', defaultValue: 0.5, minValue: 0, maxValue: 1, automatable: true }, { id: 'volume', name: 'Volume', type: 'float', defaultValue: 0.8, minValue: 0, maxValue: 1, automatable: true }], defaultPreset: { strike: 0.5, overtones: 0.6, size: 0.5, volume: 0.8 } };
+const MbBellTibetanPlugin: PluginDefinition = {
+  id: "mb-bell-tibetan",
+  slug: "mb-bell-tibetan",
+  name: "MB Tibetan Bowl",
+  category: "instrument",
+  type: "bell" as any,
+  version: "1.0.0",
+  description: "Singing bowl with meditative overtone harmonics",
+  author: "Max Booster",
+  grade: "A",
+  oscillators: [
+    { type: "sine", detune: 0, gain: 0.4 },
+    { type: "sine", detune: 1550, gain: 0.25 },
+    { type: "sine", detune: 2400, gain: 0.2 },
+    { type: "sine", detune: 3100, gain: 0.15 },
+  ],
+  envelope: { attack: 0.5, decay: 5.0, sustain: 0.3, release: 3.0 },
+  parameters: [
+    {
+      id: "strike",
+      name: "Strike/Rim",
+      type: "float",
+      defaultValue: 0.5,
+      minValue: 0,
+      maxValue: 1,
+      automatable: true,
+    },
+    {
+      id: "overtones",
+      name: "Overtones",
+      type: "float",
+      defaultValue: 0.6,
+      minValue: 0,
+      maxValue: 1,
+      automatable: true,
+    },
+    {
+      id: "size",
+      name: "Bowl Size",
+      type: "float",
+      defaultValue: 0.5,
+      minValue: 0,
+      maxValue: 1,
+      automatable: true,
+    },
+    {
+      id: "volume",
+      name: "Volume",
+      type: "float",
+      defaultValue: 0.8,
+      minValue: 0,
+      maxValue: 1,
+      automatable: true,
+    },
+  ],
+  defaultPreset: { strike: 0.5, overtones: 0.6, size: 0.5, volume: 0.8 },
+};
 
 export default MbBellTibetanPlugin;

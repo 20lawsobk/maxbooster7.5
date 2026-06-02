@@ -1,8 +1,8 @@
-import { storage } from '../storage';
-import type { InsertLogEvent, LogEvent } from '@shared/schema';
-import { logger } from '../logger.js';
+import { storage } from "../storage";
+import type { InsertLogEvent, LogEvent } from "@shared/schema";
+import { logger } from "../logger.js";
 
-type LogLevel = 'debug' | 'info' | 'warn' | 'error' | 'critical';
+type LogLevel = "debug" | "info" | "warn" | "error" | "critical";
 
 interface LogFilters {
   level?: string;
@@ -21,7 +21,7 @@ export class LoggingService {
     message: string,
     context?: unknown,
     userId?: string,
-    stackTrace?: string
+    stackTrace?: string,
   ): Promise<LogEvent> {
     const logData: InsertLogEvent = {
       level,
@@ -39,27 +39,27 @@ export class LoggingService {
     service: string,
     message: string,
     context?: unknown,
-    userId?: string
+    userId?: string,
   ): Promise<LogEvent> {
-    return this.log('debug', service, message, context, userId);
+    return this.log("debug", service, message, context, userId);
   }
 
   async logInfo(
     service: string,
     message: string,
     context?: unknown,
-    userId?: string
+    userId?: string,
   ): Promise<LogEvent> {
-    return this.log('info', service, message, context, userId);
+    return this.log("info", service, message, context, userId);
   }
 
   async logWarn(
     service: string,
     message: string,
     context?: unknown,
-    userId?: string
+    userId?: string,
   ): Promise<LogEvent> {
-    return this.log('warn', service, message, context, userId);
+    return this.log("warn", service, message, context, userId);
   }
 
   async logError(
@@ -67,16 +67,24 @@ export class LoggingService {
     message: string,
     error?: Error | any,
     context?: unknown,
-    userId?: string
+    userId?: string,
   ): Promise<LogEvent> {
-    const stackTrace = error?.stack || (error instanceof Error ? error.stack : undefined);
+    const stackTrace =
+      error?.stack || (error instanceof Error ? error.stack : undefined);
     const errorContext = {
       ...context,
       errorMessage: error?.message,
       errorName: error?.name,
     };
 
-    return this.log('error', service, message, errorContext, userId, stackTrace);
+    return this.log(
+      "error",
+      service,
+      message,
+      errorContext,
+      userId,
+      stackTrace,
+    );
   }
 
   async logCritical(
@@ -84,35 +92,51 @@ export class LoggingService {
     message: string,
     error?: Error | any,
     context?: unknown,
-    userId?: string
+    userId?: string,
   ): Promise<LogEvent> {
-    const stackTrace = error?.stack || (error instanceof Error ? error.stack : undefined);
+    const stackTrace =
+      error?.stack || (error instanceof Error ? error.stack : undefined);
     const errorContext = {
       ...context,
       errorMessage: error?.message,
       errorName: error?.name,
     };
 
-    return this.log('critical', service, message, errorContext, userId, stackTrace);
+    return this.log(
+      "critical",
+      service,
+      message,
+      errorContext,
+      userId,
+      stackTrace,
+    );
   }
 
-  async queryLogs(filters: LogFilters, limit: number = 100): Promise<LogEvent[]> {
+  async queryLogs(
+    filters: LogFilters,
+    limit: number = 100,
+  ): Promise<LogEvent[]> {
     return storage.queryLogs(filters, limit);
   }
 
   async cleanupOldLogs(): Promise<void> {
     const retentionDate = new Date();
-    retentionDate.setDate(retentionDate.getDate() - LoggingService.LOG_RETENTION_DAYS);
+    retentionDate.setDate(
+      retentionDate.getDate() - LoggingService.LOG_RETENTION_DAYS,
+    );
 
     await storage.queryLogs(
       {
         endTime: retentionDate,
       },
-      10000
+      10000,
     );
   }
 
-  streamLogs(filters: LogFilters, callback: (log: LogEvent) => void): () => void {
+  streamLogs(
+    filters: LogFilters,
+    callback: (log: LogEvent) => void,
+  ): () => void {
     let isActive = true;
 
     const pollInterval = setInterval(async () => {
@@ -127,12 +151,12 @@ export class LoggingService {
             ...filters,
             startTime: new Date(Date.now() - 5000),
           },
-          50
+          50,
         );
 
         logs.forEach((log) => callback(log));
       } catch (error: unknown) {
-        logger.warn({ err: error }, 'Error streaming logs:');
+        logger.warn({ err: error }, "Error streaming logs:");
       }
     }, 2000);
 

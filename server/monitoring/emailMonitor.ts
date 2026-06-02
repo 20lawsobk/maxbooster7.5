@@ -1,12 +1,12 @@
-import type { MailDataRequired } from '@sendgrid/mail';
-import { logger } from '../logger.js';
+import type { MailDataRequired } from "@sendgrid/mail";
+import { logger } from "../logger.js";
 
 interface EmailLog {
   timestamp: Date;
   to: string;
   templateId?: string;
   subject?: string;
-  status: 'sent' | 'failed' | 'queued';
+  status: "sent" | "failed" | "queued";
   error?: string;
   deliveryTime?: number;
 }
@@ -21,13 +21,15 @@ class EmailMonitor {
 
   logEmail(
     email: MailDataRequired,
-    status: 'sent' | 'failed',
+    status: "sent" | "failed",
     error?: string,
-    deliveryTime?: number
+    deliveryTime?: number,
   ) {
     const log: EmailLog = {
       timestamp: new Date(),
-      to: Array.isArray(email.to) ? email.to[0].toString() : email.to.toString(),
+      to: Array.isArray(email.to)
+        ? email.to[0].toString()
+        : email.to.toString(),
       templateId: (email as Record<string, unknown>).templateId,
       subject: email.subject as string,
       status,
@@ -38,13 +40,15 @@ class EmailMonitor {
     this.logs.push(log);
     this.updateMetrics(status);
 
-    logger.info(`[EmailMonitor] ${status.toUpperCase()}: ${log.to} ${error ? `(${error})` : ''}`);
+    logger.info(
+      `[EmailMonitor] ${status.toUpperCase()}: ${log.to} ${error ? `(${error})` : ""}`,
+    );
   }
 
-  private updateMetrics(status: 'sent' | 'failed') {
+  private updateMetrics(status: "sent" | "failed") {
     this.deliveryRates.total++;
-    if (status === 'sent') this.deliveryRates.sent++;
-    if (status === 'failed') this.deliveryRates.failed++;
+    if (status === "sent") this.deliveryRates.sent++;
+    if (status === "failed") this.deliveryRates.failed++;
   }
 
   getDeliveryRate(): number {
@@ -62,7 +66,7 @@ class EmailMonitor {
   }
 
   getRecentFailures() {
-    return this.logs.filter((log) => log.status === 'failed').slice(-10);
+    return this.logs.filter((log) => log.status === "failed").slice(-10);
   }
 }
 

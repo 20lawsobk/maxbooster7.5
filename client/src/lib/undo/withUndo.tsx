@@ -1,6 +1,6 @@
-import React, { ComponentType } from 'react';
-import { UndoProvider } from '@/contexts/UndoContext';
-import { UndoToast } from '@/components/undo/UndoToast';
+import React, { ComponentType } from "react";
+import { UndoProvider } from "@/contexts/UndoContext";
+import { UndoToast } from "@/components/undo/UndoToast";
 
 export interface WithUndoConfig {
   maxHistorySize?: number;
@@ -10,7 +10,7 @@ export interface WithUndoConfig {
 
 export function withUndo<P extends object>(
   WrappedComponent: ComponentType<P>,
-  config: WithUndoConfig = {}
+  config: WithUndoConfig = {},
 ) {
   const {
     maxHistorySize = 100,
@@ -31,7 +31,7 @@ export function withUndo<P extends object>(
   };
 
   WithUndoComponent.displayName = `withUndo(${
-    WrappedComponent.displayName || WrappedComponent.name || 'Component'
+    WrappedComponent.displayName || WrappedComponent.name || "Component"
   })`;
 
   return WithUndoComponent;

@@ -1,22 +1,28 @@
-import { logger } from '@/lib/logger';
-import { getCsrfTokenFromCookie } from '@/lib/queryClient';
-import { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { 
-  Cloud, 
-  Database, 
-  Zap, 
-  Archive, 
+import { logger } from "@/lib/logger";
+import { getCsrfTokenFromCookie } from "@/lib/queryClient";
+import { useState, useEffect } from "react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Cloud,
+  Database,
+  Zap,
+  Archive,
   TrendingDown,
   AlertTriangle,
   CheckCircle,
   RefreshCw,
-  HardDrive
-} from 'lucide-react';
+  HardDrive,
+} from "lucide-react";
 
 interface TierBreakdown {
   hot: {
@@ -41,8 +47,8 @@ interface DeduplicationStats {
 }
 
 interface Recommendation {
-  type: 'tier_down' | 'tier_up' | 'deduplicate' | 'cleanup' | 'compress';
-  priority: 'low' | 'medium' | 'high';
+  type: "tier_down" | "tier_up" | "deduplicate" | "cleanup" | "compress";
+  priority: "low" | "medium" | "high";
   message: string;
   potentialSavings?: number;
   affectedKeys?: string[];
@@ -60,18 +66,21 @@ interface StorageAnalytics {
 }
 
 function formatBytes(bytes: number): string {
-  if (bytes === 0) return '0 B';
+  if (bytes === 0) return "0 B";
   const k = 1024;
-  const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+  const sizes = ["B", "KB", "MB", "GB", "TB"];
   const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
 }
 
 function getPriorityColor(priority: string): string {
   switch (priority) {
-    case 'high': return 'destructive';
-    case 'medium': return 'secondary';
-    default: return 'outline';
+    case "high":
+      return "destructive";
+    case "medium":
+      return "secondary";
+    default:
+      return "outline";
   }
 }
 
@@ -87,13 +96,13 @@ export function HybridStorageStats() {
   const fetchAnalytics = async () => {
     try {
       setLoading(true);
-      const response = await fetch('/api/storage/hybrid/analytics');
+      const response = await fetch("/api/storage/hybrid/analytics");
       if (response.ok) {
         const data = await response.json();
         setAnalytics(data);
       }
     } catch (error) {
-      logger.error('Failed to fetch storage analytics:', error);
+      logger.error("Failed to fetch storage analytics:", error);
     } finally {
       setLoading(false);
     }
@@ -103,16 +112,16 @@ export function HybridStorageStats() {
     try {
       setOptimizing(true);
       const csrfToken = getCsrfTokenFromCookie();
-      const response = await fetch('/api/storage/hybrid/auto-tier', {
-        method: 'POST',
-        credentials: 'include',
-        headers: csrfToken ? { 'x-csrf-token': csrfToken } : {},
+      const response = await fetch("/api/storage/hybrid/auto-tier", {
+        method: "POST",
+        credentials: "include",
+        headers: csrfToken ? { "x-csrf-token": csrfToken } : {},
       });
       if (response.ok) {
         await fetchAnalytics();
       }
     } catch (error) {
-      logger.error('Failed to run auto-tiering:', error);
+      logger.error("Failed to run auto-tiering:", error);
     } finally {
       setOptimizing(false);
     }
@@ -143,18 +152,22 @@ export function HybridStorageStats() {
           <CardTitle>Hybrid Storage</CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-muted-foreground">Unable to load storage analytics</p>
+          <p className="text-muted-foreground">
+            Unable to load storage analytics
+          </p>
         </CardContent>
       </Card>
     );
   }
 
-  const hotPercent = analytics.totalFiles > 0 
-    ? (analytics.tierBreakdown.hot.count / analytics.totalFiles) * 100 
-    : 0;
-  const coldPercent = analytics.totalFiles > 0 
-    ? (analytics.tierBreakdown.cold.count / analytics.totalFiles) * 100 
-    : 0;
+  const hotPercent =
+    analytics.totalFiles > 0
+      ? (analytics.tierBreakdown.hot.count / analytics.totalFiles) * 100
+      : 0;
+  const coldPercent =
+    analytics.totalFiles > 0
+      ? (analytics.tierBreakdown.cold.count / analytics.totalFiles) * 100
+      : 0;
 
   return (
     <div className="space-y-6">
@@ -165,11 +178,12 @@ export function HybridStorageStats() {
             Hybrid Storage Analytics
           </h2>
           <p className="text-muted-foreground">
-            Intelligent tiering between Replit Object Storage and Pocket Dimension
+            Intelligent tiering between Replit Object Storage and Pocket
+            Dimension
           </p>
         </div>
-        <Button 
-          onClick={runAutoTiering} 
+        <Button
+          onClick={runAutoTiering}
           disabled={optimizing}
           variant="outline"
         >
@@ -198,7 +212,9 @@ export function HybridStorageStats() {
         <Card>
           <CardHeader className="pb-2">
             <CardDescription>Physical Storage</CardDescription>
-            <CardTitle className="text-3xl">{formatBytes(analytics.physicalSizeBytes)}</CardTitle>
+            <CardTitle className="text-3xl">
+              {formatBytes(analytics.physicalSizeBytes)}
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-sm text-green-600">
@@ -210,19 +226,21 @@ export function HybridStorageStats() {
         <Card>
           <CardHeader className="pb-2">
             <CardDescription>Compression Ratio</CardDescription>
-            <CardTitle className="text-3xl">{analytics.overallCompressionRatio.toFixed(2)}x</CardTitle>
+            <CardTitle className="text-3xl">
+              {analytics.overallCompressionRatio.toFixed(2)}x
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-sm text-muted-foreground">
-              Across cold tier
-            </p>
+            <p className="text-sm text-muted-foreground">Across cold tier</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="pb-2">
             <CardDescription>Deduplicated</CardDescription>
-            <CardTitle className="text-3xl">{analytics.deduplication.totalDuplicates}</CardTitle>
+            <CardTitle className="text-3xl">
+              {analytics.deduplication.totalDuplicates}
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-sm text-green-600">
@@ -247,14 +265,14 @@ export function HybridStorageStats() {
                   <Cloud className="h-5 w-5 text-blue-500" />
                   Hot Tier (Replit)
                 </CardTitle>
-                <CardDescription>
-                  Fast access for active files
-                </CardDescription>
+                <CardDescription>Fast access for active files</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex justify-between text-sm">
                   <span>{analytics.tierBreakdown.hot.count} files</span>
-                  <span>{formatBytes(analytics.tierBreakdown.hot.sizeBytes)}</span>
+                  <span>
+                    {formatBytes(analytics.tierBreakdown.hot.sizeBytes)}
+                  </span>
                 </div>
                 <Progress value={hotPercent} className="bg-blue-100" />
                 <div className="text-sm text-muted-foreground">
@@ -276,12 +294,16 @@ export function HybridStorageStats() {
               <CardContent className="space-y-4">
                 <div className="flex justify-between text-sm">
                   <span>{analytics.tierBreakdown.cold.count} files</span>
-                  <span>{formatBytes(analytics.tierBreakdown.cold.sizeBytes)}</span>
+                  <span>
+                    {formatBytes(analytics.tierBreakdown.cold.sizeBytes)}
+                  </span>
                 </div>
                 <Progress value={coldPercent} className="bg-purple-100" />
                 <div className="text-sm text-muted-foreground">
-                  Compressed to {formatBytes(analytics.tierBreakdown.cold.compressedSize)} 
-                  ({analytics.tierBreakdown.cold.compressionRatio.toFixed(2)}x ratio)
+                  Compressed to{" "}
+                  {formatBytes(analytics.tierBreakdown.cold.compressedSize)}(
+                  {analytics.tierBreakdown.cold.compressionRatio.toFixed(2)}x
+                  ratio)
                 </div>
               </CardContent>
             </Card>
@@ -303,7 +325,9 @@ export function HybridStorageStats() {
               <div className="grid gap-4 md:grid-cols-3">
                 <div className="space-y-2">
                   <p className="text-sm font-medium">Total Duplicates</p>
-                  <p className="text-2xl font-bold">{analytics.deduplication.totalDuplicates}</p>
+                  <p className="text-2xl font-bold">
+                    {analytics.deduplication.totalDuplicates}
+                  </p>
                 </div>
                 <div className="space-y-2">
                   <p className="text-sm font-medium">Space Saved</p>
@@ -312,15 +336,21 @@ export function HybridStorageStats() {
                   </p>
                 </div>
                 <div className="space-y-2">
-                  <p className="text-sm font-medium">Cross-User Deduplication</p>
-                  <p className="text-2xl font-bold">{analytics.deduplication.crossUserDuplicates}</p>
+                  <p className="text-sm font-medium">
+                    Cross-User Deduplication
+                  </p>
+                  <p className="text-2xl font-bold">
+                    {analytics.deduplication.crossUserDuplicates}
+                  </p>
                 </div>
               </div>
-              
+
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">
                   <span>Deduplication Efficiency</span>
-                  <span>{analytics.deduplication.savingsPercent.toFixed(1)}%</span>
+                  <span>
+                    {analytics.deduplication.savingsPercent.toFixed(1)}%
+                  </span>
                 </div>
                 <Progress value={analytics.deduplication.savingsPercent} />
               </div>
@@ -348,22 +378,40 @@ export function HybridStorageStats() {
               ) : (
                 <div className="space-y-4">
                   {analytics.recommendations.map((rec, index) => (
-                    <div key={index} className="flex items-start gap-3 p-3 border rounded-lg">
-                      <AlertTriangle className={`h-5 w-5 mt-0.5 ${
-                        rec.priority === 'high' ? 'text-red-500' : 
-                        rec.priority === 'medium' ? 'text-yellow-500' : 'text-blue-500'
-                      }`} />
+                    <div
+                      key={index}
+                      className="flex items-start gap-3 p-3 border rounded-lg"
+                    >
+                      <AlertTriangle
+                        className={`h-5 w-5 mt-0.5 ${
+                          rec.priority === "high"
+                            ? "text-red-500"
+                            : rec.priority === "medium"
+                              ? "text-yellow-500"
+                              : "text-blue-500"
+                        }`}
+                      />
                       <div className="flex-1 space-y-1">
                         <div className="flex items-center gap-2">
-                          <Badge variant={getPriorityColor(rec.priority) as Record<string, unknown>}>
+                          <Badge
+                            variant={
+                              getPriorityColor(rec.priority) as Record<
+                                string,
+                                unknown
+                              >
+                            }
+                          >
                             {rec.priority}
                           </Badge>
-                          <Badge variant="outline">{rec.type.replace('_', ' ')}</Badge>
+                          <Badge variant="outline">
+                            {rec.type.replace("_", " ")}
+                          </Badge>
                         </div>
                         <p className="text-sm">{rec.message}</p>
                         {rec.potentialSavings && (
                           <p className="text-sm text-green-600">
-                            Potential savings: {formatBytes(rec.potentialSavings)}
+                            Potential savings:{" "}
+                            {formatBytes(rec.potentialSavings)}
                           </p>
                         )}
                       </div>

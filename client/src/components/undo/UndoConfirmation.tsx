@@ -1,6 +1,6 @@
-import { useState, useCallback } from 'react';
-import { AlertTriangle, Undo2, Redo2, Trash2, RotateCcw } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { useState, useCallback } from "react";
+import { AlertTriangle, Undo2, Redo2, Trash2, RotateCcw } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -10,15 +10,19 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
-import { Checkbox } from '@/components/ui/checkbox';
-import { UndoableAction, getActionLabel, isDestructiveAction } from '@/lib/undo/types';
+} from "@/components/ui/alert-dialog";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  UndoableAction,
+  getActionLabel,
+  isDestructiveAction,
+} from "@/lib/undo/types";
 
 export interface UndoConfirmationProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   action: UndoableAction | null;
-  type: 'undo' | 'redo' | 'delete' | 'restore';
+  type: "undo" | "redo" | "delete" | "restore";
   onConfirm: () => Promise<void>;
   onCancel?: () => void;
   title?: string;
@@ -43,47 +47,48 @@ export function UndoConfirmation({
   if (!action) return null;
 
   const actionLabel = getActionLabel(action);
-  const isDestructive = action.metadata.isDestructive || isDestructiveAction(action.type);
+  const isDestructive =
+    action.metadata.isDestructive || isDestructiveAction(action.type);
 
   const getDefaultTitle = () => {
     switch (type) {
-      case 'undo':
-        return 'Confirm Undo';
-      case 'redo':
-        return 'Confirm Redo';
-      case 'delete':
-        return 'Confirm Delete';
-      case 'restore':
-        return 'Confirm Restore';
+      case "undo":
+        return "Confirm Undo";
+      case "redo":
+        return "Confirm Redo";
+      case "delete":
+        return "Confirm Delete";
+      case "restore":
+        return "Confirm Restore";
       default:
-        return 'Confirm Action';
+        return "Confirm Action";
     }
   };
 
   const getDefaultDescription = () => {
     switch (type) {
-      case 'undo':
-        return 'Are you sure you want to undo this action?';
-      case 'redo':
-        return 'Are you sure you want to redo this action?';
-      case 'delete':
-        return 'Are you sure you want to delete this? This action may be undoable.';
-      case 'restore':
-        return 'Are you sure you want to restore this item?';
+      case "undo":
+        return "Are you sure you want to undo this action?";
+      case "redo":
+        return "Are you sure you want to redo this action?";
+      case "delete":
+        return "Are you sure you want to delete this? This action may be undoable.";
+      case "restore":
+        return "Are you sure you want to restore this item?";
       default:
-        return 'Are you sure you want to proceed?';
+        return "Are you sure you want to proceed?";
     }
   };
 
   const getIcon = () => {
     switch (type) {
-      case 'undo':
+      case "undo":
         return <Undo2 className="w-4 h-4" />;
-      case 'redo':
+      case "redo":
         return <Redo2 className="w-4 h-4" />;
-      case 'delete':
+      case "delete":
         return <Trash2 className="w-4 h-4" />;
-      case 'restore':
+      case "restore":
         return <RotateCcw className="w-4 h-4" />;
       default:
         return null;
@@ -91,11 +96,11 @@ export function UndoConfirmation({
   };
 
   const getDefaultWarning = () => {
-    if (type === 'undo' && isDestructive) {
-      return 'This will restore previously deleted data. Some related changes may also be affected.';
+    if (type === "undo" && isDestructive) {
+      return "This will restore previously deleted data. Some related changes may also be affected.";
     }
-    if (type === 'delete') {
-      return 'This action will remove the item. You may be able to undo this from the action history.';
+    if (type === "delete") {
+      return "This action will remove the item. You may be able to undo this from the action history.";
     }
     return null;
   };
@@ -106,7 +111,7 @@ export function UndoConfirmation({
       await onConfirm();
       if (dontAskAgain) {
         const storageKey = `undoConfirm_${type}_dismissed`;
-        sessionStorage.setItem(storageKey, 'true');
+        sessionStorage.setItem(storageKey, "true");
       }
     } finally {
       setIsLoading(false);
@@ -126,7 +131,7 @@ export function UndoConfirmation({
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle className="flex items-center gap-2">
-            {(isDestructive || type === 'delete') && (
+            {(isDestructive || type === "delete") && (
               <AlertTriangle className="w-5 h-5 text-amber-500" />
             )}
             {title || getDefaultTitle()}
@@ -171,13 +176,9 @@ export function UndoConfirmation({
           <AlertDialogAction
             onClick={handleConfirm}
             disabled={isLoading}
-            className={`gap-1 ${type === 'delete' ? 'bg-destructive hover:bg-destructive/90' : ''}`}
+            className={`gap-1 ${type === "delete" ? "bg-destructive hover:bg-destructive/90" : ""}`}
           >
-            {isLoading ? (
-              <span className="animate-spin">⏳</span>
-            ) : (
-              getIcon()
-            )}
+            {isLoading ? <span className="animate-spin">⏳</span> : getIcon()}
             {type.charAt(0).toUpperCase() + type.slice(1)}
           </AlertDialogAction>
         </AlertDialogFooter>
@@ -187,11 +188,13 @@ export function UndoConfirmation({
 }
 
 export interface UseUndoConfirmationOptions {
-  type: 'undo' | 'redo' | 'delete' | 'restore';
+  type: "undo" | "redo" | "delete" | "restore";
   skipForNonDestructive?: boolean;
 }
 
-export function useUndoConfirmation(options: UseUndoConfirmationOptions = { type: 'undo' }) {
+export function useUndoConfirmation(
+  options: UseUndoConfirmationOptions = { type: "undo" },
+) {
   const [dialogState, setDialogState] = useState<{
     open: boolean;
     action: UndoableAction | null;
@@ -208,14 +211,20 @@ export function useUndoConfirmation(options: UseUndoConfirmationOptions = { type
     (
       action: UndoableAction,
       onConfirm: () => Promise<void>,
-      customOptions?: { title?: string; description?: string }
+      customOptions?: { title?: string; description?: string },
     ) => {
       const storageKey = `undoConfirm_${options.type}_dismissed`;
-      const skipConfirmation = sessionStorage.getItem(storageKey) === 'true';
+      const skipConfirmation = sessionStorage.getItem(storageKey) === "true";
 
-      const isDestructive = action.metadata.isDestructive || isDestructiveAction(action.type);
+      const isDestructive =
+        action.metadata.isDestructive || isDestructiveAction(action.type);
 
-      if (skipConfirmation || (options.skipForNonDestructive && !isDestructive && !action.metadata.requiresConfirmation)) {
+      if (
+        skipConfirmation ||
+        (options.skipForNonDestructive &&
+          !isDestructive &&
+          !action.metadata.requiresConfirmation)
+      ) {
         onConfirm();
         return;
       }
@@ -228,7 +237,7 @@ export function useUndoConfirmation(options: UseUndoConfirmationOptions = { type
         customDescription: customOptions?.description,
       });
     },
-    [options]
+    [options],
   );
 
   const hideConfirmation = useCallback(() => {
@@ -239,24 +248,27 @@ export function useUndoConfirmation(options: UseUndoConfirmationOptions = { type
     });
   }, []);
 
-  const ConfirmationDialog = useCallback(() => (
-    <UndoConfirmation
-      open={dialogState.open}
-      onOpenChange={(open) => {
-        if (!open) hideConfirmation();
-      }}
-      action={dialogState.action}
-      type={options.type}
-      title={dialogState.customTitle}
-      description={dialogState.customDescription}
-      onConfirm={async () => {
-        if (dialogState.onConfirm) {
-          await dialogState.onConfirm();
-        }
-      }}
-      onCancel={hideConfirmation}
-    />
-  ), [dialogState, options.type, hideConfirmation]);
+  const ConfirmationDialog = useCallback(
+    () => (
+      <UndoConfirmation
+        open={dialogState.open}
+        onOpenChange={(open) => {
+          if (!open) hideConfirmation();
+        }}
+        action={dialogState.action}
+        type={options.type}
+        title={dialogState.customTitle}
+        description={dialogState.customDescription}
+        onConfirm={async () => {
+          if (dialogState.onConfirm) {
+            await dialogState.onConfirm();
+          }
+        }}
+        onCancel={hideConfirmation}
+      />
+    ),
+    [dialogState, options.type, hideConfirmation],
+  );
 
   return {
     showConfirmation,
@@ -267,11 +279,11 @@ export function useUndoConfirmation(options: UseUndoConfirmationOptions = { type
 }
 
 export function useDeleteConfirmation() {
-  return useUndoConfirmation({ type: 'delete', skipForNonDestructive: false });
+  return useUndoConfirmation({ type: "delete", skipForNonDestructive: false });
 }
 
 export function useRestoreConfirmation() {
-  return useUndoConfirmation({ type: 'restore', skipForNonDestructive: true });
+  return useUndoConfirmation({ type: "restore", skipForNonDestructive: true });
 }
 
 export default UndoConfirmation;

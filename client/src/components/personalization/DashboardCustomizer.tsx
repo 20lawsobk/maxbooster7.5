@@ -1,13 +1,19 @@
-import React, { useState, useCallback, useMemo } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
-import { Skeleton } from '@/components/ui/skeleton';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import React, { useState, useCallback, useMemo } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Skeleton } from "@/components/ui/skeleton";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Dialog,
   DialogContent,
@@ -15,15 +21,15 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
-} from '@/components/ui/dialog';
+} from "@/components/ui/dialog";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { apiRequest } from '@/lib/queryClient';
+} from "@/components/ui/select";
+import { apiRequest } from "@/lib/queryClient";
 import {
   GripVertical,
   Eye,
@@ -42,9 +48,9 @@ import {
   Upload,
   Settings,
   Copy,
-} from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { DashboardWidget, WidgetSize, SmartWidgetConfig } from './SmartWidget';
+} from "lucide-react";
+import { cn } from "@/lib/utils";
+import { DashboardWidget, WidgetSize, SmartWidgetConfig } from "./SmartWidget";
 
 interface DashboardLayout {
   id: string;
@@ -69,48 +75,226 @@ interface LayoutPreset {
 
 const defaultPresets: LayoutPreset[] = [
   {
-    id: 'minimal',
-    name: 'Minimal',
-    description: 'Only essential widgets',
-    widgetIds: ['streams', 'revenue', 'quick-actions'],
+    id: "minimal",
+    name: "Minimal",
+    description: "Only essential widgets",
+    widgetIds: ["streams", "revenue", "quick-actions"],
   },
   {
-    id: 'analytics-focused',
-    name: 'Analytics Focused',
-    description: 'Data-driven dashboard',
-    widgetIds: ['streams', 'revenue', 'analytics-chart', 'audience-insights', 'trends'],
+    id: "analytics-focused",
+    name: "Analytics Focused",
+    description: "Data-driven dashboard",
+    widgetIds: [
+      "streams",
+      "revenue",
+      "analytics-chart",
+      "audience-insights",
+      "trends",
+    ],
   },
   {
-    id: 'creator',
-    name: 'Creator',
-    description: 'For active content creators',
-    widgetIds: ['quick-actions', 'ai-coach', 'content-calendar', 'social-reach', 'next-release'],
+    id: "creator",
+    name: "Creator",
+    description: "For active content creators",
+    widgetIds: [
+      "quick-actions",
+      "ai-coach",
+      "content-calendar",
+      "social-reach",
+      "next-release",
+    ],
   },
   {
-    id: 'business',
-    name: 'Business',
-    description: 'Revenue and contracts focus',
-    widgetIds: ['revenue', 'royalties', 'contracts', 'distribution-status', 'notifications'],
+    id: "business",
+    name: "Business",
+    description: "Revenue and contracts focus",
+    widgetIds: [
+      "revenue",
+      "royalties",
+      "contracts",
+      "distribution-status",
+      "notifications",
+    ],
   },
 ];
 
 const availableWidgets: SmartWidgetConfig[] = [
-  { id: 'streams', title: 'Total Streams', size: 'small', position: 0, visible: true, pinned: false, viewCount: 0, avgViewDuration: 0, category: 'analytics' },
-  { id: 'revenue', title: 'Revenue', size: 'small', position: 1, visible: true, pinned: false, viewCount: 0, avgViewDuration: 0, category: 'finance' },
-  { id: 'social-reach', title: 'Social Reach', size: 'small', position: 2, visible: true, pinned: false, viewCount: 0, avgViewDuration: 0, category: 'social' },
-  { id: 'quick-actions', title: 'Quick Actions', size: 'medium', position: 3, visible: true, pinned: false, viewCount: 0, avgViewDuration: 0, category: 'actions' },
-  { id: 'ai-coach', title: 'AI Career Coach', size: 'medium', position: 4, visible: true, pinned: false, viewCount: 0, avgViewDuration: 0, category: 'ai' },
-  { id: 'next-release', title: 'Upcoming Releases', size: 'medium', position: 5, visible: true, pinned: false, viewCount: 0, avgViewDuration: 0, category: 'releases' },
-  { id: 'analytics-chart', title: 'Analytics Chart', size: 'large', position: 6, visible: true, pinned: false, viewCount: 0, avgViewDuration: 0, category: 'analytics' },
-  { id: 'content-calendar', title: 'Content Calendar', size: 'medium', position: 7, visible: false, pinned: false, viewCount: 0, avgViewDuration: 0, category: 'content' },
-  { id: 'collaborators', title: 'Suggested Collaborators', size: 'medium', position: 8, visible: false, pinned: false, viewCount: 0, avgViewDuration: 0, category: 'collaboration' },
-  { id: 'royalties', title: 'Royalties Overview', size: 'medium', position: 9, visible: false, pinned: false, viewCount: 0, avgViewDuration: 0, category: 'finance' },
-  { id: 'distribution-status', title: 'Distribution Status', size: 'medium', position: 10, visible: false, pinned: false, viewCount: 0, avgViewDuration: 0, category: 'distribution' },
-  { id: 'audience-insights', title: 'Audience Insights', size: 'medium', position: 11, visible: false, pinned: false, viewCount: 0, avgViewDuration: 0, category: 'analytics' },
-  { id: 'trends', title: 'Trending', size: 'small', position: 12, visible: false, pinned: false, viewCount: 0, avgViewDuration: 0, category: 'discovery' },
-  { id: 'contracts', title: 'Active Contracts', size: 'medium', position: 13, visible: false, pinned: false, viewCount: 0, avgViewDuration: 0, category: 'legal' },
-  { id: 'notifications', title: 'Notifications', size: 'small', position: 14, visible: false, pinned: false, viewCount: 0, avgViewDuration: 0, category: 'system' },
-  { id: 'achievements', title: 'Achievements', size: 'small', position: 15, visible: false, pinned: false, viewCount: 0, avgViewDuration: 0, category: 'gamification' },
+  {
+    id: "streams",
+    title: "Total Streams",
+    size: "small",
+    position: 0,
+    visible: true,
+    pinned: false,
+    viewCount: 0,
+    avgViewDuration: 0,
+    category: "analytics",
+  },
+  {
+    id: "revenue",
+    title: "Revenue",
+    size: "small",
+    position: 1,
+    visible: true,
+    pinned: false,
+    viewCount: 0,
+    avgViewDuration: 0,
+    category: "finance",
+  },
+  {
+    id: "social-reach",
+    title: "Social Reach",
+    size: "small",
+    position: 2,
+    visible: true,
+    pinned: false,
+    viewCount: 0,
+    avgViewDuration: 0,
+    category: "social",
+  },
+  {
+    id: "quick-actions",
+    title: "Quick Actions",
+    size: "medium",
+    position: 3,
+    visible: true,
+    pinned: false,
+    viewCount: 0,
+    avgViewDuration: 0,
+    category: "actions",
+  },
+  {
+    id: "ai-coach",
+    title: "AI Career Coach",
+    size: "medium",
+    position: 4,
+    visible: true,
+    pinned: false,
+    viewCount: 0,
+    avgViewDuration: 0,
+    category: "ai",
+  },
+  {
+    id: "next-release",
+    title: "Upcoming Releases",
+    size: "medium",
+    position: 5,
+    visible: true,
+    pinned: false,
+    viewCount: 0,
+    avgViewDuration: 0,
+    category: "releases",
+  },
+  {
+    id: "analytics-chart",
+    title: "Analytics Chart",
+    size: "large",
+    position: 6,
+    visible: true,
+    pinned: false,
+    viewCount: 0,
+    avgViewDuration: 0,
+    category: "analytics",
+  },
+  {
+    id: "content-calendar",
+    title: "Content Calendar",
+    size: "medium",
+    position: 7,
+    visible: false,
+    pinned: false,
+    viewCount: 0,
+    avgViewDuration: 0,
+    category: "content",
+  },
+  {
+    id: "collaborators",
+    title: "Suggested Collaborators",
+    size: "medium",
+    position: 8,
+    visible: false,
+    pinned: false,
+    viewCount: 0,
+    avgViewDuration: 0,
+    category: "collaboration",
+  },
+  {
+    id: "royalties",
+    title: "Royalties Overview",
+    size: "medium",
+    position: 9,
+    visible: false,
+    pinned: false,
+    viewCount: 0,
+    avgViewDuration: 0,
+    category: "finance",
+  },
+  {
+    id: "distribution-status",
+    title: "Distribution Status",
+    size: "medium",
+    position: 10,
+    visible: false,
+    pinned: false,
+    viewCount: 0,
+    avgViewDuration: 0,
+    category: "distribution",
+  },
+  {
+    id: "audience-insights",
+    title: "Audience Insights",
+    size: "medium",
+    position: 11,
+    visible: false,
+    pinned: false,
+    viewCount: 0,
+    avgViewDuration: 0,
+    category: "analytics",
+  },
+  {
+    id: "trends",
+    title: "Trending",
+    size: "small",
+    position: 12,
+    visible: false,
+    pinned: false,
+    viewCount: 0,
+    avgViewDuration: 0,
+    category: "discovery",
+  },
+  {
+    id: "contracts",
+    title: "Active Contracts",
+    size: "medium",
+    position: 13,
+    visible: false,
+    pinned: false,
+    viewCount: 0,
+    avgViewDuration: 0,
+    category: "legal",
+  },
+  {
+    id: "notifications",
+    title: "Notifications",
+    size: "small",
+    position: 14,
+    visible: false,
+    pinned: false,
+    viewCount: 0,
+    avgViewDuration: 0,
+    category: "system",
+  },
+  {
+    id: "achievements",
+    title: "Achievements",
+    size: "small",
+    position: 15,
+    visible: false,
+    pinned: false,
+    viewCount: 0,
+    avgViewDuration: 0,
+    category: "gamification",
+  },
 ];
 
 export function DashboardCustomizer({
@@ -120,19 +304,21 @@ export function DashboardCustomizer({
 }: DashboardCustomizerProps) {
   const queryClient = useQueryClient();
   const [widgets, setWidgets] = useState<SmartWidgetConfig[]>([]);
-  const [layoutName, setLayoutName] = useState('My Dashboard');
+  const [layoutName, setLayoutName] = useState("My Dashboard");
   const [savePresetOpen, setSavePresetOpen] = useState(false);
-  const [presetName, setPresetName] = useState('');
+  const [presetName, setPresetName] = useState("");
   const [draggedWidget, setDraggedWidget] = useState<string | null>(null);
   const [hasChanges, setHasChanges] = useState(false);
 
-  const { data: currentLayout, isLoading } = useQuery<{ widgets: SmartWidgetConfig[] }>({
-    queryKey: ['/api/personalization/dashboard-layout'],
+  const { data: currentLayout, isLoading } = useQuery<{
+    widgets: SmartWidgetConfig[];
+  }>({
+    queryKey: ["/api/personalization/dashboard-layout"],
     staleTime: 5 * 60 * 1000,
   });
 
   const { data: savedPresets = [] } = useQuery<LayoutPreset[]>({
-    queryKey: ['/api/personalization/layout-presets'],
+    queryKey: ["/api/personalization/layout-presets"],
     staleTime: 10 * 60 * 1000,
   });
 
@@ -145,52 +331,64 @@ export function DashboardCustomizer({
   }, [currentLayout]);
 
   const saveLayoutMutation = useMutation({
-    mutationFn: async (layout: { name: string; widgets: SmartWidgetConfig[] }) => {
-      const response = await apiRequest('PUT', '/api/personalization/dashboard-layout', layout);
+    mutationFn: async (layout: {
+      name: string;
+      widgets: SmartWidgetConfig[];
+    }) => {
+      const response = await apiRequest(
+        "PUT",
+        "/api/personalization/dashboard-layout",
+        layout,
+      );
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/personalization/dashboard-layout'] });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/personalization/dashboard-layout"],
+      });
       setHasChanges(false);
     },
   });
 
   const savePresetMutation = useMutation({
     mutationFn: async (preset: { name: string; widgetIds: string[] }) => {
-      const response = await apiRequest('POST', '/api/personalization/layout-presets', preset);
+      const response = await apiRequest(
+        "POST",
+        "/api/personalization/layout-presets",
+        preset,
+      );
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/personalization/layout-presets'] });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/personalization/layout-presets"],
+      });
       setSavePresetOpen(false);
-      setPresetName('');
+      setPresetName("");
     },
   });
 
-  const visibleWidgets = useMemo(() =>
-    widgets.filter(w => w.visible).sort((a, b) => a.position - b.position),
-    [widgets]
+  const visibleWidgets = useMemo(
+    () =>
+      widgets.filter((w) => w.visible).sort((a, b) => a.position - b.position),
+    [widgets],
   );
 
-  const hiddenWidgets = useMemo(() =>
-    widgets.filter(w => !w.visible),
-    [widgets]
+  const hiddenWidgets = useMemo(
+    () => widgets.filter((w) => !w.visible),
+    [widgets],
   );
 
   const toggleWidgetVisibility = useCallback((widgetId: string) => {
-    setWidgets(prev =>
-      prev.map(w =>
-        w.id === widgetId ? { ...w, visible: !w.visible } : w
-      )
+    setWidgets((prev) =>
+      prev.map((w) => (w.id === widgetId ? { ...w, visible: !w.visible } : w)),
     );
     setHasChanges(true);
   }, []);
 
   const changeWidgetSize = useCallback((widgetId: string, size: WidgetSize) => {
-    setWidgets(prev =>
-      prev.map(w =>
-        w.id === widgetId ? { ...w, size } : w
-      )
+    setWidgets((prev) =>
+      prev.map((w) => (w.id === widgetId ? { ...w, size } : w)),
     );
     setHasChanges(true);
   }, []);
@@ -199,52 +397,63 @@ export function DashboardCustomizer({
     setDraggedWidget(widgetId);
   }, []);
 
-  const handleDragOver = useCallback((e: React.DragEvent, targetId: string) => {
-    e.preventDefault();
-    if (!draggedWidget || draggedWidget === targetId) return;
+  const handleDragOver = useCallback(
+    (e: React.DragEvent, targetId: string) => {
+      e.preventDefault();
+      if (!draggedWidget || draggedWidget === targetId) return;
 
-    setWidgets(prev => {
-      const newWidgets = [...prev];
-      const draggedIndex = newWidgets.findIndex(w => w.id === draggedWidget);
-      const targetIndex = newWidgets.findIndex(w => w.id === targetId);
+      setWidgets((prev) => {
+        const newWidgets = [...prev];
+        const draggedIndex = newWidgets.findIndex(
+          (w) => w.id === draggedWidget,
+        );
+        const targetIndex = newWidgets.findIndex((w) => w.id === targetId);
 
-      if (draggedIndex !== -1 && targetIndex !== -1) {
-        const [removed] = newWidgets.splice(draggedIndex, 1);
-        newWidgets.splice(targetIndex, 0, removed);
-        return newWidgets.map((w, i) => ({ ...w, position: i }));
-      }
-      return prev;
-    });
-    setHasChanges(true);
-  }, [draggedWidget]);
+        if (draggedIndex !== -1 && targetIndex !== -1) {
+          const [removed] = newWidgets.splice(draggedIndex, 1);
+          newWidgets.splice(targetIndex, 0, removed);
+          return newWidgets.map((w, i) => ({ ...w, position: i }));
+        }
+        return prev;
+      });
+      setHasChanges(true);
+    },
+    [draggedWidget],
+  );
 
   const handleDragEnd = useCallback(() => {
     setDraggedWidget(null);
   }, []);
 
   const applyPreset = useCallback((preset: LayoutPreset) => {
-    setWidgets(prev =>
-      prev.map(w => ({
-        ...w,
-        visible: preset.widgetIds.includes(w.id),
-        position: preset.widgetIds.indexOf(w.id) !== -1
-          ? preset.widgetIds.indexOf(w.id)
-          : w.position + 100,
-      })).sort((a, b) => a.position - b.position)
-        .map((w, i) => ({ ...w, position: i }))
+    setWidgets((prev) =>
+      prev
+        .map((w) => ({
+          ...w,
+          visible: preset.widgetIds.includes(w.id),
+          position:
+            preset.widgetIds.indexOf(w.id) !== -1
+              ? preset.widgetIds.indexOf(w.id)
+              : w.position + 100,
+        }))
+        .sort((a, b) => a.position - b.position)
+        .map((w, i) => ({ ...w, position: i })),
     );
     setHasChanges(true);
   }, []);
 
   const handleSave = useCallback(() => {
-    saveLayoutMutation.mutate({
-      name: layoutName,
-      widgets,
-    }, {
-      onSuccess: () => {
-        onSave?.({ id: 'custom', name: layoutName, widgets });
+    saveLayoutMutation.mutate(
+      {
+        name: layoutName,
+        widgets,
       },
-    });
+      {
+        onSuccess: () => {
+          onSave?.({ id: "custom", name: layoutName, widgets });
+        },
+      },
+    );
   }, [layoutName, widgets, saveLayoutMutation, onSave]);
 
   const handleReset = useCallback(() => {
@@ -260,7 +469,7 @@ export function DashboardCustomizer({
     if (!presetName.trim()) return;
     savePresetMutation.mutate({
       name: presetName,
-      widgetIds: visibleWidgets.map(w => w.id),
+      widgetIds: visibleWidgets.map((w) => w.id),
     });
   }, [presetName, visibleWidgets, savePresetMutation]);
 
@@ -299,13 +508,17 @@ export function DashboardCustomizer({
             <RotateCcw className="h-4 w-4 mr-2" />
             Reset
           </Button>
-          <Button variant="outline" size="sm" onClick={() => setSavePresetOpen(true)}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setSavePresetOpen(true)}
+          >
             <Copy className="h-4 w-4 mr-2" />
             Save as Preset
           </Button>
           <Button onClick={handleSave} disabled={saveLayoutMutation.isPending}>
             <Save className="h-4 w-4 mr-2" />
-            {saveLayoutMutation.isPending ? 'Saving...' : 'Save Layout'}
+            {saveLayoutMutation.isPending ? "Saving..." : "Save Layout"}
           </Button>
         </div>
       </div>
@@ -353,9 +566,7 @@ export function DashboardCustomizer({
                 <Eye className="h-4 w-4" />
                 Visible Widgets ({visibleWidgets.length})
               </CardTitle>
-              <CardDescription>
-                Drag to reorder
-              </CardDescription>
+              <CardDescription>Drag to reorder</CardDescription>
             </CardHeader>
             <CardContent>
               <ScrollArea className="h-[400px] pr-4">
@@ -368,13 +579,16 @@ export function DashboardCustomizer({
                       onDragOver={(e) => handleDragOver(e, widget.id)}
                       onDragEnd={handleDragEnd}
                       className={cn(
-                        'flex items-center gap-3 p-3 rounded-lg border bg-card transition-all',
-                        draggedWidget === widget.id && 'opacity-50 border-primary'
+                        "flex items-center gap-3 p-3 rounded-lg border bg-card transition-all",
+                        draggedWidget === widget.id &&
+                          "opacity-50 border-primary",
                       )}
                     >
                       <GripVertical className="h-4 w-4 text-muted-foreground cursor-grab" />
                       <div className="flex-1">
-                        <span className="font-medium text-sm">{widget.title}</span>
+                        <span className="font-medium text-sm">
+                          {widget.title}
+                        </span>
                         <div className="flex items-center gap-2 mt-1">
                           <Badge variant="outline" className="text-xs">
                             {widget.category}
@@ -386,7 +600,9 @@ export function DashboardCustomizer({
                       </div>
                       <Select
                         value={widget.size}
-                        onValueChange={(size) => changeWidgetSize(widget.id, size as WidgetSize)}
+                        onValueChange={(size) =>
+                          changeWidgetSize(widget.id, size as WidgetSize)
+                        }
                       >
                         <SelectTrigger className="w-24 h-8">
                           <SelectValue />
@@ -420,9 +636,7 @@ export function DashboardCustomizer({
                 <EyeOff className="h-4 w-4" />
                 Hidden Widgets ({hiddenWidgets.length})
               </CardTitle>
-              <CardDescription>
-                Click to show
-              </CardDescription>
+              <CardDescription>Click to show</CardDescription>
             </CardHeader>
             <CardContent>
               <ScrollArea className="h-[400px] pr-4">
@@ -435,7 +649,9 @@ export function DashboardCustomizer({
                     >
                       <Plus className="h-4 w-4 text-muted-foreground" />
                       <div className="flex-1">
-                        <span className="font-medium text-sm">{widget.title}</span>
+                        <span className="font-medium text-sm">
+                          {widget.title}
+                        </span>
                         <Badge variant="outline" className="text-xs ml-2">
                           {widget.category}
                         </Badge>
@@ -492,7 +708,7 @@ export function DashboardCustomizer({
               onClick={handleSaveAsPreset}
               disabled={!presetName.trim() || savePresetMutation.isPending}
             >
-              {savePresetMutation.isPending ? 'Saving...' : 'Save Preset'}
+              {savePresetMutation.isPending ? "Saving..." : "Save Preset"}
             </Button>
           </DialogFooter>
         </DialogContent>

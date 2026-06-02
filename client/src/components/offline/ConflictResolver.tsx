@@ -1,6 +1,13 @@
-import { useState, useEffect } from 'react';
-import { logger } from '@/lib/logger';
-import { AlertTriangle, GitMerge, Download, Upload, Check, X } from 'lucide-react';
+import { useState, useEffect } from "react";
+import { logger } from "@/lib/logger";
+import {
+  AlertTriangle,
+  GitMerge,
+  Download,
+  Upload,
+  Check,
+  X,
+} from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -8,15 +15,15 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { offlineQueue } from '@/lib/offline';
-import { formatDistanceToNow } from 'date-fns';
-import { cn } from '@/lib/utils';
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { offlineQueue } from "@/lib/offline";
+import { formatDistanceToNow } from "date-fns";
+import { cn } from "@/lib/utils";
 
 interface Conflict {
   actionId: string;
@@ -28,13 +35,24 @@ interface Conflict {
 interface ConflictResolverProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onResolve?: (actionId: string, resolution: 'local' | 'server' | 'merged', mergedData?: unknown) => void;
-  onResolveAll?: (resolution: 'local' | 'server') => void;
+  onResolve?: (
+    actionId: string,
+    resolution: "local" | "server" | "merged",
+    mergedData?: unknown,
+  ) => void;
+  onResolveAll?: (resolution: "local" | "server") => void;
 }
 
-export function ConflictResolver({ open, onOpenChange, onResolve, onResolveAll }: ConflictResolverProps) {
+export function ConflictResolver({
+  open,
+  onOpenChange,
+  onResolve,
+  onResolveAll,
+}: ConflictResolverProps) {
   const [conflicts, setConflicts] = useState<Conflict[]>([]);
-  const [selectedConflict, setSelectedConflict] = useState<Conflict | null>(null);
+  const [selectedConflict, setSelectedConflict] = useState<Conflict | null>(
+    null,
+  );
   const [loading, setLoading] = useState(true);
   const [resolving, setResolving] = useState(false);
 
@@ -53,21 +71,30 @@ export function ConflictResolver({ open, onOpenChange, onResolve, onResolveAll }
         setSelectedConflict(rawConflicts[0]);
       }
     } catch (error) {
-      logger.error('Failed to load conflicts:', error);
+      logger.error("Failed to load conflicts:", error);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleResolve = async (resolution: 'local' | 'server' | 'merged', mergedData?: unknown) => {
+  const handleResolve = async (
+    resolution: "local" | "server" | "merged",
+    mergedData?: unknown,
+  ) => {
     if (!selectedConflict) return;
 
     setResolving(true);
     try {
-      await offlineQueue.resolveConflict(selectedConflict.actionId, resolution, mergedData);
+      await offlineQueue.resolveConflict(
+        selectedConflict.actionId,
+        resolution,
+        mergedData,
+      );
       onResolve?.(selectedConflict.actionId, resolution, mergedData);
 
-      const updatedConflicts = conflicts.filter(c => c.actionId !== selectedConflict.actionId);
+      const updatedConflicts = conflicts.filter(
+        (c) => c.actionId !== selectedConflict.actionId,
+      );
       setConflicts(updatedConflicts);
 
       if (updatedConflicts.length > 0) {
@@ -77,13 +104,13 @@ export function ConflictResolver({ open, onOpenChange, onResolve, onResolveAll }
         onOpenChange(false);
       }
     } catch (error) {
-      logger.error('Failed to resolve conflict:', error);
+      logger.error("Failed to resolve conflict:", error);
     } finally {
       setResolving(false);
     }
   };
 
-  const handleResolveAll = async (resolution: 'local' | 'server') => {
+  const handleResolveAll = async (resolution: "local" | "server") => {
     setResolving(true);
     try {
       for (const conflict of conflicts) {
@@ -94,7 +121,7 @@ export function ConflictResolver({ open, onOpenChange, onResolve, onResolveAll }
       setSelectedConflict(null);
       onOpenChange(false);
     } catch (error) {
-      logger.error('Failed to resolve all conflicts:', error);
+      logger.error("Failed to resolve all conflicts:", error);
     } finally {
       setResolving(false);
     }
@@ -108,16 +135,27 @@ export function ConflictResolver({ open, onOpenChange, onResolve, onResolveAll }
     }
   };
 
-  const getDiffHighlight = (localData: unknown, serverData: unknown): { localDiffs: string[]; serverDiffs: string[] } => {
+  const getDiffHighlight = (
+    localData: unknown,
+    serverData: unknown,
+  ): { localDiffs: string[]; serverDiffs: string[] } => {
     const localDiffs: string[] = [];
     const serverDiffs: string[] = [];
 
-    if (typeof localData === 'object' && typeof serverData === 'object' && localData && serverData) {
+    if (
+      typeof localData === "object" &&
+      typeof serverData === "object" &&
+      localData &&
+      serverData
+    ) {
       const localObj = localData as Record<string, unknown>;
       const serverObj = serverData as Record<string, unknown>;
-      const allKeys = new Set([...Object.keys(localObj), ...Object.keys(serverObj)]);
+      const allKeys = new Set([
+        ...Object.keys(localObj),
+        ...Object.keys(serverObj),
+      ]);
 
-      allKeys.forEach(key => {
+      allKeys.forEach((key) => {
         if (JSON.stringify(localObj[key]) !== JSON.stringify(serverObj[key])) {
           if (key in localObj) localDiffs.push(key);
           if (key in serverObj) serverDiffs.push(key);
@@ -137,7 +175,8 @@ export function ConflictResolver({ open, onOpenChange, onResolve, onResolveAll }
             Resolve Conflicts
           </DialogTitle>
           <DialogDescription>
-            {conflicts.length} conflict{conflicts.length !== 1 ? 's' : ''} detected between your local changes and the server.
+            {conflicts.length} conflict{conflicts.length !== 1 ? "s" : ""}{" "}
+            detected between your local changes and the server.
           </DialogDescription>
         </DialogHeader>
 
@@ -153,24 +192,30 @@ export function ConflictResolver({ open, onOpenChange, onResolve, onResolveAll }
         ) : (
           <div className="grid grid-cols-4 gap-4">
             <div className="col-span-1 border-r pr-4">
-              <h4 className="font-medium text-sm mb-2">Conflicts ({conflicts.length})</h4>
+              <h4 className="font-medium text-sm mb-2">
+                Conflicts ({conflicts.length})
+              </h4>
               <ScrollArea className="h-[300px]">
                 <div className="space-y-2">
                   {conflicts.map((conflict) => (
                     <Card
                       key={conflict.actionId}
                       className={cn(
-                        'cursor-pointer transition-colors',
+                        "cursor-pointer transition-colors",
                         selectedConflict?.actionId === conflict.actionId
-                          ? 'border-primary'
-                          : 'hover:border-primary/50'
+                          ? "border-primary"
+                          : "hover:border-primary/50",
                       )}
                       onClick={() => setSelectedConflict(conflict)}
                     >
                       <CardContent className="p-3">
-                        <p className="text-sm font-medium truncate">{conflict.actionId}</p>
+                        <p className="text-sm font-medium truncate">
+                          {conflict.actionId}
+                        </p>
                         <p className="text-xs text-muted-foreground">
-                          {formatDistanceToNow(conflict.detectedAt, { addSuffix: true })}
+                          {formatDistanceToNow(conflict.detectedAt, {
+                            addSuffix: true,
+                          })}
                         </p>
                       </CardContent>
                     </Card>
@@ -228,7 +273,7 @@ export function ConflictResolver({ open, onOpenChange, onResolve, onResolveAll }
                     <div className="flex justify-center gap-4 mt-4">
                       <Button
                         variant="outline"
-                        onClick={() => handleResolve('local')}
+                        onClick={() => handleResolve("local")}
                         disabled={resolving}
                       >
                         <Upload className="h-4 w-4 mr-2" />
@@ -236,7 +281,7 @@ export function ConflictResolver({ open, onOpenChange, onResolve, onResolveAll }
                       </Button>
                       <Button
                         variant="outline"
-                        onClick={() => handleResolve('server')}
+                        onClick={() => handleResolve("server")}
                         disabled={resolving}
                       >
                         <Download className="h-4 w-4 mr-2" />
@@ -275,7 +320,7 @@ export function ConflictResolver({ open, onOpenChange, onResolve, onResolveAll }
             <>
               <Button
                 variant="outline"
-                onClick={() => handleResolveAll('local')}
+                onClick={() => handleResolveAll("local")}
                 disabled={resolving}
               >
                 <Upload className="h-4 w-4 mr-2" />
@@ -283,7 +328,7 @@ export function ConflictResolver({ open, onOpenChange, onResolve, onResolveAll }
               </Button>
               <Button
                 variant="outline"
-                onClick={() => handleResolveAll('server')}
+                onClick={() => handleResolveAll("server")}
                 disabled={resolving}
               >
                 <Download className="h-4 w-4 mr-2" />

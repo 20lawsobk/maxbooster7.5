@@ -1,4 +1,4 @@
-import { BasePlugin } from './BasePlugin';
+import { BasePlugin } from "./BasePlugin";
 
 /**
  * Professional Parametric EQ Plugin
@@ -10,14 +10,19 @@ export class EQPlugin extends BasePlugin {
 
   // EQ band types
   private readonly BAND_CONFIG = [
-    { type: 'highpass' as BiquadFilterType, frequency: 20, q: 0.7, gain: 0 }, // High-pass
-    { type: 'peaking' as BiquadFilterType, frequency: 60, q: 0.7, gain: 0 }, // Low
-    { type: 'peaking' as BiquadFilterType, frequency: 200, q: 0.7, gain: 0 }, // Low-mid
-    { type: 'peaking' as BiquadFilterType, frequency: 800, q: 0.7, gain: 0 }, // Mid
-    { type: 'peaking' as BiquadFilterType, frequency: 3000, q: 0.7, gain: 0 }, // High-mid
-    { type: 'peaking' as BiquadFilterType, frequency: 8000, q: 0.7, gain: 0 }, // High
-    { type: 'highshelf' as BiquadFilterType, frequency: 12000, q: 0.7, gain: 0 }, // Air
-    { type: 'lowpass' as BiquadFilterType, frequency: 20000, q: 0.7, gain: 0 }, // Low-pass
+    { type: "highpass" as BiquadFilterType, frequency: 20, q: 0.7, gain: 0 }, // High-pass
+    { type: "peaking" as BiquadFilterType, frequency: 60, q: 0.7, gain: 0 }, // Low
+    { type: "peaking" as BiquadFilterType, frequency: 200, q: 0.7, gain: 0 }, // Low-mid
+    { type: "peaking" as BiquadFilterType, frequency: 800, q: 0.7, gain: 0 }, // Mid
+    { type: "peaking" as BiquadFilterType, frequency: 3000, q: 0.7, gain: 0 }, // High-mid
+    { type: "peaking" as BiquadFilterType, frequency: 8000, q: 0.7, gain: 0 }, // High
+    {
+      type: "highshelf" as BiquadFilterType,
+      frequency: 12000,
+      q: 0.7,
+      gain: 0,
+    }, // Air
+    { type: "lowpass" as BiquadFilterType, frequency: 20000, q: 0.7, gain: 0 }, // Low-pass
   ];
 
   constructor(context: AudioContext) {
@@ -35,7 +40,11 @@ export class EQPlugin extends BasePlugin {
       filter.type = config.type;
       filter.frequency.value = config.frequency;
       filter.Q.value = config.q;
-      if (config.type === 'peaking' || config.type === 'highshelf' || config.type === 'lowshelf') {
+      if (
+        config.type === "peaking" ||
+        config.type === "highshelf" ||
+        config.type === "lowshelf"
+      ) {
         filter.gain.value = config.gain;
       }
 
@@ -57,21 +66,34 @@ export class EQPlugin extends BasePlugin {
    * @param gain Gain in dB (-24 to +24)
    * @param q Q factor (0.1 to 30)
    */
-  setBand(bandIndex: number, frequency?: number, gain?: number, q?: number): void {
+  setBand(
+    bandIndex: number,
+    frequency?: number,
+    gain?: number,
+    q?: number,
+  ): void {
     if (bandIndex < 0 || bandIndex >= this.filters.length) return;
 
     const filter = this.filters[bandIndex];
     const currentTime = this.context.currentTime;
 
     if (frequency !== undefined) {
-      filter.frequency.setValueAtTime(Math.max(20, Math.min(20000, frequency)), currentTime);
+      filter.frequency.setValueAtTime(
+        Math.max(20, Math.min(20000, frequency)),
+        currentTime,
+      );
     }
 
     if (
       gain !== undefined &&
-      (filter.type === 'peaking' || filter.type === 'highshelf' || filter.type === 'lowshelf')
+      (filter.type === "peaking" ||
+        filter.type === "highshelf" ||
+        filter.type === "lowshelf")
     ) {
-      filter.gain.setValueAtTime(Math.max(-24, Math.min(24, gain)), currentTime);
+      filter.gain.setValueAtTime(
+        Math.max(-24, Math.min(24, gain)),
+        currentTime,
+      );
     }
 
     if (q !== undefined) {
@@ -92,31 +114,33 @@ export class EQPlugin extends BasePlugin {
   /**
    * Apply preset EQ curves
    */
-  applyPreset(preset: 'flat' | 'bright' | 'warm' | 'bass-boost' | 'presence' | 'air'): void {
+  applyPreset(
+    preset: "flat" | "bright" | "warm" | "bass-boost" | "presence" | "air",
+  ): void {
     switch (preset) {
-      case 'flat':
+      case "flat":
         this.reset();
         break;
-      case 'bright':
+      case "bright":
         this.setBand(1, undefined, -2); // Reduce low
         this.setBand(4, undefined, 3); // Boost high-mid
         this.setBand(5, undefined, 4); // Boost high
         this.setBand(6, undefined, 2); // Add air
         break;
-      case 'warm':
+      case "warm":
         this.setBand(1, undefined, 3); // Boost low
         this.setBand(2, undefined, 2); // Boost low-mid
         this.setBand(5, undefined, -3); // Reduce high
         break;
-      case 'bass-boost':
+      case "bass-boost":
         this.setBand(1, 80, 6); // Strong bass boost
         this.setBand(2, undefined, 2); // Slight low-mid boost
         break;
-      case 'presence':
+      case "presence":
         this.setBand(3, undefined, -2); // Scoop mids
         this.setBand(4, 4000, 4); // Boost presence
         break;
-      case 'air':
+      case "air":
         this.setBand(6, 15000, 6); // Boost air frequencies
         break;
     }
@@ -152,7 +176,7 @@ export class EQPlugin extends BasePlugin {
   }
 
   getName(): string {
-    return 'Max Booster 8-Band EQ';
+    return "Max Booster 8-Band EQ";
   }
 
   getParameters(): Record<string, any> {

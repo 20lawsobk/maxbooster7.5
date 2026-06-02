@@ -4,7 +4,7 @@
  * Yields to browser between computation phases via setTimeout(0).
  */
 
-import { logger } from '@/lib/logger';
+import { logger } from "@/lib/logger";
 
 export interface AudioAnalysisResult {
   bpm: number;
@@ -40,7 +40,8 @@ class AudioAnalysisService {
 
   private getAudioContext(): AudioContext {
     if (!this.audioContext) {
-      this.audioContext = new (window.AudioContext || (window as Record<string, unknown>).webkitAudioContext)();
+      this.audioContext = new (window.AudioContext ||
+        (window as Record<string, unknown>).webkitAudioContext)();
     }
     return this.audioContext;
   }
@@ -55,7 +56,7 @@ class AudioAnalysisService {
     const MAX_SECONDS = 10;
     const maxSamples = Math.min(
       audioBuffer.length,
-      Math.floor(audioBuffer.sampleRate * MAX_SECONDS)
+      Math.floor(audioBuffer.sampleRate * MAX_SECONDS),
     );
     const fullMono = this.convertToMono(audioBuffer);
     const audioData = fullMono.slice(0, maxSamples);
@@ -71,7 +72,10 @@ class AudioAnalysisService {
     await yieldToMain();
     const energy = this.calculateEnergy(audioData);
     const loudness = this.calculateLoudness(audioData);
-    const spectralCentroid = this.calculateSpectralCentroid(audioData, sampleRate);
+    const spectralCentroid = this.calculateSpectralCentroid(
+      audioData,
+      sampleRate,
+    );
 
     await yieldToMain();
     const beatPositions = this.detectBeats(audioData, sampleRate);
@@ -129,7 +133,7 @@ class AudioAnalysisService {
       const bpm = Math.round((sampleRate * 60) / bestLag);
       return Math.max(minBPM, Math.min(maxBPM, bpm));
     } catch (err) {
-      logger.error('BPM detection error:', err);
+      logger.error("BPM detection error:", err);
       return 120;
     }
   }
@@ -138,9 +142,25 @@ class AudioAnalysisService {
    * Key estimation via a single 512-point DFT on the first 512 samples.
    * ~131 K cos/sin calls total (was ~168 M).
    */
-  private estimateKey(audioData: Float32Array, sampleRate: number): { musicalKey: string; scale: string } {
+  private estimateKey(
+    audioData: Float32Array,
+    sampleRate: number,
+  ): { musicalKey: string; scale: string } {
     try {
-      const keys = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+      const keys = [
+        "C",
+        "C#",
+        "D",
+        "D#",
+        "E",
+        "F",
+        "F#",
+        "G",
+        "G#",
+        "A",
+        "A#",
+        "B",
+      ];
       const chroma = new Float32Array(12);
 
       const fftSize = 512;
@@ -187,11 +207,11 @@ class AudioAnalysisService {
 
       return {
         musicalKey: keys[isMajor ? keyIndex : minorKeyIndex],
-        scale: isMajor ? 'major' : 'minor',
+        scale: isMajor ? "major" : "minor",
       };
     } catch (err) {
-      logger.error('Key estimation error:', err);
-      return { musicalKey: 'C', scale: 'major' };
+      logger.error("Key estimation error:", err);
+      return { musicalKey: "C", scale: "major" };
     }
   }
 
@@ -206,7 +226,7 @@ class AudioAnalysisService {
       }
       return Math.min(1, Math.sqrt(sum / audioData.length) * 5);
     } catch (err) {
-      logger.error('Energy calculation error:', err);
+      logger.error("Energy calculation error:", err);
       return 0.5;
     }
   }
@@ -230,7 +250,7 @@ class AudioAnalysisService {
       const consistency = 1 / (1 + variance * 10);
       return Math.round((consistency * 0.6 + energy * 0.4) * 100) / 100;
     } catch (err) {
-      logger.error('Danceability estimation error:', err);
+      logger.error("Danceability estimation error:", err);
       return 0.5;
     }
   }
@@ -247,7 +267,7 @@ class AudioAnalysisService {
       const db = 10 * Math.log10(Math.max(sum / audioData.length, 1e-10));
       return Math.round((db + 30) * 100) / 100;
     } catch (err) {
-      logger.error('Loudness calculation error:', err);
+      logger.error("Loudness calculation error:", err);
       return -14.0;
     }
   }
@@ -256,7 +276,10 @@ class AudioAnalysisService {
    * Spectral centroid via a single 512-point DFT.
    * ~131 K cos/sin calls (was ~2 M).
    */
-  private calculateSpectralCentroid(audioData: Float32Array, sampleRate: number): number {
+  private calculateSpectralCentroid(
+    audioData: Float32Array,
+    sampleRate: number,
+  ): number {
     try {
       const fftSize = 512;
       const half = fftSize >> 1;
@@ -286,7 +309,7 @@ class AudioAnalysisService {
         ? Math.round((weightedSum / totalMagnitude) * 100) / 100
         : 1500;
     } catch (err) {
-      logger.error('Spectral centroid calculation error:', err);
+      logger.error("Spectral centroid calculation error:", err);
       return 1500;
     }
   }
@@ -324,7 +347,7 @@ class AudioAnalysisService {
       }
       return beats.slice(0, 200);
     } catch (err) {
-      logger.error('Beat detection error:', err);
+      logger.error("Beat detection error:", err);
       return [];
     }
   }
@@ -349,11 +372,13 @@ class AudioAnalysisService {
   async analyzeAudioURL(url: string): Promise<AudioAnalysisResult> {
     const response = await fetch(url);
     const blob = await response.blob();
-    const file = new File([blob], 'audio.wav', { type: blob.type });
+    const file = new File([blob], "audio.wav", { type: blob.type });
     return this.analyzeAudioFile(file);
   }
 
-  async analyzeAndSuggestMetadata(audioFile: File): Promise<BeatMetadataSuggestion> {
+  async analyzeAndSuggestMetadata(
+    audioFile: File,
+  ): Promise<BeatMetadataSuggestion> {
     const analysis = await this.analyzeAudioFile(audioFile);
     return this.inferMetadata(analysis);
   }
@@ -377,58 +402,85 @@ class AudioAnalysisService {
 
   private inferGenre(a: AudioAnalysisResult): string {
     const { bpm, energy, danceability, spectralCentroid, scale } = a;
-    if (bpm >= 130 && bpm <= 150 && energy > 0.5 && spectralCentroid < 2500) return 'Trap';
-    if (bpm >= 140 && energy > 0.6 && spectralCentroid > 3000) return 'Electronic';
-    if (bpm >= 85 && bpm <= 115 && energy < 0.4 && spectralCentroid < 2000) return 'R&B';
-    if (bpm >= 60 && bpm <= 100 && energy < 0.35 && danceability < 0.4) return 'Ambient';
-    if (bpm >= 85 && bpm <= 115 && energy > 0.35 && spectralCentroid < 2500) return 'Hip-Hop';
-    if (bpm >= 100 && bpm <= 130 && danceability > 0.6 && spectralCentroid > 2500) return 'Pop';
-    if (bpm >= 115 && bpm <= 135 && danceability > 0.55 && energy > 0.45) return 'Funk';
-    if (bpm >= 60 && bpm <= 90 && energy < 0.3 && scale === 'minor') return 'Jazz';
-    if (bpm >= 90 && bpm <= 110 && energy > 0.3 && energy < 0.5 && scale === 'minor') return 'Soul';
-    if (bpm >= 130 && energy > 0.7) return 'Electronic';
-    if (bpm >= 60 && bpm <= 80 && danceability > 0.5) return 'Reggae';
-    if (energy > 0.7 && spectralCentroid > 3500) return 'Rock';
-    if (bpm >= 100 && bpm <= 130 && energy > 0.5) return 'Latin';
-    if (energy > 0.4 && danceability > 0.5) return 'Pop';
-    return 'Hip-Hop';
+    if (bpm >= 130 && bpm <= 150 && energy > 0.5 && spectralCentroid < 2500)
+      return "Trap";
+    if (bpm >= 140 && energy > 0.6 && spectralCentroid > 3000)
+      return "Electronic";
+    if (bpm >= 85 && bpm <= 115 && energy < 0.4 && spectralCentroid < 2000)
+      return "R&B";
+    if (bpm >= 60 && bpm <= 100 && energy < 0.35 && danceability < 0.4)
+      return "Ambient";
+    if (bpm >= 85 && bpm <= 115 && energy > 0.35 && spectralCentroid < 2500)
+      return "Hip-Hop";
+    if (
+      bpm >= 100 &&
+      bpm <= 130 &&
+      danceability > 0.6 &&
+      spectralCentroid > 2500
+    )
+      return "Pop";
+    if (bpm >= 115 && bpm <= 135 && danceability > 0.55 && energy > 0.45)
+      return "Funk";
+    if (bpm >= 60 && bpm <= 90 && energy < 0.3 && scale === "minor")
+      return "Jazz";
+    if (
+      bpm >= 90 &&
+      bpm <= 110 &&
+      energy > 0.3 &&
+      energy < 0.5 &&
+      scale === "minor"
+    )
+      return "Soul";
+    if (bpm >= 130 && energy > 0.7) return "Electronic";
+    if (bpm >= 60 && bpm <= 80 && danceability > 0.5) return "Reggae";
+    if (energy > 0.7 && spectralCentroid > 3500) return "Rock";
+    if (bpm >= 100 && bpm <= 130 && energy > 0.5) return "Latin";
+    if (energy > 0.4 && danceability > 0.5) return "Pop";
+    return "Hip-Hop";
   }
 
   private inferMood(a: AudioAnalysisResult): string {
     const { energy, danceability, spectralCentroid, scale, bpm } = a;
-    if (energy > 0.7 && danceability > 0.6) return 'Energetic';
-    if (energy > 0.65 && danceability < 0.4) return 'Aggressive';
-    if (energy < 0.25 && danceability < 0.35) return 'Chill';
-    if (energy < 0.3 && scale === 'minor') return 'Melancholic';
-    if (energy > 0.5 && danceability > 0.55 && scale === 'major') return 'Happy';
-    if (energy < 0.35 && spectralCentroid < 1500) return 'Dark';
-    if (energy > 0.4 && energy < 0.6 && spectralCentroid > 2500) return 'Uplifting';
-    if (energy < 0.4 && spectralCentroid > 2000) return 'Romantic';
-    if (energy > 0.5 && bpm > 120) return 'Confident';
-    if (scale === 'minor' && energy > 0.4) return 'Mysterious';
-    if (energy < 0.4 && danceability > 0.4) return 'Relaxed';
-    if (spectralCentroid < 1800 && bpm < 100) return 'Nostalgic';
-    return 'Modern';
+    if (energy > 0.7 && danceability > 0.6) return "Energetic";
+    if (energy > 0.65 && danceability < 0.4) return "Aggressive";
+    if (energy < 0.25 && danceability < 0.35) return "Chill";
+    if (energy < 0.3 && scale === "minor") return "Melancholic";
+    if (energy > 0.5 && danceability > 0.55 && scale === "major")
+      return "Happy";
+    if (energy < 0.35 && spectralCentroid < 1500) return "Dark";
+    if (energy > 0.4 && energy < 0.6 && spectralCentroid > 2500)
+      return "Uplifting";
+    if (energy < 0.4 && spectralCentroid > 2000) return "Romantic";
+    if (energy > 0.5 && bpm > 120) return "Confident";
+    if (scale === "minor" && energy > 0.4) return "Mysterious";
+    if (energy < 0.4 && danceability > 0.4) return "Relaxed";
+    if (spectralCentroid < 1800 && bpm < 100) return "Nostalgic";
+    return "Modern";
   }
 
-  private inferTags(a: AudioAnalysisResult, genre: string, mood: string): string[] {
+  private inferTags(
+    a: AudioAnalysisResult,
+    genre: string,
+    mood: string,
+  ): string[] {
     const tags: string[] = [genre.toLowerCase(), mood.toLowerCase()];
-    if (a.bpm >= 130) tags.push('fast');
-    if (a.bpm <= 85) tags.push('slow');
-    if (a.energy > 0.65) tags.push('hard');
-    if (a.energy < 0.3) tags.push('soft');
-    if (a.danceability > 0.6) tags.push('groovy');
-    if (a.scale === 'minor') tags.push('minor key');
-    if (a.scale === 'major') tags.push('major key');
-    if (a.spectralCentroid > 3000) tags.push('bright');
-    if (a.spectralCentroid < 1500) tags.push('deep');
-    if (a.loudness > 20) tags.push('loud');
-    if (genre === 'Trap') tags.push('808', 'hi-hats');
-    if (genre === 'Hip-Hop') tags.push('boom bap', 'rap');
-    if (genre === 'R&B') tags.push('smooth', 'vocals');
-    if (genre === 'Electronic') tags.push('synth', 'bass');
-    if (genre === 'Pop') tags.push('catchy', 'mainstream');
-    const bpmRange = a.bpm >= 120 ? 'uptempo' : a.bpm >= 90 ? 'mid-tempo' : 'downtempo';
+    if (a.bpm >= 130) tags.push("fast");
+    if (a.bpm <= 85) tags.push("slow");
+    if (a.energy > 0.65) tags.push("hard");
+    if (a.energy < 0.3) tags.push("soft");
+    if (a.danceability > 0.6) tags.push("groovy");
+    if (a.scale === "minor") tags.push("minor key");
+    if (a.scale === "major") tags.push("major key");
+    if (a.spectralCentroid > 3000) tags.push("bright");
+    if (a.spectralCentroid < 1500) tags.push("deep");
+    if (a.loudness > 20) tags.push("loud");
+    if (genre === "Trap") tags.push("808", "hi-hats");
+    if (genre === "Hip-Hop") tags.push("boom bap", "rap");
+    if (genre === "R&B") tags.push("smooth", "vocals");
+    if (genre === "Electronic") tags.push("synth", "bass");
+    if (genre === "Pop") tags.push("catchy", "mainstream");
+    const bpmRange =
+      a.bpm >= 120 ? "uptempo" : a.bpm >= 90 ? "mid-tempo" : "downtempo";
     tags.push(bpmRange);
     return [...new Set(tags)].slice(0, 10);
   }

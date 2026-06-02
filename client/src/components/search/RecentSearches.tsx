@@ -1,11 +1,11 @@
-import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getCsrfTokenFromCookie } from '@/lib/queryClient';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Skeleton } from '@/components/ui/skeleton';
+import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { getCsrfTokenFromCookie } from "@/lib/queryClient";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -15,7 +15,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
+} from "@/components/ui/alert-dialog";
 import {
   Clock,
   X,
@@ -24,10 +24,10 @@ import {
   ArrowRight,
   RotateCcw,
   History,
-} from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
-import { cn } from '@/lib/utils';
-import { formatDistanceToNow } from 'date-fns';
+} from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { cn } from "@/lib/utils";
+import { formatDistanceToNow } from "date-fns";
 
 interface SearchHistoryItem {
   query: string;
@@ -60,9 +60,11 @@ export function RecentSearches({
   const queryClient = useQueryClient();
 
   const { data: historyData, isLoading } = useQuery({
-    queryKey: ['/api/search/history'],
+    queryKey: ["/api/search/history"],
     queryFn: async () => {
-      const res = await fetch('/api/search/history', { credentials: 'include' });
+      const res = await fetch("/api/search/history", {
+        credentials: "include",
+      });
       if (!res.ok) return { history: [], totalCount: 0 };
       return res.json();
     },
@@ -72,28 +74,28 @@ export function RecentSearches({
   const clearHistoryMutation = useMutation({
     mutationFn: async () => {
       const csrfToken = getCsrfTokenFromCookie();
-      const res = await fetch('/api/search/history', {
-        method: 'DELETE',
-        credentials: 'include',
-        headers: csrfToken ? { 'x-csrf-token': csrfToken } : {},
+      const res = await fetch("/api/search/history", {
+        method: "DELETE",
+        credentials: "include",
+        headers: csrfToken ? { "x-csrf-token": csrfToken } : {},
       });
-      if (!res.ok) throw new Error('Failed to clear history');
+      if (!res.ok) throw new Error("Failed to clear history");
       return res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/search/history'] });
+      queryClient.invalidateQueries({ queryKey: ["/api/search/history"] });
       setShowClearDialog(false);
       onClear?.();
       toast({
-        title: 'History Cleared',
-        description: 'Your search history has been cleared.',
+        title: "History Cleared",
+        description: "Your search history has been cleared.",
       });
     },
     onError: () => {
       toast({
-        title: 'Error',
-        description: 'Failed to clear search history.',
-        variant: 'destructive',
+        title: "Error",
+        description: "Failed to clear search history.",
+        variant: "destructive",
       });
     },
   });
@@ -101,16 +103,19 @@ export function RecentSearches({
   const removeItemMutation = useMutation({
     mutationFn: async (query: string) => {
       const csrfToken = getCsrfTokenFromCookie();
-      const res = await fetch(`/api/search/history/${encodeURIComponent(query)}`, {
-        method: 'DELETE',
-        credentials: 'include',
-        headers: csrfToken ? { 'x-csrf-token': csrfToken } : {},
-      });
-      if (!res.ok) throw new Error('Failed to remove item');
+      const res = await fetch(
+        `/api/search/history/${encodeURIComponent(query)}`,
+        {
+          method: "DELETE",
+          credentials: "include",
+          headers: csrfToken ? { "x-csrf-token": csrfToken } : {},
+        },
+      );
+      if (!res.ok) throw new Error("Failed to remove item");
       return res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/search/history'] });
+      queryClient.invalidateQueries({ queryKey: ["/api/search/history"] });
     },
   });
 
@@ -119,7 +124,7 @@ export function RecentSearches({
 
   if (compact) {
     return (
-      <div className={cn('space-y-2', className)}>
+      <div className={cn("space-y-2", className)}>
         {isLoading ? (
           <div className="flex gap-2">
             {[1, 2, 3].map((i) => (
@@ -175,14 +180,17 @@ export function RecentSearches({
   }
 
   return (
-    <Card className={cn('bg-slate-800/50 border-slate-700', className)}>
+    <Card className={cn("bg-slate-800/50 border-slate-700", className)}>
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2 text-lg">
             <History className="h-5 w-5 text-slate-400" />
             Recent Searches
             {history.length > 0 && (
-              <Badge variant="secondary" className="bg-slate-700 text-slate-400">
+              <Badge
+                variant="secondary"
+                className="bg-slate-700 text-slate-400"
+              >
                 {historyData?.totalCount || history.length}
               </Badge>
             )}
@@ -263,7 +271,7 @@ function SearchHistoryItem({
 }) {
   const formattedTime = item.timestamp
     ? formatDistanceToNow(new Date(item.timestamp), { addSuffix: true })
-    : '';
+    : "";
 
   return (
     <div className="flex items-center gap-3 p-2 rounded-lg hover:bg-slate-700/50 transition-colors group">
@@ -278,7 +286,7 @@ function SearchHistoryItem({
             <div className="flex items-center gap-2 mt-0.5">
               {showResultCount && (
                 <span className="text-xs text-slate-500">
-                  {item.resultCount} result{item.resultCount !== 1 ? 's' : ''}
+                  {item.resultCount} result{item.resultCount !== 1 ? "s" : ""}
                 </span>
               )}
               {showTimestamp && formattedTime && (
@@ -323,8 +331,9 @@ function ClearHistoryDialog({
         <AlertDialogHeader>
           <AlertDialogTitle>Clear Search History</AlertDialogTitle>
           <AlertDialogDescription>
-            Are you sure you want to clear your search history? This will remove{' '}
-            {itemCount} search{itemCount !== 1 ? 'es' : ''} and cannot be undone.
+            Are you sure you want to clear your search history? This will remove{" "}
+            {itemCount} search{itemCount !== 1 ? "es" : ""} and cannot be
+            undone.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
@@ -359,9 +368,11 @@ export function InlineRecentSearches({
   className?: string;
 }) {
   const { data: historyData, isLoading } = useQuery({
-    queryKey: ['/api/search/history'],
+    queryKey: ["/api/search/history"],
     queryFn: async () => {
-      const res = await fetch('/api/search/history', { credentials: 'include' });
+      const res = await fetch("/api/search/history", {
+        credentials: "include",
+      });
       if (!res.ok) return { history: [] };
       return res.json();
     },
@@ -373,7 +384,7 @@ export function InlineRecentSearches({
   if (isLoading || history.length === 0) return null;
 
   return (
-    <div className={cn('flex items-center gap-2 flex-wrap', className)}>
+    <div className={cn("flex items-center gap-2 flex-wrap", className)}>
       <span className="text-xs text-slate-500">Recent:</span>
       {history.map((item: SearchHistoryItem, index: number) => (
         <button

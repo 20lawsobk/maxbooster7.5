@@ -1,15 +1,28 @@
-import { db } from '../db';
+import { db } from "../db";
 import {
   playlistAttributions,
   InsertPlaylistAttribution,
   PlaylistAttribution,
   dspAnalytics,
-} from '@shared/schema';
-import { eq, and, gte, lte, desc, sql, asc } from 'drizzle-orm';
-import { logger } from '../logger.js';
+} from "@shared/schema";
+import { eq, and, gte, lte, desc, sql, asc } from "drizzle-orm";
+import { logger } from "../logger.js";
 
-export type PlaylistType = 'editorial' | 'algorithmic' | 'user' | 'artist' | 'radio';
-export type DSPPlatform = 'spotify' | 'apple' | 'youtube' | 'amazon' | 'tidal' | 'deezer' | 'soundcloud' | 'pandora';
+export type PlaylistType =
+  | "editorial"
+  | "algorithmic"
+  | "user"
+  | "artist"
+  | "radio";
+export type DSPPlatform =
+  | "spotify"
+  | "apple"
+  | "youtube"
+  | "amazon"
+  | "tidal"
+  | "deezer"
+  | "soundcloud"
+  | "pandora";
 
 export interface PlaylistMetrics {
   playlistId: string;
@@ -33,8 +46,18 @@ interface PlaylistPerformanceSummary {
   totalPlaylists: number;
   totalStreams: number;
   totalRevenue: number;
-  byType: { type: PlaylistType; count: number; streams: number; revenue: number }[];
-  byPlatform: { platform: DSPPlatform; count: number; streams: number; revenue: number }[];
+  byType: {
+    type: PlaylistType;
+    count: number;
+    streams: number;
+    revenue: number;
+  }[];
+  byPlatform: {
+    platform: DSPPlatform;
+    count: number;
+    streams: number;
+    revenue: number;
+  }[];
   topPlaylists: PlaylistMetrics[];
   recentAdds: PlaylistMetrics[];
   pitchMetrics: {
@@ -56,7 +79,7 @@ interface PlaylistStreamHistory {
 class PlaylistAttributionService {
   async trackPlaylistAdd(
     userId: string,
-    playlistData: Omit<InsertPlaylistAttribution, 'userId'>
+    playlistData: Omit<InsertPlaylistAttribution, "userId">,
   ): Promise<PlaylistAttribution> {
     const [existing] = await db
       .select()
@@ -65,8 +88,8 @@ class PlaylistAttributionService {
         and(
           eq(playlistAttributions.userId, userId),
           eq(playlistAttributions.playlistId, playlistData.playlistId),
-          eq(playlistAttributions.platform, playlistData.platform)
-        )
+          eq(playlistAttributions.platform, playlistData.platform),
+        ),
       )
       .limit(1);
 
@@ -89,14 +112,16 @@ class PlaylistAttributionService {
       .values({ ...playlistData, userId })
       .returning();
 
-    logger.info(`Tracked new playlist add: ${playlistData.playlistName} for user ${userId}`);
+    logger.info(
+      `Tracked new playlist add: ${playlistData.playlistName} for user ${userId}`,
+    );
     return newAttribution;
   }
 
   async trackPlaylistRemoval(
     userId: string,
     playlistId: string,
-    platform: DSPPlatform
+    platform: DSPPlatform,
   ): Promise<void> {
     await db
       .update(playlistAttributions)
@@ -109,8 +134,8 @@ class PlaylistAttributionService {
         and(
           eq(playlistAttributions.userId, userId),
           eq(playlistAttributions.playlistId, playlistId),
-          eq(playlistAttributions.platform, platform)
-        )
+          eq(playlistAttributions.platform, platform),
+        ),
       );
 
     logger.info(`Tracked playlist removal: ${playlistId} for user ${userId}`);
@@ -120,7 +145,12 @@ class PlaylistAttributionService {
     userId: string,
     playlistId: string,
     platform: DSPPlatform,
-    metrics: { streams: number; listeners: number; saves: number; revenue?: number }
+    metrics: {
+      streams: number;
+      listeners: number;
+      saves: number;
+      revenue?: number;
+    },
   ): Promise<void> {
     await db
       .update(playlistAttributions)
@@ -135,8 +165,8 @@ class PlaylistAttributionService {
         and(
           eq(playlistAttributions.userId, userId),
           eq(playlistAttributions.playlistId, playlistId),
-          eq(playlistAttributions.platform, platform)
-        )
+          eq(playlistAttributions.platform, platform),
+        ),
       );
   }
 
@@ -144,7 +174,7 @@ class PlaylistAttributionService {
     userId: string,
     playlistId: string,
     platform: DSPPlatform,
-    pitchData: { status: string; date: Date; response?: string }
+    pitchData: { status: string; date: Date; response?: string },
   ): Promise<void> {
     await db
       .update(playlistAttributions)
@@ -158,11 +188,13 @@ class PlaylistAttributionService {
         and(
           eq(playlistAttributions.userId, userId),
           eq(playlistAttributions.playlistId, playlistId),
-          eq(playlistAttributions.platform, platform)
-        )
+          eq(playlistAttributions.platform, platform),
+        ),
       );
 
-    logger.info(`Tracked pitch for playlist ${playlistId}: ${pitchData.status}`);
+    logger.info(
+      `Tracked pitch for playlist ${playlistId}: ${pitchData.status}`,
+    );
   }
 
   async getPlaylistAttributions(
@@ -174,7 +206,7 @@ class PlaylistAttributionService {
       activeOnly?: boolean;
       startDate?: Date;
       endDate?: Date;
-    } = {}
+    } = {},
   ): Promise<PlaylistAttribution[]> {
     const conditions = [eq(playlistAttributions.userId, userId)];
 
@@ -182,7 +214,9 @@ class PlaylistAttributionService {
       conditions.push(eq(playlistAttributions.platform, options.platform));
     }
     if (options.playlistType) {
-      conditions.push(eq(playlistAttributions.playlistType, options.playlistType));
+      conditions.push(
+        eq(playlistAttributions.playlistType, options.playlistType),
+      );
     }
     if (options.trackId) {
       conditions.push(eq(playlistAttributions.trackId, options.trackId));
@@ -206,7 +240,7 @@ class PlaylistAttributionService {
 
   async getPlaylistPerformanceSummary(
     userId: string,
-    options: { startDate?: Date; endDate?: Date } = {}
+    options: { startDate?: Date; endDate?: Date } = {},
   ): Promise<PlaylistPerformanceSummary> {
     const conditions = [eq(playlistAttributions.userId, userId)];
 
@@ -271,8 +305,8 @@ class PlaylistAttributionService {
       .where(
         and(
           eq(playlistAttributions.userId, userId),
-          sql`${playlistAttributions.pitchStatus} IS NOT NULL`
-        )
+          sql`${playlistAttributions.pitchStatus} IS NOT NULL`,
+        ),
       )
       .groupBy(playlistAttributions.pitchStatus);
 
@@ -284,16 +318,21 @@ class PlaylistAttributionService {
       acceptanceRate: 0,
     };
 
-    pitchStats.forEach(s => {
+    pitchStats.forEach((s) => {
       const count = Number(s.count);
       pitchMetrics.totalPitches += count;
-      if (s.status === 'accepted' || s.status === 'approved') pitchMetrics.accepted += count;
-      else if (s.status === 'pending') pitchMetrics.pending += count;
-      else if (s.status === 'rejected' || s.status === 'declined') pitchMetrics.rejected += count;
+      if (s.status === "accepted" || s.status === "approved")
+        pitchMetrics.accepted += count;
+      else if (s.status === "pending") pitchMetrics.pending += count;
+      else if (s.status === "rejected" || s.status === "declined")
+        pitchMetrics.rejected += count;
     });
 
     if (pitchMetrics.totalPitches > 0) {
-      pitchMetrics.acceptanceRate = (pitchMetrics.accepted / (pitchMetrics.accepted + pitchMetrics.rejected)) * 100 || 0;
+      pitchMetrics.acceptanceRate =
+        (pitchMetrics.accepted /
+          (pitchMetrics.accepted + pitchMetrics.rejected)) *
+          100 || 0;
     }
 
     const mapToMetrics = (attr: PlaylistAttribution): PlaylistMetrics => ({
@@ -316,13 +355,13 @@ class PlaylistAttributionService {
       totalPlaylists: Number(totals?.totalPlaylists || 0),
       totalStreams: Number(totals?.totalStreams || 0),
       totalRevenue: Number(totals?.totalRevenue || 0),
-      byType: byType.map(t => ({
+      byType: byType.map((t) => ({
         type: t.type,
         count: Number(t.count),
         streams: Number(t.streams),
         revenue: Number(t.revenue),
       })),
-      byPlatform: byPlatform.map(p => ({
+      byPlatform: byPlatform.map((p) => ({
         platform: p.platform,
         count: Number(p.count),
         streams: Number(p.streams),
@@ -338,11 +377,11 @@ class PlaylistAttributionService {
     userId: string,
     playlistId: string,
     platform: DSPPlatform,
-    days: number = 30
+    days: number = 30,
   ): Promise<PlaylistStreamHistory[]> {
     const history: PlaylistStreamHistory[] = [];
     const baseDate = new Date();
-    
+
     let cumulativeStreams = 0;
     let cumulativeListeners = 0;
     let cumulativeSaves = 0;
@@ -350,17 +389,17 @@ class PlaylistAttributionService {
     for (let i = days - 1; i >= 0; i--) {
       const date = new Date(baseDate);
       date.setDate(date.getDate() - i);
-      
+
       const dailyStreams = Math.floor(Math.random() * 500) + 50;
       const dailyListeners = Math.floor(dailyStreams * 0.6);
       const dailySaves = Math.floor(dailyStreams * 0.05);
-      
+
       cumulativeStreams += dailyStreams;
       cumulativeListeners += dailyListeners;
       cumulativeSaves += dailySaves;
 
       history.push({
-        date: date.toISOString().split('T')[0],
+        date: date.toISOString().split("T")[0],
         streams: cumulativeStreams,
         listeners: cumulativeListeners,
         saves: cumulativeSaves,
@@ -372,12 +411,24 @@ class PlaylistAttributionService {
 
   async getPlaylistRevenueAttribution(
     userId: string,
-    options: { startDate?: Date; endDate?: Date } = {}
+    options: { startDate?: Date; endDate?: Date } = {},
   ): Promise<{
     totalRevenue: number;
-    byPlaylistType: { type: PlaylistType; revenue: number; percentage: number }[];
-    byPlatform: { platform: DSPPlatform; revenue: number; percentage: number }[];
-    topRevenueGenerators: { playlistName: string; platform: DSPPlatform; revenue: number }[];
+    byPlaylistType: {
+      type: PlaylistType;
+      revenue: number;
+      percentage: number;
+    }[];
+    byPlatform: {
+      platform: DSPPlatform;
+      revenue: number;
+      percentage: number;
+    }[];
+    topRevenueGenerators: {
+      playlistName: string;
+      platform: DSPPlatform;
+      revenue: number;
+    }[];
   }> {
     const conditions = [eq(playlistAttributions.userId, userId)];
 
@@ -428,17 +479,19 @@ class PlaylistAttributionService {
 
     return {
       totalRevenue,
-      byPlaylistType: byTypeRaw.map(t => ({
+      byPlaylistType: byTypeRaw.map((t) => ({
         type: t.type,
         revenue: Number(t.revenue),
-        percentage: totalRevenue > 0 ? (Number(t.revenue) / totalRevenue) * 100 : 0,
+        percentage:
+          totalRevenue > 0 ? (Number(t.revenue) / totalRevenue) * 100 : 0,
       })),
-      byPlatform: byPlatformRaw.map(p => ({
+      byPlatform: byPlatformRaw.map((p) => ({
         platform: p.platform,
         revenue: Number(p.revenue),
-        percentage: totalRevenue > 0 ? (Number(p.revenue) / totalRevenue) * 100 : 0,
+        percentage:
+          totalRevenue > 0 ? (Number(p.revenue) / totalRevenue) * 100 : 0,
       })),
-      topRevenueGenerators: topGenerators.map(g => ({
+      topRevenueGenerators: topGenerators.map((g) => ({
         playlistName: g.playlistName,
         platform: g.platform,
         revenue: Number(g.revenue),
@@ -455,7 +508,7 @@ class PlaylistAttributionService {
   }> {
     const conditions = [
       eq(playlistAttributions.userId, userId),
-      eq(playlistAttributions.playlistType, 'editorial'),
+      eq(playlistAttributions.playlistType, "editorial"),
     ];
 
     const [totals] = await db
@@ -480,7 +533,7 @@ class PlaylistAttributionService {
       currentActivePlacements: Number(totals?.activePlacements || 0),
       streamsFromEditorial: Number(totals?.totalStreams || 0),
       revenueFromEditorial: Number(totals?.totalRevenue || 0),
-      topEditorialPlaylists: topPlaylists.map(p => ({
+      topEditorialPlaylists: topPlaylists.map((p) => ({
         playlistId: p.playlistId,
         playlistName: p.playlistName,
         playlistType: p.playlistType,
@@ -501,7 +554,7 @@ class PlaylistAttributionService {
   async syncPlaylistsFromPlatform(
     userId: string,
     platform: DSPPlatform,
-    trackId?: string
+    trackId?: string,
   ): Promise<PlaylistAttribution[]> {
     try {
       // Build conditions array properly - only include defined conditions
@@ -509,7 +562,7 @@ class PlaylistAttributionService {
         eq(playlistAttributions.userId, userId),
         eq(playlistAttributions.platform, platform),
       ];
-      
+
       if (trackId) {
         conditions.push(eq(playlistAttributions.trackId, trackId));
       }
@@ -521,8 +574,10 @@ class PlaylistAttributionService {
         .where(and(...conditions));
 
       if (existingPlaylists.length > 0) {
-        logger.info(`Found ${existingPlaylists.length} existing playlists for ${platform}`);
-        
+        logger.info(
+          `Found ${existingPlaylists.length} existing playlists for ${platform}`,
+        );
+
         // Update streams/listeners counts from DSP analytics for each playlist
         const updatedPlaylists: PlaylistAttribution[] = [];
         for (const playlist of existingPlaylists) {
@@ -531,11 +586,13 @@ class PlaylistAttributionService {
             eq(dspAnalytics.userId, userId),
             eq(dspAnalytics.platform, platform),
           ];
-          
+
           if (playlist.trackId) {
-            analyticsConditions.push(eq(dspAnalytics.releaseId, playlist.trackId));
+            analyticsConditions.push(
+              eq(dspAnalytics.releaseId, playlist.trackId),
+            );
           }
-          
+
           // Get latest analytics for this playlist's track from dspAnalytics
           const analytics = await db
             .select({
@@ -546,7 +603,7 @@ class PlaylistAttributionService {
             .where(and(...analyticsConditions));
 
           const newStreams = Number(analytics[0]?.streams) || 0;
-          
+
           // Only update if we have new data
           if (newStreams > 0 && newStreams !== playlist.streams) {
             const [updated] = await db
@@ -557,19 +614,21 @@ class PlaylistAttributionService {
               })
               .where(eq(playlistAttributions.id, playlist.id))
               .returning();
-            
+
             updatedPlaylists.push(updated || playlist);
           } else {
             updatedPlaylists.push(playlist);
           }
         }
-        
+
         return updatedPlaylists;
       }
 
       // No existing playlists found - return empty array
       // User needs to add playlist attributions via trackPlaylistAdd or connect DSP for automatic tracking
-      logger.info(`No playlist data found for ${platform} user ${userId}. Add playlists via trackPlaylistAdd.`);
+      logger.info(
+        `No playlist data found for ${platform} user ${userId}. Add playlists via trackPlaylistAdd.`,
+      );
       return [];
     } catch (error: unknown) {
       logger.warn({ err: error }, `Error syncing playlists from ${platform}:`);

@@ -1,23 +1,23 @@
-import { logger } from '@/lib/logger';
-import { useState, useRef, useEffect, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { logger } from "@/lib/logger";
+import { useState, useRef, useEffect, useCallback } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Slider } from '@/components/ui/slider';
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Slider } from "@/components/ui/slider";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
+} from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import {
   Mic,
   MicOff,
@@ -34,9 +34,9 @@ import {
   RefreshCw,
   Waves,
   Activity,
-} from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { useToast } from '@/hooks/use-toast';
+} from "lucide-react";
+import { cn } from "@/lib/utils";
+import { useToast } from "@/hooks/use-toast";
 
 interface AudioDevice {
   deviceId: string;
@@ -51,7 +51,7 @@ interface RecordingSettings {
   monitorLevel: number;
   monitorEnabled: boolean;
   countIn: number;
-  recordingMode: 'normal' | 'punch' | 'loop';
+  recordingMode: "normal" | "punch" | "loop";
   sampleRate: number;
   bitDepth: number;
 }
@@ -75,7 +75,7 @@ export function FlowStateRecording({
   open,
   onOpenChange,
   trackId,
-  trackName = 'Audio Track',
+  trackName = "Audio Track",
   projectId,
   onRecordingComplete,
   onRecordingStart,
@@ -94,13 +94,13 @@ export function FlowStateRecording({
   const [countdownValue, setCountdownValue] = useState<number | null>(null);
 
   const [settings, setSettings] = useState<RecordingSettings>({
-    inputDevice: 'default',
-    outputDevice: 'default',
+    inputDevice: "default",
+    outputDevice: "default",
     inputGain: 1.0,
     monitorLevel: 0.5,
     monitorEnabled: false,
     countIn: 0,
-    recordingMode: 'normal',
+    recordingMode: "normal",
     sampleRate: 48000,
     bitDepth: 24,
   });
@@ -118,32 +118,34 @@ export function FlowStateRecording({
   const enumerateDevices = useCallback(async () => {
     try {
       const devices = await navigator.mediaDevices.enumerateDevices();
-      const audioDevices = devices.filter(
-        d => d.kind === 'audioinput' || d.kind === 'audiooutput'
-      ).map(d => ({
-        deviceId: d.deviceId,
-        label: d.label || `${d.kind === 'audioinput' ? 'Microphone' : 'Speaker'} ${d.deviceId.slice(0, 8)}`,
-        kind: d.kind,
-      }));
+      const audioDevices = devices
+        .filter((d) => d.kind === "audioinput" || d.kind === "audiooutput")
+        .map((d) => ({
+          deviceId: d.deviceId,
+          label:
+            d.label ||
+            `${d.kind === "audioinput" ? "Microphone" : "Speaker"} ${d.deviceId.slice(0, 8)}`,
+          kind: d.kind,
+        }));
       setAudioDevices(audioDevices);
     } catch (error) {
-      logger.error('Failed to enumerate devices:', error);
+      logger.error("Failed to enumerate devices:", error);
     }
   }, []);
 
   const requestPermission = useCallback(async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      stream.getTracks().forEach(track => track.stop());
+      stream.getTracks().forEach((track) => track.stop());
       setHasPermission(true);
       await enumerateDevices();
     } catch (error) {
-      logger.error('Microphone permission denied:', error);
+      logger.error("Microphone permission denied:", error);
       setHasPermission(false);
       toast({
-        title: 'Microphone access denied',
-        description: 'Please allow microphone access to record audio.',
-        variant: 'destructive',
+        title: "Microphone access denied",
+        description: "Please allow microphone access to record audio.",
+        variant: "destructive",
       });
     } finally {
       setIsLoading(false);
@@ -168,9 +170,9 @@ export function FlowStateRecording({
       clearInterval(timerRef.current);
     }
     if (mediaStreamRef.current) {
-      mediaStreamRef.current.getTracks().forEach(track => track.stop());
+      mediaStreamRef.current.getTracks().forEach((track) => track.stop());
     }
-    if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
+    if (audioContextRef.current && audioContextRef.current.state !== "closed") {
       audioContextRef.current.close();
     }
   }, []);
@@ -179,7 +181,10 @@ export function FlowStateRecording({
     try {
       const constraints: MediaStreamConstraints = {
         audio: {
-          deviceId: settings.inputDevice !== 'default' ? { exact: settings.inputDevice } : undefined,
+          deviceId:
+            settings.inputDevice !== "default"
+              ? { exact: settings.inputDevice }
+              : undefined,
           sampleRate: settings.sampleRate,
           echoCancellation: false,
           noiseSuppression: false,
@@ -190,9 +195,11 @@ export function FlowStateRecording({
       const stream = await navigator.mediaDevices.getUserMedia(constraints);
       mediaStreamRef.current = stream;
 
-      audioContextRef.current = new AudioContext({ sampleRate: settings.sampleRate });
+      audioContextRef.current = new AudioContext({
+        sampleRate: settings.sampleRate,
+      });
       const source = audioContextRef.current.createMediaStreamSource(stream);
-      
+
       analyzerRef.current = audioContextRef.current.createAnalyser();
       analyzerRef.current.fftSize = 2048;
       analyzerRef.current.smoothingTimeConstant = 0.8;
@@ -212,7 +219,7 @@ export function FlowStateRecording({
 
       return stream;
     } catch (error) {
-      logger.error('Failed to setup audio pipeline:', error);
+      logger.error("Failed to setup audio pipeline:", error);
       throw error;
     }
   }, [settings]);
@@ -231,7 +238,7 @@ export function FlowStateRecording({
       if (value > max) max = value;
     }
     const rms = sum / dataArray.length;
-    
+
     setInputLevel(rms);
     if (max > peakLevel) {
       setPeakLevel(max);
@@ -248,17 +255,17 @@ export function FlowStateRecording({
     if (!canvasRef.current || !analyzerRef.current) return;
 
     const canvas = canvasRef.current;
-    const ctx = canvas.getContext('2d');
+    const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
     const dataArray = new Uint8Array(analyzerRef.current.frequencyBinCount);
     analyzerRef.current.getByteTimeDomainData(dataArray);
 
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+    ctx.fillStyle = "rgba(0, 0, 0, 0.1)";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
     ctx.lineWidth = 2;
-    ctx.strokeStyle = isRecording ? '#ef4444' : '#22c55e';
+    ctx.strokeStyle = isRecording ? "#ef4444" : "#22c55e";
     ctx.beginPath();
 
     const sliceWidth = canvas.width / dataArray.length;
@@ -288,7 +295,7 @@ export function FlowStateRecording({
 
     for (let i = settings.countIn; i > 0; i--) {
       setCountdownValue(i);
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await new Promise((resolve) => setTimeout(resolve, 1000));
     }
     setCountdownValue(null);
     startRecordingImmediate();
@@ -298,9 +305,9 @@ export function FlowStateRecording({
     try {
       const stream = await setupAudioPipeline();
 
-      const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
-        ? 'audio/webm;codecs=opus'
-        : 'audio/webm';
+      const mimeType = MediaRecorder.isTypeSupported("audio/webm;codecs=opus")
+        ? "audio/webm;codecs=opus"
+        : "audio/webm";
 
       mediaRecorderRef.current = new MediaRecorder(stream, { mimeType });
       chunksRef.current = [];
@@ -322,20 +329,27 @@ export function FlowStateRecording({
       onRecordingStart?.();
 
       timerRef.current = window.setInterval(() => {
-        setRecordingTime(prev => prev + 0.1);
+        setRecordingTime((prev) => prev + 0.1);
       }, 100);
 
       updateLevels();
 
-      toast({ title: 'Recording started' });
+      toast({ title: "Recording started" });
     } catch (error) {
-      logger.error('Failed to start recording:', error);
+      logger.error("Failed to start recording:", error);
       toast({
-        title: 'Failed to start recording',
-        variant: 'destructive',
+        title: "Failed to start recording",
+        variant: "destructive",
       });
     }
-  }, [setupAudioPipeline, onRecordingComplete, onRecordingStart, recordingTime, updateLevels, toast]);
+  }, [
+    setupAudioPipeline,
+    onRecordingComplete,
+    onRecordingStart,
+    recordingTime,
+    updateLevels,
+    toast,
+  ]);
 
   const startRecording = useCallback(() => {
     startCountdown();
@@ -355,10 +369,10 @@ export function FlowStateRecording({
         cancelAnimationFrame(animationFrameRef.current);
       }
       if (mediaStreamRef.current) {
-        mediaStreamRef.current.getTracks().forEach(track => track.stop());
+        mediaStreamRef.current.getTracks().forEach((track) => track.stop());
       }
 
-      toast({ title: 'Recording stopped' });
+      toast({ title: "Recording stopped" });
     }
   }, [isRecording, onRecordingStop, toast]);
 
@@ -382,11 +396,11 @@ export function FlowStateRecording({
     const mins = Math.floor(seconds / 60);
     const secs = Math.floor(seconds % 60);
     const ms = Math.floor((seconds % 1) * 10);
-    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}.${ms}`;
+    return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}.${ms}`;
   };
 
-  const inputDevices = audioDevices.filter(d => d.kind === 'audioinput');
-  const outputDevices = audioDevices.filter(d => d.kind === 'audiooutput');
+  const inputDevices = audioDevices.filter((d) => d.kind === "audioinput");
+  const outputDevices = audioDevices.filter((d) => d.kind === "audiooutput");
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -394,10 +408,12 @@ export function FlowStateRecording({
         <div className="flex flex-col">
           <div className="h-14 px-6 flex items-center justify-between border-b border-slate-800 bg-slate-900/50">
             <div className="flex items-center gap-3">
-              <div className={cn(
-                "w-10 h-10 rounded-full flex items-center justify-center",
-                isRecording ? "bg-red-500/20" : "bg-slate-800"
-              )}>
+              <div
+                className={cn(
+                  "w-10 h-10 rounded-full flex items-center justify-center",
+                  isRecording ? "bg-red-500/20" : "bg-slate-800",
+                )}
+              >
                 {isRecording ? (
                   <motion.div
                     animate={{ scale: [1, 1.2, 1] }}
@@ -415,10 +431,12 @@ export function FlowStateRecording({
               </div>
             </div>
 
-            <div className={cn(
-              "text-3xl font-mono font-bold",
-              isRecording ? "text-red-500" : "text-white"
-            )}>
+            <div
+              className={cn(
+                "text-3xl font-mono font-bold",
+                isRecording ? "text-red-500" : "text-white",
+              )}
+            >
               {formatTime(recordingTime)}
             </div>
           </div>
@@ -466,19 +484,28 @@ export function FlowStateRecording({
                 <div className="flex gap-6">
                   <div className="flex-1 space-y-4">
                     <div className="space-y-2">
-                      <Label className="text-xs text-white/40">Input Device</Label>
+                      <Label className="text-xs text-white/40">
+                        Input Device
+                      </Label>
                       <Select
                         value={settings.inputDevice}
-                        onValueChange={(v) => setSettings(s => ({ ...s, inputDevice: v }))}
+                        onValueChange={(v) =>
+                          setSettings((s) => ({ ...s, inputDevice: v }))
+                        }
                         disabled={isRecording}
                       >
                         <SelectTrigger className="bg-slate-800 border-slate-700">
                           <SelectValue placeholder="Select input" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="default">Default Microphone</SelectItem>
-                          {inputDevices.map(device => (
-                            <SelectItem key={device.deviceId} value={device.deviceId}>
+                          <SelectItem value="default">
+                            Default Microphone
+                          </SelectItem>
+                          {inputDevices.map((device) => (
+                            <SelectItem
+                              key={device.deviceId}
+                              value={device.deviceId}
+                            >
                               {device.label}
                             </SelectItem>
                           ))}
@@ -488,7 +515,9 @@ export function FlowStateRecording({
 
                     <div className="space-y-2">
                       <div className="flex items-center justify-between">
-                        <Label className="text-xs text-white/40">Input Gain</Label>
+                        <Label className="text-xs text-white/40">
+                          Input Gain
+                        </Label>
                         <span className="text-xs text-white/60">
                           {(settings.inputGain * 100).toFixed(0)}%
                         </span>
@@ -496,7 +525,7 @@ export function FlowStateRecording({
                       <Slider
                         value={[settings.inputGain]}
                         onValueChange={([v]) => {
-                          setSettings(s => ({ ...s, inputGain: v }));
+                          setSettings((s) => ({ ...s, inputGain: v }));
                           if (gainNodeRef.current) {
                             gainNodeRef.current.gain.value = v;
                           }
@@ -515,7 +544,9 @@ export function FlowStateRecording({
                       </div>
                       <Switch
                         checked={settings.monitorEnabled}
-                        onCheckedChange={(v) => setSettings(s => ({ ...s, monitorEnabled: v }))}
+                        onCheckedChange={(v) =>
+                          setSettings((s) => ({ ...s, monitorEnabled: v }))
+                        }
                         disabled={isRecording}
                       />
                     </div>
@@ -523,14 +554,18 @@ export function FlowStateRecording({
                     {settings.monitorEnabled && (
                       <div className="space-y-2">
                         <div className="flex items-center justify-between">
-                          <Label className="text-xs text-white/40">Monitor Level</Label>
+                          <Label className="text-xs text-white/40">
+                            Monitor Level
+                          </Label>
                           <span className="text-xs text-white/60">
                             {(settings.monitorLevel * 100).toFixed(0)}%
                           </span>
                         </div>
                         <Slider
                           value={[settings.monitorLevel]}
-                          onValueChange={([v]) => setSettings(s => ({ ...s, monitorLevel: v }))}
+                          onValueChange={([v]) =>
+                            setSettings((s) => ({ ...s, monitorLevel: v }))
+                          }
                           min={0}
                           max={1}
                           step={0.01}
@@ -540,12 +575,17 @@ export function FlowStateRecording({
                   </div>
 
                   <div className="w-16 space-y-2">
-                    <Label className="text-xs text-white/40 block text-center">Level</Label>
+                    <Label className="text-xs text-white/40 block text-center">
+                      Level
+                    </Label>
                     <div className="h-40 bg-black rounded-lg p-2 flex gap-1">
                       <LevelMeter level={inputLevel} isClipping={isClipping} />
-                      <LevelMeter level={inputLevel * 0.95} isClipping={isClipping} />
+                      <LevelMeter
+                        level={inputLevel * 0.95}
+                        isClipping={isClipping}
+                      />
                     </div>
-                    <div 
+                    <div
                       className="text-[10px] text-center text-white/40 cursor-pointer hover:text-white/60"
                       onClick={resetPeakLevel}
                     >
@@ -566,16 +606,18 @@ export function FlowStateRecording({
                     <Label className="text-xs text-white/40">Count-In</Label>
                     <Select
                       value={settings.countIn.toString()}
-                      onValueChange={(v) => setSettings(s => ({ ...s, countIn: parseInt(v) }))}
+                      onValueChange={(v) =>
+                        setSettings((s) => ({ ...s, countIn: parseInt(v) }))
+                      }
                       disabled={isRecording}
                     >
                       <SelectTrigger className="bg-slate-800 border-slate-700">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        {COUNT_IN_OPTIONS.map(v => (
+                        {COUNT_IN_OPTIONS.map((v) => (
                           <SelectItem key={v} value={v.toString()}>
-                            {v === 0 ? 'Off' : `${v} bars`}
+                            {v === 0 ? "Off" : `${v} bars`}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -586,14 +628,16 @@ export function FlowStateRecording({
                     <Label className="text-xs text-white/40">Sample Rate</Label>
                     <Select
                       value={settings.sampleRate.toString()}
-                      onValueChange={(v) => setSettings(s => ({ ...s, sampleRate: parseInt(v) }))}
+                      onValueChange={(v) =>
+                        setSettings((s) => ({ ...s, sampleRate: parseInt(v) }))
+                      }
                       disabled={isRecording}
                     >
                       <SelectTrigger className="bg-slate-800 border-slate-700">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        {SAMPLE_RATES.map(rate => (
+                        {SAMPLE_RATES.map((rate) => (
                           <SelectItem key={rate} value={rate.toString()}>
                             {rate / 1000} kHz
                           </SelectItem>
@@ -606,14 +650,16 @@ export function FlowStateRecording({
                     <Label className="text-xs text-white/40">Bit Depth</Label>
                     <Select
                       value={settings.bitDepth.toString()}
-                      onValueChange={(v) => setSettings(s => ({ ...s, bitDepth: parseInt(v) }))}
+                      onValueChange={(v) =>
+                        setSettings((s) => ({ ...s, bitDepth: parseInt(v) }))
+                      }
                       disabled={isRecording}
                     >
                       <SelectTrigger className="bg-slate-800 border-slate-700">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        {BIT_DEPTHS.map(depth => (
+                        {BIT_DEPTHS.map((depth) => (
                           <SelectItem key={depth} value={depth.toString()}>
                             {depth}-bit
                           </SelectItem>
@@ -673,7 +719,13 @@ export function FlowStateRecording({
   );
 }
 
-function LevelMeter({ level, isClipping }: { level: number; isClipping: boolean }) {
+function LevelMeter({
+  level,
+  isClipping,
+}: {
+  level: number;
+  isClipping: boolean;
+}) {
   const segments = 20;
   const activeSegments = Math.floor(level * segments);
 
@@ -684,16 +736,16 @@ function LevelMeter({ level, isClipping }: { level: number; isClipping: boolean 
         const isPeak = i >= segments - 2;
         const isWarn = i >= segments - 5 && i < segments - 2;
 
-        let color = '#22c55e';
-        if (isPeak) color = isClipping ? '#ef4444' : '#ef4444';
-        else if (isWarn) color = '#eab308';
+        let color = "#22c55e";
+        if (isPeak) color = isClipping ? "#ef4444" : "#ef4444";
+        else if (isWarn) color = "#eab308";
 
         return (
           <motion.div
             key={i}
             className="flex-1 rounded-sm"
             style={{
-              backgroundColor: isActive ? color : 'rgba(255,255,255,0.1)',
+              backgroundColor: isActive ? color : "rgba(255,255,255,0.1)",
             }}
             animate={{
               opacity: isActive ? 1 : 0.3,

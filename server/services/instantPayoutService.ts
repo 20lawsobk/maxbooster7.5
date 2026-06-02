@@ -1,13 +1,23 @@
-import Stripe from 'stripe';
-import { db } from '../db';
-import { users, orders, instantPayouts, notifications, ledgerEntries, splitPayments, refunds } from '@shared/schema';
-import { eq, and, sql, desc, gte, lte } from 'drizzle-orm';
-import { logger } from '../logger.js';
-import { withLock } from '../lib/distributedLock.js';
+import Stripe from "stripe";
+import { db } from "../db";
+import {
+  users,
+  orders,
+  instantPayouts,
+  notifications,
+  ledgerEntries,
+  splitPayments,
+  refunds,
+} from "@shared/schema";
+import { eq, and, sql, desc, gte, lte } from "drizzle-orm";
+import { logger } from "../logger.js";
+import { withLock } from "../lib/distributedLock.js";
 
 // Initialize Stripe
-const stripe = process.env.STRIPE_SECRET_KEY?.startsWith('sk_')
-  ? new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: '2025-08-27.basil' })
+const stripe = process.env.STRIPE_SECRET_KEY?.startsWith("sk_")
+  ? new Stripe(process.env.STRIPE_SECRET_KEY, {
+      apiVersion: "2025-08-27.basil",
+    })
   : null;
 
 export interface PayoutBalance {
@@ -36,7 +46,13 @@ export interface RiskAssessment {
 
 export interface LedgerEntryData {
   userId: string;
-  entryType: 'credit' | 'debit' | 'payout' | 'refund' | 'split_payment' | 'platform_fee';
+  entryType:
+    | "credit"
+    | "debit"
+    | "payout"
+    | "refund"
+    | "split_payment"
+    | "platform_fee";
   amountCents: number;
   currency?: string;
   referenceType?: string;
@@ -52,8 +68,9 @@ export class InstantPayoutService {
   async recordLedgerEntry(data: LedgerEntryData): Promise<string> {
     try {
       const currentBalance = await this.calculateAvailableBalance(data.userId);
-      const balanceAfterCents = Math.round(currentBalance.availableBalance * 100) + 
-        (data.entryType === 'credit' ? data.amountCents : -data.amountCents);
+      const balanceAfterCents =
+        Math.round(currentBalance.availableBalance * 100) +
+        (data.entryType === "credit" ? data.amountCents : -data.amountCents);
 
       const [entry] = await db
         .insert(ledgerEntries)
@@ -61,7 +78,7 @@ export class InstantPayoutService {
           userId: data.userId,
           entryType: data.entryType,
           amountCents: data.amountCents,
-          currency: data.currency || 'usd',
+          currency: data.currency || "usd",
           balanceAfterCents,
           referenceType: data.referenceType,
           referenceId: data.referenceId,
@@ -70,24 +87,28 @@ export class InstantPayoutService {
         })
         .returning();
 
-      logger.info('Ledger entry recorded', { 
-        entryId: entry.id, 
-        userId: data.userId, 
+      logger.info("Ledger entry recorded", {
+        entryId: entry.id,
+        userId: data.userId,
         type: data.entryType,
-        amountCents: data.amountCents 
+        amountCents: data.amountCents,
       });
-      
+
       return entry.id;
     } catch (error: unknown) {
-      logger.warn({ err: error }, 'Error recording ledger entry:');
-      throw new Error('Failed to record ledger entry');
+      logger.warn({ err: error }, "Error recording ledger entry:");
+      throw new Error("Failed to record ledger entry");
     }
   }
 
   /**
    * Get ledger history for a user
    */
-  async getLedgerHistory(userId: string, limit: number = 50, offset: number = 0) {
+  async getLedgerHistory(
+    userId: string,
+    limit: number = 50,
+    offset: number = 0,
+  ) {
     try {
       const entries = await db
         .select()
@@ -98,15 +119,18 @@ export class InstantPayoutService {
         .offset(offset);
       return entries;
     } catch (error: unknown) {
-      logger.warn({ err: error }, 'Error fetching ledger history:');
-      throw new Error('Failed to fetch ledger history');
+      logger.warn({ err: error }, "Error fetching ledger history:");
+      throw new Error("Failed to fetch ledger history");
     }
   }
 
   /**
    * Perform risk assessment before payout
    */
-  async assessPayoutRisk(userId: string, amount: number): Promise<RiskAssessment> {
+  async assessPayoutRisk(
+    userId: string,
+    amount: number,
+  ): Promise<RiskAssessment> {
     const flags: string[] = [];
     let score = 0;
 
@@ -122,17 +146,18 @@ export class InstantPayoutService {
             FROM instant_payouts 
             WHERE user_id = ${userId} 
             AND created_at >= ${last24Hours.toISOString()}
-            AND status IN ('pending', 'completed', 'in_transit')`
+            AND status IN ('pending', 'completed', 'in_transit')`,
       );
       const recentCount = Number(recentPayoutsResult.rows?.[0]?.count || 0);
-      const recentTotal = Number(recentPayoutsResult.rows?.[0]?.total || 0) / 100;
+      const recentTotal =
+        Number(recentPayoutsResult.rows?.[0]?.total || 0) / 100;
 
       if (recentCount >= 3) {
-        flags.push('HIGH_VELOCITY_24H');
+        flags.push("HIGH_VELOCITY_24H");
         score += 25;
       }
       if (recentTotal > 5000) {
-        flags.push('HIGH_VOLUME_24H');
+        flags.push("HIGH_VOLUME_24H");
         score += 20;
       }
 
@@ -142,11 +167,12 @@ export class InstantPayoutService {
             FROM instant_payouts 
             WHERE user_id = ${userId} 
             AND created_at >= ${last7Days.toISOString()}
-            AND status = 'completed'`
+            AND status = 'completed'`,
       );
-      const weeklyTotal = Number(weeklyPayoutsResult.rows?.[0]?.total || 0) / 100;
+      const weeklyTotal =
+        Number(weeklyPayoutsResult.rows?.[0]?.total || 0) / 100;
       if (weeklyTotal > 10000) {
-        flags.push('HIGH_VOLUME_7D');
+        flags.push("HIGH_VOLUME_7D");
         score += 15;
       }
 
@@ -158,12 +184,14 @@ export class InstantPayoutService {
         .limit(1);
 
       if (user?.createdAt) {
-        const accountAgeDays = (now.getTime() - new Date(user.createdAt).getTime()) / (24 * 60 * 60 * 1000);
+        const accountAgeDays =
+          (now.getTime() - new Date(user.createdAt).getTime()) /
+          (24 * 60 * 60 * 1000);
         if (accountAgeDays < 7) {
-          flags.push('NEW_ACCOUNT');
+          flags.push("NEW_ACCOUNT");
           score += 30;
         } else if (accountAgeDays < 30) {
-          flags.push('YOUNG_ACCOUNT');
+          flags.push("YOUNG_ACCOUNT");
           score += 10;
         }
       }
@@ -171,11 +199,11 @@ export class InstantPayoutService {
       // Check for large single payout
       const balance = await this.calculateAvailableBalance(userId);
       if (amount > balance.availableBalance * 0.9) {
-        flags.push('NEAR_FULL_WITHDRAWAL');
+        flags.push("NEAR_FULL_WITHDRAWAL");
         score += 15;
       }
       if (amount > 2000) {
-        flags.push('LARGE_PAYOUT');
+        flags.push("LARGE_PAYOUT");
         score += 10;
       }
 
@@ -184,27 +212,32 @@ export class InstantPayoutService {
         sql`SELECT COUNT(*) as count
             FROM refunds 
             WHERE seller_id = ${userId} 
-            AND created_at >= ${last30Days.toISOString()}`
+            AND created_at >= ${last30Days.toISOString()}`,
       );
       const refundCount = Number(recentRefundsResult.rows?.[0]?.count || 0);
       if (refundCount > 3) {
-        flags.push('HIGH_REFUND_RATE');
+        flags.push("HIGH_REFUND_RATE");
         score += 25;
       }
 
       // Determine approval
       const approved = score < 60;
       let reason: string | undefined;
-      
+
       if (!approved) {
-        reason = `Risk score ${score} exceeds threshold. Flags: ${flags.join(', ')}`;
-        logger.warn('Payout risk check failed', { userId, amount, score, flags });
+        reason = `Risk score ${score} exceeds threshold. Flags: ${flags.join(", ")}`;
+        logger.warn("Payout risk check failed", {
+          userId,
+          amount,
+          score,
+          flags,
+        });
       }
 
       return { score, flags, approved, reason };
     } catch (error: unknown) {
-      logger.warn({ err: error }, 'Error assessing payout risk:');
-      return { score: 0, flags: ['ASSESSMENT_ERROR'], approved: true };
+      logger.warn({ err: error }, "Error assessing payout risk:");
+      return { score: 0, flags: ["ASSESSMENT_ERROR"], approved: true };
     }
   }
 
@@ -217,17 +250,21 @@ export class InstantPayoutService {
       const earningsResult = await db.execute(
         sql`SELECT COALESCE(SUM(amount), 0) as total_earnings
             FROM orders 
-            WHERE seller_id = ${userId} AND status = 'completed'`
+            WHERE seller_id = ${userId} AND status = 'completed'`,
       );
-      const marketplaceEarnings = Number(earningsResult.rows?.[0]?.total_earnings || 0);
+      const marketplaceEarnings = Number(
+        earningsResult.rows?.[0]?.total_earnings || 0,
+      );
 
       // Get total streaming/royalty earnings from royalty_transactions (pending = available to withdraw)
       const royaltiesResult = await db.execute(
         sql`SELECT COALESCE(SUM(amount), 0) as total_royalties
             FROM royalty_transactions
-            WHERE user_id = ${userId} AND status IN ('pending', 'confirmed')`
+            WHERE user_id = ${userId} AND status IN ('pending', 'confirmed')`,
       );
-      const royaltyEarnings = Number(royaltiesResult.rows?.[0]?.total_royalties || 0);
+      const royaltyEarnings = Number(
+        royaltiesResult.rows?.[0]?.total_royalties || 0,
+      );
 
       const totalEarnings = marketplaceEarnings + royaltyEarnings;
 
@@ -235,7 +272,7 @@ export class InstantPayoutService {
       const payoutsResult = await db.execute(
         sql`SELECT COALESCE(SUM(amount_cents), 0) / 100.0 as total_paid
             FROM instant_payouts 
-            WHERE user_id = ${userId} AND status = 'completed'`
+            WHERE user_id = ${userId} AND status = 'completed'`,
       );
       const totalPaid = Number(payoutsResult.rows?.[0]?.total_paid || 0);
 
@@ -243,30 +280,35 @@ export class InstantPayoutService {
       const pendingPayoutsResult = await db.execute(
         sql`SELECT COALESCE(SUM(amount_cents), 0) / 100.0 as pending_paid
             FROM instant_payouts 
-            WHERE user_id = ${userId} AND status = 'pending'`
+            WHERE user_id = ${userId} AND status = 'pending'`,
       );
-      const pendingPaid = Number(pendingPayoutsResult.rows?.[0]?.pending_paid || 0);
+      const pendingPaid = Number(
+        pendingPayoutsResult.rows?.[0]?.pending_paid || 0,
+      );
 
       // Available balance = earnings (marketplace + royalties) - completed payouts - pending payouts
-      const availableBalance = Math.max(0, totalEarnings - totalPaid - pendingPaid);
+      const availableBalance = Math.max(
+        0,
+        totalEarnings - totalPaid - pendingPaid,
+      );
       const pendingBalance = pendingPaid;
 
       return {
         availableBalance,
         pendingBalance,
         totalEarnings,
-        currency: 'usd',
+        currency: "usd",
       };
     } catch (error: unknown) {
       // Log the full error for observability
-      logger.warn('Error calculating available balance:', {
+      logger.warn("Error calculating available balance:", {
         userId,
         error: error instanceof Error ? error.message : String(error),
         stack: error instanceof Error ? error.stack : undefined,
       });
-      
+
       // Re-throw for proper error handling - caller should handle gracefully
-      throw new Error('Failed to calculate available balance');
+      throw new Error("Failed to calculate available balance");
     }
   }
 
@@ -278,7 +320,10 @@ export class InstantPayoutService {
   async updateAvailableBalance(userId: string, amount: number): Promise<void> {
     // Balance is calculated dynamically from orders and payouts tables
     // No need to update a column - this is intentionally a no-op
-    logger.info('Balance update requested for user - calculated dynamically', { userId, amount });
+    logger.info("Balance update requested for user - calculated dynamically", {
+      userId,
+      amount,
+    });
   }
 
   /**
@@ -294,7 +339,7 @@ export class InstantPayoutService {
       if (!stripe) {
         return {
           verified: false,
-          error: 'Stripe not configured',
+          error: "Stripe not configured",
         };
       }
 
@@ -311,22 +356,25 @@ export class InstantPayoutService {
         return {
           verified: false,
           requiresOnboarding: true,
-          error: 'No Stripe account connected',
+          error: "No Stripe account connected",
         };
       }
 
       // Verify account with Stripe
-      const account = await stripe.accounts.retrieve(user.stripeConnectedAccountId);
+      const account = await stripe.accounts.retrieve(
+        user.stripeConnectedAccountId,
+      );
 
       // Check if account is verified and can receive payouts
-      const canReceivePayouts = account.payouts_enabled && account.charges_enabled;
+      const canReceivePayouts =
+        account.payouts_enabled && account.charges_enabled;
 
       if (!canReceivePayouts) {
         return {
           verified: false,
           accountId: user.stripeConnectedAccountId,
           requiresOnboarding: !account.details_submitted,
-          error: 'Account verification incomplete',
+          error: "Account verification incomplete",
         };
       }
 
@@ -336,10 +384,10 @@ export class InstantPayoutService {
         requiresOnboarding: false,
       };
     } catch (error: unknown) {
-      logger.warn({ err: error }, 'Error verifying Stripe account:');
+      logger.warn({ err: error }, "Error verifying Stripe account:");
       return {
         verified: false,
-        error: error.message || 'Failed to verify Stripe account',
+        error: error.message || "Failed to verify Stripe account",
       };
     }
   }
@@ -347,10 +395,14 @@ export class InstantPayoutService {
   /**
    * Create Stripe Connect Express account link for onboarding
    */
-  async createAccountLink(userId: string, refreshUrl: string, returnUrl: string): Promise<string> {
+  async createAccountLink(
+    userId: string,
+    refreshUrl: string,
+    returnUrl: string,
+  ): Promise<string> {
     try {
       if (!stripe) {
-        throw new Error('Stripe not configured');
+        throw new Error("Stripe not configured");
       }
 
       // Get or create Stripe Connected Account
@@ -364,7 +416,7 @@ export class InstantPayoutService {
         .limit(1);
 
       if (!user) {
-        throw new Error('User not found');
+        throw new Error("User not found");
       }
 
       let accountId = user.stripeConnectedAccountId;
@@ -372,7 +424,7 @@ export class InstantPayoutService {
       // Create account if it doesn't exist
       if (!accountId) {
         const account = await stripe.accounts.create({
-          type: 'express',
+          type: "express",
           email: user.email,
           capabilities: {
             transfers: { requested: true },
@@ -381,7 +433,7 @@ export class InstantPayoutService {
           settings: {
             payouts: {
               schedule: {
-                interval: 'manual', // Allow instant payouts
+                interval: "manual", // Allow instant payouts
               },
             },
           },
@@ -404,13 +456,13 @@ export class InstantPayoutService {
         account: accountId,
         refresh_url: refreshUrl,
         return_url: returnUrl,
-        type: 'account_onboarding',
+        type: "account_onboarding",
       });
 
       return accountLink.url;
     } catch (error: unknown) {
-      logger.warn({ err: error }, 'Error creating account link:');
-      throw new Error(error.message || 'Failed to create account link');
+      logger.warn({ err: error }, "Error creating account link:");
+      throw new Error(error.message || "Failed to create account link");
     }
   }
 
@@ -423,13 +475,13 @@ export class InstantPayoutService {
     amount: number,
     orderId: string,
     platformFeePercentage: number = 10,
-    currency: string = 'usd'
+    currency: string = "usd",
   ): Promise<PayoutResult> {
     try {
       if (!stripe) {
         return {
           success: false,
-          error: 'Stripe not configured',
+          error: "Stripe not configured",
         };
       }
 
@@ -437,23 +489,25 @@ export class InstantPayoutService {
       const accountVerification = await this.verifyStripeAccount(userId);
       if (!accountVerification.verified) {
         // Seller not onboarded - store payout as pending
-        logger.warn(`Seller ${userId} not onboarded to Stripe Connect. Payout delayed.`);
+        logger.warn(
+          `Seller ${userId} not onboarded to Stripe Connect. Payout delayed.`,
+        );
 
         await db.insert(notifications).values({
           userId,
-          type: 'payout',
-          title: 'Payout Pending - Action Required',
+          type: "payout",
+          title: "Payout Pending - Action Required",
           message: `You have a pending payout of $${amount.toFixed(2)}, but you need to connect your bank account first to receive payments.`,
           metadata: {
             amount,
             orderId,
-            action: 'connect_bank_account',
+            action: "connect_bank_account",
           },
         });
 
         return {
           success: false,
-          error: 'Seller must complete Stripe Connect onboarding',
+          error: "Seller must complete Stripe Connect onboarding",
         };
       }
 
@@ -469,12 +523,17 @@ export class InstantPayoutService {
           userId,
           amountCents: Math.round(sellerAmount * 100),
           currency,
-          status: 'pending',
+          status: "pending",
         })
         .returning();
-      
+
       // Log metadata for audit purposes
-      logger.info('Payout record created', { payoutId: payoutRecord.id, orderId, platformFee, platformFeePercentage });
+      logger.info("Payout record created", {
+        payoutId: payoutRecord.id,
+        orderId,
+        platformFee,
+        platformFeePercentage,
+      });
 
       try {
         // Create TRANSFER from platform to seller's connected account
@@ -496,27 +555,34 @@ export class InstantPayoutService {
           .update(instantPayouts)
           .set({
             stripePayoutId: transfer.id,
-            status: 'in_transit',
+            status: "in_transit",
           })
           .where(eq(instantPayouts.id, payoutRecord.id));
-        
+
         // Log transfer details for audit purposes
-        logger.info('Payout transfer initiated', { payoutId: payoutRecord.id, transferId: transfer.id, orderId });
+        logger.info("Payout transfer initiated", {
+          payoutId: payoutRecord.id,
+          transferId: transfer.id,
+          orderId,
+        });
 
         // Log payout for audit (balance is calculated dynamically from orders/payouts tables)
-        logger.info('Seller payout completed - balance calculated dynamically', {
-          userId,
-          sellerAmount,
-          orderId,
-          payoutId: payoutRecord.id,
-          operation: 'increment_total_payouts',
-        });
+        logger.info(
+          "Seller payout completed - balance calculated dynamically",
+          {
+            userId,
+            sellerAmount,
+            orderId,
+            payoutId: payoutRecord.id,
+            operation: "increment_total_payouts",
+          },
+        );
 
         // Send success notification
         await db.insert(notifications).values({
           userId,
-          type: 'payout',
-          title: 'Payout Sent!',
+          type: "payout",
+          title: "Payout Sent!",
           message: `Your payout of $${sellerAmount.toFixed(2)} has been sent to your bank account and will arrive within 1-2 business days.`,
           metadata: {
             payoutId: payoutRecord.id,
@@ -533,24 +599,31 @@ export class InstantPayoutService {
           amount: sellerAmount,
         };
       } catch (stripeError: unknown) {
-        const errorMessage = stripeError instanceof Error ? stripeError.message : String(stripeError);
-        
+        const errorMessage =
+          stripeError instanceof Error
+            ? stripeError.message
+            : String(stripeError);
+
         // Log failure reason for audit (not stored in DB - column doesn't exist)
-        logger.warn('Payout transfer failed', { payoutId: payoutRecord.id, orderId, failureReason: errorMessage });
-        
+        logger.warn("Payout transfer failed", {
+          payoutId: payoutRecord.id,
+          orderId,
+          failureReason: errorMessage,
+        });
+
         // Update payout record as failed
         await db
           .update(instantPayouts)
           .set({
-            status: 'failed',
+            status: "failed",
           })
           .where(eq(instantPayouts.id, payoutRecord.id));
 
         // Send failure notification
         await db.insert(notifications).values({
           userId,
-          type: 'payout',
-          title: 'Payout Failed',
+          type: "payout",
+          title: "Payout Failed",
           message: `Your payout failed: ${errorMessage}. Please contact support if this continues.`,
           metadata: {
             payoutId: payoutRecord.id,
@@ -561,14 +634,14 @@ export class InstantPayoutService {
 
         return {
           success: false,
-          error: errorMessage || 'Transfer failed',
+          error: errorMessage || "Transfer failed",
         };
       }
     } catch (error: unknown) {
-      logger.warn({ err: error }, 'Error creating instant transfer:');
+      logger.warn({ err: error }, "Error creating instant transfer:");
       return {
         success: false,
-        error: error.message || 'Failed to create transfer',
+        error: error.message || "Failed to create transfer",
       };
     }
   }
@@ -581,7 +654,7 @@ export class InstantPayoutService {
   async requestInstantPayout(
     userId: string,
     amount: number,
-    currency: string = 'usd'
+    currency: string = "usd",
   ): Promise<PayoutResult> {
     // Distributed lock: only one payout per user can be in-flight at a time.
     // Without this, two concurrent requests both pass the balance check and both
@@ -592,10 +665,14 @@ export class InstantPayoutService {
     });
 
     if (lockResult === null) {
-      logger.warn('[Payout] Concurrent payout attempt blocked by distributed lock', { userId, amount });
+      logger.warn(
+        "[Payout] Concurrent payout attempt blocked by distributed lock",
+        { userId, amount },
+      );
       return {
         success: false,
-        error: 'A payout is already being processed for your account. Please wait a moment and try again.',
+        error:
+          "A payout is already being processed for your account. Please wait a moment and try again.",
       };
     }
 
@@ -605,13 +682,13 @@ export class InstantPayoutService {
   private async _executeInstantPayout(
     userId: string,
     amount: number,
-    currency: string
+    currency: string,
   ): Promise<PayoutResult> {
     try {
       if (!stripe) {
         return {
           success: false,
-          error: 'Stripe not configured',
+          error: "Stripe not configured",
         };
       }
 
@@ -620,7 +697,7 @@ export class InstantPayoutService {
       if (!accountVerification.verified) {
         return {
           success: false,
-          error: accountVerification.error || 'Account not verified',
+          error: accountVerification.error || "Account not verified",
         };
       }
 
@@ -636,19 +713,27 @@ export class InstantPayoutService {
       // Perform risk assessment
       const riskAssessment = await this.assessPayoutRisk(userId, amount);
       if (!riskAssessment.approved) {
-        logger.warn('Payout blocked by risk assessment', { userId, amount, riskAssessment });
-        
+        logger.warn("Payout blocked by risk assessment", {
+          userId,
+          amount,
+          riskAssessment,
+        });
+
         await db.insert(notifications).values({
           userId,
-          type: 'payout',
-          title: 'Payout Under Review',
+          type: "payout",
+          title: "Payout Under Review",
           message: `Your payout request of $${amount.toFixed(2)} requires additional review. Our team will process it within 24-48 hours.`,
-          metadata: { amount, riskScore: riskAssessment.score, flags: riskAssessment.flags },
+          metadata: {
+            amount,
+            riskScore: riskAssessment.score,
+            flags: riskAssessment.flags,
+          },
         });
-        
+
         return {
           success: false,
-          error: 'Payout requires manual review due to risk assessment',
+          error: "Payout requires manual review due to risk assessment",
           riskScore: riskAssessment.score,
         };
       }
@@ -660,7 +745,7 @@ export class InstantPayoutService {
           userId,
           amountCents: Math.round(amount * 100),
           currency,
-          status: 'pending',
+          status: "pending",
           riskScore: riskAssessment.score,
           riskFlags: riskAssessment.flags,
           metadata: { requestedAt: new Date().toISOString() },
@@ -670,10 +755,10 @@ export class InstantPayoutService {
       // Record ledger entry for the payout
       await this.recordLedgerEntry({
         userId,
-        entryType: 'payout',
+        entryType: "payout",
         amountCents: Math.round(amount * 100),
         currency,
-        referenceType: 'payout',
+        referenceType: "payout",
         referenceId: payoutRecord.id,
         description: `Payout withdrawal request`,
       });
@@ -691,7 +776,7 @@ export class InstantPayoutService {
           },
           {
             stripeAccount: accountVerification.accountId,
-          }
+          },
         );
 
         await db
@@ -699,7 +784,7 @@ export class InstantPayoutService {
           .set({
             stripePayoutId: payout.id,
             status: payout.status,
-            metadata: { 
+            metadata: {
               requestedAt: new Date().toISOString(),
               estimatedArrival: payout.arrival_date,
               method: payout.method,
@@ -709,8 +794,8 @@ export class InstantPayoutService {
 
         await db.insert(notifications).values({
           userId,
-          type: 'payout',
-          title: 'Withdrawal Initiated',
+          type: "payout",
+          title: "Withdrawal Initiated",
           message: `Your withdrawal of $${amount.toFixed(2)} has been initiated and will arrive within minutes.`,
           metadata: {
             payoutId: payoutRecord.id,
@@ -728,34 +813,37 @@ export class InstantPayoutService {
           riskScore: riskAssessment.score,
         };
       } catch (stripeError: unknown) {
-        const errorMessage = stripeError instanceof Error ? stripeError.message : String(stripeError);
-        
+        const errorMessage =
+          stripeError instanceof Error
+            ? stripeError.message
+            : String(stripeError);
+
         await db
           .update(instantPayouts)
           .set({
-            status: 'failed',
+            status: "failed",
             failureReason: errorMessage,
           })
           .where(eq(instantPayouts.id, payoutRecord.id));
 
         await db.insert(notifications).values({
           userId,
-          type: 'payout',
-          title: 'Withdrawal Failed',
+          type: "payout",
+          title: "Withdrawal Failed",
           message: `Your withdrawal request failed: ${errorMessage}`,
           metadata: { payoutId: payoutRecord.id, error: errorMessage },
         });
 
         return {
           success: false,
-          error: errorMessage || 'Payout failed',
+          error: errorMessage || "Payout failed",
         };
       }
     } catch (error: unknown) {
-      logger.warn({ err: error }, 'Error requesting instant payout:');
+      logger.warn({ err: error }, "Error requesting instant payout:");
       return {
         success: false,
-        error: (error as Error).message || 'Failed to request payout',
+        error: (error as Error).message || "Failed to request payout",
       };
     }
   }
@@ -768,11 +856,16 @@ export class InstantPayoutService {
     totalAmount: number,
     splits: Array<{ userId: string; percentage: number; role?: string }>,
     platformFeePercentage: number = 10,
-    currency: string = 'usd'
-  ): Promise<{ success: boolean; splitPaymentIds?: string[]; transfers?: string[]; errors?: string[] }> {
+    currency: string = "usd",
+  ): Promise<{
+    success: boolean;
+    splitPaymentIds?: string[];
+    transfers?: string[];
+    errors?: string[];
+  }> {
     try {
       if (!stripe) {
-        return { success: false, errors: ['Stripe not configured'] };
+        return { success: false, errors: ["Stripe not configured"] };
       }
 
       const platformFee = totalAmount * (platformFeePercentage / 100);
@@ -784,19 +877,21 @@ export class InstantPayoutService {
 
       // Record platform fee in ledger
       await this.recordLedgerEntry({
-        userId: 'platform',
-        entryType: 'platform_fee',
+        userId: "platform",
+        entryType: "platform_fee",
         amountCents: Math.round(platformFee * 100),
         currency,
-        referenceType: 'order',
+        referenceType: "order",
         referenceId: orderId,
         description: `Platform fee for order ${orderId}`,
       });
 
       for (const split of splits) {
-        const accountVerification = await this.verifyStripeAccount(split.userId);
+        const accountVerification = await this.verifyStripeAccount(
+          split.userId,
+        );
         const splitAmount = distributableAmount * (split.percentage / 100);
-        
+
         // Create split payment record
         const [splitRecord] = await db
           .insert(splitPayments)
@@ -807,17 +902,20 @@ export class InstantPayoutService {
             percentage: split.percentage,
             amountCents: Math.round(splitAmount * 100),
             currency,
-            status: 'pending',
+            status: "pending",
           })
           .returning();
-        
+
         splitPaymentIds.push(splitRecord.id);
 
         if (!accountVerification.verified || !accountVerification.accountId) {
           errors.push(`User ${split.userId} not onboarded to Stripe Connect`);
           await db
             .update(splitPayments)
-            .set({ status: 'pending_onboarding', failureReason: 'User not onboarded' })
+            .set({
+              status: "pending_onboarding",
+              failureReason: "User not onboarded",
+            })
             .where(eq(splitPayments.id, splitRecord.id));
           continue;
         }
@@ -827,42 +925,54 @@ export class InstantPayoutService {
             amount: Math.round(splitAmount * 100),
             currency,
             destination: accountVerification.accountId,
-            description: `Split payment for Order #${orderId} (${split.role || 'collaborator'})`,
+            description: `Split payment for Order #${orderId} (${split.role || "collaborator"})`,
             metadata: {
               orderId,
               userId: split.userId,
               percentage: split.percentage.toString(),
-              role: split.role || 'collaborator',
+              role: split.role || "collaborator",
               splitPaymentId: splitRecord.id,
             },
           });
 
           transfers.push(transfer.id);
-          
+
           await db
             .update(splitPayments)
-            .set({ status: 'completed', stripeTransferId: transfer.id, processedAt: new Date() })
+            .set({
+              status: "completed",
+              stripeTransferId: transfer.id,
+              processedAt: new Date(),
+            })
             .where(eq(splitPayments.id, splitRecord.id));
 
           // Record ledger entry
           await this.recordLedgerEntry({
             userId: split.userId,
-            entryType: 'split_payment',
+            entryType: "split_payment",
             amountCents: Math.round(splitAmount * 100),
             currency,
-            referenceType: 'split_payment',
+            referenceType: "split_payment",
             referenceId: splitRecord.id,
             description: `Split payment from order ${orderId} (${split.percentage}%)`,
-            metadata: { orderId, percentage: split.percentage, role: split.role },
+            metadata: {
+              orderId,
+              percentage: split.percentage,
+              role: split.role,
+            },
           });
 
-          logger.info('Split transfer created:', { orderId, userId: split.userId, amount: splitAmount });
+          logger.info("Split transfer created:", {
+            orderId,
+            userId: split.userId,
+            amount: splitAmount,
+          });
         } catch (transferError: unknown) {
           const errorMsg = (transferError as Error).message;
           errors.push(`Failed to transfer to ${split.userId}: ${errorMsg}`);
           await db
             .update(splitPayments)
-            .set({ status: 'failed', failureReason: errorMsg })
+            .set({ status: "failed", failureReason: errorMsg })
             .where(eq(splitPayments.id, splitRecord.id));
         }
       }
@@ -874,8 +984,11 @@ export class InstantPayoutService {
         errors: errors.length > 0 ? errors : undefined,
       };
     } catch (error: unknown) {
-      logger.warn({ err: error }, 'Error creating enhanced split payment:');
-      return { success: false, errors: [(error as Error).message || 'Failed to create split payment'] };
+      logger.warn({ err: error }, "Error creating enhanced split payment:");
+      return {
+        success: false,
+        errors: [(error as Error).message || "Failed to create split payment"],
+      };
     }
   }
 
@@ -885,7 +998,7 @@ export class InstantPayoutService {
   async generatePayoutReport(
     userId: string,
     startDate: Date,
-    endDate: Date
+    endDate: Date,
   ): Promise<{
     totalPayouts: number;
     totalAmount: number;
@@ -906,8 +1019,8 @@ export class InstantPayoutService {
           and(
             eq(instantPayouts.userId, userId),
             gte(instantPayouts.createdAt, startDate),
-            lte(instantPayouts.createdAt, endDate)
-          )
+            lte(instantPayouts.createdAt, endDate),
+          ),
         )
         .orderBy(desc(instantPayouts.createdAt));
 
@@ -920,7 +1033,7 @@ export class InstantPayoutService {
 
       for (const payout of payouts) {
         const amount = payout.amountCents / 100;
-        const status = payout.status || 'unknown';
+        const status = payout.status || "unknown";
         const month = new Date(payout.createdAt!).toISOString().slice(0, 7);
 
         if (!byStatus[status]) byStatus[status] = { count: 0, amount: 0 };
@@ -931,12 +1044,12 @@ export class InstantPayoutService {
         byMonth[month].count++;
         byMonth[month].amount += amount;
 
-        if (status === 'completed') {
+        if (status === "completed") {
           completedPayouts++;
           totalAmount += amount;
-        } else if (status === 'failed') {
+        } else if (status === "failed") {
           failedPayouts++;
-        } else if (status === 'pending' || status === 'in_transit') {
+        } else if (status === "pending" || status === "in_transit") {
           pendingPayouts++;
         }
       }
@@ -951,8 +1064,8 @@ export class InstantPayoutService {
         summary: { byStatus, byMonth },
       };
     } catch (error: unknown) {
-      logger.warn({ err: error }, 'Error generating payout report:');
-      throw new Error('Failed to generate payout report');
+      logger.warn({ err: error }, "Error generating payout report:");
+      throw new Error("Failed to generate payout report");
     }
   }
 
@@ -963,7 +1076,7 @@ export class InstantPayoutService {
   async requestInstantPayoutLegacy(
     userId: string,
     amount: number,
-    currency: string = 'usd'
+    currency: string = "usd",
   ): Promise<PayoutResult> {
     return this.requestInstantPayout(userId, amount, currency);
   }
@@ -971,33 +1084,49 @@ export class InstantPayoutService {
   /**
    * Retry a previously failed payout by re-initiating it with the same amount.
    */
-  async retryFailedPayout(userId: string, payoutId: string): Promise<PayoutResult> {
+  async retryFailedPayout(
+    userId: string,
+    payoutId: string,
+  ): Promise<PayoutResult> {
     try {
       const [payout] = await db
         .select()
         .from(instantPayouts)
-        .where(and(eq(instantPayouts.id, payoutId), eq(instantPayouts.userId, userId)))
+        .where(
+          and(
+            eq(instantPayouts.id, payoutId),
+            eq(instantPayouts.userId, userId),
+          ),
+        )
         .limit(1);
 
       if (!payout) {
-        return { success: false, error: 'Payout not found' };
+        return { success: false, error: "Payout not found" };
       }
 
-      if (payout.status !== 'failed') {
-        return { success: false, error: 'Only failed payouts can be retried' };
+      if (payout.status !== "failed") {
+        return { success: false, error: "Only failed payouts can be retried" };
       }
 
-      return await this.requestInstantPayout(userId, payout.amountCents / 100, payout.currency ?? 'usd');
+      return await this.requestInstantPayout(
+        userId,
+        payout.amountCents / 100,
+        payout.currency ?? "usd",
+      );
     } catch (error: unknown) {
-      logger.warn({ err: error }, 'Error retrying failed payout:');
-      return { success: false, error: 'Failed to retry payout' };
+      logger.warn({ err: error }, "Error retrying failed payout:");
+      return { success: false, error: "Failed to retry payout" };
     }
   }
 
   /**
    * Get payout history for user
    */
-  async getPayoutHistory(userId: string, limit: number = 50, offset: number = 0) {
+  async getPayoutHistory(
+    userId: string,
+    limit: number = 50,
+    offset: number = 0,
+  ) {
     try {
       const payouts = await db
         .select()
@@ -1009,8 +1138,8 @@ export class InstantPayoutService {
 
       return payouts;
     } catch (error: unknown) {
-      logger.warn({ err: error }, 'Error fetching payout history:');
-      throw new Error('Failed to fetch payout history');
+      logger.warn({ err: error }, "Error fetching payout history:");
+      throw new Error("Failed to fetch payout history");
     }
   }
 
@@ -1026,53 +1155,62 @@ export class InstantPayoutService {
         .limit(1);
 
       if (!payout) {
-        throw new Error('Payout not found');
+        throw new Error("Payout not found");
       }
 
       // If we have a Stripe payout ID and it's still pending, check status with Stripe
-      if (payout.stripePayoutId && payout.status === 'pending' && stripe) {
+      if (payout.stripePayoutId && payout.status === "pending" && stripe) {
         try {
           const [user] = await db
-            .select({ stripeConnectedAccountId: users.stripeConnectedAccountId })
+            .select({
+              stripeConnectedAccountId: users.stripeConnectedAccountId,
+            })
             .from(users)
             .where(eq(users.id, payout.userId))
             .limit(1);
 
           if (user?.stripeConnectedAccountId) {
-            const stripePayout = await stripe.payouts.retrieve(payout.stripePayoutId, {
-              stripeAccount: user.stripeConnectedAccountId,
-            });
+            const stripePayout = await stripe.payouts.retrieve(
+              payout.stripePayoutId,
+              {
+                stripeAccount: user.stripeConnectedAccountId,
+              },
+            );
 
             // Update status if changed
             if (stripePayout.status !== payout.status) {
               // Log failure reason for audit (not stored in DB - column doesn't exist)
               if (stripePayout.failure_message) {
-                logger.warn('Payout failure from Stripe', { payoutId, failureReason: stripePayout.failure_message });
+                logger.warn("Payout failure from Stripe", {
+                  payoutId,
+                  failureReason: stripePayout.failure_message,
+                });
               }
-              
+
               await db
                 .update(instantPayouts)
                 .set({
                   status: stripePayout.status,
-                  processedAt: stripePayout.status === 'paid' ? new Date() : null,
+                  processedAt:
+                    stripePayout.status === "paid" ? new Date() : null,
                 })
                 .where(eq(instantPayouts.id, payoutId));
 
               payout.status = stripePayout.status;
-              if (stripePayout.status === 'paid') {
+              if (stripePayout.status === "paid") {
                 payout.processedAt = new Date();
               }
             }
           }
         } catch (stripeError: unknown) {
-          logger.warn('Error checking Stripe payout status:', stripeError);
+          logger.warn("Error checking Stripe payout status:", stripeError);
         }
       }
 
       return payout;
     } catch (error: unknown) {
-      logger.warn({ err: error }, 'Error fetching payout status:');
-      throw new Error('Failed to fetch payout status');
+      logger.warn({ err: error }, "Error fetching payout status:");
+      throw new Error("Failed to fetch payout status");
     }
   }
 
@@ -1091,7 +1229,10 @@ export class InstantPayoutService {
         .limit(1);
 
       if (!payoutRecord) {
-        logger.info('Payout record not found for transfer webhook:', transfer.id);
+        logger.info(
+          "Payout record not found for transfer webhook:",
+          transfer.id,
+        );
         return;
       }
 
@@ -1101,20 +1242,20 @@ export class InstantPayoutService {
       let failureReason: string | null = null;
 
       switch (event.type) {
-        case 'transfer.created':
-          status = 'in_transit';
-          logger.info('Transfer created:', transfer.id);
+        case "transfer.created":
+          status = "in_transit";
+          logger.info("Transfer created:", transfer.id);
           break;
 
-        case 'transfer.paid':
-          status = 'completed';
+        case "transfer.paid":
+          status = "completed";
           processedAt = new Date();
 
           // Send success notification
           await db.insert(notifications).values({
             userId: payoutRecord.userId,
-            type: 'payout',
-            title: 'Money Received!',
+            type: "payout",
+            title: "Money Received!",
             message: `Your payout of $${(payoutRecord.amountCents / 100).toFixed(2)} has been successfully transferred to your bank account.`,
             metadata: {
               payoutId: payoutRecord.id,
@@ -1124,24 +1265,24 @@ export class InstantPayoutService {
           });
           break;
 
-        case 'transfer.failed':
-          status = 'failed';
-          failureReason = transfer.failure_message || 'Transfer failed';
+        case "transfer.failed":
+          status = "failed";
+          failureReason = transfer.failure_message || "Transfer failed";
 
           // Log transfer failure for audit (balance is calculated dynamically from orders/payouts tables)
-          logger.info('Transfer failed - balance calculated dynamically', {
+          logger.info("Transfer failed - balance calculated dynamically", {
             userId: payoutRecord.userId,
             amount: payoutRecord.amountCents / 100,
             payoutId: payoutRecord.id,
             transferId: transfer.id,
-            operation: 'transfer_failed_balance_restored',
+            operation: "transfer_failed_balance_restored",
           });
 
           // Send failure notification
           await db.insert(notifications).values({
             userId: payoutRecord.userId,
-            type: 'payout',
-            title: 'Payout Failed',
+            type: "payout",
+            title: "Payout Failed",
             message: `Your payout of $${(payoutRecord.amountCents / 100).toFixed(2)} failed: ${failureReason}. The amount has been returned to your available balance. Please ensure your bank account is verified.`,
             metadata: {
               payoutId: payoutRecord.id,
@@ -1151,23 +1292,23 @@ export class InstantPayoutService {
           });
           break;
 
-        case 'transfer.reversed':
-          status = 'refunded';
+        case "transfer.reversed":
+          status = "refunded";
 
           // Log transfer reversal for audit (balance is calculated dynamically from orders/payouts tables)
-          logger.info('Transfer reversed - balance calculated dynamically', {
+          logger.info("Transfer reversed - balance calculated dynamically", {
             userId: payoutRecord.userId,
             amount: payoutRecord.amountCents / 100,
             payoutId: payoutRecord.id,
             transferId: transfer.id,
-            operation: 'transfer_reversed_balance_restored',
+            operation: "transfer_reversed_balance_restored",
           });
 
           // Send notification
           await db.insert(notifications).values({
             userId: payoutRecord.userId,
-            type: 'payout',
-            title: 'Payout Reversed',
+            type: "payout",
+            title: "Payout Reversed",
             message: `Your payout of $${(payoutRecord.amountCents / 100).toFixed(2)} was reversed and the funds have been returned to your available balance.`,
             metadata: {
               payoutId: payoutRecord.id,
@@ -1179,9 +1320,13 @@ export class InstantPayoutService {
 
       // Log failure reason for audit (not stored in DB - column doesn't exist)
       if (failureReason) {
-        logger.warn('Transfer webhook failure', { payoutId: payoutRecord.id, transferId: transfer.id, failureReason });
+        logger.warn("Transfer webhook failure", {
+          payoutId: payoutRecord.id,
+          transferId: transfer.id,
+          failureReason,
+        });
       }
-      
+
       // Update payout record
       await db
         .update(instantPayouts)
@@ -1191,7 +1336,7 @@ export class InstantPayoutService {
         })
         .where(eq(instantPayouts.id, payoutRecord.id));
     } catch (error: unknown) {
-      logger.warn({ err: error }, 'Error handling transfer webhook:');
+      logger.warn({ err: error }, "Error handling transfer webhook:");
       throw error;
     }
   }
@@ -1211,21 +1356,22 @@ export class InstantPayoutService {
         .limit(1);
 
       if (!user) {
-        logger.info('User not found for account webhook:', account.id);
+        logger.info("User not found for account webhook:", account.id);
         return;
       }
 
       switch (event.type) {
-        case 'account.updated':
+        case "account.updated":
           // Check if account is now verified and can receive payouts
-          const canReceivePayouts = account.payouts_enabled && account.charges_enabled;
+          const canReceivePayouts =
+            account.payouts_enabled && account.charges_enabled;
 
           if (canReceivePayouts && account.details_submitted) {
             // Send success notification
             await db.insert(notifications).values({
               userId: user.id,
-              type: 'account',
-              title: 'Bank Account Connected!',
+              type: "account",
+              title: "Bank Account Connected!",
               message: `Your bank account has been successfully connected. You can now receive instant payouts when you sell beats.`,
               metadata: {
                 accountId: account.id,
@@ -1237,18 +1383,18 @@ export class InstantPayoutService {
             // Remind user to complete onboarding
             await db.insert(notifications).values({
               userId: user.id,
-              type: 'account',
-              title: 'Complete Bank Account Setup',
+              type: "account",
+              title: "Complete Bank Account Setup",
               message: `Please complete your bank account setup to receive payouts from your sales.`,
               metadata: {
                 accountId: account.id,
-                action: 'complete_onboarding',
+                action: "complete_onboarding",
               },
             });
           }
           break;
 
-        case 'account.application.deauthorized':
+        case "account.application.deauthorized":
           // User has disconnected their account
           await db
             .update(users)
@@ -1260,8 +1406,8 @@ export class InstantPayoutService {
 
           await db.insert(notifications).values({
             userId: user.id,
-            type: 'account',
-            title: 'Bank Account Disconnected',
+            type: "account",
+            title: "Bank Account Disconnected",
             message: `Your bank account has been disconnected. You will not be able to receive payouts until you reconnect it.`,
             metadata: {
               accountId: account.id,
@@ -1270,7 +1416,7 @@ export class InstantPayoutService {
           break;
       }
     } catch (error: unknown) {
-      logger.warn({ err: error }, 'Error handling account webhook:');
+      logger.warn({ err: error }, "Error handling account webhook:");
       throw error;
     }
   }
@@ -1290,7 +1436,7 @@ export class InstantPayoutService {
         .limit(1);
 
       if (!payoutRecord) {
-        logger.info('Payout record not found for webhook:', payout.id);
+        logger.info("Payout record not found for webhook:", payout.id);
         return;
       }
 
@@ -1300,15 +1446,15 @@ export class InstantPayoutService {
       let failureReason: string | null = null;
 
       switch (event.type) {
-        case 'payout.paid':
-          status = 'completed';
+        case "payout.paid":
+          status = "completed";
           processedAt = new Date();
 
           // Send success notification
           await db.insert(notifications).values({
             userId: payoutRecord.userId,
-            type: 'payout',
-            title: 'Withdrawal Completed',
+            type: "payout",
+            title: "Withdrawal Completed",
             message: `Your withdrawal of $${(payoutRecord.amountCents / 100).toFixed(2)} has been completed and is on its way to your bank account.`,
             metadata: {
               payoutId: payoutRecord.id,
@@ -1317,25 +1463,25 @@ export class InstantPayoutService {
           });
           break;
 
-        case 'payout.failed':
-          status = 'failed';
-          failureReason = payout.failure_message || 'Unknown error';
+        case "payout.failed":
+          status = "failed";
+          failureReason = payout.failure_message || "Unknown error";
 
           // Log payout failure for audit (balance is calculated dynamically from orders/payouts tables)
-          logger.info('Payout failed - balance calculated dynamically', {
+          logger.info("Payout failed - balance calculated dynamically", {
             userId: payoutRecord.userId,
             amount: payoutRecord.amountCents / 100,
             payoutId: payoutRecord.id,
             stripePayoutId: payout.id,
             failureReason,
-            operation: 'payout_failed_balance_restored',
+            operation: "payout_failed_balance_restored",
           });
 
           // Send failure notification
           await db.insert(notifications).values({
             userId: payoutRecord.userId,
-            type: 'payout',
-            title: 'Withdrawal Failed',
+            type: "payout",
+            title: "Withdrawal Failed",
             message: `Your withdrawal failed: ${failureReason}. The amount has been returned to your available balance.`,
             metadata: {
               payoutId: payoutRecord.id,
@@ -1344,25 +1490,29 @@ export class InstantPayoutService {
           });
           break;
 
-        case 'payout.canceled':
-          status = 'cancelled';
+        case "payout.canceled":
+          status = "cancelled";
 
           // Log payout cancellation for audit (balance is calculated dynamically from orders/payouts tables)
-          logger.info('Payout canceled - balance calculated dynamically', {
+          logger.info("Payout canceled - balance calculated dynamically", {
             userId: payoutRecord.userId,
             amount: payoutRecord.amountCents / 100,
             payoutId: payoutRecord.id,
             stripePayoutId: payout.id,
-            operation: 'payout_canceled_balance_restored',
+            operation: "payout_canceled_balance_restored",
           });
           break;
       }
 
       // Log failure reason for audit (not stored in DB - column doesn't exist)
       if (failureReason) {
-        logger.warn('Payout webhook failure', { payoutId: payoutRecord.id, stripePayoutId: payout.id, failureReason });
+        logger.warn("Payout webhook failure", {
+          payoutId: payoutRecord.id,
+          stripePayoutId: payout.id,
+          failureReason,
+        });
       }
-      
+
       // Update payout record
       await db
         .update(instantPayouts)
@@ -1372,7 +1522,7 @@ export class InstantPayoutService {
         })
         .where(eq(instantPayouts.id, payoutRecord.id));
     } catch (error: unknown) {
-      logger.warn({ err: error }, 'Error handling payout webhook:');
+      logger.warn({ err: error }, "Error handling payout webhook:");
       throw error;
     }
   }
@@ -1386,19 +1536,24 @@ export class InstantPayoutService {
     amount: number,
     orderId: string,
     platformFeePercentage: number = 10,
-    currency: string = 'usd'
+    currency: string = "usd",
   ): Promise<{ success: boolean; paymentIntentId?: string; error?: string }> {
     try {
       if (!stripe) {
-        return { success: false, error: 'Stripe not configured' };
+        return { success: false, error: "Stripe not configured" };
       }
 
       const accountVerification = await this.verifyStripeAccount(sellerId);
       if (!accountVerification.verified || !accountVerification.accountId) {
-        return { success: false, error: 'Seller must complete Stripe Connect onboarding' };
+        return {
+          success: false,
+          error: "Seller must complete Stripe Connect onboarding",
+        };
       }
 
-      const platformFee = Math.round(amount * 100 * (platformFeePercentage / 100));
+      const platformFee = Math.round(
+        amount * 100 * (platformFeePercentage / 100),
+      );
 
       const paymentIntent = await stripe.paymentIntents.create({
         amount: Math.round(amount * 100),
@@ -1414,15 +1569,23 @@ export class InstantPayoutService {
         },
       });
 
-      logger.info('Destination charge created:', { orderId, sellerId, amount, platformFee });
+      logger.info("Destination charge created:", {
+        orderId,
+        sellerId,
+        amount,
+        platformFee,
+      });
 
       return {
         success: true,
         paymentIntentId: paymentIntent.id,
       };
     } catch (error: unknown) {
-      logger.warn({ err: error }, 'Error creating destination charge:');
-      return { success: false, error: error.message || 'Failed to create destination charge' };
+      logger.warn({ err: error }, "Error creating destination charge:");
+      return {
+        success: false,
+        error: error.message || "Failed to create destination charge",
+      };
     }
   }
 
@@ -1435,11 +1598,11 @@ export class InstantPayoutService {
     totalAmount: number,
     splits: Array<{ userId: string; percentage: number }>,
     platformFeePercentage: number = 10,
-    currency: string = 'usd'
+    currency: string = "usd",
   ): Promise<{ success: boolean; transfers?: string[]; errors?: string[] }> {
     try {
       if (!stripe) {
-        return { success: false, errors: ['Stripe not configured'] };
+        return { success: false, errors: ["Stripe not configured"] };
       }
 
       const platformFee = totalAmount * (platformFeePercentage / 100);
@@ -1449,8 +1612,10 @@ export class InstantPayoutService {
       const errors: string[] = [];
 
       for (const split of splits) {
-        const accountVerification = await this.verifyStripeAccount(split.userId);
-        
+        const accountVerification = await this.verifyStripeAccount(
+          split.userId,
+        );
+
         if (!accountVerification.verified || !accountVerification.accountId) {
           errors.push(`User ${split.userId} not onboarded to Stripe Connect`);
           continue;
@@ -1468,14 +1633,20 @@ export class InstantPayoutService {
               orderId,
               userId: split.userId,
               percentage: split.percentage.toString(),
-              type: 'split_payment',
+              type: "split_payment",
             },
           });
 
           transfers.push(transfer.id);
-          logger.info('Split transfer created:', { orderId, userId: split.userId, amount: splitAmount });
+          logger.info("Split transfer created:", {
+            orderId,
+            userId: split.userId,
+            amount: splitAmount,
+          });
         } catch (transferError: unknown) {
-          errors.push(`Failed to transfer to ${split.userId}: ${transferError.message}`);
+          errors.push(
+            `Failed to transfer to ${split.userId}: ${transferError.message}`,
+          );
         }
       }
 
@@ -1485,31 +1656,38 @@ export class InstantPayoutService {
         errors: errors.length > 0 ? errors : undefined,
       };
     } catch (error: unknown) {
-      logger.warn({ err: error }, 'Error creating split payment:');
-      return { success: false, errors: [error.message || 'Failed to create split payment'] };
+      logger.warn({ err: error }, "Error creating split payment:");
+      return {
+        success: false,
+        errors: [error.message || "Failed to create split payment"],
+      };
     }
   }
 
   /**
    * Get Stripe Express Dashboard link for seller to view their account
    */
-  async getExpressDashboardLink(userId: string): Promise<{ url?: string; error?: string }> {
+  async getExpressDashboardLink(
+    userId: string,
+  ): Promise<{ url?: string; error?: string }> {
     try {
       if (!stripe) {
-        return { error: 'Stripe not configured' };
+        return { error: "Stripe not configured" };
       }
 
       const accountVerification = await this.verifyStripeAccount(userId);
       if (!accountVerification.verified || !accountVerification.accountId) {
-        return { error: 'No verified Stripe account found' };
+        return { error: "No verified Stripe account found" };
       }
 
-      const loginLink = await stripe.accounts.createLoginLink(accountVerification.accountId);
-      
+      const loginLink = await stripe.accounts.createLoginLink(
+        accountVerification.accountId,
+      );
+
       return { url: loginLink.url };
     } catch (error: unknown) {
-      logger.warn({ err: error }, 'Error creating dashboard link:');
-      return { error: error.message || 'Failed to create dashboard link' };
+      logger.warn({ err: error }, "Error creating dashboard link:");
+      return { error: error.message || "Failed to create dashboard link" };
     }
   }
 
@@ -1526,7 +1704,7 @@ export class InstantPayoutService {
   }> {
     try {
       const balance = await this.calculateAvailableBalance(userId);
-      
+
       const now = new Date();
       const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 
@@ -1534,15 +1712,19 @@ export class InstantPayoutService {
         sql`SELECT COALESCE(SUM(amount), 0) as monthly_earnings, COUNT(*) as monthly_sales
             FROM orders 
             WHERE seller_id = ${userId} AND status = 'completed'
-            AND created_at >= ${startOfMonth.toISOString()}`
+            AND created_at >= ${startOfMonth.toISOString()}`,
       );
-      
-      const thisMonthEarnings = Number(monthlyEarningsResult.rows?.[0]?.monthly_earnings || 0);
-      const monthlyCount = Number(monthlyEarningsResult.rows?.[0]?.monthly_sales || 0);
+
+      const thisMonthEarnings = Number(
+        monthlyEarningsResult.rows?.[0]?.monthly_earnings || 0,
+      );
+      const monthlyCount = Number(
+        monthlyEarningsResult.rows?.[0]?.monthly_sales || 0,
+      );
 
       const totalSalesResult = await db.execute(
         sql`SELECT COUNT(*) as total_sales FROM orders 
-            WHERE seller_id = ${userId} AND status = 'completed'`
+            WHERE seller_id = ${userId} AND status = 'completed'`,
       );
       const totalSales = Number(totalSalesResult.rows?.[0]?.total_sales || 0);
 
@@ -1552,11 +1734,12 @@ export class InstantPayoutService {
         pendingPayouts: balance.pendingBalance,
         availableBalance: balance.availableBalance,
         totalSales,
-        averageOrderValue: totalSales > 0 ? balance.totalEarnings / totalSales : 0,
+        averageOrderValue:
+          totalSales > 0 ? balance.totalEarnings / totalSales : 0,
       };
     } catch (error: unknown) {
-      logger.warn({ err: error }, 'Error getting earnings summary:');
-      throw new Error('Failed to get earnings summary');
+      logger.warn({ err: error }, "Error getting earnings summary:");
+      throw new Error("Failed to get earnings summary");
     }
   }
 }

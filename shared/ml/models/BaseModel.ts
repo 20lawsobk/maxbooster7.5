@@ -3,8 +3,13 @@
  * Provides common functionality for training, prediction, and persistence
  */
 
-import * as tf from '@tensorflow/tfjs';
-import type { ModelMetadata, TrainingOptions, PredictionResult, EvaluationMetrics } from '../types.js';
+import * as tf from "@tensorflow/tfjs";
+import type {
+  ModelMetadata,
+  TrainingOptions,
+  PredictionResult,
+  EvaluationMetrics,
+} from "../types.js";
 
 export abstract class BaseModel {
   protected model: tf.LayersModel | null = null;
@@ -15,9 +20,9 @@ export abstract class BaseModel {
   constructor(metadata: Partial<ModelMetadata>) {
     this.metadata = {
       id: metadata.id || crypto.randomUUID(),
-      name: metadata.name || 'UnnamedModel',
-      version: metadata.version || '1.0.0',
-      type: metadata.type || 'regression',
+      name: metadata.name || "UnnamedModel",
+      version: metadata.version || "1.0.0",
+      type: metadata.type || "regression",
       inputShape: metadata.inputShape || [],
       outputShape: metadata.outputShape || [],
       createdAt: metadata.createdAt || new Date(),
@@ -58,14 +63,14 @@ export abstract class BaseModel {
   public async train(
     inputs: number[][] | tf.Tensor,
     labels: number[] | number[][] | tf.Tensor,
-    options: TrainingOptions
+    options: TrainingOptions,
   ): Promise<void> {
     if (!this.model) {
       await this.initialize();
     }
 
     if (!this.model) {
-      throw new Error('Model initialization failed');
+      throw new Error("Model initialization failed");
     }
 
     const inputTensor = Array.isArray(inputs) ? tf.tensor(inputs) : inputs;
@@ -77,17 +82,19 @@ export abstract class BaseModel {
         batchSize: options.batchSize,
         validationSplit: options.validationSplit || 0.2,
         verbose: options.verbose ? 1 : 0,
-        callbacks: options.earlyStopping ? [
-          tf.callbacks.earlyStopping({ patience: 10, monitor: 'val_loss' })
-        ] : undefined,
+        callbacks: options.earlyStopping
+          ? [tf.callbacks.earlyStopping({ patience: 10, monitor: "val_loss" })]
+          : undefined,
       });
 
       // Update metadata
       this.metadata.lastTrained = new Date();
       const finalEpoch = history.history.loss?.length || 1;
       this.metadata.loss = Number(history.history.loss?.[finalEpoch - 1]) || 0;
-      this.metadata.accuracy = Number(history.history.acc?.[finalEpoch - 1]) || 
-                              Number(history.history.accuracy?.[finalEpoch - 1]) || 0;
+      this.metadata.accuracy =
+        Number(history.history.acc?.[finalEpoch - 1]) ||
+        Number(history.history.accuracy?.[finalEpoch - 1]) ||
+        0;
 
       this.isTrained = true;
     } finally {
@@ -102,7 +109,7 @@ export abstract class BaseModel {
    */
   public async predict(input: any): Promise<PredictionResult> {
     if (!this.model || !this.isTrained) {
-      throw new Error('Model must be trained before making predictions');
+      throw new Error("Model must be trained before making predictions");
     }
 
     const inputTensor = this.preprocessInput(input);
@@ -135,18 +142,25 @@ export abstract class BaseModel {
    */
   public async evaluate(
     testInputs: number[][] | tf.Tensor,
-    testLabels: number[] | number[][] | tf.Tensor
+    testLabels: number[] | number[][] | tf.Tensor,
   ): Promise<EvaluationMetrics> {
     if (!this.model || !this.isTrained) {
-      throw new Error('Model must be trained before evaluation');
+      throw new Error("Model must be trained before evaluation");
     }
 
-    const inputTensor = Array.isArray(testInputs) ? tf.tensor(testInputs) : testInputs;
-    const labelTensor = Array.isArray(testLabels) ? tf.tensor(testLabels) : testLabels;
+    const inputTensor = Array.isArray(testInputs)
+      ? tf.tensor(testInputs)
+      : testInputs;
+    const labelTensor = Array.isArray(testLabels)
+      ? tf.tensor(testLabels)
+      : testLabels;
 
     try {
-      const result = await this.model.evaluate(inputTensor, labelTensor) as tf.Scalar[];
-      
+      const result = (await this.model.evaluate(
+        inputTensor,
+        labelTensor,
+      )) as tf.Scalar[];
+
       const loss = await result[0].data();
       const accuracy = result.length > 1 ? await result[1].data() : [0];
 
@@ -165,11 +179,11 @@ export abstract class BaseModel {
    */
   public async save(path: string): Promise<void> {
     if (!this.model) {
-      throw new Error('No model to save');
+      throw new Error("No model to save");
     }
 
     await this.model.save(path);
-    
+
     // Save metadata
     const metadataPath = `${path}/metadata.json`;
     // Note: In browser, this would save to IndexedDB
@@ -193,7 +207,7 @@ export abstract class BaseModel {
    */
   public summary(): void {
     if (!this.model) {
-      console.log('Model not initialized');
+      console.log("Model not initialized");
       return;
     }
 

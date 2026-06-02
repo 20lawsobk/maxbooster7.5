@@ -1,9 +1,22 @@
-import { logger } from '@/lib/logger';
-import React, { createContext, useContext, useCallback, useEffect, useState, useRef } from 'react';
-import { UndoManager, getUndoManager } from '@/lib/undo/UndoManager';
-import { UndoableAction, UndoState, ActionType, ActionCategory, ActionMetadata } from '@/lib/undo/types';
-import { UndoToast } from './UndoToast';
-import { apiRequest } from '@/lib/queryClient';
+import { logger } from "@/lib/logger";
+import React, {
+  createContext,
+  useContext,
+  useCallback,
+  useEffect,
+  useState,
+  useRef,
+} from "react";
+import { UndoManager, getUndoManager } from "@/lib/undo/UndoManager";
+import {
+  UndoableAction,
+  UndoState,
+  ActionType,
+  ActionCategory,
+  ActionMetadata,
+} from "@/lib/undo/types";
+import { UndoToast } from "./UndoToast";
+import { apiRequest } from "@/lib/queryClient";
 
 export interface RecoveryPoint {
   id: string;
@@ -22,7 +35,9 @@ export interface GlobalUndoState extends UndoState {
 
 export interface GlobalUndoContextValue {
   state: GlobalUndoState;
-  executeAction: <T>(action: Omit<UndoableAction<T>, 'id' | 'isUndone' | 'result'>) => Promise<T>;
+  executeAction: <T>(
+    action: Omit<UndoableAction<T>, "id" | "isUndone" | "result">,
+  ) => Promise<T>;
   undo: () => Promise<void>;
   redo: () => Promise<void>;
   canUndo: boolean;
@@ -36,7 +51,10 @@ export interface GlobalUndoContextValue {
   getActionById: (id: string) => UndoableAction | undefined;
   showUndoToast: boolean;
   dismissUndoToast: () => void;
-  createRecoveryPoint: (name: string, description?: string) => Promise<RecoveryPoint>;
+  createRecoveryPoint: (
+    name: string,
+    description?: string,
+  ) => Promise<RecoveryPoint>;
   getRecoveryPoints: () => RecoveryPoint[];
   restoreToPoint: (pointId: string) => Promise<void>;
   deleteRecoveryPoint: (pointId: string) => Promise<void>;
@@ -64,7 +82,7 @@ export interface GlobalUndoProviderProps {
   maxHistorySize?: number;
   persistToStorage?: boolean;
   showToast?: boolean;
-  toastPosition?: 'top' | 'bottom';
+  toastPosition?: "top" | "bottom";
   toastAutoHideDuration?: number;
   enableKeyboardShortcuts?: boolean;
   autoRecoveryInterval?: number;
@@ -76,7 +94,7 @@ export function GlobalUndoProvider({
   maxHistorySize = 100,
   persistToStorage = true,
   showToast = true,
-  toastPosition = 'bottom',
+  toastPosition = "bottom",
   toastAutoHideDuration = 5000,
   enableKeyboardShortcuts = true,
   autoRecoveryInterval = 300000,
@@ -104,7 +122,7 @@ export function GlobalUndoProvider({
           ...prev,
           lastAction: action,
         }));
-        
+
         if (action.metadata.isDestructive) {
           setShowUndoToast(true);
           if (toastTimeoutRef.current) {
@@ -137,7 +155,10 @@ export function GlobalUndoProvider({
       autoRecoveryRef.current = setInterval(() => {
         const history = undoManagerRef.current?.getHistory() || [];
         if (history.length > 0) {
-          createRecoveryPoint('Auto-recovery point', 'Automatically created recovery point');
+          createRecoveryPoint(
+            "Auto-recovery point",
+            "Automatically created recovery point",
+          );
         }
       }, autoRecoveryInterval);
 
@@ -155,14 +176,14 @@ export function GlobalUndoProvider({
     const handleKeyDown = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement;
       if (
-        target.tagName === 'INPUT' ||
-        target.tagName === 'TEXTAREA' ||
+        target.tagName === "INPUT" ||
+        target.tagName === "TEXTAREA" ||
         target.isContentEditable
       ) {
         return;
       }
 
-      if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
+      if ((e.ctrlKey || e.metaKey) && e.key === "z") {
         e.preventDefault();
         if (e.shiftKey) {
           redo();
@@ -171,45 +192,49 @@ export function GlobalUndoProvider({
         }
       }
 
-      if ((e.ctrlKey || e.metaKey) && e.key === 'y') {
+      if ((e.ctrlKey || e.metaKey) && e.key === "y") {
         e.preventDefault();
         redo();
       }
     };
 
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
   }, [enableKeyboardShortcuts]);
 
   const loadRecoveryPoints = async () => {
     try {
-      const response = await apiRequest('GET', '/api/undo/restore-points');
+      const response = await apiRequest("GET", "/api/undo/restore-points");
       const data = await response.json();
       if (data.success && data.restorePoints) {
         setState((prev) => ({
           ...prev,
-          recoveryPoints: data.restorePoints.map((rp: Record<string, unknown>) => ({
-            id: rp.id,
-            name: rp.name,
-            description: rp.description,
-            createdAt: new Date(rp.createdAt).getTime(),
-            actionId: rp.actionId,
-          })),
+          recoveryPoints: data.restorePoints.map(
+            (rp: Record<string, unknown>) => ({
+              id: rp.id,
+              name: rp.name,
+              description: rp.description,
+              createdAt: new Date(rp.createdAt).getTime(),
+              actionId: rp.actionId,
+            }),
+          ),
         }));
       }
     } catch (error) {
-      logger.warn('Failed to load recovery points:', error);
+      logger.warn("Failed to load recovery points:", error);
     }
   };
 
   const executeAction = useCallback(
-    async <T,>(action: Omit<UndoableAction<T>, 'id' | 'isUndone' | 'result'>): Promise<T> => {
+    async <T,>(
+      action: Omit<UndoableAction<T>, "id" | "isUndone" | "result">,
+    ): Promise<T> => {
       if (!undoManagerRef.current) {
-        throw new Error('UndoManager not initialized');
+        throw new Error("UndoManager not initialized");
       }
       return undoManagerRef.current.executeAction(action);
     },
-    []
+    [],
   );
 
   const undo = useCallback(async () => {
@@ -247,7 +272,7 @@ export function GlobalUndoProvider({
   }, []);
 
   const startGroup = useCallback((name: string) => {
-    return undoManagerRef.current?.startGroup(name) || '';
+    return undoManagerRef.current?.startGroup(name) || "";
   }, []);
 
   const endGroup = useCallback((groupId: string) => {
@@ -269,68 +294,81 @@ export function GlobalUndoProvider({
     }
   }, []);
 
-  const createRecoveryPoint = useCallback(async (name: string, description?: string): Promise<RecoveryPoint> => {
-    try {
-      const response = await apiRequest('POST', '/api/undo/create-restore-point', {
-        name,
-        description,
-      });
-      const data = await response.json();
-      
-      const history = undoManagerRef.current?.getHistory() || [];
-      const lastAction = history[history.length - 1];
-      
-      const newPoint: RecoveryPoint = {
-        id: data.restorePointId,
-        name,
-        description,
-        createdAt: Date.now(),
-        actionId: lastAction?.id || '',
-      };
+  const createRecoveryPoint = useCallback(
+    async (name: string, description?: string): Promise<RecoveryPoint> => {
+      try {
+        const response = await apiRequest(
+          "POST",
+          "/api/undo/create-restore-point",
+          {
+            name,
+            description,
+          },
+        );
+        const data = await response.json();
 
-      setState((prev) => ({
-        ...prev,
-        recoveryPoints: [newPoint, ...prev.recoveryPoints].slice(0, 20),
-        lastAutoRecoveryAt: Date.now(),
-      }));
+        const history = undoManagerRef.current?.getHistory() || [];
+        const lastAction = history[history.length - 1];
 
-      return newPoint;
-    } catch (error) {
-      logger.error('Failed to create recovery point:', error);
-      throw error;
-    }
-  }, []);
+        const newPoint: RecoveryPoint = {
+          id: data.restorePointId,
+          name,
+          description,
+          createdAt: Date.now(),
+          actionId: lastAction?.id || "",
+        };
+
+        setState((prev) => ({
+          ...prev,
+          recoveryPoints: [newPoint, ...prev.recoveryPoints].slice(0, 20),
+          lastAutoRecoveryAt: Date.now(),
+        }));
+
+        return newPoint;
+      } catch (error) {
+        logger.error("Failed to create recovery point:", error);
+        throw error;
+      }
+    },
+    [],
+  );
 
   const getRecoveryPoints = useCallback(() => {
     return state.recoveryPoints;
   }, [state.recoveryPoints]);
 
-  const restoreToPoint = useCallback(async (pointId: string) => {
-    try {
-      const response = await apiRequest('POST', `/api/undo/restore/${pointId}`);
-      const data = await response.json();
-      
-      if (data.success) {
-        const point = state.recoveryPoints.find((p) => p.id === pointId);
-        if (point && point.actionId) {
-          await jumpToAction(point.actionId);
+  const restoreToPoint = useCallback(
+    async (pointId: string) => {
+      try {
+        const response = await apiRequest(
+          "POST",
+          `/api/undo/restore/${pointId}`,
+        );
+        const data = await response.json();
+
+        if (data.success) {
+          const point = state.recoveryPoints.find((p) => p.id === pointId);
+          if (point && point.actionId) {
+            await jumpToAction(point.actionId);
+          }
         }
+      } catch (error) {
+        logger.error("Failed to restore to point:", error);
+        throw error;
       }
-    } catch (error) {
-      logger.error('Failed to restore to point:', error);
-      throw error;
-    }
-  }, [state.recoveryPoints]);
+    },
+    [state.recoveryPoints],
+  );
 
   const deleteRecoveryPoint = useCallback(async (pointId: string) => {
     try {
-      await apiRequest('DELETE', `/api/undo/restore-points/${pointId}`);
+      await apiRequest("DELETE", `/api/undo/restore-points/${pointId}`);
       setState((prev) => ({
         ...prev,
         recoveryPoints: prev.recoveryPoints.filter((p) => p.id !== pointId),
       }));
     } catch (error) {
-      logger.error('Failed to delete recovery point:', error);
+      logger.error("Failed to delete recovery point:", error);
       throw error;
     }
   }, []);
@@ -342,45 +380,51 @@ export function GlobalUndoProvider({
     }));
   }, []);
 
-  const syncToBackend = useCallback(async (action: UndoableAction) => {
-    if (!shouldSyncToBackend) return;
-    
-    try {
-      await apiRequest('POST', '/api/undo/track-action', {
-        type: action.type,
-        category: action.metadata.category,
-        module: action.metadata.module,
-        description: action.metadata.description,
-        entityId: action.metadata.entityId,
-        entityType: action.metadata.entityType,
-        previousState: action.metadata.previousState,
-        newState: action.metadata.newState,
-        isDestructive: action.metadata.isDestructive,
-      });
-    } catch (error) {
-      logger.warn('Failed to sync action to backend:', error);
-    }
-  }, [shouldSyncToBackend]);
+  const syncToBackend = useCallback(
+    async (action: UndoableAction) => {
+      if (!shouldSyncToBackend) return;
 
-  const jumpToAction = useCallback(async (actionId: string) => {
-    const history = undoManagerRef.current?.getHistory() || [];
-    const actionIndex = history.findIndex((a) => a.id === actionId);
-    if (actionIndex === -1) return;
-
-    const currentIndex = history.length - 1;
-    const stepsToUndo = currentIndex - actionIndex;
-
-    if (stepsToUndo > 0) {
-      for (let i = 0; i < stepsToUndo; i++) {
-        await undo();
+      try {
+        await apiRequest("POST", "/api/undo/track-action", {
+          type: action.type,
+          category: action.metadata.category,
+          module: action.metadata.module,
+          description: action.metadata.description,
+          entityId: action.metadata.entityId,
+          entityType: action.metadata.entityType,
+          previousState: action.metadata.previousState,
+          newState: action.metadata.newState,
+          isDestructive: action.metadata.isDestructive,
+        });
+      } catch (error) {
+        logger.warn("Failed to sync action to backend:", error);
       }
-    } else if (stepsToUndo < 0) {
-      const stepsToRedo = Math.abs(stepsToUndo);
-      for (let i = 0; i < stepsToRedo; i++) {
-        await redo();
+    },
+    [shouldSyncToBackend],
+  );
+
+  const jumpToAction = useCallback(
+    async (actionId: string) => {
+      const history = undoManagerRef.current?.getHistory() || [];
+      const actionIndex = history.findIndex((a) => a.id === actionId);
+      if (actionIndex === -1) return;
+
+      const currentIndex = history.length - 1;
+      const stepsToUndo = currentIndex - actionIndex;
+
+      if (stepsToUndo > 0) {
+        for (let i = 0; i < stepsToUndo; i++) {
+          await undo();
+        }
+      } else if (stepsToUndo < 0) {
+        const stepsToRedo = Math.abs(stepsToUndo);
+        for (let i = 0; i < stepsToRedo; i++) {
+          await redo();
+        }
       }
-    }
-  }, [undo, redo]);
+    },
+    [undo, redo],
+  );
 
   const contextValue: GlobalUndoContextValue = {
     state,
@@ -413,7 +457,9 @@ export function GlobalUndoProvider({
       {showToast && (
         <UndoToast
           autoHideDuration={toastAutoHideDuration}
-          className={toastPosition === 'top' ? 'top-4 bottom-auto' : 'bottom-4 top-auto'}
+          className={
+            toastPosition === "top" ? "top-4 bottom-auto" : "bottom-4 top-auto"
+          }
         />
       )}
     </GlobalUndoContext.Provider>
@@ -423,7 +469,9 @@ export function GlobalUndoProvider({
 export function useGlobalUndoContext(): GlobalUndoContextValue {
   const context = useContext(GlobalUndoContext);
   if (!context) {
-    throw new Error('useGlobalUndoContext must be used within a GlobalUndoProvider');
+    throw new Error(
+      "useGlobalUndoContext must be used within a GlobalUndoProvider",
+    );
   }
   return context;
 }

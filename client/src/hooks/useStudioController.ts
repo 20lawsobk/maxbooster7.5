@@ -1,15 +1,15 @@
-import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
-import { useQueryClient, useMutation } from '@tanstack/react-query';
-import { apiRequest } from '@/lib/queryClient';
-import type { InsertStudioTrack, InsertAudioClip } from '@shared/schema';
-import AudioEngine from '@/lib/audioEngine';
-import { useStudioStore } from '@/lib/studioStore';
-import { logger } from '@/lib/logger';
+import { useState, useCallback, useEffect, useRef, useMemo } from "react";
+import { useQueryClient, useMutation } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
+import type { InsertStudioTrack, InsertAudioClip } from "@shared/schema";
+import AudioEngine from "@/lib/audioEngine";
+import { useStudioStore } from "@/lib/studioStore";
+import { logger } from "@/lib/logger";
 
 export interface StudioTrack {
   id: string;
   name: string;
-  trackType: 'audio' | 'midi' | 'instrument';
+  trackType: "audio" | "midi" | "instrument";
   trackNumber: number;
   volume: number;
   pan: number;
@@ -52,7 +52,10 @@ export interface StudioControllerOptions {
   onError?: (error: Error) => void;
 }
 
-export function useStudioController({ projectId, onError }: StudioControllerOptions) {
+export function useStudioController({
+  projectId,
+  onError,
+}: StudioControllerOptions) {
   const queryClient = useQueryClient();
 
   // Audio Engine instance (singleton)
@@ -81,14 +84,20 @@ export function useStudioController({ projectId, onError }: StudioControllerOpti
   const [selectedTrackId, setSelectedTrackId] = useState<string | null>(null);
 
   // Clips state (trackId -> AudioClipData[])
-  const [trackClips, setTrackClips] = useState<Map<string, AudioClipData[]>>(new Map());
+  const [trackClips, setTrackClips] = useState<Map<string, AudioClipData[]>>(
+    new Map(),
+  );
 
   // RAF for time updates
   const animationFrameRef = useRef<number>();
-  
+
   // Meter levels state (only active when playing)
-  const [trackMeterLevels, setTrackMeterLevels] = useState<Map<string, [number, number]>>(new Map());
-  const [masterMeterLevels, setMasterMeterLevels] = useState<[number, number]>([0, 0]);
+  const [trackMeterLevels, setTrackMeterLevels] = useState<
+    Map<string, [number, number]>
+  >(new Map());
+  const [masterMeterLevels, setMasterMeterLevels] = useState<[number, number]>([
+    0, 0,
+  ]);
   const meterAnimationRef = useRef<number>();
 
   // Transport state getter for compatibility
@@ -108,17 +117,25 @@ export function useStudioController({ projectId, onError }: StudioControllerOpti
     try {
       // Check if Web Audio API is supported before creating instance
       if (!AudioEngine.isSupported()) {
-        logger.warn('Web Audio API not supported in this browser');
+        logger.warn("Web Audio API not supported in this browser");
         if (onError) {
-          onError(new Error('Web Audio API is not supported in this browser. Please use a modern browser like Chrome, Firefox, or Safari.'));
+          onError(
+            new Error(
+              "Web Audio API is not supported in this browser. Please use a modern browser like Chrome, Firefox, or Safari.",
+            ),
+          );
         }
         return;
       }
       audioEngineRef.current = AudioEngine.getInstance();
     } catch (error) {
-      logger.error('Failed to get AudioEngine instance:', error);
+      logger.error("Failed to get AudioEngine instance:", error);
       if (onError) {
-        onError(error instanceof Error ? error : new Error('Failed to initialize audio engine'));
+        onError(
+          error instanceof Error
+            ? error
+            : new Error("Failed to initialize audio engine"),
+        );
       }
     }
     return () => {
@@ -128,7 +145,7 @@ export function useStudioController({ projectId, onError }: StudioControllerOpti
           audioEngineRef.current.stop();
         }
       } catch (cleanupError) {
-        logger.warn('Error during AudioEngine cleanup:', cleanupError);
+        logger.warn("Error during AudioEngine cleanup:", cleanupError);
       }
     };
   }, [onError]);
@@ -160,7 +177,7 @@ export function useStudioController({ projectId, onError }: StudioControllerOpti
       if (db <= -60) return 0;
       return Math.pow(10, db / 20);
     };
-    
+
     if (isPlaying && audioEngineRef.current) {
       const updateMeters = () => {
         const engine = audioEngineRef.current;
@@ -168,21 +185,25 @@ export function useStudioController({ projectId, onError }: StudioControllerOpti
           meterAnimationRef.current = requestAnimationFrame(updateMeters);
           return;
         }
-        
+
         const newLevels = new Map<string, [number, number]>();
         for (const track of tracks) {
           const peakData = engine.getTrackPeakLevel(track.id);
           const linearPeak = peakData ? dbToLinear(peakData.peak) : 0;
-          const safeLevel = Number.isFinite(linearPeak) ? Math.max(0, Math.min(1, linearPeak)) : 0;
+          const safeLevel = Number.isFinite(linearPeak)
+            ? Math.max(0, Math.min(1, linearPeak))
+            : 0;
           newLevels.set(track.id, [safeLevel, safeLevel]);
         }
         setTrackMeterLevels(newLevels);
-        
+
         const masterPeak = engine.getMasterPeakLevel();
         const masterLinear = masterPeak ? dbToLinear(masterPeak.peak) : 0;
-        const safeMaster = Number.isFinite(masterLinear) ? Math.max(0, Math.min(1, masterLinear)) : 0;
+        const safeMaster = Number.isFinite(masterLinear)
+          ? Math.max(0, Math.min(1, masterLinear))
+          : 0;
         setMasterMeterLevels([safeMaster, safeMaster]);
-        
+
         meterAnimationRef.current = requestAnimationFrame(updateMeters);
       };
       meterAnimationRef.current = requestAnimationFrame(updateMeters);
@@ -203,30 +224,33 @@ export function useStudioController({ projectId, onError }: StudioControllerOpti
   // Preload all audio buffers when trackClips changes (eliminates play() delay)
   const preloadProjectAudio = useCallback(async () => {
     if (!trackClips.size) return;
-    
+
     const audioEngine = audioEngineRef.current;
     if (!audioEngine) return;
-    
+
     try {
       const loadPromises: Promise<void>[] = [];
-      
+
       for (const [, clips] of trackClips.entries()) {
         for (const clip of clips) {
           const url = clip.audioUrl || clip.filePath;
           if (url && clip.id) {
             loadPromises.push(
-              audioEngine.loadBuffer(clip.id, url).then(() => {}).catch((e) => {
-                logger.warn(`Failed to preload clip ${clip.id}:`, e);
-              })
+              audioEngine
+                .loadBuffer(clip.id, url)
+                .then(() => {})
+                .catch((e) => {
+                  logger.warn(`Failed to preload clip ${clip.id}:`, e);
+                }),
             );
           }
         }
       }
-      
+
       await Promise.all(loadPromises);
       logger.info(`Preloaded ${loadPromises.length} audio buffers`);
     } catch (error) {
-      logger.warn('Error during audio preload:', error);
+      logger.warn("Error during audio preload:", error);
     }
   }, [trackClips]);
 
@@ -238,10 +262,12 @@ export function useStudioController({ projectId, onError }: StudioControllerOpti
   // Create track mutation
   const createTrackMutation = useMutation({
     mutationFn: async (trackData: Partial<InsertStudioTrack>) => {
-      return await apiRequest('POST', `/api/studio/tracks`, trackData);
+      return await apiRequest("POST", `/api/studio/tracks`, trackData);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/studio/projects', projectId, 'tracks'] });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/studio/projects", projectId, "tracks"],
+      });
     },
   });
 
@@ -254,20 +280,28 @@ export function useStudioController({ projectId, onError }: StudioControllerOpti
       trackId: string;
       updates: Partial<StudioTrack>;
     }) => {
-      return await apiRequest('PATCH', `/api/studio/tracks/${trackId}`, updates);
+      return await apiRequest(
+        "PATCH",
+        `/api/studio/tracks/${trackId}`,
+        updates,
+      );
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/studio/projects', projectId, 'tracks'] });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/studio/projects", projectId, "tracks"],
+      });
     },
   });
 
   // Delete track mutation
   const deleteTrackMutation = useMutation({
     mutationFn: async (trackId: string) => {
-      return await apiRequest('DELETE', `/api/studio/tracks/${trackId}`);
+      return await apiRequest("DELETE", `/api/studio/tracks/${trackId}`);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/studio/projects', projectId, 'tracks'] });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/studio/projects", projectId, "tracks"],
+      });
     },
   });
 
@@ -280,20 +314,24 @@ export function useStudioController({ projectId, onError }: StudioControllerOpti
       clipId: string;
       updates: Partial<InsertAudioClip>;
     }) => {
-      return await apiRequest('PATCH', `/api/studio/clips/${clipId}`, updates);
+      return await apiRequest("PATCH", `/api/studio/clips/${clipId}`, updates);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/studio/projects', projectId, 'tracks'] });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/studio/projects", projectId, "tracks"],
+      });
     },
   });
 
   // Delete clip mutation
   const deleteClipMutation = useMutation({
     mutationFn: async (clipId: string) => {
-      return await apiRequest('DELETE', `/api/studio/clips/${clipId}`);
+      return await apiRequest("DELETE", `/api/studio/clips/${clipId}`);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/studio/projects', projectId, 'tracks'] });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/studio/projects", projectId, "tracks"],
+      });
     },
   });
 
@@ -302,14 +340,14 @@ export function useStudioController({ projectId, onError }: StudioControllerOpti
   const play = useCallback(async () => {
     try {
       if (!audioEngineRef.current) {
-        throw new Error('Audio engine not initialized');
+        throw new Error("Audio engine not initialized");
       }
 
       // Initialize and unlock AudioEngine (BeatStars-style: works on user gesture)
       const isReady = await audioEngineRef.current.ensureReady();
       if (!isReady) {
         // Still not ready, but we can continue - it might unlock mid-playback
-        logger.warn('Audio engine not fully ready, attempting playback anyway');
+        logger.warn("Audio engine not fully ready, attempting playback anyway");
       }
       setAudioEngineInitialized(true);
 
@@ -324,7 +362,7 @@ export function useStudioController({ projectId, onError }: StudioControllerOpti
 
       // Set up tracks in AudioEngine (buffers are already preloaded)
       for (const track of tracks) {
-        if (track.trackType === 'audio') {
+        if (track.trackType === "audio") {
           const clips = trackClips.get(track.id) || [];
 
           // Create track in AudioEngine if not exists
@@ -336,7 +374,7 @@ export function useStudioController({ projectId, onError }: StudioControllerOpti
               pan: track.pan,
               isMuted: track.mute,
               isSolo: track.solo,
-              bus: track.outputBus || 'master',
+              bus: track.outputBus || "master",
             });
           } else {
             // Update existing track parameters to match current state
@@ -347,20 +385,24 @@ export function useStudioController({ projectId, onError }: StudioControllerOpti
           }
 
           // Add clips to track (awaiting since loadTrack is instant with cached buffers)
-          const validClips = clips.filter((clip) => clip.audioUrl || clip.filePath);
+          const validClips = clips.filter(
+            (clip) => clip.audioUrl || clip.filePath,
+          );
           if (validClips.length > 0) {
-            await audioEngineRef.current.loadTrack(
-              track.id,
-              validClips.map((clip) => ({
-                id: clip.id,
-                url: clip.audioUrl || clip.filePath,
-                startTime: clip.startTime,
-                duration: clip.duration,
-                offset: clip.offset || 0,
-              }))
-            ).catch((e) => {
-              logger.warn(`Failed to load track ${track.id}:`, e);
-            });
+            await audioEngineRef.current
+              .loadTrack(
+                track.id,
+                validClips.map((clip) => ({
+                  id: clip.id,
+                  url: clip.audioUrl || clip.filePath,
+                  startTime: clip.startTime,
+                  duration: clip.duration,
+                  offset: clip.offset || 0,
+                })),
+              )
+              .catch((e) => {
+                logger.warn(`Failed to load track ${track.id}:`, e);
+              });
           }
         }
       }
@@ -369,10 +411,17 @@ export function useStudioController({ projectId, onError }: StudioControllerOpti
       await audioEngineRef.current.play(currentTime);
       setStoreIsPlaying(true);
     } catch (error: unknown) {
-      logger.error('Failed to play:', error);
+      logger.error("Failed to play:", error);
       if (onError) onError(error as Error);
     }
-  }, [audioEngineInitialized, tracks, trackClips, currentTime, setStoreIsPlaying, onError]);
+  }, [
+    audioEngineInitialized,
+    tracks,
+    trackClips,
+    currentTime,
+    setStoreIsPlaying,
+    onError,
+  ]);
 
   const pause = useCallback(() => {
     try {
@@ -383,7 +432,7 @@ export function useStudioController({ projectId, onError }: StudioControllerOpti
       setStoreCurrentTime(engineTime);
       setStoreIsPlaying(false);
     } catch (error: unknown) {
-      logger.error('Failed to pause:', error);
+      logger.error("Failed to pause:", error);
       if (onError) onError(error as Error);
     }
   }, [setStoreCurrentTime, setStoreIsPlaying, onError]);
@@ -397,7 +446,7 @@ export function useStudioController({ projectId, onError }: StudioControllerOpti
       setStoreIsPlaying(false);
       setStoreIsRecording(false);
     } catch (error: unknown) {
-      logger.error('Failed to stop:', error);
+      logger.error("Failed to stop:", error);
       if (onError) onError(error as Error);
     }
   }, [setStoreCurrentTime, setStoreIsPlaying, setStoreIsRecording, onError]);
@@ -410,11 +459,11 @@ export function useStudioController({ projectId, onError }: StudioControllerOpti
         await audioEngineRef.current.seek(time);
         setStoreCurrentTime(time);
       } catch (error: unknown) {
-        logger.error('Failed to seek:', error);
+        logger.error("Failed to seek:", error);
         if (onError) onError(error as Error);
       }
     },
-    [setStoreCurrentTime, onError]
+    [setStoreCurrentTime, onError],
   );
 
   const toggleLoop = useCallback(() => {
@@ -431,15 +480,15 @@ export function useStudioController({ projectId, onError }: StudioControllerOpti
 
       // Persist tempo changes to backend if projectId exists
       if (projectId) {
-        apiRequest('PATCH', `/api/studio/projects/${projectId}`, { tempo: newTempo }).catch(
-          (error) => {
-            logger.error('Failed to persist tempo:', error);
-            if (onError) onError(error as Error);
-          }
-        );
+        apiRequest("PATCH", `/api/studio/projects/${projectId}`, {
+          tempo: newTempo,
+        }).catch((error) => {
+          logger.error("Failed to persist tempo:", error);
+          if (onError) onError(error as Error);
+        });
       }
     },
-    [projectId, setStoreTempo, onError]
+    [projectId, setStoreTempo, onError],
   );
 
   const startRecording = useCallback(async () => {
@@ -468,10 +517,12 @@ export function useStudioController({ projectId, onError }: StudioControllerOpti
 
       // Load audio clip data for tracks (defer audio engine track creation until play)
       for (const track of tracksData) {
-        if (track.trackType === 'audio') {
+        if (track.trackType === "audio") {
           try {
             // Fetch clips for this track from API
-            const response = await fetch(`/api/studio/tracks/${track.id}/audio-clips`);
+            const response = await fetch(
+              `/api/studio/tracks/${track.id}/audio-clips`,
+            );
             if (!response.ok) {
               continue;
             }
@@ -487,29 +538,31 @@ export function useStudioController({ projectId, onError }: StudioControllerOpti
 
       setTrackClips(clipsMap);
     },
-    [onError]
+    [onError],
   );
 
   // Sync local tracks to Zustand store for FlowState adapter (separate effect to avoid render loops)
   useEffect(() => {
-    setStoreTracks(tracks.map(t => ({
-      id: t.id,
-      name: t.name,
-      trackType: t.trackType,
-      trackNumber: t.trackNumber,
-      volume: t.volume,
-      pan: t.pan,
-      mute: t.mute,
-      solo: t.solo,
-      armed: t.armed,
-      recordEnabled: t.recordEnabled,
-      inputMonitoring: t.inputMonitoring,
-      color: t.color,
-      height: t.height,
-      collapsed: t.collapsed,
-      outputBus: t.outputBus,
-      groupId: t.groupId,
-    })));
+    setStoreTracks(
+      tracks.map((t) => ({
+        id: t.id,
+        name: t.name,
+        trackType: t.trackType,
+        trackNumber: t.trackNumber,
+        volume: t.volume,
+        pan: t.pan,
+        mute: t.mute,
+        solo: t.solo,
+        armed: t.armed,
+        recordEnabled: t.recordEnabled,
+        inputMonitoring: t.inputMonitoring,
+        color: t.color,
+        height: t.height,
+        collapsed: t.collapsed,
+        outputBus: t.outputBus,
+        groupId: t.groupId,
+      })),
+    );
   }, [tracks, setStoreTracks]);
 
   const createTrack = useCallback(
@@ -521,19 +574,21 @@ export function useStudioController({ projectId, onError }: StudioControllerOpti
         });
         return result;
       } catch (error: unknown) {
-        logger.error('Failed to create track:', error);
+        logger.error("Failed to create track:", error);
         if (onError) onError(error as Error);
         throw error;
       }
     },
-    [createTrackMutation, projectId, onError]
+    [createTrackMutation, projectId, onError],
   );
 
   const updateTrack = useCallback(
     async (trackId: string, updates: Partial<StudioTrack>) => {
       try {
         // Optimistic update in local state
-        setTracks((prev) => prev.map((t) => (t.id === trackId ? { ...t, ...updates } : t)));
+        setTracks((prev) =>
+          prev.map((t) => (t.id === trackId ? { ...t, ...updates } : t)),
+        );
 
         // Update in audio engine if relevant
         if (audioEngineRef.current) {
@@ -554,12 +609,12 @@ export function useStudioController({ projectId, onError }: StudioControllerOpti
         // Persist to backend
         await updateTrackMutation.mutateAsync({ trackId, updates });
       } catch (error: unknown) {
-        logger.error('Failed to update track:', error);
+        logger.error("Failed to update track:", error);
         if (onError) onError(error as Error);
         throw error;
       }
     },
-    [updateTrackMutation, onError]
+    [updateTrackMutation, onError],
   );
 
   const deleteTrack = useCallback(
@@ -581,12 +636,12 @@ export function useStudioController({ projectId, onError }: StudioControllerOpti
         // Persist to backend
         await deleteTrackMutation.mutateAsync(trackId);
       } catch (error: unknown) {
-        logger.error('Failed to delete track:', error);
+        logger.error("Failed to delete track:", error);
         if (onError) onError(error as Error);
         throw error;
       }
     },
-    [deleteTrackMutation, onError]
+    [deleteTrackMutation, onError],
   );
 
   // ========== MIXER CONTROLS ==========
@@ -595,14 +650,14 @@ export function useStudioController({ projectId, onError }: StudioControllerOpti
     async (trackId: string, volume: number) => {
       await updateTrack(trackId, { volume });
     },
-    [updateTrack]
+    [updateTrack],
   );
 
   const setTrackPan = useCallback(
     async (trackId: string, pan: number) => {
       await updateTrack(trackId, { pan });
     },
-    [updateTrack]
+    [updateTrack],
   );
 
   const toggleMute = useCallback(
@@ -612,7 +667,7 @@ export function useStudioController({ projectId, onError }: StudioControllerOpti
         await updateTrack(trackId, { mute: !track.mute });
       }
     },
-    [tracks, updateTrack]
+    [tracks, updateTrack],
   );
 
   const toggleSolo = useCallback(
@@ -622,7 +677,7 @@ export function useStudioController({ projectId, onError }: StudioControllerOpti
         await updateTrack(trackId, { solo: !track.solo });
       }
     },
-    [tracks, updateTrack]
+    [tracks, updateTrack],
   );
 
   const setMasterVolume = useCallback((volume: number) => {
@@ -639,7 +694,7 @@ export function useStudioController({ projectId, onError }: StudioControllerOpti
         const newMap = new Map(prev);
         const clips = newMap.get(trackId) || [];
         const updatedClips = clips.map((clip) =>
-          clip.id === clipId ? { ...clip, ...updates } : clip
+          clip.id === clipId ? { ...clip, ...updates } : clip,
         );
         newMap.set(trackId, updatedClips);
 
@@ -653,14 +708,14 @@ export function useStudioController({ projectId, onError }: StudioControllerOpti
               startTime: clip.startTime,
               duration: clip.duration,
               offset: clip.offset,
-            }))
+            })),
           );
         }
 
         return newMap;
       });
     },
-    []
+    [],
   );
 
   const addClipToMap = useCallback((trackId: string, clip: AudioClipData) => {
@@ -680,7 +735,7 @@ export function useStudioController({ projectId, onError }: StudioControllerOpti
             startTime: c.startTime,
             duration: c.duration,
             offset: c.offset,
-          }))
+          })),
         );
       }
 
@@ -705,7 +760,7 @@ export function useStudioController({ projectId, onError }: StudioControllerOpti
             startTime: clip.startTime,
             duration: clip.duration,
             offset: clip.offset,
-          }))
+          })),
         );
       }
 
@@ -726,7 +781,10 @@ export function useStudioController({ projectId, onError }: StudioControllerOpti
             if (clipIndex !== -1) {
               // Update the clip in the map
               const updatedClips = [...clips];
-              updatedClips[clipIndex] = { ...updatedClips[clipIndex], ...updates };
+              updatedClips[clipIndex] = {
+                ...updatedClips[clipIndex],
+                ...updates,
+              };
 
               // Sync to audio engine
               audioEngineRef.current.addClipsToTrack(
@@ -737,7 +795,7 @@ export function useStudioController({ projectId, onError }: StudioControllerOpti
                   startTime: clip.startTime,
                   duration: clip.duration,
                   offset: clip.offset,
-                }))
+                })),
               );
 
               // Update local state
@@ -751,12 +809,12 @@ export function useStudioController({ projectId, onError }: StudioControllerOpti
           }
         }
       } catch (error: unknown) {
-        logger.error('Failed to update clip:', error);
+        logger.error("Failed to update clip:", error);
         if (onError) onError(error as Error);
         throw error;
       }
     },
-    [updateClipMutation, trackClips, onError]
+    [updateClipMutation, trackClips, onError],
   );
 
   const deleteClip = useCallback(
@@ -764,14 +822,14 @@ export function useStudioController({ projectId, onError }: StudioControllerOpti
       try {
         await deleteClipMutation.mutateAsync(clipId);
         removeClipFromMap(trackId, clipId);
-        logger.info('Clip deleted successfully', { trackId, clipId });
+        logger.info("Clip deleted successfully", { trackId, clipId });
       } catch (error: unknown) {
-        logger.error('Failed to delete clip:', error);
+        logger.error("Failed to delete clip:", error);
         if (onError) onError(error as Error);
         throw error;
       }
     },
-    [deleteClipMutation, removeClipFromMap, onError]
+    [deleteClipMutation, removeClipFromMap, onError],
   );
 
   // Calculate project duration from clips reactively
@@ -822,7 +880,7 @@ export function useStudioController({ projectId, onError }: StudioControllerOpti
     toggleMute,
     toggleSolo,
     setMasterVolume,
-    
+
     // Meters (only active when playing)
     trackMeterLevels,
     masterMeterLevels,

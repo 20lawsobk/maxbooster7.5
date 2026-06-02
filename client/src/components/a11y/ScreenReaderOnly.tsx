@@ -1,4 +1,4 @@
-import React from 'react';
+import React from "react";
 
 export interface ScreenReaderOnlyProps {
   children: React.ReactNode;
@@ -9,34 +9,34 @@ export interface ScreenReaderOnlyProps {
 }
 
 const srOnlyStyles: React.CSSProperties = {
-  position: 'absolute',
-  width: '1px',
-  height: '1px',
+  position: "absolute",
+  width: "1px",
+  height: "1px",
   padding: 0,
-  margin: '-1px',
-  overflow: 'hidden',
-  clip: 'rect(0, 0, 0, 0)',
-  whiteSpace: 'nowrap',
+  margin: "-1px",
+  overflow: "hidden",
+  clip: "rect(0, 0, 0, 0)",
+  whiteSpace: "nowrap",
   border: 0,
 };
 
 const focusableStyles: React.CSSProperties = {
-  position: 'static',
-  width: 'auto',
-  height: 'auto',
-  padding: 'inherit',
-  margin: 'inherit',
-  overflow: 'visible',
-  clip: 'auto',
-  whiteSpace: 'normal',
+  position: "static",
+  width: "auto",
+  height: "auto",
+  padding: "inherit",
+  margin: "inherit",
+  overflow: "visible",
+  clip: "auto",
+  whiteSpace: "normal",
 };
 
 export function ScreenReaderOnly({
   children,
-  as: Component = 'span',
+  as: Component = "span",
   focusable = false,
   id,
-  className = '',
+  className = "",
 }: ScreenReaderOnlyProps) {
   const [isFocused, setIsFocused] = React.useState(false);
 
@@ -63,9 +63,9 @@ export function ScreenReaderOnly({
       tabIndex: focusable ? 0 : undefined,
       onFocus: focusable ? handleFocus : undefined,
       onBlur: focusable ? handleBlur : undefined,
-      'aria-hidden': false,
+      "aria-hidden": false,
     },
-    children
+    children,
   );
 }
 
@@ -81,7 +81,11 @@ export interface AccessibleTextProps {
   id?: string;
 }
 
-export function AccessibleText({ children, visualText, id }: AccessibleTextProps) {
+export function AccessibleText({
+  children,
+  visualText,
+  id,
+}: AccessibleTextProps) {
   if (visualText !== undefined) {
     return (
       <>
@@ -114,7 +118,10 @@ export interface AccessibleDescriptionProps {
   children: React.ReactNode;
 }
 
-export function AccessibleDescription({ id, children }: AccessibleDescriptionProps) {
+export function AccessibleDescription({
+  id,
+  children,
+}: AccessibleDescriptionProps) {
   return <ScreenReaderOnly id={id}>{children}</ScreenReaderOnly>;
 }
 

@@ -1,92 +1,109 @@
-import React from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Badge } from '@/components/ui/badge';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Check, X, Users, UserPlus, Clock, Trash2 } from 'lucide-react';
-import { apiRequest } from '@/lib/queryClient';
-import { useToast } from '@/hooks/use-toast';
+import React from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Check, X, Users, UserPlus, Clock, Trash2 } from "lucide-react";
+import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 
 export function ConnectionsList() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
   const { data: connections, isLoading: connectionsLoading } = useQuery({
-    queryKey: ['/api/collaborations/connections'],
+    queryKey: ["/api/collaborations/connections"],
     queryFn: async () => {
-      const res = await fetch('/api/collaborations/connections', {
-        credentials: 'include',
+      const res = await fetch("/api/collaborations/connections", {
+        credentials: "include",
       });
-      if (!res.ok) throw new Error('Failed to fetch connections');
+      if (!res.ok) throw new Error("Failed to fetch connections");
       return res.json();
     },
   });
 
   const { data: pendingRequests, isLoading: pendingLoading } = useQuery({
-    queryKey: ['/api/collaborations/connections/pending'],
+    queryKey: ["/api/collaborations/connections/pending"],
     queryFn: async () => {
-      const res = await fetch('/api/collaborations/connections/pending', {
-        credentials: 'include',
+      const res = await fetch("/api/collaborations/connections/pending", {
+        credentials: "include",
       });
-      if (!res.ok) throw new Error('Failed to fetch pending requests');
+      if (!res.ok) throw new Error("Failed to fetch pending requests");
       return res.json();
     },
   });
 
   const acceptMutation = useMutation({
     mutationFn: async (connectionId: string) => {
-      const res = await apiRequest('POST', `/api/collaborations/accept/${connectionId}`);
+      const res = await apiRequest(
+        "POST",
+        `/api/collaborations/accept/${connectionId}`,
+      );
       return res.json();
     },
     onSuccess: () => {
-      toast({ title: 'Connection Accepted' });
-      queryClient.invalidateQueries({ queryKey: ['/api/collaborations/connections'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/collaborations/connections/pending'] });
+      toast({ title: "Connection Accepted" });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/collaborations/connections"],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/collaborations/connections/pending"],
+      });
     },
     onError: (error: Error) => {
       toast({
-        title: 'Error',
-        description: error.message || 'Failed to accept connection',
-        variant: 'destructive',
+        title: "Error",
+        description: error.message || "Failed to accept connection",
+        variant: "destructive",
       });
     },
   });
 
   const declineMutation = useMutation({
     mutationFn: async (connectionId: string) => {
-      const res = await apiRequest('POST', `/api/collaborations/decline/${connectionId}`);
+      const res = await apiRequest(
+        "POST",
+        `/api/collaborations/decline/${connectionId}`,
+      );
       return res.json();
     },
     onSuccess: () => {
-      toast({ title: 'Connection Declined' });
-      queryClient.invalidateQueries({ queryKey: ['/api/collaborations/connections/pending'] });
+      toast({ title: "Connection Declined" });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/collaborations/connections/pending"],
+      });
     },
     onError: (error: Error) => {
       toast({
-        title: 'Error',
-        description: error.message || 'Failed to decline connection',
-        variant: 'destructive',
+        title: "Error",
+        description: error.message || "Failed to decline connection",
+        variant: "destructive",
       });
     },
   });
 
   const removeMutation = useMutation({
     mutationFn: async (connectionId: string) => {
-      const res = await apiRequest('DELETE', `/api/collaborations/connections/${connectionId}`);
+      const res = await apiRequest(
+        "DELETE",
+        `/api/collaborations/connections/${connectionId}`,
+      );
       return res.json();
     },
     onSuccess: () => {
-      toast({ title: 'Connection Removed' });
-      queryClient.invalidateQueries({ queryKey: ['/api/collaborations/connections'] });
+      toast({ title: "Connection Removed" });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/collaborations/connections"],
+      });
     },
     onError: (error: Error) => {
       toast({
-        title: 'Error',
-        description: error.message || 'Failed to remove connection',
-        variant: 'destructive',
+        title: "Error",
+        description: error.message || "Failed to remove connection",
+        variant: "destructive",
       });
     },
   });
@@ -94,22 +111,25 @@ export function ConnectionsList() {
   const getDisplayName = (user: Record<string, unknown>) => {
     return (
       user?.username ||
-      [user?.firstName, user?.lastName].filter(Boolean).join(' ') ||
-      'Anonymous Artist'
+      [user?.firstName, user?.lastName].filter(Boolean).join(" ") ||
+      "Anonymous Artist"
     );
   };
 
   const getInitials = (user: Record<string, unknown>) => {
     const name = getDisplayName(user);
     return name
-      .split(' ')
+      .split(" ")
       .map((n: string) => n[0])
-      .join('')
+      .join("")
       .toUpperCase()
       .slice(0, 2);
   };
 
-  const renderConnectionCard = (connection: Record<string, unknown>, showActions: boolean = false) => {
+  const renderConnectionCard = (
+    connection: Record<string, unknown>,
+    showActions: boolean = false,
+  ) => {
     const user = connection.connectedUser || connection.requester;
     const displayName = getDisplayName(user);
     const initials = getInitials(user);
@@ -198,7 +218,10 @@ export function ConnectionsList() {
       <CardContent>
         <Tabs defaultValue="connections">
           <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="connections" className="flex items-center gap-2">
+            <TabsTrigger
+              value="connections"
+              className="flex items-center gap-2"
+            >
               <Users className="h-4 w-4" />
               Connections
               {connections?.length > 0 && (
@@ -219,7 +242,9 @@ export function ConnectionsList() {
               renderSkeletons()
             ) : connections?.length > 0 ? (
               <div className="space-y-3">
-                {connections.map((conn: Record<string, unknown>) => renderConnectionCard(conn, false))}
+                {connections.map((conn: Record<string, unknown>) =>
+                  renderConnectionCard(conn, false),
+                )}
               </div>
             ) : (
               <div className="text-center py-8 text-muted-foreground">
@@ -235,7 +260,9 @@ export function ConnectionsList() {
               renderSkeletons()
             ) : pendingRequests?.length > 0 ? (
               <div className="space-y-3">
-                {pendingRequests.map((req: Record<string, unknown>) => renderConnectionCard(req, true))}
+                {pendingRequests.map((req: Record<string, unknown>) =>
+                  renderConnectionCard(req, true),
+                )}
               </div>
             ) : (
               <div className="text-center py-8 text-muted-foreground">

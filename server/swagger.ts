@@ -1,21 +1,21 @@
 /**
  * Swagger/OpenAPI Documentation Configuration
- * 
+ *
  * Provides interactive API documentation at /api-docs
  */
 
-import swaggerJsdoc from 'swagger-jsdoc';
-import swaggerUi from 'swagger-ui-express';
-import type { Express } from 'express';
-import { logger } from './logger.js';
-import { getBaseUrl } from './config/defaults.js';
+import swaggerJsdoc from "swagger-jsdoc";
+import swaggerUi from "swagger-ui-express";
+import type { Express } from "express";
+import { logger } from "./logger.js";
+import { getBaseUrl } from "./config/defaults.js";
 
 const options: swaggerJsdoc.Options = {
   definition: {
-    openapi: '3.0.0',
+    openapi: "3.0.0",
     info: {
-      title: 'Max Booster API',
-      version: '1.0.0',
+      title: "Max Booster API",
+      version: "1.0.0",
       description: `
 # Max Booster API Documentation
 
@@ -53,110 +53,116 @@ All errors follow this format:
 \`\`\`
       `,
       contact: {
-        name: 'Max Booster Support',
-        email: 'support@maxbooster.ai',
+        name: "Max Booster Support",
+        email: "support@maxbooster.ai",
       },
       license: {
-        name: 'Proprietary',
+        name: "Proprietary",
       },
     },
     servers: [
       {
         url: getBaseUrl(),
-        description: 'Max Booster API Server',
+        description: "Max Booster API Server",
       },
     ],
     components: {
       securitySchemes: {
         sessionCookie: {
-          type: 'apiKey',
-          in: 'cookie',
-          name: 'connect.sid',
-          description: 'Session cookie obtained from login',
+          type: "apiKey",
+          in: "cookie",
+          name: "connect.sid",
+          description: "Session cookie obtained from login",
         },
       },
       schemas: {
         User: {
-          type: 'object',
+          type: "object",
           properties: {
-            id: { type: 'string', description: 'User UUID' },
-            email: { type: 'string', format: 'email' },
-            firstName: { type: 'string' },
-            lastName: { type: 'string' },
+            id: { type: "string", description: "User UUID" },
+            email: { type: "string", format: "email" },
+            firstName: { type: "string" },
+            lastName: { type: "string" },
             subscriptionTier: {
-              type: 'string',
-              enum: ['free', 'starter', 'pro', 'elite'],
+              type: "string",
+              enum: ["free", "starter", "pro", "elite"],
             },
-            createdAt: { type: 'string', format: 'date-time' },
+            createdAt: { type: "string", format: "date-time" },
           },
         },
         Error: {
-          type: 'object',
+          type: "object",
           properties: {
             error: {
-              type: 'object',
+              type: "object",
               properties: {
-                code: { type: 'string' },
-                message: { type: 'string' },
-                details: { type: 'object' },
-                requestId: { type: 'string' },
-                timestamp: { type: 'string', format: 'date-time' },
+                code: { type: "string" },
+                message: { type: "string" },
+                details: { type: "object" },
+                requestId: { type: "string" },
+                timestamp: { type: "string", format: "date-time" },
               },
             },
           },
         },
         Track: {
-          type: 'object',
+          type: "object",
           properties: {
-            id: { type: 'string' },
-            title: { type: 'string' },
-            duration: { type: 'number', description: 'Duration in seconds' },
-            bpm: { type: 'number' },
-            key: { type: 'string' },
-            genre: { type: 'string' },
-            createdAt: { type: 'string', format: 'date-time' },
+            id: { type: "string" },
+            title: { type: "string" },
+            duration: { type: "number", description: "Duration in seconds" },
+            bpm: { type: "number" },
+            key: { type: "string" },
+            genre: { type: "string" },
+            createdAt: { type: "string", format: "date-time" },
           },
         },
       },
       responses: {
         UnauthorizedError: {
-          description: 'Authentication required',
+          description: "Authentication required",
           content: {
-            'application/json': {
-              schema: { $ref: '#/components/schemas/Error' },
+            "application/json": {
+              schema: { $ref: "#/components/schemas/Error" },
             },
           },
         },
         NotFoundError: {
-          description: 'Resource not found',
+          description: "Resource not found",
           content: {
-            'application/json': {
-              schema: { $ref: '#/components/schemas/Error' },
+            "application/json": {
+              schema: { $ref: "#/components/schemas/Error" },
             },
           },
         },
         ValidationError: {
-          description: 'Validation failed',
+          description: "Validation failed",
           content: {
-            'application/json': {
-              schema: { $ref: '#/components/schemas/Error' },
+            "application/json": {
+              schema: { $ref: "#/components/schemas/Error" },
             },
           },
         },
       },
     },
     tags: [
-      { name: 'Authentication', description: 'User authentication and sessions' },
-      { name: 'Studio', description: 'DAW and audio processing' },
-      { name: 'Distribution', description: 'Music distribution and releases' },
-      { name: 'Marketplace', description: 'Buy and sell beats, stems, and tracks' },
-      { name: 'Social Media', description: 'Multi-platform social management' },
-      { name: 'Analytics', description: 'Insights and metrics' },
-      { name: 'Payments', description: 'Stripe payments and royalties' },
-      { name: 'Admin', description: 'Admin panel operations' },
+      {
+        name: "Authentication",
+        description: "User authentication and sessions",
+      },
+      { name: "Studio", description: "DAW and audio processing" },
+      { name: "Distribution", description: "Music distribution and releases" },
+      {
+        name: "Marketplace",
+        description: "Buy and sell beats, stems, and tracks",
+      },
+      { name: "Social Media", description: "Multi-platform social management" },
+      { name: "Analytics", description: "Insights and metrics" },
+      { name: "Payments", description: "Stripe payments and royalties" },
+      { name: "Admin", description: "Admin panel operations" },
     ],
   },
-  apis: ['./server/routes.ts', './server/routes/*.ts'], // Path to route files
+  apis: ["./server/routes.ts", "./server/routes/*.ts"], // Path to route files
 };
 
 const swaggerSpec = swaggerJsdoc(options);
@@ -167,27 +173,27 @@ const swaggerSpec = swaggerJsdoc(options);
 export function setupSwagger(app: Express): void {
   // Serve Swagger UI
   app.use(
-    '/api-docs',
+    "/api-docs",
     swaggerUi.serve,
     swaggerUi.setup(swaggerSpec, {
-      customCss: '.swagger-ui .topbar { display: none }',
-      customSiteTitle: 'Max Booster API Docs',
-      customfavIcon: '/favicon.ico',
-    })
+      customCss: ".swagger-ui .topbar { display: none }",
+      customSiteTitle: "Max Booster API Docs",
+      customfavIcon: "/favicon.ico",
+    }),
   );
 
   // Serve raw OpenAPI spec
-  app.get('/api-docs.json', (req, res) => {
-    res.setHeader('Content-Type', 'application/json');
+  app.get("/api-docs.json", (req, res) => {
+    res.setHeader("Content-Type", "application/json");
     res.send(swaggerSpec);
   });
 
-  logger.info('📚 Swagger documentation available at /api-docs');
+  logger.info("📚 Swagger documentation available at /api-docs");
 }
 
 /**
  * Example JSDoc annotations for routes:
- * 
+ *
  * @swagger
  * /api/auth/login:
  *   post:

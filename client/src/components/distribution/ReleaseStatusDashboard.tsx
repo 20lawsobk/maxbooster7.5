@@ -1,10 +1,20 @@
-import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tantml:parameter>@/lib/queryClient';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
-import { useToast } from '@/hooks/use-toast';
+import { useState } from "react";
+import {
+  useQuery,
+  useMutation,
+  useQueryClient,
+} from "@tantml:parameter>@/lib/queryClient";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
+import { useToast } from "@/hooks/use-toast";
 import {
   RefreshCw,
   CheckCircle2,
@@ -16,7 +26,7 @@ import {
   ChevronRight,
   Calendar,
   TrendingUp,
-} from 'lucide-react';
+} from "lucide-react";
 import {
   SpotifyIcon,
   AppleMusicIcon,
@@ -25,12 +35,21 @@ import {
   TidalIcon,
   DeezerIcon,
   SoundCloudIcon,
-} from '@/components/ui/brand-icons';
+} from "@/components/ui/brand-icons";
 
 interface PlatformStatus {
   platform: string;
   platformName: string;
-  status: 'pending' | 'processing' | 'delivered' | 'live' | 'failed' | 'removed' | 'in_review' | 'rejected' | 'takedown';
+  status:
+    | "pending"
+    | "processing"
+    | "delivered"
+    | "live"
+    | "failed"
+    | "removed"
+    | "in_review"
+    | "rejected"
+    | "takedown";
   externalId?: string;
   estimatedGoLive?: string;
   deliveredAt?: string;
@@ -55,76 +74,96 @@ const PLATFORM_CONFIG: Record<
     processingTime: string;
   }
 > = {
-  spotify: { icon: SpotifyIcon, color: '#1DB954', processingTime: '2-3 days' },
-  'apple-music': { icon: AppleMusicIcon, color: '#FA243C', processingTime: '3-5 days' },
-  'youtube-music': { icon: YouTubeIcon, color: '#FF0000', processingTime: '2-4 days' },
-  'amazon-music': { icon: AmazonIcon, color: '#FF9900', processingTime: '3-5 days' },
-  tidal: { icon: TidalIcon, color: '#000000', processingTime: '3-5 days' },
-  deezer: { icon: DeezerIcon, color: '#FEAA2D', processingTime: '2-4 days' },
-  soundcloud: { icon: SoundCloudIcon, color: '#FF3300', processingTime: '1-2 days' },
+  spotify: { icon: SpotifyIcon, color: "#1DB954", processingTime: "2-3 days" },
+  "apple-music": {
+    icon: AppleMusicIcon,
+    color: "#FA243C",
+    processingTime: "3-5 days",
+  },
+  "youtube-music": {
+    icon: YouTubeIcon,
+    color: "#FF0000",
+    processingTime: "2-4 days",
+  },
+  "amazon-music": {
+    icon: AmazonIcon,
+    color: "#FF9900",
+    processingTime: "3-5 days",
+  },
+  tidal: { icon: TidalIcon, color: "#000000", processingTime: "3-5 days" },
+  deezer: { icon: DeezerIcon, color: "#FEAA2D", processingTime: "2-4 days" },
+  soundcloud: {
+    icon: SoundCloudIcon,
+    color: "#FF3300",
+    processingTime: "1-2 days",
+  },
 };
 
 const STATUS_CONFIG = {
   pending: {
-    label: 'Awaiting Submission',
-    color: 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20',
+    label: "Awaiting Submission",
+    color: "bg-yellow-500/10 text-yellow-500 border-yellow-500/20",
     icon: Clock,
-    description: 'Release will be submitted soon',
+    description: "Release will be submitted soon",
   },
   processing: {
-    label: 'Being Delivered',
-    color: 'bg-blue-500/10 text-blue-500 border-blue-500/20',
+    label: "Being Delivered",
+    color: "bg-blue-500/10 text-blue-500 border-blue-500/20",
     icon: Loader2,
-    description: 'Currently being delivered to platform',
+    description: "Currently being delivered to platform",
   },
   delivered: {
-    label: 'Awaiting Approval',
-    color: 'bg-purple-500/10 text-purple-500 border-purple-500/20',
+    label: "Awaiting Approval",
+    color: "bg-purple-500/10 text-purple-500 border-purple-500/20",
     icon: Clock,
-    description: 'Received by platform, pending approval',
+    description: "Received by platform, pending approval",
   },
   live: {
-    label: 'Live',
-    color: 'bg-green-500/10 text-green-500 border-green-500/20',
+    label: "Live",
+    color: "bg-green-500/10 text-green-500 border-green-500/20",
     icon: CheckCircle2,
-    description: 'Successfully live on platform',
+    description: "Successfully live on platform",
   },
   failed: {
-    label: 'Delivery Failed',
-    color: 'bg-red-500/10 text-red-500 border-red-500/20',
+    label: "Delivery Failed",
+    color: "bg-red-500/10 text-red-500 border-red-500/20",
     icon: XCircle,
-    description: 'Delivery encountered an error',
+    description: "Delivery encountered an error",
   },
   removed: {
-    label: 'Taken Down',
-    color: 'bg-gray-500/10 text-gray-500 border-gray-500/20',
+    label: "Taken Down",
+    color: "bg-gray-500/10 text-gray-500 border-gray-500/20",
     icon: XCircle,
-    description: 'Removed from platform',
+    description: "Removed from platform",
   },
   in_review: {
-    label: 'Under Review',
-    color: 'bg-orange-500/10 text-orange-500 border-orange-500/20',
+    label: "Under Review",
+    color: "bg-orange-500/10 text-orange-500 border-orange-500/20",
     icon: AlertCircle,
-    description: 'Platform is reviewing your release',
+    description: "Platform is reviewing your release",
   },
   rejected: {
-    label: 'Rejected',
-    color: 'bg-red-500/10 text-red-500 border-red-500/20',
+    label: "Rejected",
+    color: "bg-red-500/10 text-red-500 border-red-500/20",
     icon: XCircle,
-    description: 'Release was rejected — check error details',
+    description: "Release was rejected — check error details",
   },
   takedown: {
-    label: 'Takedown Requested',
-    color: 'bg-gray-500/10 text-gray-400 border-gray-500/20',
+    label: "Takedown Requested",
+    color: "bg-gray-500/10 text-gray-400 border-gray-500/20",
     icon: XCircle,
-    description: 'Takedown request is being processed',
+    description: "Takedown request is being processed",
   },
 };
 
-export function ReleaseStatusDashboard({ releaseId, releaseTitle }: ReleaseStatusDashboardProps) {
+export function ReleaseStatusDashboard({
+  releaseId,
+  releaseTitle,
+}: ReleaseStatusDashboardProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [selectedPlatform, setSelectedPlatform] = useState<PlatformStatus | null>(null);
+  const [selectedPlatform, setSelectedPlatform] =
+    useState<PlatformStatus | null>(null);
 
   // Fetch release status
   const {
@@ -139,15 +178,15 @@ export function ReleaseStatusDashboard({ releaseId, releaseTitle }: ReleaseStatu
   const refreshMutation = useMutation({
     mutationFn: async () => {
       const response = await apiRequest(
-        'POST',
-        `/api/distribution/releases/${releaseId}/check-status`
+        "POST",
+        `/api/distribution/releases/${releaseId}/check-status`,
       );
       return response.json();
     },
     onSuccess: () => {
       toast({
-        title: 'Status updated',
-        description: 'Latest delivery status has been fetched.',
+        title: "Status updated",
+        description: "Latest delivery status has been fetched.",
       });
       queryClient.invalidateQueries({
         queryKey: [`/api/distribution/releases/${releaseId}/status`],
@@ -155,9 +194,9 @@ export function ReleaseStatusDashboard({ releaseId, releaseTitle }: ReleaseStatu
     },
     onError: () => {
       toast({
-        title: 'Error',
-        description: 'Failed to refresh status. Please try again.',
-        variant: 'destructive',
+        title: "Error",
+        description: "Failed to refresh status. Please try again.",
+        variant: "destructive",
       });
     },
   });
@@ -166,21 +205,34 @@ export function ReleaseStatusDashboard({ releaseId, releaseTitle }: ReleaseStatu
     ...s,
     // Normalize backend status aliases to known STATUS_CONFIG keys
     status: (() => {
-      const known = new Set(['pending','processing','delivered','live','failed','removed','in_review','rejected','takedown']);
-      const v = (s.status ?? 'pending').toLowerCase().replace(/-/g, '_');
-      if (known.has(v)) return v as PlatformStatus['status'];
+      const known = new Set([
+        "pending",
+        "processing",
+        "delivered",
+        "live",
+        "failed",
+        "removed",
+        "in_review",
+        "rejected",
+        "takedown",
+      ]);
+      const v = (s.status ?? "pending").toLowerCase().replace(/-/g, "_");
+      if (known.has(v)) return v as PlatformStatus["status"];
       // Map additional aliases from webhook handler
-      if (v === 'approved' || v === 'distributed') return 'live' as const;
-      if (v === 'error') return 'failed' as const;
-      if (v === 'taken_down' || v === 'takedown_requested') return 'takedown' as const;
-      return 'processing' as const; // safe unknown fallback
+      if (v === "approved" || v === "distributed") return "live" as const;
+      if (v === "error") return "failed" as const;
+      if (v === "taken_down" || v === "takedown_requested")
+        return "takedown" as const;
+      return "processing" as const; // safe unknown fallback
     })(),
   }));
   const overallProgress = statusData?.overallProgress || 0;
 
-  const liveCount = statuses.filter((s) => s.status === 'live').length;
+  const liveCount = statuses.filter((s) => s.status === "live").length;
   const totalCount = statuses.length;
-  const failedCount = statuses.filter((s) => ['failed', 'rejected'].includes(s.status)).length;
+  const failedCount = statuses.filter((s) =>
+    ["failed", "rejected"].includes(s.status),
+  ).length;
 
   if (isLoading) {
     return (
@@ -203,7 +255,11 @@ export function ReleaseStatusDashboard({ releaseId, releaseTitle }: ReleaseStatu
                 <TrendingUp className="h-5 w-5 text-primary" />
                 Release Delivery Status
               </CardTitle>
-              {releaseTitle && <CardDescription className="mt-1">{releaseTitle}</CardDescription>}
+              {releaseTitle && (
+                <CardDescription className="mt-1">
+                  {releaseTitle}
+                </CardDescription>
+              )}
             </div>
             <Button
               variant="outline"
@@ -211,7 +267,7 @@ export function ReleaseStatusDashboard({ releaseId, releaseTitle }: ReleaseStatu
               disabled={refreshMutation.isPending}
             >
               <RefreshCw
-                className={`h-4 w-4 mr-2 ${refreshMutation.isPending ? 'animate-spin' : ''}`}
+                className={`h-4 w-4 mr-2 ${refreshMutation.isPending ? "animate-spin" : ""}`}
               />
               Refresh Status
             </Button>
@@ -238,8 +294,14 @@ export function ReleaseStatusDashboard({ releaseId, releaseTitle }: ReleaseStatu
             <div className="text-center p-3 bg-blue-500/10 rounded-lg">
               <p className="text-2xl font-bold text-blue-500">
                 {
-                  statuses.filter((s) => ['pending', 'processing', 'delivered', 'in_review'].includes(s.status))
-                    .length
+                  statuses.filter((s) =>
+                    [
+                      "pending",
+                      "processing",
+                      "delivered",
+                      "in_review",
+                    ].includes(s.status),
+                  ).length
                 }
               </p>
               <p className="text-xs text-muted-foreground">In Progress</p>
@@ -257,10 +319,10 @@ export function ReleaseStatusDashboard({ releaseId, releaseTitle }: ReleaseStatu
         {statuses.map((platformStatus) => {
           const config = PLATFORM_CONFIG[platformStatus.platform];
           const statusConfig = STATUS_CONFIG[platformStatus.status] ?? {
-            label: platformStatus.status.replace(/_/g, ' '),
-            color: 'bg-muted/50 text-muted-foreground border-muted',
+            label: platformStatus.status.replace(/_/g, " "),
+            color: "bg-muted/50 text-muted-foreground border-muted",
             icon: Clock,
-            description: 'Status update pending',
+            description: "Status update pending",
           };
           const Icon = config?.icon;
           const StatusIcon = statusConfig.icon;
@@ -276,17 +338,24 @@ export function ReleaseStatusDashboard({ releaseId, releaseTitle }: ReleaseStatu
                   <div className="flex items-center gap-3">
                     <div
                       className="w-10 h-10 rounded-full flex items-center justify-center"
-                      style={{ backgroundColor: config?.color ?? '#6366f1' }}
+                      style={{ backgroundColor: config?.color ?? "#6366f1" }}
                     >
-                      {Icon
-                        ? <Icon className="h-5 w-5 text-white" />
-                        : <span className="text-white text-xs font-bold">{platformStatus.platformName.slice(0, 2).toUpperCase()}</span>
-                      }
+                      {Icon ? (
+                        <Icon className="h-5 w-5 text-white" />
+                      ) : (
+                        <span className="text-white text-xs font-bold">
+                          {platformStatus.platformName
+                            .slice(0, 2)
+                            .toUpperCase()}
+                        </span>
+                      )}
                     </div>
                     <div>
-                      <h4 className="font-semibold">{platformStatus.platformName}</h4>
+                      <h4 className="font-semibold">
+                        {platformStatus.platformName}
+                      </h4>
                       <p className="text-xs text-muted-foreground">
-                        {config?.processingTime || 'Processing time varies'}
+                        {config?.processingTime || "Processing time varies"}
                       </p>
                     </div>
                   </div>
@@ -300,40 +369,49 @@ export function ReleaseStatusDashboard({ releaseId, releaseTitle }: ReleaseStatu
                 >
                   {StatusIcon && (
                     <StatusIcon
-                      className={`h-3 w-3 ${platformStatus.status === 'processing' ? 'animate-spin' : ''}`}
+                      className={`h-3 w-3 ${platformStatus.status === "processing" ? "animate-spin" : ""}`}
                     />
                   )}
                   {statusConfig.label}
                 </Badge>
 
                 {/* Additional Info */}
-                {platformStatus.status === 'live' && platformStatus.liveAt && (
+                {platformStatus.status === "live" && platformStatus.liveAt && (
                   <div className="flex items-center gap-2 text-xs text-muted-foreground">
                     <Calendar className="h-3 w-3" />
-                    <span>Went live {new Date(platformStatus.liveAt).toLocaleDateString()}</span>
-                  </div>
-                )}
-
-                {platformStatus.status === 'delivered' && platformStatus.estimatedGoLive && (
-                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                    <Clock className="h-3 w-3" />
                     <span>
-                      Est. go-live: {new Date(platformStatus.estimatedGoLive).toLocaleDateString()}
+                      Went live{" "}
+                      {new Date(platformStatus.liveAt).toLocaleDateString()}
                     </span>
                   </div>
                 )}
 
-                {platformStatus.status === 'failed' && (
+                {platformStatus.status === "delivered" &&
+                  platformStatus.estimatedGoLive && (
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <Clock className="h-3 w-3" />
+                      <span>
+                        Est. go-live:{" "}
+                        {new Date(
+                          platformStatus.estimatedGoLive,
+                        ).toLocaleDateString()}
+                      </span>
+                    </div>
+                  )}
+
+                {platformStatus.status === "failed" && (
                   <div className="p-2 bg-red-500/10 rounded text-xs text-red-500">
                     <AlertCircle className="h-3 w-3 inline mr-1" />
-                    {platformStatus.errorMessage || 'Delivery failed'}
+                    {platformStatus.errorMessage || "Delivery failed"}
                   </div>
                 )}
 
                 {platformStatus.externalId && (
                   <div className="flex items-center gap-1 text-xs text-muted-foreground">
                     <ExternalLink className="h-3 w-3" />
-                    <span className="font-mono truncate">{platformStatus.externalId}</span>
+                    <span className="font-mono truncate">
+                      {platformStatus.externalId}
+                    </span>
                   </div>
                 )}
               </CardContent>
@@ -347,7 +425,9 @@ export function ReleaseStatusDashboard({ releaseId, releaseTitle }: ReleaseStatu
         <Card>
           <CardHeader>
             <CardTitle>Delivery Timeline</CardTitle>
-            <CardDescription>Track the progress of your release across platforms</CardDescription>
+            <CardDescription>
+              Track the progress of your release across platforms
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
@@ -363,49 +443,64 @@ export function ReleaseStatusDashboard({ releaseId, releaseTitle }: ReleaseStatu
                     <div className="flex flex-col items-center">
                       <div
                         className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                          platformStatus.status === 'live'
-                            ? 'bg-green-500'
-                            : platformStatus.status === 'failed'
-                              ? 'bg-red-500'
-                              : platformStatus.status === 'processing'
-                                ? 'bg-blue-500'
-                                : 'bg-muted'
+                          platformStatus.status === "live"
+                            ? "bg-green-500"
+                            : platformStatus.status === "failed"
+                              ? "bg-red-500"
+                              : platformStatus.status === "processing"
+                                ? "bg-blue-500"
+                                : "bg-muted"
                         }`}
                       >
                         {StatusIcon && (
                           <StatusIcon
-                            className={`h-5 w-5 text-white ${platformStatus.status === 'processing' ? 'animate-spin' : ''}`}
+                            className={`h-5 w-5 text-white ${platformStatus.status === "processing" ? "animate-spin" : ""}`}
                           />
                         )}
                       </div>
-                      {index < statuses.length - 1 && <div className="w-0.5 h-16 bg-muted" />}
+                      {index < statuses.length - 1 && (
+                        <div className="w-0.5 h-16 bg-muted" />
+                      )}
                     </div>
 
                     {/* Content */}
                     <div className="flex-1 pb-8">
                       <div className="flex items-center gap-2 mb-1">
-                        {Icon && <Icon className="h-4 w-4" style={{ color: config.color }} />}
-                        <h4 className="font-medium">{platformStatus.platformName}</h4>
+                        {Icon && (
+                          <Icon
+                            className="h-4 w-4"
+                            style={{ color: config.color }}
+                          />
+                        )}
+                        <h4 className="font-medium">
+                          {platformStatus.platformName}
+                        </h4>
                         <Badge variant="outline" className="text-xs">
                           {statusConfig.label}
                         </Badge>
                       </div>
-                      <p className="text-sm text-muted-foreground">{statusConfig.description}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {statusConfig.description}
+                      </p>
 
-                      {platformStatus.status === 'failed' && platformStatus.errorResolution && (
-                        <div className="mt-2 p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg">
-                          <p className="text-sm font-medium text-blue-500 mb-1">
-                            Resolution Steps:
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            {platformStatus.errorResolution}
-                          </p>
-                        </div>
-                      )}
+                      {platformStatus.status === "failed" &&
+                        platformStatus.errorResolution && (
+                          <div className="mt-2 p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg">
+                            <p className="text-sm font-medium text-blue-500 mb-1">
+                              Resolution Steps:
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              {platformStatus.errorResolution}
+                            </p>
+                          </div>
+                        )}
 
                       {platformStatus.lastChecked && (
                         <p className="text-xs text-muted-foreground mt-2">
-                          Last checked: {new Date(platformStatus.lastChecked).toLocaleString()}
+                          Last checked:{" "}
+                          {new Date(
+                            platformStatus.lastChecked,
+                          ).toLocaleString()}
                         </p>
                       )}
                     </div>
@@ -422,9 +517,12 @@ export function ReleaseStatusDashboard({ releaseId, releaseTitle }: ReleaseStatu
         <Card>
           <CardContent className="p-12 text-center">
             <Clock className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-            <h3 className="text-lg font-semibold mb-2">No distribution status yet</h3>
+            <h3 className="text-lg font-semibold mb-2">
+              No distribution status yet
+            </h3>
             <p className="text-sm text-muted-foreground">
-              Your release will appear here once it's submitted for distribution.
+              Your release will appear here once it's submitted for
+              distribution.
             </p>
           </CardContent>
         </Card>

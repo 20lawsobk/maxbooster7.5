@@ -1,16 +1,16 @@
-import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
-import { Skeleton } from '@/components/ui/skeleton';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import React from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
+import { Skeleton } from "@/components/ui/skeleton";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   useRecommendedActions,
   useCareerProgress,
   RecommendedAction,
   ActionCategory,
-} from '@/hooks/useRecommendedActions';
+} from "@/hooks/useRecommendedActions";
 import {
   ArrowRight,
   Clock,
@@ -30,8 +30,8 @@ import {
   BarChart3,
   Sparkles,
   ChevronRight,
-} from 'lucide-react';
-import { cn } from '@/lib/utils';
+} from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface RecommendedActionsPanelProps {
   limit?: number;
@@ -57,16 +57,17 @@ const categoryIcons: Record<string, React.ElementType> = {
 };
 
 const priorityColors: Record<string, string> = {
-  high: 'bg-red-500',
-  medium: 'bg-yellow-500',
-  low: 'bg-green-500',
+  high: "bg-red-500",
+  medium: "bg-yellow-500",
+  low: "bg-green-500",
 };
 
-const impactBadgeVariants: Record<string, 'default' | 'secondary' | 'outline'> = {
-  high: 'default',
-  medium: 'secondary',
-  low: 'outline',
-};
+const impactBadgeVariants: Record<string, "default" | "secondary" | "outline"> =
+  {
+    high: "default",
+    medium: "secondary",
+    low: "outline",
+  };
 
 export function RecommendedActionsPanel({
   limit = 5,
@@ -91,12 +92,7 @@ export function RecommendedActionsPanel({
     isUpdating,
   } = useRecommendedActions({ limit });
 
-  const {
-    currentStage,
-    nextStage,
-    progress,
-    milestones,
-  } = useCareerProgress();
+  const { currentStage, nextStage, progress, milestones } = useCareerProgress();
 
   const handleComplete = async (actionId: string) => {
     await completeAction(actionId);
@@ -108,7 +104,7 @@ export function RecommendedActionsPanel({
     onActionDismiss?.(actionId);
   };
 
-  const generalActions = actions.filter(a => !a.contextual);
+  const generalActions = actions.filter((a) => !a.contextual);
 
   if (isLoading) {
     return (
@@ -196,7 +192,8 @@ export function RecommendedActionsPanel({
             <Progress value={progress} className="h-2" />
             <div className="flex justify-between mt-1">
               <span className="text-xs text-muted-foreground">
-                {milestones.filter(m => m.completed).length}/{milestones.length} milestones
+                {milestones.filter((m) => m.completed).length}/
+                {milestones.length} milestones
               </span>
               <span className="text-xs font-medium">{progress}%</span>
             </div>
@@ -265,25 +262,32 @@ function ActionCard({
   return (
     <div
       className={cn(
-        'p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors cursor-pointer',
-        action.priority === 'high' && 'border-red-200 dark:border-red-800'
+        "p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors cursor-pointer",
+        action.priority === "high" && "border-red-200 dark:border-red-800",
       )}
       onClick={onClick}
     >
       <div className="flex items-start gap-3">
-        <div className={cn(
-          'p-2 rounded-lg',
-          action.priority === 'high'
-            ? 'bg-red-100 text-red-600 dark:bg-red-900 dark:text-red-400'
-            : 'bg-muted'
-        )}>
+        <div
+          className={cn(
+            "p-2 rounded-lg",
+            action.priority === "high"
+              ? "bg-red-100 text-red-600 dark:bg-red-900 dark:text-red-400"
+              : "bg-muted",
+          )}
+        >
           <CategoryIcon className="h-4 w-4" />
         </div>
 
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
             <h4 className="font-medium text-sm truncate">{action.title}</h4>
-            <div className={cn('h-2 w-2 rounded-full', priorityColors[action.priority])} />
+            <div
+              className={cn(
+                "h-2 w-2 rounded-full",
+                priorityColors[action.priority],
+              )}
+            />
           </div>
 
           {!compact && (
@@ -293,7 +297,10 @@ function ActionCard({
           )}
 
           <div className="flex items-center gap-3 mt-2">
-            <Badge variant={impactBadgeVariants[action.impact]} className="text-xs">
+            <Badge
+              variant={impactBadgeVariants[action.impact]}
+              className="text-xs"
+            >
               <Star className="h-3 w-3 mr-1" />
               {action.impact} impact
             </Badge>

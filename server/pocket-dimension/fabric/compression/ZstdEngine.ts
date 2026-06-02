@@ -1,13 +1,17 @@
-import { brotliCompress, brotliDecompress, constants as zlibConstants } from 'zlib';
-import { promisify } from 'util';
-import { createHash } from 'crypto';
-import fs from 'fs/promises';
-import path from 'path';
+import {
+  brotliCompress,
+  brotliDecompress,
+  constants as zlibConstants,
+} from "zlib";
+import { promisify } from "util";
+import { createHash } from "crypto";
+import fs from "fs/promises";
+import path from "path";
 
 const brotliCompressAsync = promisify(brotliCompress);
 const brotliDecompressAsync = promisify(brotliDecompress);
 
-const DICT_DIR = path.join('./pocket-dimensions', '.dicts');
+const DICT_DIR = path.join("./pocket-dimensions", ".dicts");
 const DICT_SAMPLE_MAX = 200;
 const DICT_SIZE = 112 * 1024;
 const BROTLI_QUALITY = 9;
@@ -25,7 +29,10 @@ export class ZstdEngine {
   private sampleAccumulator = new Map<string, Buffer[]>();
   private dictMeta = new Map<string, DictEntry>();
 
-  async compress(data: Buffer, dictId?: string): Promise<{ compressed: Buffer; dictId?: string }> {
+  async compress(
+    data: Buffer,
+    dictId?: string,
+  ): Promise<{ compressed: Buffer; dictId?: string }> {
     const opts = {
       params: {
         [zlibConstants.BROTLI_PARAM_QUALITY]: BROTLI_QUALITY,
@@ -57,9 +64,9 @@ export class ZstdEngine {
     if (!samples || samples.length < 10) return null;
 
     const combined = Buffer.concat(samples);
-    const dictId = createHash('sha256')
+    const dictId = createHash("sha256")
       .update(`${domain}:${samples.length}:${combined.length}`)
-      .digest('hex')
+      .digest("hex")
       .substring(0, 16);
 
     const existing = this.dictMeta.get(domain);
@@ -113,12 +120,23 @@ export class ZstdEngine {
     }
   }
 
-  private async persistDict(id: string, domain: string, data: Buffer, sampleCount: number): Promise<void> {
+  private async persistDict(
+    id: string,
+    domain: string,
+    data: Buffer,
+    sampleCount: number,
+  ): Promise<void> {
     await fs.mkdir(DICT_DIR, { recursive: true });
     await fs.writeFile(path.join(DICT_DIR, `${id}.dict`), data);
     await fs.writeFile(
       path.join(DICT_DIR, `${id}.meta.json`),
-      JSON.stringify({ id, domain, sampleCount, dictBytes: data.length, createdAt: new Date() }),
+      JSON.stringify({
+        id,
+        domain,
+        sampleCount,
+        dictBytes: data.length,
+        createdAt: new Date(),
+      }),
     );
   }
 

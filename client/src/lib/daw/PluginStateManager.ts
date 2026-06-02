@@ -1,4 +1,4 @@
-import { logger } from '../logger';
+import { logger } from "../logger";
 export interface PluginPreset {
   id: string;
   name: string;
@@ -38,12 +38,17 @@ export interface PluginStateManagerState {
   failedPlugins: string[];
 }
 
-type PluginParameterChangeListener = (instanceId: string, parameterId: string, value: Record<string, unknown>) => void;
+type PluginParameterChangeListener = (
+  instanceId: string,
+  parameterId: string,
+  value: Record<string, unknown>,
+) => void;
 
 export class PluginStateManager {
   private state: PluginStateManagerState;
   private listeners: Set<() => void> = new Set();
-  private parameterListeners: Map<string, Set<PluginParameterChangeListener>> = new Map();
+  private parameterListeners: Map<string, Set<PluginParameterChangeListener>> =
+    new Map();
   private saveTimer: number | null = null;
 
   constructor() {
@@ -64,10 +69,12 @@ export class PluginStateManager {
     pluginId: string,
     trackId: string,
     name: string,
-    defaultParameters: Record<string, number | boolean | string> = {}
+    defaultParameters: Record<string, number | boolean | string> = {},
   ): void {
-    const existingIndex = this.state.plugins.findIndex(p => p.instanceId === instanceId);
-    
+    const existingIndex = this.state.plugins.findIndex(
+      (p) => p.instanceId === instanceId,
+    );
+
     const plugin: PluginState = {
       id: pluginId,
       instanceId,
@@ -93,7 +100,9 @@ export class PluginStateManager {
   }
 
   unregisterPlugin(instanceId: string): void {
-    const index = this.state.plugins.findIndex(p => p.instanceId === instanceId);
+    const index = this.state.plugins.findIndex(
+      (p) => p.instanceId === instanceId,
+    );
     if (index !== -1) {
       this.state.plugins.splice(index, 1);
       this.state.automationBindings.delete(instanceId);
@@ -101,8 +110,12 @@ export class PluginStateManager {
     }
   }
 
-  setParameter(instanceId: string, parameterId: string, value: number | boolean | string): void {
-    const plugin = this.state.plugins.find(p => p.instanceId === instanceId);
+  setParameter(
+    instanceId: string,
+    parameterId: string,
+    value: number | boolean | string,
+  ): void {
+    const plugin = this.state.plugins.find((p) => p.instanceId === instanceId);
     if (!plugin) return;
 
     const oldValue = plugin.parameters[parameterId];
@@ -114,8 +127,11 @@ export class PluginStateManager {
     this.notify();
   }
 
-  setParameters(instanceId: string, parameters: Record<string, number | boolean | string>): void {
-    const plugin = this.state.plugins.find(p => p.instanceId === instanceId);
+  setParameters(
+    instanceId: string,
+    parameters: Record<string, number | boolean | string>,
+  ): void {
+    const plugin = this.state.plugins.find((p) => p.instanceId === instanceId);
     if (!plugin) return;
 
     for (const [parameterId, value] of Object.entries(parameters)) {
@@ -128,18 +144,23 @@ export class PluginStateManager {
     this.notify();
   }
 
-  getParameter(instanceId: string, parameterId: string): number | boolean | string | undefined {
-    const plugin = this.state.plugins.find(p => p.instanceId === instanceId);
+  getParameter(
+    instanceId: string,
+    parameterId: string,
+  ): number | boolean | string | undefined {
+    const plugin = this.state.plugins.find((p) => p.instanceId === instanceId);
     return plugin?.parameters[parameterId];
   }
 
-  getAllParameters(instanceId: string): Record<string, number | boolean | string> | null {
-    const plugin = this.state.plugins.find(p => p.instanceId === instanceId);
+  getAllParameters(
+    instanceId: string,
+  ): Record<string, number | boolean | string> | null {
+    const plugin = this.state.plugins.find((p) => p.instanceId === instanceId);
     return plugin ? { ...plugin.parameters } : null;
   }
 
   setBypass(instanceId: string, bypassed: boolean): void {
-    const plugin = this.state.plugins.find(p => p.instanceId === instanceId);
+    const plugin = this.state.plugins.find((p) => p.instanceId === instanceId);
     if (plugin) {
       plugin.bypassed = bypassed;
       this.notify();
@@ -147,7 +168,7 @@ export class PluginStateManager {
   }
 
   setLatency(instanceId: string, latency: number): void {
-    const plugin = this.state.plugins.find(p => p.instanceId === instanceId);
+    const plugin = this.state.plugins.find((p) => p.instanceId === instanceId);
     if (plugin) {
       plugin.latency = latency;
       this.notify();
@@ -155,7 +176,7 @@ export class PluginStateManager {
   }
 
   reportError(instanceId: string, errorMessage: string): void {
-    const plugin = this.state.plugins.find(p => p.instanceId === instanceId);
+    const plugin = this.state.plugins.find((p) => p.instanceId === instanceId);
     if (plugin) {
       plugin.hasError = true;
       plugin.errorMessage = errorMessage;
@@ -167,17 +188,19 @@ export class PluginStateManager {
   }
 
   clearError(instanceId: string): void {
-    const plugin = this.state.plugins.find(p => p.instanceId === instanceId);
+    const plugin = this.state.plugins.find((p) => p.instanceId === instanceId);
     if (plugin) {
       plugin.hasError = false;
       plugin.errorMessage = null;
-      this.state.failedPlugins = this.state.failedPlugins.filter(id => id !== instanceId);
+      this.state.failedPlugins = this.state.failedPlugins.filter(
+        (id) => id !== instanceId,
+      );
       this.notify();
     }
   }
 
   createPreset(instanceId: string, name: string): string | null {
-    const plugin = this.state.plugins.find(p => p.instanceId === instanceId);
+    const plugin = this.state.plugins.find((p) => p.instanceId === instanceId);
     if (!plugin) return null;
 
     const id = `preset_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
@@ -198,9 +221,9 @@ export class PluginStateManager {
   }
 
   loadPreset(instanceId: string, presetId: string): boolean {
-    const plugin = this.state.plugins.find(p => p.instanceId === instanceId);
-    const preset = this.state.presets.find(p => p.id === presetId);
-    
+    const plugin = this.state.plugins.find((p) => p.instanceId === instanceId);
+    const preset = this.state.presets.find((p) => p.id === presetId);
+
     if (!plugin || !preset) return false;
     if (plugin.pluginId !== preset.pluginId) return false;
 
@@ -215,8 +238,12 @@ export class PluginStateManager {
     return true;
   }
 
-  updatePreset(presetId: string, newParameters?: Record<string, number | boolean | string>, newName?: string): boolean {
-    const preset = this.state.presets.find(p => p.id === presetId);
+  updatePreset(
+    presetId: string,
+    newParameters?: Record<string, number | boolean | string>,
+    newName?: string,
+  ): boolean {
+    const preset = this.state.presets.find((p) => p.id === presetId);
     if (!preset || preset.isFactory) return false;
 
     if (newParameters) {
@@ -232,7 +259,7 @@ export class PluginStateManager {
   }
 
   deletePreset(presetId: string): boolean {
-    const preset = this.state.presets.find(p => p.id === presetId);
+    const preset = this.state.presets.find((p) => p.id === presetId);
     if (!preset || preset.isFactory) return false;
 
     const index = this.state.presets.indexOf(preset);
@@ -249,10 +276,16 @@ export class PluginStateManager {
   }
 
   getPresetsForPlugin(pluginId: string): PluginPreset[] {
-    return this.state.presets.filter(p => p.pluginId === pluginId);
+    return this.state.presets.filter((p) => p.pluginId === pluginId);
   }
 
-  importFactoryPresets(pluginId: string, presets: Array<{ name: string; parameters: Record<string, number | boolean | string> }>): void {
+  importFactoryPresets(
+    pluginId: string,
+    presets: Array<{
+      name: string;
+      parameters: Record<string, number | boolean | string>;
+    }>,
+  ): void {
     for (const preset of presets) {
       const id = `preset_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       this.state.presets.push({
@@ -268,13 +301,21 @@ export class PluginStateManager {
     this.notify();
   }
 
-  bindAutomation(instanceId: string, parameterId: string, automationLaneId: string, minValue: number, maxValue: number): void {
+  bindAutomation(
+    instanceId: string,
+    parameterId: string,
+    automationLaneId: string,
+    minValue: number,
+    maxValue: number,
+  ): void {
     if (!this.state.automationBindings.has(instanceId)) {
       this.state.automationBindings.set(instanceId, []);
     }
 
     const bindings = this.state.automationBindings.get(instanceId)!;
-    const existingIndex = bindings.findIndex(b => b.parameterId === parameterId);
+    const existingIndex = bindings.findIndex(
+      (b) => b.parameterId === parameterId,
+    );
 
     const binding: PluginAutomationBinding = {
       parameterId,
@@ -295,7 +336,7 @@ export class PluginStateManager {
   unbindAutomation(instanceId: string, parameterId: string): void {
     const bindings = this.state.automationBindings.get(instanceId);
     if (bindings) {
-      const index = bindings.findIndex(b => b.parameterId === parameterId);
+      const index = bindings.findIndex((b) => b.parameterId === parameterId);
       if (index !== -1) {
         bindings.splice(index, 1);
         this.notify();
@@ -308,7 +349,7 @@ export class PluginStateManager {
   }
 
   copyPluginState(instanceId: string): Record<string, any> | null {
-    const plugin = this.state.plugins.find(p => p.instanceId === instanceId);
+    const plugin = this.state.plugins.find((p) => p.instanceId === instanceId);
     if (!plugin) return null;
 
     return {
@@ -319,11 +360,11 @@ export class PluginStateManager {
   }
 
   pastePluginState(instanceId: string, state: Record<string, any>): boolean {
-    const plugin = this.state.plugins.find(p => p.instanceId === instanceId);
+    const plugin = this.state.plugins.find((p) => p.instanceId === instanceId);
     if (!plugin) return false;
 
     if (state.pluginId && state.pluginId !== plugin.pluginId) {
-      logger.warn('Cannot paste state from different plugin type');
+      logger.warn("Cannot paste state from different plugin type");
       return false;
     }
 
@@ -338,18 +379,21 @@ export class PluginStateManager {
   }
 
   getPluginsForTrack(trackId: string): PluginState[] {
-    return this.state.plugins.filter(p => p.trackId === trackId);
+    return this.state.plugins.filter((p) => p.trackId === trackId);
   }
 
   movePlugin(instanceId: string, newTrackId: string): void {
-    const plugin = this.state.plugins.find(p => p.instanceId === instanceId);
+    const plugin = this.state.plugins.find((p) => p.instanceId === instanceId);
     if (plugin) {
       plugin.trackId = newTrackId;
       this.notify();
     }
   }
 
-  onParameterChange(instanceId: string, listener: PluginParameterChangeListener): () => void {
+  onParameterChange(
+    instanceId: string,
+    listener: PluginParameterChangeListener,
+  ): () => void {
     if (!this.parameterListeners.has(instanceId)) {
       this.parameterListeners.set(instanceId, new Set());
     }
@@ -357,8 +401,14 @@ export class PluginStateManager {
     return () => this.parameterListeners.get(instanceId)?.delete(listener);
   }
 
-  private emitParameterChange(instanceId: string, parameterId: string, value: Record<string, unknown>): void {
-    this.parameterListeners.get(instanceId)?.forEach(l => l(instanceId, parameterId, value));
+  private emitParameterChange(
+    instanceId: string,
+    parameterId: string,
+    value: Record<string, unknown>,
+  ): void {
+    this.parameterListeners
+      .get(instanceId)
+      ?.forEach((l) => l(instanceId, parameterId, value));
   }
 
   private scheduleSave(): void {
@@ -376,7 +426,7 @@ export class PluginStateManager {
   }
 
   private notify(): void {
-    this.listeners.forEach(l => l());
+    this.listeners.forEach((l) => l());
   }
 
   serialize(): { plugins: PluginState[]; presets: PluginPreset[] } {

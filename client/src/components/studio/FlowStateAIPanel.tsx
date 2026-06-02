@@ -1,6 +1,6 @@
-import { logger } from '@/lib/logger';
-import { useState, useCallback, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { logger } from "@/lib/logger";
+import { useState, useCallback, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Brain,
   Sparkles,
@@ -30,15 +30,24 @@ import {
   Hash,
   BarChart3,
   Waves,
-} from 'lucide-react';
-import type { FlowStateMode } from '@/hooks/useFlowStateAdapter';
-import { cn } from '@/lib/utils';
-import { apiRequest } from '@/lib/queryClient';
-import { useToast } from '@/hooks/use-toast';
+} from "lucide-react";
+import type { FlowStateMode } from "@/hooks/useFlowStateAdapter";
+import { cn } from "@/lib/utils";
+import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 
 interface AISuggestion {
   id: string;
-  type: 'harmonic' | 'rhythmic' | 'arrangement' | 'mix' | 'effect' | 'automation' | 'chord' | 'melody' | 'structure';
+  type:
+    | "harmonic"
+    | "rhythmic"
+    | "arrangement"
+    | "mix"
+    | "effect"
+    | "automation"
+    | "chord"
+    | "melody"
+    | "structure";
   title: string;
   description: string;
   confidence: number;
@@ -72,7 +81,11 @@ interface FlowStateAIPanelProps {
   onAIMix?: () => void;
   onAIMaster?: () => void;
   onAIGenerate?: () => void;
-  onGenerateMelody?: (params?: { key?: string; scale?: string; tempo?: number }) => void;
+  onGenerateMelody?: (params?: {
+    key?: string;
+    scale?: string;
+    tempo?: number;
+  }) => void;
   onGenerateDrums?: (params?: { genre?: string; tempo?: number }) => void;
   onGeneratePercussion?: () => void;
   onGenerateBass?: (params?: { key?: string; scale?: string }) => void;
@@ -89,47 +102,47 @@ interface FlowStateAIPanelProps {
 
 const MODE_TIPS: Record<FlowStateMode, string[]> = {
   create: [
-    'Describe your vision and let AI compose',
-    'Use the pattern library for inspiration',
-    'Try text-to-music for quick ideas',
-    'AI detects key and suggests harmonies',
+    "Describe your vision and let AI compose",
+    "Use the pattern library for inspiration",
+    "Try text-to-music for quick ideas",
+    "AI detects key and suggests harmonies",
   ],
   record: [
-    'Enable input monitoring for live effects',
-    'AI will suggest optimal take selection',
-    'Use punch-in for precise recording',
-    'Real-time pitch and timing correction available',
+    "Enable input monitoring for live effects",
+    "AI will suggest optimal take selection",
+    "Use punch-in for precise recording",
+    "Real-time pitch and timing correction available",
   ],
   mix: [
-    'AI Mix analyzes and balances your tracks',
-    'Start with gain staging before processing',
-    'Check mix in mono for phase issues',
-    'AI suggests EQ curves based on genre',
+    "AI Mix analyzes and balances your tracks",
+    "Start with gain staging before processing",
+    "Check mix in mono for phase issues",
+    "AI suggests EQ curves based on genre",
   ],
   master: [
-    'Target -14 LUFS for streaming platforms',
-    'AI Master optimizes for your chosen target',
-    'Leave headroom for codec conversion',
-    'Compare with reference tracks',
+    "Target -14 LUFS for streaming platforms",
+    "AI Master optimizes for your chosen target",
+    "Leave headroom for codec conversion",
+    "Compare with reference tracks",
   ],
   perform: [
-    'Map MIDI controllers to parameters',
-    'AI suggests optimal cue points',
-    'Enable low-latency mode',
-    'Auto-DJ transitions available',
+    "Map MIDI controllers to parameters",
+    "AI suggests optimal cue points",
+    "Enable low-latency mode",
+    "Auto-DJ transitions available",
   ],
 };
 
 const SUGGESTION_COLORS: Record<string, string> = {
-  harmonic: 'from-purple-500 to-pink-500',
-  rhythmic: 'from-orange-500 to-red-500',
-  arrangement: 'from-blue-500 to-cyan-500',
-  mix: 'from-green-500 to-emerald-500',
-  effect: 'from-indigo-500 to-purple-500',
-  automation: 'from-amber-500 to-yellow-500',
-  chord: 'from-violet-500 to-purple-500',
-  melody: 'from-pink-500 to-rose-500',
-  structure: 'from-teal-500 to-cyan-500',
+  harmonic: "from-purple-500 to-pink-500",
+  rhythmic: "from-orange-500 to-red-500",
+  arrangement: "from-blue-500 to-cyan-500",
+  mix: "from-green-500 to-emerald-500",
+  effect: "from-indigo-500 to-purple-500",
+  automation: "from-amber-500 to-yellow-500",
+  chord: "from-violet-500 to-purple-500",
+  melody: "from-pink-500 to-rose-500",
+  structure: "from-teal-500 to-cyan-500",
 };
 
 const SUGGESTION_ICONS: Record<string, React.ElementType> = {
@@ -145,23 +158,31 @@ const SUGGESTION_ICONS: Record<string, React.ElementType> = {
 };
 
 const GENRE_PRESETS = [
-  { id: 'hip_hop', name: 'Hip-Hop', icon: '🎤' },
-  { id: 'trap', name: 'Trap', icon: '🔥' },
-  { id: 'edm', name: 'EDM', icon: '🎧' },
-  { id: 'rock', name: 'Rock', icon: '🎸' },
-  { id: 'pop', name: 'Pop', icon: '🎵' },
-  { id: 'jazz', name: 'Jazz', icon: '🎺' },
-  { id: 'rb', name: 'R&B', icon: '🎹' },
-  { id: 'lofi', name: 'Lo-Fi', icon: '☕' },
+  { id: "hip_hop", name: "Hip-Hop", icon: "🎤" },
+  { id: "trap", name: "Trap", icon: "🔥" },
+  { id: "edm", name: "EDM", icon: "🎧" },
+  { id: "rock", name: "Rock", icon: "🎸" },
+  { id: "pop", name: "Pop", icon: "🎵" },
+  { id: "jazz", name: "Jazz", icon: "🎺" },
+  { id: "rb", name: "R&B", icon: "🎹" },
+  { id: "lofi", name: "Lo-Fi", icon: "☕" },
 ];
 
 const CHORD_PROGRESSIONS = [
-  { id: 'pop', name: 'I-V-vi-IV', description: 'Classic Pop' },
-  { id: 'jazz', name: 'ii-V-I', description: 'Jazz Standard' },
-  { id: 'blues', name: 'I-I-I-I-IV-IV-I-I-V-IV-I-V', description: '12-Bar Blues' },
-  { id: 'canon', name: 'I-V-vi-iii-IV-I-IV-V', description: "Pachelbel's Canon" },
-  { id: 'sad', name: 'vi-IV-I-V', description: 'Emotional/Sad' },
-  { id: 'rock', name: 'I-IV-V', description: 'Classic Rock' },
+  { id: "pop", name: "I-V-vi-IV", description: "Classic Pop" },
+  { id: "jazz", name: "ii-V-I", description: "Jazz Standard" },
+  {
+    id: "blues",
+    name: "I-I-I-I-IV-IV-I-I-V-IV-I-V",
+    description: "12-Bar Blues",
+  },
+  {
+    id: "canon",
+    name: "I-V-vi-iii-IV-I-IV-V",
+    description: "Pachelbel's Canon",
+  },
+  { id: "sad", name: "vi-IV-I-V", description: "Emotional/Sad" },
+  { id: "rock", name: "I-IV-V", description: "Classic Rock" },
 ];
 
 const MODE_ICONS: Record<FlowStateMode, React.ElementType> = {
@@ -174,13 +195,13 @@ const MODE_ICONS: Record<FlowStateMode, React.ElementType> = {
 
 export function FlowStateAIPanel({
   suggestions = [],
-  mode = 'create',
+  mode = "create",
   projectId,
   tracks = [],
   currentTime = 0,
   tempo = 120,
-  musicalKey = 'C',
-  scale = 'minor',
+  musicalKey = "C",
+  scale = "minor",
   onAIMix,
   onAIMaster,
   onAIGenerate,
@@ -199,19 +220,31 @@ export function FlowStateAIPanel({
   isAIMastering = false,
 }: FlowStateAIPanelProps) {
   const { toast } = useToast();
-  const [expandedSuggestion, setExpandedSuggestion] = useState<string | null>(null);
-  const [dismissedSuggestions, setDismissedSuggestions] = useState<Set<string>>(new Set());
+  const [expandedSuggestion, setExpandedSuggestion] = useState<string | null>(
+    null,
+  );
+  const [dismissedSuggestions, setDismissedSuggestions] = useState<Set<string>>(
+    new Set(),
+  );
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [activeTab, setActiveTab] = useState<'suggestions' | 'generate' | 'analyze' | 'process'>('suggestions');
-  const [selectedGenre, setSelectedGenre] = useState('hip_hop');
-  const [selectedProgression, setSelectedProgression] = useState('pop');
+  const [activeTab, setActiveTab] = useState<
+    "suggestions" | "generate" | "analyze" | "process"
+  >("suggestions");
+  const [selectedGenre, setSelectedGenre] = useState("hip_hop");
+  const [selectedProgression, setSelectedProgression] = useState("pop");
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
-  const [generatedSuggestions, setGeneratedSuggestions] = useState<AISuggestion[]>([]);
+  const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(
+    null,
+  );
+  const [generatedSuggestions, setGeneratedSuggestions] = useState<
+    AISuggestion[]
+  >([]);
   const [isGeneratingSuggestions, setIsGeneratingSuggestions] = useState(false);
 
   const allSuggestions = [...suggestions, ...generatedSuggestions];
-  const activeSuggestions = allSuggestions.filter(s => !dismissedSuggestions.has(s.id));
+  const activeSuggestions = allSuggestions.filter(
+    (s) => !dismissedSuggestions.has(s.id),
+  );
   const tips = MODE_TIPS[mode] || [];
   const ModeIcon = MODE_ICONS[mode];
 
@@ -219,22 +252,22 @@ export function FlowStateAIPanel({
     setIsGeneratingSuggestions(true);
     try {
       const newSuggestions: AISuggestion[] = [];
-      
-      if (mode === 'create') {
+
+      if (mode === "create") {
         newSuggestions.push({
           id: `suggest-melody-${Date.now()}`,
-          type: 'melody',
-          title: 'Generate Melody in ' + musicalKey + ' ' + scale,
+          type: "melody",
+          title: "Generate Melody in " + musicalKey + " " + scale,
           description: `Create an AI-composed melodic line at ${tempo} BPM that fits your current track.`,
           confidence: 0.92,
           onApply: () => onGenerateMelody?.({ key: musicalKey, scale, tempo }),
         });
-        
-        if (tracks.length === 0 || !tracks.some(t => t.type === 'drums')) {
+
+        if (tracks.length === 0 || !tracks.some((t) => t.type === "drums")) {
           newSuggestions.push({
             id: `suggest-drums-${Date.now()}`,
-            type: 'rhythmic',
-            title: 'Add Drum Pattern',
+            type: "rhythmic",
+            title: "Add Drum Pattern",
             description: `Generate a ${selectedGenre} drum pattern to establish the groove.`,
             confidence: 0.88,
             onApply: () => onGenerateDrums?.({ genre: selectedGenre, tempo }),
@@ -243,70 +276,92 @@ export function FlowStateAIPanel({
 
         newSuggestions.push({
           id: `suggest-chords-${Date.now()}`,
-          type: 'chord',
-          title: 'Suggest Chord Progression',
-          description: 'AI will analyze and suggest chord progressions that complement your melody.',
+          type: "chord",
+          title: "Suggest Chord Progression",
+          description:
+            "AI will analyze and suggest chord progressions that complement your melody.",
           confidence: 0.85,
           onApply: () => onSuggestChords?.(),
         });
       }
-      
-      if (mode === 'mix') {
+
+      if (mode === "mix") {
         newSuggestions.push({
           id: `suggest-eq-${Date.now()}`,
-          type: 'mix',
-          title: 'Auto-EQ Optimization',
-          description: 'Balance frequency spectrum across all tracks for cleaner separation.',
+          type: "mix",
+          title: "Auto-EQ Optimization",
+          description:
+            "Balance frequency spectrum across all tracks for cleaner separation.",
           confidence: 0.9,
           onApply: () => onAIMix?.(),
         });
 
         newSuggestions.push({
           id: `suggest-levels-${Date.now()}`,
-          type: 'mix',
-          title: 'Auto Level Balancing',
-          description: 'Automatically adjust track volumes for optimal balance.',
+          type: "mix",
+          title: "Auto Level Balancing",
+          description:
+            "Automatically adjust track volumes for optimal balance.",
           confidence: 0.87,
           onApply: () => onAIMix?.(),
         });
       }
-      
-      if (mode === 'master') {
+
+      if (mode === "master") {
         newSuggestions.push({
           id: `suggest-loudness-${Date.now()}`,
-          type: 'mix',
-          title: 'Optimize for Streaming',
-          description: 'Apply mastering chain targeting -14 LUFS for Spotify/Apple Music.',
+          type: "mix",
+          title: "Optimize for Streaming",
+          description:
+            "Apply mastering chain targeting -14 LUFS for Spotify/Apple Music.",
           confidence: 0.93,
           onApply: () => onAIMaster?.(),
         });
       }
 
-      if (mode === 'record') {
+      if (mode === "record") {
         newSuggestions.push({
           id: `suggest-pitch-${Date.now()}`,
-          type: 'effect',
-          title: 'Enable Pitch Correction',
-          description: 'Real-time pitch correction tuned to ' + musicalKey + ' ' + scale,
+          type: "effect",
+          title: "Enable Pitch Correction",
+          description:
+            "Real-time pitch correction tuned to " + musicalKey + " " + scale,
           confidence: 0.86,
-          onApply: () => toast({ title: 'Pitch correction enabled', description: `Tuned to ${musicalKey} ${scale}` }),
+          onApply: () =>
+            toast({
+              title: "Pitch correction enabled",
+              description: `Tuned to ${musicalKey} ${scale}`,
+            }),
         });
       }
 
       setGeneratedSuggestions(newSuggestions);
     } catch (error) {
-      logger.error('Failed to generate suggestions:', error);
+      logger.error("Failed to generate suggestions:", error);
     } finally {
       setIsGeneratingSuggestions(false);
     }
-  }, [mode, tracks, tempo, musicalKey, scale, selectedGenre, onGenerateMelody, onGenerateDrums, onSuggestChords, onAIMix, onAIMaster, toast]);
+  }, [
+    mode,
+    tracks,
+    tempo,
+    musicalKey,
+    scale,
+    selectedGenre,
+    onGenerateMelody,
+    onGenerateDrums,
+    onSuggestChords,
+    onAIMix,
+    onAIMaster,
+    toast,
+  ]);
 
   useEffect(() => {
     generateContextSuggestions();
   }, [mode]);
 
   const handleDismiss = (id: string) => {
-    setDismissedSuggestions(prev => new Set([...prev, id]));
+    setDismissedSuggestions((prev) => new Set([...prev, id]));
   };
 
   const handleRefresh = () => {
@@ -323,15 +378,15 @@ export function FlowStateAIPanel({
       if (result) {
         setAnalysisResult(result);
         toast({
-          title: 'Analysis Complete',
+          title: "Analysis Complete",
           description: `Detected: ${result.key} ${result.scale} at ${result.tempo} BPM`,
         });
       }
     } catch (error) {
       toast({
-        title: 'Analysis Failed',
-        description: 'Could not analyze audio',
-        variant: 'destructive',
+        title: "Analysis Failed",
+        description: "Could not analyze audio",
+        variant: "destructive",
       });
     } finally {
       setIsAnalyzing(false);
@@ -355,10 +410,15 @@ export function FlowStateAIPanel({
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.9 }}
           >
-            <RefreshCw className={cn("w-4 h-4", isRefreshing && "animate-spin")} />
+            <RefreshCw
+              className={cn("w-4 h-4", isRefreshing && "animate-spin")}
+            />
           </motion.button>
           {onClose && (
-            <button onClick={onClose} className="p-2 rounded-lg hover:bg-white/5 text-white/50 hover:text-white">
+            <button
+              onClick={onClose}
+              className="p-2 rounded-lg hover:bg-white/5 text-white/50 hover:text-white"
+            >
               <X className="w-4 h-4" />
             </button>
           )}
@@ -367,10 +427,10 @@ export function FlowStateAIPanel({
 
       <div className="flex border-b border-white/5">
         {[
-          { id: 'suggestions', label: 'Ideas', icon: Lightbulb },
-          { id: 'generate', label: 'Create', icon: Wand2 },
-          { id: 'analyze', label: 'Analyze', icon: Target },
-          { id: 'process', label: 'Process', icon: Zap },
+          { id: "suggestions", label: "Ideas", icon: Lightbulb },
+          { id: "generate", label: "Create", icon: Wand2 },
+          { id: "analyze", label: "Analyze", icon: Target },
+          { id: "process", label: "Process", icon: Zap },
         ].map((tab) => (
           <motion.button
             key={tab.id}
@@ -379,9 +439,9 @@ export function FlowStateAIPanel({
               "flex-1 py-2.5 text-xs font-medium flex items-center justify-center gap-1.5 transition-all border-b-2",
               activeTab === tab.id
                 ? "border-purple-500 text-white bg-white/5"
-                : "border-transparent text-white/50 hover:text-white"
+                : "border-transparent text-white/50 hover:text-white",
             )}
-            whileHover={{ backgroundColor: 'rgba(255,255,255,0.05)' }}
+            whileHover={{ backgroundColor: "rgba(255,255,255,0.05)" }}
           >
             <tab.icon className="w-3.5 h-3.5" />
             {tab.label}
@@ -391,7 +451,7 @@ export function FlowStateAIPanel({
 
       <div className="flex-1 overflow-y-auto">
         <AnimatePresence mode="wait">
-          {activeTab === 'suggestions' && (
+          {activeTab === "suggestions" && (
             <motion.div
               key="suggestions"
               initial={{ opacity: 0, x: -20 }}
@@ -402,11 +462,16 @@ export function FlowStateAIPanel({
               <div className="bg-gradient-to-r from-white/5 to-white/[0.02] rounded-xl p-3 border border-white/5">
                 <div className="flex items-center gap-2 mb-2">
                   <ModeIcon className="w-4 h-4 text-indigo-400" />
-                  <span className="text-xs font-medium text-white/70 capitalize">{mode} Mode</span>
+                  <span className="text-xs font-medium text-white/70 capitalize">
+                    {mode} Mode
+                  </span>
                 </div>
                 <ul className="space-y-1.5">
                   {tips.map((tip, i) => (
-                    <li key={i} className="flex items-start gap-2 text-xs text-white/50">
+                    <li
+                      key={i}
+                      className="flex items-start gap-2 text-xs text-white/50"
+                    >
                       <Lightbulb className="w-3 h-3 mt-0.5 text-amber-400/60 flex-shrink-0" />
                       <span>{tip}</span>
                     </li>
@@ -424,8 +489,11 @@ export function FlowStateAIPanel({
               </div>
 
               {activeSuggestions.map((suggestion) => {
-                const colorClass = SUGGESTION_COLORS[suggestion.type] || SUGGESTION_COLORS.harmonic;
-                const IconComponent = SUGGESTION_ICONS[suggestion.type] || Music;
+                const colorClass =
+                  SUGGESTION_COLORS[suggestion.type] ||
+                  SUGGESTION_COLORS.harmonic;
+                const IconComponent =
+                  SUGGESTION_ICONS[suggestion.type] || Music;
                 const isExpanded = expandedSuggestion === suggestion.id;
 
                 return (
@@ -436,19 +504,23 @@ export function FlowStateAIPanel({
                       "rounded-xl border overflow-hidden cursor-pointer",
                       isExpanded
                         ? "bg-white/[0.08] border-white/10"
-                        : "bg-white/[0.03] border-white/5 hover:bg-white/[0.06]"
+                        : "bg-white/[0.03] border-white/5 hover:bg-white/[0.06]",
                     )}
-                    onClick={() => setExpandedSuggestion(isExpanded ? null : suggestion.id)}
+                    onClick={() =>
+                      setExpandedSuggestion(isExpanded ? null : suggestion.id)
+                    }
                   >
                     <div className="p-3">
                       <div className="flex items-start gap-3">
-                        <div className={cn(
-                          "w-8 h-8 rounded-lg bg-gradient-to-br flex items-center justify-center flex-shrink-0",
-                          colorClass
-                        )}>
+                        <div
+                          className={cn(
+                            "w-8 h-8 rounded-lg bg-gradient-to-br flex items-center justify-center flex-shrink-0",
+                            colorClass,
+                          )}
+                        >
                           <IconComponent className="w-4 h-4 text-white" />
                         </div>
-                        
+
                         <div className="flex-1 min-w-0">
                           <h3 className="text-sm font-medium text-white truncate">
                             {suggestion.title}
@@ -459,8 +531,13 @@ export function FlowStateAIPanel({
                           <div className="mt-2 flex items-center gap-2">
                             <div className="flex-1 h-1 bg-white/5 rounded-full overflow-hidden">
                               <div
-                                className={cn("h-full bg-gradient-to-r", colorClass)}
-                                style={{ width: `${suggestion.confidence * 100}%` }}
+                                className={cn(
+                                  "h-full bg-gradient-to-r",
+                                  colorClass,
+                                )}
+                                style={{
+                                  width: `${suggestion.confidence * 100}%`,
+                                }}
                               />
                             </div>
                             <span className="text-[10px] text-white/40">
@@ -491,13 +568,13 @@ export function FlowStateAIPanel({
                               suggestion.onApply();
                               onApplySuggestion?.(suggestion);
                               toast({
-                                title: 'Applied',
+                                title: "Applied",
                                 description: suggestion.title,
                               });
                             }}
                             className={cn(
                               "flex-1 py-2 rounded-lg text-xs font-medium text-white bg-gradient-to-r flex items-center justify-center gap-1.5",
-                              colorClass
+                              colorClass,
                             )}
                             whileHover={{ scale: 1.02 }}
                             whileTap={{ scale: 0.98 }}
@@ -527,7 +604,9 @@ export function FlowStateAIPanel({
                   <div className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center mx-auto mb-3">
                     <Sparkles className="w-5 h-5 text-white/30" />
                   </div>
-                  <p className="text-sm text-white/50">No suggestions right now</p>
+                  <p className="text-sm text-white/50">
+                    No suggestions right now
+                  </p>
                   <p className="text-xs text-white/30 mt-1">Keep creating!</p>
                   <motion.button
                     onClick={handleRefresh}
@@ -542,7 +621,7 @@ export function FlowStateAIPanel({
             </motion.div>
           )}
 
-          {activeTab === 'generate' && (
+          {activeTab === "generate" && (
             <motion.div
               key="generate"
               initial={{ opacity: 0, x: -20 }}
@@ -563,13 +642,15 @@ export function FlowStateAIPanel({
                       "p-3 rounded-xl border text-center transition-all",
                       selectedGenre === genre.id
                         ? "bg-purple-600 border-purple-500"
-                        : "bg-white/5 hover:bg-white/10 border-white/5"
+                        : "bg-white/5 hover:bg-white/10 border-white/5",
                     )}
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
                   >
                     <span className="text-xl">{genre.icon}</span>
-                    <p className="text-[10px] text-white/70 mt-1">{genre.name}</p>
+                    <p className="text-[10px] text-white/70 mt-1">
+                      {genre.name}
+                    </p>
                   </motion.button>
                 ))}
               </div>
@@ -591,7 +672,9 @@ export function FlowStateAIPanel({
 
               <div className="space-y-2">
                 <motion.button
-                  onClick={() => onGenerateMelody?.({ key: musicalKey, scale, tempo })}
+                  onClick={() =>
+                    onGenerateMelody?.({ key: musicalKey, scale, tempo })
+                  }
                   className="w-full p-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/5 flex items-center gap-3 text-left"
                   whileHover={{ scale: 1.01 }}
                   whileTap={{ scale: 0.99 }}
@@ -601,7 +684,9 @@ export function FlowStateAIPanel({
                   </div>
                   <div className="flex-1">
                     <p className="text-sm text-white">Generate Melody</p>
-                    <p className="text-[10px] text-white/50">{musicalKey} {scale} at {tempo} BPM</p>
+                    <p className="text-[10px] text-white/50">
+                      {musicalKey} {scale} at {tempo} BPM
+                    </p>
                   </div>
                   <ChevronRight className="w-4 h-4 text-white/30" />
                 </motion.button>
@@ -617,13 +702,17 @@ export function FlowStateAIPanel({
                   </div>
                   <div className="flex-1">
                     <p className="text-sm text-white">Generate Bass</p>
-                    <p className="text-[10px] text-white/50">Low-end foundation patterns</p>
+                    <p className="text-[10px] text-white/50">
+                      Low-end foundation patterns
+                    </p>
                   </div>
                   <ChevronRight className="w-4 h-4 text-white/30" />
                 </motion.button>
 
                 <motion.button
-                  onClick={() => onGenerateDrums?.({ genre: selectedGenre, tempo })}
+                  onClick={() =>
+                    onGenerateDrums?.({ genre: selectedGenre, tempo })
+                  }
                   className="w-full p-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/5 flex items-center gap-3 text-left"
                   whileHover={{ scale: 1.01 }}
                   whileTap={{ scale: 0.99 }}
@@ -633,7 +722,9 @@ export function FlowStateAIPanel({
                   </div>
                   <div className="flex-1">
                     <p className="text-sm text-white">Generate Drums</p>
-                    <p className="text-[10px] text-white/50">{selectedGenre} style at {tempo} BPM</p>
+                    <p className="text-[10px] text-white/50">
+                      {selectedGenre} style at {tempo} BPM
+                    </p>
                   </div>
                   <ChevronRight className="w-4 h-4 text-white/30" />
                 </motion.button>
@@ -649,7 +740,9 @@ export function FlowStateAIPanel({
                   </div>
                   <div className="flex-1">
                     <p className="text-sm text-white">Generate Percussion</p>
-                    <p className="text-[10px] text-white/50">Shakers, congas, tambourines</p>
+                    <p className="text-[10px] text-white/50">
+                      Shakers, congas, tambourines
+                    </p>
                   </div>
                   <ChevronRight className="w-4 h-4 text-white/30" />
                 </motion.button>
@@ -665,13 +758,16 @@ export function FlowStateAIPanel({
                     key={prog.id}
                     onClick={() => {
                       setSelectedProgression(prog.id);
-                      onGenerateChords?.({ progression: prog.name, key: musicalKey });
+                      onGenerateChords?.({
+                        progression: prog.name,
+                        key: musicalKey,
+                      });
                     }}
                     className={cn(
                       "w-full p-3 rounded-xl border flex items-center gap-3 text-left transition-all",
                       selectedProgression === prog.id
                         ? "bg-violet-600/20 border-violet-500/50"
-                        : "bg-white/5 hover:bg-white/10 border-white/5"
+                        : "bg-white/5 hover:bg-white/10 border-white/5",
                     )}
                     whileHover={{ scale: 1.01 }}
                     whileTap={{ scale: 0.99 }}
@@ -680,8 +776,12 @@ export function FlowStateAIPanel({
                       <Hash className="w-4 h-4 text-violet-400" />
                     </div>
                     <div className="flex-1">
-                      <p className="text-sm text-white font-mono">{prog.name}</p>
-                      <p className="text-[10px] text-white/50">{prog.description}</p>
+                      <p className="text-sm text-white font-mono">
+                        {prog.name}
+                      </p>
+                      <p className="text-[10px] text-white/50">
+                        {prog.description}
+                      </p>
                     </div>
                   </motion.button>
                 ))}
@@ -689,7 +789,7 @@ export function FlowStateAIPanel({
             </motion.div>
           )}
 
-          {activeTab === 'analyze' && (
+          {activeTab === "analyze" && (
             <motion.div
               key="analyze"
               initial={{ opacity: 0, x: -20 }}
@@ -730,51 +830,85 @@ export function FlowStateAIPanel({
                   <div className="grid grid-cols-2 gap-2">
                     <div className="p-3 rounded-xl bg-white/5 border border-white/5">
                       <p className="text-[10px] text-white/40 uppercase">Key</p>
-                      <p className="text-lg font-bold text-white">{analysisResult.key} {analysisResult.scale}</p>
+                      <p className="text-lg font-bold text-white">
+                        {analysisResult.key} {analysisResult.scale}
+                      </p>
                     </div>
                     <div className="p-3 rounded-xl bg-white/5 border border-white/5">
-                      <p className="text-[10px] text-white/40 uppercase">Tempo</p>
-                      <p className="text-lg font-bold text-white">{analysisResult.tempo} BPM</p>
+                      <p className="text-[10px] text-white/40 uppercase">
+                        Tempo
+                      </p>
+                      <p className="text-lg font-bold text-white">
+                        {analysisResult.tempo} BPM
+                      </p>
                     </div>
                   </div>
 
                   <div className="p-3 rounded-xl bg-white/5 border border-white/5 space-y-2">
-                    <p className="text-[10px] text-white/40 uppercase">Energy Analysis</p>
+                    <p className="text-[10px] text-white/40 uppercase">
+                      Energy Analysis
+                    </p>
                     <div className="space-y-1">
                       <div className="flex items-center justify-between">
                         <span className="text-xs text-white/60">Energy</span>
-                        <span className="text-xs text-white">{Math.round(analysisResult.energy * 100)}%</span>
+                        <span className="text-xs text-white">
+                          {Math.round(analysisResult.energy * 100)}%
+                        </span>
                       </div>
                       <div className="h-1 bg-white/10 rounded-full overflow-hidden">
-                        <div className="h-full bg-orange-500" style={{ width: `${analysisResult.energy * 100}%` }} />
+                        <div
+                          className="h-full bg-orange-500"
+                          style={{ width: `${analysisResult.energy * 100}%` }}
+                        />
                       </div>
                     </div>
                     <div className="space-y-1">
                       <div className="flex items-center justify-between">
-                        <span className="text-xs text-white/60">Danceability</span>
-                        <span className="text-xs text-white">{Math.round(analysisResult.danceability * 100)}%</span>
+                        <span className="text-xs text-white/60">
+                          Danceability
+                        </span>
+                        <span className="text-xs text-white">
+                          {Math.round(analysisResult.danceability * 100)}%
+                        </span>
                       </div>
                       <div className="h-1 bg-white/10 rounded-full overflow-hidden">
-                        <div className="h-full bg-pink-500" style={{ width: `${analysisResult.danceability * 100}%` }} />
+                        <div
+                          className="h-full bg-pink-500"
+                          style={{
+                            width: `${analysisResult.danceability * 100}%`,
+                          }}
+                        />
                       </div>
                     </div>
                     <div className="space-y-1">
                       <div className="flex items-center justify-between">
-                        <span className="text-xs text-white/60">Valence (Mood)</span>
-                        <span className="text-xs text-white">{Math.round(analysisResult.valence * 100)}%</span>
+                        <span className="text-xs text-white/60">
+                          Valence (Mood)
+                        </span>
+                        <span className="text-xs text-white">
+                          {Math.round(analysisResult.valence * 100)}%
+                        </span>
                       </div>
                       <div className="h-1 bg-white/10 rounded-full overflow-hidden">
-                        <div className="h-full bg-green-500" style={{ width: `${analysisResult.valence * 100}%` }} />
+                        <div
+                          className="h-full bg-green-500"
+                          style={{ width: `${analysisResult.valence * 100}%` }}
+                        />
                       </div>
                     </div>
                   </div>
 
                   {analysisResult.chords.length > 0 && (
                     <div className="p-3 rounded-xl bg-white/5 border border-white/5">
-                      <p className="text-[10px] text-white/40 uppercase mb-2">Detected Chords</p>
+                      <p className="text-[10px] text-white/40 uppercase mb-2">
+                        Detected Chords
+                      </p>
                       <div className="flex flex-wrap gap-1">
                         {analysisResult.chords.slice(0, 8).map((c, i) => (
-                          <span key={i} className="px-2 py-1 text-xs bg-purple-500/20 text-purple-300 rounded">
+                          <span
+                            key={i}
+                            className="px-2 py-1 text-xs bg-purple-500/20 text-purple-300 rounded"
+                          >
                             {c.chord}
                           </span>
                         ))}
@@ -811,7 +945,7 @@ export function FlowStateAIPanel({
             </motion.div>
           )}
 
-          {activeTab === 'process' && (
+          {activeTab === "process" && (
             <motion.div
               key="process"
               initial={{ opacity: 0, x: -20 }}
@@ -830,14 +964,18 @@ export function FlowStateAIPanel({
                   "w-full p-4 rounded-xl border flex items-center gap-4 text-left transition-all",
                   isAIMixing
                     ? "bg-blue-500/20 border-blue-500/30"
-                    : "bg-white/5 hover:bg-white/10 border-white/5"
+                    : "bg-white/5 hover:bg-white/10 border-white/5",
                 )}
                 whileHover={!isAIMixing ? { scale: 1.01 } : {}}
               >
-                <div className={cn(
-                  "w-12 h-12 rounded-xl flex items-center justify-center",
-                  isAIMixing ? "bg-blue-500" : "bg-gradient-to-br from-blue-500 to-cyan-500"
-                )}>
+                <div
+                  className={cn(
+                    "w-12 h-12 rounded-xl flex items-center justify-center",
+                    isAIMixing
+                      ? "bg-blue-500"
+                      : "bg-gradient-to-br from-blue-500 to-cyan-500",
+                  )}
+                >
                   {isAIMixing ? (
                     <Loader2 className="w-5 h-5 text-white animate-spin" />
                   ) : (
@@ -846,7 +984,7 @@ export function FlowStateAIPanel({
                 </div>
                 <div className="flex-1">
                   <p className="text-sm font-medium text-white">
-                    {isAIMixing ? 'Mixing...' : 'AI Mix'}
+                    {isAIMixing ? "Mixing..." : "AI Mix"}
                   </p>
                   <p className="text-xs text-white/50">
                     Intelligent track balancing & processing
@@ -861,14 +999,18 @@ export function FlowStateAIPanel({
                   "w-full p-4 rounded-xl border flex items-center gap-4 text-left transition-all",
                   isAIMastering
                     ? "bg-amber-500/20 border-amber-500/30"
-                    : "bg-white/5 hover:bg-white/10 border-white/5"
+                    : "bg-white/5 hover:bg-white/10 border-white/5",
                 )}
                 whileHover={!isAIMastering ? { scale: 1.01 } : {}}
               >
-                <div className={cn(
-                  "w-12 h-12 rounded-xl flex items-center justify-center",
-                  isAIMastering ? "bg-amber-500" : "bg-gradient-to-br from-amber-500 to-yellow-500"
-                )}>
+                <div
+                  className={cn(
+                    "w-12 h-12 rounded-xl flex items-center justify-center",
+                    isAIMastering
+                      ? "bg-amber-500"
+                      : "bg-gradient-to-br from-amber-500 to-yellow-500",
+                  )}
+                >
                   {isAIMastering ? (
                     <Loader2 className="w-5 h-5 text-white animate-spin" />
                   ) : (
@@ -877,7 +1019,7 @@ export function FlowStateAIPanel({
                 </div>
                 <div className="flex-1">
                   <p className="text-sm font-medium text-white">
-                    {isAIMastering ? 'Mastering...' : 'AI Master'}
+                    {isAIMastering ? "Mastering..." : "AI Master"}
                   </p>
                   <p className="text-xs text-white/50">
                     Professional mastering for streaming
@@ -891,15 +1033,17 @@ export function FlowStateAIPanel({
 
               <div className="grid grid-cols-2 gap-2">
                 {[
-                  { value: '-14', label: 'Spotify', platform: 'YouTube' },
-                  { value: '-16', label: 'Apple', platform: 'Music' },
+                  { value: "-14", label: "Spotify", platform: "YouTube" },
+                  { value: "-16", label: "Apple", platform: "Music" },
                 ].map((target) => (
                   <motion.button
                     key={target.value}
                     className="p-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/5 text-center"
                     whileHover={{ scale: 1.02 }}
                   >
-                    <p className="text-lg font-bold text-white">{target.value}</p>
+                    <p className="text-lg font-bold text-white">
+                      {target.value}
+                    </p>
                     <p className="text-[10px] text-white/50">{target.label}</p>
                   </motion.button>
                 ))}
@@ -916,8 +1060,12 @@ export function FlowStateAIPanel({
                 whileTap={{ scale: 0.99 }}
               >
                 <Volume2 className="w-4 h-4 text-white/60" />
-                <span className="text-sm text-white flex-1 text-left">Analyze Audio</span>
-                <span className="text-[10px] text-white/30">BPM, Key, Energy</span>
+                <span className="text-sm text-white flex-1 text-left">
+                  Analyze Audio
+                </span>
+                <span className="text-[10px] text-white/30">
+                  BPM, Key, Energy
+                </span>
               </motion.button>
             </motion.div>
           )}

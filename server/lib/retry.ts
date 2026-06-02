@@ -1,4 +1,4 @@
-import { logger } from '../logger.js';
+import { logger } from "../logger.js";
 
 export interface RetryOptions {
   retries?: number;
@@ -12,21 +12,38 @@ export interface RetryOptions {
 }
 
 const DEFAULT_RETRY_ON = (err: unknown): boolean => {
-  if (!err || typeof err !== 'object') return true;
+  if (!err || typeof err !== "object") return true;
   const e = err as { code?: string; response?: { status?: number } };
-  if (e.code && ['ECONNRESET', 'ETIMEDOUT', 'ENOTFOUND', 'EAI_AGAIN', 'ECONNREFUSED'].includes(e.code)) {
+  if (
+    e.code &&
+    [
+      "ECONNRESET",
+      "ETIMEDOUT",
+      "ENOTFOUND",
+      "EAI_AGAIN",
+      "ECONNREFUSED",
+    ].includes(e.code)
+  ) {
     return true;
   }
   const status = e.response?.status;
-  if (typeof status === 'number') {
-    return status === 408 || status === 425 || status === 429 || (status >= 500 && status < 600);
+  if (typeof status === "number") {
+    return (
+      status === 408 ||
+      status === 425 ||
+      status === 429 ||
+      (status >= 500 && status < 600)
+    );
   }
   return true;
 };
 
 const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 
-export async function withRetry<T>(fn: () => Promise<T>, opts: RetryOptions = {}): Promise<T> {
+export async function withRetry<T>(
+  fn: () => Promise<T>,
+  opts: RetryOptions = {},
+): Promise<T> {
   const retries = opts.retries ?? 4;
   const baseMs = opts.baseMs ?? 250;
   const maxMs = opts.maxMs ?? 8_000;
@@ -42,11 +59,19 @@ export async function withRetry<T>(fn: () => Promise<T>, opts: RetryOptions = {}
       lastErr = err;
       if (attempt === retries || !retryOn(err, attempt)) break;
       const expo = Math.min(maxMs, baseMs * Math.pow(factor, attempt));
-      const delay = jitter ? Math.floor(expo / 2 + Math.random() * (expo / 2)) : expo;
+      const delay = jitter
+        ? Math.floor(expo / 2 + Math.random() * (expo / 2))
+        : expo;
       opts.onRetry?.(err, attempt + 1, delay);
       logger.debug?.(
-        { attempt: attempt + 1, retries, delayMs: delay, label: opts.label, err: (err as Record<string, unknown>)?.message },
-        '[retry] retrying'
+        {
+          attempt: attempt + 1,
+          retries,
+          delayMs: delay,
+          label: opts.label,
+          err: (err as Record<string, unknown>)?.message,
+        },
+        "[retry] retrying",
       );
       await sleep(delay);
     }

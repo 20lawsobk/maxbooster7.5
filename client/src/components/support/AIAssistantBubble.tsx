@@ -1,18 +1,28 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import { useState, useEffect, useRef, useCallback } from "react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import {
-  Sparkles, X, Send, Lightbulb, Music, TrendingUp, Zap,
-  Minimize2, Maximize2, Trash2, ChevronUp, Loader2,
-} from 'lucide-react';
-import { useAuth } from '@/hooks/useAuth';
-import { cn } from '@/lib/utils';
+  Sparkles,
+  X,
+  Send,
+  Lightbulb,
+  Music,
+  TrendingUp,
+  Zap,
+  Minimize2,
+  Maximize2,
+  Trash2,
+  ChevronUp,
+  Loader2,
+} from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
+import { cn } from "@/lib/utils";
 
 interface Message {
   id: string;
-  role: 'user' | 'assistant';
+  role: "user" | "assistant";
   content: string;
   timestamp: Date;
 }
@@ -24,15 +34,23 @@ interface Suggestion {
 }
 
 const QUICK_SUGGESTIONS: Suggestion[] = [
-  { icon: Music, text: 'How do I use the DAW?', color: 'text-purple-400' },
-  { icon: TrendingUp, text: 'How does distribution work?', color: 'text-blue-400' },
-  { icon: Zap, text: 'Tell me about the AI features', color: 'text-amber-400' },
-  { icon: Lightbulb, text: 'How do I monetize my music?', color: 'text-green-400' },
+  { icon: Music, text: "How do I use the DAW?", color: "text-purple-400" },
+  {
+    icon: TrendingUp,
+    text: "How does distribution work?",
+    color: "text-blue-400",
+  },
+  { icon: Zap, text: "Tell me about the AI features", color: "text-amber-400" },
+  {
+    icon: Lightbulb,
+    text: "How do I monetize my music?",
+    color: "text-green-400",
+  },
 ];
 
 const WELCOME_MESSAGE = (username?: string): Message => ({
-  id: 'welcome',
-  role: 'assistant',
+  id: "welcome",
+  role: "assistant",
   content: username
     ? `Hey ${username}! I'm Max — built in-house by the B-Lawz Music team. I remember our full conversation history across every session, so feel free to ask follow-up questions anytime. What can I help you with today?`
     : "Hey there! I'm Max, your in-house AI assistant. Ask me anything about Max Booster — Studio, distribution, royalties, marketplace, social media, advertising, and more. What do you want to know?",
@@ -41,8 +59,8 @@ const WELCOME_MESSAGE = (username?: string): Message => ({
 
 async function apiFetch(path: string, options?: RequestInit) {
   const res = await fetch(path, {
-    headers: { 'Content-Type': 'application/json' },
-    credentials: 'include',
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
     ...options,
   });
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -54,7 +72,7 @@ export function AIAssistantBubble() {
   const [isOpen, setIsOpen] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
-  const [inputValue, setInputValue] = useState('');
+  const [inputValue, setInputValue] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   const [historyLoaded, setHistoryLoaded] = useState(false);
   const [hasMore, setHasMore] = useState(false);
@@ -68,13 +86,13 @@ export function AIAssistantBubble() {
   // Scroll to bottom when new messages arrive (but not when loading older)
   useEffect(() => {
     if (shouldScrollToBottom.current && bottomAnchorRef.current) {
-      bottomAnchorRef.current.scrollIntoView({ behavior: 'smooth' });
+      bottomAnchorRef.current.scrollIntoView({ behavior: "smooth" });
     }
   }, [messages, isTyping]);
 
   const mapRow = (m: Record<string, unknown>): Message => ({
     id: m.id,
-    role: m.role as 'user' | 'assistant',
+    role: m.role as "user" | "assistant",
     content: m.content,
     timestamp: new Date(m.createdAt),
   });
@@ -90,7 +108,7 @@ export function AIAssistantBubble() {
 
     try {
       shouldScrollToBottom.current = true;
-      const data = await apiFetch('/api/assistant/history');
+      const data = await apiFetch("/api/assistant/history");
       const prior: Message[] = (data.messages || []).map(mapRow);
       setHasMore(data.hasMore ?? false);
       setTotalMessages(data.total ?? prior.length);
@@ -113,7 +131,7 @@ export function AIAssistantBubble() {
     if (isLoadingOlder || !hasMore) return;
 
     // Find the oldest message ID as the cursor
-    const currentMessages = messages.filter((m) => m.id !== 'welcome');
+    const currentMessages = messages.filter((m) => m.id !== "welcome");
     if (currentMessages.length === 0) return;
     const oldestId = currentMessages[0].id;
 
@@ -125,7 +143,9 @@ export function AIAssistantBubble() {
     shouldScrollToBottom.current = false;
 
     try {
-      const data = await apiFetch(`/api/assistant/history?before=${encodeURIComponent(oldestId)}`);
+      const data = await apiFetch(
+        `/api/assistant/history?before=${encodeURIComponent(oldestId)}`,
+      );
       const older: Message[] = (data.messages || []).map(mapRow);
 
       if (older.length > 0) {
@@ -157,33 +177,33 @@ export function AIAssistantBubble() {
 
     const optimisticUser: Message = {
       id: `optimistic-${Date.now()}`,
-      role: 'user',
+      role: "user",
       content: textToSend,
       timestamp: new Date(),
     };
 
     shouldScrollToBottom.current = true;
     setMessages((prev) => [...prev, optimisticUser]);
-    setInputValue('');
+    setInputValue("");
     setIsTyping(true);
 
     try {
-      const data = await apiFetch('/api/assistant/chat', {
-        method: 'POST',
+      const data = await apiFetch("/api/assistant/chat", {
+        method: "POST",
         body: JSON.stringify({ message: textToSend }),
       });
 
       // Replace the optimistic message with the server-persisted one (has real ID)
       const realUserMessage: Message = {
         id: data.messageId || optimisticUser.id,
-        role: 'user',
+        role: "user",
         content: textToSend,
         timestamp: optimisticUser.timestamp,
       };
 
       const aiMessage: Message = {
         id: data.assistantMessageId || `ai-${Date.now()}`,
-        role: 'assistant',
+        role: "assistant",
         content: data.content,
         timestamp: new Date(),
       };
@@ -200,8 +220,9 @@ export function AIAssistantBubble() {
         optimisticUser,
         {
           id: `err-${Date.now()}`,
-          role: 'assistant',
-          content: "I'm having trouble connecting right now. Please check your connection and try again.",
+          role: "assistant",
+          content:
+            "I'm having trouble connecting right now. Please check your connection and try again.",
           timestamp: new Date(),
         },
       ]);
@@ -218,7 +239,7 @@ export function AIAssistantBubble() {
       return;
     }
     try {
-      await apiFetch('/api/assistant/history', { method: 'DELETE' });
+      await apiFetch("/api/assistant/history", { method: "DELETE" });
     } catch {
       // ignore
     }
@@ -254,14 +275,16 @@ export function AIAssistantBubble() {
     );
   }
 
-  const nonWelcomeCount = messages.filter((m) => m.id !== 'welcome').length;
+  const nonWelcomeCount = messages.filter((m) => m.id !== "welcome").length;
   const showSuggestions = nonWelcomeCount === 0 && !isTyping;
 
   return (
-    <div className={cn(
-      "fixed bottom-6 right-6 z-50 transition-all duration-200",
-      isMinimized ? "w-80" : "w-96"
-    )}>
+    <div
+      className={cn(
+        "fixed bottom-6 right-6 z-50 transition-all duration-200",
+        isMinimized ? "w-80" : "w-96",
+      )}
+    >
       <Card className="shadow-2xl border-2 border-cyan-500/20 bg-[#1a1a1a]">
         <CardHeader className="bg-gradient-to-r from-cyan-500/10 to-blue-500/10 border-b border-cyan-500/20 p-4">
           <div className="flex items-center justify-between">
@@ -275,7 +298,8 @@ export function AIAssistantBubble() {
                   In-House AI
                   {user && totalMessages > 0 && (
                     <span className="ml-1 text-cyan-400/70">
-                      · {totalMessages.toLocaleString()} msg{totalMessages !== 1 ? 's' : ''}
+                      · {totalMessages.toLocaleString()} msg
+                      {totalMessages !== 1 ? "s" : ""}
                     </span>
                   )}
                 </div>
@@ -299,7 +323,11 @@ export function AIAssistantBubble() {
                 className="h-8 w-8 p-0 text-gray-400 hover:text-white"
                 onClick={() => setIsMinimized(!isMinimized)}
               >
-                {isMinimized ? <Maximize2 className="h-4 w-4" /> : <Minimize2 className="h-4 w-4" />}
+                {isMinimized ? (
+                  <Maximize2 className="h-4 w-4" />
+                ) : (
+                  <Minimize2 className="h-4 w-4" />
+                )}
               </Button>
               <Button
                 variant="ghost"
@@ -317,7 +345,6 @@ export function AIAssistantBubble() {
           <CardContent className="p-0">
             <ScrollArea ref={scrollRef} className="h-96 p-4">
               <div className="space-y-4">
-
                 {/* ── Load older messages button ── */}
                 {hasMore && (
                   <div className="flex justify-center pb-2">
@@ -349,15 +376,15 @@ export function AIAssistantBubble() {
                     key={message.id}
                     className={cn(
                       "flex",
-                      message.role === 'user' ? 'justify-end' : 'justify-start'
+                      message.role === "user" ? "justify-end" : "justify-start",
                     )}
                   >
                     <div
                       className={cn(
                         "max-w-[80%] rounded-lg px-4 py-2 whitespace-pre-wrap text-sm",
-                        message.role === 'user'
-                          ? 'bg-gradient-to-r from-cyan-500 to-blue-500 text-white'
-                          : 'bg-[#252525] text-gray-100 border border-gray-700'
+                        message.role === "user"
+                          ? "bg-gradient-to-r from-cyan-500 to-blue-500 text-white"
+                          : "bg-[#252525] text-gray-100 border border-gray-700",
                       )}
                     >
                       {message.content}
@@ -370,9 +397,18 @@ export function AIAssistantBubble() {
                   <div className="flex justify-start">
                     <div className="bg-[#252525] text-gray-100 border border-gray-700 rounded-lg px-4 py-2">
                       <div className="flex space-x-2">
-                        <div className="w-2 h-2 bg-cyan-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                        <div className="w-2 h-2 bg-cyan-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                        <div className="w-2 h-2 bg-cyan-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                        <div
+                          className="w-2 h-2 bg-cyan-400 rounded-full animate-bounce"
+                          style={{ animationDelay: "0ms" }}
+                        />
+                        <div
+                          className="w-2 h-2 bg-cyan-400 rounded-full animate-bounce"
+                          style={{ animationDelay: "150ms" }}
+                        />
+                        <div
+                          className="w-2 h-2 bg-cyan-400 rounded-full animate-bounce"
+                          style={{ animationDelay: "300ms" }}
+                        />
                       </div>
                     </div>
                   </div>
@@ -389,8 +425,15 @@ export function AIAssistantBubble() {
                         className="justify-start text-left h-auto py-2 px-3 border-gray-700 hover:border-cyan-500/50 hover:bg-cyan-500/10"
                         onClick={() => handleSendMessage(suggestion.text)}
                       >
-                        <suggestion.icon className={cn("h-4 w-4 mr-2 flex-shrink-0", suggestion.color)} />
-                        <span className="text-xs text-gray-300">{suggestion.text}</span>
+                        <suggestion.icon
+                          className={cn(
+                            "h-4 w-4 mr-2 flex-shrink-0",
+                            suggestion.color,
+                          )}
+                        />
+                        <span className="text-xs text-gray-300">
+                          {suggestion.text}
+                        </span>
                       </Button>
                     ))}
                   </div>
@@ -407,7 +450,7 @@ export function AIAssistantBubble() {
                   value={inputValue}
                   onChange={(e) => setInputValue(e.target.value)}
                   onKeyDown={(e) => {
-                    if (e.key === 'Enter' && !e.shiftKey) {
+                    if (e.key === "Enter" && !e.shiftKey) {
                       e.preventDefault();
                       handleSendMessage();
                     }
@@ -427,8 +470,8 @@ export function AIAssistantBubble() {
               </div>
               <div className="mt-2 text-xs text-gray-500 text-center">
                 {user
-                  ? 'Infinite history saved · All messages persisted'
-                  : 'In-house AI · Sign in to save your conversation'}
+                  ? "Infinite history saved · All messages persisted"
+                  : "In-house AI · Sign in to save your conversation"}
               </div>
             </div>
           </CardContent>

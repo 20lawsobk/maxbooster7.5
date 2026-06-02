@@ -36,7 +36,8 @@ export class AIAnalyzer {
     const peaks = this.findPeaks(dataArray);
 
     // Calculate average level
-    const averageLevel = dataArray.reduce((sum, val) => sum + val, 0) / bufferLength;
+    const averageLevel =
+      dataArray.reduce((sum, val) => sum + val, 0) / bufferLength;
 
     // Find dominant frequency
     const dominantFrequency = this.findDominantFrequency(dataArray);
@@ -72,7 +73,11 @@ export class AIAnalyzer {
     const blockSize = Math.floor(sampleRate * 0.4); // 400ms blocks
     let blockCount = 0;
 
-    for (let start = 0; start < channelData[0].length - blockSize; start += blockSize / 2) {
+    for (
+      let start = 0;
+      start < channelData[0].length - blockSize;
+      start += blockSize / 2
+    ) {
       let blockPower = 0;
 
       for (let channel = 0; channel < channelData.length; channel++) {
@@ -112,7 +117,11 @@ export class AIAnalyzer {
     const minDistance = 10; // Minimum distance between peaks
 
     for (let i = 1; i < data.length - 1; i++) {
-      if (data[i] > threshold && data[i] > data[i - 1] && data[i] > data[i + 1]) {
+      if (
+        data[i] > threshold &&
+        data[i] > data[i - 1] &&
+        data[i] > data[i + 1]
+      ) {
         // Check minimum distance from last peak
         if (peaks.length === 0 || i - peaks[peaks.length - 1] >= minDistance) {
           peaks.push(i);
@@ -147,7 +156,10 @@ export class AIAnalyzer {
   /**
    * Create K-weighting pre-filter
    */
-  private createKWeightingPreFilter(sampleRate: number): { b: number[]; a: number[] } {
+  private createKWeightingPreFilter(sampleRate: number): {
+    b: number[];
+    a: number[];
+  } {
     // High-pass filter at 100 Hz
     const fc = 100 / sampleRate;
     const K = Math.tan(Math.PI * fc);
@@ -162,7 +174,10 @@ export class AIAnalyzer {
   /**
    * Create K-weighting high shelf filter
    */
-  private createKWeightingHighShelf(sampleRate: number): { b: number[]; a: number[] } {
+  private createKWeightingHighShelf(sampleRate: number): {
+    b: number[];
+    a: number[];
+  } {
     // High shelf at 2 kHz, +4 dB
     const fc = 2000 / sampleRate;
     const V0 = Math.pow(10, 4 / 20);
@@ -185,7 +200,7 @@ export class AIAnalyzer {
   private applyKWeighting(
     block: Float32Array,
     preFilter: { b: number[]; a: number[] },
-    highShelf: { b: number[]; a: number[] }
+    highShelf: { b: number[]; a: number[] },
   ): Float32Array {
     const filtered = new Float32Array(block.length);
 
@@ -194,10 +209,12 @@ export class AIAnalyzer {
       filtered[i] = preFilter.b[0] * block[i];
 
       if (i >= 1) {
-        filtered[i] += preFilter.b[1] * block[i - 1] - preFilter.a[1] * filtered[i - 1];
+        filtered[i] +=
+          preFilter.b[1] * block[i - 1] - preFilter.a[1] * filtered[i - 1];
       }
       if (i >= 2) {
-        filtered[i] += preFilter.b[2] * block[i - 2] - preFilter.a[2] * filtered[i - 2];
+        filtered[i] +=
+          preFilter.b[2] * block[i - 2] - preFilter.a[2] * filtered[i - 2];
       }
     }
 
@@ -207,10 +224,12 @@ export class AIAnalyzer {
       output[i] = highShelf.b[0] * filtered[i];
 
       if (i >= 1) {
-        output[i] += highShelf.b[1] * filtered[i - 1] - highShelf.a[1] * output[i - 1];
+        output[i] +=
+          highShelf.b[1] * filtered[i - 1] - highShelf.a[1] * output[i - 1];
       }
       if (i >= 2) {
-        output[i] += highShelf.b[2] * filtered[i - 2] - highShelf.a[2] * output[i - 2];
+        output[i] +=
+          highShelf.b[2] * filtered[i - 2] - highShelf.a[2] * output[i - 2];
       }
     }
 
@@ -222,7 +241,7 @@ export class AIAnalyzer {
    */
   analyzeStereoImage(
     leftChannel: Float32Array,
-    rightChannel: Float32Array
+    rightChannel: Float32Array,
   ): {
     correlation: number;
     balance: number;
@@ -259,7 +278,7 @@ export class AIAnalyzer {
    */
   detectClipping(
     buffer: AudioBuffer,
-    threshold: number = 0.99
+    threshold: number = 0.99,
   ): {
     hasClipping: boolean;
     clippedSamples: number;
@@ -334,11 +353,11 @@ export class AIAnalyzer {
     treble: { min: number; max: number; label: string };
   } {
     return {
-      bass: { min: 20, max: 250, label: 'Bass' },
-      lowMid: { min: 250, max: 500, label: 'Low-Mid' },
-      mid: { min: 500, max: 2000, label: 'Mid' },
-      highMid: { min: 2000, max: 8000, label: 'High-Mid' },
-      treble: { min: 8000, max: 20000, label: 'Treble' },
+      bass: { min: 20, max: 250, label: "Bass" },
+      lowMid: { min: 250, max: 500, label: "Low-Mid" },
+      mid: { min: 500, max: 2000, label: "Mid" },
+      highMid: { min: 2000, max: 8000, label: "High-Mid" },
+      treble: { min: 8000, max: 20000, label: "Treble" },
     };
   }
 

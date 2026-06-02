@@ -1,7 +1,7 @@
-import { getRedisClient } from './redisClient.js';
-import { isPdimConfigured } from './pdimClient.js';
-import { logger } from '../logger.js';
-import { randomBytes } from 'crypto';
+import { getRedisClient } from "./redisClient.js";
+import { isPdimConfigured } from "./pdimClient.js";
+import { logger } from "../logger.js";
+import { randomBytes } from "crypto";
 
 /**
  * Distributed Lock Service — PDIM-backed
@@ -14,14 +14,17 @@ import { randomBytes } from 'crypto';
  * Acquire a lock.
  * @returns Lock token if acquired, null if the lock is already held by another node.
  */
-export async function acquireLock(lockName: string, ttlSeconds: number): Promise<string | null> {
+export async function acquireLock(
+  lockName: string,
+  ttlSeconds: number,
+): Promise<string | null> {
   const redis = getRedisClient();
-  const token = randomBytes(16).toString('hex');
+  const token = randomBytes(16).toString("hex");
   const key = `lock:${lockName}`;
 
   try {
-    const result = await redis.set(key, token, 'EX', ttlSeconds, 'NX');
-    return result === 'OK' ? token : null;
+    const result = await redis.set(key, token, "EX", ttlSeconds, "NX");
+    return result === "OK" ? token : null;
   } catch (err) {
     logger.warn({ err: err }, `[Lock] Failed to acquire lock ${lockName}:`);
     throw err;
@@ -34,7 +37,10 @@ export async function acquireLock(lockName: string, ttlSeconds: number): Promise
  * NOTE: This uses Lua eval and will time out on PDIM. For scheduler tasks,
  * use withSchedLock() instead, which performs a non-Lua get+del release.
  */
-export async function releaseLock(lockName: string, token: string): Promise<void> {
+export async function releaseLock(
+  lockName: string,
+  token: string,
+): Promise<void> {
   const redis = getRedisClient();
   const key = `lock:${lockName}`;
   const lua = `
@@ -63,7 +69,7 @@ export async function releaseLock(lockName: string, token: string): Promise<void
 export async function withLock<T>(
   lockName: string,
   ttlSeconds: number,
-  fn: () => Promise<T>
+  fn: () => Promise<T>,
 ): Promise<T | null> {
   const token = await acquireLock(lockName, ttlSeconds);
   if (!token) return null;
@@ -138,7 +144,9 @@ export async function withSchedLock(
   } catch (err) {
     // PDIM unavailable — degrade gracefully: allow this pod to execute rather
     // than leaving the job unrun across the entire cluster during an outage.
-    logger.warn(`[SchedLock] PDIM error for ${name}, allowing execution: ${(err as Error).message}`);
+    logger.warn(
+      `[SchedLock] PDIM error for ${name}, allowing execution: ${(err as Error).message}`,
+    );
     _heldLockCount++;
     try {
       await fn();

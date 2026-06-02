@@ -1,9 +1,13 @@
-import { transportEngine, MusicalPosition, TransportEngine } from './TransportEngine';
+import {
+  transportEngine,
+  MusicalPosition,
+  TransportEngine,
+} from "./TransportEngine";
 
 export interface TimelineEvent {
   id: string;
   trackId: string;
-  type: 'audio' | 'midi' | 'automation' | 'marker' | 'tempo' | 'time-signature';
+  type: "audio" | "midi" | "automation" | "marker" | "tempo" | "time-signature";
   startBeat: number;
   durationBeats: number;
   sourceRef: string;
@@ -18,7 +22,7 @@ export interface TimelineMarker {
   beat: number;
   name: string;
   color: string;
-  type: 'marker' | 'loop-start' | 'loop-end' | 'punch-in' | 'punch-out';
+  type: "marker" | "loop-start" | "loop-end" | "punch-in" | "punch-out";
 }
 
 export interface TimelineRegion {
@@ -37,7 +41,7 @@ export interface QuantizeSettings {
   swingAmount: number;
 }
 
-export type EditMode = 'ripple' | 'shuffle' | 'slip' | 'spot';
+export type EditMode = "ripple" | "shuffle" | "slip" | "spot";
 
 export interface TimelineEngineState {
   events: TimelineEvent[];
@@ -73,7 +77,7 @@ export class TimelineEngine {
         swing: 0,
         swingAmount: 0,
       },
-      editMode: 'slip',
+      editMode: "slip",
       snapToGrid: true,
       gridDivision: 0.25,
       zoom: 1,
@@ -88,11 +92,11 @@ export class TimelineEngine {
   }
 
   beatsToSeconds(beats: number): number {
-    const position = this.transport.musicalToSeconds({ 
-      bar: Math.floor(beats / BEATS_PER_BAR) + 1, 
-      beat: (beats % BEATS_PER_BAR) + 1, 
-      tick: 0, 
-      totalBeats: beats 
+    const position = this.transport.musicalToSeconds({
+      bar: Math.floor(beats / BEATS_PER_BAR) + 1,
+      beat: (beats % BEATS_PER_BAR) + 1,
+      tick: 0,
+      totalBeats: beats,
     });
     return position;
   }
@@ -129,7 +133,7 @@ export class TimelineEngine {
 
     const gridValue = this.state.quantize.value;
     const quantized = Math.round(beat / gridValue) * gridValue;
-    
+
     if (this.state.quantize.swing > 0) {
       const swingOffset = this.calculateSwingOffset(quantized);
       return quantized + swingOffset;
@@ -142,9 +146,13 @@ export class TimelineEngine {
   private calculateSwingOffset(beat: number): number {
     const gridValue = this.state.quantize.value;
     const beatInGrid = (beat / gridValue) % 2;
-    
+
     if (beatInGrid >= 0.5 && beatInGrid < 1.5) {
-      return this.state.quantize.swingAmount * gridValue * (this.state.quantize.swing / 100);
+      return (
+        this.state.quantize.swingAmount *
+        gridValue *
+        (this.state.quantize.swing / 100)
+      );
     }
     return 0;
   }
@@ -155,10 +163,10 @@ export class TimelineEngine {
     return Math.round(beat / grid) * grid;
   }
 
-  addEvent(event: Omit<TimelineEvent, 'id'>): string {
+  addEvent(event: Omit<TimelineEvent, "id">): string {
     const id = `evt_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     const newEvent: TimelineEvent = { ...event, id };
-    
+
     if (this.state.snapToGrid) {
       newEvent.startBeat = this.snapToGrid(newEvent.startBeat);
     }
@@ -170,7 +178,7 @@ export class TimelineEngine {
   }
 
   removeEvent(eventId: string): TimelineEvent | null {
-    const index = this.state.events.findIndex(e => e.id === eventId);
+    const index = this.state.events.findIndex((e) => e.id === eventId);
     if (index === -1) return null;
 
     const event = this.state.events[index];
@@ -180,7 +188,7 @@ export class TimelineEngine {
 
     const removed = this.state.events.splice(index, 1)[0];
 
-    if (this.state.editMode === 'ripple') {
+    if (this.state.editMode === "ripple") {
       this.rippleDelete(event.trackId, event.startBeat, event.durationBeats);
     }
 
@@ -188,8 +196,12 @@ export class TimelineEngine {
     return removed;
   }
 
-  moveEvent(eventId: string, newStartBeat: number, newTrackId?: string): boolean {
-    const event = this.state.events.find(e => e.id === eventId);
+  moveEvent(
+    eventId: string,
+    newStartBeat: number,
+    newTrackId?: string,
+  ): boolean {
+    const event = this.state.events.find((e) => e.id === eventId);
     if (!event || event.locked) return false;
     if (this.isTrackLocked(event.trackId)) return false;
     if (newTrackId && this.isTrackLocked(newTrackId)) return false;
@@ -201,7 +213,7 @@ export class TimelineEngine {
       newStartBeat = this.snapToGrid(newStartBeat);
     }
 
-    if (this.state.editMode === 'ripple') {
+    if (this.state.editMode === "ripple") {
       this.rippleMove(oldTrackId, oldStartBeat, newStartBeat - oldStartBeat);
     }
 
@@ -213,8 +225,12 @@ export class TimelineEngine {
     return true;
   }
 
-  resizeEvent(eventId: string, newDurationBeats: number, fromStart: boolean = false): boolean {
-    const event = this.state.events.find(e => e.id === eventId);
+  resizeEvent(
+    eventId: string,
+    newDurationBeats: number,
+    fromStart: boolean = false,
+  ): boolean {
+    const event = this.state.events.find((e) => e.id === eventId);
     if (!event || event.locked) return false;
     if (this.isTrackLocked(event.trackId)) return false;
 
@@ -235,8 +251,11 @@ export class TimelineEngine {
     return true;
   }
 
-  splitEvent(eventId: string, splitBeat: number): { leftId: string; rightId: string } | null {
-    const event = this.state.events.find(e => e.id === eventId);
+  splitEvent(
+    eventId: string,
+    splitBeat: number,
+  ): { leftId: string; rightId: string } | null {
+    const event = this.state.events.find((e) => e.id === eventId);
     if (!event || event.locked) return null;
     if (this.isTrackLocked(event.trackId)) return null;
 
@@ -260,8 +279,14 @@ export class TimelineEngine {
     return { leftId: eventId, rightId };
   }
 
-  private rippleMove(trackId: string, fromBeat: number, deltaBeat: number): void {
-    const trackEvents = this.state.events.filter(e => e.trackId === trackId && e.startBeat >= fromBeat);
+  private rippleMove(
+    trackId: string,
+    fromBeat: number,
+    deltaBeat: number,
+  ): void {
+    const trackEvents = this.state.events.filter(
+      (e) => e.trackId === trackId && e.startBeat >= fromBeat,
+    );
     for (const event of trackEvents) {
       if (!event.locked) {
         event.startBeat = Math.max(0, event.startBeat + deltaBeat);
@@ -269,8 +294,14 @@ export class TimelineEngine {
     }
   }
 
-  private rippleDelete(trackId: string, fromBeat: number, durationBeats: number): void {
-    const trackEvents = this.state.events.filter(e => e.trackId === trackId && e.startBeat > fromBeat);
+  private rippleDelete(
+    trackId: string,
+    fromBeat: number,
+    durationBeats: number,
+  ): void {
+    const trackEvents = this.state.events.filter(
+      (e) => e.trackId === trackId && e.startBeat > fromBeat,
+    );
     for (const event of trackEvents) {
       if (!event.locked) {
         event.startBeat = Math.max(0, event.startBeat - durationBeats);
@@ -278,8 +309,12 @@ export class TimelineEngine {
     }
   }
 
-  getEventsInRange(startBeat: number, endBeat: number, trackId?: string): TimelineEvent[] {
-    return this.state.events.filter(e => {
+  getEventsInRange(
+    startBeat: number,
+    endBeat: number,
+    trackId?: string,
+  ): TimelineEvent[] {
+    return this.state.events.filter((e) => {
       if (trackId && e.trackId !== trackId) return false;
       const eventEnd = e.startBeat + e.durationBeats;
       return e.startBeat < endBeat && eventEnd > startBeat;
@@ -287,11 +322,13 @@ export class TimelineEngine {
   }
 
   getEventAtPosition(beat: number, trackId: string): TimelineEvent | null {
-    return this.state.events.find(e => {
-      if (e.trackId !== trackId) return false;
-      const eventEnd = e.startBeat + e.durationBeats;
-      return beat >= e.startBeat && beat < eventEnd;
-    }) || null;
+    return (
+      this.state.events.find((e) => {
+        if (e.trackId !== trackId) return false;
+        const eventEnd = e.startBeat + e.durationBeats;
+        return beat >= e.startBeat && beat < eventEnd;
+      }) || null
+    );
   }
 
   selectEvents(eventIds: string[]): void {
@@ -339,7 +376,7 @@ export class TimelineEngine {
   }
 
   lockEvent(eventId: string): void {
-    const event = this.state.events.find(e => e.id === eventId);
+    const event = this.state.events.find((e) => e.id === eventId);
     if (event) {
       event.locked = true;
       this.notify();
@@ -347,17 +384,17 @@ export class TimelineEngine {
   }
 
   unlockEvent(eventId: string): void {
-    const event = this.state.events.find(e => e.id === eventId);
+    const event = this.state.events.find((e) => e.id === eventId);
     if (event) {
       event.locked = false;
       this.notify();
     }
   }
 
-  addMarker(marker: Omit<TimelineMarker, 'id'>): string {
+  addMarker(marker: Omit<TimelineMarker, "id">): string {
     const id = `marker_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     const newMarker = { ...marker, id };
-    
+
     if (this.state.snapToGrid) {
       newMarker.beat = this.snapToGrid(newMarker.beat);
     }
@@ -369,14 +406,14 @@ export class TimelineEngine {
   }
 
   removeMarker(markerId: string): void {
-    const index = this.state.markers.findIndex(m => m.id === markerId);
+    const index = this.state.markers.findIndex((m) => m.id === markerId);
     if (index !== -1) {
       this.state.markers.splice(index, 1);
       this.notify();
     }
   }
 
-  addRegion(region: Omit<TimelineRegion, 'id'>): string {
+  addRegion(region: Omit<TimelineRegion, "id">): string {
     const id = `region_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     const newRegion = { ...region, id };
 
@@ -391,7 +428,7 @@ export class TimelineEngine {
   }
 
   removeRegion(regionId: string): void {
-    const index = this.state.regions.findIndex(r => r.id === regionId);
+    const index = this.state.regions.findIndex((r) => r.id === regionId);
     if (index !== -1) {
       this.state.regions.splice(index, 1);
       this.notify();
@@ -441,7 +478,7 @@ export class TimelineEngine {
   }
 
   private notify(): void {
-    this.listeners.forEach(l => l());
+    this.listeners.forEach((l) => l());
   }
 
   serialize(): TimelineEngineState {

@@ -1,5 +1,15 @@
 import { db } from "../db";
-import { eq, and, or, desc, sql, ilike, ne, notInArray, inArray } from "drizzle-orm";
+import {
+  eq,
+  and,
+  or,
+  desc,
+  sql,
+  ilike,
+  ne,
+  notInArray,
+  inArray,
+} from "drizzle-orm";
 import {
   artistConnections,
   collaborationProjects,
@@ -47,7 +57,7 @@ class CollaborationService {
   async sendConnectionRequest(
     fromId: string,
     toId: string,
-    message?: string
+    message?: string,
   ): Promise<ArtistConnection> {
     if (fromId === toId) {
       throw new Error("Cannot send connection request to yourself");
@@ -60,13 +70,13 @@ class CollaborationService {
         or(
           and(
             eq(artistConnections.requesterId, fromId),
-            eq(artistConnections.receiverId, toId)
+            eq(artistConnections.receiverId, toId),
           ),
           and(
             eq(artistConnections.requesterId, toId),
-            eq(artistConnections.receiverId, fromId)
-          )
-        )
+            eq(artistConnections.receiverId, fromId),
+          ),
+        ),
       )
       .limit(1);
 
@@ -98,7 +108,7 @@ class CollaborationService {
 
   async acceptConnection(
     connectionId: string,
-    userId: string
+    userId: string,
   ): Promise<ArtistConnection> {
     const [connection] = await db
       .select()
@@ -132,7 +142,7 @@ class CollaborationService {
 
   async declineConnection(
     connectionId: string,
-    userId: string
+    userId: string,
   ): Promise<ArtistConnection> {
     const [connection] = await db
       .select()
@@ -159,9 +169,9 @@ class CollaborationService {
     return updated;
   }
 
-  async getConnections(userId: string): Promise<
-    (ArtistConnection & { connectedUser: Partial<User> })[]
-  > {
+  async getConnections(
+    userId: string,
+  ): Promise<(ArtistConnection & { connectedUser: Partial<User> })[]> {
     const connections = await db
       .select()
       .from(artistConnections)
@@ -170,9 +180,9 @@ class CollaborationService {
           eq(artistConnections.status, "accepted"),
           or(
             eq(artistConnections.requesterId, userId),
-            eq(artistConnections.receiverId, userId)
-          )
-        )
+            eq(artistConnections.receiverId, userId),
+          ),
+        ),
       )
       .orderBy(desc(artistConnections.acceptedAt));
 
@@ -198,14 +208,14 @@ class CollaborationService {
           ...conn,
           connectedUser: user || {},
         };
-      })
+      }),
     );
 
     return result;
   }
 
   async getPendingRequests(
-    userId: string
+    userId: string,
   ): Promise<(ArtistConnection & { requester: Partial<User> })[]> {
     const requests = await db
       .select()
@@ -213,8 +223,8 @@ class CollaborationService {
       .where(
         and(
           eq(artistConnections.receiverId, userId),
-          eq(artistConnections.status, "pending")
-        )
+          eq(artistConnections.status, "pending"),
+        ),
       )
       .orderBy(desc(artistConnections.createdAt));
 
@@ -238,7 +248,7 @@ class CollaborationService {
           ...req,
           requester: requester || {},
         };
-      })
+      }),
     );
 
     return result;
@@ -246,7 +256,7 @@ class CollaborationService {
 
   async getSuggestedCollaborators(
     userId: string,
-    limit: number = 10
+    limit: number = 10,
   ): Promise<CollaboratorMatch[]> {
     const [currentUser] = await db
       .select()
@@ -267,8 +277,8 @@ class CollaborationService {
       .where(
         or(
           eq(artistConnections.requesterId, userId),
-          eq(artistConnections.receiverId, userId)
-        )
+          eq(artistConnections.receiverId, userId),
+        ),
       );
 
     const excludeIds = new Set([userId]);
@@ -295,10 +305,12 @@ class CollaborationService {
 
     const userFactors = this.extractMatchingFactors(currentUser);
     const scoredMatches: CollaboratorMatch[] = potentialMatches.map((match) => {
-      const matchFactors = this.extractMatchingFactors(match as Record<string, unknown>);
+      const matchFactors = this.extractMatchingFactors(
+        match as Record<string, unknown>,
+      );
       const { score, reasons } = this.calculateMatchScore(
         userFactors,
-        matchFactors
+        matchFactors,
       );
 
       return {
@@ -320,7 +332,9 @@ class CollaborationService {
     return scoredMatches.slice(0, limit);
   }
 
-  private extractMatchingFactors(user: Record<string, unknown>): MatchingFactors {
+  private extractMatchingFactors(
+    user: Record<string, unknown>,
+  ): MatchingFactors {
     const onboardingData = user.onboardingData || {};
     const skills: string[] = [];
 
@@ -328,9 +342,7 @@ class CollaborationService {
       skills.push(onboardingData.artistType.toLowerCase());
     }
     if (onboardingData.skills) {
-      skills.push(
-        ...onboardingData.skills.map((s: string) => s.toLowerCase())
-      );
+      skills.push(...onboardingData.skills.map((s: string) => s.toLowerCase()));
     }
 
     return {
@@ -344,7 +356,7 @@ class CollaborationService {
 
   private calculateMatchScore(
     user: MatchingFactors,
-    match: MatchingFactors
+    match: MatchingFactors,
   ): { score: number; reasons: string[] } {
     let score = 0;
     const reasons: string[] = [];
@@ -390,7 +402,8 @@ class CollaborationService {
 
     if (match.lastActive) {
       const daysSinceActive = Math.floor(
-        (Date.now() - new Date(match.lastActive).getTime()) / (1000 * 60 * 60 * 24)
+        (Date.now() - new Date(match.lastActive).getTime()) /
+          (1000 * 60 * 60 * 24),
       );
       if (daysSinceActive < 7) {
         score += 10;
@@ -413,7 +426,7 @@ class CollaborationService {
       lookingFor?: string[];
       maxMembers?: number;
       isPublic?: boolean;
-    }
+    },
   ): Promise<CollaborationProject> {
     const [project] = await db
       .insert(collaborationProjects)
@@ -441,15 +454,18 @@ class CollaborationService {
 
   async getProjects(
     userId?: string,
-    filters?: { genre?: string; status?: string; ownOnly?: boolean }
+    filters?: { genre?: string; status?: string; ownOnly?: boolean },
   ): Promise<ProjectWithMembers[]> {
     let query = db.select().from(collaborationProjects);
 
     if (filters?.ownOnly && userId) {
-      query = query.where(eq(collaborationProjects.ownerId, userId)) as Record<string, unknown>;
+      query = query.where(eq(collaborationProjects.ownerId, userId)) as Record<
+        string,
+        unknown
+      >;
     } else if (filters?.status) {
       query = query.where(
-        eq(collaborationProjects.status, filters.status)
+        eq(collaborationProjects.status, filters.status),
       ) as Record<string, unknown>;
     }
 
@@ -477,7 +493,7 @@ class CollaborationService {
               .limit(1);
 
             return { ...member, user: user || {} };
-          })
+          }),
         );
 
         const [owner] = await db
@@ -497,7 +513,7 @@ class CollaborationService {
           members: membersWithUsers,
           owner: owner || {},
         };
-      })
+      }),
     );
 
     return result;
@@ -506,7 +522,7 @@ class CollaborationService {
   async joinProject(
     userId: string,
     projectId: string,
-    role: string = "member"
+    role: string = "member",
   ): Promise<ProjectMember> {
     const [project] = await db
       .select()
@@ -528,8 +544,8 @@ class CollaborationService {
       .where(
         and(
           eq(projectMembers.projectId, projectId),
-          eq(projectMembers.userId, userId)
-        )
+          eq(projectMembers.userId, userId),
+        ),
       )
       .limit(1);
 
@@ -571,7 +587,9 @@ class CollaborationService {
     }
 
     if (project.ownerId === userId) {
-      throw new Error("Project owner cannot leave. Transfer ownership or delete the project.");
+      throw new Error(
+        "Project owner cannot leave. Transfer ownership or delete the project.",
+      );
     }
 
     await db
@@ -579,8 +597,8 @@ class CollaborationService {
       .where(
         and(
           eq(projectMembers.projectId, projectId),
-          eq(projectMembers.userId, userId)
-        )
+          eq(projectMembers.userId, userId),
+        ),
       );
   }
 
@@ -591,7 +609,7 @@ class CollaborationService {
       location?: string;
       skills?: string[];
     },
-    limit: number = 20
+    limit: number = 20,
   ): Promise<Partial<User>[]> {
     let whereConditions: unknown[] = [];
 
@@ -601,8 +619,8 @@ class CollaborationService {
           ilike(users.username, `%${query}%`),
           ilike(users.firstName, `%${query}%`),
           ilike(users.lastName, `%${query}%`),
-          ilike(users.bio, `%${query}%`)
-        )
+          ilike(users.bio, `%${query}%`),
+        ),
       );
     }
 
@@ -647,7 +665,7 @@ class CollaborationService {
         ].filter(Boolean);
 
         return filters.skills!.some((skill) =>
-          userSkills.includes(skill.toLowerCase())
+          userSkills.includes(skill.toLowerCase()),
         );
       });
     }
@@ -657,7 +675,7 @@ class CollaborationService {
 
   async getConnectionStatus(
     userId: string,
-    otherUserId: string
+    otherUserId: string,
   ): Promise<{ status: string | null; connectionId: string | null }> {
     const [connection] = await db
       .select()
@@ -666,13 +684,13 @@ class CollaborationService {
         or(
           and(
             eq(artistConnections.requesterId, userId),
-            eq(artistConnections.receiverId, otherUserId)
+            eq(artistConnections.receiverId, otherUserId),
           ),
           and(
             eq(artistConnections.requesterId, otherUserId),
-            eq(artistConnections.receiverId, userId)
-          )
-        )
+            eq(artistConnections.receiverId, userId),
+          ),
+        ),
       )
       .limit(1);
 
@@ -694,10 +712,7 @@ class CollaborationService {
       throw new Error("Connection not found");
     }
 
-    if (
-      connection.requesterId !== userId &&
-      connection.receiverId !== userId
-    ) {
+    if (connection.requesterId !== userId && connection.receiverId !== userId) {
       throw new Error("Not authorized to remove this connection");
     }
 

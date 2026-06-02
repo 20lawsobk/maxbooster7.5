@@ -1,4 +1,4 @@
-import { logger } from '../logger.js';
+import { logger } from "../logger.js";
 
 // ── Deterministic PRNG — FNV-1a 32-bit ──────────────────────────────────────
 function seededIndex(seed: string, length: number): number {
@@ -14,7 +14,7 @@ function seededIndex(seed: string, length: number): number {
 // ────────────────────────────────────────────────────────────────────────────
 
 interface ConversationMessage {
-  role: 'user' | 'assistant';
+  role: "user" | "assistant";
   content: string;
 }
 
@@ -44,10 +44,25 @@ type KnowledgeEntry = {
 const KNOWLEDGE_BASE: KnowledgeEntry[] = [
   // ── STUDIO / DAW ──────────────────────────────────────────────────────────
   {
-    keywords: ['studio', 'daw', 'digital audio workstation', 'record', 'recording', 'tracks', 'track', 'how to use studio', 'open studio'],
-    category: 'studio',
-    relatedKeywords: ['mixing', 'mastering', 'export', 'midi', 'plugin'],
-    nextSteps: ['Try the AI Mix feature on your track', 'Export your finished track to WAV', 'Use AI Generator to create a beat from scratch', 'Set up a distribution release from your Studio project'],
+    keywords: [
+      "studio",
+      "daw",
+      "digital audio workstation",
+      "record",
+      "recording",
+      "tracks",
+      "track",
+      "how to use studio",
+      "open studio",
+    ],
+    category: "studio",
+    relatedKeywords: ["mixing", "mastering", "export", "midi", "plugin"],
+    nextSteps: [
+      "Try the AI Mix feature on your track",
+      "Export your finished track to WAV",
+      "Use AI Generator to create a beat from scratch",
+      "Set up a distribution release from your Studio project",
+    ],
     answer: `The Max Booster Studio is a full professional DAW (Digital Audio Workstation) — built 100% in-house.
 
 **Getting Started:**
@@ -83,10 +98,34 @@ const KNOWLEDGE_BASE: KnowledgeEntry[] = [
 The Studio interface is modeled after Studio One for a professional-grade workflow.`,
   },
   {
-    keywords: ['ai mix', 'ai mixing', 'mixing', 'eq', 'compression', 'master', 'mastering', 'ai master', 'loudness', 'lufs', 'finish track', 'polish', 'mix down'],
-    category: 'studio',
-    relatedKeywords: ['export', 'distribution', 'studio', 'mastering standards'],
-    nextSteps: ['Export your mastered track to WAV for distribution', 'Submit to distribution after mastering', 'Run AI Master to hit streaming loudness targets', 'Upload to the Beat Marketplace after mastering'],
+    keywords: [
+      "ai mix",
+      "ai mixing",
+      "mixing",
+      "eq",
+      "compression",
+      "master",
+      "mastering",
+      "ai master",
+      "loudness",
+      "lufs",
+      "finish track",
+      "polish",
+      "mix down",
+    ],
+    category: "studio",
+    relatedKeywords: [
+      "export",
+      "distribution",
+      "studio",
+      "mastering standards",
+    ],
+    nextSteps: [
+      "Export your mastered track to WAV for distribution",
+      "Submit to distribution after mastering",
+      "Run AI Master to hit streaming loudness targets",
+      "Upload to the Beat Marketplace after mastering",
+    ],
     answer: `AI Mixing & Mastering is powered by Max Booster's custom in-house AI engine — no third-party APIs.
 
 **AI Mixer:**
@@ -123,10 +162,33 @@ The Studio interface is modeled after Studio One for a professional-grade workfl
 This replaces thousands of dollars in professional mixing/mastering services.`,
   },
   {
-    keywords: ['ai generator', 'generate beat', 'generate music', 'generate melody', 'text to music', 'create beat', 'beat from scratch', 'ai generate', 'generate from text', 'make beat', 'create music'],
-    category: 'studio',
-    relatedKeywords: ['midi', 'instruments', 'export', 'marketplace', 'distribution'],
-    nextSteps: ['Edit the generated beat in the MIDI editor', 'Add your own vocals or instrumentation', 'Export and distribute the track', 'List the beat on the Marketplace'],
+    keywords: [
+      "ai generator",
+      "generate beat",
+      "generate music",
+      "generate melody",
+      "text to music",
+      "create beat",
+      "beat from scratch",
+      "ai generate",
+      "generate from text",
+      "make beat",
+      "create music",
+    ],
+    category: "studio",
+    relatedKeywords: [
+      "midi",
+      "instruments",
+      "export",
+      "marketplace",
+      "distribution",
+    ],
+    nextSteps: [
+      "Edit the generated beat in the MIDI editor",
+      "Add your own vocals or instrumentation",
+      "Export and distribute the track",
+      "List the beat on the Marketplace",
+    ],
     answer: `The AI Generator creates original beats, melodies, chord progressions, and full instrumentals from text descriptions — all powered by our in-house AdvancedMusicAI model.
 
 **How to use:**
@@ -154,10 +216,25 @@ This replaces thousands of dollars in professional mixing/mastering services.`,
 All generated music is 100% yours to use, sell, or distribute.`,
   },
   {
-    keywords: ['midi', 'piano roll', 'midi editor', 'midi notes', 'midi instrument', 'virtual instrument', 'vst', 'plugin', 'synthesizer'],
-    category: 'studio',
-    relatedKeywords: ['generate', 'studio', 'instruments', 'chord'],
-    nextSteps: ['Quantize your MIDI to fix timing', 'Add velocity variation for a human feel', 'Humanize function for natural groove', 'Route MIDI to a virtual instrument'],
+    keywords: [
+      "midi",
+      "piano roll",
+      "midi editor",
+      "midi notes",
+      "midi instrument",
+      "virtual instrument",
+      "vst",
+      "plugin",
+      "synthesizer",
+    ],
+    category: "studio",
+    relatedKeywords: ["generate", "studio", "instruments", "chord"],
+    nextSteps: [
+      "Quantize your MIDI to fix timing",
+      "Add velocity variation for a human feel",
+      "Humanize function for natural groove",
+      "Route MIDI to a virtual instrument",
+    ],
     answer: `The MIDI editor and virtual instruments in Max Booster Studio give you full in-box production capability.
 
 **MIDI Piano Roll:**
@@ -188,10 +265,25 @@ All generated music is 100% yours to use, sell, or distribute.`,
 For MIDI hardware (keyboards, controllers), you may be prompted for MIDI device permission in your browser — this only appears on the Studio page.`,
   },
   {
-    keywords: ['export', 'bounce', 'download track', 'wav', 'mp3', 'flac', 'stems', 'export project', 'bounce down'],
-    category: 'studio',
-    relatedKeywords: ['distribution', 'marketplace', 'mastering', 'delivery'],
-    nextSteps: ['Submit your exported track to distribution', 'Upload to the Beat Marketplace', 'Run AI Master before exporting for best quality', 'Export stems for collaborators'],
+    keywords: [
+      "export",
+      "bounce",
+      "download track",
+      "wav",
+      "mp3",
+      "flac",
+      "stems",
+      "export project",
+      "bounce down",
+    ],
+    category: "studio",
+    relatedKeywords: ["distribution", "marketplace", "mastering", "delivery"],
+    nextSteps: [
+      "Submit your exported track to distribution",
+      "Upload to the Beat Marketplace",
+      "Run AI Master before exporting for best quality",
+      "Export stems for collaborators",
+    ],
     answer: `Exporting your finished music from Max Booster Studio:
 
 **Export Formats:**
@@ -219,10 +311,22 @@ For MIDI hardware (keyboards, controllers), you may be prompted for MIDI device 
 **Pro Tip:** Export stems as well as your final mix — buyers on the Marketplace may pay significantly more for stem packs.`,
   },
   {
-    keywords: ['collaboration', 'collab', 'real-time editing', 'work together', 'invite collaborator', 'shared project', 'co-produce'],
-    category: 'studio',
-    relatedKeywords: ['studio', 'royalty split', 'share'],
-    nextSteps: ['Set up a royalty split agreement with your collaborator', 'Export stems after collaborating', 'Submit a joint release to distribution'],
+    keywords: [
+      "collaboration",
+      "collab",
+      "real-time editing",
+      "work together",
+      "invite collaborator",
+      "shared project",
+      "co-produce",
+    ],
+    category: "studio",
+    relatedKeywords: ["studio", "royalty split", "share"],
+    nextSteps: [
+      "Set up a royalty split agreement with your collaborator",
+      "Export stems after collaborating",
+      "Submit a joint release to distribution",
+    ],
     answer: `Real-time studio collaboration lets you co-produce tracks live with other Max Booster users.
 
 **Starting a Collaboration:**
@@ -250,10 +354,22 @@ For MIDI hardware (keyboards, controllers), you may be prompted for MIDI device 
 • Project history logs every change and who made it`,
   },
   {
-    keywords: ['stem separation', 'stem splitter', 'isolate vocals', 'remove vocals', 'extract drums', 'separate stems', 'isolate bass'],
-    category: 'studio',
-    relatedKeywords: ['remix', 'sampling', 'studio'],
-    nextSteps: ['Use isolated stems in a remix', 'Export isolated vocal for acapella', 'Layer stems into a new beat'],
+    keywords: [
+      "stem separation",
+      "stem splitter",
+      "isolate vocals",
+      "remove vocals",
+      "extract drums",
+      "separate stems",
+      "isolate bass",
+    ],
+    category: "studio",
+    relatedKeywords: ["remix", "sampling", "studio"],
+    nextSteps: [
+      "Use isolated stems in a remix",
+      "Export isolated vocal for acapella",
+      "Layer stems into a new beat",
+    ],
     answer: `Stem Separation uses AI to isolate individual elements from any audio file — powered by our in-house AI.
 
 **What you can separate:**
@@ -284,10 +400,33 @@ For MIDI hardware (keyboards, controllers), you may be prompted for MIDI device 
 
   // ── DISTRIBUTION ──────────────────────────────────────────────────────────
   {
-    keywords: ['distribution', 'distribute', 'release music', 'upload music', 'submit music', 'put music on spotify', 'streaming', 'get on spotify', 'apple music', 'new release', 'submit release'],
-    category: 'distribution',
-    relatedKeywords: ['platforms', 'isrc', 'metadata', 'cover art', 'royalties'],
-    nextSteps: ['Upload cover art (3000x3000px)', 'Set your release date (2+ weeks out for best playlist pitching odds)', 'Add collaborator royalty splits', 'Pitch to playlist editors after going live'],
+    keywords: [
+      "distribution",
+      "distribute",
+      "release music",
+      "upload music",
+      "submit music",
+      "put music on spotify",
+      "streaming",
+      "get on spotify",
+      "apple music",
+      "new release",
+      "submit release",
+    ],
+    category: "distribution",
+    relatedKeywords: [
+      "platforms",
+      "isrc",
+      "metadata",
+      "cover art",
+      "royalties",
+    ],
+    nextSteps: [
+      "Upload cover art (3000x3000px)",
+      "Set your release date (2+ weeks out for best playlist pitching odds)",
+      "Add collaborator royalty splits",
+      "Pitch to playlist editors after going live",
+    ],
     answer: `Max Booster distributes your music to 150+ streaming platforms worldwide — and you keep 100% of your royalties.
 
 **Step-by-Step Distribution:**
@@ -323,10 +462,26 @@ For MIDI hardware (keyboards, controllers), you may be prompted for MIDI device 
 **Pre-Save Campaigns:** Max Booster generates a pre-save link automatically for any scheduled release.`,
   },
   {
-    keywords: ['platforms', 'which platforms', 'streaming platforms', 'where distributed', 'tidal', 'deezer', 'amazon music', 'youtube music', 'pandora', 'soundcloud', 'boomplay'],
-    category: 'distribution',
-    relatedKeywords: ['distribution', 'royalties', 'international'],
-    nextSteps: ['Select all platforms for maximum reach', 'Enable YouTube Content ID for video monetization', 'Check your platform-specific analytics after launch'],
+    keywords: [
+      "platforms",
+      "which platforms",
+      "streaming platforms",
+      "where distributed",
+      "tidal",
+      "deezer",
+      "amazon music",
+      "youtube music",
+      "pandora",
+      "soundcloud",
+      "boomplay",
+    ],
+    category: "distribution",
+    relatedKeywords: ["distribution", "royalties", "international"],
+    nextSteps: [
+      "Select all platforms for maximum reach",
+      "Enable YouTube Content ID for video monetization",
+      "Check your platform-specific analytics after launch",
+    ],
     answer: `Max Booster distributes to 150+ platforms including every major service globally:
 
 **Major Streaming (US/Global):**
@@ -352,10 +507,22 @@ YouTube (full upload + Content ID — monetizes any video using your music)
 You can distribute to all 150+ platforms at once or select specific ones. No extra charge per platform — everything is included in your subscription.`,
   },
   {
-    keywords: ['isrc', 'isrc code', 'upc', 'barcode', 'release code', 'copyright', 'metadata'],
-    category: 'distribution',
-    relatedKeywords: ['distribution', 'release', 'copyright'],
-    nextSteps: ['Make sure all metadata is correct before submitting', 'Register with a PRO for performance royalties', 'Keep your ISRC codes on file for future reference'],
+    keywords: [
+      "isrc",
+      "isrc code",
+      "upc",
+      "barcode",
+      "release code",
+      "copyright",
+      "metadata",
+    ],
+    category: "distribution",
+    relatedKeywords: ["distribution", "release", "copyright"],
+    nextSteps: [
+      "Make sure all metadata is correct before submitting",
+      "Register with a PRO for performance royalties",
+      "Keep your ISRC codes on file for future reference",
+    ],
     answer: `ISRC and UPC codes identify your music worldwide — Max Booster handles both automatically.
 
 **ISRC (International Standard Recording Code):**
@@ -382,10 +549,22 @@ You can distribute to all 150+ platforms at once or select specific ones. No ext
 • Genre selection impacts playlist editorial consideration — choose the most specific genre that fits`,
   },
   {
-    keywords: ['cover art', 'artwork', 'album art', 'image requirements', 'art size', 'art specs', 'album cover'],
-    category: 'distribution',
-    relatedKeywords: ['distribution', 'release'],
-    nextSteps: ['Create your art at 3000x3000px', 'Test visibility at thumbnail size', 'Submit your release after cover art is ready'],
+    keywords: [
+      "cover art",
+      "artwork",
+      "album art",
+      "image requirements",
+      "art size",
+      "art specs",
+      "album cover",
+    ],
+    category: "distribution",
+    relatedKeywords: ["distribution", "release"],
+    nextSteps: [
+      "Create your art at 3000x3000px",
+      "Test visibility at thumbnail size",
+      "Submit your release after cover art is ready",
+    ],
     answer: `Cover art requirements for music distribution:
 
 **Required Specifications:**
@@ -413,10 +592,22 @@ You can distribute to all 150+ platforms at once or select specific ones. No ext
 Beat marketplace thumbnails can be any dimension but square is recommended for consistency.`,
   },
   {
-    keywords: ['playlist pitching', 'playlist', 'editorial playlist', 'spotify editorial', 'submit to playlist', 'pitch release', 'editorial consideration'],
-    category: 'distribution',
-    relatedKeywords: ['distribution', 'release', 'spotify', 'analytics'],
-    nextSteps: ['Submit your pitch 7+ days before release date', 'Connect your Spotify for Artists account', 'Write a compelling pitch in the style description field'],
+    keywords: [
+      "playlist pitching",
+      "playlist",
+      "editorial playlist",
+      "spotify editorial",
+      "submit to playlist",
+      "pitch release",
+      "editorial consideration",
+    ],
+    category: "distribution",
+    relatedKeywords: ["distribution", "release", "spotify", "analytics"],
+    nextSteps: [
+      "Submit your pitch 7+ days before release date",
+      "Connect your Spotify for Artists account",
+      "Write a compelling pitch in the style description field",
+    ],
     answer: `Playlist Pitching submits your music directly to editorial playlist curators before your release date.
 
 **How to Pitch:**
@@ -448,10 +639,20 @@ Max Booster also connects you with independent playlist curators (not just edito
 Track your playlist placements in Analytics → Playlists. Playlist adds typically spike streams within 48 hours.`,
   },
   {
-    keywords: ['labelgrid', 'label distribution', 'distribution service', 'label submission', 'label portal', 'submit to label'],
-    category: 'distribution',
-    relatedKeywords: ['distribution', 'release', 'label'],
-    nextSteps: ['Submit your best release to labels via the Label Submissions portal', 'Build your streaming stats before pitching to labels'],
+    keywords: [
+      "labelgrid",
+      "label distribution",
+      "distribution service",
+      "label submission",
+      "label portal",
+      "submit to label",
+    ],
+    category: "distribution",
+    relatedKeywords: ["distribution", "release", "label"],
+    nextSteps: [
+      "Submit your best release to labels via the Label Submissions portal",
+      "Build your streaming stats before pitching to labels",
+    ],
     answer: `LabelGrid Integration allows you to submit your music to record labels and distributors directly from Max Booster.
 
 **What LabelGrid provides:**
@@ -479,10 +680,28 @@ When you submit to a label through LabelGrid, your Max Booster analytics (stream
 
   // ── ROYALTIES & PAYMENTS ──────────────────────────────────────────────────
   {
-    keywords: ['royalties', 'royalty', 'payment', 'paid', 'when do i get paid', 'earnings', 'revenue', 'money', 'payout', 'income', 'how much', 'earnings dashboard'],
-    category: 'royalties',
-    relatedKeywords: ['payout', 'split', 'publishing', 'stripe', 'bank'],
-    nextSteps: ['Connect your payout method in Settings → Billing', 'Set up a payout alert for when earnings hit $10', 'View platform-by-platform breakdown in Royalties dashboard', 'Set up royalty splits for future releases with collaborators'],
+    keywords: [
+      "royalties",
+      "royalty",
+      "payment",
+      "paid",
+      "when do i get paid",
+      "earnings",
+      "revenue",
+      "money",
+      "payout",
+      "income",
+      "how much",
+      "earnings dashboard",
+    ],
+    category: "royalties",
+    relatedKeywords: ["payout", "split", "publishing", "stripe", "bank"],
+    nextSteps: [
+      "Connect your payout method in Settings → Billing",
+      "Set up a payout alert for when earnings hit $10",
+      "View platform-by-platform breakdown in Royalties dashboard",
+      "Set up royalty splits for future releases with collaborators",
+    ],
     answer: `Royalties flow from streaming platforms to your Max Booster account to your bank:
 
 **Payment Timeline:**
@@ -512,10 +731,28 @@ Go to Settings → Billing → Payment Methods → Add Payout Account
 The Revenue Intelligence dashboard predicts your next 30/90/180 days of earnings based on current growth trajectories — found under Analytics → Revenue Intelligence.`,
   },
   {
-    keywords: ['royalty split', 'split royalties', 'collaborator', 'co-writer', 'featured artist', 'split payment', 'share revenue', 'revenue share'],
-    category: 'royalties',
-    relatedKeywords: ['royalties', 'collaboration', 'publishing', 'distribution'],
-    nextSteps: ['Invite collaborators to accept their split before submitting', 'Download the split agreement PDF for your records', 'Set up publishing splits separately from master splits'],
+    keywords: [
+      "royalty split",
+      "split royalties",
+      "collaborator",
+      "co-writer",
+      "featured artist",
+      "split payment",
+      "share revenue",
+      "revenue share",
+    ],
+    category: "royalties",
+    relatedKeywords: [
+      "royalties",
+      "collaboration",
+      "publishing",
+      "distribution",
+    ],
+    nextSteps: [
+      "Invite collaborators to accept their split before submitting",
+      "Download the split agreement PDF for your records",
+      "Set up publishing splits separately from master splits",
+    ],
     answer: `Royalty splits let you automatically share earnings with co-writers, producers, featured artists, and managers.
 
 **How to Set Up Splits:**
@@ -541,10 +778,25 @@ The Revenue Intelligence dashboard predicts your next 30/90/180 days of earnings
 • Publishing (songwriting) splits — managed separately in Royalties → Publishing`,
   },
   {
-    keywords: ['publishing', 'publishing rights', 'mechanical', 'performance rights', 'pro', 'ascap', 'bmi', 'songwriting royalties', 'sync', 'sync licensing'],
-    category: 'royalties',
-    relatedKeywords: ['royalties', 'distribution', 'copyright'],
-    nextSteps: ['Register with a PRO (ASCAP, BMI, or SESAC)', 'Register all your released songs with your PRO', 'Check the Sync Licensing portal for placement opportunities'],
+    keywords: [
+      "publishing",
+      "publishing rights",
+      "mechanical",
+      "performance rights",
+      "pro",
+      "ascap",
+      "bmi",
+      "songwriting royalties",
+      "sync",
+      "sync licensing",
+    ],
+    category: "royalties",
+    relatedKeywords: ["royalties", "distribution", "copyright"],
+    nextSteps: [
+      "Register with a PRO (ASCAP, BMI, or SESAC)",
+      "Register all your released songs with your PRO",
+      "Check the Sync Licensing portal for placement opportunities",
+    ],
     answer: `Publishing royalties are separate from streaming royalties — here's how both work:
 
 **Streaming (Master) Royalties:**
@@ -584,10 +836,20 @@ Go to **Sync Licensing** in the sidebar to list your tracks for sync opportuniti
 **Pro Tip:** Register every song with your PRO as soon as it's distributed — retroactive registration is possible but you may miss early earnings.`,
   },
   {
-    keywords: ['instant payout', 'advance', 'cash advance', 'early payout', 'royalty advance', 'instant cash'],
-    category: 'royalties',
-    relatedKeywords: ['royalties', 'payment', 'stripe'],
-    nextSteps: ['Check your advance eligibility in Royalties → Instant Payouts', 'Connect a verified payout method to unlock advances'],
+    keywords: [
+      "instant payout",
+      "advance",
+      "cash advance",
+      "early payout",
+      "royalty advance",
+      "instant cash",
+    ],
+    category: "royalties",
+    relatedKeywords: ["royalties", "payment", "stripe"],
+    nextSteps: [
+      "Check your advance eligibility in Royalties → Instant Payouts",
+      "Connect a verified payout method to unlock advances",
+    ],
     answer: `Instant Payouts let you access your earned royalties immediately, before the 60–90 day platform reporting cycle.
 
 **How it works:**
@@ -610,10 +872,27 @@ Your advance eligibility is calculated using our AI revenue forecasting model, w
 
   // ── MARKETPLACE ───────────────────────────────────────────────────────────
   {
-    keywords: ['marketplace', 'sell beats', 'beat store', 'storefront', 'list beat', 'upload beat', 'beat marketplace', 'sell samples', 'sell loops', 'sell presets', 'beat selling'],
-    category: 'marketplace',
-    relatedKeywords: ['license', 'stripe', 'storefront', 'pricing', 'revenue'],
-    nextSteps: ['Set up your Stripe Connect account to receive payments', 'Create your storefront branding (logo, banner, colors)', 'Price your beats competitively ($20–$50 for leases, $200+ for exclusives)', 'Upload a watermarked preview MP3 to attract buyers'],
+    keywords: [
+      "marketplace",
+      "sell beats",
+      "beat store",
+      "storefront",
+      "list beat",
+      "upload beat",
+      "beat marketplace",
+      "sell samples",
+      "sell loops",
+      "sell presets",
+      "beat selling",
+    ],
+    category: "marketplace",
+    relatedKeywords: ["license", "stripe", "storefront", "pricing", "revenue"],
+    nextSteps: [
+      "Set up your Stripe Connect account to receive payments",
+      "Create your storefront branding (logo, banner, colors)",
+      "Price your beats competitively ($20–$50 for leases, $200+ for exclusives)",
+      "Upload a watermarked preview MP3 to attract buyers",
+    ],
     answer: `The Max Booster Marketplace is your built-in beat store — zero platform fees.
 
 **Set Up Your Storefront:**
@@ -651,10 +930,25 @@ Your advance eligibility is calculated using our AI revenue forecasting model, w
 **You keep 100%** (minus Stripe processing: ~2.9% + $0.30 per transaction).`,
   },
   {
-    keywords: ['license', 'licensing', 'exclusive', 'non-exclusive', 'lease', 'exclusive rights', 'beat license', 'music license', 'license terms', 'license template'],
-    category: 'marketplace',
-    relatedKeywords: ['marketplace', 'sell', 'beat'],
-    nextSteps: ['Use the built-in license template editor to customize your terms', 'Set stream and download limits per license tier', 'Specify whether the buyer must credit you'],
+    keywords: [
+      "license",
+      "licensing",
+      "exclusive",
+      "non-exclusive",
+      "lease",
+      "exclusive rights",
+      "beat license",
+      "music license",
+      "license terms",
+      "license template",
+    ],
+    category: "marketplace",
+    relatedKeywords: ["marketplace", "sell", "beat"],
+    nextSteps: [
+      "Use the built-in license template editor to customize your terms",
+      "Set stream and download limits per license tier",
+      "Specify whether the buyer must credit you",
+    ],
     answer: `Max Booster supports all standard music licensing tiers for the marketplace:
 
 **License Types:**
@@ -694,10 +988,22 @@ Your advance eligibility is calculated using our AI revenue forecasting model, w
 • License history is stored in your account for legal protection`,
   },
   {
-    keywords: ['storefront', 'custom store', 'beat store setup', 'store branding', 'custom url', 'store link', 'promote store'],
-    category: 'marketplace',
-    relatedKeywords: ['marketplace', 'sell', 'stripe', 'social media'],
-    nextSteps: ['Share your storefront URL on all social media profiles', 'Enable the Social Media Autopilot to auto-promote your beats', 'Add your storefront link to your press kit'],
+    keywords: [
+      "storefront",
+      "custom store",
+      "beat store setup",
+      "store branding",
+      "custom url",
+      "store link",
+      "promote store",
+    ],
+    category: "marketplace",
+    relatedKeywords: ["marketplace", "sell", "stripe", "social media"],
+    nextSteps: [
+      "Share your storefront URL on all social media profiles",
+      "Enable the Social Media Autopilot to auto-promote your beats",
+      "Add your storefront link to your press kit",
+    ],
     answer: `Your Max Booster Storefront is your own professional beat/music store.
 
 **Storefront Customization:**
@@ -726,10 +1032,35 @@ Your advance eligibility is calculated using our AI revenue forecasting model, w
 
   // ── SOCIAL MEDIA & AUTOPILOT ──────────────────────────────────────────────
   {
-    keywords: ['social media', 'social', 'autopilot', 'auto post', 'automatic posting', 'instagram', 'twitter', 'tiktok', 'facebook', 'youtube', 'post automatically', 'social media autopilot', 'auto posting'],
-    category: 'social',
-    relatedKeywords: ['connect account', 'schedule', 'content', 'advertising', 'analytics'],
-    nextSteps: ['Connect your social accounts via OAuth', 'Set your posting frequency (start with 1–2x/day)', 'Upload your music for content generation', 'Turn on the AI caption writer for platform-optimized text'],
+    keywords: [
+      "social media",
+      "social",
+      "autopilot",
+      "auto post",
+      "automatic posting",
+      "instagram",
+      "twitter",
+      "tiktok",
+      "facebook",
+      "youtube",
+      "post automatically",
+      "social media autopilot",
+      "auto posting",
+    ],
+    category: "social",
+    relatedKeywords: [
+      "connect account",
+      "schedule",
+      "content",
+      "advertising",
+      "analytics",
+    ],
+    nextSteps: [
+      "Connect your social accounts via OAuth",
+      "Set your posting frequency (start with 1–2x/day)",
+      "Upload your music for content generation",
+      "Turn on the AI caption writer for platform-optimized text",
+    ],
     answer: `The Social Media Autopilot runs 24/7 and manages your entire social presence using our in-house AI.
 
 **What it does automatically:**
@@ -766,10 +1097,24 @@ Instagram, Twitter/X, Facebook (Pages), YouTube, TikTok, LinkedIn, Threads
 The AI learns from your engagement data — content improves automatically over time as it sees what resonates with your audience.`,
   },
   {
-    keywords: ['connect account', 'connect instagram', 'connect twitter', 'connect tiktok', 'oauth', 'link account', 'social account', 'connect facebook', 'connect youtube'],
-    category: 'social',
-    relatedKeywords: ['social media', 'autopilot', 'posting'],
-    nextSteps: ['Enable Autopilot after connecting accounts', 'Set your posting preferences per platform', 'Connect analytics to measure performance'],
+    keywords: [
+      "connect account",
+      "connect instagram",
+      "connect twitter",
+      "connect tiktok",
+      "oauth",
+      "link account",
+      "social account",
+      "connect facebook",
+      "connect youtube",
+    ],
+    category: "social",
+    relatedKeywords: ["social media", "autopilot", "posting"],
+    nextSteps: [
+      "Enable Autopilot after connecting accounts",
+      "Set your posting preferences per platform",
+      "Connect analytics to measure performance",
+    ],
     answer: `Connecting your social media accounts to Max Booster:
 
 **Steps:**
@@ -801,10 +1146,23 @@ The AI learns from your engagement data — content improves automatically over 
 **Troubleshooting:** If a connection fails, log into the platform directly first, then retry the OAuth flow.`,
   },
   {
-    keywords: ['post schedule', 'when to post', 'best time', 'posting time', 'schedule post', 'optimal time', 'timing', 'posting frequency'],
-    category: 'social',
-    relatedKeywords: ['social media', 'autopilot', 'analytics'],
-    nextSteps: ['Enable AI-Optimized Timing for automatic best-time selection', 'Review your past post performance to refine timing', 'Set blackout windows for holidays and off-hours'],
+    keywords: [
+      "post schedule",
+      "when to post",
+      "best time",
+      "posting time",
+      "schedule post",
+      "optimal time",
+      "timing",
+      "posting frequency",
+    ],
+    category: "social",
+    relatedKeywords: ["social media", "autopilot", "analytics"],
+    nextSteps: [
+      "Enable AI-Optimized Timing for automatic best-time selection",
+      "Review your past post performance to refine timing",
+      "Set blackout windows for holidays and off-hours",
+    ],
     answer: `Max Booster's AI calculates optimal posting times for your specific audience — not generic industry averages.
 
 **How the Timing AI works:**
@@ -832,10 +1190,21 @@ The AI learns from your engagement data — content improves automatically over 
 For a new release, use "Burst Mode" — the AI posts 5–8x more frequently in the 48 hours around your release date to maximize initial momentum.`,
   },
   {
-    keywords: ['content calendar', 'plan posts', 'posting plan', 'content plan', 'schedule content', 'bulk schedule'],
-    category: 'social',
-    relatedKeywords: ['social media', 'autopilot', 'schedule'],
-    nextSteps: ['Review and approve queued content in the Content Calendar', 'Upload assets in bulk for the AI to repurpose', 'Set a release countdown schedule for your next drop'],
+    keywords: [
+      "content calendar",
+      "plan posts",
+      "posting plan",
+      "content plan",
+      "schedule content",
+      "bulk schedule",
+    ],
+    category: "social",
+    relatedKeywords: ["social media", "autopilot", "schedule"],
+    nextSteps: [
+      "Review and approve queued content in the Content Calendar",
+      "Upload assets in bulk for the AI to repurpose",
+      "Set a release countdown schedule for your next drop",
+    ],
     answer: `The Content Calendar gives you a visual overview and control over all scheduled and auto-generated content.
 
 **How to use:**
@@ -862,10 +1231,28 @@ If you have a social media manager, give them Editor access to the content calen
 
   // ── ADVERTISING AUTOPILOT ─────────────────────────────────────────────────
   {
-    keywords: ['advertising', 'ad campaign', 'advertising autopilot', 'organic ads', 'zero cost', 'growth', 'promote music', 'marketing', 'ad spend', 'viral', 'promote', 'grow fans'],
-    category: 'advertising',
-    relatedKeywords: ['social media', 'analytics', 'ab test', 'campaign'],
-    nextSteps: ['Create your first campaign and set an objective (Awareness vs. Streams)', 'Connect your social accounts so the AI can execute campaigns', 'Review your A/B test results after 72 hours', 'Set a release date campaign for your next drop'],
+    keywords: [
+      "advertising",
+      "ad campaign",
+      "advertising autopilot",
+      "organic ads",
+      "zero cost",
+      "growth",
+      "promote music",
+      "marketing",
+      "ad spend",
+      "viral",
+      "promote",
+      "grow fans",
+    ],
+    category: "advertising",
+    relatedKeywords: ["social media", "analytics", "ab test", "campaign"],
+    nextSteps: [
+      "Create your first campaign and set an objective (Awareness vs. Streams)",
+      "Connect your social accounts so the AI can execute campaigns",
+      "Review your A/B test results after 72 hours",
+      "Set a release date campaign for your next drop",
+    ],
     answer: `The Advertising Autopilot is Max Booster's zero-cost organic growth engine — it replicates paid ad results using purely organic strategy.
 
 **Core Philosophy:**
@@ -902,10 +1289,23 @@ Results typically begin showing within **72 hours** of activation.
 • Content performance breakdown by variation`,
   },
   {
-    keywords: ['ab test', 'a/b test', 'test content', 'which post performs', 'content test', 'split test', 'variant', 'best content'],
-    category: 'advertising',
-    relatedKeywords: ['advertising', 'social media', 'content'],
-    nextSteps: ['Wait 48–72 hours for sufficient test data', 'Apply the winning variant to future campaigns', 'Test your thumbnail variations next after captions'],
+    keywords: [
+      "ab test",
+      "a/b test",
+      "test content",
+      "which post performs",
+      "content test",
+      "split test",
+      "variant",
+      "best content",
+    ],
+    category: "advertising",
+    relatedKeywords: ["advertising", "social media", "content"],
+    nextSteps: [
+      "Wait 48–72 hours for sufficient test data",
+      "Apply the winning variant to future campaigns",
+      "Test your thumbnail variations next after captions",
+    ],
     answer: `A/B testing in the Advertising Autopilot finds what content drives the most growth for your specific audience.
 
 **What gets tested automatically:**
@@ -938,10 +1338,34 @@ You can also set up custom A/B tests in the Content Calendar — create two vers
 
   // ── ANALYTICS ─────────────────────────────────────────────────────────────
   {
-    keywords: ['analytics', 'stats', 'statistics', 'performance', 'streams', 'listeners', 'plays', 'views', 'data', 'insights', 'dashboard', 'metrics', 'audience'],
-    category: 'analytics',
-    relatedKeywords: ['royalties', 'social media', 'distribution', 'revenue intelligence'],
-    nextSteps: ['Filter by platform to see which drives most streams', 'Check audience demographics to inform content strategy', 'Enable revenue intelligence for earnings prediction', 'Connect Spotify for Artists for more granular data'],
+    keywords: [
+      "analytics",
+      "stats",
+      "statistics",
+      "performance",
+      "streams",
+      "listeners",
+      "plays",
+      "views",
+      "data",
+      "insights",
+      "dashboard",
+      "metrics",
+      "audience",
+    ],
+    category: "analytics",
+    relatedKeywords: [
+      "royalties",
+      "social media",
+      "distribution",
+      "revenue intelligence",
+    ],
+    nextSteps: [
+      "Filter by platform to see which drives most streams",
+      "Check audience demographics to inform content strategy",
+      "Enable revenue intelligence for earnings prediction",
+      "Connect Spotify for Artists for more granular data",
+    ],
     answer: `The Analytics dashboard gives you a complete view of your music career performance in one place.
 
 **Dashboard Overview:**
@@ -975,10 +1399,25 @@ AI-powered earnings forecasting — go to Analytics → Revenue Intelligence to 
 Export a certified analytics report — a professionally formatted PDF with your verified streaming statistics, suitable for presenting to labels, sync supervisors, and press.`,
   },
   {
-    keywords: ['audience', 'demographics', 'listeners', 'fans', 'who listens', 'audience data', 'listener data', 'age', 'location', 'geography'],
-    category: 'analytics',
-    relatedKeywords: ['analytics', 'social media', 'advertising', 'content'],
-    nextSteps: ['Use audience data to target your Advertising Autopilot campaigns', 'Adjust content language/style based on top country', 'Schedule posts in the timezone of your largest audience'],
+    keywords: [
+      "audience",
+      "demographics",
+      "listeners",
+      "fans",
+      "who listens",
+      "audience data",
+      "listener data",
+      "age",
+      "location",
+      "geography",
+    ],
+    category: "analytics",
+    relatedKeywords: ["analytics", "social media", "advertising", "content"],
+    nextSteps: [
+      "Use audience data to target your Advertising Autopilot campaigns",
+      "Adjust content language/style based on top country",
+      "Schedule posts in the timezone of your largest audience",
+    ],
     answer: `Audience Analytics reveals exactly who your listeners are and where they come from.
 
 **Demographic Breakdown:**
@@ -1005,10 +1444,21 @@ Export a certified analytics report — a professionally formatted PDF with your
 • Low save rate → your hook isn't connecting, A/B test intro variations`,
   },
   {
-    keywords: ['executive dashboard', 'career overview', 'career score', 'health score', 'career metrics', 'overall performance'],
-    category: 'analytics',
-    relatedKeywords: ['analytics', 'revenue', 'social media', 'distribution'],
-    nextSteps: ['Review your Career Health Score weekly', 'Take suggested actions from the career coach', 'Export your certified analytics report'],
+    keywords: [
+      "executive dashboard",
+      "career overview",
+      "career score",
+      "health score",
+      "career metrics",
+      "overall performance",
+    ],
+    category: "analytics",
+    relatedKeywords: ["analytics", "revenue", "social media", "distribution"],
+    nextSteps: [
+      "Review your Career Health Score weekly",
+      "Take suggested actions from the career coach",
+      "Export your certified analytics report",
+    ],
     answer: `The Executive Dashboard gives you a bird's-eye view of your entire music career in one screen.
 
 **What's on the Executive Dashboard:**
@@ -1035,10 +1485,27 @@ Export a certified analytics report — a professionally formatted PDF with your
 
   // ── CAREER TOOLS ──────────────────────────────────────────────────────────
   {
-    keywords: ['career coach', 'career advice', 'career plan', 'music career', 'grow career', 'career strategy', 'what should i do next'],
-    category: 'career',
-    relatedKeywords: ['analytics', 'advertising', 'distribution', 'social media'],
-    nextSteps: ['Complete your career profile for personalized coaching', 'Set a 6-month career goal in the Career Coach', 'Review your Weekly Action Plan every Monday'],
+    keywords: [
+      "career coach",
+      "career advice",
+      "career plan",
+      "music career",
+      "grow career",
+      "career strategy",
+      "what should i do next",
+    ],
+    category: "career",
+    relatedKeywords: [
+      "analytics",
+      "advertising",
+      "distribution",
+      "social media",
+    ],
+    nextSteps: [
+      "Complete your career profile for personalized coaching",
+      "Set a 6-month career goal in the Career Coach",
+      "Review your Weekly Action Plan every Monday",
+    ],
     answer: `The Career Coach is Max Booster's AI-driven career management system that creates personalized roadmaps for your music career.
 
 **What it does:**
@@ -1071,10 +1538,22 @@ The Coach adapts to your stage:
 • **Major-ready** — label pitch preparation mode`,
   },
   {
-    keywords: ['press kit', 'epk', 'electronic press kit', 'bio', 'artist bio', 'press materials', 'media kit'],
-    category: 'career',
-    relatedKeywords: ['career', 'distribution', 'analytics'],
-    nextSteps: ['Add your best photos and streaming data to your EPK', 'Share your EPK link when pitching to blogs and venues', 'Update your EPK after each major release'],
+    keywords: [
+      "press kit",
+      "epk",
+      "electronic press kit",
+      "bio",
+      "artist bio",
+      "press materials",
+      "media kit",
+    ],
+    category: "career",
+    relatedKeywords: ["career", "distribution", "analytics"],
+    nextSteps: [
+      "Add your best photos and streaming data to your EPK",
+      "Share your EPK link when pitching to blogs and venues",
+      "Update your EPK after each major release",
+    ],
     answer: `The Press Kit (EPK) builder creates a professional media package for blogs, venues, labels, and sync supervisors.
 
 **What's in your EPK:**
@@ -1109,10 +1588,24 @@ The Coach adapts to your stage:
 • Include in grant applications and festival submissions`,
   },
   {
-    keywords: ['tour', 'shows', 'venues', 'booking', 'gigs', 'live performance', 'concert', 'tour management', 'booking agent'],
-    category: 'career',
-    relatedKeywords: ['career', 'analytics', 'press kit'],
-    nextSteps: ['Add your upcoming shows to the Tour Manager', 'Share show dates via the Social Media Autopilot', 'Add venue contacts to your CRM'],
+    keywords: [
+      "tour",
+      "shows",
+      "venues",
+      "booking",
+      "gigs",
+      "live performance",
+      "concert",
+      "tour management",
+      "booking agent",
+    ],
+    category: "career",
+    relatedKeywords: ["career", "analytics", "press kit"],
+    nextSteps: [
+      "Add your upcoming shows to the Tour Manager",
+      "Share show dates via the Social Media Autopilot",
+      "Add venue contacts to your CRM",
+    ],
     answer: `The Tour Manager and Venue CRM help you organize your live performance business.
 
 **Tour Manager:**
@@ -1140,10 +1633,24 @@ The Coach adapts to your stage:
 • Generate PDF set lists to share with your band`,
   },
   {
-    keywords: ['sync licensing', 'sync', 'tv', 'film', 'commercial', 'music supervisor', 'sync placement', 'license for film', 'brand deal'],
-    category: 'career',
-    relatedKeywords: ['publishing', 'royalties', 'career'],
-    nextSteps: ['List your top tracks in the Sync Licensing portal', 'Tag tracks accurately (mood, tempo, instrumentation) for supervisor search', 'Register your publishing with a PRO to collect sync performance royalties'],
+    keywords: [
+      "sync licensing",
+      "sync",
+      "tv",
+      "film",
+      "commercial",
+      "music supervisor",
+      "sync placement",
+      "license for film",
+      "brand deal",
+    ],
+    category: "career",
+    relatedKeywords: ["publishing", "royalties", "career"],
+    nextSteps: [
+      "List your top tracks in the Sync Licensing portal",
+      "Tag tracks accurately (mood, tempo, instrumentation) for supervisor search",
+      "Register your publishing with a PRO to collect sync performance royalties",
+    ],
     answer: `The Sync Licensing portal connects your music with TV shows, films, ads, and games.
 
 **What sync licensing earns:**
@@ -1173,10 +1680,24 @@ Supervisors search by: genre, mood, tempo, vocal presence, instrumentation, era.
 Always upload instrumental versions of your tracks — many placements prefer instrumentals. You can create them in Studio (mute vocal track, export).`,
   },
   {
-    keywords: ['songwriter', 'songwriting', 'lyric', 'lyrics', 'verse', 'chorus', 'song structure', 'write song', 'co-write'],
-    category: 'career',
-    relatedKeywords: ['studio', 'publishing', 'career'],
-    nextSteps: ['Save your lyrics to the Songwriting workspace', 'Register finished songs with your PRO for publishing royalties', 'Collaborate on lyrics with co-writers via the collaboration feature'],
+    keywords: [
+      "songwriter",
+      "songwriting",
+      "lyric",
+      "lyrics",
+      "verse",
+      "chorus",
+      "song structure",
+      "write song",
+      "co-write",
+    ],
+    category: "career",
+    relatedKeywords: ["studio", "publishing", "career"],
+    nextSteps: [
+      "Save your lyrics to the Songwriting workspace",
+      "Register finished songs with your PRO for publishing royalties",
+      "Collaborate on lyrics with co-writers via the collaboration feature",
+    ],
     answer: `The Songwriting workspace helps you write, organize, and develop your songs.
 
 **Songwriting Features:**
@@ -1199,10 +1720,20 @@ Always upload instrumental versions of your tracks — many placements prefer in
 Track your productivity: songs written per month, average completion rate, genre distribution of your catalog.`,
   },
   {
-    keywords: ['sample clearance', 'sample', 'clear sample', 'sample permission', 'copyright clearance', 'sample approval'],
-    category: 'career',
-    relatedKeywords: ['publishing', 'distribution', 'copyright'],
-    nextSteps: ['Submit your sample for clearance before distributing', 'Use the AI generator to create original elements instead of sampling'],
+    keywords: [
+      "sample clearance",
+      "sample",
+      "clear sample",
+      "sample permission",
+      "copyright clearance",
+      "sample approval",
+    ],
+    category: "career",
+    relatedKeywords: ["publishing", "distribution", "copyright"],
+    nextSteps: [
+      "Submit your sample for clearance before distributing",
+      "Use the AI generator to create original elements instead of sampling",
+    ],
     answer: `The Sample Clearance portal helps you legally clear samples before distributing music.
 
 **What you need to clear:**
@@ -1229,10 +1760,21 @@ Track your productivity: songs written per month, average completion rate, genre
 **Alternative:** If clearance is denied or too expensive, use the Studio's AI Generator to create a similar original element — legally yours from the start.`,
   },
   {
-    keywords: ['project budget', 'budget', 'production cost', 'music budget', 'spending', 'studio budget', 'album budget'],
-    category: 'career',
-    relatedKeywords: ['career', 'royalties', 'revenue'],
-    nextSteps: ['Add all your production expenses to track ROI on each release', 'Compare budgets vs. revenue in the Analytics dashboard'],
+    keywords: [
+      "project budget",
+      "budget",
+      "production cost",
+      "music budget",
+      "spending",
+      "studio budget",
+      "album budget",
+    ],
+    category: "career",
+    relatedKeywords: ["career", "royalties", "revenue"],
+    nextSteps: [
+      "Add all your production expenses to track ROI on each release",
+      "Compare budgets vs. revenue in the Analytics dashboard",
+    ],
     answer: `Project Budget Management helps you track the financial performance of each release.
 
 **What to track:**
@@ -1267,10 +1809,26 @@ This data helps you make smarter investment decisions across your catalog.`,
 
   // ── SUBSCRIPTIONS & BILLING ──────────────────────────────────────────────
   {
-    keywords: ['subscription', 'plan', 'pricing', 'price', 'cost', 'monthly', 'yearly', 'lifetime', 'upgrade', 'downgrade', 'free trial'],
-    category: 'account',
-    relatedKeywords: ['billing', 'payment', 'cancel', 'stripe'],
-    nextSteps: ['View your current plan in Settings → Billing', 'Upgrade to unlock additional concurrent distribution releases', 'Set up autopay to avoid interruptions'],
+    keywords: [
+      "subscription",
+      "plan",
+      "pricing",
+      "price",
+      "cost",
+      "monthly",
+      "yearly",
+      "lifetime",
+      "upgrade",
+      "downgrade",
+      "free trial",
+    ],
+    category: "account",
+    relatedKeywords: ["billing", "payment", "cancel", "stripe"],
+    nextSteps: [
+      "View your current plan in Settings → Billing",
+      "Upgrade to unlock additional concurrent distribution releases",
+      "Set up autopay to avoid interruptions",
+    ],
     answer: `Max Booster offers flexible plans built for serious artists at every stage of their career.
 
 **Plan Structure:**
@@ -1310,10 +1868,21 @@ Go to **Settings → Billing** to: view your current plan, update payment method
 For current specific pricing, visit the Pricing page or contact our support team.`,
   },
   {
-    keywords: ['cancel', 'cancellation', 'cancel subscription', 'stop subscription', 'end plan', 'pause subscription'],
-    category: 'account',
-    relatedKeywords: ['subscription', 'billing', 'refund'],
-    nextSteps: ['Download your data before canceling', 'Check your pending royalties before canceling — they still get paid out', 'Consider pausing instead of canceling if it\'s temporary'],
+    keywords: [
+      "cancel",
+      "cancellation",
+      "cancel subscription",
+      "stop subscription",
+      "end plan",
+      "pause subscription",
+    ],
+    category: "account",
+    relatedKeywords: ["subscription", "billing", "refund"],
+    nextSteps: [
+      "Download your data before canceling",
+      "Check your pending royalties before canceling — they still get paid out",
+      "Consider pausing instead of canceling if it's temporary",
+    ],
     answer: `Canceling or pausing your Max Booster subscription:
 
 **How to cancel:**
@@ -1343,10 +1912,22 @@ Even if you cancel, Max Booster continues collecting and paying out royalties fr
 
   // ── ACCOUNT & SECURITY ────────────────────────────────────────────────────
   {
-    keywords: ['password', 'reset password', 'forgot password', 'change password', 'login issue', 'cant login', 'locked out', 'sign in'],
-    category: 'account',
-    relatedKeywords: ['2fa', 'security', 'account'],
-    nextSteps: ['Enable 2FA after resetting your password for better security', 'Add a backup email in case of lockout'],
+    keywords: [
+      "password",
+      "reset password",
+      "forgot password",
+      "change password",
+      "login issue",
+      "cant login",
+      "locked out",
+      "sign in",
+    ],
+    category: "account",
+    relatedKeywords: ["2fa", "security", "account"],
+    nextSteps: [
+      "Enable 2FA after resetting your password for better security",
+      "Add a backup email in case of lockout",
+    ],
     answer: `Help with password and login issues:
 
 **Forgot your password:**
@@ -1378,10 +1959,20 @@ Even if you cancel, Max Booster continues collecting and paying out royalties fr
 After multiple failed login attempts, your account temporarily locks for 15 minutes as a security measure. Wait 15 minutes or contact support to unlock immediately.`,
   },
   {
-    keywords: ['delete account', 'close account', 'remove account', 'deactivate', 'terminate account'],
-    category: 'account',
-    relatedKeywords: ['data', 'privacy', 'cancel', 'gdpr'],
-    nextSteps: ['Download all your Studio projects before requesting deletion', 'Collect any pending earnings (must be above $10 threshold)', 'Save your royalty reports and split agreements'],
+    keywords: [
+      "delete account",
+      "close account",
+      "remove account",
+      "deactivate",
+      "terminate account",
+    ],
+    category: "account",
+    relatedKeywords: ["data", "privacy", "cancel", "gdpr"],
+    nextSteps: [
+      "Download all your Studio projects before requesting deletion",
+      "Collect any pending earnings (must be above $10 threshold)",
+      "Save your royalty reports and split agreements",
+    ],
     answer: `To delete your Max Booster account:
 
 1. Go to **Settings → Account**
@@ -1408,10 +1999,22 @@ After multiple failed login attempts, your account temporarily locks for 15 minu
 • Collect any pending earnings above the $10 payout threshold`,
   },
   {
-    keywords: ['2fa', 'two factor', 'authenticator', 'mfa', 'security', 'two-factor authentication', 'backup codes'],
-    category: 'account',
-    relatedKeywords: ['password', 'account', 'security'],
-    nextSteps: ['Download your backup codes and store them safely', 'Add 2FA to your authenticator app (Google Authenticator, Authy)', 'Enable login notifications for new device detection'],
+    keywords: [
+      "2fa",
+      "two factor",
+      "authenticator",
+      "mfa",
+      "security",
+      "two-factor authentication",
+      "backup codes",
+    ],
+    category: "account",
+    relatedKeywords: ["password", "account", "security"],
+    nextSteps: [
+      "Download your backup codes and store them safely",
+      "Add 2FA to your authenticator app (Google Authenticator, Authy)",
+      "Enable login notifications for new device detection",
+    ],
     answer: `Two-factor authentication (2FA) adds a critical layer of security to your Max Booster account.
 
 **Setting up 2FA:**
@@ -1441,10 +2044,22 @@ Google Authenticator, Authy, 1Password, Microsoft Authenticator, Bitwarden
 **Strong password + 2FA** is the best protection for your account, music library, and earnings.`,
   },
   {
-    keywords: ['api key', 'developer api', 'api access', 'third party access', 'developer', 'webhook', 'api integration'],
-    category: 'account',
-    relatedKeywords: ['security', 'account', 'developer'],
-    nextSteps: ['Generate an API key in Settings → Developer', 'Set up webhooks to receive real-time event notifications', 'Review API rate limits before building integrations'],
+    keywords: [
+      "api key",
+      "developer api",
+      "api access",
+      "third party access",
+      "developer",
+      "webhook",
+      "api integration",
+    ],
+    category: "account",
+    relatedKeywords: ["security", "account", "developer"],
+    nextSteps: [
+      "Generate an API key in Settings → Developer",
+      "Set up webhooks to receive real-time event notifications",
+      "Review API rate limits before building integrations",
+    ],
     answer: `Max Booster provides a developer API for building custom integrations.
 
 **API Access:**
@@ -1481,10 +2096,25 @@ Full API documentation with examples is available at your Developer settings pag
 
   // ── MAX AI ASSISTANT ──────────────────────────────────────────────────────
   {
-    keywords: ['who are you', 'what are you', 'about max', 'about you', 'what is max', 'are you ai', 'are you a bot', 'are you real', 'how do you work', 'introduce yourself'],
-    category: 'assistant',
-    relatedKeywords: ['help', 'support', 'features'],
-    nextSteps: ['Ask me anything about any Max Booster feature', 'Tell me your current goal and I\'ll suggest a starting point', 'Ask me "what should I do next?" for personalized guidance'],
+    keywords: [
+      "who are you",
+      "what are you",
+      "about max",
+      "about you",
+      "what is max",
+      "are you ai",
+      "are you a bot",
+      "are you real",
+      "how do you work",
+      "introduce yourself",
+    ],
+    category: "assistant",
+    relatedKeywords: ["help", "support", "features"],
+    nextSteps: [
+      "Ask me anything about any Max Booster feature",
+      "Tell me your current goal and I'll suggest a starting point",
+      'Ask me "what should I do next?" for personalized guidance',
+    ],
     answer: `I'm Max — the AI assistant built entirely in-house by the Max Booster engineering team.
 
 **What makes me different:**
@@ -1511,10 +2141,25 @@ Full API documentation with examples is available at your Developer settings pag
 What would you like to explore today?`,
   },
   {
-    keywords: ['in-house ai', 'custom ai', 'ai technology', 'how is ai built', 'your ai', 'max booster ai', 'proprietary ai', 'ai model', 'trained ai', 'ai engine'],
-    category: 'assistant',
-    relatedKeywords: ['assistant', 'studio', 'advertising'],
-    nextSteps: ['Try the AI Generator to create original music', 'Activate the Social Media Autopilot to see the AI in action', 'Enable the Advertising Autopilot for zero-cost organic growth'],
+    keywords: [
+      "in-house ai",
+      "custom ai",
+      "ai technology",
+      "how is ai built",
+      "your ai",
+      "max booster ai",
+      "proprietary ai",
+      "ai model",
+      "trained ai",
+      "ai engine",
+    ],
+    category: "assistant",
+    relatedKeywords: ["assistant", "studio", "advertising"],
+    nextSteps: [
+      "Try the AI Generator to create original music",
+      "Activate the Social Media Autopilot to see the AI in action",
+      "Enable the Advertising Autopilot for zero-cost organic growth",
+    ],
     answer: `Every AI feature in Max Booster — including me — is built and trained entirely in-house by the B-Lawz Music engineering team.
 
 **Our In-House AI Stack:**
@@ -1546,10 +2191,23 @@ What would you like to explore today?`,
 
   // ── SUPPORT & GENERAL ─────────────────────────────────────────────────────
   {
-    keywords: ['help', 'support', 'contact support', 'contact us', 'human support', 'talk to person', 'escalate', 'ticket'],
-    category: 'support',
-    relatedKeywords: ['account', 'billing', 'assistant'],
-    nextSteps: ['Try asking me your question first — I can resolve most issues instantly', 'Open a support ticket for billing or account-specific issues', 'Check the status page for any ongoing platform issues'],
+    keywords: [
+      "help",
+      "support",
+      "contact support",
+      "contact us",
+      "human support",
+      "talk to person",
+      "escalate",
+      "ticket",
+    ],
+    category: "support",
+    relatedKeywords: ["account", "billing", "assistant"],
+    nextSteps: [
+      "Try asking me your question first — I can resolve most issues instantly",
+      "Open a support ticket for billing or account-specific issues",
+      "Check the status page for any ongoing platform issues",
+    ],
     answer: `I'm here to help with any question about Max Booster! Here's how to get support:
 
 **Ask me (Max) first:**
@@ -1579,10 +2237,23 @@ Check if there's a known issue at the Status page (linked in the sidebar footer)
 What can I help you with right now?`,
   },
   {
-    keywords: ['mobile app', 'app', 'ios app', 'android app', 'download app', 'phone app', 'tablet', 'desktop app'],
-    category: 'general',
-    relatedKeywords: ['notifications', 'sync', 'offline'],
-    nextSteps: ['Download the mobile app for studio recording on the go', 'Enable push notifications for royalty and campaign alerts', 'Sync your projects across all devices automatically'],
+    keywords: [
+      "mobile app",
+      "app",
+      "ios app",
+      "android app",
+      "download app",
+      "phone app",
+      "tablet",
+      "desktop app",
+    ],
+    category: "general",
+    relatedKeywords: ["notifications", "sync", "offline"],
+    nextSteps: [
+      "Download the mobile app for studio recording on the go",
+      "Enable push notifications for royalty and campaign alerts",
+      "Sync your projects across all devices automatically",
+    ],
     answer: `Max Booster is available on every platform — web, mobile, and desktop.
 
 **iOS App:**
@@ -1612,10 +2283,21 @@ What can I help you with right now?`,
 All your projects, settings, and data sync instantly across all devices. Start a beat on desktop, add a vocal on mobile, distribute from the web — everything stays in sync.`,
   },
   {
-    keywords: ['notification', 'alert', 'email notification', 'push notification', 'turn off notification', 'notification settings'],
-    category: 'general',
-    relatedKeywords: ['mobile', 'account', 'settings'],
-    nextSteps: ['Set up a royalty alert for when earnings hit $10', 'Enable push notifications in the mobile app', 'Configure digest frequency (real-time vs. daily summary)'],
+    keywords: [
+      "notification",
+      "alert",
+      "email notification",
+      "push notification",
+      "turn off notification",
+      "notification settings",
+    ],
+    category: "general",
+    relatedKeywords: ["mobile", "account", "settings"],
+    nextSteps: [
+      "Set up a royalty alert for when earnings hit $10",
+      "Enable push notifications in the mobile app",
+      "Configure digest frequency (real-time vs. daily summary)",
+    ],
     answer: `Max Booster notifications keep you informed about important career events.
 
 **Notification Types:**
@@ -1641,10 +2323,23 @@ All your projects, settings, and data sync instantly across all devices. Start a
 **Email preferences:** You can unsubscribe from marketing emails while keeping transactional notifications (receipts, distribution updates) — manage in Settings → Email Preferences.`,
   },
   {
-    keywords: ['gdpr', 'privacy', 'data', 'my data', 'delete data', 'data rights', 'privacy policy', 'personal data', 'data export'],
-    category: 'account',
-    relatedKeywords: ['delete account', 'security', 'account'],
-    nextSteps: ['Export your data in Settings → Privacy → Export My Data', 'Review what data we collect in Settings → Privacy'],
+    keywords: [
+      "gdpr",
+      "privacy",
+      "data",
+      "my data",
+      "delete data",
+      "data rights",
+      "privacy policy",
+      "personal data",
+      "data export",
+    ],
+    category: "account",
+    relatedKeywords: ["delete account", "security", "account"],
+    nextSteps: [
+      "Export your data in Settings → Privacy → Export My Data",
+      "Review what data we collect in Settings → Privacy",
+    ],
     answer: `Max Booster is fully GDPR-compliant and built with privacy as a foundation.
 
 **Your Data Rights:**
@@ -1674,10 +2369,19 @@ All your projects, settings, and data sync instantly across all devices. Start a
 • 90-day backup retention after account deletion`,
   },
   {
-    keywords: ['offline', 'offline mode', 'no internet', 'work offline', 'cache'],
-    category: 'general',
-    relatedKeywords: ['mobile', 'studio', 'storage'],
-    nextSteps: ['Enable offline mode in the mobile app settings', 'Download your active projects for offline access before going offline'],
+    keywords: [
+      "offline",
+      "offline mode",
+      "no internet",
+      "work offline",
+      "cache",
+    ],
+    category: "general",
+    relatedKeywords: ["mobile", "studio", "storage"],
+    nextSteps: [
+      "Enable offline mode in the mobile app settings",
+      "Download your active projects for offline access before going offline",
+    ],
     answer: `Max Booster supports offline mode for working without an internet connection.
 
 **Offline Capabilities:**
@@ -1702,10 +2406,23 @@ All your projects, settings, and data sync instantly across all devices. Start a
 Any edits made offline are queued and synced automatically when internet is restored. If there's a conflict (you edited on both offline and another device), you'll be shown both versions and choose which to keep.`,
   },
   {
-    keywords: ['onboarding', 'getting started', 'new user', 'beginner', 'first steps', 'setup', 'start', 'where to begin'],
-    category: 'general',
-    relatedKeywords: ['career coach', 'distribution', 'studio', 'social media'],
-    nextSteps: ['Complete the onboarding checklist in your dashboard', 'Set up your artist profile first (it powers all other features)', 'Connect your social accounts to unlock the Autopilot'],
+    keywords: [
+      "onboarding",
+      "getting started",
+      "new user",
+      "beginner",
+      "first steps",
+      "setup",
+      "start",
+      "where to begin",
+    ],
+    category: "general",
+    relatedKeywords: ["career coach", "distribution", "studio", "social media"],
+    nextSteps: [
+      "Complete the onboarding checklist in your dashboard",
+      "Set up your artist profile first (it powers all other features)",
+      "Connect your social accounts to unlock the Autopilot",
+    ],
     answer: `Welcome to Max Booster! Here's how to get started effectively:
 
 **Recommended First Steps:**
@@ -1727,10 +2444,22 @@ Your dashboard has an interactive onboarding checklist showing your progress. Co
 **Tip:** The platform works best when everything is connected — Studio → Distribution → Analytics → Autopilot form a complete loop that compounds results over time.`,
   },
   {
-    keywords: ['hybrid storage', 'storage', 'file storage', 'pocket dimension', 'boosterstate', 'replit storage', 'object storage', 'storage tier'],
-    category: 'general',
-    relatedKeywords: ['studio', 'distribution', 'files'],
-    nextSteps: ['All storage is managed automatically — no action needed', 'Large project archives are stored in cold tier to save space'],
+    keywords: [
+      "hybrid storage",
+      "storage",
+      "file storage",
+      "pocket dimension",
+      "boosterstate",
+      "replit storage",
+      "object storage",
+      "storage tier",
+    ],
+    category: "general",
+    relatedKeywords: ["studio", "distribution", "files"],
+    nextSteps: [
+      "All storage is managed automatically — no action needed",
+      "Large project archives are stored in cold tier to save space",
+    ],
     answer: `Max Booster uses a three-tier hybrid storage architecture for optimal performance and cost efficiency.
 
 **Storage Tiers:**
@@ -1766,10 +2495,34 @@ If multiple users upload the same audio sample, it's stored once and referenced 
 
   // ── AI VIDEO GENERATOR ────────────────────────────────────────────────────
   {
-    keywords: ['video', 'music video', 'ai video', 'generate video', 'cinematic video', 'visual', 'video generator', 'make video', 'create video', 'video for music', 'lyric video', 'visualizer'],
-    category: 'studio',
-    relatedKeywords: ['social media', 'youtube', 'tiktok', 'instagram reels', 'distribution'],
-    nextSteps: ['Export your video to YouTube or Instagram Reels', 'Use the AI Video on TikTok with the Social Media Autopilot', 'Add your branding overlay before exporting', 'Share the cinematic video on all connected social platforms'],
+    keywords: [
+      "video",
+      "music video",
+      "ai video",
+      "generate video",
+      "cinematic video",
+      "visual",
+      "video generator",
+      "make video",
+      "create video",
+      "video for music",
+      "lyric video",
+      "visualizer",
+    ],
+    category: "studio",
+    relatedKeywords: [
+      "social media",
+      "youtube",
+      "tiktok",
+      "instagram reels",
+      "distribution",
+    ],
+    nextSteps: [
+      "Export your video to YouTube or Instagram Reels",
+      "Use the AI Video on TikTok with the Social Media Autopilot",
+      "Add your branding overlay before exporting",
+      "Share the cinematic video on all connected social platforms",
+    ],
     answer: `The AI Cinematic Video Generator creates professional music videos and visual content from your audio — powered entirely by Max Booster's in-house AI.
 
 **What it does:**
@@ -1805,10 +2558,27 @@ No video editing skills required. The AI handles every frame end to end.`,
 
   // ── FAN HUB & COMMUNITY ───────────────────────────────────────────────────
   {
-    keywords: ['fan hub', 'fan community', 'fan engagement', 'fans', 'community', 'fan club', 'fan page', 'engage fans', 'fan interaction', 'fan base', 'fanbase'],
-    category: 'social',
-    relatedKeywords: ['social media', 'autopilot', 'analytics', 'fan campaign'],
-    nextSteps: ['Set up a Fan Campaign to grow your community', 'Use the Social Media Autopilot to keep fans engaged automatically', 'Track your audience demographics in the Analytics dashboard', 'Send a pre-save campaign to your fanbase before your next release'],
+    keywords: [
+      "fan hub",
+      "fan community",
+      "fan engagement",
+      "fans",
+      "community",
+      "fan club",
+      "fan page",
+      "engage fans",
+      "fan interaction",
+      "fan base",
+      "fanbase",
+    ],
+    category: "social",
+    relatedKeywords: ["social media", "autopilot", "analytics", "fan campaign"],
+    nextSteps: [
+      "Set up a Fan Campaign to grow your community",
+      "Use the Social Media Autopilot to keep fans engaged automatically",
+      "Track your audience demographics in the Analytics dashboard",
+      "Send a pre-save campaign to your fanbase before your next release",
+    ],
     answer: `The Fan Hub is your centralized space for building and engaging your fan community on Max Booster.
 
 **Fan Hub Features:**
@@ -1836,10 +2606,32 @@ Building a loyal fan community is one of the most powerful career accelerators �
 
   // ── CONTRACTS ─────────────────────────────────────────────────────────────
   {
-    keywords: ['contract', 'music contract', 'agreement', 'deal', 'record deal', 'publishing deal', 'licensing agreement', 'feature agreement', 'collaborator contract', 'contract management'],
-    category: 'career',
-    relatedKeywords: ['sync licensing', 'royalty split', 'publishing', 'marketplace license', 'legal'],
-    nextSteps: ['Set up a royalty split for your collaborators alongside the contract', 'Register the track in the Sync Licensing portal after the agreement is signed', 'Export a PDF copy of the contract for your records', 'Use the Contract alongside a Marketplace license for beat sales'],
+    keywords: [
+      "contract",
+      "music contract",
+      "agreement",
+      "deal",
+      "record deal",
+      "publishing deal",
+      "licensing agreement",
+      "feature agreement",
+      "collaborator contract",
+      "contract management",
+    ],
+    category: "career",
+    relatedKeywords: [
+      "sync licensing",
+      "royalty split",
+      "publishing",
+      "marketplace license",
+      "legal",
+    ],
+    nextSteps: [
+      "Set up a royalty split for your collaborators alongside the contract",
+      "Register the track in the Sync Licensing portal after the agreement is signed",
+      "Export a PDF copy of the contract for your records",
+      "Use the Contract alongside a Marketplace license for beat sales",
+    ],
     answer: `Max Booster's Contract Management system lets you draft, send, and manage music industry agreements — all without a lawyer for standard deals.
 
 **Contract Types Supported:**
@@ -1871,10 +2663,33 @@ Building a loyal fan community is one of the most powerful career accelerators �
 
   // ── RADIO PITCHING ────────────────────────────────────────────────────────
   {
-    keywords: ['radio', 'radio pitch', 'radio submission', 'fm radio', 'internet radio', 'radio station', 'radio play', 'airplay', 'radio promotion', 'college radio', 'submit to radio'],
-    category: 'career',
-    relatedKeywords: ['distribution', 'playlist pitching', 'career coach', 'sync licensing', 'analytics'],
-    nextSteps: ['Submit your radio pitch at least 4 weeks before your release date', 'Pair your radio campaign with a Social Media Autopilot burst for maximum reach', 'Track airplay royalties in your Royalties dashboard', 'Follow up your radio submission with an EPK (Electronic Press Kit)'],
+    keywords: [
+      "radio",
+      "radio pitch",
+      "radio submission",
+      "fm radio",
+      "internet radio",
+      "radio station",
+      "radio play",
+      "airplay",
+      "radio promotion",
+      "college radio",
+      "submit to radio",
+    ],
+    category: "career",
+    relatedKeywords: [
+      "distribution",
+      "playlist pitching",
+      "career coach",
+      "sync licensing",
+      "analytics",
+    ],
+    nextSteps: [
+      "Submit your radio pitch at least 4 weeks before your release date",
+      "Pair your radio campaign with a Social Media Autopilot burst for maximum reach",
+      "Track airplay royalties in your Royalties dashboard",
+      "Follow up your radio submission with an EPK (Electronic Press Kit)",
+    ],
     answer: `The Radio Pitch Tool lets you submit tracks to FM stations, internet radio networks, and college radio programs — directly from Max Booster.
 
 **Radio submission types:**
@@ -1907,10 +2722,32 @@ Building a loyal fan community is one of the most powerful career accelerators �
 
   // ── FAN CAMPAIGNS ─────────────────────────────────────────────────────────
   {
-    keywords: ['fan campaign', 'campaign', 'presave', 'pre-save', 'pre save', 'release campaign', 'music campaign', 'launch campaign', 'promotional campaign', 'countdown campaign'],
-    category: 'social',
-    relatedKeywords: ['social media autopilot', 'distribution', 'release', 'fan hub', 'analytics'],
-    nextSteps: ['Launch a pre-save campaign 2-4 weeks before your release', 'Connect your social accounts to auto-post campaign content', 'Pair the campaign with a release countdown for maximum hype', 'Monitor campaign performance in the Analytics dashboard'],
+    keywords: [
+      "fan campaign",
+      "campaign",
+      "presave",
+      "pre-save",
+      "pre save",
+      "release campaign",
+      "music campaign",
+      "launch campaign",
+      "promotional campaign",
+      "countdown campaign",
+    ],
+    category: "social",
+    relatedKeywords: [
+      "social media autopilot",
+      "distribution",
+      "release",
+      "fan hub",
+      "analytics",
+    ],
+    nextSteps: [
+      "Launch a pre-save campaign 2-4 weeks before your release",
+      "Connect your social accounts to auto-post campaign content",
+      "Pair the campaign with a release countdown for maximum hype",
+      "Monitor campaign performance in the Analytics dashboard",
+    ],
     answer: `Fan Campaigns are coordinated promotional efforts built inside Max Booster to drive engagement and momentum around your music releases and brand.
 
 **Campaign Types:**
@@ -1941,10 +2778,32 @@ Building a loyal fan community is one of the most powerful career accelerators �
 
   // ── RELEASE COUNTDOWN ─────────────────────────────────────────────────────
   {
-    keywords: ['release countdown', 'countdown', 'pre-release', 'pre release', 'hype', 'teaser', 'upcoming release', 'dropping soon', 'countdown timer', 'release date'],
-    category: 'distribution',
-    relatedKeywords: ['fan campaign', 'social media autopilot', 'pre-save', 'distribution', 'release'],
-    nextSteps: ['Activate the Social Media Autopilot to post countdown content automatically', 'Launch a pre-save campaign alongside the countdown', 'Submit your playlist pitch during the countdown period', 'Prepare your release announcement content in the Content Calendar'],
+    keywords: [
+      "release countdown",
+      "countdown",
+      "pre-release",
+      "pre release",
+      "hype",
+      "teaser",
+      "upcoming release",
+      "dropping soon",
+      "countdown timer",
+      "release date",
+    ],
+    category: "distribution",
+    relatedKeywords: [
+      "fan campaign",
+      "social media autopilot",
+      "pre-save",
+      "distribution",
+      "release",
+    ],
+    nextSteps: [
+      "Activate the Social Media Autopilot to post countdown content automatically",
+      "Launch a pre-save campaign alongside the countdown",
+      "Submit your playlist pitch during the countdown period",
+      "Prepare your release announcement content in the Content Calendar",
+    ],
     answer: `Release Countdown is a built-in feature that builds anticipation for your upcoming music drop with automated teaser content, timers, and pre-release assets.
 
 **What the Release Countdown does:**
@@ -1981,10 +2840,33 @@ Building a loyal fan community is one of the most powerful career accelerators �
 
   // ── MERCH / MERCHANDISE ───────────────────────────────────────────────────
   {
-    keywords: ['merch', 'merchandise', 'merch store', 't-shirt', 'hoodie', 'clothing', 'sell merch', 'artist merch', 'fan merch', 'print on demand', 'merch drop'],
-    category: 'marketplace',
-    relatedKeywords: ['fan hub', 'fan campaign', 'storefront', 'marketplace', 'royalties'],
-    nextSteps: ['Promote your merch drop with a Fan Campaign', 'Add your merch store link to all social profiles', 'Use the Autopilot to auto-post merch announcements', 'Run a limited-time drop campaign for new merch items'],
+    keywords: [
+      "merch",
+      "merchandise",
+      "merch store",
+      "t-shirt",
+      "hoodie",
+      "clothing",
+      "sell merch",
+      "artist merch",
+      "fan merch",
+      "print on demand",
+      "merch drop",
+    ],
+    category: "marketplace",
+    relatedKeywords: [
+      "fan hub",
+      "fan campaign",
+      "storefront",
+      "marketplace",
+      "royalties",
+    ],
+    nextSteps: [
+      "Promote your merch drop with a Fan Campaign",
+      "Add your merch store link to all social profiles",
+      "Use the Autopilot to auto-post merch announcements",
+      "Run a limited-time drop campaign for new merch items",
+    ],
     answer: `Max Booster includes a built-in Merchandise storefront so you can sell artist merch directly to your fans alongside your music and beats.
 
 **What you can sell:**
@@ -2024,10 +2906,32 @@ Building a loyal fan community is one of the most powerful career accelerators �
 
   // ── WORKSPACES ────────────────────────────────────────────────────────────
   {
-    keywords: ['workspace', 'workspaces', 'organize', 'organization', 'project folder', 'band account', 'team', 'label account', 'multiple artists', 'manage artists'],
-    category: 'account',
-    relatedKeywords: ['collaboration', 'royalty split', 'contracts', 'studio', 'distribution'],
-    nextSteps: ['Invite team members to your workspace in Settings → Workspace', 'Set permissions so collaborators can only access what they need', 'Create separate workspaces for different artist projects', 'Assign royalty splits across workspace members'],
+    keywords: [
+      "workspace",
+      "workspaces",
+      "organize",
+      "organization",
+      "project folder",
+      "band account",
+      "team",
+      "label account",
+      "multiple artists",
+      "manage artists",
+    ],
+    category: "account",
+    relatedKeywords: [
+      "collaboration",
+      "royalty split",
+      "contracts",
+      "studio",
+      "distribution",
+    ],
+    nextSteps: [
+      "Invite team members to your workspace in Settings → Workspace",
+      "Set permissions so collaborators can only access what they need",
+      "Create separate workspaces for different artist projects",
+      "Assign royalty splits across workspace members",
+    ],
     answer: `Workspaces let you organize your Max Booster account for different artists, bands, or projects — and invite team members with controlled access.
 
 **What Workspaces do:**
@@ -2064,10 +2968,30 @@ Multiple workspaces are available on all paid plans.`,
 
   // ── SELF-EVOLUTION ENGINE ─────────────────────────────────────────────────
   {
-    keywords: ['self evolution', 'self-evolution', 'evolving ai', 'ai learning', 'ai improve', 'platform learn', 'adaptive ai', 'ai retrain', 'train model', 'model update', 'ai evolution'],
-    category: 'assistant',
-    relatedKeywords: ['in-house ai', 'ai technology', 'max booster ai', 'pocket dimension'],
-    nextSteps: ['Your usage automatically contributes to improving the platform AI', 'No action required — the Self-Evolution Engine runs automatically'],
+    keywords: [
+      "self evolution",
+      "self-evolution",
+      "evolving ai",
+      "ai learning",
+      "ai improve",
+      "platform learn",
+      "adaptive ai",
+      "ai retrain",
+      "train model",
+      "model update",
+      "ai evolution",
+    ],
+    category: "assistant",
+    relatedKeywords: [
+      "in-house ai",
+      "ai technology",
+      "max booster ai",
+      "pocket dimension",
+    ],
+    nextSteps: [
+      "Your usage automatically contributes to improving the platform AI",
+      "No action required — the Self-Evolution Engine runs automatically",
+    ],
     answer: `The Self-Evolution Engine is Max Booster's proprietary AI retraining system that continuously improves every AI feature on the platform based on real usage patterns.
 
 **How it works:**
@@ -2099,10 +3023,36 @@ Max Booster is one of the only platforms where the AI is genuinely self-improvin
 
   // ── MAX BOOSTER OVERVIEW ──────────────────────────────────────────────────
   {
-    keywords: ['what is max booster', 'about max booster', 'max booster platform', 'what does max booster do', 'max booster features', 'everything max booster', 'platform overview', 'all features', 'what can max booster do', 'tell me about max booster', 'overview', 'platform summary'],
-    category: 'general',
-    relatedKeywords: ['studio', 'distribution', 'royalties', 'marketplace', 'social', 'analytics', 'career'],
-    nextSteps: ['Explore the Studio to start making music', 'Submit your first release via Distribution', 'Connect your social accounts for Autopilot', 'Check your career score in the Analytics Dashboard'],
+    keywords: [
+      "what is max booster",
+      "about max booster",
+      "max booster platform",
+      "what does max booster do",
+      "max booster features",
+      "everything max booster",
+      "platform overview",
+      "all features",
+      "what can max booster do",
+      "tell me about max booster",
+      "overview",
+      "platform summary",
+    ],
+    category: "general",
+    relatedKeywords: [
+      "studio",
+      "distribution",
+      "royalties",
+      "marketplace",
+      "social",
+      "analytics",
+      "career",
+    ],
+    nextSteps: [
+      "Explore the Studio to start making music",
+      "Submit your first release via Distribution",
+      "Connect your social accounts for Autopilot",
+      "Check your career score in the Analytics Dashboard",
+    ],
     answer: `**Max Booster** is the all-in-one AI music career management platform for independent artists — built by B-Lawz Music.
 
 It replaces every tool you'd need to run a music career, from production to streaming to marketing to monetization. Everything runs on custom in-house AI — no OpenAI, no external APIs.
@@ -2193,166 +3143,253 @@ It replaces every tool you'd need to run a music career, from production to stre
 
 const PROACTIVE_FLOWS: Record<string, string[]> = {
   studio: [
-    'Ready to distribute this track? Go to Distribution → New Release',
-    'Export your track as stems for future collaboration or licensing',
-    'Run AI Master to hit streaming loudness targets before exporting',
-    'List the finished beat on the Marketplace to start earning',
-    'Share a preview on social media using the Autopilot',
+    "Ready to distribute this track? Go to Distribution → New Release",
+    "Export your track as stems for future collaboration or licensing",
+    "Run AI Master to hit streaming loudness targets before exporting",
+    "List the finished beat on the Marketplace to start earning",
+    "Share a preview on social media using the Autopilot",
   ],
   distribution: [
-    'Submit a playlist pitch 7+ days before your release date for editorial consideration',
-    'Set up royalty splits now if you have collaborators on this release',
-    'Enable pre-save links to build momentum before your release goes live',
-    'Prepare a social media campaign to launch alongside your release',
-    'Tag your tracks in the Sync Licensing portal after they go live',
+    "Submit a playlist pitch 7+ days before your release date for editorial consideration",
+    "Set up royalty splits now if you have collaborators on this release",
+    "Enable pre-save links to build momentum before your release goes live",
+    "Prepare a social media campaign to launch alongside your release",
+    "Tag your tracks in the Sync Licensing portal after they go live",
   ],
   royalties: [
-    'Connect a payout method in Settings → Billing to receive earnings',
-    'Set up royalty splits before your next release if you work with collaborators',
-    'Register with a PRO (ASCAP/BMI) to collect publishing performance royalties',
-    'Check Revenue Intelligence for your 90-day earnings forecast',
-    'Export your royalty report for tax filing (Settings → Reports)',
+    "Connect a payout method in Settings → Billing to receive earnings",
+    "Set up royalty splits before your next release if you work with collaborators",
+    "Register with a PRO (ASCAP/BMI) to collect publishing performance royalties",
+    "Check Revenue Intelligence for your 90-day earnings forecast",
+    "Export your royalty report for tax filing (Settings → Reports)",
   ],
   marketplace: [
-    'Upload a watermarked MP3 preview — buyers need to hear before purchasing',
-    'Enable the Social Media Autopilot to auto-promote new beat uploads',
-    'Set up bundle pricing (3 beats for a discount) to increase average order value',
-    'Add your store URL to all your social media profiles and bio links',
-    'Check your conversion rate in Marketplace Analytics — optimize pricing if below 2%',
+    "Upload a watermarked MP3 preview — buyers need to hear before purchasing",
+    "Enable the Social Media Autopilot to auto-promote new beat uploads",
+    "Set up bundle pricing (3 beats for a discount) to increase average order value",
+    "Add your store URL to all your social media profiles and bio links",
+    "Check your conversion rate in Marketplace Analytics — optimize pricing if below 2%",
   ],
   social: [
-    'Enable AI-Optimized Timing to automatically post at peak audience hours',
-    'Use Burst Mode around your next release date for maximum momentum',
-    'Connect all platforms — each connected account amplifies the AI\'s effectiveness',
-    'Review pending content in the Content Calendar before it goes live',
-    'A/B test your caption hooks — small wording changes can double engagement',
+    "Enable AI-Optimized Timing to automatically post at peak audience hours",
+    "Use Burst Mode around your next release date for maximum momentum",
+    "Connect all platforms — each connected account amplifies the AI's effectiveness",
+    "Review pending content in the Content Calendar before it goes live",
+    "A/B test your caption hooks — small wording changes can double engagement",
   ],
   advertising: [
-    'Review your A/B test results after 72 hours — apply winning variants',
-    'Create a release-specific campaign 2 weeks before launch',
-    'Target your campaign at the genre fans identified in your analytics',
-    'Use Burst Mode + Advertising Autopilot together for maximum launch impact',
-    'Check stream lift attribution — see which posts are actually driving listens',
+    "Review your A/B test results after 72 hours — apply winning variants",
+    "Create a release-specific campaign 2 weeks before launch",
+    "Target your campaign at the genre fans identified in your analytics",
+    "Use Burst Mode + Advertising Autopilot together for maximum launch impact",
+    "Check stream lift attribution — see which posts are actually driving listens",
   ],
   analytics: [
-    'Export a Certified Analytics report to pitch to labels, blogs, or press',
-    'Check your audience demographic breakdown to refine content targeting',
-    'Set milestone alerts — get notified when you hit 10K or 50K monthly listeners',
-    'Compare platform-by-platform to find where to double down',
-    'Use Revenue Intelligence to project your next 90 days of earnings',
+    "Export a Certified Analytics report to pitch to labels, blogs, or press",
+    "Check your audience demographic breakdown to refine content targeting",
+    "Set milestone alerts — get notified when you hit 10K or 50K monthly listeners",
+    "Compare platform-by-platform to find where to double down",
+    "Use Revenue Intelligence to project your next 90 days of earnings",
   ],
   career: [
-    'Update your Press Kit EPK after every major release',
-    'Submit to labels via the LabelGrid portal when you have 10K+ monthly listeners',
-    'Add your next show to the Tour Manager and auto-post the dates',
-    'Check your Career Health Score weekly and act on low-scoring areas',
-    'Register every new song with your PRO to ensure you collect all royalties',
+    "Update your Press Kit EPK after every major release",
+    "Submit to labels via the LabelGrid portal when you have 10K+ monthly listeners",
+    "Add your next show to the Tour Manager and auto-post the dates",
+    "Check your Career Health Score weekly and act on low-scoring areas",
+    "Register every new song with your PRO to ensure you collect all royalties",
   ],
   account: [
-    'Enable 2FA for maximum account security',
-    'Add a backup email in case you lose access to your primary',
-    'Download your data export periodically as a personal backup',
-    'Review connected app permissions every 6 months',
+    "Enable 2FA for maximum account security",
+    "Add a backup email in case you lose access to your primary",
+    "Download your data export periodically as a personal backup",
+    "Review connected app permissions every 6 months",
   ],
   support: [
-    'Check the Status page for any ongoing platform issues before submitting a ticket',
-    'Include your username and steps to reproduce when submitting a bug report',
+    "Check the Status page for any ongoing platform issues before submitting a ticket",
+    "Include your username and steps to reproduce when submitting a bug report",
   ],
   assistant: [
     'Ask me "what should I do next?" for personalized step suggestions based on your goal',
-    'Ask about any specific feature for a detailed walkthrough',
-    'I can explain how any two features work together — just ask',
+    "Ask about any specific feature for a detailed walkthrough",
+    "I can explain how any two features work together — just ask",
   ],
   video: [
-    'Export your music video to YouTube and TikTok after generation',
-    'Share your cinematic video using the Social Media Autopilot for hands-free promotion',
-    'Add branding overlays before exporting to keep your visual identity consistent',
-    'Use Lyric Video style for tracks with a strong vocal performance',
+    "Export your music video to YouTube and TikTok after generation",
+    "Share your cinematic video using the Social Media Autopilot for hands-free promotion",
+    "Add branding overlays before exporting to keep your visual identity consistent",
+    "Use Lyric Video style for tracks with a strong vocal performance",
   ],
   campaign: [
-    'Launch a pre-save campaign 2-4 weeks before your release date for maximum Day-1 streams',
-    'Pair your Fan Campaign with Release Countdown posts for high-momentum launches',
-    'Track campaign conversions in Analytics to see which content drove the most pre-saves',
-    'Reuse winning campaign content structures for your next release',
+    "Launch a pre-save campaign 2-4 weeks before your release date for maximum Day-1 streams",
+    "Pair your Fan Campaign with Release Countdown posts for high-momentum launches",
+    "Track campaign conversions in Analytics to see which content drove the most pre-saves",
+    "Reuse winning campaign content structures for your next release",
   ],
   merch: [
-    'Promote your merch drop with a Fan Campaign for maximum visibility',
-    'Add your merch store link to every social media bio',
-    'Bundle merch with a music release for higher average order value',
-    'Use the Autopilot to announce new merch drops automatically across all platforms',
+    "Promote your merch drop with a Fan Campaign for maximum visibility",
+    "Add your merch store link to every social media bio",
+    "Bundle merch with a music release for higher average order value",
+    "Use the Autopilot to announce new merch drops automatically across all platforms",
   ],
   contracts: [
-    'Pair your contract with a Royalty Split to automate payment distribution',
-    'Register your track in the Sync Licensing portal after signing a placement agreement',
-    'Export signed contracts as PDFs for your personal records',
-    'Set contract expiry reminders so you never miss a renewal date',
+    "Pair your contract with a Royalty Split to automate payment distribution",
+    "Register your track in the Sync Licensing portal after signing a placement agreement",
+    "Export signed contracts as PDFs for your personal records",
+    "Set contract expiry reminders so you never miss a renewal date",
   ],
   radio: [
-    'Submit your radio pitch at least 4 weeks before your release date',
-    'Pair your radio push with a Social Media Burst Mode campaign',
-    'Track airplay royalties through your Royalties dashboard',
-    'Update your EPK before submitting to major stations',
+    "Submit your radio pitch at least 4 weeks before your release date",
+    "Pair your radio push with a Social Media Burst Mode campaign",
+    "Track airplay royalties through your Royalties dashboard",
+    "Update your EPK before submitting to major stations",
   ],
   workspace: [
-    'Set collaborator permissions before sharing your workspace with a manager or band member',
-    'Create a separate workspace for each artist if you manage multiple acts',
-    'Review workspace member access every few months to keep permissions current',
+    "Set collaborator permissions before sharing your workspace with a manager or band member",
+    "Create a separate workspace for each artist if you manage multiple acts",
+    "Review workspace member access every few months to keep permissions current",
   ],
   general: [
-    'The Max Assistant can guide you through any feature — just ask',
-    'Check your Career Health Score weekly in the Analytics Dashboard',
-    'Use the Platform Overview to discover features you haven\'t tried yet',
+    "The Max Assistant can guide you through any feature — just ask",
+    "Check your Career Health Score weekly in the Analytics Dashboard",
+    "Use the Platform Overview to discover features you haven't tried yet",
   ],
 };
 
 const QUICK_ACTIONS_MAP: Record<string, QuickAction[]> = {
   studio: [
-    { label: 'How to export stems', prompt: 'How do I export stems from my studio project?' },
-    { label: 'AI mixing guide', prompt: 'How does AI mixing and mastering work?' },
-    { label: 'Generate a beat', prompt: 'How do I generate a beat with the AI generator?' },
-    { label: 'Real-time collab', prompt: 'How does real-time studio collaboration work?' },
+    {
+      label: "How to export stems",
+      prompt: "How do I export stems from my studio project?",
+    },
+    {
+      label: "AI mixing guide",
+      prompt: "How does AI mixing and mastering work?",
+    },
+    {
+      label: "Generate a beat",
+      prompt: "How do I generate a beat with the AI generator?",
+    },
+    {
+      label: "Real-time collab",
+      prompt: "How does real-time studio collaboration work?",
+    },
   ],
   distribution: [
-    { label: 'Submit a release', prompt: 'How do I submit my first release for distribution?' },
-    { label: 'Pitch to playlists', prompt: 'How does playlist pitching work?' },
-    { label: 'Cover art specs', prompt: 'What are the cover art requirements for distribution?' },
-    { label: 'Set royalty splits', prompt: 'How do I set up royalty splits for a release?' },
+    {
+      label: "Submit a release",
+      prompt: "How do I submit my first release for distribution?",
+    },
+    { label: "Pitch to playlists", prompt: "How does playlist pitching work?" },
+    {
+      label: "Cover art specs",
+      prompt: "What are the cover art requirements for distribution?",
+    },
+    {
+      label: "Set royalty splits",
+      prompt: "How do I set up royalty splits for a release?",
+    },
   ],
   royalties: [
-    { label: 'When do I get paid', prompt: 'When and how do royalty payments work?' },
-    { label: 'Payout setup', prompt: 'How do I connect my bank account for payouts?' },
-    { label: 'Publishing royalties', prompt: 'How do publishing and PRO royalties work?' },
-    { label: 'Royalty splits', prompt: 'How do I split royalties with collaborators?' },
+    {
+      label: "When do I get paid",
+      prompt: "When and how do royalty payments work?",
+    },
+    {
+      label: "Payout setup",
+      prompt: "How do I connect my bank account for payouts?",
+    },
+    {
+      label: "Publishing royalties",
+      prompt: "How do publishing and PRO royalties work?",
+    },
+    {
+      label: "Royalty splits",
+      prompt: "How do I split royalties with collaborators?",
+    },
   ],
   marketplace: [
-    { label: 'Set up storefront', prompt: 'How do I set up my beat marketplace storefront?' },
-    { label: 'License types', prompt: 'What are the different beat license types?' },
-    { label: 'Pricing strategy', prompt: 'How should I price my beats?' },
-    { label: 'Connect Stripe', prompt: 'How do I connect Stripe to receive marketplace payments?' },
+    {
+      label: "Set up storefront",
+      prompt: "How do I set up my beat marketplace storefront?",
+    },
+    {
+      label: "License types",
+      prompt: "What are the different beat license types?",
+    },
+    { label: "Pricing strategy", prompt: "How should I price my beats?" },
+    {
+      label: "Connect Stripe",
+      prompt: "How do I connect Stripe to receive marketplace payments?",
+    },
   ],
   social: [
-    { label: 'Connect accounts', prompt: 'How do I connect my social media accounts?' },
-    { label: 'Posting schedule', prompt: 'When is the best time to post on social media?' },
-    { label: 'Content calendar', prompt: 'How does the content calendar work?' },
-    { label: 'TikTok setup', prompt: 'How do I connect TikTok to the autopilot?' },
+    {
+      label: "Connect accounts",
+      prompt: "How do I connect my social media accounts?",
+    },
+    {
+      label: "Posting schedule",
+      prompt: "When is the best time to post on social media?",
+    },
+    {
+      label: "Content calendar",
+      prompt: "How does the content calendar work?",
+    },
+    {
+      label: "TikTok setup",
+      prompt: "How do I connect TikTok to the autopilot?",
+    },
   ],
   advertising: [
-    { label: 'Create a campaign', prompt: 'How do I create an advertising autopilot campaign?' },
-    { label: 'A/B testing', prompt: 'How does A/B testing work in the advertising autopilot?' },
-    { label: 'Zero-cost growth', prompt: 'How does organic zero-cost growth work?' },
-    { label: 'Track results', prompt: 'How do I measure my advertising campaign results?' },
+    {
+      label: "Create a campaign",
+      prompt: "How do I create an advertising autopilot campaign?",
+    },
+    {
+      label: "A/B testing",
+      prompt: "How does A/B testing work in the advertising autopilot?",
+    },
+    {
+      label: "Zero-cost growth",
+      prompt: "How does organic zero-cost growth work?",
+    },
+    {
+      label: "Track results",
+      prompt: "How do I measure my advertising campaign results?",
+    },
   ],
   analytics: [
-    { label: 'Reading my dashboard', prompt: 'How do I read my analytics dashboard?' },
-    { label: 'Audience data', prompt: 'How do I see my audience demographics?' },
-    { label: 'Revenue forecast', prompt: 'How does the revenue intelligence forecast work?' },
-    { label: 'Certified analytics', prompt: 'How do I get a certified analytics report for label pitches?' },
+    {
+      label: "Reading my dashboard",
+      prompt: "How do I read my analytics dashboard?",
+    },
+    {
+      label: "Audience data",
+      prompt: "How do I see my audience demographics?",
+    },
+    {
+      label: "Revenue forecast",
+      prompt: "How does the revenue intelligence forecast work?",
+    },
+    {
+      label: "Certified analytics",
+      prompt: "How do I get a certified analytics report for label pitches?",
+    },
   ],
   career: [
-    { label: 'Career Coach setup', prompt: 'How do I set up my career coach plan?' },
-    { label: 'Build my EPK', prompt: 'How do I build my press kit EPK?' },
-    { label: 'Sync licensing', prompt: 'How do I list my music for sync licensing?' },
-    { label: 'Submit to labels', prompt: 'How do I submit my music to record labels?' },
+    {
+      label: "Career Coach setup",
+      prompt: "How do I set up my career coach plan?",
+    },
+    { label: "Build my EPK", prompt: "How do I build my press kit EPK?" },
+    {
+      label: "Sync licensing",
+      prompt: "How do I list my music for sync licensing?",
+    },
+    {
+      label: "Submit to labels",
+      prompt: "How do I submit my music to record labels?",
+    },
   ],
 };
 
@@ -2361,20 +3398,98 @@ const QUICK_ACTIONS_MAP: Record<string, QuickAction[]> = {
 // ─────────────────────────────────────────────────────────────────────────────
 
 const FOLLOW_UP_PATTERNS = [
-  { pattern: /^(how|what|why|when|where|can|do|does|is|are|tell me|explain|show|give)\b/i, isQuestion: true },
-  { pattern: /\bmore\b|\bdetail|\bexplain|\belaborate|\bexpand\b/i, isFollowUp: true },
-  { pattern: /\bthat\b|\bit\b|\bthis\b|\bthose\b|\bthey\b/i, isContextual: true },
+  {
+    pattern:
+      /^(how|what|why|when|where|can|do|does|is|are|tell me|explain|show|give)\b/i,
+    isQuestion: true,
+  },
+  {
+    pattern: /\bmore\b|\bdetail|\bexplain|\belaborate|\bexpand\b/i,
+    isFollowUp: true,
+  },
+  {
+    pattern: /\bthat\b|\bit\b|\bthis\b|\bthose\b|\bthey\b/i,
+    isContextual: true,
+  },
 ];
 
 const STOP_WORDS = new Set([
-  'is', 'in', 'to', 'be', 'as', 'at', 'by', 'or', 'an', 'if', 'no', 'so',
-  'the', 'and', 'for', 'are', 'not', 'can', 'was', 'one', 'had', 'its',
-  'did', 'who', 'now', 'see', 'use', 'two', 'way', 'any', 'has', 'him',
-  'them', 'they', 'with', 'have', 'from', 'will', 'been', 'when', 'your',
-  'does', 'into', 'just', 'like', 'make', 'some', 'than', 'that', 'this',
-  'how', 'what', 'work', 'tell', 'help', 'give', 'show', 'get', 'much',
-  'about', 'really', 'actually', 'also', 'more', 'which', 'where', 'there',
-  'want', 'need', 'my', 'me', 'you', 'we', 'our', 'your', 'their',
+  "is",
+  "in",
+  "to",
+  "be",
+  "as",
+  "at",
+  "by",
+  "or",
+  "an",
+  "if",
+  "no",
+  "so",
+  "the",
+  "and",
+  "for",
+  "are",
+  "not",
+  "can",
+  "was",
+  "one",
+  "had",
+  "its",
+  "did",
+  "who",
+  "now",
+  "see",
+  "use",
+  "two",
+  "way",
+  "any",
+  "has",
+  "him",
+  "them",
+  "they",
+  "with",
+  "have",
+  "from",
+  "will",
+  "been",
+  "when",
+  "your",
+  "does",
+  "into",
+  "just",
+  "like",
+  "make",
+  "some",
+  "than",
+  "that",
+  "this",
+  "how",
+  "what",
+  "work",
+  "tell",
+  "help",
+  "give",
+  "show",
+  "get",
+  "much",
+  "about",
+  "really",
+  "actually",
+  "also",
+  "more",
+  "which",
+  "where",
+  "there",
+  "want",
+  "need",
+  "my",
+  "me",
+  "you",
+  "we",
+  "our",
+  "your",
+  "their",
 ]);
 
 function scoreEntry(entry: KnowledgeEntry, tokens: string[]): number {
@@ -2386,12 +3501,16 @@ function scoreEntry(entry: KnowledgeEntry, tokens: string[]): number {
       if (kw === token) {
         score += 4;
       } else {
-        const kwWords = kw.split(' ');
+        const kwWords = kw.split(" ");
         if (kwWords.includes(token)) {
           score += 3;
         } else if (token.includes(kw) && kw.length >= 4) {
           score += 2;
-        } else if (kwWords.some((w) => w.includes(token) && token.length >= 5 && w !== token)) {
+        } else if (
+          kwWords.some(
+            (w) => w.includes(token) && token.length >= 5 && w !== token,
+          )
+        ) {
           score += 1;
         }
       }
@@ -2399,7 +3518,7 @@ function scoreEntry(entry: KnowledgeEntry, tokens: string[]): number {
     // Also score related keywords (lower weight)
     if (entry.relatedKeywords) {
       for (const rk of entry.relatedKeywords) {
-        if (rk === token || rk.split(' ').includes(token)) {
+        if (rk === token || rk.split(" ").includes(token)) {
           score += 1;
         }
       }
@@ -2411,37 +3530,46 @@ function scoreEntry(entry: KnowledgeEntry, tokens: string[]): number {
 function tokenize(text: string): string[] {
   return text
     .toLowerCase()
-    .replace(/[^\w\s]/g, ' ')
+    .replace(/[^\w\s]/g, " ")
     .split(/\s+/)
     .filter((t) => t.length >= 3);
 }
 
-function detectFollowUpContext(message: string, history: ConversationMessage[]): string | null {
-  const isContextual = FOLLOW_UP_PATTERNS.some((p) => p.isContextual && p.pattern.test(message));
+function detectFollowUpContext(
+  message: string,
+  history: ConversationMessage[],
+): string | null {
+  const isContextual = FOLLOW_UP_PATTERNS.some(
+    (p) => p.isContextual && p.pattern.test(message),
+  );
   if (!isContextual || history.length === 0) return null;
 
   for (let i = history.length - 1; i >= 0; i--) {
     const msg = history[i];
-    if (msg.role === 'assistant') {
+    if (msg.role === "assistant") {
       const tokens = tokenize(msg.content);
       const bestEntry = KNOWLEDGE_BASE.reduce(
         (best, entry) => {
           const s = scoreEntry(entry, tokens);
           return s > best.score ? { entry, score: s } : best;
         },
-        { entry: null as KnowledgeEntry | null, score: 0 }
+        { entry: null as KnowledgeEntry | null, score: 0 },
       );
-      if (bestEntry.entry && bestEntry.score > 2) return bestEntry.entry.category;
+      if (bestEntry.entry && bestEntry.score > 2)
+        return bestEntry.entry.category;
       break;
     }
   }
   return null;
 }
 
-function getProactiveSuggestions(category: string, entry: KnowledgeEntry): string[] {
+function getProactiveSuggestions(
+  category: string,
+  entry: KnowledgeEntry,
+): string[] {
   const flows = PROACTIVE_FLOWS[category] || [];
   const nextSteps = entry.nextSteps || [];
-  
+
   // Combine next steps and proactive flows, prioritize specific next steps
   const combined = [...nextSteps, ...flows];
   // Deduplicate and return top 3
@@ -2454,31 +3582,31 @@ function getRelatedTopics(entry: KnowledgeEntry): string[] {
   return related.slice(0, 4).map((k) => {
     // Map keyword to a human-readable topic name
     const topicMap: Record<string, string> = {
-      studio: 'Studio & Production',
-      distribution: 'Music Distribution',
-      royalties: 'Royalties & Payments',
-      marketplace: 'Beat Marketplace',
-      social: 'Social Media Autopilot',
-      advertising: 'Advertising Autopilot',
-      analytics: 'Analytics Dashboard',
-      career: 'Career Tools',
-      account: 'Account Settings',
-      mixing: 'AI Mixing & Mastering',
-      export: 'Exporting Tracks',
-      midi: 'MIDI & Virtual Instruments',
-      platforms: 'Streaming Platforms',
-      license: 'Beat Licensing',
-      publishing: 'Publishing & PRO',
-      split: 'Royalty Splits',
-      'connect account': 'Connecting Accounts',
-      schedule: 'Posting Schedule',
-      'ab test': 'A/B Testing',
-      campaign: 'Ad Campaigns',
-      stripe: 'Stripe & Payments',
-      'press kit': 'Press Kit / EPK',
-      sync: 'Sync Licensing',
-      'career coach': 'Career Coach',
-      'isrc': 'ISRC & Metadata',
+      studio: "Studio & Production",
+      distribution: "Music Distribution",
+      royalties: "Royalties & Payments",
+      marketplace: "Beat Marketplace",
+      social: "Social Media Autopilot",
+      advertising: "Advertising Autopilot",
+      analytics: "Analytics Dashboard",
+      career: "Career Tools",
+      account: "Account Settings",
+      mixing: "AI Mixing & Mastering",
+      export: "Exporting Tracks",
+      midi: "MIDI & Virtual Instruments",
+      platforms: "Streaming Platforms",
+      license: "Beat Licensing",
+      publishing: "Publishing & PRO",
+      split: "Royalty Splits",
+      "connect account": "Connecting Accounts",
+      schedule: "Posting Schedule",
+      "ab test": "A/B Testing",
+      campaign: "Ad Campaigns",
+      stripe: "Stripe & Payments",
+      "press kit": "Press Kit / EPK",
+      sync: "Sync Licensing",
+      "career coach": "Career Coach",
+      isrc: "ISRC & Metadata",
     };
     return topicMap[k] || k;
   });
@@ -2494,20 +3622,30 @@ function getQuickActions(category: string): QuickAction[] {
 
 export function generateMaxResponse(
   userMessage: string,
-  history: ConversationMessage[]
+  history: ConversationMessage[],
 ): AssistantResponse {
   const tokens = tokenize(userMessage);
 
   if (tokens.length === 0) {
     return {
-      content: "I didn't catch that — could you rephrase your question? I'm here to help with anything about Max Booster.",
-      category: 'general',
+      content:
+        "I didn't catch that — could you rephrase your question? I'm here to help with anything about Max Booster.",
+      category: "general",
       confidence: 1,
       quickActions: [
-        { label: 'Getting started', prompt: 'How do I get started with Max Booster?' },
-        { label: 'Distribute music', prompt: 'How do I distribute my music?' },
-        { label: 'Set up social autopilot', prompt: 'How do I set up the social media autopilot?' },
-        { label: 'Sell beats', prompt: 'How do I sell beats on the marketplace?' },
+        {
+          label: "Getting started",
+          prompt: "How do I get started with Max Booster?",
+        },
+        { label: "Distribute music", prompt: "How do I distribute my music?" },
+        {
+          label: "Set up social autopilot",
+          prompt: "How do I set up the social media autopilot?",
+        },
+        {
+          label: "Sell beats",
+          prompt: "How do I sell beats on the marketplace?",
+        },
       ],
     };
   }
@@ -2535,9 +3673,17 @@ export function generateMaxResponse(
 
   const followUpCategory = detectFollowUpContext(userMessage, history);
   if (followUpCategory) {
-    const categoryEntries = KNOWLEDGE_BASE.filter((e) => e.category === followUpCategory);
+    const categoryEntries = KNOWLEDGE_BASE.filter(
+      (e) => e.category === followUpCategory,
+    );
     if (categoryEntries.length > 0) {
-      const entry = categoryEntries[seededIndex(followUpCategory + ':' + userMessage.slice(0, 48), categoryEntries.length)];
+      const entry =
+        categoryEntries[
+          seededIndex(
+            followUpCategory + ":" + userMessage.slice(0, 48),
+            categoryEntries.length,
+          )
+        ];
       return {
         content: entry.answer,
         category: followUpCategory,
@@ -2549,7 +3695,9 @@ export function generateMaxResponse(
     }
   }
 
-  const isQuestion = FOLLOW_UP_PATTERNS.some((p) => p.isQuestion && p.pattern.test(userMessage));
+  const isQuestion = FOLLOW_UP_PATTERNS.some(
+    (p) => p.isQuestion && p.pattern.test(userMessage),
+  );
 
   const fallbackTopics = `Here are the areas I can help you with — click any topic or ask me anything:
 
@@ -2569,15 +3717,29 @@ What would you like to explore?`;
     content: isQuestion
       ? `Great question! Let me point you in the right direction.\n\n${fallbackTopics}`
       : fallbackTopics,
-    category: 'general',
+    category: "general",
     confidence: 0.2,
     quickActions: [
-      { label: 'Getting started', prompt: 'How do I get started with Max Booster?' },
-      { label: 'Distribute music', prompt: 'How do I distribute my first release?' },
-      { label: 'Set up autopilot', prompt: 'How do I set up the social media autopilot?' },
-      { label: 'Sell beats', prompt: 'How do I sell beats on the marketplace?' },
+      {
+        label: "Getting started",
+        prompt: "How do I get started with Max Booster?",
+      },
+      {
+        label: "Distribute music",
+        prompt: "How do I distribute my first release?",
+      },
+      {
+        label: "Set up autopilot",
+        prompt: "How do I set up the social media autopilot?",
+      },
+      {
+        label: "Sell beats",
+        prompt: "How do I sell beats on the marketplace?",
+      },
     ],
   };
 }
 
-logger.info('[MaxAssistantService] In-house Max AI assistant knowledge engine initialized — comprehensive edition with proactive prediction');
+logger.info(
+  "[MaxAssistantService] In-house Max AI assistant knowledge engine initialized — comprehensive edition with proactive prediction",
+);

@@ -1,13 +1,13 @@
-import { Worker, isMainThread, parentPort, workerData } from 'worker_threads';
-import http from 'http';
-import https from 'https';
-import { EventEmitter } from 'events';
-import { logger } from '../../logger.js';
+import { Worker, isMainThread, parentPort, workerData } from "worker_threads";
+import http from "http";
+import https from "https";
+import { EventEmitter } from "events";
+import { logger } from "../../logger.js";
 
 export interface LoadTestConfig {
   targetUrl: string;
   endpoint: string;
-  method: 'GET' | 'POST' | 'PUT' | 'DELETE';
+  method: "GET" | "POST" | "PUT" | "DELETE";
   headers?: Record<string, string>;
   body?: Record<string, unknown>;
   concurrentUsers: number;
@@ -54,7 +54,7 @@ export class LoadTestFramework extends EventEmitter {
   async runLoadTest(config: LoadTestConfig): Promise<LoadTestResult> {
     this.reset();
     this.startTime = Date.now();
-    
+
     const usersPerBatch = Math.min(config.concurrentUsers, 100);
     const batches = Math.ceil(config.concurrentUsers / usersPerBatch);
     const delayBetweenBatches = (config.rampUpSeconds * 1000) / batches;
@@ -62,8 +62,11 @@ export class LoadTestFramework extends EventEmitter {
     const promises: Promise<void>[] = [];
 
     for (let batch = 0; batch < batches; batch++) {
-      const usersInThisBatch = Math.min(usersPerBatch, config.concurrentUsers - batch * usersPerBatch);
-      
+      const usersInThisBatch = Math.min(
+        usersPerBatch,
+        config.concurrentUsers - batch * usersPerBatch,
+      );
+
       for (let user = 0; user < usersInThisBatch; user++) {
         promises.push(this.simulateUser(config));
       }
@@ -82,21 +85,27 @@ export class LoadTestFramework extends EventEmitter {
     for (let i = 0; i < config.requestsPerUser; i++) {
       await this.makeRequest(config);
       if (config.thinkTimeMs > 0) {
-        await this.sleep(config.thinkTimeMs + Math.random() * config.thinkTimeMs * 0.5);
+        await this.sleep(
+          config.thinkTimeMs + Math.random() * config.thinkTimeMs * 0.5,
+        );
       }
     }
   }
 
   private async makeRequest(config: LoadTestConfig): Promise<void> {
     const startTime = Date.now();
-    
+
     try {
       const response = await this.httpRequest(config);
       const duration = Date.now() - startTime;
-      
+
       this.responseTimes.push(duration);
-      
-      if (response.statusCode && response.statusCode >= 200 && response.statusCode < 400) {
+
+      if (
+        response.statusCode &&
+        response.statusCode >= 200 &&
+        response.statusCode < 400
+      ) {
         this.successCount++;
       } else {
         this.failCount++;
@@ -107,15 +116,17 @@ export class LoadTestFramework extends EventEmitter {
       const duration = Date.now() - startTime;
       this.responseTimes.push(duration);
       this.failCount++;
-      const errorKey = error.code || error.message || 'Unknown';
+      const errorKey = error.code || error.message || "Unknown";
       this.errors.set(errorKey, (this.errors.get(errorKey) || 0) + 1);
     }
   }
 
-  private httpRequest(config: LoadTestConfig): Promise<{ statusCode?: number; body: string }> {
+  private httpRequest(
+    config: LoadTestConfig,
+  ): Promise<{ statusCode?: number; body: string }> {
     return new Promise((resolve, reject) => {
       const url = new URL(config.endpoint, config.targetUrl);
-      const isHttps = url.protocol === 'https:';
+      const isHttps = url.protocol === "https:";
       const lib = isHttps ? https : http;
 
       const options: http.RequestOptions = {
@@ -124,22 +135,22 @@ export class LoadTestFramework extends EventEmitter {
         path: url.pathname + url.search,
         method: config.method,
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
           ...config.headers,
         },
         timeout: 30000,
       };
 
       const req = lib.request(options, (res) => {
-        let body = '';
-        res.on('data', (chunk) => body += chunk);
-        res.on('end', () => resolve({ statusCode: res.statusCode, body }));
+        let body = "";
+        res.on("data", (chunk) => (body += chunk));
+        res.on("end", () => resolve({ statusCode: res.statusCode, body }));
       });
 
-      req.on('error', reject);
-      req.on('timeout', () => {
+      req.on("error", reject);
+      req.on("timeout", () => {
         req.destroy();
-        reject(new Error('TIMEOUT'));
+        reject(new Error("TIMEOUT"));
       });
 
       if (config.body) {
@@ -153,7 +164,7 @@ export class LoadTestFramework extends EventEmitter {
     const sortedTimes = [...this.responseTimes].sort((a, b) => a - b);
     const totalRequests = this.successCount + this.failCount;
     const durationMs = Date.now() - this.startTime;
-    
+
     const memoryUsage = process.memoryUsage();
     const cpuUsage = process.cpuUsage();
 
@@ -161,9 +172,10 @@ export class LoadTestFramework extends EventEmitter {
       totalRequests,
       successfulRequests: this.successCount,
       failedRequests: this.failCount,
-      avgResponseTimeMs: sortedTimes.length > 0 
-        ? sortedTimes.reduce((a, b) => a + b, 0) / sortedTimes.length 
-        : 0,
+      avgResponseTimeMs:
+        sortedTimes.length > 0
+          ? sortedTimes.reduce((a, b) => a + b, 0) / sortedTimes.length
+          : 0,
       minResponseTimeMs: sortedTimes[0] || 0,
       maxResponseTimeMs: sortedTimes[sortedTimes.length - 1] || 0,
       p50ResponseTimeMs: this.percentile(sortedTimes, 50),
@@ -192,52 +204,60 @@ export class LoadTestFramework extends EventEmitter {
   }
 
   private sleep(ms: number): Promise<void> {
-    return new Promise(resolve => setTimeout(resolve, ms));
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 }
 
 export class ScalabilityTester {
   private framework = new LoadTestFramework();
-  
+
   private scaleProfiles = [
-    { name: 'Small', users: 10, multiplier: 1 },
-    { name: 'Medium', users: 100, multiplier: 10 },
-    { name: 'Large', users: 1000, multiplier: 100 },
-    { name: 'XLarge', users: 5000, multiplier: 500 },
-    { name: 'Enterprise', users: 10000, multiplier: 1000 },
-    { name: 'Hyperscale', users: 50000, multiplier: 5000 },
-    { name: 'Global', users: 100000, multiplier: 10000 },
-    { name: 'Mega', users: 500000, multiplier: 50000 },
-    { name: 'Planetary', users: 1000000, multiplier: 100000 },
-    { name: 'Billion', users: 1000000, multiplier: 1000000000 },
-    { name: '10 Billion', users: 1000000, multiplier: 10000000000 },
-    { name: '80 Billion', users: 1000000, multiplier: 80000000000 },
+    { name: "Small", users: 10, multiplier: 1 },
+    { name: "Medium", users: 100, multiplier: 10 },
+    { name: "Large", users: 1000, multiplier: 100 },
+    { name: "XLarge", users: 5000, multiplier: 500 },
+    { name: "Enterprise", users: 10000, multiplier: 1000 },
+    { name: "Hyperscale", users: 50000, multiplier: 5000 },
+    { name: "Global", users: 100000, multiplier: 10000 },
+    { name: "Mega", users: 500000, multiplier: 50000 },
+    { name: "Planetary", users: 1000000, multiplier: 100000 },
+    { name: "Billion", users: 1000000, multiplier: 1000000000 },
+    { name: "10 Billion", users: 1000000, multiplier: 10000000000 },
+    { name: "80 Billion", users: 1000000, multiplier: 80000000000 },
   ];
 
   async runProgressiveScaleTest(
-    baseConfig: Omit<LoadTestConfig, 'concurrentUsers'>,
-    maxScale: string = '80 Billion'
+    baseConfig: Omit<LoadTestConfig, "concurrentUsers">,
+    maxScale: string = "80 Billion",
   ): Promise<ScaleTestResult[]> {
     const results: ScaleTestResult[] = [];
-    
+
     for (const profile of this.scaleProfiles) {
-      logger.info(`Testing at ${profile.name} scale`, { simulatedUsers: this.formatNumber(profile.multiplier) });
-      
+      logger.info(`Testing at ${profile.name} scale`, {
+        simulatedUsers: this.formatNumber(profile.multiplier),
+      });
+
       const actualConcurrentUsers = Math.min(profile.users, 1000);
-      
+
       const config: LoadTestConfig = {
         ...baseConfig,
         concurrentUsers: actualConcurrentUsers,
-        requestsPerUser: Math.min(10, Math.ceil(profile.multiplier / actualConcurrentUsers / 1000)),
+        requestsPerUser: Math.min(
+          10,
+          Math.ceil(profile.multiplier / actualConcurrentUsers / 1000),
+        ),
       };
 
       try {
         const testResult = await this.framework.runLoadTest(config);
-        
-        const scaledResult = this.projectToScale(testResult, profile.multiplier);
-        
+
+        const scaledResult = this.projectToScale(
+          testResult,
+          profile.multiplier,
+        );
+
         const analysis = this.analyzeResults(scaledResult, profile.multiplier);
-        
+
         results.push({
           scale: profile.name,
           simulatedUsers: profile.multiplier,
@@ -250,19 +270,22 @@ export class ScalabilityTester {
         this.printResults(results[results.length - 1]);
 
         if (!analysis.passed) {
-          logger.warn(`Performance degradation detected at ${profile.name} scale`);
+          logger.warn(
+            `Performance degradation detected at ${profile.name} scale`,
+          );
         }
 
         if (profile.name === maxScale) break;
-        
       } catch (error) {
-        logger.warn(`Test failed at ${profile.name} scale`, { error: error.message });
+        logger.warn(`Test failed at ${profile.name} scale`, {
+          error: error.message,
+        });
         results.push({
           scale: profile.name,
           simulatedUsers: profile.multiplier,
           results: {} as LoadTestResult,
-          bottlenecks: ['Test execution failure'],
-          recommendations: ['Review error logs and fix issues'],
+          bottlenecks: ["Test execution failure"],
+          recommendations: ["Review error logs and fix issues"],
           passed: false,
         });
       }
@@ -271,27 +294,36 @@ export class ScalabilityTester {
     return results;
   }
 
-  private projectToScale(result: LoadTestResult, targetScale: number): LoadTestResult {
+  private projectToScale(
+    result: LoadTestResult,
+    targetScale: number,
+  ): LoadTestResult {
     const actualScale = result.totalRequests;
     const scaleFactor = targetScale / actualScale;
-    
+
     const degradationFactor = 1 + Math.log10(scaleFactor) * 0.1;
-    
+
     return {
       ...result,
       totalRequests: Math.round(result.totalRequests * scaleFactor),
       successfulRequests: Math.round(result.successfulRequests * scaleFactor),
-      failedRequests: Math.round(result.failedRequests * scaleFactor * degradationFactor),
+      failedRequests: Math.round(
+        result.failedRequests * scaleFactor * degradationFactor,
+      ),
       avgResponseTimeMs: result.avgResponseTimeMs * degradationFactor,
       p95ResponseTimeMs: result.p95ResponseTimeMs * degradationFactor * 1.5,
       p99ResponseTimeMs: result.p99ResponseTimeMs * degradationFactor * 2,
-      requestsPerSecond: result.requestsPerSecond * Math.min(scaleFactor, 1000000),
+      requestsPerSecond:
+        result.requestsPerSecond * Math.min(scaleFactor, 1000000),
       errorRate: Math.min(0.99, result.errorRate * degradationFactor),
     };
   }
 
-  private analyzeResults(result: LoadTestResult, scale: number): { 
-    bottlenecks: string[]; 
+  private analyzeResults(
+    result: LoadTestResult,
+    scale: number,
+  ): {
+    bottlenecks: string[];
     recommendations: string[];
     passed: boolean;
   } {
@@ -300,21 +332,23 @@ export class ScalabilityTester {
     let passed = true;
 
     if (result.avgResponseTimeMs > 1000) {
-      bottlenecks.push('High average response time');
-      recommendations.push('Add Redis caching layer');
-      recommendations.push('Implement database connection pooling');
+      bottlenecks.push("High average response time");
+      recommendations.push("Add Redis caching layer");
+      recommendations.push("Implement database connection pooling");
     }
 
     if (result.p99ResponseTimeMs > 5000) {
-      bottlenecks.push('Extremely high tail latency (p99)');
-      recommendations.push('Add request queuing with BullMQ');
-      recommendations.push('Implement circuit breakers for slow services');
+      bottlenecks.push("Extremely high tail latency (p99)");
+      recommendations.push("Add request queuing with BullMQ");
+      recommendations.push("Implement circuit breakers for slow services");
     }
 
     if (result.errorRate > 0.01) {
-      bottlenecks.push(`High error rate: ${(result.errorRate * 100).toFixed(2)}%`);
-      recommendations.push('Add retry logic with exponential backoff');
-      recommendations.push('Implement graceful degradation');
+      bottlenecks.push(
+        `High error rate: ${(result.errorRate * 100).toFixed(2)}%`,
+      );
+      recommendations.push("Add retry logic with exponential backoff");
+      recommendations.push("Implement graceful degradation");
       passed = false;
     }
 
@@ -323,23 +357,23 @@ export class ScalabilityTester {
     }
 
     if (result.memoryUsageMB > 1024) {
-      bottlenecks.push('High memory usage');
-      recommendations.push('Implement object pooling');
-      recommendations.push('Add memory-efficient data structures');
+      bottlenecks.push("High memory usage");
+      recommendations.push("Implement object pooling");
+      recommendations.push("Add memory-efficient data structures");
     }
 
     if (scale > 1000000 && result.requestsPerSecond < 10000) {
-      bottlenecks.push('Throughput bottleneck for billion-scale');
-      recommendations.push('Implement horizontal scaling with load balancer');
-      recommendations.push('Add edge caching with CDN');
-      recommendations.push('Use message queues for async processing');
+      bottlenecks.push("Throughput bottleneck for billion-scale");
+      recommendations.push("Implement horizontal scaling with load balancer");
+      recommendations.push("Add edge caching with CDN");
+      recommendations.push("Use message queues for async processing");
     }
 
     if (scale > 1000000000) {
-      recommendations.push('Deploy across multiple regions with geo-routing');
-      recommendations.push('Implement database sharding');
-      recommendations.push('Use read replicas for query distribution');
-      recommendations.push('Add Kubernetes auto-scaling');
+      recommendations.push("Deploy across multiple regions with geo-routing");
+      recommendations.push("Implement database sharding");
+      recommendations.push("Use read replicas for query distribution");
+      recommendations.push("Add Kubernetes auto-scaling");
     }
 
     return { bottlenecks, recommendations, passed };
@@ -350,34 +384,45 @@ export class ScalabilityTester {
       simulatedUsers: this.formatNumber(result.simulatedUsers),
       totalRequests: this.formatNumber(result.results.totalRequests),
       successRate: `${((1 - result.results.errorRate) * 100).toFixed(2)}%`,
-      avgResponse: `${result.results.avgResponseTimeMs?.toFixed(2) || 'N/A'}ms`,
-      p95Response: `${result.results.p95ResponseTimeMs?.toFixed(2) || 'N/A'}ms`,
-      p99Response: `${result.results.p99ResponseTimeMs?.toFixed(2) || 'N/A'}ms`,
+      avgResponse: `${result.results.avgResponseTimeMs?.toFixed(2) || "N/A"}ms`,
+      p95Response: `${result.results.p95ResponseTimeMs?.toFixed(2) || "N/A"}ms`,
+      p99Response: `${result.results.p99ResponseTimeMs?.toFixed(2) || "N/A"}ms`,
       throughput: `${this.formatNumber(Math.round(result.results.requestsPerSecond || 0))} req/s`,
-      status: result.passed ? 'PASSED' : 'NEEDS OPTIMIZATION',
+      status: result.passed ? "PASSED" : "NEEDS OPTIMIZATION",
       bottlenecks: result.bottlenecks,
       recommendations: result.recommendations,
     });
   }
 
   private formatNumber(num: number): string {
-    if (num >= 1e12) return (num / 1e12).toFixed(1) + 'T';
-    if (num >= 1e9) return (num / 1e9).toFixed(1) + 'B';
-    if (num >= 1e6) return (num / 1e6).toFixed(1) + 'M';
-    if (num >= 1e3) return (num / 1e3).toFixed(1) + 'K';
+    if (num >= 1e12) return (num / 1e12).toFixed(1) + "T";
+    if (num >= 1e9) return (num / 1e9).toFixed(1) + "B";
+    if (num >= 1e6) return (num / 1e6).toFixed(1) + "M";
+    if (num >= 1e3) return (num / 1e3).toFixed(1) + "K";
     return num.toString();
   }
 }
 
-export async function runComprehensiveLoadTest(baseUrl: string, authCookie: string): Promise<void> {
+export async function runComprehensiveLoadTest(
+  baseUrl: string,
+  authCookie: string,
+): Promise<void> {
   const tester = new ScalabilityTester();
-  
+
   const endpoints = [
-    { name: 'Health Check', endpoint: '/api/health', method: 'GET' as const },
-    { name: 'AI Services', endpoint: '/api/ai/health', method: 'GET' as const },
-    { name: 'User Profile', endpoint: '/api/user/profile', method: 'GET' as const },
-    { name: 'Marketplace', endpoint: '/api/marketplace/beats', method: 'GET' as const },
-    { name: 'Trends', endpoint: '/api/ai/trends', method: 'GET' as const },
+    { name: "Health Check", endpoint: "/api/health", method: "GET" as const },
+    { name: "AI Services", endpoint: "/api/ai/health", method: "GET" as const },
+    {
+      name: "User Profile",
+      endpoint: "/api/user/profile",
+      method: "GET" as const,
+    },
+    {
+      name: "Marketplace",
+      endpoint: "/api/marketplace/beats",
+      method: "GET" as const,
+    },
+    { name: "Trends", endpoint: "/api/ai/trends", method: "GET" as const },
   ];
 
   const allResults: Map<string, ScaleTestResult[]> = new Map();
@@ -398,14 +443,14 @@ export async function runComprehensiveLoadTest(baseUrl: string, authCookie: stri
     allResults.set(ep.name, results);
   }
 
-  logger.info('FINAL SUMMARY');
-  
+  logger.info("FINAL SUMMARY");
+
   for (const [endpoint, results] of allResults.entries()) {
     const lastResult = results[results.length - 1];
     logger.info(`Endpoint summary: ${endpoint}`, {
       maxScaleTested: lastResult.scale,
-      simulatedUsers: tester['formatNumber'](lastResult.simulatedUsers),
-      status: lastResult.passed ? 'PASSED' : 'NEEDS WORK',
+      simulatedUsers: tester["formatNumber"](lastResult.simulatedUsers),
+      status: lastResult.passed ? "PASSED" : "NEEDS WORK",
     });
   }
 }

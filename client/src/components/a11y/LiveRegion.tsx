@@ -1,23 +1,23 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from "react";
 
-export type LiveRegionPriority = 'polite' | 'assertive' | 'off';
+export type LiveRegionPriority = "polite" | "assertive" | "off";
 
 export interface LiveRegionProps {
   priority?: LiveRegionPriority;
   atomic?: boolean;
-  relevant?: 'additions' | 'removals' | 'text' | 'all' | 'additions text';
-  role?: 'status' | 'alert' | 'log' | 'timer' | 'marquee';
+  relevant?: "additions" | "removals" | "text" | "all" | "additions text";
+  role?: "status" | "alert" | "log" | "timer" | "marquee";
   className?: string;
   clearAfter?: number;
   children?: React.ReactNode;
 }
 
 export function LiveRegion({
-  priority = 'polite',
+  priority = "polite",
   atomic = true,
-  relevant = 'additions text',
-  role = priority === 'assertive' ? 'alert' : 'status',
-  className = '',
+  relevant = "additions text",
+  role = priority === "assertive" ? "alert" : "status",
+  className = "",
   clearAfter,
   children,
 }: LiveRegionProps) {
@@ -62,8 +62,8 @@ export interface UseLiveRegionOptions {
 }
 
 export function useLiveRegion(options: UseLiveRegionOptions = {}) {
-  const { priority = 'polite', debounceMs = 100 } = options;
-  const [message, setMessage] = useState<string>('');
+  const { priority = "polite", debounceMs = 100 } = options;
+  const [message, setMessage] = useState<string>("");
   const timeoutRef = useRef<ReturnType<typeof setTimeout>>();
 
   const announce = useCallback(
@@ -72,17 +72,17 @@ export function useLiveRegion(options: UseLiveRegionOptions = {}) {
         clearTimeout(timeoutRef.current);
       }
 
-      setMessage('');
+      setMessage("");
 
       timeoutRef.current = setTimeout(() => {
         setMessage(text);
       }, debounceMs);
     },
-    [debounceMs]
+    [debounceMs],
   );
 
   const clear = useCallback(() => {
-    setMessage('');
+    setMessage("");
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);
     }
@@ -102,7 +102,7 @@ export function useLiveRegion(options: UseLiveRegionOptions = {}) {
         {message}
       </LiveRegion>
     ),
-    [priority, message]
+    [priority, message],
   );
 
   return {
@@ -122,38 +122,46 @@ interface AnnouncerContextValue {
   clear: () => void;
 }
 
-const AnnouncerContext = React.createContext<AnnouncerContextValue | null>(null);
+const AnnouncerContext = React.createContext<AnnouncerContextValue | null>(
+  null,
+);
 
 export function Announcer({ children }: AnnouncerProps) {
-  const [politeMessage, setPoliteMessage] = useState('');
-  const [assertiveMessage, setAssertiveMessage] = useState('');
+  const [politeMessage, setPoliteMessage] = useState("");
+  const [assertiveMessage, setAssertiveMessage] = useState("");
   const politeTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
   const assertiveTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
 
-  const announce = useCallback((message: string, priority: LiveRegionPriority = 'polite') => {
-    const setMessage = priority === 'assertive' ? setAssertiveMessage : setPoliteMessage;
-    const timeoutRef = priority === 'assertive' ? assertiveTimeoutRef : politeTimeoutRef;
+  const announce = useCallback(
+    (message: string, priority: LiveRegionPriority = "polite") => {
+      const setMessage =
+        priority === "assertive" ? setAssertiveMessage : setPoliteMessage;
+      const timeoutRef =
+        priority === "assertive" ? assertiveTimeoutRef : politeTimeoutRef;
 
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
-    }
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
 
-    setMessage('');
+      setMessage("");
 
-    timeoutRef.current = setTimeout(() => {
-      setMessage(message);
-    }, 50);
-  }, []);
+      timeoutRef.current = setTimeout(() => {
+        setMessage(message);
+      }, 50);
+    },
+    [],
+  );
 
   const clear = useCallback(() => {
-    setPoliteMessage('');
-    setAssertiveMessage('');
+    setPoliteMessage("");
+    setAssertiveMessage("");
   }, []);
 
   useEffect(() => {
     return () => {
       if (politeTimeoutRef.current) clearTimeout(politeTimeoutRef.current);
-      if (assertiveTimeoutRef.current) clearTimeout(assertiveTimeoutRef.current);
+      if (assertiveTimeoutRef.current)
+        clearTimeout(assertiveTimeoutRef.current);
     };
   }, []);
 
@@ -169,7 +177,7 @@ export function Announcer({ children }: AnnouncerProps) {
 export function useAnnouncer(): AnnouncerContextValue {
   const context = React.useContext(AnnouncerContext);
   if (!context) {
-    throw new Error('useAnnouncer must be used within an Announcer provider');
+    throw new Error("useAnnouncer must be used within an Announcer provider");
   }
   return context;
 }

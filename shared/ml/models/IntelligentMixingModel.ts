@@ -57,15 +57,18 @@ export class IntelligentMixingModel {
     };
   }
 
-  public optimizeMixing(analysis: AudioAnalysis, targetGenre?: string): MixingParameters {
+  public optimizeMixing(
+    analysis: AudioAnalysis,
+    targetGenre?: string,
+  ): MixingParameters {
     const gainAdjustment = this.calculateOptimalGain(analysis);
-    
+
     const compressorParams = this.optimizeCompression(analysis, targetGenre);
-    
+
     const eqBands = this.optimizeEQ(analysis, targetGenre);
-    
+
     const reverbMix = this.calculateReverbMix(targetGenre);
-    
+
     const stereoWidth = this.optimizeStereoWidth(analysis);
 
     return {
@@ -153,7 +156,7 @@ export class IntelligentMixingModel {
     const lowBand = spectrum.slice(0, Math.floor(spectrum.length * 0.15));
     const midBand = spectrum.slice(
       Math.floor(spectrum.length * 0.15),
-      Math.floor(spectrum.length * 0.6)
+      Math.floor(spectrum.length * 0.6),
     );
     const highBand = spectrum.slice(Math.floor(spectrum.length * 0.6));
 
@@ -209,13 +212,13 @@ export class IntelligentMixingModel {
   private calculateOptimalGain(analysis: AudioAnalysis): number {
     const headroom = -0.3;
     const targetPeak = headroom;
-    
+
     return targetPeak - analysis.peakLevel;
   }
 
   private optimizeCompression(
     analysis: AudioAnalysis,
-    targetGenre?: string
+    targetGenre?: string,
   ): {
     threshold: number;
     ratio: number;
@@ -228,13 +231,13 @@ export class IntelligentMixingModel {
     > = {
       rock: { threshold: -18, ratio: 4, attack: 10, release: 100 },
       pop: { threshold: -20, ratio: 6, attack: 5, release: 50 },
-      'hip-hop': { threshold: -15, ratio: 8, attack: 3, release: 80 },
+      "hip-hop": { threshold: -15, ratio: 8, attack: 3, release: 80 },
       electronic: { threshold: -12, ratio: 10, attack: 1, release: 30 },
       jazz: { threshold: -25, ratio: 2, attack: 20, release: 150 },
       classical: { threshold: -30, ratio: 1.5, attack: 30, release: 200 },
     };
 
-    const settings = genreSettings[targetGenre || 'pop'] || genreSettings.pop;
+    const settings = genreSettings[targetGenre || "pop"] || genreSettings.pop;
 
     if (analysis.dynamicRange > 12) {
       settings.threshold -= 3;
@@ -249,7 +252,7 @@ export class IntelligentMixingModel {
 
   private optimizeEQ(
     analysis: AudioAnalysis,
-    targetGenre?: string
+    targetGenre?: string,
   ): Array<{ freq: number; gain: number; q: number }> {
     const bands: Array<{ freq: number; gain: number; q: number }> = [];
 
@@ -279,14 +282,14 @@ export class IntelligentMixingModel {
   private calculateReverbMix(targetGenre?: string): number {
     const genreReverb: Record<string, number> = {
       rock: 0.15,
-      pop: 0.20,
-      'hip-hop': 0.10,
+      pop: 0.2,
+      "hip-hop": 0.1,
       electronic: 0.25,
-      jazz: 0.30,
-      classical: 0.40,
+      jazz: 0.3,
+      classical: 0.4,
     };
 
-    return genreReverb[targetGenre || 'pop'] || 0.20;
+    return genreReverb[targetGenre || "pop"] || 0.2;
   }
 
   private optimizeStereoWidth(analysis: AudioAnalysis): number {
@@ -324,12 +327,12 @@ export class IntelligentMixingModel {
 
   public applyMixingParameters(
     audioBuffer: Float32Array,
-    params: MixingParameters
+    params: MixingParameters,
   ): Float32Array {
     let processed = new Float32Array(audioBuffer);
 
     processed = this.applyGain(processed, params.gainDB);
-    
+
     processed = this.applyCompression(processed, {
       threshold: params.compressorThreshold,
       ratio: params.compressorRatio,
@@ -343,17 +346,22 @@ export class IntelligentMixingModel {
   private applyGain(buffer: Float32Array, gainDB: number): Float32Array {
     const gainLinear = Math.pow(10, gainDB / 20);
     const result = new Float32Array(buffer.length);
-    
+
     for (let i = 0; i < buffer.length; i++) {
       result[i] = buffer[i] * gainLinear;
     }
-    
+
     return result;
   }
 
   private applyCompression(
     buffer: Float32Array,
-    params: { threshold: number; ratio: number; attack: number; release: number }
+    params: {
+      threshold: number;
+      ratio: number;
+      attack: number;
+      release: number;
+    },
   ): Float32Array {
     const result = new Float32Array(buffer.length);
     const thresholdLinear = Math.pow(10, params.threshold / 20);
@@ -364,8 +372,9 @@ export class IntelligentMixingModel {
 
       if (inputLevel > thresholdLinear) {
         const overshoot = inputLevel / thresholdLinear;
-        const targetGainReduction = 1 - 1 / (1 + (overshoot - 1) * (params.ratio - 1));
-        
+        const targetGainReduction =
+          1 - 1 / (1 + (overshoot - 1) * (params.ratio - 1));
+
         gainReduction += (targetGainReduction - gainReduction) * 0.001;
       } else {
         gainReduction *= 0.999;

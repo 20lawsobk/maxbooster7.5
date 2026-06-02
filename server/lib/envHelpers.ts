@@ -13,6 +13,6 @@
  */
 
 export const isProductionEnv = (): boolean =>
-  process.env.NODE_ENV === 'production' || !!process.env.REPLIT_DEPLOYMENT;
+  process.env.NODE_ENV === "production" || !!process.env.REPLIT_DEPLOYMENT;
 
 export const isDevEnv = (): boolean => !isProductionEnv();

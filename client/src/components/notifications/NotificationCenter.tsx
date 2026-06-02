@@ -1,6 +1,6 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
-import { useQuery, useMutation } from '@tanstack/react-query';
-import { useLocation } from 'wouter';
+import { useState, useEffect, useCallback, useMemo } from "react";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { useLocation } from "wouter";
 import {
   Bell,
   BellRing,
@@ -28,64 +28,76 @@ import {
   FileText,
   BarChart2,
   MapPin,
-} from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Separator } from '@/components/ui/separator';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Separator } from "@/components/ui/separator";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
   DropdownMenuSeparator,
-} from '@/components/ui/dropdown-menu';
-import { Switch } from '@/components/ui/switch';
-import { apiRequest, queryClient } from '@/lib/queryClient';
-import { useToast } from '@/hooks/use-toast';
-import { cn } from '@/lib/utils';
-import { useWebSocket } from '@/hooks/useWebSocket';
-import { useAuth } from '@/hooks/useAuth';
-import { logger } from '@/lib/logger';
-import { NotificationItem } from './NotificationItem';
-import { NotificationBadge } from './NotificationBadge';
-import { NotificationToast, NotificationToastContainer } from './NotificationToast';
-import type { Notification, NotificationCategory, NotificationPreferences, NotificationOutcome } from './types';
-import { categoryConfig, typeToCategory } from './types';
+} from "@/components/ui/dropdown-menu";
+import { Switch } from "@/components/ui/switch";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
+import { cn } from "@/lib/utils";
+import { useWebSocket } from "@/hooks/useWebSocket";
+import { useAuth } from "@/hooks/useAuth";
+import { logger } from "@/lib/logger";
+import { NotificationItem } from "./NotificationItem";
+import { NotificationBadge } from "./NotificationBadge";
+import {
+  NotificationToast,
+  NotificationToastContainer,
+} from "./NotificationToast";
+import type {
+  Notification,
+  NotificationCategory,
+  NotificationPreferences,
+  NotificationOutcome,
+} from "./types";
+import { categoryConfig, typeToCategory } from "./types";
 
-type TabFilter = 'all' | 'unread' | NotificationCategory;
+type TabFilter = "all" | "unread" | NotificationCategory;
 
 const categoryIcons: Record<NotificationCategory, React.ElementType> = {
-  account_security:   Shield,
-  distribution:       Music2,
-  social_media:       MessageSquare,
+  account_security: Shield,
+  distribution: Music2,
+  social_media: MessageSquare,
   direct_interaction: Heart,
   platform_generated: Flame,
-  content_based:      FileText,
+  content_based: FileText,
   engagement_summary: BarChart2,
-  location_based:     MapPin,
-  marketplace:        ShoppingBag,
-  royalties:          DollarSign,
-  collaboration:      Users,
-  achievements:       Trophy,
-  system:             Megaphone,
-  platform_admin:     LayoutDashboard,
+  location_based: MapPin,
+  marketplace: ShoppingBag,
+  royalties: DollarSign,
+  collaboration: Users,
+  achievements: Trophy,
+  system: Megaphone,
+  platform_admin: LayoutDashboard,
 };
 
 const defaultPreferences: NotificationPreferences = {
   muteAll: false,
   quietHours: {
     enabled: false,
-    startTime: '22:00',
-    endTime: '08:00',
-    timezone: 'America/New_York',
+    startTime: "22:00",
+    endTime: "08:00",
+    timezone: "America/New_York",
     allowUrgent: true,
   },
   email: {
     enabled: true,
-    frequency: 'instant',
+    frequency: "instant",
     categories: {
       account_security: true,
       distribution: true,
@@ -130,7 +142,7 @@ const defaultPreferences: NotificationPreferences = {
 
 export function NotificationCenter() {
   const [isOpen, setIsOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<TabFilter>('all');
+  const [activeTab, setActiveTab] = useState<TabFilter>("all");
   const [hasNewNotification, setHasNewNotification] = useState(false);
   const [toastQueue, setToastQueue] = useState<Notification[]>([]);
   const { toast } = useToast();
@@ -140,51 +152,64 @@ export function NotificationCenter() {
   const { isConnected } = useWebSocket({
     userId: user?.id,
     onMessage: (message) => {
-      if (message.type === 'notification') {
-        logger.info('📬 Real-time notification received:', message.data);
-        queryClient.invalidateQueries({ queryKey: ['/api/notifications'] });
+      if (message.type === "notification") {
+        logger.info("📬 Real-time notification received:", message.data);
+        queryClient.invalidateQueries({ queryKey: ["/api/notifications"] });
 
         if (message.data?.title) {
           const notification = message.data as Notification;
           setToastQueue((prev) => [...prev, notification]);
 
-          if ('Notification' in window && Notification.permission === 'granted' && preferences?.inApp?.desktop) {
+          if (
+            "Notification" in window &&
+            Notification.permission === "granted" &&
+            preferences?.inApp?.desktop
+          ) {
             new window.Notification(notification.title, {
-              body: notification.message || '',
-              icon: '/favicon.png',
+              body: notification.message || "",
+              icon: "/favicon.png",
               tag: notification.id,
             });
           }
 
           if (preferences?.inApp?.sound) {
-            const audio = new Audio('/notification.mp3');
+            const audio = new Audio("/notification.mp3");
             audio.volume = 0.3;
             audio.play().catch(() => {});
           }
         }
       }
     },
-    onConnect: () => logger.info('🔌 WebSocket connected for notifications'),
-    onDisconnect: () => logger.info('🔌 WebSocket disconnected'),
-    onError: (error) => logger.error('❌ WebSocket error:', error),
+    onConnect: () => logger.info("🔌 WebSocket connected for notifications"),
+    onDisconnect: () => logger.info("🔌 WebSocket disconnected"),
+    onError: (error) => logger.error("❌ WebSocket error:", error),
   });
 
-  const { data: notifications = [], isLoading, refetch } = useQuery<Notification[]>({
-    queryKey: ['/api/notifications'],
+  const {
+    data: notifications = [],
+    isLoading,
+    refetch,
+  } = useQuery<Notification[]>({
+    queryKey: ["/api/notifications"],
     refetchInterval: isConnected ? false : 30000,
     enabled: !!user,
   });
 
-  const { data: preferences = defaultPreferences } = useQuery<NotificationPreferences>({
-    queryKey: ['/api/notifications/preferences'],
-    enabled: !!user,
-  });
+  const { data: preferences = defaultPreferences } =
+    useQuery<NotificationPreferences>({
+      queryKey: ["/api/notifications/preferences"],
+      enabled: !!user,
+    });
 
-  const unreadCount = useMemo(() => notifications.filter((n) => !n.isRead).length, [notifications]);
+  const unreadCount = useMemo(
+    () => notifications.filter((n) => !n.isRead).length,
+    [notifications],
+  );
 
   const urgentCount = useMemo(
-    () => notifications.filter((n) => !n.isRead && n.priority === 'urgent').length,
-    [notifications]
+    () =>
+      notifications.filter((n) => !n.isRead && n.priority === "urgent").length,
+    [notifications],
   );
 
   useEffect(() => {
@@ -197,9 +222,10 @@ export function NotificationCenter() {
 
   const filteredNotifications = useMemo(() => {
     return notifications.filter((notification) => {
-      if (activeTab === 'all') return true;
-      if (activeTab === 'unread') return !notification.isRead;
-      const category = notification.category || typeToCategory[notification.type] || 'system';
+      if (activeTab === "all") return true;
+      if (activeTab === "unread") return !notification.isRead;
+      const category =
+        notification.category || typeToCategory[notification.type] || "system";
       return category === activeTab;
     });
   }, [notifications, activeTab]);
@@ -223,7 +249,9 @@ export function NotificationCenter() {
     };
 
     notifications.forEach((n) => {
-      const category = (n.category || typeToCategory[n.type] || 'system') as NotificationCategory;
+      const category = (n.category ||
+        typeToCategory[n.type] ||
+        "system") as NotificationCategory;
       if (groups[category]) {
         groups[category].push(n);
       } else {
@@ -235,56 +263,87 @@ export function NotificationCenter() {
   }, [notifications]);
 
   const markAsReadMutation = useMutation({
-    mutationFn: async (id: string) => apiRequest('PUT', `/api/notifications/${id}/read`),
+    mutationFn: async (id: string) =>
+      apiRequest("PUT", `/api/notifications/${id}/read`),
     onMutate: async (id) => {
-      await queryClient.cancelQueries({ queryKey: ['/api/notifications'] });
-      const previous = queryClient.getQueryData<Notification[]>(['/api/notifications']);
-      queryClient.setQueryData<Notification[]>(['/api/notifications'], (old = []) =>
-        old.map((n) => (n.id === id ? { ...n, isRead: true } : n))
+      await queryClient.cancelQueries({ queryKey: ["/api/notifications"] });
+      const previous = queryClient.getQueryData<Notification[]>([
+        "/api/notifications",
+      ]);
+      queryClient.setQueryData<Notification[]>(
+        ["/api/notifications"],
+        (old = []) =>
+          old.map((n) => (n.id === id ? { ...n, isRead: true } : n)),
       );
       return { previous };
     },
     onError: (_, __, context) => {
-      queryClient.setQueryData(['/api/notifications'], context?.previous);
-      toast({ title: 'Error', description: 'Failed to mark as read', variant: 'destructive' });
+      queryClient.setQueryData(["/api/notifications"], context?.previous);
+      toast({
+        title: "Error",
+        description: "Failed to mark as read",
+        variant: "destructive",
+      });
     },
-    onSettled: () => queryClient.invalidateQueries({ queryKey: ['/api/notifications'] }),
+    onSettled: () =>
+      queryClient.invalidateQueries({ queryKey: ["/api/notifications"] }),
   });
 
   const markAllAsReadMutation = useMutation({
-    mutationFn: async () => apiRequest('PUT', '/api/notifications/mark-all-read'),
+    mutationFn: async () =>
+      apiRequest("PUT", "/api/notifications/mark-all-read"),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/notifications'] });
-      toast({ title: 'All notifications marked as read' });
+      queryClient.invalidateQueries({ queryKey: ["/api/notifications"] });
+      toast({ title: "All notifications marked as read" });
     },
-    onError: () => toast({ title: 'Error', description: 'Failed to mark all as read', variant: 'destructive' }),
+    onError: () =>
+      toast({
+        title: "Error",
+        description: "Failed to mark all as read",
+        variant: "destructive",
+      }),
   });
 
   const deleteNotificationMutation = useMutation({
-    mutationFn: async (id: string) => apiRequest('DELETE', `/api/notifications/${id}`),
+    mutationFn: async (id: string) =>
+      apiRequest("DELETE", `/api/notifications/${id}`),
     onMutate: async (id) => {
-      await queryClient.cancelQueries({ queryKey: ['/api/notifications'] });
-      const previous = queryClient.getQueryData<Notification[]>(['/api/notifications']);
-      queryClient.setQueryData<Notification[]>(['/api/notifications'], (old = []) =>
-        old.filter((n) => n.id !== id)
+      await queryClient.cancelQueries({ queryKey: ["/api/notifications"] });
+      const previous = queryClient.getQueryData<Notification[]>([
+        "/api/notifications",
+      ]);
+      queryClient.setQueryData<Notification[]>(
+        ["/api/notifications"],
+        (old = []) => old.filter((n) => n.id !== id),
       );
       return { previous };
     },
-    onSuccess: () => toast({ title: 'Notification deleted' }),
+    onSuccess: () => toast({ title: "Notification deleted" }),
     onError: (_, __, context) => {
-      queryClient.setQueryData(['/api/notifications'], context?.previous);
-      toast({ title: 'Error', description: 'Failed to delete notification', variant: 'destructive' });
+      queryClient.setQueryData(["/api/notifications"], context?.previous);
+      toast({
+        title: "Error",
+        description: "Failed to delete notification",
+        variant: "destructive",
+      });
     },
-    onSettled: () => queryClient.invalidateQueries({ queryKey: ['/api/notifications'] }),
+    onSettled: () =>
+      queryClient.invalidateQueries({ queryKey: ["/api/notifications"] }),
   });
 
   const clearAllMutation = useMutation({
-    mutationFn: async () => apiRequest('DELETE', '/api/notifications/clear-all'),
+    mutationFn: async () =>
+      apiRequest("DELETE", "/api/notifications/clear-all"),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/notifications'] });
-      toast({ title: 'All notifications cleared' });
+      queryClient.invalidateQueries({ queryKey: ["/api/notifications"] });
+      toast({ title: "All notifications cleared" });
     },
-    onError: () => toast({ title: 'Error', description: 'Failed to clear notifications', variant: 'destructive' }),
+    onError: () =>
+      toast({
+        title: "Error",
+        description: "Failed to clear notifications",
+        variant: "destructive",
+      }),
   });
 
   const handleNavigate = useCallback(
@@ -292,7 +351,7 @@ export function NotificationCenter() {
       setIsOpen(false);
       navigate(url);
     },
-    [navigate]
+    [navigate],
   );
 
   const handleDismissToast = useCallback((id: string) => {
@@ -304,7 +363,7 @@ export function NotificationCenter() {
       markAsReadMutation.mutate(id);
       handleDismissToast(id);
     },
-    [markAsReadMutation, handleDismissToast]
+    [markAsReadMutation, handleDismissToast],
   );
 
   return (
@@ -314,9 +373,12 @@ export function NotificationCenter() {
           <Button
             variant="ghost"
             size="icon"
-            className={cn('relative transition-transform', hasNewNotification && 'animate-bounce')}
+            className={cn(
+              "relative transition-transform",
+              hasNewNotification && "animate-bounce",
+            )}
             data-testid="notification-center-trigger"
-            aria-label={`Notifications${unreadCount > 0 ? ` (${unreadCount} unread)` : ''}`}
+            aria-label={`Notifications${unreadCount > 0 ? ` (${unreadCount} unread)` : ""}`}
           >
             {hasNewNotification || unreadCount > 0 ? (
               <BellRing className="h-5 w-5" />
@@ -326,7 +388,7 @@ export function NotificationCenter() {
             {unreadCount > 0 && (
               <NotificationBadge
                 count={unreadCount}
-                variant={urgentCount > 0 ? 'urgent' : 'default'}
+                variant={urgentCount > 0 ? "urgent" : "default"}
                 className="absolute -top-1 -right-1"
               />
             )}
@@ -353,7 +415,9 @@ export function NotificationCenter() {
                   size="sm"
                   className="h-8 w-8 p-0"
                   onClick={() => markAllAsReadMutation.mutate()}
-                  disabled={unreadCount === 0 || markAllAsReadMutation.isPending}
+                  disabled={
+                    unreadCount === 0 || markAllAsReadMutation.isPending
+                  }
                   title="Mark all as read"
                   data-testid="mark-all-read-btn"
                 >
@@ -369,7 +433,7 @@ export function NotificationCenter() {
                   className="h-8 w-8 p-0"
                   onClick={() => {
                     setIsOpen(false);
-                    navigate('/settings?tab=notifications');
+                    navigate("/settings?tab=notifications");
                   }}
                   title="Notification settings"
                   data-testid="notification-settings-btn"
@@ -379,7 +443,11 @@ export function NotificationCenter() {
               </div>
             </div>
 
-            <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as TabFilter)} className="flex-1 flex flex-col min-h-0">
+            <Tabs
+              value={activeTab}
+              onValueChange={(v) => setActiveTab(v as TabFilter)}
+              className="flex-1 flex flex-col min-h-0"
+            >
               <div className="border-b px-2">
                 <TabsList className="h-10 w-full justify-start bg-transparent gap-1">
                   <TabsTrigger value="all" className="text-xs px-2">
@@ -388,21 +456,35 @@ export function NotificationCenter() {
                   <TabsTrigger value="unread" className="text-xs px-2">
                     Unread
                     {unreadCount > 0 && (
-                      <Badge variant="secondary" className="ml-1 h-4 px-1 text-[10px]">
+                      <Badge
+                        variant="secondary"
+                        className="ml-1 h-4 px-1 text-[10px]"
+                      >
                         {unreadCount}
                       </Badge>
                     )}
                   </TabsTrigger>
                   {(Object.keys(categoryConfig) as NotificationCategory[])
-                    .filter((cat) => cat !== 'platform_admin' || user?.role === 'admin')
+                    .filter(
+                      (cat) =>
+                        cat !== "platform_admin" || user?.role === "admin",
+                    )
                     .map((cat) => {
                       const Icon = categoryIcons[cat];
-                      const catCount = groupedByCategory[cat].filter((n) => !n.isRead).length;
+                      const catCount = groupedByCategory[cat].filter(
+                        (n) => !n.isRead,
+                      ).length;
                       return (
-                        <TabsTrigger key={cat} value={cat} className={`text-xs px-2 ${cat === 'platform_admin' ? 'text-orange-600 dark:text-orange-400' : ''}`}>
+                        <TabsTrigger
+                          key={cat}
+                          value={cat}
+                          className={`text-xs px-2 ${cat === "platform_admin" ? "text-orange-600 dark:text-orange-400" : ""}`}
+                        >
                           <Icon className="h-3 w-3 mr-1" />
                           {catCount > 0 && (
-                            <span className="text-[10px] text-muted-foreground">{catCount}</span>
+                            <span className="text-[10px] text-muted-foreground">
+                              {catCount}
+                            </span>
                           )}
                         </TabsTrigger>
                       );
@@ -422,11 +504,11 @@ export function NotificationCenter() {
                     </div>
                     <h4 className="font-medium mb-1">No notifications</h4>
                     <p className="text-sm text-muted-foreground max-w-[200px]">
-                      {activeTab === 'unread'
+                      {activeTab === "unread"
                         ? "You're all caught up!"
-                        : activeTab === 'all'
-                        ? "You don't have any notifications yet."
-                        : `No ${categoryConfig[activeTab as NotificationCategory]?.label.toLowerCase() || activeTab} notifications.`}
+                        : activeTab === "all"
+                          ? "You don't have any notifications yet."
+                          : `No ${categoryConfig[activeTab as NotificationCategory]?.label.toLowerCase() || activeTab} notifications.`}
                     </p>
                   </div>
                 ) : (
@@ -453,7 +535,7 @@ export function NotificationCenter() {
                     variant="ghost"
                     size="sm"
                     className="text-xs text-muted-foreground"
-                    onClick={() => handleNavigate('/notifications')}
+                    onClick={() => handleNavigate("/notifications")}
                   >
                     View all notifications
                   </Button>

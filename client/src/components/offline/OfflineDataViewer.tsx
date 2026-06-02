@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { logger } from '@/lib/logger';
+import { useState, useEffect } from "react";
+import { logger } from "@/lib/logger";
 import {
   Database,
   RefreshCw,
@@ -13,18 +13,24 @@ import {
   User,
   Layout,
   FolderOpen,
-} from 'lucide-react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Separator } from '@/components/ui/separator';
+} from "lucide-react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Separator } from "@/components/ui/separator";
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
-} from '@/components/ui/collapsible';
+} from "@/components/ui/collapsible";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -35,10 +41,10 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from '@/components/ui/alert-dialog';
-import { cn } from '@/lib/utils';
-import { offlineCache, CacheEntry, CacheCategory } from '@/lib/offline';
-import { formatDistanceToNow } from 'date-fns';
+} from "@/components/ui/alert-dialog";
+import { cn } from "@/lib/utils";
+import { offlineCache, CacheEntry, CacheCategory } from "@/lib/offline";
+import { formatDistanceToNow } from "date-fns";
 
 interface CacheStats {
   totalEntries: number;
@@ -53,12 +59,15 @@ interface OfflineDataViewerProps {
   showDetails?: boolean;
 }
 
-const categoryConfig: Record<CacheCategory, { icon: typeof Database; label: string; color: string }> = {
-  analytics: { icon: BarChart3, label: 'Analytics', color: 'text-blue-500' },
-  dashboard: { icon: Layout, label: 'Dashboard', color: 'text-purple-500' },
-  ui: { icon: FileText, label: 'UI Data', color: 'text-green-500' },
-  user: { icon: User, label: 'User Data', color: 'text-orange-500' },
-  general: { icon: FolderOpen, label: 'General', color: 'text-gray-500' },
+const categoryConfig: Record<
+  CacheCategory,
+  { icon: typeof Database; label: string; color: string }
+> = {
+  analytics: { icon: BarChart3, label: "Analytics", color: "text-blue-500" },
+  dashboard: { icon: Layout, label: "Dashboard", color: "text-purple-500" },
+  ui: { icon: FileText, label: "UI Data", color: "text-green-500" },
+  user: { icon: User, label: "User Data", color: "text-orange-500" },
+  general: { icon: FolderOpen, label: "General", color: "text-gray-500" },
 };
 
 export function OfflineDataViewer({
@@ -68,8 +77,12 @@ export function OfflineDataViewer({
 }: OfflineDataViewerProps) {
   const [stats, setStats] = useState<CacheStats | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [expandedCategories, setExpandedCategories] = useState<Set<CacheCategory>>(new Set());
-  const [categoryEntries, setCategoryEntries] = useState<Record<CacheCategory, CacheEntry[]>>({
+  const [expandedCategories, setExpandedCategories] = useState<
+    Set<CacheCategory>
+  >(new Set());
+  const [categoryEntries, setCategoryEntries] = useState<
+    Record<CacheCategory, CacheEntry[]>
+  >({
     analytics: [],
     dashboard: [],
     ui: [],
@@ -83,7 +96,7 @@ export function OfflineDataViewer({
       const cacheStats = await offlineCache.getStats();
       setStats(cacheStats);
     } catch (error) {
-      logger.error('[OfflineDataViewer] Failed to load stats:', error);
+      logger.error("[OfflineDataViewer] Failed to load stats:", error);
     } finally {
       setIsLoading(false);
     }
@@ -92,9 +105,12 @@ export function OfflineDataViewer({
   const loadCategoryEntries = async (category: CacheCategory) => {
     try {
       const entries = await offlineCache.getByCategory(category);
-      setCategoryEntries(prev => ({ ...prev, [category]: entries }));
+      setCategoryEntries((prev) => ({ ...prev, [category]: entries }));
     } catch (error) {
-      logger.error('[OfflineDataViewer] Failed to load category entries:', error);
+      logger.error(
+        "[OfflineDataViewer] Failed to load category entries:",
+        error,
+      );
     }
   };
 
@@ -116,7 +132,7 @@ export function OfflineDataViewer({
   const handleClearCategory = async (category: CacheCategory) => {
     await offlineCache.invalidateCategory(category);
     await loadStats();
-    setCategoryEntries(prev => ({ ...prev, [category]: [] }));
+    setCategoryEntries((prev) => ({ ...prev, [category]: [] }));
   };
 
   const handleClearAll = async () => {
@@ -141,17 +157,19 @@ export function OfflineDataViewer({
   };
 
   const formatBytes = (bytes: number): string => {
-    if (bytes === 0) return '0 B';
+    if (bytes === 0) return "0 B";
     const k = 1024;
-    const sizes = ['B', 'KB', 'MB', 'GB'];
+    const sizes = ["B", "KB", "MB", "GB"];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + " " + sizes[i];
   };
 
-  const usagePercent = stats ? Math.round((stats.totalSize / maxCacheSize) * 100) : 0;
+  const usagePercent = stats
+    ? Math.round((stats.totalSize / maxCacheSize) * 100)
+    : 0;
 
   return (
-    <Card className={cn('w-full', className)}>
+    <Card className={cn("w-full", className)}>
       <CardHeader>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -169,7 +187,7 @@ export function OfflineDataViewer({
             onClick={loadStats}
             disabled={isLoading}
           >
-            <RefreshCw className={cn('h-4 w-4', isLoading && 'animate-spin')} />
+            <RefreshCw className={cn("h-4 w-4", isLoading && "animate-spin")} />
           </Button>
         </div>
       </CardHeader>
@@ -192,15 +210,23 @@ export function OfflineDataViewer({
 
             <div className="grid grid-cols-3 gap-3 text-center">
               <div className="p-3 rounded-lg bg-muted/50">
-                <div className="font-semibold text-lg">{stats.totalEntries}</div>
-                <div className="text-xs text-muted-foreground">Cached Items</div>
+                <div className="font-semibold text-lg">
+                  {stats.totalEntries}
+                </div>
+                <div className="text-xs text-muted-foreground">
+                  Cached Items
+                </div>
               </div>
               <div className="p-3 rounded-lg bg-muted/50">
-                <div className="font-semibold text-lg">{Math.round(stats.hitRate * 100)}%</div>
+                <div className="font-semibold text-lg">
+                  {Math.round(stats.hitRate * 100)}%
+                </div>
                 <div className="text-xs text-muted-foreground">Hit Rate</div>
               </div>
               <div className="p-3 rounded-lg bg-muted/50">
-                <div className="font-semibold text-lg">{Object.keys(stats.byCategory).length}</div>
+                <div className="font-semibold text-lg">
+                  {Object.keys(stats.byCategory).length}
+                </div>
                 <div className="text-xs text-muted-foreground">Categories</div>
               </div>
             </div>
@@ -209,7 +235,12 @@ export function OfflineDataViewer({
 
             <ScrollArea className="max-h-[300px]">
               <div className="space-y-2">
-                {(Object.entries(stats.byCategory) as [CacheCategory, { count: number; size: number }][])
+                {(
+                  Object.entries(stats.byCategory) as [
+                    CacheCategory,
+                    { count: number; size: number },
+                  ][]
+                )
                   .filter(([, data]) => data.count > 0)
                   .map(([category, data]) => {
                     const config = categoryConfig[category];
@@ -226,9 +257,11 @@ export function OfflineDataViewer({
                         <CollapsibleTrigger asChild>
                           <div className="flex items-center justify-between p-3 rounded-lg bg-muted/30 hover:bg-muted/50 cursor-pointer transition-colors">
                             <div className="flex items-center gap-3">
-                              <Icon className={cn('h-4 w-4', config.color)} />
+                              <Icon className={cn("h-4 w-4", config.color)} />
                               <div>
-                                <p className="font-medium text-sm">{config.label}</p>
+                                <p className="font-medium text-sm">
+                                  {config.label}
+                                </p>
                                 <p className="text-xs text-muted-foreground">
                                   {data.count} items • {formatBytes(data.size)}
                                 </p>
@@ -247,17 +280,28 @@ export function OfflineDataViewer({
                                       <Trash2 className="h-3 w-3" />
                                     </Button>
                                   </AlertDialogTrigger>
-                                  <AlertDialogContent onClick={(e) => e.stopPropagation()}>
+                                  <AlertDialogContent
+                                    onClick={(e) => e.stopPropagation()}
+                                  >
                                     <AlertDialogHeader>
-                                      <AlertDialogTitle>Clear {config.label} Cache</AlertDialogTitle>
+                                      <AlertDialogTitle>
+                                        Clear {config.label} Cache
+                                      </AlertDialogTitle>
                                       <AlertDialogDescription>
-                                        This will remove all {data.count} cached {config.label.toLowerCase()} items.
-                                        This action cannot be undone.
+                                        This will remove all {data.count} cached{" "}
+                                        {config.label.toLowerCase()} items. This
+                                        action cannot be undone.
                                       </AlertDialogDescription>
                                     </AlertDialogHeader>
                                     <AlertDialogFooter>
-                                      <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                      <AlertDialogAction onClick={() => handleClearCategory(category)}>
+                                      <AlertDialogCancel>
+                                        Cancel
+                                      </AlertDialogCancel>
+                                      <AlertDialogAction
+                                        onClick={() =>
+                                          handleClearCategory(category)
+                                        }
+                                      >
                                         Clear
                                       </AlertDialogAction>
                                     </AlertDialogFooter>
@@ -275,7 +319,9 @@ export function OfflineDataViewer({
                         <CollapsibleContent>
                           <div className="pl-10 pr-3 py-2 space-y-1">
                             {entries.length === 0 ? (
-                              <p className="text-xs text-muted-foreground py-2">No data cached for this category.</p>
+                              <p className="text-xs text-muted-foreground py-2">
+                                No data cached for this category.
+                              </p>
                             ) : (
                               entries.slice(0, 10).map((entry) => (
                                 <div
@@ -284,16 +330,23 @@ export function OfflineDataViewer({
                                 >
                                   <div className="flex items-center gap-2 min-w-0 flex-1">
                                     <span className="truncate font-mono text-muted-foreground">
-                                      {entry.key.length > 40 ? '...' + entry.key.slice(-37) : entry.key}
+                                      {entry.key.length > 40
+                                        ? "..." + entry.key.slice(-37)
+                                        : entry.key}
                                     </span>
                                   </div>
                                   <div className="flex items-center gap-2 flex-shrink-0 ml-2">
-                                    <Badge variant="outline" className="text-[10px] px-1 py-0">
+                                    <Badge
+                                      variant="outline"
+                                      className="text-[10px] px-1 py-0"
+                                    >
                                       {formatBytes(entry.size)}
                                     </Badge>
                                     <span className="text-muted-foreground flex items-center gap-1">
                                       <Clock className="h-3 w-3" />
-                                      {formatDistanceToNow(entry.lastAccessed, { addSuffix: true })}
+                                      {formatDistanceToNow(entry.lastAccessed, {
+                                        addSuffix: true,
+                                      })}
                                     </span>
                                   </div>
                                 </div>
@@ -340,8 +393,9 @@ export function OfflineDataViewer({
                   <AlertDialogHeader>
                     <AlertDialogTitle>Clear All Offline Data</AlertDialogTitle>
                     <AlertDialogDescription>
-                      This will remove all {stats.totalEntries} cached items ({formatBytes(stats.totalSize)}).
-                      You'll need to reconnect to reload this data.
+                      This will remove all {stats.totalEntries} cached items (
+                      {formatBytes(stats.totalSize)}). You'll need to reconnect
+                      to reload this data.
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>

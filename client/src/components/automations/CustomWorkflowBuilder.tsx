@@ -1,15 +1,27 @@
-import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { apiRequest } from '@/lib/queryClient';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Switch } from '@/components/ui/switch';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Switch } from "@/components/ui/switch";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -19,14 +31,25 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Separator } from '@/components/ui/separator';
-import { useToast } from '@/hooks/use-toast';
+} from "@/components/ui/alert-dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Separator } from "@/components/ui/separator";
+import { useToast } from "@/hooks/use-toast";
 import {
-  Plus, Play, Trash2, Edit, Loader2, Zap, Clock, ChevronRight,
-  AlertCircle, CheckCircle2, X, ListTodo, Webhook,
-} from 'lucide-react';
+  Plus,
+  Play,
+  Trash2,
+  Edit,
+  Loader2,
+  Zap,
+  Clock,
+  ChevronRight,
+  AlertCircle,
+  CheckCircle2,
+  X,
+  ListTodo,
+  Webhook,
+} from "lucide-react";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -40,7 +63,7 @@ interface TriggerDef {
 interface ActionFieldDef {
   key: string;
   label: string;
-  type: 'text' | 'textarea' | 'select';
+  type: "text" | "textarea" | "select";
   placeholder?: string;
   options?: string[];
 }
@@ -108,7 +131,9 @@ function ActionRow({
   return (
     <div className="rounded-lg border bg-muted/30 p-3 space-y-3">
       <div className="flex items-center gap-2">
-        <span className="text-xs font-semibold text-muted-foreground w-5">{index + 1}.</span>
+        <span className="text-xs font-semibold text-muted-foreground w-5">
+          {index + 1}.
+        </span>
         <Select
           value={action.type}
           onValueChange={(v) => onChange({ type: v, config: {} })}
@@ -124,7 +149,12 @@ function ActionRow({
             ))}
           </SelectContent>
         </Select>
-        <Button size="sm" variant="ghost" className="h-8 w-8 p-0 text-destructive hover:text-destructive" onClick={onRemove}>
+        <Button
+          size="sm"
+          variant="ghost"
+          className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+          onClick={onRemove}
+        >
           <X className="h-4 w-4" />
         </Button>
       </div>
@@ -138,31 +168,50 @@ function ActionRow({
           {def.fields.map((field) => (
             <div key={field.key} className="space-y-1">
               <Label className="text-xs font-medium">{field.label}</Label>
-              {field.type === 'textarea' ? (
+              {field.type === "textarea" ? (
                 <Textarea
                   className="text-xs resize-none min-h-[60px]"
                   placeholder={field.placeholder}
-                  value={action.config[field.key] ?? ''}
-                  onChange={(e) => onChange({ ...action, config: { ...action.config, [field.key]: e.target.value } })}
+                  value={action.config[field.key] ?? ""}
+                  onChange={(e) =>
+                    onChange({
+                      ...action,
+                      config: { ...action.config, [field.key]: e.target.value },
+                    })
+                  }
                 />
-              ) : field.type === 'select' ? (
+              ) : field.type === "select" ? (
                 <Select
-                  value={action.config[field.key] ?? field.options?.[0] ?? ''}
-                  onValueChange={(v) => onChange({ ...action, config: { ...action.config, [field.key]: v } })}
+                  value={action.config[field.key] ?? field.options?.[0] ?? ""}
+                  onValueChange={(v) =>
+                    onChange({
+                      ...action,
+                      config: { ...action.config, [field.key]: v },
+                    })
+                  }
                 >
                   <SelectTrigger className="h-7 text-xs">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {field.options?.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}
+                    {field.options?.map((o) => (
+                      <SelectItem key={o} value={o}>
+                        {o}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               ) : (
                 <Input
                   className="h-7 text-xs"
                   placeholder={field.placeholder}
-                  value={action.config[field.key] ?? ''}
-                  onChange={(e) => onChange({ ...action, config: { ...action.config, [field.key]: e.target.value } })}
+                  value={action.config[field.key] ?? ""}
+                  onChange={(e) =>
+                    onChange({
+                      ...action,
+                      config: { ...action.config, [field.key]: e.target.value },
+                    })
+                  }
                 />
               )}
             </div>
@@ -189,10 +238,16 @@ function WorkflowDialog({
   const { toast } = useToast();
   const qc = useQueryClient();
 
-  const [name, setName] = useState(editWorkflow?.name ?? '');
-  const [description, setDescription] = useState(editWorkflow?.description ?? '');
-  const [triggerEvent, setTriggerEvent] = useState(editWorkflow?.triggerEvent ?? '');
-  const [actions, setActions] = useState<CustomAction[]>(editWorkflow?.actions ?? [{ type: 'push_notification', config: {} }]);
+  const [name, setName] = useState(editWorkflow?.name ?? "");
+  const [description, setDescription] = useState(
+    editWorkflow?.description ?? "",
+  );
+  const [triggerEvent, setTriggerEvent] = useState(
+    editWorkflow?.triggerEvent ?? "",
+  );
+  const [actions, setActions] = useState<CustomAction[]>(
+    editWorkflow?.actions ?? [{ type: "push_notification", config: {} }],
+  );
 
   const isEdit = !!editWorkflow;
 
@@ -200,23 +255,31 @@ function WorkflowDialog({
     mutationFn: async () => {
       const body = { name, description, triggerEvent, actions };
       if (isEdit) {
-        const res = await apiRequest('PUT', `/api/custom-workflows/${editWorkflow!.id}`, body);
+        const res = await apiRequest(
+          "PUT",
+          `/api/custom-workflows/${editWorkflow!.id}`,
+          body,
+        );
         return res.json();
       } else {
-        const res = await apiRequest('POST', '/api/custom-workflows', body);
+        const res = await apiRequest("POST", "/api/custom-workflows", body);
         return res.json();
       }
     },
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['/api/custom-workflows'] });
+      qc.invalidateQueries({ queryKey: ["/api/custom-workflows"] });
       toast({
-        title: isEdit ? 'Workflow updated' : 'Workflow created',
+        title: isEdit ? "Workflow updated" : "Workflow created",
         description: `"${name}" is ready. Enable it to activate.`,
       });
       onClose();
     },
     onError: (err: Error) => {
-      toast({ title: 'Error', description: err.message ?? 'Could not save workflow.', variant: 'destructive' });
+      toast({
+        title: "Error",
+        description: err.message ?? "Could not save workflow.",
+        variant: "destructive",
+      });
     },
   });
 
@@ -228,24 +291,35 @@ function WorkflowDialog({
 
   const selectedTrigger = catalog.triggers.find((t) => t.id === triggerEvent);
 
-  const canSave = name.trim().length > 0 && triggerEvent.length > 0 && actions.length > 0 && actions.every((a) => a.type);
+  const canSave =
+    name.trim().length > 0 &&
+    triggerEvent.length > 0 &&
+    actions.length > 0 &&
+    actions.every((a) => a.type);
 
-  const addAction = () => setActions((prev) => [...prev, { type: 'push_notification', config: {} }]);
+  const addAction = () =>
+    setActions((prev) => [...prev, { type: "push_notification", config: {} }]);
   const updateAction = (i: number, updated: CustomAction) =>
-    setActions((prev) => prev.map((a, idx) => idx === i ? updated : a));
+    setActions((prev) => prev.map((a, idx) => (idx === i ? updated : a)));
   const removeAction = (i: number) =>
     setActions((prev) => prev.filter((_, idx) => idx !== i));
 
   return (
-    <Dialog open={open} onOpenChange={(o) => { if (!o) onClose(); }}>
+    <Dialog
+      open={open}
+      onOpenChange={(o) => {
+        if (!o) onClose();
+      }}
+    >
       <DialogContent className="max-w-xl max-h-[90vh] flex flex-col p-0">
         <DialogHeader className="px-6 pt-6 pb-3 flex-shrink-0">
           <DialogTitle className="flex items-center gap-2">
             <Zap className="h-5 w-5 text-primary" />
-            {isEdit ? 'Edit Workflow' : 'Create Custom Workflow'}
+            {isEdit ? "Edit Workflow" : "Create Custom Workflow"}
           </DialogTitle>
           <DialogDescription>
-            Define a trigger and one or more actions. Your workflow fires automatically when the trigger event occurs.
+            Define a trigger and one or more actions. Your workflow fires
+            automatically when the trigger event occurs.
           </DialogDescription>
         </DialogHeader>
 
@@ -254,7 +328,9 @@ function WorkflowDialog({
             {/* Step 1: Name */}
             <div className="space-y-3">
               <div className="flex items-center gap-2">
-                <div className="h-6 w-6 rounded-full bg-primary text-primary-foreground text-xs font-bold flex items-center justify-center flex-shrink-0">1</div>
+                <div className="h-6 w-6 rounded-full bg-primary text-primary-foreground text-xs font-bold flex items-center justify-center flex-shrink-0">
+                  1
+                </div>
                 <h3 className="font-semibold text-sm">Name your workflow</h3>
               </div>
               <div className="pl-8 space-y-2">
@@ -278,7 +354,9 @@ function WorkflowDialog({
             {/* Step 2: Trigger */}
             <div className="space-y-3">
               <div className="flex items-center gap-2">
-                <div className="h-6 w-6 rounded-full bg-primary text-primary-foreground text-xs font-bold flex items-center justify-center flex-shrink-0">2</div>
+                <div className="h-6 w-6 rounded-full bg-primary text-primary-foreground text-xs font-bold flex items-center justify-center flex-shrink-0">
+                  2
+                </div>
                 <h3 className="font-semibold text-sm">When should this run?</h3>
               </div>
               <div className="pl-8 space-y-2">
@@ -287,16 +365,20 @@ function WorkflowDialog({
                     <SelectValue placeholder="Choose a trigger event..." />
                   </SelectTrigger>
                   <SelectContent>
-                    {Object.entries(triggersByCategory).map(([category, triggers]) => (
-                      <div key={category}>
-                        <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wider">{category}</div>
-                        {triggers.map((t) => (
-                          <SelectItem key={t.id} value={t.id}>
-                            {t.label}
-                          </SelectItem>
-                        ))}
-                      </div>
-                    ))}
+                    {Object.entries(triggersByCategory).map(
+                      ([category, triggers]) => (
+                        <div key={category}>
+                          <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                            {category}
+                          </div>
+                          {triggers.map((t) => (
+                            <SelectItem key={t.id} value={t.id}>
+                              {t.label}
+                            </SelectItem>
+                          ))}
+                        </div>
+                      ),
+                    )}
                   </SelectContent>
                 </Select>
                 {selectedTrigger && (
@@ -313,10 +395,12 @@ function WorkflowDialog({
             {/* Step 3: Actions */}
             <div className="space-y-3">
               <div className="flex items-center gap-2">
-                <div className="h-6 w-6 rounded-full bg-primary text-primary-foreground text-xs font-bold flex items-center justify-center flex-shrink-0">3</div>
+                <div className="h-6 w-6 rounded-full bg-primary text-primary-foreground text-xs font-bold flex items-center justify-center flex-shrink-0">
+                  3
+                </div>
                 <h3 className="font-semibold text-sm">What should happen?</h3>
                 <span className="text-xs text-muted-foreground ml-auto">
-                  {actions.length} action{actions.length !== 1 ? 's' : ''}
+                  {actions.length} action{actions.length !== 1 ? "s" : ""}
                 </span>
               </div>
               <div className="pl-8 space-y-2">
@@ -351,16 +435,21 @@ function WorkflowDialog({
                 </summary>
                 <div className="mt-2 text-xs text-muted-foreground space-y-1 pl-4">
                   {[
-                    ['{{trackName}}', 'The track that triggered the event'],
-                    ['{{releaseName}}', 'The release or album name'],
-                    ['{{platform}}', 'Streaming platform name'],
-                    ['{{artistName}}', 'Your artist name'],
-                    ['{{eventType}}', 'The event that fired (e.g. track:uploaded)'],
-                    ['{{timestamp}}', 'Date and time of the trigger'],
-                    ['{{milestone}}', 'Stream count milestone (e.g. 10,000)'],
+                    ["{{trackName}}", "The track that triggered the event"],
+                    ["{{releaseName}}", "The release or album name"],
+                    ["{{platform}}", "Streaming platform name"],
+                    ["{{artistName}}", "Your artist name"],
+                    [
+                      "{{eventType}}",
+                      "The event that fired (e.g. track:uploaded)",
+                    ],
+                    ["{{timestamp}}", "Date and time of the trigger"],
+                    ["{{milestone}}", "Stream count milestone (e.g. 10,000)"],
                   ].map(([v, d]) => (
                     <div key={v} className="flex gap-2">
-                      <code className="font-mono text-primary bg-primary/10 px-1 rounded flex-shrink-0">{v}</code>
+                      <code className="font-mono text-primary bg-primary/10 px-1 rounded flex-shrink-0">
+                        {v}
+                      </code>
                       <span>{d}</span>
                     </div>
                   ))}
@@ -371,14 +460,18 @@ function WorkflowDialog({
         </ScrollArea>
 
         <div className="flex items-center justify-end gap-2 px-6 py-4 border-t flex-shrink-0">
-          <Button variant="ghost" size="sm" onClick={onClose}>Cancel</Button>
+          <Button variant="ghost" size="sm" onClick={onClose}>
+            Cancel
+          </Button>
           <Button
             size="sm"
             disabled={!canSave || saveMutation.isPending}
             onClick={() => saveMutation.mutate()}
           >
-            {saveMutation.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" /> : null}
-            {isEdit ? 'Save changes' : 'Create workflow'}
+            {saveMutation.isPending ? (
+              <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" />
+            ) : null}
+            {isEdit ? "Save changes" : "Create workflow"}
           </Button>
         </div>
       </DialogContent>
@@ -401,56 +494,92 @@ function WorkflowCard({
   const qc = useQueryClient();
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
 
-  const triggerDef = catalog.triggers.find((t) => t.id === workflow.triggerEvent);
+  const triggerDef = catalog.triggers.find(
+    (t) => t.id === workflow.triggerEvent,
+  );
 
   const toggleMutation = useMutation({
     mutationFn: async (enable: boolean) => {
-      const res = await apiRequest('POST', `/api/custom-workflows/${workflow.id}/${enable ? 'enable' : 'disable'}`);
+      const res = await apiRequest(
+        "POST",
+        `/api/custom-workflows/${workflow.id}/${enable ? "enable" : "disable"}`,
+      );
       return res.json();
     },
     onSuccess: (_, enable) => {
-      qc.invalidateQueries({ queryKey: ['/api/custom-workflows'] });
-      toast({ title: enable ? 'Workflow enabled' : 'Workflow disabled', description: `"${workflow.name}" updated.` });
+      qc.invalidateQueries({ queryKey: ["/api/custom-workflows"] });
+      toast({
+        title: enable ? "Workflow enabled" : "Workflow disabled",
+        description: `"${workflow.name}" updated.`,
+      });
     },
-    onError: () => toast({ title: 'Error', description: 'Could not update workflow.', variant: 'destructive' }),
+    onError: () =>
+      toast({
+        title: "Error",
+        description: "Could not update workflow.",
+        variant: "destructive",
+      }),
   });
 
   const testMutation = useMutation({
     mutationFn: async () => {
-      const res = await apiRequest('POST', `/api/custom-workflows/${workflow.id}/test`);
+      const res = await apiRequest(
+        "POST",
+        `/api/custom-workflows/${workflow.id}/test`,
+      );
       return res.json();
     },
     onSuccess: (data: Record<string, unknown>) => {
-      qc.invalidateQueries({ queryKey: ['/api/custom-workflows'] });
+      qc.invalidateQueries({ queryKey: ["/api/custom-workflows"] });
       toast({
-        title: 'Test run complete',
-        description: `Actions run: ${data.actionsRun?.join(', ') ?? 'none'}`,
+        title: "Test run complete",
+        description: `Actions run: ${data.actionsRun?.join(", ") ?? "none"}`,
       });
     },
-    onError: () => toast({ title: 'Error', description: 'Test run failed.', variant: 'destructive' }),
+    onError: () =>
+      toast({
+        title: "Error",
+        description: "Test run failed.",
+        variant: "destructive",
+      }),
   });
 
   const deleteMutation = useMutation({
     mutationFn: async () => {
-      const res = await apiRequest('DELETE', `/api/custom-workflows/${workflow.id}`);
+      const res = await apiRequest(
+        "DELETE",
+        `/api/custom-workflows/${workflow.id}`,
+      );
       return res.json();
     },
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['/api/custom-workflows'] });
-      toast({ title: 'Workflow deleted', description: `"${workflow.name}" removed.` });
+      qc.invalidateQueries({ queryKey: ["/api/custom-workflows"] });
+      toast({
+        title: "Workflow deleted",
+        description: `"${workflow.name}" removed.`,
+      });
     },
-    onError: () => toast({ title: 'Error', description: 'Could not delete.', variant: 'destructive' }),
+    onError: () =>
+      toast({
+        title: "Error",
+        description: "Could not delete.",
+        variant: "destructive",
+      }),
   });
 
   const actions = workflow.actions as CustomAction[];
 
   return (
-    <Card className={`transition-all ${workflow.enabled ? 'border-primary/40 bg-primary/5' : ''}`}>
+    <Card
+      className={`transition-all ${workflow.enabled ? "border-primary/40 bg-primary/5" : ""}`}
+    >
       <CardHeader className="pb-2 pt-4 px-4">
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2 flex-wrap">
-              <CardTitle className="text-sm font-semibold leading-snug">{workflow.name}</CardTitle>
+              <CardTitle className="text-sm font-semibold leading-snug">
+                {workflow.name}
+              </CardTitle>
               {workflow.enabled && (
                 <Badge className="text-xs py-0 h-4 bg-green-500/20 text-green-600 border-green-500/30 hover:bg-green-500/20">
                   Active
@@ -458,12 +587,14 @@ function WorkflowCard({
               )}
               {workflow.runCount > 0 && (
                 <Badge variant="outline" className="text-xs py-0 h-4">
-                  {workflow.runCount} run{workflow.runCount !== 1 ? 's' : ''}
+                  {workflow.runCount} run{workflow.runCount !== 1 ? "s" : ""}
                 </Badge>
               )}
             </div>
             {workflow.description && (
-              <p className="text-xs text-muted-foreground mt-1 leading-relaxed">{workflow.description}</p>
+              <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+                {workflow.description}
+              </p>
             )}
           </div>
           <Switch
@@ -486,11 +617,17 @@ function WorkflowCard({
             {actions.slice(0, 3).map((a, i) => (
               <Badge key={i} variant="outline" className="text-xs gap-1 py-0.5">
                 {actionIcon(a.type)}
-                {catalog.actions.find((d) => d.id === a.type)?.label.split(' ').slice(0, 2).join(' ') ?? a.type}
+                {catalog.actions
+                  .find((d) => d.id === a.type)
+                  ?.label.split(" ")
+                  .slice(0, 2)
+                  .join(" ") ?? a.type}
               </Badge>
             ))}
             {actions.length > 3 && (
-              <Badge variant="outline" className="text-xs py-0.5">+{actions.length - 3} more</Badge>
+              <Badge variant="outline" className="text-xs py-0.5">
+                +{actions.length - 3} more
+              </Badge>
             )}
           </div>
         </div>
@@ -505,9 +642,11 @@ function WorkflowCard({
             disabled={testMutation.isPending}
             title="Test run"
           >
-            {testMutation.isPending
-              ? <Loader2 className="h-3 w-3 animate-spin" />
-              : <Play className="h-3 w-3" />}
+            {testMutation.isPending ? (
+              <Loader2 className="h-3 w-3 animate-spin" />
+            ) : (
+              <Play className="h-3 w-3" />
+            )}
             Test
           </Button>
           <Button
@@ -526,7 +665,11 @@ function WorkflowCard({
             onClick={() => setConfirmDeleteOpen(true)}
             disabled={deleteMutation.isPending}
           >
-            {deleteMutation.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : <Trash2 className="h-3 w-3" />}
+            {deleteMutation.isPending ? (
+              <Loader2 className="h-3 w-3 animate-spin" />
+            ) : (
+              <Trash2 className="h-3 w-3" />
+            )}
             Delete
           </Button>
         </div>
@@ -537,14 +680,18 @@ function WorkflowCard({
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Workflow</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete &ldquo;{workflow.name}&rdquo;? This action cannot be undone.
+              Are you sure you want to delete &ldquo;{workflow.name}&rdquo;?
+              This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-              onClick={() => { setConfirmDeleteOpen(false); deleteMutation.mutate(); }}
+              onClick={() => {
+                setConfirmDeleteOpen(false);
+                deleteMutation.mutate();
+              }}
             >
               Delete
             </AlertDialogAction>
@@ -559,19 +706,33 @@ function WorkflowCard({
 
 export function CustomWorkflowTab() {
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [editTarget, setEditTarget] = useState<CustomWorkflow | undefined>(undefined);
+  const [editTarget, setEditTarget] = useState<CustomWorkflow | undefined>(
+    undefined,
+  );
 
   const { data: workflows = [], isLoading } = useQuery<CustomWorkflow[]>({
-    queryKey: ['/api/custom-workflows'],
+    queryKey: ["/api/custom-workflows"],
   });
 
-  const { data: catalog } = useQuery<{ triggers: TriggerDef[]; actions: ActionDef[] }>({
-    queryKey: ['/api/custom-workflows/catalog'],
+  const { data: catalog } = useQuery<{
+    triggers: TriggerDef[];
+    actions: ActionDef[];
+  }>({
+    queryKey: ["/api/custom-workflows/catalog"],
   });
 
-  const openCreate = () => { setEditTarget(undefined); setDialogOpen(true); };
-  const openEdit = (w: CustomWorkflow) => { setEditTarget(w); setDialogOpen(true); };
-  const closeDialog = () => { setDialogOpen(false); setEditTarget(undefined); };
+  const openCreate = () => {
+    setEditTarget(undefined);
+    setDialogOpen(true);
+  };
+  const openEdit = (w: CustomWorkflow) => {
+    setEditTarget(w);
+    setDialogOpen(true);
+  };
+  const closeDialog = () => {
+    setDialogOpen(false);
+    setEditTarget(undefined);
+  };
 
   const enabledCount = workflows.filter((w) => w.enabled).length;
 
@@ -579,7 +740,10 @@ export function CustomWorkflowTab() {
     return (
       <div className="space-y-3">
         {[1, 2, 3].map((i) => (
-          <div key={i} className="flex items-center justify-between p-4 border rounded-lg">
+          <div
+            key={i}
+            className="flex items-center justify-between p-4 border rounded-lg"
+          >
             <div className="flex items-center gap-3 flex-1">
               <div className="h-9 w-9 rounded-lg bg-muted animate-pulse" />
               <div className="space-y-1.5 flex-1">
@@ -602,10 +766,15 @@ export function CustomWorkflowTab() {
           <h2 className="text-sm font-semibold">Custom Workflows</h2>
           <p className="text-xs text-muted-foreground mt-0.5">
             Build your own automations with any trigger + action combination.
-            {workflows.length > 0 && ` ${enabledCount}/${workflows.length} active.`}
+            {workflows.length > 0 &&
+              ` ${enabledCount}/${workflows.length} active.`}
           </p>
         </div>
-        <Button size="sm" onClick={openCreate} className="gap-1.5 flex-shrink-0">
+        <Button
+          size="sm"
+          onClick={openCreate}
+          className="gap-1.5 flex-shrink-0"
+        >
           <Plus className="h-3.5 w-3.5" />
           New Workflow
         </Button>
@@ -618,19 +787,39 @@ export function CustomWorkflowTab() {
             <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
               <Zap className="h-6 w-6 text-primary" />
             </div>
-            <p className="font-semibold text-sm mb-1">Build your first automation</p>
+            <p className="font-semibold text-sm mb-1">
+              Build your first automation
+            </p>
             <p className="text-xs text-muted-foreground mb-4 max-w-xs mx-auto">
-              Choose any trigger — a sale, a release going live, a milestone — and define exactly what happens next.
+              Choose any trigger — a sale, a release going live, a milestone —
+              and define exactly what happens next.
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 max-w-md mx-auto text-xs text-left mb-6">
               {[
-                { trigger: 'Beat sold', arrow: '→', action: 'Email myself + notify buyer' },
-                { trigger: 'Track uploaded', arrow: '→', action: 'Post to Instagram' },
-                { trigger: 'Every Monday', arrow: '→', action: 'Log weekly goals' },
+                {
+                  trigger: "Beat sold",
+                  arrow: "→",
+                  action: "Email myself + notify buyer",
+                },
+                {
+                  trigger: "Track uploaded",
+                  arrow: "→",
+                  action: "Post to Instagram",
+                },
+                {
+                  trigger: "Every Monday",
+                  arrow: "→",
+                  action: "Log weekly goals",
+                },
               ].map((ex) => (
-                <div key={ex.trigger} className="rounded-lg border bg-card p-2.5">
+                <div
+                  key={ex.trigger}
+                  className="rounded-lg border bg-card p-2.5"
+                >
                   <p className="font-medium text-foreground">{ex.trigger}</p>
-                  <p className="text-muted-foreground text-xs">{ex.arrow} {ex.action}</p>
+                  <p className="text-muted-foreground text-xs">
+                    {ex.arrow} {ex.action}
+                  </p>
                 </div>
               ))}
             </div>

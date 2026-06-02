@@ -14,8 +14,8 @@
  * still runs the compute on cache failure.
  */
 
-import { getRedisClient } from './redisConnectionFactory.js';
-import { logger } from '../logger.js';
+import { getRedisClient } from "./redisConnectionFactory.js";
+import { logger } from "../logger.js";
 
 const DEFAULT_TTL = 60; // 60 seconds
 
@@ -42,7 +42,7 @@ class QueryCache {
       const cached = await redis.get(`qcache:${key}`);
       return cached ? (JSON.parse(cached) as T) : null;
     } catch (err) {
-      warnOnce('get', err);
+      warnOnce("get", err);
       return null;
     }
   }
@@ -57,7 +57,7 @@ class QueryCache {
       const redis = await getRedisClient();
       await redis.setex(`qcache:${key}`, ttl, JSON.stringify(data));
     } catch (err) {
-      warnOnce('set', err);
+      warnOnce("set", err);
     }
   }
 
@@ -66,7 +66,11 @@ class QueryCache {
    * If the cache get/set fails, the compute still runs and its value is
    * returned uncached — the caller sees no error.
    */
-  async getOrCompute<T>(key: string, computeFn: () => Promise<T>, ttlSeconds?: number): Promise<T> {
+  async getOrCompute<T>(
+    key: string,
+    computeFn: () => Promise<T>,
+    ttlSeconds?: number,
+  ): Promise<T> {
     const cached = await this.get<T>(key);
     if (cached !== null) return cached;
     const result = await computeFn();
@@ -82,7 +86,7 @@ class QueryCache {
       const redis = await getRedisClient();
       await redis.del(`qcache:${key}`);
     } catch (err) {
-      warnOnce('invalidate', err);
+      warnOnce("invalidate", err);
     }
   }
 
@@ -97,7 +101,7 @@ class QueryCache {
         await redis.del(...keys);
       }
     } catch (err) {
-      warnOnce('invalidatePattern', err);
+      warnOnce("invalidatePattern", err);
     }
   }
 
@@ -107,12 +111,12 @@ class QueryCache {
   async clear(): Promise<void> {
     try {
       const redis = await getRedisClient();
-      const keys = await redis.keys('qcache:*');
+      const keys = await redis.keys("qcache:*");
       if (keys.length > 0) {
         await redis.del(...keys);
       }
     } catch (err) {
-      warnOnce('clear', err);
+      warnOnce("clear", err);
     }
   }
 
@@ -121,7 +125,7 @@ class QueryCache {
    */
   getStats() {
     return {
-      backend: 'PDIM',
+      backend: "PDIM",
     };
   }
 }
@@ -132,6 +136,9 @@ export const queryCache = new QueryCache();
 /**
  * Helper: Create cache key from query components
  */
-export function createCacheKey(prefix: string, ...parts: (string | number)[]): string {
-  return `${prefix}:${parts.join(':')}`;
+export function createCacheKey(
+  prefix: string,
+  ...parts: (string | number)[]
+): string {
+  return `${prefix}:${parts.join(":")}`;
 }

@@ -1,6 +1,6 @@
-import { requestContext } from './requestContext.js';
+import { requestContext } from "./requestContext.js";
 
-export type LogLevel = 'debug' | 'info' | 'warn' | 'error';
+export type LogLevel = "debug" | "info" | "warn" | "error";
 
 export interface LogEntry {
   timestamp: string;
@@ -31,16 +31,16 @@ const LEVEL_PRIORITY: Record<LogLevel, number> = {
 };
 
 const COLORS = {
-  reset: '\x1b[0m',
-  bright: '\x1b[1m',
-  dim: '\x1b[2m',
-  red: '\x1b[31m',
-  green: '\x1b[32m',
-  yellow: '\x1b[33m',
-  blue: '\x1b[34m',
-  magenta: '\x1b[35m',
-  cyan: '\x1b[36m',
-  gray: '\x1b[90m',
+  reset: "\x1b[0m",
+  bright: "\x1b[1m",
+  dim: "\x1b[2m",
+  red: "\x1b[31m",
+  green: "\x1b[32m",
+  yellow: "\x1b[33m",
+  blue: "\x1b[34m",
+  magenta: "\x1b[35m",
+  cyan: "\x1b[36m",
+  gray: "\x1b[90m",
 };
 
 const LEVEL_COLORS: Record<LogLevel, string> = {
@@ -51,10 +51,10 @@ const LEVEL_COLORS: Record<LogLevel, string> = {
 };
 
 const LEVEL_ICONS: Record<LogLevel, string> = {
-  debug: '🔍',
-  info: '✅',
-  warn: '⚠️',
-  error: '❌',
+  debug: "🔍",
+  info: "✅",
+  warn: "⚠️",
+  error: "❌",
 };
 
 class StructuredLogger {
@@ -66,15 +66,22 @@ class StructuredLogger {
   constructor(options: LoggerOptions = {}) {
     this.service = options.service;
     this.defaultMetadata = options.defaultMetadata;
-    this.isProduction = process.env.NODE_ENV === 'production' || !!process.env.REPLIT_DEPLOYMENT;
-    this.minLevel = (process.env.LOG_LEVEL as LogLevel) || (this.isProduction ? 'info' : 'debug');
+    this.isProduction =
+      process.env.NODE_ENV === "production" || !!process.env.REPLIT_DEPLOYMENT;
+    this.minLevel =
+      (process.env.LOG_LEVEL as LogLevel) ||
+      (this.isProduction ? "info" : "debug");
   }
 
   private shouldLog(level: LogLevel): boolean {
     return LEVEL_PRIORITY[level] >= LEVEL_PRIORITY[this.minLevel];
   }
 
-  private getRequestContext(): { requestId?: string; userId?: number; duration?: number } {
+  private getRequestContext(): {
+    requestId?: string;
+    userId?: number;
+    duration?: number;
+  } {
     const ctx = requestContext.getContext();
     if (!ctx) {
       return {};
@@ -94,10 +101,19 @@ class StructuredLogger {
     const color = LEVEL_COLORS[entry.level];
     const icon = LEVEL_ICONS[entry.level];
     const timestamp = new Date(entry.timestamp).toLocaleTimeString();
-    const reqId = entry.requestId ? `${COLORS.dim}[${entry.requestId.substring(0, 8)}]${COLORS.reset}` : '';
-    const svc = entry.service ? `${COLORS.cyan}[${entry.service}]${COLORS.reset}` : '';
-    const dur = entry.duration !== undefined ? `${COLORS.dim}(${entry.duration}ms)${COLORS.reset}` : '';
-    const usr = entry.userId ? `${COLORS.magenta}user:${entry.userId}${COLORS.reset}` : '';
+    const reqId = entry.requestId
+      ? `${COLORS.dim}[${entry.requestId.substring(0, 8)}]${COLORS.reset}`
+      : "";
+    const svc = entry.service
+      ? `${COLORS.cyan}[${entry.service}]${COLORS.reset}`
+      : "";
+    const dur =
+      entry.duration !== undefined
+        ? `${COLORS.dim}(${entry.duration}ms)${COLORS.reset}`
+        : "";
+    const usr = entry.userId
+      ? `${COLORS.magenta}user:${entry.userId}${COLORS.reset}`
+      : "";
 
     let output = `${COLORS.dim}${timestamp}${COLORS.reset} ${color}${icon} ${entry.level.toUpperCase().padEnd(5)}${COLORS.reset} ${reqId}${svc} ${entry.message} ${dur} ${usr}`;
 
@@ -111,15 +127,20 @@ class StructuredLogger {
         output += ` ${COLORS.dim}(${entry.error.code})${COLORS.reset}`;
       }
       if (entry.error.stack) {
-        const stackLines = entry.error.stack.split('\n').slice(1, 6);
-        output += `\n${COLORS.dim}${stackLines.join('\n')}${COLORS.reset}`;
+        const stackLines = entry.error.stack.split("\n").slice(1, 6);
+        output += `\n${COLORS.dim}${stackLines.join("\n")}${COLORS.reset}`;
       }
     }
 
     return output;
   }
 
-  private log(level: LogLevel, message: string, metadata?: Record<string, unknown>, error?: Error | unknown): void {
+  private log(
+    level: LogLevel,
+    message: string,
+    metadata?: Record<string, unknown>,
+    error?: Error | unknown,
+  ): void {
     if (!this.shouldLog(level)) {
       return;
     }
@@ -145,10 +166,10 @@ class StructuredLogger {
 
     const formattedMessage = this.formatMessage(entry);
 
-    if (level === 'error') {
-      process.stderr.write(formattedMessage + '\n');
+    if (level === "error") {
+      process.stderr.write(formattedMessage + "\n");
     } else {
-      process.stdout.write(formattedMessage + '\n');
+      process.stdout.write(formattedMessage + "\n");
     }
 
     for (const transport of globalTransports) {
@@ -160,12 +181,18 @@ class StructuredLogger {
           });
         }
       } catch (err) {
-        process.stderr.write(`[LogTransport Error] ${err instanceof Error ? err.message : String(err)}\n`);
+        process.stderr.write(
+          `[LogTransport Error] ${err instanceof Error ? err.message : String(err)}\n`,
+        );
       }
     }
   }
 
-  private formatError(error: unknown): { message: string; stack?: string; code?: string } {
+  private formatError(error: unknown): {
+    message: string;
+    stack?: string;
+    code?: string;
+  } {
     if (error instanceof Error) {
       return {
         message: error.message,
@@ -173,10 +200,10 @@ class StructuredLogger {
         code: (error as Record<string, unknown>).code,
       };
     }
-    if (typeof error === 'string') {
+    if (typeof error === "string") {
       return { message: error };
     }
-    if (typeof error === 'object' && error !== null) {
+    if (typeof error === "object" && error !== null) {
       const err = error as Record<string, unknown>;
       return {
         message: String(err.message || JSON.stringify(error)),
@@ -188,22 +215,26 @@ class StructuredLogger {
   }
 
   debug(message: string, metadata?: Record<string, unknown>): void {
-    this.log('debug', message, metadata);
+    this.log("debug", message, metadata);
   }
 
   info(message: string, metadata?: Record<string, unknown>): void {
-    this.log('info', message, metadata);
+    this.log("info", message, metadata);
   }
 
   warn(message: string, metadata?: Record<string, unknown>): void {
-    this.log('warn', message, metadata);
+    this.log("warn", message, metadata);
   }
 
-  error(message: string, errorOrMetadata?: Error | Record<string, unknown>, metadata?: Record<string, unknown>): void {
+  error(
+    message: string,
+    errorOrMetadata?: Error | Record<string, unknown>,
+    metadata?: Record<string, unknown>,
+  ): void {
     if (errorOrMetadata instanceof Error) {
-      this.log('error', message, metadata, errorOrMetadata);
+      this.log("error", message, metadata, errorOrMetadata);
     } else {
-      this.log('error', message, errorOrMetadata);
+      this.log("error", message, errorOrMetadata);
     }
   }
 
@@ -223,7 +254,9 @@ class StructuredLogger {
     return () => {
       const end = process.hrtime.bigint();
       const durationMs = Number(end - start) / 1_000_000;
-      this.info(`${label} completed`, { durationMs: Math.round(durationMs * 100) / 100 });
+      this.info(`${label} completed`, {
+        durationMs: Math.round(durationMs * 100) / 100,
+      });
     };
   }
 
@@ -245,15 +278,17 @@ class StructuredLogger {
   static createMemorySnapshot(): Record<string, number> {
     const usage = process.memoryUsage();
     return {
-      heapUsedMB: Math.round(usage.heapUsed / 1024 / 1024 * 100) / 100,
-      heapTotalMB: Math.round(usage.heapTotal / 1024 / 1024 * 100) / 100,
-      rssMB: Math.round(usage.rss / 1024 / 1024 * 100) / 100,
-      externalMB: Math.round(usage.external / 1024 / 1024 * 100) / 100,
+      heapUsedMB: Math.round((usage.heapUsed / 1024 / 1024) * 100) / 100,
+      heapTotalMB: Math.round((usage.heapTotal / 1024 / 1024) * 100) / 100,
+      rssMB: Math.round((usage.rss / 1024 / 1024) * 100) / 100,
+      externalMB: Math.round((usage.external / 1024 / 1024) * 100) / 100,
     };
   }
 }
 
-export const structuredLogger = new StructuredLogger({ service: 'max-booster' });
+export const structuredLogger = new StructuredLogger({
+  service: "max-booster",
+});
 
 export function createLogger(service: string): StructuredLogger {
   return new StructuredLogger({ service });

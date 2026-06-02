@@ -10,9 +10,17 @@
  * - Normalization and dithering options
  */
 
-import type { TrackEffects } from './audioEngine';
-import type { AudioFormat, SampleRate, BitDepth } from '../../../shared/audioConstants';
-import { AUDIO_FORMATS, SAMPLE_RATES, BIT_DEPTHS } from '../../../shared/audioConstants';
+import type { TrackEffects } from "./audioEngine";
+import type {
+  AudioFormat,
+  SampleRate,
+  BitDepth,
+} from "../../../shared/audioConstants";
+import {
+  AUDIO_FORMATS,
+  SAMPLE_RATES,
+  BIT_DEPTHS,
+} from "../../../shared/audioConstants";
 
 export interface ExportTrack {
   id: string;
@@ -28,7 +36,7 @@ export interface ExportTrack {
 
 export interface ExportOptions {
   tracks: ExportTrack[];
-  exportType: 'mixdown' | 'stems';
+  exportType: "mixdown" | "stems";
   sampleRate: SampleRate | number;
   bitDepth: BitDepth | number;
   audioFormat?: AudioFormat;
@@ -45,7 +53,7 @@ export interface ExportOptions {
 }
 
 export interface ExportResult {
-  type: 'mixdown' | 'stems';
+  type: "mixdown" | "stems";
   files: Array<{
     name: string;
     blob: Blob;
@@ -54,7 +62,7 @@ export interface ExportResult {
 }
 
 export interface ExportProgress {
-  stage: 'loading' | 'rendering' | 'encoding' | 'complete';
+  stage: "loading" | "rendering" | "encoding" | "complete";
   progress: number;
   message: string;
 }
@@ -63,7 +71,10 @@ export interface ExportProgress {
  * Convert AudioBuffer to WAV Blob
  * Writes proper WAV file header and PCM audio data
  */
-function audioBufferToWav(audioBuffer: AudioBuffer, bitDepth: number = 24): Blob {
+function audioBufferToWav(
+  audioBuffer: AudioBuffer,
+  bitDepth: number = 24,
+): Blob {
   const numChannels = audioBuffer.numberOfChannels;
   const sampleRate = audioBuffer.sampleRate;
   const format = bitDepth === 32 ? 3 : 1; // 3 = IEEE float, 1 = PCM
@@ -82,10 +93,10 @@ function audioBufferToWav(audioBuffer: AudioBuffer, bitDepth: number = 24): Blob
     }
   };
 
-  writeString(0, 'RIFF');
+  writeString(0, "RIFF");
   view.setUint32(4, 36 + length, true);
-  writeString(8, 'WAVE');
-  writeString(12, 'fmt ');
+  writeString(8, "WAVE");
+  writeString(12, "fmt ");
   view.setUint32(16, 16, true); // fmt chunk size
   view.setUint16(20, format, true); // audio format
   view.setUint16(22, numChannels, true);
@@ -93,7 +104,7 @@ function audioBufferToWav(audioBuffer: AudioBuffer, bitDepth: number = 24): Blob
   view.setUint32(28, sampleRate * blockAlign, true); // byte rate
   view.setUint16(32, blockAlign, true);
   view.setUint16(34, bitDepth, true);
-  writeString(36, 'data');
+  writeString(36, "data");
   view.setUint32(40, length, true);
 
   // Write interleaved PCM data
@@ -115,7 +126,8 @@ function audioBufferToWav(audioBuffer: AudioBuffer, bitDepth: number = 24): Blob
         view.setInt16(offset, int16, true);
         offset += 2;
       } else if (bitDepth === 24) {
-        const int24 = Math.max(-8388608, Math.min(8388607, sample * 8388608)) | 0;
+        const int24 =
+          Math.max(-8388608, Math.min(8388607, sample * 8388608)) | 0;
         view.setUint8(offset, int24 & 0xff);
         view.setUint8(offset + 1, (int24 >> 8) & 0xff);
         view.setUint8(offset + 2, (int24 >> 16) & 0xff);
@@ -127,13 +139,16 @@ function audioBufferToWav(audioBuffer: AudioBuffer, bitDepth: number = 24): Blob
     }
   }
 
-  return new Blob([buffer], { type: 'audio/wav' });
+  return new Blob([buffer], { type: "audio/wav" });
 }
 
 /**
  * Normalize audio buffer to target peak level
  */
-function normalizeAudioBuffer(audioBuffer: AudioBuffer, targetPeak: number = 0.95): AudioBuffer {
+function normalizeAudioBuffer(
+  audioBuffer: AudioBuffer,
+  targetPeak: number = 0.95,
+): AudioBuffer {
   let maxPeak = 0;
 
   // Find peak across all channels
@@ -184,7 +199,10 @@ function createSoftClipperCurve(thresholdDb: number = -0.3): Float32Array {
 /**
  * Load audio buffer from URL
  */
-async function loadAudioBuffer(url: string, context: OfflineAudioContext): Promise<AudioBuffer> {
+async function loadAudioBuffer(
+  url: string,
+  context: OfflineAudioContext,
+): Promise<AudioBuffer> {
   const response = await fetch(url);
   if (!response.ok) {
     throw new Error(`Failed to load audio from ${url}: ${response.statusText}`);
@@ -201,7 +219,7 @@ function buildTrackEffectsChain(
   context: OfflineAudioContext,
   source: AudioBufferSourceNode,
   track: ExportTrack,
-  destination: AudioNode
+  destination: AudioNode,
 ): void {
   let currentNode: AudioNode = source;
 
@@ -216,14 +234,14 @@ function buildTrackEffectsChain(
     const eq = track.effects.eq;
 
     const eqLow = context.createBiquadFilter();
-    eqLow.type = 'lowshelf';
+    eqLow.type = "lowshelf";
     eqLow.frequency.value = 80;
     eqLow.gain.value = eq.lowGain;
     currentNode.connect(eqLow);
     currentNode = eqLow;
 
     const eqMid = context.createBiquadFilter();
-    eqMid.type = 'peaking';
+    eqMid.type = "peaking";
     eqMid.frequency.value = eq.midFrequency || 1000;
     eqMid.Q.value = 1.2;
     eqMid.gain.value = eq.midGain;
@@ -231,7 +249,7 @@ function buildTrackEffectsChain(
     currentNode = eqMid;
 
     const eqHigh = context.createBiquadFilter();
-    eqHigh.type = 'highshelf';
+    eqHigh.type = "highshelf";
     eqHigh.frequency.value = 8000;
     eqHigh.gain.value = eq.highGain;
     currentNode.connect(eqHigh);
@@ -266,7 +284,7 @@ function buildTrackEffectsChain(
  */
 function buildMasterChain(
   context: OfflineAudioContext,
-  options: ExportOptions
+  options: ExportOptions,
 ): { input: GainNode; output: AudioNode } {
   // Master gain
   const masterGain = context.createGain();
@@ -290,7 +308,7 @@ function buildMasterChain(
   // Master limiter (soft clipper)
   const masterLimiter = context.createWaveShaper();
   masterLimiter.curve = createSoftClipperCurve(-0.3);
-  masterLimiter.oversample = '4x';
+  masterLimiter.oversample = "4x";
 
   // Connect master chain
   masterGain.connect(masterComp);
@@ -304,9 +322,13 @@ function buildMasterChain(
  */
 async function exportMixdown(
   options: ExportOptions,
-  onProgress?: (progress: ExportProgress) => void
+  onProgress?: (progress: ExportProgress) => void,
 ): Promise<Blob> {
-  onProgress?.({ stage: 'loading', progress: 0, message: 'Loading audio files...' });
+  onProgress?.({
+    stage: "loading",
+    progress: 0,
+    message: "Loading audio files...",
+  });
 
   // Check for solo tracks
   const hasSolo = options.tracks.some((t) => t.isSolo);
@@ -322,7 +344,7 @@ async function exportMixdown(
   for (let i = 0; i < tracksToRender.length; i++) {
     const track = tracksToRender[i];
     onProgress?.({
-      stage: 'loading',
+      stage: "loading",
       progress: (i / tracksToRender.length) * 30,
       message: `Loading ${track.name}...`,
     });
@@ -384,24 +406,36 @@ async function exportMixdown(
     }
   }
 
-  onProgress?.({ stage: 'rendering', progress: 40, message: 'Rendering audio...' });
+  onProgress?.({
+    stage: "rendering",
+    progress: 40,
+    message: "Rendering audio...",
+  });
 
   // Render offline context
   let renderedBuffer = await offlineContext.startRendering();
 
-  onProgress?.({ stage: 'encoding', progress: 70, message: 'Processing audio...' });
+  onProgress?.({
+    stage: "encoding",
+    progress: 70,
+    message: "Processing audio...",
+  });
 
   // Normalize if requested
   if (options.normalize) {
     renderedBuffer = normalizeAudioBuffer(renderedBuffer, 0.95);
   }
 
-  onProgress?.({ stage: 'encoding', progress: 90, message: 'Encoding WAV...' });
+  onProgress?.({ stage: "encoding", progress: 90, message: "Encoding WAV..." });
 
   // Convert to WAV
   const wavBlob = audioBufferToWav(renderedBuffer, options.bitDepth);
 
-  onProgress?.({ stage: 'complete', progress: 100, message: 'Export complete!' });
+  onProgress?.({
+    stage: "complete",
+    progress: 100,
+    message: "Export complete!",
+  });
 
   return wavBlob;
 }
@@ -411,7 +445,7 @@ async function exportMixdown(
  */
 async function exportStems(
   options: ExportOptions,
-  onProgress?: (progress: ExportProgress) => void
+  onProgress?: (progress: ExportProgress) => void,
 ): Promise<Array<{ name: string; blob: Blob; trackId: string }>> {
   const stems: Array<{ name: string; blob: Blob; trackId: string }> = [];
 
@@ -427,7 +461,7 @@ async function exportStems(
     const track = tracksToExport[i];
 
     onProgress?.({
-      stage: 'loading',
+      stage: "loading",
       progress: (i / tracksToExport.length) * 100,
       message: `Rendering ${track.name} (${i + 1}/${tracksToExport.length})...`,
     });
@@ -458,7 +492,12 @@ async function exportStems(
       source.buffer = buffer;
 
       // Build effects chain (without master chain for stems)
-      buildTrackEffectsChain(offlineContext, source, track, offlineContext.destination);
+      buildTrackEffectsChain(
+        offlineContext,
+        source,
+        track,
+        offlineContext.destination,
+      );
 
       // Start playback at clip's start time
       source.start(clipStartTime);
@@ -484,7 +523,11 @@ async function exportStems(
     }
   }
 
-  onProgress?.({ stage: 'complete', progress: 100, message: 'All stems rendered!' });
+  onProgress?.({
+    stage: "complete",
+    progress: 100,
+    message: "All stems rendered!",
+  });
 
   return stems;
 }
@@ -494,15 +537,15 @@ async function exportStems(
  */
 export async function exportAudio(
   options: ExportOptions,
-  onProgress?: (progress: ExportProgress) => void
+  onProgress?: (progress: ExportProgress) => void,
 ): Promise<ExportResult> {
-  if (options.exportType === 'mixdown') {
+  if (options.exportType === "mixdown") {
     const blob = await exportMixdown(options, onProgress);
     return {
-      type: 'mixdown',
+      type: "mixdown",
       files: [
         {
-          name: 'mixdown.wav',
+          name: "mixdown.wav",
           blob,
         },
       ],
@@ -510,7 +553,7 @@ export async function exportAudio(
   } else {
     const stems = await exportStems(options, onProgress);
     return {
-      type: 'stems',
+      type: "stems",
       files: stems,
     };
   }

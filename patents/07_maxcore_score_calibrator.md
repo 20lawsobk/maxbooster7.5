@@ -1,7 +1,7 @@
 UNITED STATES PATENT APPLICATION
 
-APPLICANT/ASSIGNEE:  B-Lawz Music LLC
-CORRESPONDENCE ADDRESS:  B-Lawz Music LLC
+APPLICANT/ASSIGNEE: B-Lawz Music LLC
+CORRESPONDENCE ADDRESS: B-Lawz Music LLC
 
 TITLE OF INVENTION
 
@@ -39,57 +39,58 @@ The training infrastructure comprises an 8TB (and growing) multi-domain dataset 
 
 The calibrator interacts with this infrastructure through two query categories:
 
-  Content signal queries: 5 queries, sequential with 200ms inter-query gaps
-    These query the LLM for content quality signals across the five primary model domains.
-    Sequential execution prevents queue saturation on the single-threaded LLM server.
+Content signal queries: 5 queries, sequential with 200ms inter-query gaps
+These query the LLM for content quality signals across the five primary model domains.
+Sequential execution prevents queue saturation on the single-threaded LLM server.
 
-  Model state queries: 4 queries, parallel via Promise.allSettled
-    These query lightweight GET endpoints for model training depth, weight sync status,
-    and calibration history without invoking LLM inference.
+Model state queries: 4 queries, parallel via Promise.allSettled
+These query lightweight GET endpoints for model training depth, weight sync status,
+and calibration history without invoking LLM inference.
 
 II. Default Scoring Weight Vector
 
 Ten scoring dimensions are defined with default weights:
 
-  engagement:                0.25  (predicted engagement rate — highest weight)
-  hookStrength:              0.18  (first-sentence attention capture)
-  callToActionEffectiveness: 0.13  (actionability of the post's ask)
-  sentiment:                 0.10  (emotional resonance and positivity)
-  clarity:                   0.08  (readability and message clarity)
-  brandAlignment:            0.08  (consistency with brand voice profile)
-  algorithmAlignment:        0.08  (platform algorithm optimization signals)
-  specificity:               0.05  (concreteness of claims and data)
-  emotionalArc:              0.03  (narrative arc from hook to CTA)
-  narrativeAuthenticity:     0.02  (domain-specific vocabulary authenticity)
+engagement: 0.25 (predicted engagement rate — highest weight)
+hookStrength: 0.18 (first-sentence attention capture)
+callToActionEffectiveness: 0.13 (actionability of the post's ask)
+sentiment: 0.10 (emotional resonance and positivity)
+clarity: 0.08 (readability and message clarity)
+brandAlignment: 0.08 (consistency with brand voice profile)
+algorithmAlignment: 0.08 (platform algorithm optimization signals)
+specificity: 0.05 (concreteness of claims and data)
+emotionalArc: 0.03 (narrative arc from hook to CTA)
+narrativeAuthenticity: 0.02 (domain-specific vocabulary authenticity)
 
 These weights sum to 1.00 and are normalized after calibration adjustment to maintain this property.
 
 III. Default Threshold Values
 
-  DEFAULT_THRESHOLD  = 81   (90% of Veo's ~90 baseline score on this rubric)
-  DEFAULT_FLOOR      = 73   (absolute minimum — approximately 90% of the gate threshold)
+DEFAULT_THRESHOLD = 81 (90% of Veo's ~90 baseline score on this rubric)
+DEFAULT_FLOOR = 73 (absolute minimum — approximately 90% of the gate threshold)
 
 IV. Signal Merging Engine
 
 The signal merging engine receives content generation signals from the sequential LLM queries and model training depth weights from the parallel model state queries. It produces calibrated weight adjustments as follows:
 
-  For each scoring dimension d:
-    base_weight(d) = DEFAULT_WEIGHTS[d]
-    generation_signal(d) = content signal query result for domain d (normalized 0–1)
-    training_depth_weight(d) = model state depth signal for domain d (normalized 0–1)
-    calibrated_weight(d) = base_weight(d) × (1 + α × generation_signal(d)) × (1 + β × training_depth_weight(d))
+For each scoring dimension d:
+base_weight(d) = DEFAULT_WEIGHTS[d]
+generation_signal(d) = content signal query result for domain d (normalized 0–1)
+training_depth_weight(d) = model state depth signal for domain d (normalized 0–1)
+calibrated_weight(d) = base_weight(d) × (1 + α × generation_signal(d)) × (1 + β × training_depth_weight(d))
 
 where α and β are calibration sensitivity constants. After all dimensions are adjusted, weights are renormalized to sum to 1.00.
 
 Calibrated threshold values are computed similarly:
-  if training_depth is high and generation signals are strong: threshold may rise above 81
-  if training infrastructure is in warming state: threshold remains at defaults
+if training_depth is high and generation signals are strong: threshold may rise above 81
+if training infrastructure is in warming state: threshold remains at defaults
 
 V. Calibration Refresh Cycle
 
 Calibration runs at startup and every 6 hours thereafter (CALIBRATION_TTL_MS = 6 × 3600 × 1000 ms). This interval is chosen to:
-  - Be short enough to capture new model training runs that complete within a session cycle
-  - Be long enough to avoid excessive load on the training infrastructure LLM server
+
+- Be short enough to capture new model training runs that complete within a session cycle
+- Be long enough to avoid excessive load on the training infrastructure LLM server
 
 A mutual exclusion guard prevents concurrent calibration runs. Calibration is triggered non-blockingly when the quality gate encounters a cold or warming readiness state.
 
@@ -97,11 +98,11 @@ VI. LLM Warmth Subsystem
 
 LLM inference servers typically enter a cold state after a period of inactivity, causing the first inference request to experience a latency spike (commonly 30–60 seconds for large models). The warmth subsystem fires a lightweight keepalive request to the LLM serving endpoint every 90 seconds:
 
-  startMaxCoreLLMWarmth():
-    Sets an interval at 90 seconds.
-    Each interval fires a minimal content signal request to the LLM.
-    The response is discarded; only the warmth effect on the server is used.
-    First inference attempts after warmth is active return in approximately 6 seconds.
+startMaxCoreLLMWarmth():
+Sets an interval at 90 seconds.
+Each interval fires a minimal content signal request to the LLM.
+The response is discarded; only the warmth effect on the server is used.
+First inference attempts after warmth is active return in approximately 6 seconds.
 
 The warmth subsystem is started at calibrator initialization and runs for the lifetime of the process.
 
@@ -109,20 +110,20 @@ VII. Training Readiness Profiler
 
 The readiness profiler examines four named base model weights (social_base, advertising_base, content_base, engagement_base) and the calibration status flag:
 
-  cold:    0 weights synced AND calibration not run
-    Summary: "No MaxCore base weights synced yet and calibration has not run — system is starting up"
+cold: 0 weights synced AND calibration not run
+Summary: "No MaxCore base weights synced yet and calibration has not run — system is starting up"
 
-  warming: Some weights synced OR calibration pending
-    Summary: "{n}/4 MaxCore base models present, calibration {complete/pending} — scores will
-              improve as the training simulator and memory sync complete their first cycle"
+warming: Some weights synced OR calibration pending
+Summary: "{n}/4 MaxCore base models present, calibration {complete/pending} — scores will
+improve as the training simulator and memory sync complete their first cycle"
 
-  ready:   All 4 weights synced, calibrated at defaults
-    Summary: "All 4 MaxCore base models synced, calibrated at defaults (gate=81, floor=73) —
-              scores will rise further as training simulator accumulates sessions"
+ready: All 4 weights synced, calibrated at defaults
+Summary: "All 4 MaxCore base models synced, calibrated at defaults (gate=81, floor=73) —
+scores will rise further as training simulator accumulates sessions"
 
-  optimal: All 4 weights synced, calibrated ABOVE defaults (gate > 81)
-    Summary: "All 4 MaxCore base models synced and training-calibrated (gate={g}, floor={f}) —
-              maximum quality capability active"
+optimal: All 4 weights synced, calibrated ABOVE defaults (gate > 81)
+Summary: "All 4 MaxCore base models synced and training-calibrated (gate={g}, floor={f}) —
+maximum quality capability active"
 
 The readiness profile is cached for 60 seconds to prevent re-querying on every quality gate invocation. It is returned with every quality gate failure response, providing contextual explanations and remediation guidance.
 
@@ -135,18 +136,18 @@ When calibration raises the gate threshold above the static default (indicating 
 IX. Public API
 
 The calibrator exposes four public functions:
-  getCalibratedWeights() → ScoreWeights
-    Returns the current calibrated weight vector, defaulting to DEFAULT_WEIGHTS if uncalibrated.
+getCalibratedWeights() → ScoreWeights
+Returns the current calibrated weight vector, defaulting to DEFAULT_WEIGHTS if uncalibrated.
 
-  getCalibratedThresholds() → CalibratedThresholds
-    Returns the current calibrated gate and floor thresholds, defaulting to {81, 73}.
+getCalibratedThresholds() → CalibratedThresholds
+Returns the current calibrated gate and floor thresholds, defaulting to {81, 73}.
 
-  isCalibrated() → boolean
-    Returns true if calibration has run at least once in the current process lifetime.
+isCalibrated() → boolean
+Returns true if calibration has run at least once in the current process lifetime.
 
-  runCalibration() → Promise<void>
-    Triggers an immediate non-blocking calibration cycle if one is not already in progress
-    and the TTL has elapsed.
+runCalibration() → Promise<void>
+Triggers an immediate non-blocking calibration cycle if one is not already in progress
+and the TTL has elapsed.
 
 These functions are consumed by the content quality gate to determine whether to use calibrated or default thresholds and weights for each quality gate invocation.
 
@@ -183,12 +184,12 @@ CLAIMS
 12. The system of claim 1, further comprising a non-blocking calibration trigger that initiates a calibration cycle when the quality gate encounters a cold or warming readiness state, enabling the next quality gate invocation to benefit from calibrated thresholds without delaying the current invocation.
 
 13. A method of calibrating a content quality scoring system using live training infrastructure signals, the method comprising:
-   at startup and at periodic refresh intervals, querying a training infrastructure for content generation quality signals using sequential requests with inter-query delays;
-   querying training depth and model state signals concurrently;
-   computing calibrated scoring dimension weights by adjusting default weights using functions of the content quality and training depth signals;
-   computing calibrated acceptance threshold and floor values based on the training depth and model state signals;
-   caching the calibrated weights and thresholds in process memory for use by a downstream content quality gate; and
-   providing the calibrated weights and thresholds as defaults to a per-user adaptive threshold system that can raise individual user thresholds above the calibrated default but not below it.
+    at startup and at periodic refresh intervals, querying a training infrastructure for content generation quality signals using sequential requests with inter-query delays;
+    querying training depth and model state signals concurrently;
+    computing calibrated scoring dimension weights by adjusting default weights using functions of the content quality and training depth signals;
+    computing calibrated acceptance threshold and floor values based on the training depth and model state signals;
+    caching the calibrated weights and thresholds in process memory for use by a downstream content quality gate; and
+    providing the calibrated weights and thresholds as defaults to a per-user adaptive threshold system that can raise individual user thresholds above the calibrated default but not below it.
 
 14. The method of claim 13, further comprising classifying the training infrastructure readiness into a plurality of levels and including a human-readable readiness summary and remediation hint with each quality gate failure response.
 
@@ -197,12 +198,12 @@ CLAIMS
 16. The method of claim 13, further comprising maintaining a language model inference server in a warm state by firing keepalive requests at a fixed interval, reducing first-inference latency from a cold-start latency of tens of seconds to a warm-inference latency within a configurable bound.
 
 17. A non-transitory computer-readable medium storing instructions that, when executed by a processor, implement:
-   a sequential content signal querier configured to query a language model inference server for a plurality of content quality signals with a configurable inter-query delay;
-   a parallel model state querier configured to concurrently query a plurality of model state endpoints that do not involve language model inference;
-   a signal merger configured to compute calibrated scoring dimension weights as a function of content quality signals and model training depth weights, normalized to sum to one;
-   a threshold calibrator configured to output a calibrated acceptance threshold and pressure floor based on merged signals;
-   a readiness classifier configured to determine a readiness level from the number of available base model weights and calibration recency; and
-   a warmth manager configured to fire periodic keepalive requests to the language model inference endpoint to prevent cold-start latency.
+    a sequential content signal querier configured to query a language model inference server for a plurality of content quality signals with a configurable inter-query delay;
+    a parallel model state querier configured to concurrently query a plurality of model state endpoints that do not involve language model inference;
+    a signal merger configured to compute calibrated scoring dimension weights as a function of content quality signals and model training depth weights, normalized to sum to one;
+    a threshold calibrator configured to output a calibrated acceptance threshold and pressure floor based on merged signals;
+    a readiness classifier configured to determine a readiness level from the number of available base model weights and calibration recency; and
+    a warmth manager configured to fire periodic keepalive requests to the language model inference endpoint to prevent cold-start latency.
 
 18. The computer-readable medium of claim 17, wherein the sequential content signal querier fires queries to a plurality of model domain endpoints representing distinct functional domains of the training infrastructure, and wherein the inter-query delay prevents simultaneous queuing of multiple inference requests on the server.
 

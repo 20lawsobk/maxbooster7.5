@@ -13,6 +13,7 @@ This Business Continuity Policy establishes Max Booster's framework for maintain
 ## 2. Scope
 
 This policy applies to:
+
 - All Max Booster business operations and services
 - Critical systems, applications, and infrastructure
 - Data centers and cloud infrastructure
@@ -22,39 +23,40 @@ This policy applies to:
 ## 3. Business Continuity Objectives
 
 ### 3.1 Recovery Time Objective (RTO)
+
 Maximum acceptable downtime for critical systems:
+
 - **Tier 1 (Critical):** RTO = 4 hours
   - Core platform and API
   - User authentication services
   - Database systems
   - Payment processing
-  
 - **Tier 2 (Important):** RTO = 24 hours
   - Analytics and reporting
   - Email services
   - Content delivery network
-  
 - **Tier 3 (Standard):** RTO = 72 hours
   - Internal tools and dashboards
   - Marketing websites
   - Non-critical integrations
 
 ### 3.2 Recovery Point Objective (RPO)
+
 Maximum acceptable data loss:
+
 - **Critical Data:** RPO = 1 hour (continuous replication)
   - User accounts and profiles
   - Financial transactions
   - Music projects and content
-  
 - **Important Data:** RPO = 4 hours (4-hour backups)
   - Analytics data
   - Audit logs
-  
 - **Standard Data:** RPO = 24 hours (daily backups)
   - System logs
   - Temporary files
 
 ### 3.3 Service Level Agreements (SLA)
+
 - **Platform Availability:** 99.9% uptime (8.76 hours downtime/year maximum)
 - **Data Durability:** 99.999999999% (11 nines)
 - **Support Response:** Critical issues within 1 hour
@@ -63,17 +65,19 @@ Maximum acceptable data loss:
 
 ### 4.1 Critical Business Functions
 
-| Function | Impact if Down 4hr | Impact if Down 24hr | Impact if Down 72hr | Priority |
-|----------|-------------------|---------------------|---------------------|----------|
-| Music streaming & access | High revenue loss | Severe reputation damage | Customer churn | Tier 1 |
-| User authentication | No user access | Service unusable | Legal issues | Tier 1 |
-| Payment processing | Revenue loss | Contract violations | Financial impact | Tier 1 |
-| API services | Partner failures | Integration failures | Partner churn | Tier 1 |
-| Analytics platform | Minor impact | Decision delays | Operational issues | Tier 2 |
-| Marketing website | Low impact | Lead loss | Brand impact | Tier 3 |
+| Function                 | Impact if Down 4hr | Impact if Down 24hr      | Impact if Down 72hr | Priority |
+| ------------------------ | ------------------ | ------------------------ | ------------------- | -------- |
+| Music streaming & access | High revenue loss  | Severe reputation damage | Customer churn      | Tier 1   |
+| User authentication      | No user access     | Service unusable         | Legal issues        | Tier 1   |
+| Payment processing       | Revenue loss       | Contract violations      | Financial impact    | Tier 1   |
+| API services             | Partner failures   | Integration failures     | Partner churn       | Tier 1   |
+| Analytics platform       | Minor impact       | Decision delays          | Operational issues  | Tier 2   |
+| Marketing website        | Low impact         | Lead loss                | Brand impact        | Tier 3   |
 
 ### 4.2 Dependencies
+
 Critical dependencies identified:
+
 - **Infrastructure:** AWS (primary), database clusters, CDN
 - **Third-Party Services:** Payment gateways, authentication providers
 - **Personnel:** On-call engineers, security team, support team
@@ -84,12 +88,14 @@ Critical dependencies identified:
 ### 5.1 Technology Recovery
 
 **Multi-Region Architecture:**
+
 - Primary region: US-East (AWS)
 - Secondary region: US-West (AWS)
 - Automatic failover for critical services
 - Geographic redundancy for data storage
 
 **Backup Strategy:**
+
 - Automated daily incremental backups
 - Weekly full backups
 - Monthly archival backups
@@ -97,12 +103,14 @@ Critical dependencies identified:
 - Backup testing monthly
 
 **Infrastructure as Code:**
+
 - All infrastructure defined as code (Terraform)
 - Version controlled in Git repositories
 - Automated deployment pipelines
 - Ability to rebuild infrastructure in hours
 
 **Database Recovery:**
+
 - Continuous replication to standby instances
 - Point-in-time recovery capability (7 days)
 - Automated failover with health checks
@@ -111,6 +119,7 @@ Critical dependencies identified:
 ### 5.2 Data Recovery
 
 **Data Protection Measures:**
+
 - RAID arrays for redundancy
 - Snapshot-based backups every 4 hours
 - Cross-region replication for critical data
@@ -118,6 +127,7 @@ Critical dependencies identified:
 - Retention policies per data classification
 
 **Recovery Procedures:**
+
 1. Identify data requiring recovery
 2. Verify backup availability and integrity
 3. Restore from most recent valid backup
@@ -132,6 +142,7 @@ Critical dependencies identified:
 **Trigger:** Complete failure of primary data center or region
 
 **Response:**
+
 1. Activate failover to secondary region (automated)
 2. Notify Incident Response Team
 3. Assess cause and estimated recovery time
@@ -147,6 +158,7 @@ Critical dependencies identified:
 **Trigger:** Confirmed data breach or ransomware infection
 
 **Response:**
+
 1. Activate Incident Response Policy
 2. Isolate affected systems immediately
 3. Restore from clean backups
@@ -162,6 +174,7 @@ Critical dependencies identified:
 **Trigger:** Hurricane, earthquake, flood, fire affecting facilities
 
 **Response:**
+
 1. Account for all personnel safety
 2. Activate remote work procedures
 3. Assess facility and infrastructure damage
@@ -177,6 +190,7 @@ Critical dependencies identified:
 **Trigger:** DDoS attack, targeted intrusion, or sophisticated cyber attack
 
 **Response:**
+
 1. Activate Incident Response Team
 2. Implement DDoS mitigation (CDN, rate limiting)
 3. Block malicious traffic sources
@@ -192,6 +206,7 @@ Critical dependencies identified:
 **Trigger:** Critical personnel unavailable (illness, departure, etc.)
 
 **Response:**
+
 1. Activate cross-training and succession plans
 2. Assign backup personnel to critical roles
 3. Access knowledge base and documentation
@@ -199,6 +214,7 @@ Critical dependencies identified:
 5. Accelerate hiring if long-term absence
 
 **Mitigation:**
+
 - Cross-training programs for critical roles
 - Documented procedures and runbooks
 - Succession planning for leadership
@@ -218,18 +234,21 @@ Critical dependencies identified:
 ### 7.2 Responsibilities
 
 **Crisis Management Lead:**
+
 - Activate and lead crisis management team
 - Make strategic decisions
 - Authorize expenditures and contracts
 - Communicate with board and investors
 
 **Technical Recovery Lead:**
+
 - Assess technical impact and recovery options
 - Direct technical recovery efforts
 - Coordinate with infrastructure and development teams
 - Provide recovery time estimates
 
 **Communications Lead:**
+
 - Manage internal and external communications
 - Coordinate customer notifications
 - Handle media inquiries
@@ -240,11 +259,13 @@ Critical dependencies identified:
 ### 8.1 Internal Communication
 
 **Executive Team:**
+
 - Notify immediately for Tier 1 incidents
 - Status updates every 2 hours during crisis
 - Debrief after incident resolution
 
 **All Employees:**
+
 - Initial notification within 1 hour
 - Regular updates via email/Slack
 - Return-to-normal announcement
@@ -252,19 +273,23 @@ Critical dependencies identified:
 ### 8.2 External Communication
 
 **Customers:**
+
 - Status page updates within 30 minutes
 - Email notifications for extended outages
 - Resolution confirmation
 
 **Partners and Vendors:**
+
 - Notify within 2 hours if integration affected
 - Coordination calls as needed
 
 **Regulators:**
+
 - GDPR breach notification (72 hours)
 - SOC2 auditor notification (material incidents)
 
 **Media:**
+
 - Prepared statements for public incidents
 - Spokesperson designated
 - Consistent messaging
@@ -282,16 +307,19 @@ Critical dependencies identified:
 ### 9.1 Testing Schedule
 
 **Monthly:**
+
 - Backup restoration test (sample restore)
 - Failover test (non-production)
 - Contact list verification
 
 **Quarterly:**
+
 - Tabletop exercise with crisis team
 - Disaster recovery drill (simulated incident)
 - Update BIA and risk assessment
 
 **Annually:**
+
 - Full disaster recovery test (actual failover)
 - Third-party BC audit
 - Comprehensive plan review and update
@@ -299,6 +327,7 @@ Critical dependencies identified:
 ### 9.2 Test Documentation
 
 All tests documented with:
+
 - Test objectives and scenarios
 - Participants involved
 - Results and observations
@@ -311,16 +340,19 @@ All tests documented with:
 ### 10.1 Employee Training
 
 **All Employees:**
+
 - Annual BC awareness training
 - Emergency contact procedures
 - Remote work readiness
 
 **Crisis Management Team:**
+
 - Quarterly crisis simulation exercises
 - Annual BC planning workshop
 - Leadership decision-making training
 
 **Technical Teams:**
+
 - Monthly recovery procedure drills
 - Runbook and documentation reviews
 - Infrastructure failover training
@@ -337,6 +369,7 @@ All tests documented with:
 ### 11.1 Vendor BC Requirements
 
 Critical vendors must:
+
 - Provide BC and DR plans
 - Meet or exceed our RTO/RPO requirements
 - Conduct annual BC testing
@@ -355,6 +388,7 @@ Critical vendors must:
 ### 12.1 Regular Updates
 
 Plan updated when:
+
 - New critical systems deployed
 - Infrastructure changes
 - Organizational changes
@@ -371,22 +405,26 @@ Plan updated when:
 ## 13. Roles and Responsibilities
 
 ### 13.1 Executive Management
+
 - Approve BC policy and funding
 - Support BC initiatives
 - Participate in annual testing
 
 ### 13.2 IT and Security Teams
+
 - Implement technical recovery capabilities
 - Maintain backup and redundancy systems
 - Execute recovery procedures
 - Conduct testing and drills
 
 ### 13.3 Department Heads
+
 - Identify critical business functions
 - Maintain department-specific recovery plans
 - Train teams on BC procedures
 
 ### 13.4 All Employees
+
 - Know emergency procedures
 - Maintain updated contact information
 - Participate in BC testing
@@ -397,6 +435,7 @@ Plan updated when:
 ### 14.1 BC Budget
 
 Annual budget allocated for:
+
 - Redundant infrastructure and systems
 - Backup and replication costs
 - BC testing and exercises
@@ -407,6 +446,7 @@ Annual budget allocated for:
 ### 14.2 Insurance Coverage
 
 **Cyber Insurance:**
+
 - Coverage amount: $5M
 - Breach response costs
 - Business interruption
@@ -414,6 +454,7 @@ Annual budget allocated for:
 - Legal and regulatory costs
 
 **Business Interruption Insurance:**
+
 - Revenue loss coverage
 - Extra expense coverage
 - Supply chain disruption
@@ -437,6 +478,7 @@ Annual budget allocated for:
 ## 16. Policy Review
 
 Reviewed annually or when:
+
 - Major incidents occur
 - Significant business changes
 - Regulatory requirements change

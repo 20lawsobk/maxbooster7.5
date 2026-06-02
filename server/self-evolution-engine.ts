@@ -1,54 +1,86 @@
 /**
  * Max Booster Self-Evolution Engine
- * 
+ *
  * REAL-TIME AUTONOMOUS PLATFORM UPGRADING SYSTEM
- * 
+ *
  * This system monitors the music industry, competitors, and technology landscape
  * then LITERALLY generates and deploys code changes to keep Max Booster ahead
  * of competition for all time.
- * 
+ *
  * Core Capabilities:
  * 1. Industry Monitoring - Tracks competitor features, API changes, standards
  * 2. Code Generation - AI writes new features, optimizations, fixes
  * 3. Automated Testing - Validates generated code before deployment
  * 4. Safe Deployment - Canary releases with automatic rollback
  * 5. Continuous Learning - Improves based on user feedback and metrics
- * 
+ *
  * NO EXTERNAL AI APIS - All code generation is custom-built
  */
 
-import { EventEmitter } from 'events';
-import http from 'http';
-import { logger } from './logger.js';
-import { storage } from './storage.js';
-import { customAI } from './custom-ai-engine.js';
-import { industryMonitor } from './services/industryMonitorService.js';
-import { storageService } from './services/storageService.js';
-import { evolutionRegistry, type EnhancementCategory } from './services/evolutionRegistry.js';
-import { isProductionEnv } from './lib/envHelpers.js';
+import { EventEmitter } from "events";
+import http from "http";
+import { logger } from "./logger.js";
+import { storage } from "./storage.js";
+import { customAI } from "./custom-ai-engine.js";
+import { industryMonitor } from "./services/industryMonitorService.js";
+import { storageService } from "./services/storageService.js";
+import {
+  evolutionRegistry,
+  type EnhancementCategory,
+} from "./services/evolutionRegistry.js";
+import { isProductionEnv } from "./lib/envHelpers.js";
 
 interface IndustryChange {
   id: string;
-  source: 'competitor' | 'streaming_platform' | 'social_media' | 'security' | 'regulation' | 'technology';
-  category: 'feature' | 'api_change' | 'standard' | 'optimization' | 'security_patch' | 'ux_pattern';
+  source:
+    | "competitor"
+    | "streaming_platform"
+    | "social_media"
+    | "security"
+    | "regulation"
+    | "technology";
+  category:
+    | "feature"
+    | "api_change"
+    | "standard"
+    | "optimization"
+    | "security_patch"
+    | "ux_pattern";
   title: string;
   description: string;
   detectedAt: Date;
-  urgency: 'critical' | 'high' | 'medium' | 'low';
+  urgency: "critical" | "high" | "medium" | "low";
   affectedModules: string[];
   competitiveImpact: number; // 0-100, how much this affects our competitive position
-  implementationComplexity: 'trivial' | 'simple' | 'moderate' | 'complex' | 'major';
+  implementationComplexity:
+    | "trivial"
+    | "simple"
+    | "moderate"
+    | "complex"
+    | "major";
   estimatedImplementationHours: number;
 }
 
 interface CodeUpgrade {
   id: string;
   changeId: string;
-  type: 'new_feature' | 'optimization' | 'bug_fix' | 'api_update' | 'security_patch' | 'standard_compliance';
+  type:
+    | "new_feature"
+    | "optimization"
+    | "bug_fix"
+    | "api_update"
+    | "security_patch"
+    | "standard_compliance";
   targetFiles: string[];
   generatedCode: Map<string, string>;
   testCode: string;
-  status: 'pending' | 'testing' | 'deploying' | 'deployed' | 'rolled_back' | 'failed';
+  status:
+    | "pending"
+    | "testing"
+    | "deploying"
+    | "deployed"
+    | "rolled_back"
+    | "failed";
   createdAt: Date;
   deployedAt?: Date;
   rollbackReason?: string;
@@ -78,7 +110,13 @@ interface CompetitorFeature {
 
 interface PlatformStandard {
   platform: string; // Spotify, Apple Music, YouTube, etc.
-  standardType: 'audio_format' | 'metadata' | 'api_version' | 'loudness' | 'artwork' | 'content_policy';
+  standardType:
+    | "audio_format"
+    | "metadata"
+    | "api_version"
+    | "loudness"
+    | "artwork"
+    | "content_policy";
   currentRequirement: string;
   maxBoosterCompliant: boolean;
   complianceDeadline?: Date;
@@ -99,797 +137,796 @@ const COMPETITOR_PLATFORMS: Array<{
   category: string;
   knownFeatures: string[];
 }> = [
-
   // ── MUSIC DISTRIBUTION ───────────────────────────────────────────────────
   {
-    name: 'DistroKid',
-    category: 'distribution',
+    name: "DistroKid",
+    category: "distribution",
     knownFeatures: [
-      'music distribution to all DSPs',
-      'royalty splits with collaborators',
-      'smart links and pre-save pages',
-      'Spotify for Artists integration',
-      'YouTube Content ID',
-      'daily streaming stats',
-      'album artwork creation tool',
-      'scheduled release date setting',
-      'leave a legacy feature',
-      'bank-direct royalty payouts',
+      "music distribution to all DSPs",
+      "royalty splits with collaborators",
+      "smart links and pre-save pages",
+      "Spotify for Artists integration",
+      "YouTube Content ID",
+      "daily streaming stats",
+      "album artwork creation tool",
+      "scheduled release date setting",
+      "leave a legacy feature",
+      "bank-direct royalty payouts",
     ],
   },
   {
-    name: 'TuneCore',
-    category: 'distribution',
+    name: "TuneCore",
+    category: "distribution",
     knownFeatures: [
-      'music distribution to all DSPs',
-      'music publishing administration',
-      'sync licensing marketplace',
-      'social media monetization',
-      'streaming analytics dashboard',
-      'advance funding for artists',
-      'publishing royalty collection worldwide',
+      "music distribution to all DSPs",
+      "music publishing administration",
+      "sync licensing marketplace",
+      "social media monetization",
+      "streaming analytics dashboard",
+      "advance funding for artists",
+      "publishing royalty collection worldwide",
     ],
   },
   {
-    name: 'CD Baby',
-    category: 'distribution',
+    name: "CD Baby",
+    category: "distribution",
     knownFeatures: [
-      'music distribution to all DSPs',
-      'physical CD and vinyl distribution',
-      'music publishing administration',
-      'sync licensing',
-      'YouTube Content ID',
-      'artist merch store',
-      'cover song licensing',
-      'radio tracking airplay reporting',
+      "music distribution to all DSPs",
+      "physical CD and vinyl distribution",
+      "music publishing administration",
+      "sync licensing",
+      "YouTube Content ID",
+      "artist merch store",
+      "cover song licensing",
+      "radio tracking airplay reporting",
     ],
   },
   {
-    name: 'AWAL',
-    category: 'distribution',
+    name: "AWAL",
+    category: "distribution",
     knownFeatures: [
-      'selective distribution with A&R support',
-      'marketing campaigns for signed artists',
-      'advanced real-time streaming analytics',
-      'editorial playlist pitching',
-      'brand partnerships',
-      'recording advances',
-      'label services deal structure',
+      "selective distribution with A&R support",
+      "marketing campaigns for signed artists",
+      "advanced real-time streaming analytics",
+      "editorial playlist pitching",
+      "brand partnerships",
+      "recording advances",
+      "label services deal structure",
     ],
   },
   {
-    name: 'UnitedMasters',
-    category: 'distribution',
+    name: "UnitedMasters",
+    category: "distribution",
     knownFeatures: [
-      'music distribution to all DSPs',
-      'brand deals and sync opportunities',
-      'first-party fan data ownership',
-      'advanced streaming analytics',
-      'select artist marketing support',
-      'direct brand licensing',
-      'UnitedMasters app for mobile distribution',
+      "music distribution to all DSPs",
+      "brand deals and sync opportunities",
+      "first-party fan data ownership",
+      "advanced streaming analytics",
+      "select artist marketing support",
+      "direct brand licensing",
+      "UnitedMasters app for mobile distribution",
     ],
   },
   {
-    name: 'Amuse',
-    category: 'distribution',
+    name: "Amuse",
+    category: "distribution",
     knownFeatures: [
-      'free music distribution',
-      'AI-powered artist insights',
-      'advance funding for artists',
-      'split payments',
-      'mobile-first iOS distribution app',
-      'Spotify playlist submission tool',
+      "free music distribution",
+      "AI-powered artist insights",
+      "advance funding for artists",
+      "split payments",
+      "mobile-first iOS distribution app",
+      "Spotify playlist submission tool",
     ],
   },
   {
-    name: 'Stem',
-    category: 'distribution',
+    name: "Stem",
+    category: "distribution",
     knownFeatures: [
-      'music distribution to all DSPs',
-      'split payments for collaborators',
-      'fan growth tools',
-      'detailed streaming reports',
-      'advance funding',
-      'multi-party royalty splits',
+      "music distribution to all DSPs",
+      "split payments for collaborators",
+      "fan growth tools",
+      "detailed streaming reports",
+      "advance funding",
+      "multi-party royalty splits",
     ],
   },
   {
-    name: 'Landr',
-    category: 'distribution',
+    name: "Landr",
+    category: "distribution",
     knownFeatures: [
-      'AI-powered audio mastering',
-      'music distribution to all DSPs',
-      'sample pack marketplace',
-      'online music collaboration tools',
-      'plugin marketplace',
-      'AI mixing feedback',
-      'mastering for stems',
+      "AI-powered audio mastering",
+      "music distribution to all DSPs",
+      "sample pack marketplace",
+      "online music collaboration tools",
+      "plugin marketplace",
+      "AI mixing feedback",
+      "mastering for stems",
     ],
   },
   {
-    name: 'Bandcamp',
-    category: 'distribution',
+    name: "Bandcamp",
+    category: "distribution",
     knownFeatures: [
-      'direct fan sales with artist-kept revenue',
-      'name-your-price album pricing',
-      'merch sales',
-      'fan subscriptions and memberships',
-      'artist discovery via genre tags',
-      'Bandcamp Friday artist promotions',
+      "direct fan sales with artist-kept revenue",
+      "name-your-price album pricing",
+      "merch sales",
+      "fan subscriptions and memberships",
+      "artist discovery via genre tags",
+      "Bandcamp Friday artist promotions",
     ],
   },
   {
-    name: 'RouteNote',
-    category: 'distribution',
+    name: "RouteNote",
+    category: "distribution",
     knownFeatures: [
-      'free music distribution to DSPs',
-      'revenue share distribution model',
-      'YouTube Content ID',
-      'streaming analytics',
-      'cover song licensing',
+      "free music distribution to DSPs",
+      "revenue share distribution model",
+      "YouTube Content ID",
+      "streaming analytics",
+      "cover song licensing",
     ],
   },
   {
-    name: 'Ditto Music',
-    category: 'distribution',
+    name: "Ditto Music",
+    category: "distribution",
     knownFeatures: [
-      'music distribution to all DSPs',
-      'record label in a box service',
-      'music publishing royalty collection',
-      'chart eligibility distribution',
-      'band/artist management tools',
+      "music distribution to all DSPs",
+      "record label in a box service",
+      "music publishing royalty collection",
+      "chart eligibility distribution",
+      "band/artist management tools",
     ],
   },
   {
-    name: 'ONErpm',
-    category: 'distribution',
+    name: "ONErpm",
+    category: "distribution",
     knownFeatures: [
-      'music distribution to all DSPs',
-      'YouTube channel management',
-      'label services',
-      'advance funding for artists',
-      'marketing and promotional support',
-      'streaming analytics',
+      "music distribution to all DSPs",
+      "YouTube channel management",
+      "label services",
+      "advance funding for artists",
+      "marketing and promotional support",
+      "streaming analytics",
     ],
   },
   {
-    name: 'Believe Digital',
-    category: 'distribution',
+    name: "Believe Digital",
+    category: "distribution",
     knownFeatures: [
-      'distribution for independent artists and labels',
-      'digital marketing services',
-      'A&R scouting and support',
-      'streaming platform relationship management',
-      'advanced analytics',
+      "distribution for independent artists and labels",
+      "digital marketing services",
+      "A&R scouting and support",
+      "streaming platform relationship management",
+      "advanced analytics",
     ],
   },
   {
-    name: 'Vydia',
-    category: 'distribution',
+    name: "Vydia",
+    category: "distribution",
     knownFeatures: [
-      'music video and audio distribution',
-      'YouTube Content ID monetization',
-      'rights management',
-      'automated royalty splits',
-      'video distribution to streaming platforms',
+      "music video and audio distribution",
+      "YouTube Content ID monetization",
+      "rights management",
+      "automated royalty splits",
+      "video distribution to streaming platforms",
     ],
   },
   {
-    name: 'Soundrop',
-    category: 'distribution',
+    name: "Soundrop",
+    category: "distribution",
     knownFeatures: [
-      'cover song licensing and distribution',
-      'original music distribution',
-      'per-release pricing model',
-      'automated mechanical license procurement',
+      "cover song licensing and distribution",
+      "original music distribution",
+      "per-release pricing model",
+      "automated mechanical license procurement",
     ],
   },
 
   // ── BEAT MARKETPLACES ────────────────────────────────────────────────────
   {
-    name: 'BeatStars',
-    category: 'beat_marketplace',
+    name: "BeatStars",
+    category: "beat_marketplace",
     knownFeatures: [
-      'beat marketplace with licensing tiers',
-      'exclusive and non-exclusive beat leases',
-      'built-in beat player storefront',
-      'beat collaboration splits',
-      'direct-to-fan beat selling',
-      'beat licensing contract generation',
-      'beat subscription plans for producers',
-      'built-in YouTube monetization for beats',
-      'beat analytics and play tracking',
-      'mobile app for producers',
-      'producer profile pages',
-      'stem file delivery',
+      "beat marketplace with licensing tiers",
+      "exclusive and non-exclusive beat leases",
+      "built-in beat player storefront",
+      "beat collaboration splits",
+      "direct-to-fan beat selling",
+      "beat licensing contract generation",
+      "beat subscription plans for producers",
+      "built-in YouTube monetization for beats",
+      "beat analytics and play tracking",
+      "mobile app for producers",
+      "producer profile pages",
+      "stem file delivery",
     ],
   },
   {
-    name: 'Airbit',
-    category: 'beat_marketplace',
+    name: "Airbit",
+    category: "beat_marketplace",
     knownFeatures: [
-      'beat marketplace with licensing tiers',
-      'customizable beat player embed',
-      'exclusive and non-exclusive licenses',
-      'beat licensing contract templates',
-      'beat analytics dashboard',
-      'direct PayPal and Stripe payouts',
-      'bulk beat upload',
-      'discount and coupon codes for beats',
-      'beat subscription bundles',
+      "beat marketplace with licensing tiers",
+      "customizable beat player embed",
+      "exclusive and non-exclusive licenses",
+      "beat licensing contract templates",
+      "beat analytics dashboard",
+      "direct PayPal and Stripe payouts",
+      "bulk beat upload",
+      "discount and coupon codes for beats",
+      "beat subscription bundles",
     ],
   },
   {
-    name: 'SoundClick',
-    category: 'beat_marketplace',
+    name: "SoundClick",
+    category: "beat_marketplace",
     knownFeatures: [
-      'beat and music selling marketplace',
-      'fan streaming pages',
-      'subscription-based fan membership',
-      'beat licensing',
-      'music charts and rankings',
+      "beat and music selling marketplace",
+      "fan streaming pages",
+      "subscription-based fan membership",
+      "beat licensing",
+      "music charts and rankings",
     ],
   },
   {
-    name: 'Traktrain',
-    category: 'beat_marketplace',
+    name: "Traktrain",
+    category: "beat_marketplace",
     knownFeatures: [
-      'beat marketplace',
-      'exclusive and non-exclusive licenses',
-      'beat licensing contracts',
-      'beat player embed for websites',
-      'analytics for beat plays and sales',
+      "beat marketplace",
+      "exclusive and non-exclusive licenses",
+      "beat licensing contracts",
+      "beat player embed for websites",
+      "analytics for beat plays and sales",
     ],
   },
   {
-    name: 'Beatbrokerz',
-    category: 'beat_marketplace',
+    name: "Beatbrokerz",
+    category: "beat_marketplace",
     knownFeatures: [
-      'beat marketplace',
-      'beat licensing tiers',
-      'bulk beat purchases',
-      'producer storefront pages',
+      "beat marketplace",
+      "beat licensing tiers",
+      "bulk beat purchases",
+      "producer storefront pages",
     ],
   },
   {
-    name: 'Soundee',
-    category: 'beat_marketplace',
+    name: "Soundee",
+    category: "beat_marketplace",
     knownFeatures: [
-      'beat marketplace',
-      'producer profile and storefront',
-      'beat licensing',
-      'audio sample marketplace',
+      "beat marketplace",
+      "producer profile and storefront",
+      "beat licensing",
+      "audio sample marketplace",
     ],
   },
   {
-    name: 'Rocbattle',
-    category: 'beat_marketplace',
+    name: "Rocbattle",
+    category: "beat_marketplace",
     knownFeatures: [
-      'beat marketplace',
-      'beat battle competitions',
-      'producer community',
-      'beat licensing',
+      "beat marketplace",
+      "beat battle competitions",
+      "producer community",
+      "beat licensing",
     ],
   },
   {
-    name: 'Soundgine',
-    category: 'beat_marketplace',
+    name: "Soundgine",
+    category: "beat_marketplace",
     knownFeatures: [
-      'embeddable beat player',
-      'beat licensing and sales',
-      'digital product delivery',
-      'beat store widget for websites',
+      "embeddable beat player",
+      "beat licensing and sales",
+      "digital product delivery",
+      "beat store widget for websites",
     ],
   },
 
   // ── AI MUSIC CREATION ─────────────────────────────────────────────────────
   {
-    name: 'Suno AI',
-    category: 'ai_music',
+    name: "Suno AI",
+    category: "ai_music",
     knownFeatures: [
-      'AI full song generation from text prompts',
-      'AI vocals and lyrics generation',
-      'genre-specific AI music creation',
-      'instant music production without instruments',
-      'royalty-free AI-generated music',
-      'mobile and web AI music app',
+      "AI full song generation from text prompts",
+      "AI vocals and lyrics generation",
+      "genre-specific AI music creation",
+      "instant music production without instruments",
+      "royalty-free AI-generated music",
+      "mobile and web AI music app",
     ],
   },
   {
-    name: 'Udio',
-    category: 'ai_music',
+    name: "Udio",
+    category: "ai_music",
     knownFeatures: [
-      'AI full song generation from text prompts',
-      'high-fidelity AI audio generation',
-      'AI lyric writing and vocal generation',
-      'genre and mood control',
-      'stem exports from AI generation',
+      "AI full song generation from text prompts",
+      "high-fidelity AI audio generation",
+      "AI lyric writing and vocal generation",
+      "genre and mood control",
+      "stem exports from AI generation",
     ],
   },
   {
-    name: 'Boomy',
-    category: 'ai_music',
+    name: "Boomy",
+    category: "ai_music",
     knownFeatures: [
-      'AI music generation in seconds',
-      'auto-distribute AI songs to DSPs',
-      'royalty sharing for AI-generated music',
-      'no-instrument music creation',
-      'AI genre selection and customization',
+      "AI music generation in seconds",
+      "auto-distribute AI songs to DSPs",
+      "royalty sharing for AI-generated music",
+      "no-instrument music creation",
+      "AI genre selection and customization",
     ],
   },
   {
-    name: 'AIVA',
-    category: 'ai_music',
+    name: "AIVA",
+    category: "ai_music",
     knownFeatures: [
-      'AI composition for film and games',
-      'orchestral and classical AI scoring',
-      'style influence from existing compositions',
-      'MIDI export from AI composition',
-      'commercial licensing of AI music',
+      "AI composition for film and games",
+      "orchestral and classical AI scoring",
+      "style influence from existing compositions",
+      "MIDI export from AI composition",
+      "commercial licensing of AI music",
     ],
   },
   {
-    name: 'Soundraw',
-    category: 'ai_music',
+    name: "Soundraw",
+    category: "ai_music",
     knownFeatures: [
-      'AI royalty-free music generation',
-      'real-time AI music customization',
-      'mood and energy AI music controls',
-      'commercial license included',
-      'DAW-ready stems download',
+      "AI royalty-free music generation",
+      "real-time AI music customization",
+      "mood and energy AI music controls",
+      "commercial license included",
+      "DAW-ready stems download",
     ],
   },
   {
-    name: 'Beatoven.ai',
-    category: 'ai_music',
+    name: "Beatoven.ai",
+    category: "ai_music",
     knownFeatures: [
-      'AI background music generation for video',
-      'mood-based AI music creation',
-      'multi-section AI track building',
-      'royalty-free AI music for content creators',
+      "AI background music generation for video",
+      "mood-based AI music creation",
+      "multi-section AI track building",
+      "royalty-free AI music for content creators",
     ],
   },
   {
-    name: 'Mubert',
-    category: 'ai_music',
+    name: "Mubert",
+    category: "ai_music",
     knownFeatures: [
-      'AI generative music streaming',
-      'API for AI music in apps',
-      'real-time AI music for video',
-      'royalty-free AI music licensing',
+      "AI generative music streaming",
+      "API for AI music in apps",
+      "real-time AI music for video",
+      "royalty-free AI music licensing",
     ],
   },
   {
-    name: 'Loudly',
-    category: 'ai_music',
+    name: "Loudly",
+    category: "ai_music",
     knownFeatures: [
-      'AI music generation for content creators',
-      'royalty-free AI music library',
-      'loop and stem AI generation',
-      'mood and genre AI controls',
+      "AI music generation for content creators",
+      "royalty-free AI music library",
+      "loop and stem AI generation",
+      "mood and genre AI controls",
     ],
   },
 
   // ── AI SOCIAL MEDIA MANAGEMENT ───────────────────────────────────────────
   {
-    name: 'Hootsuite',
-    category: 'social_management',
+    name: "Hootsuite",
+    category: "social_management",
     knownFeatures: [
-      'multi-platform social media scheduling',
-      'social media analytics and reporting',
-      'team collaboration for social posts',
-      'social listening and monitoring',
-      'AI-powered caption suggestions',
-      'best time to post AI recommendations',
-      'social media ad management',
-      'inbox unified messaging',
+      "multi-platform social media scheduling",
+      "social media analytics and reporting",
+      "team collaboration for social posts",
+      "social listening and monitoring",
+      "AI-powered caption suggestions",
+      "best time to post AI recommendations",
+      "social media ad management",
+      "inbox unified messaging",
     ],
   },
   {
-    name: 'Buffer',
-    category: 'social_management',
+    name: "Buffer",
+    category: "social_management",
     knownFeatures: [
-      'social media post scheduling',
-      'multi-platform content calendar',
-      'AI post writing assistant',
-      'social media analytics',
-      'link in bio landing page',
-      'engagement reply tools',
-      'hashtag manager',
+      "social media post scheduling",
+      "multi-platform content calendar",
+      "AI post writing assistant",
+      "social media analytics",
+      "link in bio landing page",
+      "engagement reply tools",
+      "hashtag manager",
     ],
   },
   {
-    name: 'Sprout Social',
-    category: 'social_management',
+    name: "Sprout Social",
+    category: "social_management",
     knownFeatures: [
-      'social media scheduling and publishing',
-      'social listening and sentiment analysis',
-      'AI-powered social analytics',
-      'CRM integration for social',
-      'team workflow and approval',
-      'competitor social analysis',
-      'influencer identification',
+      "social media scheduling and publishing",
+      "social listening and sentiment analysis",
+      "AI-powered social analytics",
+      "CRM integration for social",
+      "team workflow and approval",
+      "competitor social analysis",
+      "influencer identification",
     ],
   },
   {
-    name: 'Later',
-    category: 'social_management',
+    name: "Later",
+    category: "social_management",
     knownFeatures: [
-      'visual social media content calendar',
-      'Instagram post and Reels scheduling',
-      'TikTok scheduling',
-      'link in bio tool',
-      'AI caption writer',
-      'hashtag suggestions',
-      'best time to post analytics',
-      'user-generated content repurposing',
+      "visual social media content calendar",
+      "Instagram post and Reels scheduling",
+      "TikTok scheduling",
+      "link in bio tool",
+      "AI caption writer",
+      "hashtag suggestions",
+      "best time to post analytics",
+      "user-generated content repurposing",
     ],
   },
   {
-    name: 'Metricool',
-    category: 'social_management',
+    name: "Metricool",
+    category: "social_management",
     knownFeatures: [
-      'social media scheduling across all platforms',
-      'unified analytics dashboard',
-      'competitor social analytics',
-      'hashtag analytics',
-      'TikTok and YouTube analytics',
-      'social ad performance tracking',
-      'best time to post AI',
+      "social media scheduling across all platforms",
+      "unified analytics dashboard",
+      "competitor social analytics",
+      "hashtag analytics",
+      "TikTok and YouTube analytics",
+      "social ad performance tracking",
+      "best time to post AI",
     ],
   },
   {
-    name: 'Planoly',
-    category: 'social_management',
+    name: "Planoly",
+    category: "social_management",
     knownFeatures: [
-      'Instagram visual feed planner',
-      'social media scheduling',
-      'Reels and Stories scheduling',
-      'link in bio page builder',
-      'hashtag manager',
-      'content analytics',
+      "Instagram visual feed planner",
+      "social media scheduling",
+      "Reels and Stories scheduling",
+      "link in bio page builder",
+      "hashtag manager",
+      "content analytics",
     ],
   },
   {
-    name: 'Vista Social',
-    category: 'social_management',
+    name: "Vista Social",
+    category: "social_management",
     knownFeatures: [
-      'social media scheduling and publishing',
-      'AI post content generator',
-      'review management across platforms',
-      'social inbox unified messaging',
-      'analytics and reporting',
+      "social media scheduling and publishing",
+      "AI post content generator",
+      "review management across platforms",
+      "social inbox unified messaging",
+      "analytics and reporting",
     ],
   },
   {
-    name: 'Publer',
-    category: 'social_management',
+    name: "Publer",
+    category: "social_management",
     knownFeatures: [
-      'AI-powered social media post generator',
-      'social media scheduling',
-      'bulk scheduling via CSV',
-      'watermarking media for posts',
-      'analytics dashboard',
-      'recycling evergreen content',
+      "AI-powered social media post generator",
+      "social media scheduling",
+      "bulk scheduling via CSV",
+      "watermarking media for posts",
+      "analytics dashboard",
+      "recycling evergreen content",
     ],
   },
 
   // ── MUSIC MARKETING & ARTIST TOOLS ───────────────────────────────────────
   {
-    name: 'Submithub',
-    category: 'music_marketing',
+    name: "Submithub",
+    category: "music_marketing",
     knownFeatures: [
-      'music submission to playlist curators',
-      'music blog submission',
-      'TikTok influencer pitching',
-      'YouTube channel submission',
-      'guaranteed curator feedback',
-      'promotion performance analytics',
+      "music submission to playlist curators",
+      "music blog submission",
+      "TikTok influencer pitching",
+      "YouTube channel submission",
+      "guaranteed curator feedback",
+      "promotion performance analytics",
     ],
   },
   {
-    name: 'Groover',
-    category: 'music_marketing',
+    name: "Groover",
+    category: "music_marketing",
     knownFeatures: [
-      'music promotion to blogs and playlists',
-      'guaranteed feedback from curators',
-      'influencer and press pitching',
-      'radio station pitching',
-      'streaming platform pitching',
+      "music promotion to blogs and playlists",
+      "guaranteed feedback from curators",
+      "influencer and press pitching",
+      "radio station pitching",
+      "streaming platform pitching",
     ],
   },
   {
-    name: 'Feature.fm',
-    category: 'music_marketing',
+    name: "Feature.fm",
+    category: "music_marketing",
     knownFeatures: [
-      'smart music links',
-      'pre-save campaign tool',
-      'fan data capture from links',
-      'music ad targeting on social media',
-      'release countdown pages',
-      'artist website builder',
+      "smart music links",
+      "pre-save campaign tool",
+      "fan data capture from links",
+      "music ad targeting on social media",
+      "release countdown pages",
+      "artist website builder",
     ],
   },
   {
-    name: 'Hypeddit',
-    category: 'music_marketing',
+    name: "Hypeddit",
+    category: "music_marketing",
     knownFeatures: [
-      'music promotion gate campaigns',
-      'free download in exchange for social follow',
-      'TikTok sound growth tools',
-      'SoundCloud promotion',
-      'Spotify playlist promotion',
+      "music promotion gate campaigns",
+      "free download in exchange for social follow",
+      "TikTok sound growth tools",
+      "SoundCloud promotion",
+      "Spotify playlist promotion",
     ],
   },
   {
-    name: 'Linkfire',
-    category: 'music_marketing',
+    name: "Linkfire",
+    category: "music_marketing",
     knownFeatures: [
-      'smart music links for all DSPs',
-      'pre-save and pre-add campaigns',
-      'fan behavior analytics from links',
-      'album and tour smart pages',
-      'retargeting pixel support',
+      "smart music links for all DSPs",
+      "pre-save and pre-add campaigns",
+      "fan behavior analytics from links",
+      "album and tour smart pages",
+      "retargeting pixel support",
     ],
   },
   {
-    name: 'Chartmetric',
-    category: 'music_marketing',
+    name: "Chartmetric",
+    category: "music_marketing",
     knownFeatures: [
-      'real-time music streaming analytics',
-      'playlist tracking across all DSPs',
-      'artist benchmark comparisons',
-      'TikTok and social trend analytics',
-      'A&R discovery tools',
-      'radio airplay tracking',
+      "real-time music streaming analytics",
+      "playlist tracking across all DSPs",
+      "artist benchmark comparisons",
+      "TikTok and social trend analytics",
+      "A&R discovery tools",
+      "radio airplay tracking",
     ],
   },
   {
-    name: 'Soundcharts',
-    category: 'music_marketing',
+    name: "Soundcharts",
+    category: "music_marketing",
     knownFeatures: [
-      'real-time chart position tracking',
-      'radio airplay monitoring',
-      'social media performance analytics',
-      'streaming platform analytics',
-      'playlist tracking',
-      'competitor artist benchmarking',
+      "real-time chart position tracking",
+      "radio airplay monitoring",
+      "social media performance analytics",
+      "streaming platform analytics",
+      "playlist tracking",
+      "competitor artist benchmarking",
     ],
   },
   {
-    name: 'ReverbNation',
-    category: 'music_marketing',
+    name: "ReverbNation",
+    category: "music_marketing",
     knownFeatures: [
-      'artist promotional tools',
-      'gig and venue booking',
-      'music distribution',
-      'fan email marketing',
-      'EPK electronic press kit',
-      'music licensing opportunities',
+      "artist promotional tools",
+      "gig and venue booking",
+      "music distribution",
+      "fan email marketing",
+      "EPK electronic press kit",
+      "music licensing opportunities",
     ],
   },
   {
-    name: 'Toneden',
-    category: 'music_marketing',
+    name: "Toneden",
+    category: "music_marketing",
     knownFeatures: [
-      'smart link pages for music',
-      'pre-save and pre-add campaigns',
-      'fan data capture tools',
-      'social media retargeting from links',
-      'contest and giveaway campaigns',
+      "smart link pages for music",
+      "pre-save and pre-add campaigns",
+      "fan data capture tools",
+      "social media retargeting from links",
+      "contest and giveaway campaigns",
     ],
   },
   {
-    name: 'Promoly',
-    category: 'music_marketing',
+    name: "Promoly",
+    category: "music_marketing",
     knownFeatures: [
-      'music press and blog pitching',
-      'email promo campaign tracking',
-      'media contact database',
-      'open and click analytics for promos',
+      "music press and blog pitching",
+      "email promo campaign tracking",
+      "media contact database",
+      "open and click analytics for promos",
     ],
   },
 
   // ── DAWS (DIGITAL AUDIO WORKSTATIONS) ────────────────────────────────────
   {
-    name: 'FL Studio',
-    category: 'daw',
+    name: "FL Studio",
+    category: "daw",
     knownFeatures: [
-      'pattern-based beat making',
-      'step sequencer',
-      'piano roll editor',
-      'built-in mixer with effects chains',
-      'lifetime free updates',
-      'VST plugin support',
-      'MIDI controller integration',
-      'audio recording and editing',
-      'Edison audio editor',
-      'ZGameEditor Visualizer',
-      'integrated beat marketplace plugins',
-      'mobile version FL Studio Mobile',
+      "pattern-based beat making",
+      "step sequencer",
+      "piano roll editor",
+      "built-in mixer with effects chains",
+      "lifetime free updates",
+      "VST plugin support",
+      "MIDI controller integration",
+      "audio recording and editing",
+      "Edison audio editor",
+      "ZGameEditor Visualizer",
+      "integrated beat marketplace plugins",
+      "mobile version FL Studio Mobile",
     ],
   },
   {
-    name: 'Ableton Live',
-    category: 'daw',
+    name: "Ableton Live",
+    category: "daw",
     knownFeatures: [
-      'session view for live performance',
-      'arrangement view for production',
-      'Max for Live modular integration',
-      'built-in instruments and effects',
-      'VST and AU plugin support',
-      'MIDI and audio clip launching',
-      'warping and time-stretching',
-      'built-in synthesizers',
-      'Push hardware controller integration',
-      'Packs sample library ecosystem',
+      "session view for live performance",
+      "arrangement view for production",
+      "Max for Live modular integration",
+      "built-in instruments and effects",
+      "VST and AU plugin support",
+      "MIDI and audio clip launching",
+      "warping and time-stretching",
+      "built-in synthesizers",
+      "Push hardware controller integration",
+      "Packs sample library ecosystem",
     ],
   },
   {
-    name: 'Logic Pro',
-    category: 'daw',
+    name: "Logic Pro",
+    category: "daw",
     knownFeatures: [
-      'professional audio recording and mixing',
-      'built-in AI stem splitter',
-      'Drummer virtual session drummer AI',
-      'built-in mastering tools',
-      'large instrument and loop library',
-      'AU plugin support',
-      'Spatial Audio and Dolby Atmos mixing',
-      'GarageBand project import',
-      'Score editor for notation',
-      'Logic Remote iPad controller',
-      'Flex Time audio editing',
+      "professional audio recording and mixing",
+      "built-in AI stem splitter",
+      "Drummer virtual session drummer AI",
+      "built-in mastering tools",
+      "large instrument and loop library",
+      "AU plugin support",
+      "Spatial Audio and Dolby Atmos mixing",
+      "GarageBand project import",
+      "Score editor for notation",
+      "Logic Remote iPad controller",
+      "Flex Time audio editing",
     ],
   },
   {
-    name: 'Pro Tools',
-    category: 'daw',
+    name: "Pro Tools",
+    category: "daw",
     knownFeatures: [
-      'industry-standard recording and mixing',
-      'advanced audio editing',
-      'cloud collaboration sessions',
-      'AAX plugin ecosystem',
-      'AVID hardware integration',
-      'clip gain and automation',
-      'Dolby Atmos mixing',
-      'subscription and perpetual license options',
+      "industry-standard recording and mixing",
+      "advanced audio editing",
+      "cloud collaboration sessions",
+      "AAX plugin ecosystem",
+      "AVID hardware integration",
+      "clip gain and automation",
+      "Dolby Atmos mixing",
+      "subscription and perpetual license options",
     ],
   },
   {
-    name: 'Studio One',
-    category: 'daw',
+    name: "Studio One",
+    category: "daw",
     knownFeatures: [
-      'drag-and-drop workflow',
-      'built-in mastering suite Project page',
-      'Melodyne pitch correction bundled',
-      'scratch pad for ideas',
-      'VST and AU plugin support',
-      'built-in chord track and key detection',
-      'impact XT drum machine',
-      'free Studio One Prime tier',
+      "drag-and-drop workflow",
+      "built-in mastering suite Project page",
+      "Melodyne pitch correction bundled",
+      "scratch pad for ideas",
+      "VST and AU plugin support",
+      "built-in chord track and key detection",
+      "impact XT drum machine",
+      "free Studio One Prime tier",
     ],
   },
   {
-    name: 'Cubase',
-    category: 'daw',
+    name: "Cubase",
+    category: "daw",
     knownFeatures: [
-      'professional MIDI sequencing',
-      'advanced audio editing',
-      'VariAudio pitch correction',
-      'built-in chord pads',
-      'Steinberg VST plugin support',
-      'remote recording',
-      'score editor for notation',
+      "professional MIDI sequencing",
+      "advanced audio editing",
+      "VariAudio pitch correction",
+      "built-in chord pads",
+      "Steinberg VST plugin support",
+      "remote recording",
+      "score editor for notation",
     ],
   },
   {
-    name: 'Reaper',
-    category: 'daw',
+    name: "Reaper",
+    category: "daw",
     knownFeatures: [
-      'lightweight highly customizable DAW',
-      'affordable perpetual license',
-      'VST and AU plugin support',
-      'scripting with Lua and Python',
-      'flexible routing',
-      'active community themes and scripts',
+      "lightweight highly customizable DAW",
+      "affordable perpetual license",
+      "VST and AU plugin support",
+      "scripting with Lua and Python",
+      "flexible routing",
+      "active community themes and scripts",
     ],
   },
   {
-    name: 'Bitwig Studio',
-    category: 'daw',
+    name: "Bitwig Studio",
+    category: "daw",
     knownFeatures: [
-      'modular device system The Grid',
-      'cross-platform Windows Mac Linux',
-      'live performance clip launcher',
-      'VST plugin support',
-      'Bitwig hardware controller integration',
-      'note expression per-note modulation',
+      "modular device system The Grid",
+      "cross-platform Windows Mac Linux",
+      "live performance clip launcher",
+      "VST plugin support",
+      "Bitwig hardware controller integration",
+      "note expression per-note modulation",
     ],
   },
   {
-    name: 'Reason Studios',
-    category: 'daw',
+    name: "Reason Studios",
+    category: "daw",
     knownFeatures: [
-      'rack-based modular synthesizers',
-      'built-in instruments and effects',
-      'VST plugin support via Rack Extension',
-      'combinators for complex patches',
-      'built-in mastering suite',
-      'Reason Plus subscription model',
+      "rack-based modular synthesizers",
+      "built-in instruments and effects",
+      "VST plugin support via Rack Extension",
+      "combinators for complex patches",
+      "built-in mastering suite",
+      "Reason Plus subscription model",
     ],
   },
   {
-    name: 'GarageBand',
-    category: 'daw',
+    name: "GarageBand",
+    category: "daw",
     knownFeatures: [
-      'free DAW for macOS and iOS',
-      'Drummer AI beat generation',
-      'large loop library',
-      'basic recording and mixing',
-      'Logic Pro project upgrade path',
-      'iPhone and iPad music creation',
+      "free DAW for macOS and iOS",
+      "Drummer AI beat generation",
+      "large loop library",
+      "basic recording and mixing",
+      "Logic Pro project upgrade path",
+      "iPhone and iPad music creation",
     ],
   },
   {
-    name: 'Cakewalk by BandLab',
-    category: 'daw',
+    name: "Cakewalk by BandLab",
+    category: "daw",
     knownFeatures: [
-      'free professional DAW on Windows',
-      'ProChannel mastering console',
-      'VST plugin support',
-      'BandLab cloud integration',
-      'MIDI sequencing',
-      'audio recording and editing',
+      "free professional DAW on Windows",
+      "ProChannel mastering console",
+      "VST plugin support",
+      "BandLab cloud integration",
+      "MIDI sequencing",
+      "audio recording and editing",
     ],
   },
   {
-    name: 'Adobe Audition',
-    category: 'daw',
+    name: "Adobe Audition",
+    category: "daw",
     knownFeatures: [
-      'professional audio editing and restoration',
-      'multi-track mixing',
-      'AI noise reduction and speech cleanup',
-      'podcast and broadcast audio tools',
-      'Adobe Creative Cloud integration',
+      "professional audio editing and restoration",
+      "multi-track mixing",
+      "AI noise reduction and speech cleanup",
+      "podcast and broadcast audio tools",
+      "Adobe Creative Cloud integration",
     ],
   },
   {
-    name: 'Soundtrap',
-    category: 'daw',
+    name: "Soundtrap",
+    category: "daw",
     knownFeatures: [
-      'browser-based online DAW',
-      'real-time collaboration in the browser',
-      'built-in loops and instruments',
-      'podcast recording tools',
-      'Spotify integration',
-      'education-focused music creation',
+      "browser-based online DAW",
+      "real-time collaboration in the browser",
+      "built-in loops and instruments",
+      "podcast recording tools",
+      "Spotify integration",
+      "education-focused music creation",
     ],
   },
   {
-    name: 'BandLab',
-    category: 'daw',
+    name: "BandLab",
+    category: "daw",
     knownFeatures: [
-      'free browser and mobile DAW',
-      'social music creation community',
-      'real-time online collaboration',
-      'built-in mastering',
-      'music distribution via BandLab Distribution',
-      'fan engagement tools',
-      'split royalties',
+      "free browser and mobile DAW",
+      "social music creation community",
+      "real-time online collaboration",
+      "built-in mastering",
+      "music distribution via BandLab Distribution",
+      "fan engagement tools",
+      "split royalties",
     ],
   },
   {
-    name: 'Splice',
-    category: 'daw',
+    name: "Splice",
+    category: "daw",
     knownFeatures: [
-      'sample and loop subscription library',
-      'plugin rent-to-own marketplace',
-      'DAW project version control',
-      'collaboration via shared projects',
-      'AI-powered sample search',
-      'CoSo AI beat maker',
+      "sample and loop subscription library",
+      "plugin rent-to-own marketplace",
+      "DAW project version control",
+      "collaboration via shared projects",
+      "AI-powered sample search",
+      "CoSo AI beat maker",
     ],
   },
 ];
@@ -909,7 +946,7 @@ const COMPETITOR_PLATFORMS: Array<{
  *   missing    → +0 pts
  *   score = (Σ pts) / (totalFeatures × 3) × 100
  */
-type AdvantageLevel = 'surpassed' | 'at_parity';
+type AdvantageLevel = "surpassed" | "at_parity";
 
 interface AdvantageEntry {
   level: AdvantageLevel;
@@ -918,75 +955,460 @@ interface AdvantageEntry {
 
 const MAX_BOOSTER_ADVANTAGES = new Map<string, AdvantageEntry>([
   // ── DISTRIBUTION ──────────────────────────────────────────────────────────
-  ['music distribution to all DSPs',         { level: 'at_parity',  reason: 'We distribute but lack a speed or pricing edge over DistroKid/RouteNote — need to surpass on delivery speed or fan analytics at distribution point.' }],
-  ['royalty splits with collaborators',       { level: 'at_parity',  reason: 'Splits exist but DistroKid and Stem offer more granular real-time split tracking — need superior UX and instant payout triggers.' }],
-  ['split payments for collaborators',        { level: 'at_parity',  reason: 'Same as above — must surpass with automated multi-party smart contracts and instant settlement.' }],
-  ['smart links and pre-save pages',          { level: 'at_parity',  reason: 'Smart links exist but Feature.fm and Linkfire offer deeper retargeting pixels and fan data capture — must surpass on conversion analytics.' }],
-  ['YouTube Content ID',                      { level: 'at_parity',  reason: 'Content ID implemented but need automated conflict resolution and real-time earnings dashboard to surpass.' }],
-  ['daily streaming stats',                   { level: 'at_parity',  reason: 'Stats available but not yet presented with AI narrative summaries and predictive trend lines — must surpass Chartmetric-level intelligence.' }],
-  ['music publishing administration',        { level: 'at_parity',  reason: 'Publishing exists but TuneCore collects from more societies globally — need broader PRO coverage to surpass.' }],
-  ['sync licensing',                          { level: 'at_parity',  reason: 'Sync exists but CD Baby and TuneCore have larger supervisor networks — must surpass with AI-powered sync pitch matching.' }],
-  ['advance funding for artists',            { level: 'at_parity',  reason: 'Funding offered but TuneCore and Amuse have faster approval — surpass with AI-scored instant advance decisions.' }],
+  [
+    "music distribution to all DSPs",
+    {
+      level: "at_parity",
+      reason:
+        "We distribute but lack a speed or pricing edge over DistroKid/RouteNote — need to surpass on delivery speed or fan analytics at distribution point.",
+    },
+  ],
+  [
+    "royalty splits with collaborators",
+    {
+      level: "at_parity",
+      reason:
+        "Splits exist but DistroKid and Stem offer more granular real-time split tracking — need superior UX and instant payout triggers.",
+    },
+  ],
+  [
+    "split payments for collaborators",
+    {
+      level: "at_parity",
+      reason:
+        "Same as above — must surpass with automated multi-party smart contracts and instant settlement.",
+    },
+  ],
+  [
+    "smart links and pre-save pages",
+    {
+      level: "at_parity",
+      reason:
+        "Smart links exist but Feature.fm and Linkfire offer deeper retargeting pixels and fan data capture — must surpass on conversion analytics.",
+    },
+  ],
+  [
+    "YouTube Content ID",
+    {
+      level: "at_parity",
+      reason:
+        "Content ID implemented but need automated conflict resolution and real-time earnings dashboard to surpass.",
+    },
+  ],
+  [
+    "daily streaming stats",
+    {
+      level: "at_parity",
+      reason:
+        "Stats available but not yet presented with AI narrative summaries and predictive trend lines — must surpass Chartmetric-level intelligence.",
+    },
+  ],
+  [
+    "music publishing administration",
+    {
+      level: "at_parity",
+      reason:
+        "Publishing exists but TuneCore collects from more societies globally — need broader PRO coverage to surpass.",
+    },
+  ],
+  [
+    "sync licensing",
+    {
+      level: "at_parity",
+      reason:
+        "Sync exists but CD Baby and TuneCore have larger supervisor networks — must surpass with AI-powered sync pitch matching.",
+    },
+  ],
+  [
+    "advance funding for artists",
+    {
+      level: "at_parity",
+      reason:
+        "Funding offered but TuneCore and Amuse have faster approval — surpass with AI-scored instant advance decisions.",
+    },
+  ],
 
   // ── BEAT MARKETPLACE ──────────────────────────────────────────────────────
-  ['beat marketplace with licensing tiers',   { level: 'at_parity',  reason: 'Marketplace exists but BeatStars has far more producers and social discovery — must surpass with AI beat-to-artist matching and trend scoring.' }],
-  ['exclusive and non-exclusive beat leases', { level: 'at_parity',  reason: 'Tiers exist but BeatStars and Airbit have smarter automated upsell flows — surpass with AI-generated dynamic pricing.' }],
-  ['beat licensing contract generation',      { level: 'surpassed',  reason: 'AI-generated contracts that auto-populate splits, usage rights, and delivery on purchase — BeatStars still uses static templates.' }],
-  ['beat analytics and play tracking',        { level: 'at_parity',  reason: 'Basic analytics exist — must surpass Airbit with listener geography, skip rates, and AI-powered "beats trending toward purchase" signals.' }],
-  ['stem file delivery',                      { level: 'at_parity',  reason: 'Stems delivered on purchase but no quality gate or automatic format conversion — must surpass BeatStars with AI stem validation.' }],
-  ['producer profile pages',                  { level: 'at_parity',  reason: 'Profiles exist — surpass BeatStars with AI-curated producer highlight reels and auto-generated promo videos from beats.' }],
+  [
+    "beat marketplace with licensing tiers",
+    {
+      level: "at_parity",
+      reason:
+        "Marketplace exists but BeatStars has far more producers and social discovery — must surpass with AI beat-to-artist matching and trend scoring.",
+    },
+  ],
+  [
+    "exclusive and non-exclusive beat leases",
+    {
+      level: "at_parity",
+      reason:
+        "Tiers exist but BeatStars and Airbit have smarter automated upsell flows — surpass with AI-generated dynamic pricing.",
+    },
+  ],
+  [
+    "beat licensing contract generation",
+    {
+      level: "surpassed",
+      reason:
+        "AI-generated contracts that auto-populate splits, usage rights, and delivery on purchase — BeatStars still uses static templates.",
+    },
+  ],
+  [
+    "beat analytics and play tracking",
+    {
+      level: "at_parity",
+      reason:
+        'Basic analytics exist — must surpass Airbit with listener geography, skip rates, and AI-powered "beats trending toward purchase" signals.',
+    },
+  ],
+  [
+    "stem file delivery",
+    {
+      level: "at_parity",
+      reason:
+        "Stems delivered on purchase but no quality gate or automatic format conversion — must surpass BeatStars with AI stem validation.",
+    },
+  ],
+  [
+    "producer profile pages",
+    {
+      level: "at_parity",
+      reason:
+        "Profiles exist — surpass BeatStars with AI-curated producer highlight reels and auto-generated promo videos from beats.",
+    },
+  ],
 
   // ── ANALYTICS ─────────────────────────────────────────────────────────────
-  ['streaming analytics dashboard',           { level: 'at_parity',  reason: 'Dashboard exists — must surpass Chartmetric with real-time AI narrative summaries and anomaly flagging.' }],
-  ['advanced real-time streaming analytics',  { level: 'surpassed',  reason: 'Multi-platform aggregation with AI cohort analysis and predictive revenue modeling — ahead of AWAL and Chartmetric on AI insight depth.' }],
-  ['revenue forecasting',                     { level: 'surpassed',  reason: 'AI time-series revenue forecasting with confidence intervals — no competitor offers this at the independent artist level.' }],
-  ['playlist tracking across all DSPs',       { level: 'at_parity',  reason: 'Playlist tracking implemented — surpass Soundcharts by adding AI prediction of editorial playlist add probability.' }],
-  ['artist benchmark comparisons',            { level: 'at_parity',  reason: 'Benchmarking exists — surpass by adding AI strategy recommendations derived from what top comparables are doing differently.' }],
-  ['competitor artist benchmarking',          { level: 'surpassed',  reason: 'Full competitor analysis suite with share-of-voice, engagement gap detection, and strategy insights — no pure music distributor matches this.' }],
-  ['A&R discovery tools',                     { level: 'surpassed',  reason: 'AI signing potential scoring with trajectory modeling — AWAL does this manually for their own roster, we do it for everyone.' }],
-  ['radio tracking airplay reporting',        { level: 'at_parity',  reason: 'Radio tracking exists but CD Baby and Soundcharts have wider station coverage — must surpass with automatic pitch recommendations based on airplay gaps.' }],
+  [
+    "streaming analytics dashboard",
+    {
+      level: "at_parity",
+      reason:
+        "Dashboard exists — must surpass Chartmetric with real-time AI narrative summaries and anomaly flagging.",
+    },
+  ],
+  [
+    "advanced real-time streaming analytics",
+    {
+      level: "surpassed",
+      reason:
+        "Multi-platform aggregation with AI cohort analysis and predictive revenue modeling — ahead of AWAL and Chartmetric on AI insight depth.",
+    },
+  ],
+  [
+    "revenue forecasting",
+    {
+      level: "surpassed",
+      reason:
+        "AI time-series revenue forecasting with confidence intervals — no competitor offers this at the independent artist level.",
+    },
+  ],
+  [
+    "playlist tracking across all DSPs",
+    {
+      level: "at_parity",
+      reason:
+        "Playlist tracking implemented — surpass Soundcharts by adding AI prediction of editorial playlist add probability.",
+    },
+  ],
+  [
+    "artist benchmark comparisons",
+    {
+      level: "at_parity",
+      reason:
+        "Benchmarking exists — surpass by adding AI strategy recommendations derived from what top comparables are doing differently.",
+    },
+  ],
+  [
+    "competitor artist benchmarking",
+    {
+      level: "surpassed",
+      reason:
+        "Full competitor analysis suite with share-of-voice, engagement gap detection, and strategy insights — no pure music distributor matches this.",
+    },
+  ],
+  [
+    "A&R discovery tools",
+    {
+      level: "surpassed",
+      reason:
+        "AI signing potential scoring with trajectory modeling — AWAL does this manually for their own roster, we do it for everyone.",
+    },
+  ],
+  [
+    "radio tracking airplay reporting",
+    {
+      level: "at_parity",
+      reason:
+        "Radio tracking exists but CD Baby and Soundcharts have wider station coverage — must surpass with automatic pitch recommendations based on airplay gaps.",
+    },
+  ],
 
   // ── SOCIAL & AUTOPILOT ────────────────────────────────────────────────────
-  ['social media scheduling and publishing',  { level: 'surpassed',  reason: 'Music-native autopilot understands release cycles, drop timing, and platform algorithms in ways Hootsuite and Buffer never will — fully surpassed for music artists.' }],
-  ['social media autopilot',                  { level: 'surpassed',  reason: 'Fully autonomous 24/7 posting with algorithm-aware timing, viral scoring, and auto-content generation — no competitor in music or social management offers this.' }],
-  ['multi-platform content calendar',         { level: 'surpassed',  reason: 'Calendar auto-populated by AI based on release schedule, trending sounds, and engagement windows — generic tools require manual planning.' }],
-  ['AI post content generator',               { level: 'surpassed',  reason: 'Music-context-aware AI that writes captions aligned to artist brand voice, release narrative, and genre slang — Buffer and Publer use generic LLMs.' }],
-  ['AI-powered caption suggestions',          { level: 'surpassed',  reason: 'Captions trained on viral music content patterns, not generic marketing copy — fully differentiated from Hootsuite and Later.' }],
-  ['best time to post AI recommendations',    { level: 'at_parity',  reason: 'Timing recommendations exist — surpass Later and Metricool by adding release-day surge detection and fan timezone clustering.' }],
-  ['hashtag suggestions',                     { level: 'at_parity',  reason: 'Hashtag tool exists — surpass Buffer and Later with real-time trending hashtag velocity scoring and niche penetration analysis.' }],
-  ['social listening and monitoring',         { level: 'at_parity',  reason: 'Listening tools exist — surpass Sprout Social on music-specific signal detection: sample usage, cover songs, lyric quotes, fan videos.' }],
-  ['fan growth tools',                        { level: 'at_parity',  reason: 'Fan growth features exist — must surpass Stem and UnitedMasters with AI-driven fan segment analysis and personalized re-engagement flows.' }],
-  ['content auto-generation',                 { level: 'surpassed',  reason: 'Full AI content pipeline generating posts, captions, hooks, video scripts, and artwork variants — no distribution platform or social tool matches this scope.' }],
-  ['link in bio landing page',                { level: 'at_parity',  reason: 'Smart links exist but Buffer and Later offer more polished link-in-bio builders — surpass with AI-personalized fan landing pages that change by traffic source.' }],
-  ['social media ad management',              { level: 'surpassed',  reason: 'AI-optimized ad campaigns with music-native targeting (genre fans, similar artist audiences) that generic tools cannot replicate.' }],
+  [
+    "social media scheduling and publishing",
+    {
+      level: "surpassed",
+      reason:
+        "Music-native autopilot understands release cycles, drop timing, and platform algorithms in ways Hootsuite and Buffer never will — fully surpassed for music artists.",
+    },
+  ],
+  [
+    "social media autopilot",
+    {
+      level: "surpassed",
+      reason:
+        "Fully autonomous 24/7 posting with algorithm-aware timing, viral scoring, and auto-content generation — no competitor in music or social management offers this.",
+    },
+  ],
+  [
+    "multi-platform content calendar",
+    {
+      level: "surpassed",
+      reason:
+        "Calendar auto-populated by AI based on release schedule, trending sounds, and engagement windows — generic tools require manual planning.",
+    },
+  ],
+  [
+    "AI post content generator",
+    {
+      level: "surpassed",
+      reason:
+        "Music-context-aware AI that writes captions aligned to artist brand voice, release narrative, and genre slang — Buffer and Publer use generic LLMs.",
+    },
+  ],
+  [
+    "AI-powered caption suggestions",
+    {
+      level: "surpassed",
+      reason:
+        "Captions trained on viral music content patterns, not generic marketing copy — fully differentiated from Hootsuite and Later.",
+    },
+  ],
+  [
+    "best time to post AI recommendations",
+    {
+      level: "at_parity",
+      reason:
+        "Timing recommendations exist — surpass Later and Metricool by adding release-day surge detection and fan timezone clustering.",
+    },
+  ],
+  [
+    "hashtag suggestions",
+    {
+      level: "at_parity",
+      reason:
+        "Hashtag tool exists — surpass Buffer and Later with real-time trending hashtag velocity scoring and niche penetration analysis.",
+    },
+  ],
+  [
+    "social listening and monitoring",
+    {
+      level: "at_parity",
+      reason:
+        "Listening tools exist — surpass Sprout Social on music-specific signal detection: sample usage, cover songs, lyric quotes, fan videos.",
+    },
+  ],
+  [
+    "fan growth tools",
+    {
+      level: "at_parity",
+      reason:
+        "Fan growth features exist — must surpass Stem and UnitedMasters with AI-driven fan segment analysis and personalized re-engagement flows.",
+    },
+  ],
+  [
+    "content auto-generation",
+    {
+      level: "surpassed",
+      reason:
+        "Full AI content pipeline generating posts, captions, hooks, video scripts, and artwork variants — no distribution platform or social tool matches this scope.",
+    },
+  ],
+  [
+    "link in bio landing page",
+    {
+      level: "at_parity",
+      reason:
+        "Smart links exist but Buffer and Later offer more polished link-in-bio builders — surpass with AI-personalized fan landing pages that change by traffic source.",
+    },
+  ],
+  [
+    "social media ad management",
+    {
+      level: "surpassed",
+      reason:
+        "AI-optimized ad campaigns with music-native targeting (genre fans, similar artist audiences) that generic tools cannot replicate.",
+    },
+  ],
 
   // ── AI MUSIC ──────────────────────────────────────────────────────────────
-  ['AI-powered audio mastering',              { level: 'surpassed',  reason: 'LUFS-targeted AI mastering with platform-specific loudness profiles for every DSP — Landr offers one profile, we offer per-platform optimization.' }],
-  ['AI mixing feedback',                      { level: 'at_parity',  reason: 'Mixing feedback exists — must surpass Landr with stem-level AI analysis and genre-specific mix benchmarks.' }],
-  ['AI-powered artist insights',              { level: 'surpassed',  reason: 'Multi-dimensional AI insights combining streaming, social, market position, and revenue trajectory — Amuse and AWAL only surface surface-level metrics.' }],
-  ['AI full song generation from text prompts', { level: 'at_parity', reason: 'AI generation exists — must surpass Suno and Udio by tying AI generation directly to the artist\'s existing style and brand DNA.' }],
+  [
+    "AI-powered audio mastering",
+    {
+      level: "surpassed",
+      reason:
+        "LUFS-targeted AI mastering with platform-specific loudness profiles for every DSP — Landr offers one profile, we offer per-platform optimization.",
+    },
+  ],
+  [
+    "AI mixing feedback",
+    {
+      level: "at_parity",
+      reason:
+        "Mixing feedback exists — must surpass Landr with stem-level AI analysis and genre-specific mix benchmarks.",
+    },
+  ],
+  [
+    "AI-powered artist insights",
+    {
+      level: "surpassed",
+      reason:
+        "Multi-dimensional AI insights combining streaming, social, market position, and revenue trajectory — Amuse and AWAL only surface surface-level metrics.",
+    },
+  ],
+  [
+    "AI full song generation from text prompts",
+    {
+      level: "at_parity",
+      reason:
+        "AI generation exists — must surpass Suno and Udio by tying AI generation directly to the artist's existing style and brand DNA.",
+    },
+  ],
 
   // ── ADVERTISING ───────────────────────────────────────────────────────────
-  ['automated advertising campaigns',         { level: 'surpassed',  reason: 'AI-managed campaigns with music-native targeting, automatic creative rotation, and ROAS optimization — no music distribution platform offers this.' }],
+  [
+    "automated advertising campaigns",
+    {
+      level: "surpassed",
+      reason:
+        "AI-managed campaigns with music-native targeting, automatic creative rotation, and ROAS optimization — no music distribution platform offers this.",
+    },
+  ],
 
   // ── MARKETING ─────────────────────────────────────────────────────────────
-  ['playlist pitching',                       { level: 'at_parity',  reason: 'Pitching exists — surpass Submithub and Groover with AI pitch letter personalization and curator match scoring.' }],
-  ['editorial playlist pitching',             { level: 'at_parity',  reason: 'Editorial pitching available — surpass AWAL with AI mood/genre match scoring against known editorial playlist criteria.' }],
-  ['viral score prediction',                  { level: 'surpassed',  reason: 'Multi-signal viral probability scoring using social velocity, streaming trajectory, and content format analysis — unique to Max Booster.' }],
-  ['platform algorithm intelligence',         { level: 'surpassed',  reason: 'Deep per-platform algorithm health monitoring with shadowban detection and boost-window identification — no competitor tracks this systematically.' }],
-  ['social media monetization',               { level: 'at_parity',  reason: 'Monetization tracking exists — surpass TuneCore with AI-predicted earnings by platform and automatic routing of content to highest-yield platforms.' }],
-  ['brand deals and sync opportunities',      { level: 'at_parity',  reason: 'Opportunities surfaced but UnitedMasters has direct brand relationships — surpass by building AI brand-to-artist fit scoring and outreach automation.' }],
-  ['guaranteed curator feedback',             { level: 'at_parity',  reason: 'Feedback collection exists — surpass Submithub and Groover by closing the loop: AI learns from curator rejections to improve future pitches.' }],
-  ['music promotion to blogs and playlists',  { level: 'at_parity',  reason: 'Promotion tools exist — surpass Groover with AI-ranked media lists and auto-personalized outreach emails per contact.' }],
+  [
+    "playlist pitching",
+    {
+      level: "at_parity",
+      reason:
+        "Pitching exists — surpass Submithub and Groover with AI pitch letter personalization and curator match scoring.",
+    },
+  ],
+  [
+    "editorial playlist pitching",
+    {
+      level: "at_parity",
+      reason:
+        "Editorial pitching available — surpass AWAL with AI mood/genre match scoring against known editorial playlist criteria.",
+    },
+  ],
+  [
+    "viral score prediction",
+    {
+      level: "surpassed",
+      reason:
+        "Multi-signal viral probability scoring using social velocity, streaming trajectory, and content format analysis — unique to Max Booster.",
+    },
+  ],
+  [
+    "platform algorithm intelligence",
+    {
+      level: "surpassed",
+      reason:
+        "Deep per-platform algorithm health monitoring with shadowban detection and boost-window identification — no competitor tracks this systematically.",
+    },
+  ],
+  [
+    "social media monetization",
+    {
+      level: "at_parity",
+      reason:
+        "Monetization tracking exists — surpass TuneCore with AI-predicted earnings by platform and automatic routing of content to highest-yield platforms.",
+    },
+  ],
+  [
+    "brand deals and sync opportunities",
+    {
+      level: "at_parity",
+      reason:
+        "Opportunities surfaced but UnitedMasters has direct brand relationships — surpass by building AI brand-to-artist fit scoring and outreach automation.",
+    },
+  ],
+  [
+    "guaranteed curator feedback",
+    {
+      level: "at_parity",
+      reason:
+        "Feedback collection exists — surpass Submithub and Groover by closing the loop: AI learns from curator rejections to improve future pitches.",
+    },
+  ],
+  [
+    "music promotion to blogs and playlists",
+    {
+      level: "at_parity",
+      reason:
+        "Promotion tools exist — surpass Groover with AI-ranked media lists and auto-personalized outreach emails per contact.",
+    },
+  ],
 
   // ── DAW / STUDIO ──────────────────────────────────────────────────────────
-  ['audio recording and editing',             { level: 'at_parity',  reason: 'Basic recording exists — must surpass traditional DAWs by integrating AI-assisted arrangement suggestions and real-time AI coaching during sessions.' }],
-  ['VST plugin support',                      { level: 'at_parity',  reason: 'Plugins supported — surpass by building an AI plugin recommendation engine that suggests chains based on genre and reference track analysis.' }],
-  ['MIDI controller integration',             { level: 'at_parity',  reason: 'MIDI exists — surpass by adding AI that learns a producer\'s playing patterns and auto-suggests scale/chord completions in real time.' }],
-  ['built-in mastering tools',                { level: 'surpassed',  reason: 'AI mastering superior to Logic Pro\'s built-in tools — platform-specific LUFS targeting and stem-aware mastering not available in any DAW.' }],
-  ['pattern-based beat making',               { level: 'at_parity',  reason: 'Beat tools exist — surpass FL Studio and BeatStars with AI that generates pattern variations based on genre rules and trending rhythmic templates.' }],
-  ['sample pack marketplace',                 { level: 'at_parity',  reason: 'Sample marketplace exists — surpass Landr and Splice by adding AI-curated packs tailored to each producer\'s existing sound and genre.' }],
-  ['online music collaboration tools',        { level: 'at_parity',  reason: 'Collaboration features exist — surpass Soundtrap and BandLab with AI session co-production that fills in missing parts in real time.' }],
+  [
+    "audio recording and editing",
+    {
+      level: "at_parity",
+      reason:
+        "Basic recording exists — must surpass traditional DAWs by integrating AI-assisted arrangement suggestions and real-time AI coaching during sessions.",
+    },
+  ],
+  [
+    "VST plugin support",
+    {
+      level: "at_parity",
+      reason:
+        "Plugins supported — surpass by building an AI plugin recommendation engine that suggests chains based on genre and reference track analysis.",
+    },
+  ],
+  [
+    "MIDI controller integration",
+    {
+      level: "at_parity",
+      reason:
+        "MIDI exists — surpass by adding AI that learns a producer's playing patterns and auto-suggests scale/chord completions in real time.",
+    },
+  ],
+  [
+    "built-in mastering tools",
+    {
+      level: "surpassed",
+      reason:
+        "AI mastering superior to Logic Pro's built-in tools — platform-specific LUFS targeting and stem-aware mastering not available in any DAW.",
+    },
+  ],
+  [
+    "pattern-based beat making",
+    {
+      level: "at_parity",
+      reason:
+        "Beat tools exist — surpass FL Studio and BeatStars with AI that generates pattern variations based on genre rules and trending rhythmic templates.",
+    },
+  ],
+  [
+    "sample pack marketplace",
+    {
+      level: "at_parity",
+      reason:
+        "Sample marketplace exists — surpass Landr and Splice by adding AI-curated packs tailored to each producer's existing sound and genre.",
+    },
+  ],
+  [
+    "online music collaboration tools",
+    {
+      level: "at_parity",
+      reason:
+        "Collaboration features exist — surpass Soundtrap and BandLab with AI session co-production that fills in missing parts in real time.",
+    },
+  ],
 ]);
 
 export class SelfEvolutionEngine extends EventEmitter {
@@ -1014,29 +1436,39 @@ export class SelfEvolutionEngine extends EventEmitter {
   private readonly MAX_CHANGES_IN_MEMORY = 500;
   private readonly MAX_UPGRADES_IN_MEMORY = 200;
   private readonly MAX_SEEN_IDS = 2000;
-  private readonly STATE_KEY = 'evolution-state/state.json';
+  private readonly STATE_KEY = "evolution-state/state.json";
   private readonly MAX_BOOSTER_MODULES = [
-    'studio', 'distribution', 'social', 'advertising', 
-    'marketplace', 'analytics', 'security', 'monetization'
+    "studio",
+    "distribution",
+    "social",
+    "advertising",
+    "marketplace",
+    "analytics",
+    "security",
+    "monetization",
   ];
 
   constructor() {
     super();
     this.initializeIndustryKnowledge();
     this.seedSeenIdsFromDisk().catch(() => {});
-    logger.info('🧬 Self-Evolution Engine initialized');
+    logger.info("🧬 Self-Evolution Engine initialized");
   }
 
   private async seedSeenIdsFromDisk(): Promise<void> {
     try {
       const buf = await storageService.downloadFile(this.STATE_KEY);
-      const state = JSON.parse(buf.toString('utf-8')) as { seenChangeIds?: string[] };
+      const state = JSON.parse(buf.toString("utf-8")) as {
+        seenChangeIds?: string[];
+      };
       if (Array.isArray(state.seenChangeIds)) {
         for (const id of state.seenChangeIds) this.seenChangeIds.add(id);
-        logger.info(`🧬 Restored ${this.seenChangeIds.size} seen change IDs from Pocket Dimension`);
+        logger.info(
+          `🧬 Restored ${this.seenChangeIds.size} seen change IDs from Pocket Dimension`,
+        );
       }
     } catch {
-      logger.info('🧬 No prior evolution state found — starting fresh');
+      logger.info("🧬 No prior evolution state found — starting fresh");
     }
   }
 
@@ -1045,12 +1477,12 @@ export class SelfEvolutionEngine extends EventEmitter {
       const ids = Array.from(this.seenChangeIds);
       const state = { seenChangeIds: ids, savedAt: new Date().toISOString() };
       await storageService.uploadFile(
-        Buffer.from(JSON.stringify(state, null, 2), 'utf-8'),
+        Buffer.from(JSON.stringify(state, null, 2), "utf-8"),
         this.STATE_KEY,
-        'application/json',
+        "application/json",
       );
     } catch (e) {
-      logger.warn({ err: e }, 'Failed to persist evolution state:');
+      logger.warn({ err: e }, "Failed to persist evolution state:");
     }
   }
 
@@ -1059,29 +1491,31 @@ export class SelfEvolutionEngine extends EventEmitter {
       const arr = Array.from(this.seenChangeIds);
       const keep = arr.slice(arr.length - (this.MAX_SEEN_IDS - 500));
       this.seenChangeIds = new Set(keep);
-      logger.info(`🧬 Pruned seenChangeIds to ${this.seenChangeIds.size} entries`);
+      logger.info(
+        `🧬 Pruned seenChangeIds to ${this.seenChangeIds.size} entries`,
+      );
     }
   }
 
   /**
    * PRODUCTION SAFETY GATE
-   * 
+   *
    * The Self-Evolution Engine is DISABLED by default in production.
    * To enable automatic self-evolution:
    * 1. Set ENABLE_SELF_EVOLUTION=true in environment variables
    * 2. OR run in development mode (NODE_ENV=development)
-   * 
+   *
    * Manual triggering via API is always available for controlled upgrades.
    */
   isProductionSafetyEnabled(): boolean {
     const isProd = isProductionEnv();
-    const explicitlyEnabled = process.env.ENABLE_SELF_EVOLUTION === 'true';
-    
+    const explicitlyEnabled = process.env.ENABLE_SELF_EVOLUTION === "true";
+
     // In development, auto-evolution is allowed
     if (!isProd) {
       return true;
     }
-    
+
     // In production, require explicit opt-in
     return explicitlyEnabled;
   }
@@ -1103,18 +1537,20 @@ export class SelfEvolutionEngine extends EventEmitter {
     reason: string;
   } {
     const isProduction = isProductionEnv();
-    const explicitOptIn = process.env.ENABLE_SELF_EVOLUTION === 'true';
+    const explicitOptIn = process.env.ENABLE_SELF_EVOLUTION === "true";
     const autoEvolutionEnabled = this.isProductionSafetyEnabled();
-    
+
     let reason: string;
     if (!isProduction) {
-      reason = 'Development mode - auto-evolution enabled by default';
+      reason = "Development mode - auto-evolution enabled by default";
     } else if (explicitOptIn) {
-      reason = 'Production mode with explicit ENABLE_SELF_EVOLUTION=true opt-in';
+      reason =
+        "Production mode with explicit ENABLE_SELF_EVOLUTION=true opt-in";
     } else {
-      reason = 'Production mode - auto-evolution disabled for safety. Set ENABLE_SELF_EVOLUTION=true to enable.';
+      reason =
+        "Production mode - auto-evolution disabled for safety. Set ENABLE_SELF_EVOLUTION=true to enable.";
     }
-    
+
     return {
       isProduction,
       autoEvolutionEnabled,
@@ -1134,11 +1570,13 @@ export class SelfEvolutionEngine extends EventEmitter {
     upgradesDeployed: number;
   }> {
     const cycleId = `manual_evolution_${Date.now()}`;
-    logger.info(`🔧 MANUAL EVOLUTION TRIGGER: Starting controlled upgrade cycle ${cycleId}`);
-    
+    logger.info(
+      `🔧 MANUAL EVOLUTION TRIGGER: Starting controlled upgrade cycle ${cycleId}`,
+    );
+
     try {
       await this.runEvolutionCycle();
-      
+
       const status = this.getStatus();
       return {
         success: true,
@@ -1147,22 +1585,79 @@ export class SelfEvolutionEngine extends EventEmitter {
         upgradesDeployed: status.upgradesDeployed,
       };
     } catch (error) {
-      logger.warn({ err: error }, `❌ Manual evolution cycle ${cycleId} failed:`);
+      logger.warn(
+        { err: error },
+        `❌ Manual evolution cycle ${cycleId} failed:`,
+      );
       throw error;
     }
   }
 
   private async initializeIndustryKnowledge(): Promise<void> {
     this.platformStandards = [
-      { platform: 'Spotify', standardType: 'loudness', currentRequirement: '-14 LUFS', maxBoosterCompliant: true, autoFixAvailable: true },
-      { platform: 'Apple Music', standardType: 'loudness', currentRequirement: '-16 LUFS', maxBoosterCompliant: true, autoFixAvailable: true },
-      { platform: 'YouTube', standardType: 'loudness', currentRequirement: '-14 LUFS', maxBoosterCompliant: true, autoFixAvailable: true },
-      { platform: 'Tidal', standardType: 'loudness', currentRequirement: '-14 LUFS', maxBoosterCompliant: true, autoFixAvailable: true },
-      { platform: 'Amazon Music', standardType: 'loudness', currentRequirement: '-14 LUFS', maxBoosterCompliant: true, autoFixAvailable: true },
-      { platform: 'Spotify', standardType: 'audio_format', currentRequirement: 'FLAC/WAV 16-24bit 44.1-192kHz', maxBoosterCompliant: true, autoFixAvailable: true },
-      { platform: 'Apple Music', standardType: 'audio_format', currentRequirement: 'ALAC/FLAC 24bit 96kHz+', maxBoosterCompliant: true, autoFixAvailable: true },
-      { platform: 'Instagram', standardType: 'api_version', currentRequirement: 'Graph API v18.0', maxBoosterCompliant: true, autoFixAvailable: true },
-      { platform: 'TikTok', standardType: 'api_version', currentRequirement: 'TikTok API v2', maxBoosterCompliant: true, autoFixAvailable: true },
+      {
+        platform: "Spotify",
+        standardType: "loudness",
+        currentRequirement: "-14 LUFS",
+        maxBoosterCompliant: true,
+        autoFixAvailable: true,
+      },
+      {
+        platform: "Apple Music",
+        standardType: "loudness",
+        currentRequirement: "-16 LUFS",
+        maxBoosterCompliant: true,
+        autoFixAvailable: true,
+      },
+      {
+        platform: "YouTube",
+        standardType: "loudness",
+        currentRequirement: "-14 LUFS",
+        maxBoosterCompliant: true,
+        autoFixAvailable: true,
+      },
+      {
+        platform: "Tidal",
+        standardType: "loudness",
+        currentRequirement: "-14 LUFS",
+        maxBoosterCompliant: true,
+        autoFixAvailable: true,
+      },
+      {
+        platform: "Amazon Music",
+        standardType: "loudness",
+        currentRequirement: "-14 LUFS",
+        maxBoosterCompliant: true,
+        autoFixAvailable: true,
+      },
+      {
+        platform: "Spotify",
+        standardType: "audio_format",
+        currentRequirement: "FLAC/WAV 16-24bit 44.1-192kHz",
+        maxBoosterCompliant: true,
+        autoFixAvailable: true,
+      },
+      {
+        platform: "Apple Music",
+        standardType: "audio_format",
+        currentRequirement: "ALAC/FLAC 24bit 96kHz+",
+        maxBoosterCompliant: true,
+        autoFixAvailable: true,
+      },
+      {
+        platform: "Instagram",
+        standardType: "api_version",
+        currentRequirement: "Graph API v18.0",
+        maxBoosterCompliant: true,
+        autoFixAvailable: true,
+      },
+      {
+        platform: "TikTok",
+        standardType: "api_version",
+        currentRequirement: "TikTok API v2",
+        maxBoosterCompliant: true,
+        autoFixAvailable: true,
+      },
     ];
   }
 
@@ -1170,22 +1665,30 @@ export class SelfEvolutionEngine extends EventEmitter {
     if (this.isRunning) return;
 
     if (!this.isProductionSafetyEnabled()) {
-      logger.warn('🛡️ Self-Evolution Engine: auto-start blocked by production safety gate. Set ENABLE_SELF_EVOLUTION=true to allow.');
+      logger.warn(
+        "🛡️ Self-Evolution Engine: auto-start blocked by production safety gate. Set ENABLE_SELF_EVOLUTION=true to allow.",
+      );
       return;
     }
 
     this.isRunning = true;
 
-    logger.info('🚀 Self-Evolution Engine ACTIVATED');
-    logger.info('   Max Booster will now autonomously upgrade itself to stay ahead of competition');
+    logger.info("🚀 Self-Evolution Engine ACTIVATED");
+    logger.info(
+      "   Max Booster will now autonomously upgrade itself to stay ahead of competition",
+    );
 
-    this.runEvolutionCycle().catch((e) => logger.warn({ err: e }, 'Initial evolution cycle error:'));
+    this.runEvolutionCycle().catch((e) =>
+      logger.warn({ err: e }, "Initial evolution cycle error:"),
+    );
 
     this.monitoringInterval = setInterval(() => {
-      this.runEvolutionCycle().catch((e) => logger.warn({ err: e }, 'Scheduled evolution cycle error:'));
+      this.runEvolutionCycle().catch((e) =>
+        logger.warn({ err: e }, "Scheduled evolution cycle error:"),
+      );
     }, this.MONITORING_INTERVAL_MS);
 
-    this.emit('started');
+    this.emit("started");
   }
 
   async stop(): Promise<void> {
@@ -1197,13 +1700,13 @@ export class SelfEvolutionEngine extends EventEmitter {
       this.monitoringInterval = null;
     }
 
-    logger.info('🛑 Self-Evolution Engine stopped');
-    this.emit('stopped');
+    logger.info("🛑 Self-Evolution Engine stopped");
+    this.emit("stopped");
   }
 
   private async runEvolutionCycle(): Promise<void> {
     if (this.isCycleRunning) {
-      logger.info('🔒 Evolution cycle already in progress — skipping overlap');
+      logger.info("🔒 Evolution cycle already in progress — skipping overlap");
       return;
     }
 
@@ -1214,7 +1717,9 @@ export class SelfEvolutionEngine extends EventEmitter {
     try {
       // Phase 0: Competitive leadership check — runs FIRST every cycle
       const leadershipGaps = await this.assessCompetitiveLeadership();
-      logger.info(`   🏆 Competitive leadership: ${leadershipGaps.length} gaps vs competitors (score: ${this.competitivePositionScore}/100)`);
+      logger.info(
+        `   🏆 Competitive leadership: ${leadershipGaps.length} gaps vs competitors (score: ${this.competitivePositionScore}/100)`,
+      );
 
       // Phase 1: Monitor the industry landscape
       const changes = await this.monitorIndustryLandscape();
@@ -1226,23 +1731,31 @@ export class SelfEvolutionEngine extends EventEmitter {
           this.industryChanges.push(gap);
         }
       }
-      logger.info(`   📡 Detected ${changes.length} industry changes (${leadershipGaps.length} from competitive scan)`);
+      logger.info(
+        `   📡 Detected ${changes.length} industry changes (${leadershipGaps.length} from competitive scan)`,
+      );
 
       // Phase 2: Analyze competitive position
       const competitiveGaps = await this.analyzeCompetitivePosition(changes);
-      logger.info(`   🎯 Identified ${competitiveGaps.length} competitive gaps to address`);
+      logger.info(
+        `   🎯 Identified ${competitiveGaps.length} competitive gaps to address`,
+      );
 
       // Phase 3: Generate code upgrades for high-priority changes
       const upgrades = await this.generateCodeUpgrades(competitiveGaps);
       logger.info(`   💻 Generated ${upgrades.length} code upgrades`);
       this.upgradeQueue.push(...upgrades);
       if (this.upgradeQueue.length > this.MAX_UPGRADES_IN_MEMORY) {
-        this.upgradeQueue = this.upgradeQueue.slice(-this.MAX_UPGRADES_IN_MEMORY);
+        this.upgradeQueue = this.upgradeQueue.slice(
+          -this.MAX_UPGRADES_IN_MEMORY,
+        );
       }
 
       // Phase 4: Test and validate generated code
       const validatedUpgrades = await this.testUpgrades(upgrades);
-      logger.info(`   ✅ Validated ${validatedUpgrades.length} upgrades for deployment`);
+      logger.info(
+        `   ✅ Validated ${validatedUpgrades.length} upgrades for deployment`,
+      );
 
       // Phase 5: Deploy upgrades with canary pattern
       const deployedCount = await this.deployUpgrades(validatedUpgrades);
@@ -1255,18 +1768,25 @@ export class SelfEvolutionEngine extends EventEmitter {
       await this.learnFromCycle(cycleId);
 
       this.lastCycleError = null;
-      logger.info(`✅ Evolution cycle ${cycleId} completed successfully (total: ${this.totalCyclesRun + 1})`);
-      this.emit('cycleCompleted', { cycleId, changes: changes.length, upgrades: deployedCount });
-
+      logger.info(
+        `✅ Evolution cycle ${cycleId} completed successfully (total: ${this.totalCyclesRun + 1})`,
+      );
+      this.emit("cycleCompleted", {
+        cycleId,
+        changes: changes.length,
+        upgrades: deployedCount,
+      });
     } catch (error) {
       this.lastCycleError = (error as Error).message || String(error);
       logger.warn({ err: error }, `❌ Evolution cycle ${cycleId} failed:`);
-      this.emit('cycleFailed', { cycleId, error });
+      this.emit("cycleFailed", { cycleId, error });
     } finally {
       this.lastCycleAt = new Date();
       this.totalCyclesRun++;
       this.pruneSeenIds();
-      this.saveStateToDisk().catch(e => logger.warn({ err: e }, 'Could not save state:'));
+      this.saveStateToDisk().catch((e) =>
+        logger.warn({ err: e }, "Could not save state:"),
+      );
       this.isCycleRunning = false;
     }
   }
@@ -1310,30 +1830,32 @@ export class SelfEvolutionEngine extends EventEmitter {
         // Look up our advantage status for this feature (fuzzy key match)
         const advantageEntry = this.lookupAdvantage(feature);
 
-        if (advantageEntry?.level === 'surpassed') {
+        if (advantageEntry?.level === "surpassed") {
           // We win on this dimension — no action needed
           totalPoints += 3;
           surpassedCount++;
           continue;
         }
 
-        if (advantageEntry?.level === 'at_parity') {
+        if (advantageEntry?.level === "at_parity") {
           // Parity is not the goal — generate a change to SURPASS this feature
           totalPoints += 1;
           parityCount++;
-          const gapId = `surpass_${competitor.name}_${feature}`.replace(/[^a-z0-9_]/gi, '_').toLowerCase();
+          const gapId = `surpass_${competitor.name}_${feature}`
+            .replace(/[^a-z0-9_]/gi, "_")
+            .toLowerCase();
           if (!this.seenChangeIds.has(gapId)) {
             gaps.push({
               id: gapId,
-              source: 'competitor',
-              category: 'optimization',
+              source: "competitor",
+              category: "optimization",
               title: `Surpass ${competitor.name}: "${feature}"`,
               description: `Max Booster has an equivalent but has not meaningfully differentiated. ${advantageEntry.reason} Target: be definitively better than ${competitor.name} on this dimension.`,
               detectedAt: new Date(),
-              urgency: 'high',
+              urgency: "high",
               affectedModules: this.inferModulesFromFeature(feature),
               competitiveImpact: 85,
-              implementationComplexity: 'moderate',
+              implementationComplexity: "moderate",
               estimatedImplementationHours: 16,
             });
             this.competitiveGapsDetected++;
@@ -1343,19 +1865,21 @@ export class SelfEvolutionEngine extends EventEmitter {
 
         // Missing entirely — most urgent
         missingCount++;
-        const gapId = `missing_${competitor.name}_${feature}`.replace(/[^a-z0-9_]/gi, '_').toLowerCase();
+        const gapId = `missing_${competitor.name}_${feature}`
+          .replace(/[^a-z0-9_]/gi, "_")
+          .toLowerCase();
         if (!this.seenChangeIds.has(gapId)) {
           gaps.push({
             id: gapId,
-            source: 'competitor',
-            category: 'feature',
+            source: "competitor",
+            category: "feature",
             title: `MISSING vs ${competitor.name}: "${feature}"`,
             description: `${competitor.name} offers "${feature}" and Max Booster has no equivalent. This is a critical gap that must be closed — then exceeded.`,
             detectedAt: new Date(),
-            urgency: 'critical',
+            urgency: "critical",
             affectedModules: this.inferModulesFromFeature(feature),
             competitiveImpact: 98,
-            implementationComplexity: 'moderate',
+            implementationComplexity: "moderate",
             estimatedImplementationHours: 24,
           });
           this.competitiveGapsDetected++;
@@ -1368,7 +1892,7 @@ export class SelfEvolutionEngine extends EventEmitter {
     for (const signal of liveCompetitorSignals.slice(0, 10)) {
       const converted: IndustryChange = {
         id: signal.id,
-        source: 'competitor',
+        source: "competitor",
         category: signal.category,
         title: `SURPASS: ${signal.title}`,
         description: `${signal.description} — this is a live competitive threat. The goal is not to match this but to do it better.`,
@@ -1386,23 +1910,30 @@ export class SelfEvolutionEngine extends EventEmitter {
     }
 
     // ── 3. Score: 100 = surpassed on everything, 0 = missing everything ─────
-    const rawScore = maxPoints > 0 ? Math.round((totalPoints / maxPoints) * 100) : 0;
+    const rawScore =
+      maxPoints > 0 ? Math.round((totalPoints / maxPoints) * 100) : 0;
     this.competitivePositionScore = Math.min(100, rawScore);
 
     logger.info(
       `[SelfEvolution] Competitive scan — score: ${this.competitivePositionScore}/100` +
-      ` | surpassed: ${surpassedCount} | at_parity: ${parityCount} | missing: ${missingCount}` +
-      ` | action_items: ${gaps.length}`
+        ` | surpassed: ${surpassedCount} | at_parity: ${parityCount} | missing: ${missingCount}` +
+        ` | action_items: ${gaps.length}`,
     );
 
     if (missingCount > 0) {
-      logger.warn(`[SelfEvolution] ${missingCount} features MISSING entirely vs competitors — highest priority to build AND surpass.`);
+      logger.warn(
+        `[SelfEvolution] ${missingCount} features MISSING entirely vs competitors — highest priority to build AND surpass.`,
+      );
     }
     if (parityCount > 0) {
-      logger.info(`[SelfEvolution] ${parityCount} features at parity — must be surpassed, not just maintained.`);
+      logger.info(
+        `[SelfEvolution] ${parityCount} features at parity — must be surpassed, not just maintained.`,
+      );
     }
     if (surpassedCount > 0) {
-      logger.info(`[SelfEvolution] ${surpassedCount} features where Max Booster is definitively ahead — maintain and extend lead.`);
+      logger.info(
+        `[SelfEvolution] ${surpassedCount} features where Max Booster is definitively ahead — maintain and extend lead.`,
+      );
     }
 
     // Persist for getStatus()
@@ -1428,8 +1959,8 @@ export class SelfEvolutionEngine extends EventEmitter {
     // Fuzzy: check if any key is a substantial substring of the feature or vice versa
     for (const [key, entry] of MAX_BOOSTER_ADVANTAGES) {
       const keyLower = key.toLowerCase();
-      const featureWords = featureLower.split(' ').slice(0, 4).join(' ');
-      const keyWords = keyLower.split(' ').slice(0, 4).join(' ');
+      const featureWords = featureLower.split(" ").slice(0, 4).join(" ");
+      const keyWords = keyLower.split(" ").slice(0, 4).join(" ");
       if (featureLower.includes(keyWords) || keyLower.includes(featureWords)) {
         return entry;
       }
@@ -1441,15 +1972,18 @@ export class SelfEvolutionEngine extends EventEmitter {
   private inferModulesFromFeature(feature: string): string[] {
     const f = feature.toLowerCase();
     const modules: string[] = [];
-    if (/distribut|dsp|isrc|upc|release/.test(f)) modules.push('distribution');
-    if (/analytic|stats|insight|report|dashboard/.test(f)) modules.push('analytics');
-    if (/social|tiktok|instagram|post|content/.test(f)) modules.push('social');
-    if (/market|advertis|campaign|brand|deal/.test(f)) modules.push('advertising');
-    if (/monetiz|revenue|royalt|payout|split|funding|advance/.test(f)) modules.push('monetization');
-    if (/mix|master|studio|plugin|vst|produc/.test(f)) modules.push('studio');
-    if (/marketplace|beat|sample|merch/.test(f)) modules.push('marketplace');
-    if (/securi|auth|encrypt/.test(f)) modules.push('security');
-    return modules.length > 0 ? modules : ['distribution', 'analytics'];
+    if (/distribut|dsp|isrc|upc|release/.test(f)) modules.push("distribution");
+    if (/analytic|stats|insight|report|dashboard/.test(f))
+      modules.push("analytics");
+    if (/social|tiktok|instagram|post|content/.test(f)) modules.push("social");
+    if (/market|advertis|campaign|brand|deal/.test(f))
+      modules.push("advertising");
+    if (/monetiz|revenue|royalt|payout|split|funding|advance/.test(f))
+      modules.push("monetization");
+    if (/mix|master|studio|plugin|vst|produc/.test(f)) modules.push("studio");
+    if (/marketplace|beat|sample|merch/.test(f)) modules.push("marketplace");
+    if (/securi|auth|encrypt/.test(f)) modules.push("security");
+    return modules.length > 0 ? modules : ["distribution", "analytics"];
   }
 
   // ============================================
@@ -1462,7 +1996,7 @@ export class SelfEvolutionEngine extends EventEmitter {
     // Primary: real RSS feeds + optional Tavily/Exa search intelligence
     try {
       const raw = await industryMonitor.fetchLiveChanges();
-      liveChanges = raw.map(c => ({
+      liveChanges = raw.map((c) => ({
         id: c.id,
         source: c.source,
         category: c.category,
@@ -1475,16 +2009,23 @@ export class SelfEvolutionEngine extends EventEmitter {
         implementationComplexity: c.implementationComplexity,
         estimatedImplementationHours: c.estimatedImplementationHours,
       }));
-      logger.info(`[SelfEvolution] Live industry monitor: ${liveChanges.length} real changes fetched`);
+      logger.info(
+        `[SelfEvolution] Live industry monitor: ${liveChanges.length} real changes fetched`,
+      );
     } catch (error) {
-      logger.warn('[SelfEvolution] Live industry monitor failed — no simulated fallback, skipping cycle phase 1:', (error as Error).message);
+      logger.warn(
+        "[SelfEvolution] Live industry monitor failed — no simulated fallback, skipping cycle phase 1:",
+        (error as Error).message,
+      );
     }
 
-    const newChanges = liveChanges.filter(c => !this.seenChangeIds.has(c.id));
+    const newChanges = liveChanges.filter((c) => !this.seenChangeIds.has(c.id));
     for (const c of newChanges) this.seenChangeIds.add(c.id);
     this.industryChanges.push(...newChanges);
     if (this.industryChanges.length > this.MAX_CHANGES_IN_MEMORY) {
-      this.industryChanges = this.industryChanges.slice(-this.MAX_CHANGES_IN_MEMORY);
+      this.industryChanges = this.industryChanges.slice(
+        -this.MAX_CHANGES_IN_MEMORY,
+      );
     }
     return newChanges;
   }
@@ -1493,10 +2034,12 @@ export class SelfEvolutionEngine extends EventEmitter {
   // PHASE 2: COMPETITIVE ANALYSIS
   // ============================================
 
-  private async analyzeCompetitivePosition(changes: IndustryChange[]): Promise<IndustryChange[]> {
+  private async analyzeCompetitivePosition(
+    changes: IndustryChange[],
+  ): Promise<IndustryChange[]> {
     // Sort by competitive impact and urgency
     const prioritized = changes
-      .filter(c => c.competitiveImpact > 50) // Only address significant gaps
+      .filter((c) => c.competitiveImpact > 50) // Only address significant gaps
       .sort((a, b) => {
         const urgencyWeight = { critical: 4, high: 3, medium: 2, low: 1 };
         const aScore = a.competitiveImpact * urgencyWeight[a.urgency];
@@ -1512,7 +2055,9 @@ export class SelfEvolutionEngine extends EventEmitter {
   // PHASE 3: CODE GENERATION
   // ============================================
 
-  private async generateCodeUpgrades(changes: IndustryChange[]): Promise<CodeUpgrade[]> {
+  private async generateCodeUpgrades(
+    changes: IndustryChange[],
+  ): Promise<CodeUpgrade[]> {
     const upgrades: CodeUpgrade[] = [];
 
     for (const change of changes) {
@@ -1525,7 +2070,9 @@ export class SelfEvolutionEngine extends EventEmitter {
     return upgrades;
   }
 
-  private async generateUpgradeForChange(change: IndustryChange): Promise<CodeUpgrade | null> {
+  private async generateUpgradeForChange(
+    change: IndustryChange,
+  ): Promise<CodeUpgrade | null> {
     logger.info(`   🔧 Generating enhancement for: ${change.title}`);
 
     const category = this.categorizeChange(change);
@@ -1541,8 +2088,8 @@ export class SelfEvolutionEngine extends EventEmitter {
         // produces — surfaced verbatim in the admin upgrade history.
         [`registry:${category}`, JSON.stringify(payload, null, 2)],
       ]),
-      testCode: '',
-      status: 'pending',
+      testCode: "",
+      status: "pending",
       createdAt: new Date(),
       performanceImpact: { before: {}, after: {} },
       enhancementCategory: category,
@@ -1561,22 +2108,24 @@ export class SelfEvolutionEngine extends EventEmitter {
    */
   private categorizeChange(change: IndustryChange): EnhancementCategory {
     const mods = change.affectedModules || [];
-    const social = change.source === 'social_media' || mods.includes('social');
-    const timingSignal = /\b(timing|schedul|post time|best time|when to post|peak hour)/i.test(
-      `${change.title} ${change.description}`,
-    );
+    const social = change.source === "social_media" || mods.includes("social");
+    const timingSignal =
+      /\b(timing|schedul|post time|best time|when to post|peak hour)/i.test(
+        `${change.title} ${change.description}`,
+      );
 
-    if (change.source === 'social_media') {
-      return timingSignal ? 'posting_optimization' : 'content_optimization';
+    if (change.source === "social_media") {
+      return timingSignal ? "posting_optimization" : "content_optimization";
     }
-    if (change.source === 'streaming_platform') return 'platform_compliance';
-    if (change.source === 'regulation') return 'platform_compliance';
-    if (change.source === 'security') return 'feature_flag';
-    if (change.source === 'technology') return 'feature_flag';
+    if (change.source === "streaming_platform") return "platform_compliance";
+    if (change.source === "regulation") return "platform_compliance";
+    if (change.source === "security") return "feature_flag";
+    if (change.source === "technology") return "feature_flag";
     // competitor (and anything else)
-    if (social) return timingSignal ? 'posting_optimization' : 'content_optimization';
-    if (mods.includes('distribution')) return 'distribution_config';
-    return 'content_optimization';
+    if (social)
+      return timingSignal ? "posting_optimization" : "content_optimization";
+    if (mods.includes("distribution")) return "distribution_config";
+    return "content_optimization";
   }
 
   /**
@@ -1589,10 +2138,11 @@ export class SelfEvolutionEngine extends EventEmitter {
     change: IndustryChange,
   ): Record<string, unknown> {
     const platform = this.inferPlatformFromChange(change);
-    const high = change.competitiveImpact >= 80 || change.urgency === 'critical';
+    const high =
+      change.competitiveImpact >= 80 || change.urgency === "critical";
 
     switch (category) {
-      case 'posting_optimization': {
+      case "posting_optimization": {
         // The ONLY posting knob a live consumer reads is `optimalHours`
         // (getOptimalHoursOverride → autopilot posting-window selection). Emit a
         // bounded heuristic engagement window so this enhancement produces a
@@ -1600,39 +2150,40 @@ export class SelfEvolutionEngine extends EventEmitter {
         // learned timing and ABOVE static defaults — fully reversible.
         const payload: Record<string, unknown> = {
           optimalHours: high ? [11, 14, 17, 19, 21] : [12, 18, 20],
-          engagementTargeting: high ? 'high' : 'standard',
+          engagementTargeting: high ? "high" : "standard",
         };
         if (platform) payload.platform = platform;
         return payload;
       }
-      case 'content_optimization': {
+      case "content_optimization": {
         const payload: Record<string, unknown> = {
-          hashtagStrategy: high ? 'trending' : 'balanced',
-          captionLength: 'optimal',
-          callToActionStrength: high ? 'high' : 'medium',
+          hashtagStrategy: high ? "trending" : "balanced",
+          captionLength: "optimal",
+          callToActionStrength: high ? "high" : "medium",
           visualPriority: true,
           variantCount: high ? 5 : 3,
         };
         if (platform) payload.platform = platform;
         return payload;
       }
-      case 'distribution_config':
+      case "distribution_config":
         return {
           autoFormat: true,
           qualityCheck: true,
           metadataValidation: true,
-          complianceLevel: high ? 'strict' : 'standard',
+          complianceLevel: high ? "strict" : "standard",
         };
-      case 'platform_compliance':
+      case "platform_compliance":
         return {
-          platform: platform || 'all',
+          platform: platform || "all",
           requirement: change.description.slice(0, 500),
           urgency: change.urgency,
           autoApply: false,
         };
-      case 'feature_flag':
+      case "feature_flag":
         return {
-          name: this.camelCase(change.title).slice(0, 80) || `flag_${change.id}`,
+          name:
+            this.camelCase(change.title).slice(0, 80) || `flag_${change.id}`,
           enabled: false,
           rolloutPercentage: 0,
         };
@@ -1643,13 +2194,23 @@ export class SelfEvolutionEngine extends EventEmitter {
 
   private inferPlatformFromChange(change: IndustryChange): string | undefined {
     const text = `${change.title} ${change.description}`.toLowerCase();
-    const platforms = ['tiktok', 'instagram', 'twitter', 'facebook', 'linkedin', 'youtube', 'threads', 'spotify', 'apple music', 'tidal'];
+    const platforms = [
+      "tiktok",
+      "instagram",
+      "twitter",
+      "facebook",
+      "linkedin",
+      "youtube",
+      "threads",
+      "spotify",
+      "apple music",
+      "tidal",
+    ];
     for (const p of platforms) {
       if (text.includes(p)) return p;
     }
     return undefined;
   }
-
 
   // ============================================
   // PHASE 4: TESTING
@@ -1666,27 +2227,36 @@ export class SelfEvolutionEngine extends EventEmitter {
     const validated: CodeUpgrade[] = [];
 
     for (const upgrade of upgrades) {
-      upgrade.status = 'testing';
+      upgrade.status = "testing";
 
       if (!upgrade.enhancementCategory || !upgrade.enhancementPayload) {
-        upgrade.status = 'failed';
-        upgrade.notAppliedReason = 'no enhancement payload generated';
-        logger.warn(`   ❌ Validation failed for: ${upgrade.id} - no enhancement payload`);
+        upgrade.status = "failed";
+        upgrade.notAppliedReason = "no enhancement payload generated";
+        logger.warn(
+          `   ❌ Validation failed for: ${upgrade.id} - no enhancement payload`,
+        );
         continue;
       }
 
-      const clean = evolutionRegistry.sanitize(upgrade.enhancementCategory, upgrade.enhancementPayload);
+      const clean = evolutionRegistry.sanitize(
+        upgrade.enhancementCategory,
+        upgrade.enhancementPayload,
+      );
       if (!clean.ok) {
-        upgrade.status = 'failed';
+        upgrade.status = "failed";
         upgrade.notAppliedReason = clean.reason;
-        logger.warn(`   ❌ Validation failed for: ${upgrade.id} - ${clean.reason}`);
+        logger.warn(
+          `   ❌ Validation failed for: ${upgrade.id} - ${clean.reason}`,
+        );
         continue;
       }
 
       // Persist the sanitized payload so what we apply == what we validated.
       upgrade.enhancementPayload = clean.payload;
       validated.push(upgrade);
-      logger.info(`   ✅ Validated enhancement for: ${upgrade.id} (${upgrade.enhancementCategory})`);
+      logger.info(
+        `   ✅ Validated enhancement for: ${upgrade.id} (${upgrade.enhancementCategory})`,
+      );
     }
 
     return validated;
@@ -1709,61 +2279,69 @@ export class SelfEvolutionEngine extends EventEmitter {
 
     for (const upgrade of upgrades) {
       try {
-        upgrade.status = 'deploying';
+        upgrade.status = "deploying";
 
         if (!upgrade.enhancementCategory || !upgrade.enhancementPayload) {
-          upgrade.status = 'failed';
-          upgrade.notAppliedReason = 'no enhancement payload to apply';
+          upgrade.status = "failed";
+          upgrade.notAppliedReason = "no enhancement payload to apply";
           continue;
         }
 
-        const change = this.industryChanges.find(c => c.id === upgrade.changeId);
+        const change = this.industryChanges.find(
+          (c) => c.id === upgrade.changeId,
+        );
         const result = await evolutionRegistry.apply({
           upgradeId: upgrade.id,
           changeId: upgrade.changeId,
           category: upgrade.enhancementCategory,
           title: change?.title || upgrade.changeId,
-          source: change?.source || 'unknown',
+          source: change?.source || "unknown",
           payload: upgrade.enhancementPayload,
         });
 
         if (!result.consumed) {
           // Stored in the registry, but no live subsystem reads this category
           // yet — be honest: this is NOT an applied behavior change.
-          upgrade.status = 'deployed';
+          upgrade.status = "deployed";
           upgrade.deployedAt = new Date();
           upgrade.applied = false;
           upgrade.notAppliedReason = `category "${upgrade.enhancementCategory}" has no wired runtime consumer yet`;
-          logger.info(`   📋 Recorded (advisory, not applied): ${upgrade.id} (${upgrade.enhancementCategory})`);
+          logger.info(
+            `   📋 Recorded (advisory, not applied): ${upgrade.id} (${upgrade.enhancementCategory})`,
+          );
           await this.recordDeployment(upgrade);
           continue;
         }
 
         if (!result.applied) {
-          upgrade.status = 'failed';
-          upgrade.notAppliedReason = result.reason || 'registry rejected payload';
-          logger.warn(`   ❌ Apply rejected for ${upgrade.id}: ${upgrade.notAppliedReason}`);
+          upgrade.status = "failed";
+          upgrade.notAppliedReason =
+            result.reason || "registry rejected payload";
+          logger.warn(
+            `   ❌ Apply rejected for ${upgrade.id}: ${upgrade.notAppliedReason}`,
+          );
           continue;
         }
 
-        upgrade.status = 'deployed';
+        upgrade.status = "deployed";
         upgrade.deployedAt = new Date();
         upgrade.applied = true;
         appliedCount++;
-        logger.info(`   ✅ Applied (live): ${upgrade.id} → registry[${upgrade.enhancementCategory}]`);
+        logger.info(
+          `   ✅ Applied (live): ${upgrade.id} → registry[${upgrade.enhancementCategory}]`,
+        );
 
         await this.recordDeployment(upgrade);
 
         // NOTE: we intentionally do NOT emit 'filesDeployed' anymore — the
         // registry takes effect in-process immediately (and persists for other
         // workers), so a disruptive full-process restart is no longer needed.
-        this.emit('enhancementsApplied', {
+        this.emit("enhancementsApplied", {
           upgradeId: upgrade.id,
           category: upgrade.enhancementCategory,
         });
-
       } catch (error) {
-        upgrade.status = 'failed';
+        upgrade.status = "failed";
         upgrade.notAppliedReason = (error as Error).message;
         logger.warn({ err: error }, `   ❌ Failed to apply ${upgrade.id}:`);
       }
@@ -1779,10 +2357,10 @@ export class SelfEvolutionEngine extends EventEmitter {
   private async recordDeployment(upgrade: CodeUpgrade): Promise<void> {
     try {
       await storage.createOptimizationTask({
-        taskType: 'self_evolution',
+        taskType: "self_evolution",
         // Honest status: 'completed' only when a real behavior change was
         // applied; otherwise 'recorded' (stored but not behavior-changing).
-        status: upgrade.applied ? 'completed' : 'recorded',
+        status: upgrade.applied ? "completed" : "recorded",
         description: upgrade.applied
           ? `Applied: ${upgrade.enhancementCategory} - ${upgrade.changeId}`
           : `Recorded (not applied): ${upgrade.enhancementCategory} - ${upgrade.changeId} (${upgrade.notAppliedReason})`,
@@ -1797,7 +2375,7 @@ export class SelfEvolutionEngine extends EventEmitter {
         completedAt: new Date(),
       });
     } catch (error) {
-      logger.warn({ err: error }, 'Failed to record deployment:');
+      logger.warn({ err: error }, "Failed to record deployment:");
     }
   }
 
@@ -1807,43 +2385,57 @@ export class SelfEvolutionEngine extends EventEmitter {
 
   private async monitorDeploymentHealth(): Promise<void> {
     try {
-      const port = process.env.PORT || '5000';
+      const port = process.env.PORT || "5000";
       const start = Date.now();
 
       const responseTime = await new Promise<number>((resolve, reject) => {
         const req = http.get(`http://127.0.0.1:${port}/api/health`, (res) => {
           res.resume();
-          res.on('end', () => resolve(Date.now() - start));
+          res.on("end", () => resolve(Date.now() - start));
         });
-        req.setTimeout(5000, () => { req.destroy(); reject(new Error('Health check timeout')); });
-        req.on('error', reject);
+        req.setTimeout(5000, () => {
+          req.destroy();
+          reject(new Error("Health check timeout"));
+        });
+        req.on("error", reject);
       });
 
       const metrics = { errorRate: 0, responseTime };
 
       if (responseTime > 3000) {
-        logger.warn(`⚠️ Post-deployment health check slow: ${responseTime}ms — analyzing rollback need`);
+        logger.warn(
+          `⚠️ Post-deployment health check slow: ${responseTime}ms — analyzing rollback need`,
+        );
         await this.analyzeRollbackNeed({ ...metrics, errorRate: 0.02 });
       } else {
         logger.info(`   💚 Health check passed: ${responseTime}ms`);
       }
     } catch (e) {
-      logger.warn(`⚠️ Health check failed (${(e as Error).message}) — analyzing rollback need`);
+      logger.warn(
+        `⚠️ Health check failed (${(e as Error).message}) — analyzing rollback need`,
+      );
       await this.analyzeRollbackNeed({ errorRate: 0.1, responseTime: 9999 });
     }
   }
 
-  private async analyzeRollbackNeed(metrics: Record<string, number>): Promise<void> {
-    const needsRollback = metrics.errorRate > 0.05 || metrics.responseTime > 3000;
+  private async analyzeRollbackNeed(
+    metrics: Record<string, number>,
+  ): Promise<void> {
+    const needsRollback =
+      metrics.errorRate > 0.05 || metrics.responseTime > 3000;
 
     if (needsRollback) {
-      logger.warn(`🔙 CRITICAL: Initiating automatic rollback (errorRate=${metrics.errorRate.toFixed(3)}, responseTime=${metrics.responseTime}ms)`);
+      logger.warn(
+        `🔙 CRITICAL: Initiating automatic rollback (errorRate=${metrics.errorRate.toFixed(3)}, responseTime=${metrics.responseTime}ms)`,
+      );
       await this.performRollback();
     }
   }
 
   private async performRollback(): Promise<void> {
-    logger.info('🔙 Performing automatic rollback — deactivating all active registry enhancements...');
+    logger.info(
+      "🔙 Performing automatic rollback — deactivating all active registry enhancements...",
+    );
 
     // The REAL revert: deactivate every active registry enhancement so live
     // subsystems fall back to real learned data / static defaults immediately.
@@ -1851,16 +2443,21 @@ export class SelfEvolutionEngine extends EventEmitter {
     try {
       revertedCount = await evolutionRegistry.deactivateAll();
     } catch (e) {
-      logger.warn({ err: e }, '   ❌ Failed to deactivate registry enhancements:');
+      logger.warn(
+        { err: e },
+        "   ❌ Failed to deactivate registry enhancements:",
+      );
     }
 
     if (revertedCount > 0) {
-      logger.info(`🔙 Rollback complete — deactivated ${revertedCount} enhancement(s)`);
+      logger.info(
+        `🔙 Rollback complete — deactivated ${revertedCount} enhancement(s)`,
+      );
     } else {
-      logger.info('🔙 Rollback: no active enhancements — nothing to revert');
+      logger.info("🔙 Rollback: no active enhancements — nothing to revert");
     }
 
-    this.emit('rollbackCompleted', { revertedCount });
+    this.emit("rollbackCompleted", { revertedCount });
   }
 
   // ============================================
@@ -1872,33 +2469,46 @@ export class SelfEvolutionEngine extends EventEmitter {
 
     // Honest accounting: success = upgrades whose enhancement was genuinely
     // APPLIED to a live-consumed registry category, not merely "deployed".
-    const appliedCount = this.upgradeQueue.filter(u => u.applied === true).length;
-    const failedCount = this.upgradeQueue.filter(u => u.status === 'failed').length;
+    const appliedCount = this.upgradeQueue.filter(
+      (u) => u.applied === true,
+    ).length;
+    const failedCount = this.upgradeQueue.filter(
+      (u) => u.status === "failed",
+    ).length;
     const total = appliedCount + failedCount;
     const successRate = total > 0 ? appliedCount / total : 1.0;
     const deployedCount = appliedCount;
 
     // Count how many of this cycle's applied upgrades addressed competitive gaps
     const competitorGapsClosedThisCycle = this.upgradeQueue
-      .filter(u => u.applied === true)
-      .filter(u => {
-        const change = this.industryChanges.find(c => c.id === u.changeId);
-        return change?.source === 'competitor';
+      .filter((u) => u.applied === true)
+      .filter((u) => {
+        const change = this.industryChanges.find((c) => c.id === u.changeId);
+        return change?.source === "competitor";
       }).length;
 
     if (competitorGapsClosedThisCycle > 0) {
       this.competitiveGapsAddressed += competitorGapsClosedThisCycle;
       // Each closed gap nudges the score up (capped at 100)
-      this.competitivePositionScore = Math.min(100, this.competitivePositionScore + competitorGapsClosedThisCycle);
-      logger.info(`   🏆 Competitive position improved: +${competitorGapsClosedThisCycle} gaps closed → score now ${this.competitivePositionScore}/100`);
+      this.competitivePositionScore = Math.min(
+        100,
+        this.competitivePositionScore + competitorGapsClosedThisCycle,
+      );
+      logger.info(
+        `   🏆 Competitive position improved: +${competitorGapsClosedThisCycle} gaps closed → score now ${this.competitivePositionScore}/100`,
+      );
     }
 
     // Log competitive leadership summary
-    const competitorChanges = this.industryChanges.filter(c => c.source === 'competitor').length;
-    logger.info(`   📊 Competitive leadership summary: score=${this.competitivePositionScore}/100 | gaps_detected=${this.competitiveGapsDetected} | gaps_addressed=${this.competitiveGapsAddressed} | competitor_signals=${competitorChanges}`);
+    const competitorChanges = this.industryChanges.filter(
+      (c) => c.source === "competitor",
+    ).length;
+    logger.info(
+      `   📊 Competitive leadership summary: score=${this.competitivePositionScore}/100 | gaps_detected=${this.competitiveGapsDetected} | gaps_addressed=${this.competitiveGapsAddressed} | competitor_signals=${competitorChanges}`,
+    );
 
     if (successRate > 0.9) {
-      customAI.recordPerformance('self_evolution', {
+      customAI.recordPerformance("self_evolution", {
         cycleId,
         successRate,
         deployedCount,
@@ -1917,30 +2527,49 @@ export class SelfEvolutionEngine extends EventEmitter {
   // HELPER METHODS
   // ============================================
 
-  private async checkIfMaxBoosterHasFeature(featureName: string): Promise<boolean> {
+  private async checkIfMaxBoosterHasFeature(
+    featureName: string,
+  ): Promise<boolean> {
     // Check if we already have this feature implemented
     const existingFeatures = [
-      'AI Mixing', 'AI Mastering', 'BPM Detection', 'Key Detection',
-      'Stem Separation', 'Loudness Normalization', 'Social Media Autopilot',
-      'Advertising Autopilot', 'Analytics Dashboard', 'Distribution'
+      "AI Mixing",
+      "AI Mastering",
+      "BPM Detection",
+      "Key Detection",
+      "Stem Separation",
+      "Loudness Normalization",
+      "Social Media Autopilot",
+      "Advertising Autopilot",
+      "Analytics Dashboard",
+      "Distribution",
     ];
-    
-    return existingFeatures.some(f => 
-      featureName.toLowerCase().includes(f.toLowerCase()) ||
-      f.toLowerCase().includes(featureName.toLowerCase())
+
+    return existingFeatures.some(
+      (f) =>
+        featureName.toLowerCase().includes(f.toLowerCase()) ||
+        f.toLowerCase().includes(featureName.toLowerCase()),
     );
   }
 
   private async identifyTargetFiles(change: IndustryChange): Promise<string[]> {
     const moduleFileMap: Record<string, string[]> = {
-      studio: ['server/services/aiMusicService.ts', 'server/services/studioService.ts'],
-      distribution: ['server/services/distributionService.ts'],
-      social: ['server/services/aiContentService.ts', 'server/autonomous-autopilot.ts'],
-      advertising: ['server/services/advertisingAIService.ts'],
-      marketplace: ['server/services/marketplaceService.ts'],
-      analytics: ['server/services/aiAnalyticsService.ts', 'server/services/aiInsightsEngine.ts'],
-      security: ['server/security-system.ts', 'server/audit-system.ts'],
-      monetization: ['server/services/paymentService.ts'],
+      studio: [
+        "server/services/aiMusicService.ts",
+        "server/services/studioService.ts",
+      ],
+      distribution: ["server/services/distributionService.ts"],
+      social: [
+        "server/services/aiContentService.ts",
+        "server/autonomous-autopilot.ts",
+      ],
+      advertising: ["server/services/advertisingAIService.ts"],
+      marketplace: ["server/services/marketplaceService.ts"],
+      analytics: [
+        "server/services/aiAnalyticsService.ts",
+        "server/services/aiInsightsEngine.ts",
+      ],
+      security: ["server/security-system.ts", "server/audit-system.ts"],
+      monetization: ["server/services/paymentService.ts"],
     };
 
     const files: string[] = [];
@@ -1952,14 +2581,20 @@ export class SelfEvolutionEngine extends EventEmitter {
     return files;
   }
 
-  private mapChangeToUpgradeType(change: IndustryChange): CodeUpgrade['type'] {
+  private mapChangeToUpgradeType(change: IndustryChange): CodeUpgrade["type"] {
     switch (change.category) {
-      case 'feature': return 'new_feature';
-      case 'optimization': return 'optimization';
-      case 'security_patch': return 'security_patch';
-      case 'api_change': return 'api_update';
-      case 'standard': return 'standard_compliance';
-      default: return 'optimization';
+      case "feature":
+        return "new_feature";
+      case "optimization":
+        return "optimization";
+      case "security_patch":
+        return "security_patch";
+      case "api_change":
+        return "api_update";
+      case "standard":
+        return "standard_compliance";
+      default:
+        return "optimization";
     }
   }
 
@@ -1976,8 +2611,8 @@ export class SelfEvolutionEngine extends EventEmitter {
   private camelCase(str: string): string {
     return str
       .replace(/[^a-zA-Z0-9]+(.)/g, (_, char) => char.toUpperCase())
-      .replace(/^./, char => char.toLowerCase())
-      .replace(/[^a-zA-Z0-9]/g, '');
+      .replace(/^./, (char) => char.toLowerCase())
+      .replace(/[^a-zA-Z0-9]/g, "");
   }
 
   // ============================================
@@ -2014,25 +2649,33 @@ export class SelfEvolutionEngine extends EventEmitter {
   } {
     const now = Date.now();
     const expectedIntervalMs = this.MONITORING_INTERVAL_MS * 1.5;
-    const intervalHealthy = !this.isRunning || !this.lastCycleAt
-      ? true
-      : (now - this.lastCycleAt.getTime()) < expectedIntervalMs;
+    const intervalHealthy =
+      !this.isRunning || !this.lastCycleAt
+        ? true
+        : now - this.lastCycleAt.getTime() < expectedIntervalMs;
 
-    const competitorChanges = this.industryChanges.filter(c => c.source === 'competitor');
+    const competitorChanges = this.industryChanges.filter(
+      (c) => c.source === "competitor",
+    );
     return {
       isRunning: this.isRunning,
       isCycleRunning: this.isCycleRunning,
       changesDetected: this.industryChanges.length,
       upgradesGenerated: this.upgradeQueue.length,
-      upgradesApplied: this.upgradeQueue.filter(u => u.applied === true).length,
-      upgradesRecordedNotApplied: this.upgradeQueue.filter(u => u.status === 'deployed' && u.applied !== true).length,
+      upgradesApplied: this.upgradeQueue.filter((u) => u.applied === true)
+        .length,
+      upgradesRecordedNotApplied: this.upgradeQueue.filter(
+        (u) => u.status === "deployed" && u.applied !== true,
+      ).length,
       // upgradesDeployed reports genuinely-APPLIED upgrades (honest): a "deployed"
       // status alone no longer counts unless it changed live behavior.
-      upgradesDeployed: this.upgradeQueue.filter(u => u.applied === true).length,
+      upgradesDeployed: this.upgradeQueue.filter((u) => u.applied === true)
+        .length,
       appliedEnhancements: evolutionRegistry.getStats().consumedActive,
-      lastCycle: this.industryChanges.length > 0
-        ? this.industryChanges[this.industryChanges.length - 1].detectedAt
-        : null,
+      lastCycle:
+        this.industryChanges.length > 0
+          ? this.industryChanges[this.industryChanges.length - 1].detectedAt
+          : null,
       lastCycleAt: this.lastCycleAt,
       lastCycleError: this.lastCycleError,
       totalCyclesRun: this.totalCyclesRun,
@@ -2040,7 +2683,7 @@ export class SelfEvolutionEngine extends EventEmitter {
       // Competitive leadership metrics
       competitiveLeadership: {
         score: this.competitivePositionScore,
-        goal: 'surpass every competitor on every dimension — parity is never enough',
+        goal: "surpass every competitor on every dimension — parity is never enough",
         competitorsTracked: COMPETITOR_PLATFORMS.length,
         surpassed: this.lastSurpassedCount,
         atParity: this.lastParityCount,
@@ -2051,7 +2694,11 @@ export class SelfEvolutionEngine extends EventEmitter {
         topThreats: competitorChanges
           .sort((a, b) => b.competitiveImpact - a.competitiveImpact)
           .slice(0, 5)
-          .map(c => ({ title: c.title, impact: c.competitiveImpact, urgency: c.urgency })),
+          .map((c) => ({
+            title: c.title,
+            impact: c.competitiveImpact,
+            urgency: c.urgency,
+          })),
       },
       memoryUsage: {
         changes: this.industryChanges.length,
@@ -2065,15 +2712,21 @@ export class SelfEvolutionEngine extends EventEmitter {
     return this.industryChanges.slice(-limit);
   }
 
-  getUpgradeHistory(limit: number = 50): Array<Omit<CodeUpgrade, 'generatedCode'> & { generatedCode: Record<string, string> }> {
-    return this.upgradeQueue.slice(-limit).map(upgrade => ({
+  getUpgradeHistory(
+    limit: number = 50,
+  ): Array<
+    Omit<CodeUpgrade, "generatedCode"> & {
+      generatedCode: Record<string, string>;
+    }
+  > {
+    return this.upgradeQueue.slice(-limit).map((upgrade) => ({
       ...upgrade,
       generatedCode: Object.fromEntries(upgrade.generatedCode),
     }));
   }
 
   async forceEvolutionCycle(): Promise<void> {
-    logger.info('⚡ Force-triggering evolution cycle...');
+    logger.info("⚡ Force-triggering evolution cycle...");
     await this.runEvolutionCycle();
   }
 }

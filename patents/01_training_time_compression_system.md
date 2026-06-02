@@ -1,7 +1,7 @@
 UNITED STATES PATENT APPLICATION
 
-APPLICANT/ASSIGNEE:  B-Lawz Music LLC
-CORRESPONDENCE ADDRESS:  B-Lawz Music LLC
+APPLICANT/ASSIGNEE: B-Lawz Music LLC
+CORRESPONDENCE ADDRESS: B-Lawz Music LLC
 
 TITLE OF INVENTION
 
@@ -35,19 +35,19 @@ I. System Architecture Overview
 
 The training time compression system (hereinafter "the System") comprises the following functional modules operating in a coordinated training loop:
 
-  Module A — Augmentation Burst Engine
-  Module B — Scene Interpolation Synthesizer
-  Module C — Adaptive Learning Rate Surgeon
-  Module D — Curriculum Phase Controller
-  Module E — Temporal Consistency Pair Generator
-  Module F — Year-Equivalent Throughput Engine (the "Experience Clock")
-  Module G — Session Registry and Reporting Layer
+Module A — Augmentation Burst Engine
+Module B — Scene Interpolation Synthesizer
+Module C — Adaptive Learning Rate Surgeon
+Module D — Curriculum Phase Controller
+Module E — Temporal Consistency Pair Generator
+Module F — Year-Equivalent Throughput Engine (the "Experience Clock")
+Module G — Session Registry and Reporting Layer
 
 II. Module A — Augmentation Burst Engine
 
 The Augmentation Burst Engine receives a single real training frame f and produces a burst of B variants {f₁, f₂, ..., f_B} through stochastic spatial transformations. Each variant undergoes an independent random subset of: horizontal flip, vertical flip, random crop with resize, brightness jitter in [0.85, 1.15], contrast jitter in [0.85, 1.15], hue rotation in [−0.05, +0.05], and Gaussian noise injection at σ ∈ [0.01, 0.03].
 
-The gradients of all B variants are accumulated before a single parameter update is applied. This produces an effective batch diversity equivalent to training on B distinct frames while paying the I/O cost of loading only one frame. Each burst variant earns _BURST_YEAR_WEIGHT = 6.0 year-equivalent steps, reflecting that six diverse gradient directions are collapsed into a single efficient update.
+The gradients of all B variants are accumulated before a single parameter update is applied. This produces an effective batch diversity equivalent to training on B distinct frames while paying the I/O cost of loading only one frame. Each burst variant earns \_BURST_YEAR_WEIGHT = 6.0 year-equivalent steps, reflecting that six diverse gradient directions are collapsed into a single efficient update.
 
 In the preferred embodiment, burst_size B = 8, yielding a per-frame informational density of 8 × 6 = 48 YE-steps per real training frame loaded.
 
@@ -55,7 +55,7 @@ III. Module B — Scene Interpolation Synthesizer
 
 The Scene Interpolation Synthesizer generates synthetic training examples by linearly interpolating between two real frames f_a and f_b sampled from the dataset. The blended frame f_blend = α × f_a + (1 − α) × f_b for α ∈ [0, 1] sampled uniformly. The conditioning prompt for the blended frame is constructed by selecting the first sentence of prompt_a followed by the final clause of prompt_b, weighted by α.
 
-This technique expands the effective dataset size without requiring additional real data retrieval. Interpolated frames are injected into the training batch at a configurable density interp_density ∈ [0.0, 0.8] of steps per epoch. Each interpolated frame earns _INTERP_YEAR_WEIGHT = 3.0 year-equivalent steps.
+This technique expands the effective dataset size without requiring additional real data retrieval. Interpolated frames are injected into the training batch at a configurable density interp_density ∈ [0.0, 0.8] of steps per epoch. Each interpolated frame earns \_INTERP_YEAR_WEIGHT = 3.0 year-equivalent steps.
 
 IV. Module C — Adaptive Learning Rate Surgeon
 
@@ -73,9 +73,9 @@ This curriculum ordering mirrors the progressive training strategy used in large
 
 VI. Module E — Temporal Consistency Pair Generator
 
-The Temporal Consistency Pair Generator selects pairs of consecutive frames (f_t, f_{t+1}) from the same video sequence and trains the model on both simultaneously with a coherence penalty term added to the loss:
+The Temporal Consistency Pair Generator selects pairs of consecutive frames (f*t, f*{t+1}) from the same video sequence and trains the model on both simultaneously with a coherence penalty term added to the loss:
 
-  L_total = L_reconstruction(f_t) + L_reconstruction(f_{t+1}) + λ × ||latent(f_t) − latent(f_{t+1})||₂
+L*total = L_reconstruction(f_t) + L_reconstruction(f*{t+1}) + λ × ||latent(f*t) − latent(f*{t+1})||₂
 
 where λ is a configurable coherence weight and latent(f) denotes the model's internal latent representation of frame f. This teaches the model that adjacent frames must be perceptually related, building temporal consistency before full temporal UNet training is applied.
 
@@ -85,26 +85,26 @@ The Year-Equivalent Throughput Engine (the "Experience Clock") is the central no
 
 The target pace is derived from the baseline throughput of an 8-core CPU:
 
-  _YEAR_EQUIV_STEPS_PER_MINUTE = _CPU_STEPS_PER_SEC_BASELINE × 365.25 × 24 × 3600
-                               = 4.5 × 31,557,600
-                               ≈ 142,009,200 YE-steps per real minute
+\_YEAR_EQUIV_STEPS_PER_MINUTE = \_CPU_STEPS_PER_SEC_BASELINE × 365.25 × 24 × 3600
+= 4.5 × 31,557,600
+≈ 142,009,200 YE-steps per real minute
 
 This figure represents how many gradient steps a conventional single-frame CPU training loop would execute in one real minute over one calendar year of continuous operation. The Experience Clock therefore defines "one simulated year" as the equivalent informational throughput of one calendar year of naive CPU training.
 
-The Experience Clock maintains a running total _year_equiv_steps and three counters for each step type, weighted as follows:
+The Experience Clock maintains a running total \_year_equiv_steps and three counters for each step type, weighted as follows:
 
-  Burst variant step:              _BURST_YEAR_WEIGHT = 6.0 YE-steps
-  Priority replay step:            _REPLAY_YEAR_WEIGHT = 12.0 YE-steps
-  Synthetic interpolation frame:   _INTERP_YEAR_WEIGHT = 3.0 YE-steps
-  Scenario-sourced step (depth 0): _SCENARIO_YE_WEIGHT_BASE = 18 YE-steps
-  Scenario-sourced step (depth 1): _SCENARIO_YE_WEIGHT_COMPOUND_1 = 24 YE-steps
-  Scenario-sourced step (depth 2+):_SCENARIO_YE_WEIGHT_COMPOUND_2 = 30 YE-steps
+Burst variant step: \_BURST_YEAR_WEIGHT = 6.0 YE-steps
+Priority replay step: \_REPLAY_YEAR_WEIGHT = 12.0 YE-steps
+Synthetic interpolation frame: \_INTERP_YEAR_WEIGHT = 3.0 YE-steps
+Scenario-sourced step (depth 0): \_SCENARIO_YE_WEIGHT_BASE = 18 YE-steps
+Scenario-sourced step (depth 1): \_SCENARIO_YE_WEIGHT_COMPOUND_1 = 24 YE-steps
+Scenario-sourced step (depth 2+):\_SCENARIO_YE_WEIGHT_COMPOUND_2 = 30 YE-steps
 
 The year-equivalent deficit at elapsed time t is:
 
-  deficit(t) = max(0, target_pace × t_minutes − _year_equiv_steps)
+deficit(t) = max(0, target_pace × t_minutes − \_year_equiv_steps)
 
-This deficit is consumed by two downstream systems: (1) the replay cycle scheduler, which computes recommended_replay_cycles = deficit / (REPLAY_BATCH_SIZE × _REPLAY_YEAR_WEIGHT), and (2) the Caffeine Mode pressure signal consumed by the content quality gate and scenario selection layer, which converts the deficit into a dimensionless pressure score on [0, 1.5].
+This deficit is consumed by two downstream systems: (1) the replay cycle scheduler, which computes recommended_replay_cycles = deficit / (REPLAY_BATCH_SIZE × \_REPLAY_YEAR_WEIGHT), and (2) the Caffeine Mode pressure signal consumed by the content quality gate and scenario selection layer, which converts the deficit into a dimensionless pressure score on [0, 1.5].
 
 VIII. Module G — Session Registry
 
@@ -117,9 +117,10 @@ In the preferred embodiment, the System is calibrated so that each training sess
 X. Interoperability with Scenario Engine and Memory System
 
 The YE deficit output of Module F is consumed by:
-  - The Music Industry Compounding Scenario Engine (see Patent No. 2), which uses compound_depth-weighted YE credits
-  - The A/B Test Scenario Layer (see Patent No. 3), which converts the deficit into training pressure for UCB1 bandit exploration-exploitation tuning
-  - The Four-Tier Memory Replay System (see Patent No. 5), which uses the recommended_replay_cycles count to drive post-epoch memory playback
+
+- The Music Industry Compounding Scenario Engine (see Patent No. 2), which uses compound_depth-weighted YE credits
+- The A/B Test Scenario Layer (see Patent No. 3), which converts the deficit into training pressure for UCB1 bandit exploration-exploitation tuning
+- The Four-Tier Memory Replay System (see Patent No. 5), which uses the recommended_replay_cycles count to drive post-epoch memory playback
 
 CLAIMS
 
@@ -157,11 +158,11 @@ CLAIMS
 12. The system of claim 1, further comprising a session registry that records per-session and cumulative training statistics including simulated years of experience, and exposes said statistics via a network-accessible status endpoint.
 
 13. A method of measuring effective training progress of a machine learning model training session, the method comprising:
-   defining a year-equivalent step unit representing the informational density of one conventional single-frame training step on baseline hardware operating for one calendar year;
-   assigning distinct year-equivalent weights to each of a plurality of step types including data augmentation burst steps, experience replay steps, and synthetic interpolation steps;
-   accumulating a running total of year-equivalent steps weighted by step type;
-   computing a target year-equivalent step count based on elapsed real time at a fixed conversion rate; and
-   reporting a deficit representing the difference between the target and accumulated year-equivalent step counts.
+    defining a year-equivalent step unit representing the informational density of one conventional single-frame training step on baseline hardware operating for one calendar year;
+    assigning distinct year-equivalent weights to each of a plurality of step types including data augmentation burst steps, experience replay steps, and synthetic interpolation steps;
+    accumulating a running total of year-equivalent steps weighted by step type;
+    computing a target year-equivalent step count based on elapsed real time at a fixed conversion rate; and
+    reporting a deficit representing the difference between the target and accumulated year-equivalent step counts.
 
 14. The method of claim 13, wherein the fixed conversion rate is one simulated year of training experience per one real wall-clock minute.
 
@@ -170,21 +171,21 @@ CLAIMS
 16. The method of claim 13, wherein assigning distinct year-equivalent weights comprises assigning a higher weight to steps whose gradients carry domain-specific structured narrative context than to steps whose gradients are derived from stochastic augmentation alone.
 
 17. A computer-implemented method for accelerating diffusion model fine-tuning on a central processing unit, the method comprising:
-   simultaneously applying, within a single training loop, five orthogonal acceleration techniques comprising: augmentation burst training, synthetic scene interpolation, adaptive learning rate surgery, curriculum-ordered scene presentation, and temporal consistency pair training;
-   maintaining a unified year-equivalent throughput counter that aggregates contributions from all five techniques using distinct informational density weights; and
-   computing a simulated training experience metric in units of calendar years from the unified counter.
+    simultaneously applying, within a single training loop, five orthogonal acceleration techniques comprising: augmentation burst training, synthetic scene interpolation, adaptive learning rate surgery, curriculum-ordered scene presentation, and temporal consistency pair training;
+    maintaining a unified year-equivalent throughput counter that aggregates contributions from all five techniques using distinct informational density weights; and
+    computing a simulated training experience metric in units of calendar years from the unified counter.
 
 18. The method of claim 17, further comprising distributing updated model weights to client nodes after each training session at a synchronization interval matching a domain-specific dataset refresh cycle.
 
 19. The method of claim 17, wherein the simultaneous application of the five techniques achieves an effective compression ratio of approximately ten real hours of GPU training per one real hour of central processing unit training.
 
 20. A non-transitory computer-readable medium storing instructions that, when executed by a processor, implement:
-   an augmentation burst engine configured to generate a configurable number of stochastically augmented variants of each training frame and accumulate their gradients before a weight update;
-   an interpolation synthesizer configured to blend pairs of real training frames and their conditioning prompts at random interpolation weights to produce synthetic training samples;
-   an adaptive learning rate surgeon configured to monitor a rolling loss window and apply a transient multiplicative learning rate correction when the loss slope indicates a plateau;
-   a curriculum phase controller configured to sort training examples by per-scene loss variance in ascending order at the beginning of each training epoch;
-   a temporal consistency pair generator configured to impose a coherence penalty on consecutive training frame pairs; and
-   a year-equivalent experience clock configured to assign distinct informational density weights to each step type and report accumulated simulated training experience in units of years.
+    an augmentation burst engine configured to generate a configurable number of stochastically augmented variants of each training frame and accumulate their gradients before a weight update;
+    an interpolation synthesizer configured to blend pairs of real training frames and their conditioning prompts at random interpolation weights to produce synthetic training samples;
+    an adaptive learning rate surgeon configured to monitor a rolling loss window and apply a transient multiplicative learning rate correction when the loss slope indicates a plateau;
+    a curriculum phase controller configured to sort training examples by per-scene loss variance in ascending order at the beginning of each training epoch;
+    a temporal consistency pair generator configured to impose a coherence penalty on consecutive training frame pairs; and
+    a year-equivalent experience clock configured to assign distinct informational density weights to each step type and report accumulated simulated training experience in units of years.
 
 ABSTRACT
 

@@ -1,20 +1,44 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
-import { Volume2, VolumeX, Headphones, Mic, ChevronDown, ChevronUp, Plus, MoreVertical } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Slider } from '@/components/ui/slider';
-import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
-import { Separator } from '@/components/ui/separator';
-import { studioOneTheme } from '@/lib/studioOneTheme';
-import { useStudioLayoutStore } from '@/lib/studioLayoutStore';
-import { valueToDb, dbToValue, MAX_DB, MIN_DB, DB_RANGE } from './ProfessionalFader';
+import { useState, useEffect, useCallback, useRef } from "react";
+import {
+  Volume2,
+  VolumeX,
+  Headphones,
+  Mic,
+  ChevronDown,
+  ChevronUp,
+  Plus,
+  MoreVertical,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Slider } from "@/components/ui/slider";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { Separator } from "@/components/ui/separator";
+import { studioOneTheme } from "@/lib/studioOneTheme";
+import { useStudioLayoutStore } from "@/lib/studioLayoutStore";
+import {
+  valueToDb,
+  dbToValue,
+  MAX_DB,
+  MIN_DB,
+  DB_RANGE,
+} from "./ProfessionalFader";
 
 interface InsertEffect {
   id: string;
   name: string;
-  type: 'eq' | 'compressor' | 'reverb' | 'delay' | 'distortion' | 'chorus';
+  type: "eq" | "compressor" | "reverb" | "delay" | "distortion" | "chorus";
   bypass: boolean;
   params?: Record<string, number>;
 }
@@ -32,7 +56,7 @@ interface StudioOneChannelStripProps {
   name: string;
   trackNumber: number;
   color: string;
-  trackType: 'audio' | 'midi' | 'instrument' | 'bus' | 'fx' | 'master';
+  trackType: "audio" | "midi" | "instrument" | "bus" | "fx" | "master";
   volume: number;
   pan: number;
   mute: boolean;
@@ -57,10 +81,18 @@ interface StudioOneChannelStripProps {
   onSelect?: () => void;
 }
 
-function VUMeterBar({ level, peak, height = 200 }: { level: number; peak: number; height?: number }) {
+function VUMeterBar({
+  level,
+  peak,
+  height = 200,
+}: {
+  level: number;
+  peak: number;
+  height?: number;
+}) {
   const levelPercent = Math.min(100, Math.max(0, level * 100));
   const peakPercent = Math.min(100, Math.max(0, peak * 100));
-  
+
   const getGradient = () => {
     return `linear-gradient(to top, 
       ${studioOneTheme.colors.meter.low} 0%, 
@@ -72,9 +104,9 @@ function VUMeterBar({ level, peak, height = 200 }: { level: number; peak: number
   };
 
   return (
-    <div 
+    <div
       className="relative w-2 rounded-sm overflow-hidden"
-      style={{ 
+      style={{
         height,
         background: studioOneTheme.colors.bg.deep,
         border: `1px solid ${studioOneTheme.colors.border.subtle}`,
@@ -94,7 +126,10 @@ function VUMeterBar({ level, peak, height = 200 }: { level: number; peak: number
         className="absolute left-0 right-0 h-0.5"
         style={{
           bottom: `${peakPercent}%`,
-          background: peakPercent > 95 ? studioOneTheme.colors.meter.clip : studioOneTheme.colors.text.primary,
+          background:
+            peakPercent > 95
+              ? studioOneTheme.colors.meter.clip
+              : studioOneTheme.colors.text.primary,
         }}
       />
       {/* Scale marks */}
@@ -112,7 +147,13 @@ function VUMeterBar({ level, peak, height = 200 }: { level: number; peak: number
   );
 }
 
-function PanKnob({ value, onChange }: { value: number; onChange: (v: number) => void }) {
+function PanKnob({
+  value,
+  onChange,
+}: {
+  value: number;
+  onChange: (v: number) => void;
+}) {
   const [isDragging, setIsDragging] = useState(false);
   const startY = useRef(0);
   const startValue = useRef(0);
@@ -137,16 +178,21 @@ function PanKnob({ value, onChange }: { value: number; onChange: (v: number) => 
       setIsDragging(false);
     };
 
-    window.addEventListener('mousemove', handleMouseMove);
-    window.addEventListener('mouseup', handleMouseUp);
+    window.addEventListener("mousemove", handleMouseMove);
+    window.addEventListener("mouseup", handleMouseUp);
     return () => {
-      window.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('mouseup', handleMouseUp);
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("mouseup", handleMouseUp);
     };
   }, [isDragging, onChange]);
 
   const rotation = value * 135;
-  const displayValue = value === 0 ? 'C' : value < 0 ? `${Math.abs(value * 100).toFixed(0)}L` : `${(value * 100).toFixed(0)}R`;
+  const displayValue =
+    value === 0
+      ? "C"
+      : value < 0
+        ? `${Math.abs(value * 100).toFixed(0)}L`
+        : `${(value * 100).toFixed(0)}R`;
 
   return (
     <div className="flex flex-col items-center gap-1">
@@ -155,7 +201,7 @@ function PanKnob({ value, onChange }: { value: number; onChange: (v: number) => 
         style={{
           background: `conic-gradient(from 225deg, ${studioOneTheme.colors.bg.tertiary} 0deg, ${studioOneTheme.colors.bg.tertiary} 270deg, ${studioOneTheme.colors.bg.tertiary} 270deg)`,
           border: `2px solid ${studioOneTheme.colors.border.secondary}`,
-          boxShadow: isDragging ? studioOneTheme.effects.glow.blue : 'none',
+          boxShadow: isDragging ? studioOneTheme.effects.glow.blue : "none",
         }}
         onMouseDown={handleMouseDown}
         onDoubleClick={() => onChange(0)}
@@ -164,12 +210,12 @@ function PanKnob({ value, onChange }: { value: number; onChange: (v: number) => 
           className="absolute top-1 left-1/2 w-0.5 h-2 rounded-full"
           style={{
             background: studioOneTheme.colors.accent.blue,
-            transformOrigin: 'bottom center',
+            transformOrigin: "bottom center",
             transform: `translateX(-50%) rotate(${rotation}deg)`,
           }}
         />
       </div>
-      <span 
+      <span
         className="text-[9px] font-mono"
         style={{ color: studioOneTheme.colors.text.muted }}
       >
@@ -179,14 +225,14 @@ function PanKnob({ value, onChange }: { value: number; onChange: (v: number) => 
   );
 }
 
-function VerticalFader({ 
-  value, 
-  onChange, 
+function VerticalFader({
+  value,
+  onChange,
   height = 120,
-  color 
-}: { 
-  value: number; 
-  onChange: (v: number) => void; 
+  color,
+}: {
+  value: number;
+  onChange: (v: number) => void;
   height?: number;
   color: string;
 }) {
@@ -198,13 +244,16 @@ function VerticalFader({
     updateValue(e);
   };
 
-  const updateValue = useCallback((e: MouseEvent | React.MouseEvent) => {
-    if (!trackRef.current) return;
-    const rect = trackRef.current.getBoundingClientRect();
-    const y = e.clientY - rect.top;
-    const percent = 1 - (y / rect.height);
-    onChange(Math.max(0, Math.min(1, percent)));
-  }, [onChange]);
+  const updateValue = useCallback(
+    (e: MouseEvent | React.MouseEvent) => {
+      if (!trackRef.current) return;
+      const rect = trackRef.current.getBoundingClientRect();
+      const y = e.clientY - rect.top;
+      const percent = 1 - y / rect.height;
+      onChange(Math.max(0, Math.min(1, percent)));
+    },
+    [onChange],
+  );
 
   useEffect(() => {
     if (!isDragging) return;
@@ -212,18 +261,18 @@ function VerticalFader({
     const handleMouseMove = (e: MouseEvent) => updateValue(e);
     const handleMouseUp = () => setIsDragging(false);
 
-    window.addEventListener('mousemove', handleMouseMove);
-    window.addEventListener('mouseup', handleMouseUp);
+    window.addEventListener("mousemove", handleMouseMove);
+    window.addEventListener("mouseup", handleMouseUp);
     return () => {
-      window.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('mouseup', handleMouseUp);
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("mouseup", handleMouseUp);
     };
   }, [isDragging, updateValue]);
 
   const thumbPosition = (1 - value) * 100;
   // Use consistent dB conversion with +30dB safety cap
   const db = valueToDb(value);
-  const dbValue = db === -Infinity ? '-∞' : db.toFixed(1);
+  const dbValue = db === -Infinity ? "-∞" : db.toFixed(1);
   // Unity gain (0dB) position for double-click reset
   const unityGainValue = dbToValue(0);
 
@@ -265,10 +314,12 @@ function VerticalFader({
             transform: `translate(-50%, -50%)`,
             background: `linear-gradient(180deg, ${studioOneTheme.colors.bg.elevated} 0%, ${studioOneTheme.colors.bg.tertiary} 100%)`,
             border: `1px solid ${studioOneTheme.colors.border.secondary}`,
-            boxShadow: isDragging ? studioOneTheme.effects.glow.blue : studioOneTheme.effects.shadow.sm,
+            boxShadow: isDragging
+              ? studioOneTheme.effects.glow.blue
+              : studioOneTheme.effects.shadow.sm,
           }}
         >
-          <div 
+          <div
             className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-4 h-0.5 rounded-full"
             style={{ background: color }}
           />
@@ -285,7 +336,7 @@ function VerticalFader({
           />
         ))}
       </div>
-      <span 
+      <span
         className="text-[9px] font-mono"
         style={{ color: studioOneTheme.colors.text.muted }}
       >
@@ -325,12 +376,17 @@ export function StudioOneChannelStrip({
   onSelect,
 }: StudioOneChannelStripProps) {
   const { consoleSections, channelWidth } = useStudioLayoutStore();
-  const [localMeterLevels, setLocalMeterLevels] = useState<[number, number]>([0, 0]);
-  const [localPeakLevels, setLocalPeakLevels] = useState<[number, number]>([0, 0]);
+  const [localMeterLevels, setLocalMeterLevels] = useState<[number, number]>([
+    0, 0,
+  ]);
+  const [localPeakLevels, setLocalPeakLevels] = useState<[number, number]>([
+    0, 0,
+  ]);
   const [showInserts, setShowInserts] = useState(true);
   const [showSends, setShowSends] = useState(true);
 
-  const width = channelWidth === 'narrow' ? 60 : channelWidth === 'wide' ? 120 : 80;
+  const width =
+    channelWidth === "narrow" ? 60 : channelWidth === "wide" ? 120 : 80;
 
   useEffect(() => {
     if (mute) {
@@ -343,13 +399,13 @@ export function StudioOneChannelStrip({
       if (val === undefined || val === null || !Number.isFinite(val)) return 0;
       return Math.max(0, Math.min(1, val));
     };
-    
+
     const rawL = safeValue(meterLevels?.[0]) * volume;
     const rawR = safeValue(meterLevels?.[1]) * volume;
     const scaledL = Math.min(1, rawL);
     const scaledR = Math.min(1, rawR);
     setLocalMeterLevels([scaledL, scaledR]);
-    
+
     if (scaledL > 0 || scaledR > 0) {
       setLocalPeakLevels((prev) => [
         Math.max(prev[0] * 0.98, scaledL),
@@ -362,13 +418,20 @@ export function StudioOneChannelStrip({
 
   const getTrackTypeLabel = () => {
     switch (trackType) {
-      case 'audio': return 'A';
-      case 'midi': return 'M';
-      case 'instrument': return 'I';
-      case 'bus': return 'B';
-      case 'fx': return 'FX';
-      case 'master': return 'MST';
-      default: return '';
+      case "audio":
+        return "A";
+      case "midi":
+        return "M";
+      case "instrument":
+        return "I";
+      case "bus":
+        return "B";
+      case "fx":
+        return "FX";
+      case "master":
+        return "MST";
+      default:
+        return "";
     }
   };
 
@@ -378,11 +441,13 @@ export function StudioOneChannelStrip({
       style={{
         width,
         minWidth: width,
-        background: isSelected 
+        background: isSelected
           ? `linear-gradient(180deg, ${studioOneTheme.colors.bg.secondary} 0%, ${studioOneTheme.colors.bg.primary} 100%)`
           : studioOneTheme.colors.bg.primary,
         borderColor: studioOneTheme.colors.border.subtle,
-        boxShadow: isSelected ? `inset 0 0 0 1px ${studioOneTheme.colors.accent.blue}` : 'none',
+        boxShadow: isSelected
+          ? `inset 0 0 0 1px ${studioOneTheme.colors.accent.blue}`
+          : "none",
       }}
       onClick={onSelect}
     >
@@ -396,25 +461,25 @@ export function StudioOneChannelStrip({
         }}
       >
         <div className="flex items-center gap-1">
-          <span 
+          <span
             className="text-[9px] font-bold rounded px-1"
-            style={{ 
-              background: color + '40',
+            style={{
+              background: color + "40",
               color: studioOneTheme.colors.text.primary,
             }}
           >
             {trackNumber}
           </span>
-          <span 
+          <span
             className="text-[10px] font-medium truncate flex-1"
             style={{ color: studioOneTheme.colors.text.primary }}
             title={name}
           >
             {name}
           </span>
-          <span 
+          <span
             className="text-[8px] font-bold px-1 rounded"
-            style={{ 
+            style={{
               background: studioOneTheme.colors.bg.deep,
               color: studioOneTheme.colors.text.muted,
             }}
@@ -424,18 +489,18 @@ export function StudioOneChannelStrip({
         </div>
 
         {/* Input/Output routing */}
-        {consoleSections.inputs && channelWidth !== 'narrow' && (
+        {consoleSections.inputs && channelWidth !== "narrow" && (
           <div className="flex flex-col gap-0.5">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button 
+                <button
                   className="w-full text-[8px] py-0.5 px-1 rounded text-left truncate hover:bg-white/10"
-                  style={{ 
+                  style={{
                     background: studioOneTheme.colors.bg.deep,
                     color: studioOneTheme.colors.text.muted,
                   }}
                 >
-                  {inputSource || 'No Input'}
+                  {inputSource || "No Input"}
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent>
@@ -450,7 +515,7 @@ export function StudioOneChannelStrip({
 
       {/* Inserts Section */}
       {consoleSections.inserts && (
-        <div 
+        <div
           className="border-b"
           style={{ borderColor: studioOneTheme.colors.border.subtle }}
         >
@@ -460,7 +525,11 @@ export function StudioOneChannelStrip({
             style={{ color: studioOneTheme.colors.text.muted }}
           >
             <span>INSERTS</span>
-            {showInserts ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+            {showInserts ? (
+              <ChevronUp className="h-3 w-3" />
+            ) : (
+              <ChevronDown className="h-3 w-3" />
+            )}
           </button>
 
           {showInserts && (
@@ -469,7 +538,7 @@ export function StudioOneChannelStrip({
                 <button
                   onClick={onAddInsert}
                   className="w-full text-[8px] py-1 rounded flex items-center justify-center gap-1 hover:bg-white/5"
-                  style={{ 
+                  style={{
                     color: studioOneTheme.colors.text.muted,
                     border: `1px dashed ${studioOneTheme.colors.border.subtle}`,
                   }}
@@ -482,8 +551,10 @@ export function StudioOneChannelStrip({
                     key={insert.id}
                     className="w-full text-[8px] py-0.5 px-1 rounded truncate hover:bg-white/10"
                     style={{
-                      background: insert.bypass ? 'transparent' : `${color}20`,
-                      color: insert.bypass ? studioOneTheme.colors.text.muted : studioOneTheme.colors.text.primary,
+                      background: insert.bypass ? "transparent" : `${color}20`,
+                      color: insert.bypass
+                        ? studioOneTheme.colors.text.muted
+                        : studioOneTheme.colors.text.primary,
                       border: `1px solid ${insert.bypass ? studioOneTheme.colors.border.subtle : color}40`,
                     }}
                   >
@@ -498,7 +569,7 @@ export function StudioOneChannelStrip({
 
       {/* Sends Section */}
       {consoleSections.sends && (
-        <div 
+        <div
           className="border-b"
           style={{ borderColor: studioOneTheme.colors.border.subtle }}
         >
@@ -508,7 +579,11 @@ export function StudioOneChannelStrip({
             style={{ color: studioOneTheme.colors.text.muted }}
           >
             <span>SENDS</span>
-            {showSends ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+            {showSends ? (
+              <ChevronUp className="h-3 w-3" />
+            ) : (
+              <ChevronDown className="h-3 w-3" />
+            )}
           </button>
 
           {showSends && (
@@ -517,7 +592,7 @@ export function StudioOneChannelStrip({
                 <button
                   onClick={onAddSend}
                   className="w-full text-[8px] py-1 rounded flex items-center justify-center gap-1 hover:bg-white/5"
-                  style={{ 
+                  style={{
                     color: studioOneTheme.colors.text.muted,
                     border: `1px dashed ${studioOneTheme.colors.border.subtle}`,
                   }}
@@ -527,7 +602,7 @@ export function StudioOneChannelStrip({
               ) : (
                 sends.map((send) => (
                   <div key={send.id} className="flex items-center gap-1">
-                    <span 
+                    <span
                       className="text-[7px] truncate flex-1"
                       style={{ color: studioOneTheme.colors.text.muted }}
                     >
@@ -538,7 +613,9 @@ export function StudioOneChannelStrip({
                       min="0"
                       max="100"
                       value={send.level * 100}
-                      onChange={(e) => onSendChange?.(send.id, Number(e.target.value) / 100)}
+                      onChange={(e) =>
+                        onSendChange?.(send.id, Number(e.target.value) / 100)
+                      }
                       className="w-10 h-1"
                     />
                   </div>
@@ -550,7 +627,7 @@ export function StudioOneChannelStrip({
       )}
 
       {/* Pan & Meters */}
-      <div 
+      <div
         className="flex-1 flex items-stretch gap-1 p-1.5 border-b"
         style={{ borderColor: studioOneTheme.colors.border.subtle }}
       >
@@ -562,8 +639,16 @@ export function StudioOneChannelStrip({
         {/* Meters */}
         {consoleSections.meters && (
           <div className="flex gap-0.5 flex-1 justify-center">
-            <VUMeterBar level={localMeterLevels[0]} peak={localPeakLevels[0]} height={80} />
-            <VUMeterBar level={localMeterLevels[1]} peak={localPeakLevels[1]} height={80} />
+            <VUMeterBar
+              level={localMeterLevels[0]}
+              peak={localPeakLevels[0]}
+              height={80}
+            />
+            <VUMeterBar
+              level={localMeterLevels[1]}
+              peak={localPeakLevels[1]}
+              height={80}
+            />
           </div>
         )}
       </div>
@@ -571,9 +656,9 @@ export function StudioOneChannelStrip({
       {/* Fader Section */}
       {consoleSections.faders && (
         <div className="flex-1 flex flex-col items-center p-1.5 min-h-[140px]">
-          <VerticalFader 
-            value={volume} 
-            onChange={onVolumeChange} 
+          <VerticalFader
+            value={volume}
+            onChange={onVolumeChange}
             height={100}
             color={color}
           />
@@ -581,29 +666,40 @@ export function StudioOneChannelStrip({
       )}
 
       {/* Control Buttons */}
-      <div 
+      <div
         className="p-1.5 space-y-1"
         style={{ background: studioOneTheme.colors.bg.deep }}
       >
-        {trackType === 'audio' && (
+        {trackType === "audio" && (
           <button
             onClick={onArmedToggle}
             className="w-full h-5 text-[9px] font-bold rounded transition-all flex items-center justify-center gap-1"
             style={{
-              background: armed ? studioOneTheme.colors.button.record : studioOneTheme.colors.bg.tertiary,
-              color: armed ? '#fff' : studioOneTheme.colors.text.muted,
-              boxShadow: armed ? studioOneTheme.effects.glow.red : 'none',
+              background: armed
+                ? studioOneTheme.colors.button.record
+                : studioOneTheme.colors.bg.tertiary,
+              color: armed ? "#fff" : studioOneTheme.colors.text.muted,
+              boxShadow: armed ? studioOneTheme.effects.glow.red : "none",
             }}
           >
-            <div className={`w-2 h-2 rounded-full ${armed ? 'animate-pulse' : ''}`} style={{ background: armed ? '#fff' : studioOneTheme.colors.button.record }} />
+            <div
+              className={`w-2 h-2 rounded-full ${armed ? "animate-pulse" : ""}`}
+              style={{
+                background: armed
+                  ? "#fff"
+                  : studioOneTheme.colors.button.record,
+              }}
+            />
           </button>
         )}
         <button
           onClick={onMuteToggle}
           className="w-full h-5 text-[9px] font-bold rounded transition-all"
           style={{
-            background: mute ? studioOneTheme.colors.button.mute : studioOneTheme.colors.bg.tertiary,
-            color: mute ? '#000' : studioOneTheme.colors.text.muted,
+            background: mute
+              ? studioOneTheme.colors.button.mute
+              : studioOneTheme.colors.bg.tertiary,
+            color: mute ? "#000" : studioOneTheme.colors.text.muted,
           }}
         >
           M
@@ -612,8 +708,10 @@ export function StudioOneChannelStrip({
           onClick={onSoloToggle}
           className="w-full h-5 text-[9px] font-bold rounded transition-all"
           style={{
-            background: solo ? studioOneTheme.colors.button.solo : studioOneTheme.colors.bg.tertiary,
-            color: solo ? '#fff' : studioOneTheme.colors.text.muted,
+            background: solo
+              ? studioOneTheme.colors.button.solo
+              : studioOneTheme.colors.bg.tertiary,
+            color: solo ? "#fff" : studioOneTheme.colors.text.muted,
           }}
         >
           S

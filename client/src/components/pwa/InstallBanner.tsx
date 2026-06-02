@@ -1,10 +1,10 @@
-import { useState, useEffect } from 'react';
-import { X, Download, Smartphone } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { usePWAInstall } from '@/hooks/usePWAInstall';
-import { useAuth } from '@/hooks/useAuth';
+import { useState, useEffect } from "react";
+import { X, Download, Smartphone } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { usePWAInstall } from "@/hooks/usePWAInstall";
+import { useAuth } from "@/hooks/useAuth";
 
-const DISMISSAL_KEY = 'pwa-install-dismissed';
+const DISMISSAL_KEY = "pwa-install-dismissed";
 const DISMISSAL_DURATION = 7 * 24 * 60 * 60 * 1000;
 
 export function InstallBanner() {
@@ -56,9 +56,11 @@ export function InstallBanner() {
   return (
     <div
       className={`fixed bottom-0 left-0 right-0 z-[55] p-3 sm:p-4 transition-transform duration-300 ease-out ${
-        isVisible ? 'translate-y-0' : 'translate-y-full'
+        isVisible ? "translate-y-0" : "translate-y-full"
       }`}
-      style={{ paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom, 0px))' }}
+      style={{
+        paddingBottom: "max(0.75rem, env(safe-area-inset-bottom, 0px))",
+      }}
     >
       <div className="max-w-lg mx-auto">
         <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-black/70 backdrop-blur-xl shadow-2xl">

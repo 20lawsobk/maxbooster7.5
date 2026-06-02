@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from 'react';
-import { motion } from 'framer-motion';
+import { useEffect, useRef, useState } from "react";
+import { motion } from "framer-motion";
 
 interface LEDMeterProps {
   level: number;
@@ -7,7 +7,7 @@ interface LEDMeterProps {
   width?: number;
   height?: number;
   segments?: number;
-  orientation?: 'vertical' | 'horizontal';
+  orientation?: "vertical" | "horizontal";
   stereo?: boolean;
   leftLevel?: number;
   rightLevel?: number;
@@ -25,14 +25,14 @@ export function LEDMeter({
   width = 24,
   height = 200,
   segments = 30,
-  orientation = 'vertical',
+  orientation = "vertical",
   stereo = false,
   leftLevel,
   rightLevel,
   showScale = true,
   showPeakHold = true,
   peakHoldTime = 2000,
-  className = '',
+  className = "",
 }: LEDMeterProps) {
   const [peakHoldLevel, setPeakHoldLevel] = useState<number>(-60);
   const [leftPeakHold, setLeftPeakHold] = useState<number>(-60);
@@ -71,7 +71,8 @@ export function LEDMeter({
 
     if (rightLevel !== undefined && rightLevel > rightPeakHold) {
       setRightPeakHold(rightLevel);
-      if (rightPeakTimeoutRef.current) clearTimeout(rightPeakTimeoutRef.current);
+      if (rightPeakTimeoutRef.current)
+        clearTimeout(rightPeakTimeoutRef.current);
       rightPeakTimeoutRef.current = setTimeout(() => {
         setRightPeakHold(-60);
       }, peakHoldTime);
@@ -79,27 +80,36 @@ export function LEDMeter({
 
     return () => {
       if (leftPeakTimeoutRef.current) clearTimeout(leftPeakTimeoutRef.current);
-      if (rightPeakTimeoutRef.current) clearTimeout(rightPeakTimeoutRef.current);
+      if (rightPeakTimeoutRef.current)
+        clearTimeout(rightPeakTimeoutRef.current);
     };
-  }, [leftLevel, rightLevel, leftPeakHold, rightPeakHold, peakHoldTime, showPeakHold, stereo]);
+  }, [
+    leftLevel,
+    rightLevel,
+    leftPeakHold,
+    rightPeakHold,
+    peakHoldTime,
+    showPeakHold,
+    stereo,
+  ]);
 
   const getSegmentColor = (segmentDb: number, isActive: boolean): string => {
     if (!isActive) {
-      if (segmentDb > 0) return 'rgba(239, 68, 68, 0.15)';
-      if (segmentDb > -6) return 'rgba(234, 179, 8, 0.15)';
-      return 'rgba(34, 197, 94, 0.15)';
+      if (segmentDb > 0) return "rgba(239, 68, 68, 0.15)";
+      if (segmentDb > -6) return "rgba(234, 179, 8, 0.15)";
+      return "rgba(34, 197, 94, 0.15)";
     }
 
-    if (segmentDb > 0) return '#ef4444';
-    if (segmentDb > -6) return '#eab308';
-    if (segmentDb > -12) return '#84cc16';
-    return '#22c55e';
+    if (segmentDb > 0) return "#ef4444";
+    if (segmentDb > -6) return "#eab308";
+    if (segmentDb > -12) return "#84cc16";
+    return "#22c55e";
   };
 
   const getSegmentGlow = (segmentDb: number): string => {
-    if (segmentDb > 0) return '0 0 8px rgba(239, 68, 68, 0.8)';
-    if (segmentDb > -6) return '0 0 6px rgba(234, 179, 8, 0.6)';
-    return '0 0 4px rgba(34, 197, 94, 0.5)';
+    if (segmentDb > 0) return "0 0 8px rgba(239, 68, 68, 0.8)";
+    if (segmentDb > -6) return "0 0 6px rgba(234, 179, 8, 0.6)";
+    return "0 0 4px rgba(34, 197, 94, 0.5)";
   };
 
   const dbToSegment = (db: number): number => {
@@ -111,7 +121,12 @@ export function LEDMeter({
     return (segment / segments) * 63 - 60;
   };
 
-  const renderMeter = (meterLevel: number, meterPeakHold: number, key?: string, channelLabel?: string) => {
+  const renderMeter = (
+    meterLevel: number,
+    meterPeakHold: number,
+    key?: string,
+    channelLabel?: string,
+  ) => {
     const activeSegments = dbToSegment(meterLevel);
     const peakSegment = dbToSegment(meterPeakHold);
     const meterWidth = stereo ? (width - 4) / 2 : width;
@@ -123,16 +138,21 @@ export function LEDMeter({
         className="flex flex-col-reverse gap-[1px]"
         style={{ width: meterWidth, height }}
         role="meter"
-        aria-label={channelLabel ? `${channelLabel} channel level meter` : 'Audio level meter'}
+        aria-label={
+          channelLabel
+            ? `${channelLabel} channel level meter`
+            : "Audio level meter"
+        }
         aria-valuenow={Math.round(meterLevel)}
         aria-valuemin={-60}
         aria-valuemax={3}
-        aria-valuetext={`${Math.round(meterLevel)} dB${isClipping ? ', CLIPPING' : ''}`}
+        aria-valuetext={`${Math.round(meterLevel)} dB${isClipping ? ", CLIPPING" : ""}`}
       >
         {Array.from({ length: segments }).map((_, i) => {
           const segmentDb = segmentToDb(i);
           const isActive = i < activeSegments;
-          const isPeakHold = showPeakHold && i === peakSegment && peakSegment > 0;
+          const isPeakHold =
+            showPeakHold && i === peakSegment && peakSegment > 0;
 
           return (
             <motion.div
@@ -140,8 +160,11 @@ export function LEDMeter({
               className="rounded-[1px]"
               style={{
                 height: (height - segments) / segments,
-                background: isPeakHold ? '#ffffff' : getSegmentColor(segmentDb, isActive),
-                boxShadow: isActive || isPeakHold ? getSegmentGlow(segmentDb) : 'none',
+                background: isPeakHold
+                  ? "#ffffff"
+                  : getSegmentColor(segmentDb, isActive),
+                boxShadow:
+                  isActive || isPeakHold ? getSegmentGlow(segmentDb) : "none",
               }}
               initial={false}
               animate={{
@@ -162,23 +185,30 @@ export function LEDMeter({
     return (
       <div
         className="flex flex-col justify-between text-[8px] font-mono ml-1"
-        style={{ height, color: 'var(--studio-text-muted)' }}
+        style={{ height, color: "var(--studio-text-muted)" }}
       >
-        {DB_MARKS.slice().reverse().map((db) => {
-          const position = ((db + 60) / 63) * 100;
-          return (
-            <div
-              key={db}
-              className="flex items-center"
-              style={{
-                position: 'relative',
-                color: db > 0 ? '#ef4444' : db > -6 ? '#eab308' : 'var(--studio-text-muted)',
-              }}
-            >
-              <span className="w-6 text-right">{db}</span>
-            </div>
-          );
-        })}
+        {DB_MARKS.slice()
+          .reverse()
+          .map((db) => {
+            const position = ((db + 60) / 63) * 100;
+            return (
+              <div
+                key={db}
+                className="flex items-center"
+                style={{
+                  position: "relative",
+                  color:
+                    db > 0
+                      ? "#ef4444"
+                      : db > -6
+                        ? "#eab308"
+                        : "var(--studio-text-muted)",
+                }}
+              >
+                <span className="w-6 text-right">{db}</span>
+              </div>
+            );
+          })}
       </div>
     );
   };
@@ -188,14 +218,14 @@ export function LEDMeter({
       <div
         className="flex gap-[2px] p-1 rounded"
         style={{
-          background: 'var(--studio-bg-deep)',
-          border: '1px solid var(--studio-border)',
+          background: "var(--studio-bg-deep)",
+          border: "1px solid var(--studio-border)",
         }}
       >
         {stereo ? (
           <>
-            {renderMeter(leftLevel ?? level, leftPeakHold, 'left', 'Left')}
-            {renderMeter(rightLevel ?? level, rightPeakHold, 'right', 'Right')}
+            {renderMeter(leftLevel ?? level, leftPeakHold, "left", "Left")}
+            {renderMeter(rightLevel ?? level, rightPeakHold, "right", "Right")}
           </>
         ) : (
           renderMeter(level, peakHoldLevel, undefined, undefined)
@@ -230,16 +260,20 @@ export function ClipIndicator({ isClipping, onReset }: ClipIndicatorProps) {
       onClick={handleReset}
       className="min-w-[44px] min-h-[44px] px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider touch-manipulation"
       style={{
-        background: hasClipped ? '#ef4444' : 'var(--studio-bg-deep)',
-        color: hasClipped ? '#ffffff' : 'var(--studio-text-muted)',
-        border: '1px solid var(--studio-border)',
+        background: hasClipped ? "#ef4444" : "var(--studio-bg-deep)",
+        color: hasClipped ? "#ffffff" : "var(--studio-text-muted)",
+        border: "1px solid var(--studio-border)",
       }}
       animate={{
-        boxShadow: hasClipped ? '0 0 10px rgba(239, 68, 68, 0.5)' : 'none',
+        boxShadow: hasClipped ? "0 0 10px rgba(239, 68, 68, 0.5)" : "none",
       }}
       whileHover={{ scale: 1.05 }}
       whileTap={{ scale: 0.95 }}
-      aria-label={hasClipped ? 'Audio clipping detected. Click to reset indicator.' : 'Clip indicator - no clipping'}
+      aria-label={
+        hasClipped
+          ? "Audio clipping detected. Click to reset indicator."
+          : "Clip indicator - no clipping"
+      }
       aria-live="polite"
     >
       CLIP
@@ -263,29 +297,31 @@ export function LoudnessMeter({
   height = 200,
 }: LoudnessMeterProps) {
   const normalizedLufs = Math.max(lufsRange.min, Math.min(lufsRange.max, lufs));
-  const percentage = ((normalizedLufs - lufsRange.min) / (lufsRange.max - lufsRange.min)) * 100;
-  const targetPercentage = ((target - lufsRange.min) / (lufsRange.max - lufsRange.min)) * 100;
+  const percentage =
+    ((normalizedLufs - lufsRange.min) / (lufsRange.max - lufsRange.min)) * 100;
+  const targetPercentage =
+    ((target - lufsRange.min) / (lufsRange.max - lufsRange.min)) * 100;
 
   const getColor = () => {
-    if (lufs > target + 2) return '#ef4444';
-    if (lufs > target - 1) return '#22c55e';
-    if (lufs > target - 4) return '#eab308';
-    return '#3b82f6';
+    if (lufs > target + 2) return "#ef4444";
+    if (lufs > target - 1) return "#22c55e";
+    if (lufs > target - 4) return "#eab308";
+    return "#3b82f6";
   };
 
   const getLoudnessDescription = () => {
-    if (lufs > target + 2) return 'above target (too loud)';
-    if (lufs > target - 1) return 'within target range';
-    if (lufs > target - 4) return 'slightly below target';
-    return 'below target (too quiet)';
+    if (lufs > target + 2) return "above target (too loud)";
+    if (lufs > target - 1) return "within target range";
+    if (lufs > target - 4) return "slightly below target";
+    return "below target (too quiet)";
   };
 
   return (
     <div
       className="flex flex-col items-center gap-2 p-2 rounded"
       style={{
-        background: 'var(--studio-bg-deep)',
-        border: '1px solid var(--studio-border)',
+        background: "var(--studio-bg-deep)",
+        border: "1px solid var(--studio-border)",
       }}
       role="meter"
       aria-label="LUFS loudness meter"
@@ -294,16 +330,19 @@ export function LoudnessMeter({
       aria-valuemax={lufsRange.max}
       aria-valuetext={`${lufs.toFixed(1)} LUFS, ${getLoudnessDescription()}, target ${target} LUFS`}
     >
-      <span className="text-[9px] font-bold uppercase tracking-wider" style={{ color: 'var(--studio-text-muted)' }}>
+      <span
+        className="text-[9px] font-bold uppercase tracking-wider"
+        style={{ color: "var(--studio-text-muted)" }}
+      >
         LUFS
       </span>
-      
+
       <div
         className="relative rounded overflow-hidden"
         style={{
           width,
           height,
-          background: 'var(--studio-surface)',
+          background: "var(--studio-surface)",
         }}
         aria-hidden="true"
       >
@@ -313,28 +352,28 @@ export function LoudnessMeter({
           animate={{ height: `${percentage}%` }}
           transition={{ duration: 0.1 }}
         />
-        
+
         <div
           className="absolute left-0 right-0 h-[2px]"
           style={{
             bottom: `${targetPercentage}%`,
-            background: '#ffffff',
-            boxShadow: '0 0 4px rgba(255, 255, 255, 0.5)',
+            background: "#ffffff",
+            boxShadow: "0 0 4px rgba(255, 255, 255, 0.5)",
           }}
         />
-        
+
         <div
           className="absolute left-full ml-1 text-[8px] font-mono whitespace-nowrap"
           style={{
             bottom: `${targetPercentage}%`,
-            transform: 'translateY(50%)',
-            color: 'var(--studio-text-muted)',
+            transform: "translateY(50%)",
+            color: "var(--studio-text-muted)",
           }}
         >
           {target} (target)
         </div>
       </div>
-      
+
       <div
         className="font-mono text-sm font-bold"
         style={{ color: getColor() }}

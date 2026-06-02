@@ -1,5 +1,14 @@
-import React, { createContext, useContext, type ReactNode, useMemo, useCallback } from 'react';
-import { useReducedMotion, type ReducedMotionResult } from '@/hooks/useReducedMotion';
+import React, {
+  createContext,
+  useContext,
+  type ReactNode,
+  useMemo,
+  useCallback,
+} from "react";
+import {
+  useReducedMotion,
+  type ReducedMotionResult,
+} from "@/hooks/useReducedMotion";
 
 export interface ReducedMotionContextValue extends ReducedMotionResult {
   shouldAnimate: boolean;
@@ -12,7 +21,9 @@ export interface ReducedMotionContextValue extends ReducedMotionResult {
   getDuration: (normalMs: number) => number;
 }
 
-const ReducedMotionContext = createContext<ReducedMotionContextValue | undefined>(undefined);
+const ReducedMotionContext = createContext<
+  ReducedMotionContextValue | undefined
+>(undefined);
 
 export interface ReducedMotionProviderProps {
   children: ReactNode;
@@ -44,7 +55,7 @@ export function ReducedMotionProvider({
         ? { opacity: 0 }
         : { opacity: 0, y: -20, scale: 0.95 },
     }),
-    [reducedMotion.prefersReducedMotion]
+    [reducedMotion.prefersReducedMotion],
   );
 
   const getSpringConfig = useCallback(() => {
@@ -52,7 +63,7 @@ export function ReducedMotionProvider({
       return { duration: 0 };
     }
     return {
-      type: 'spring',
+      type: "spring",
       stiffness: 300,
       damping: 30,
     };
@@ -62,7 +73,7 @@ export function ReducedMotionProvider({
     (normalMs: number): number => {
       return reducedMotion.prefersReducedMotion ? 0 : normalMs;
     },
-    [reducedMotion.prefersReducedMotion]
+    [reducedMotion.prefersReducedMotion],
   );
 
   const value = useMemo<ReducedMotionContextValue>(
@@ -73,7 +84,13 @@ export function ReducedMotionProvider({
       getSpringConfig,
       getDuration,
     }),
-    [reducedMotion, shouldAnimate, motionVariants, getSpringConfig, getDuration]
+    [
+      reducedMotion,
+      shouldAnimate,
+      motionVariants,
+      getSpringConfig,
+      getDuration,
+    ],
   );
 
   return (
@@ -86,7 +103,9 @@ export function ReducedMotionProvider({
 export function useReducedMotionContext(): ReducedMotionContextValue {
   const context = useContext(ReducedMotionContext);
   if (context === undefined) {
-    throw new Error('useReducedMotionContext must be used within a ReducedMotionProvider');
+    throw new Error(
+      "useReducedMotionContext must be used within a ReducedMotionProvider",
+    );
   }
   return context;
 }
@@ -95,8 +114,8 @@ export function useShouldAnimate(): boolean {
   const context = useContext(ReducedMotionContext);
   if (context === undefined) {
     const prefersReducedMotion =
-      typeof window !== 'undefined' &&
-      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      typeof window !== "undefined" &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     return !prefersReducedMotion;
   }
   return context.shouldAnimate;
@@ -106,8 +125,8 @@ export function useMotionVariants() {
   const context = useContext(ReducedMotionContext);
   if (context === undefined) {
     const prefersReducedMotion =
-      typeof window !== 'undefined' &&
-      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      typeof window !== "undefined" &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
     return {
       hidden: prefersReducedMotion ? { opacity: 0 } : { opacity: 0, y: 20 },
@@ -123,7 +142,10 @@ export interface MotionSafeWrapperProps {
   fallback?: ReactNode;
 }
 
-export function MotionSafeWrapper({ children, fallback }: MotionSafeWrapperProps) {
+export function MotionSafeWrapper({
+  children,
+  fallback,
+}: MotionSafeWrapperProps) {
   const shouldAnimate = useShouldAnimate();
 
   if (!shouldAnimate && fallback) {

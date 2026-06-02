@@ -20,6 +20,7 @@ infsh login
 > **What does the installer do?** The [install script](https://cli.inference.sh) detects your OS and architecture, downloads the correct binary from `dist.inference.sh`, verifies its SHA-256 checksum, and places it in your PATH. That's it — no elevated permissions, no background processes, no telemetry. If you have [cosign](https://docs.sigstore.dev/cosign/system_config/installation/) installed, the installer also verifies the Sigstore signature automatically.
 >
 > **Manual install** (if you prefer not to pipe to sh):
+>
 > ```bash
 > # Download the binary and checksums
 > curl -LO https://dist.inference.sh/cli/checksums.txt
@@ -55,28 +56,28 @@ infsh app run infsh/rodin-3d-generator --input '{"prompt": "a wooden chair"}'
 
 ## Commands
 
-| Task | Command |
-|------|---------|
-| List all apps | `infsh app list` |
-| Search apps | `infsh app list --search "flux"` |
-| Filter by category | `infsh app list --category image` |
-| Get app details | `infsh app get google/veo-3-1-fast` |
+| Task                  | Command                                                  |
+| --------------------- | -------------------------------------------------------- |
+| List all apps         | `infsh app list`                                         |
+| Search apps           | `infsh app list --search "flux"`                         |
+| Filter by category    | `infsh app list --category image`                        |
+| Get app details       | `infsh app get google/veo-3-1-fast`                      |
 | Generate sample input | `infsh app sample google/veo-3-1-fast --save input.json` |
-| Run app | `infsh app run google/veo-3-1-fast --input input.json` |
-| Run without waiting | `infsh app run <app> --input input.json --no-wait` |
-| Check task status | `infsh task get <task-id>` |
+| Run app               | `infsh app run google/veo-3-1-fast --input input.json`   |
+| Run without waiting   | `infsh app run <app> --input input.json --no-wait`       |
+| Check task status     | `infsh task get <task-id>`                               |
 
 ## What's Available
 
-| Category | Examples |
-|----------|----------|
-| **Image** | FLUX, Gemini 3 Pro, Grok Imagine, Seedream 4.5, Reve, Topaz Upscaler |
-| **Video** | Veo 3.1, Seedance 1.5, Wan 2.5, OmniHuman, Fabric, HunyuanVideo Foley |
-| **LLMs** | Claude Opus/Sonnet/Haiku, Gemini 3 Pro, Kimi K2, GLM-4, any OpenRouter model |
-| **Search** | Tavily Search, Tavily Extract, Exa Search, Exa Answer, Exa Extract |
-| **3D** | Rodin 3D Generator |
-| **Twitter/X** | post-tweet, post-create, dm-send, user-follow, post-like, post-retweet |
-| **Utilities** | Media merger, caption videos, image stitching, audio extraction |
+| Category      | Examples                                                                     |
+| ------------- | ---------------------------------------------------------------------------- |
+| **Image**     | FLUX, Gemini 3 Pro, Grok Imagine, Seedream 4.5, Reve, Topaz Upscaler         |
+| **Video**     | Veo 3.1, Seedance 1.5, Wan 2.5, OmniHuman, Fabric, HunyuanVideo Foley        |
+| **LLMs**      | Claude Opus/Sonnet/Haiku, Gemini 3 Pro, Kimi K2, GLM-4, any OpenRouter model |
+| **Search**    | Tavily Search, Tavily Extract, Exa Search, Exa Answer, Exa Extract           |
+| **3D**        | Rodin 3D Generator                                                           |
+| **Twitter/X** | post-tweet, post-create, dm-send, user-follow, post-like, post-retweet       |
+| **Utilities** | Media merger, caption videos, image stitching, audio extraction              |
 
 ## Related Skills
 

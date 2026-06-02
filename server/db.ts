@@ -1,16 +1,18 @@
-import { Pool, neonConfig } from '@neondatabase/serverless';
-import { drizzle } from 'drizzle-orm/neon-serverless';
-import { sql } from 'drizzle-orm';
-import ws from 'ws';
-import * as schema from '@shared/schema';
-import { config } from './config/defaults.js';
-import { createHash } from 'crypto';
-import { logger } from './logger.js';
+import { Pool, neonConfig } from "@neondatabase/serverless";
+import { drizzle } from "drizzle-orm/neon-serverless";
+import { sql } from "drizzle-orm";
+import ws from "ws";
+import * as schema from "@shared/schema";
+import { config } from "./config/defaults.js";
+import { createHash } from "crypto";
+import { logger } from "./logger.js";
 
 neonConfig.webSocketConstructor = ws;
 
 if (!config.database.url) {
-  throw new Error('DATABASE_URL must be set. Did you forget to provision a database?');
+  throw new Error(
+    "DATABASE_URL must be set. Did you forget to provision a database?",
+  );
 }
 
 // Database Query Telemetry with bounded ring buffer (O(1) memory, O(1) updates)
@@ -49,7 +51,7 @@ class QueryTelemetry {
 
   private hashSql(sql: string): string {
     // Cryptographic hash for SQL identification - prevents collision spoofing
-    const hash = createHash('sha256').update(sql).digest('hex');
+    const hash = createHash("sha256").update(sql).digest("hex");
     return `sql_${hash.substring(0, 16)}`; // First 16 chars of SHA-256
   }
 
@@ -61,7 +63,7 @@ class QueryTelemetry {
       this.firstQueryTime = now;
     }
 
-    const isWarmingUp = (now - this.firstQueryTime) < this.warmupGraceMs;
+    const isWarmingUp = now - this.firstQueryTime < this.warmupGraceMs;
 
     // Update running aggregates (always track for accurate lifetime stats)
     this.lifetimeTotal++;
@@ -72,12 +74,16 @@ class QueryTelemetry {
     // Only flag queries that would genuinely degrade user experience (> 1s).
     if (duration > 1000 && !isWarmingUp) {
       this.lifetimeSlow++;
-      const isDev = !(process.env.NODE_ENV === 'production' || !!process.env.REPLIT_DEPLOYMENT);
-      const sqlPreview = isDev ? sql.substring(0, 200).replace(/\s+/g, ' ') : '';
+      const isDev = !(
+        process.env.NODE_ENV === "production" || !!process.env.REPLIT_DEPLOYMENT
+      );
+      const sqlPreview = isDev
+        ? sql.substring(0, 200).replace(/\s+/g, " ")
+        : "";
       logger.warn(
         `⚠️ Slow query detected (${duration}ms):`,
         sqlHash,
-        isDev ? `\n   SQL: ${sqlPreview}...` : ''
+        isDev ? `\n   SQL: ${sqlPreview}...` : "",
       );
     }
 
@@ -126,7 +132,7 @@ class QueryTelemetry {
 
     // Filter recent queries from ring buffer
     const recentQueries = this.ringBuffer.filter(
-      (q) => q && q.timestamp && now - q.timestamp < windowMs
+      (q) => q && q.timestamp && now - q.timestamp < windowMs,
     );
 
     if (recentQueries.length === 0) {
@@ -149,10 +155,13 @@ class QueryTelemetry {
 
     // Calculate windowed metrics
     const windowedSlow = recentQueries.filter((q) => q.duration > 1000).length;
-    const durations = recentQueries.map((q) => q.duration).sort((a, b) => a - b);
+    const durations = recentQueries
+      .map((q) => q.duration)
+      .sort((a, b) => a - b);
     const p95Index = Math.floor(durations.length * 0.95);
     const p95Latency = durations[p95Index] || 0;
-    const windowedAverage = durations.reduce((sum, d) => sum + d, 0) / durations.length;
+    const windowedAverage =
+      durations.reduce((sum, d) => sum + d, 0) / durations.length;
 
     return {
       windowedQueries: recentQueries.length,
@@ -162,7 +171,9 @@ class QueryTelemetry {
       lifetimeTotal: this.lifetimeTotal,
       lifetimeSlow: this.lifetimeSlow,
       lifetimeAverage:
-        this.lifetimeTotal > 0 ? Math.round((this.runningSum / this.lifetimeTotal) * 100) / 100 : 0,
+        this.lifetimeTotal > 0
+          ? Math.round((this.runningSum / this.lifetimeTotal) * 100) / 100
+          : 0,
       slowestQuery: this.slowestEver,
       lastRefresh: new Date().toISOString(),
       windowMinutes: 15,
@@ -181,7 +192,8 @@ export function getQueryTelemetry() {
 class InstrumentedPool extends Pool {
   async query(...args: unknown[]): Promise<unknown> {
     const startTime = Date.now();
-    const sql = typeof args[0] === 'string' ? args[0] : args[0]?.text || 'unknown';
+    const sql =
+      typeof args[0] === "string" ? args[0] : args[0]?.text || "unknown";
 
     try {
       const result = await super.query(...args);
@@ -210,16 +222,19 @@ export const pool = new InstrumentedPool({
 // minutes and starving user-facing requests. Using pool.on('connect') rather
 // than the 'options' startup parameter is safer with Neon's WebSocket proxy,
 // which may not forward arbitrary startup options to the backend.
-pool.on('connect', (client: Record<string, unknown>) => {
+pool.on("connect", (client: Record<string, unknown>) => {
   client.query("SET statement_timeout = '30000'").catch((err: Error) => {
-    logger.warn('[DB] Failed to set statement_timeout on new connection:', err.message);
+    logger.warn(
+      "[DB] Failed to set statement_timeout on new connection:",
+      err.message,
+    );
   });
 });
 
 // Pool-level error handler — prevents unhandled 'error' events from idle client
 // disconnects from becoming uncaughtExceptions and crashing the process.
-pool.on('error', (err: Error) => {
-  logger.warn('[DB] Idle client error (pool):', err.message);
+pool.on("error", (err: Error) => {
+  logger.warn("[DB] Idle client error (pool):", err.message);
 });
 
 export const db = drizzle(pool, { schema });
@@ -227,9 +242,10 @@ export const db = drizzle(pool, { schema });
 // Read replica routing: production-only read-write split.
 // In production, DATABASE_REPLICA_URLS routes SELECT queries to the Neon read replica.
 // In development, all queries run on the primary — replicas are a production resource.
-const isProduction = process.env.NODE_ENV === 'production' || !!process.env.REPLIT_DEPLOYMENT;
+const isProduction =
+  process.env.NODE_ENV === "production" || !!process.env.REPLIT_DEPLOYMENT;
 const replicaUrl = isProduction
-  ? (process.env.DATABASE_REPLICA_URLS || '').split(',').filter(Boolean)[0]
+  ? (process.env.DATABASE_REPLICA_URLS || "").split(",").filter(Boolean)[0]
   : undefined;
 
 export const replicaPool = replicaUrl
@@ -243,20 +259,22 @@ export const replicaPool = replicaUrl
 
 // Prevent uncaughtException from replica pool idle client disconnects
 if (replicaPool) {
-  replicaPool.on('error', (err: Error) => {
-    logger.warn('[DB] Idle client error (replica pool):', err.message);
+  replicaPool.on("error", (err: Error) => {
+    logger.warn("[DB] Idle client error (replica pool):", err.message);
   });
 }
 
 if (isProduction && replicaPool) {
-  logger.info('[db] Read replica pool created — will verify connectivity at startup');
+  logger.info(
+    "[db] Read replica pool created — will verify connectivity at startup",
+  );
 } else if (isProduction && !replicaPool) {
-  logger.warn('[db] DATABASE_REPLICA_URLS not set — all queries routed to primary in production');
+  logger.warn(
+    "[db] DATABASE_REPLICA_URLS not set — all queries routed to primary in production",
+  );
 }
 
-export let dbRead = replicaPool
-  ? drizzle(replicaPool, { schema })
-  : db;
+export let dbRead = replicaPool ? drizzle(replicaPool, { schema }) : db;
 
 /**
  * verifyReadReplica — called once at startup.
@@ -268,11 +286,17 @@ export async function verifyReadReplica(): Promise<void> {
   if (!replicaPool) return;
   try {
     await dbRead.execute(sql`SELECT 1`);
-    logger.info('[db] ✅ Read replica verified — SELECTs route to Neon replica');
+    logger.info(
+      "[db] ✅ Read replica verified — SELECTs route to Neon replica",
+    );
   } catch (err) {
-    logger.warn('[db] ❌ Read replica health check FAILED — routing ALL queries to primary');
+    logger.warn(
+      "[db] ❌ Read replica health check FAILED — routing ALL queries to primary",
+    );
     logger.warn(`[db]    Replica error: ${err.message}`);
-    logger.warn('[db]    Check DATABASE_REPLICA_URLS — the replica URL may be invalid or the Neon replica may be down');
+    logger.warn(
+      "[db]    Check DATABASE_REPLICA_URLS — the replica URL may be invalid or the Neon replica may be down",
+    );
     dbRead = db;
   }
 }

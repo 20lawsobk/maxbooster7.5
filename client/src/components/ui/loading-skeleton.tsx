@@ -1,22 +1,26 @@
-import { cn } from '@/lib/utils';
+import { cn } from "@/lib/utils";
 
 interface SkeletonProps {
   className?: string;
-  variant?: 'default' | 'circle' | 'text' | 'card';
+  variant?: "default" | "circle" | "text" | "card";
   lines?: number;
 }
 
-export function Skeleton({ className, variant = 'default', lines = 1 }: SkeletonProps) {
-  if (variant === 'text' && lines > 1) {
+export function Skeleton({
+  className,
+  variant = "default",
+  lines = 1,
+}: SkeletonProps) {
+  if (variant === "text" && lines > 1) {
     return (
       <div className="space-y-2">
         {Array.from({ length: lines }).map((_, i) => (
           <div
             key={i}
             className={cn(
-              'skeleton h-4 rounded',
-              i === lines - 1 ? 'w-3/4' : 'w-full',
-              className
+              "skeleton h-4 rounded",
+              i === lines - 1 ? "w-3/4" : "w-full",
+              className,
             )}
           />
         ))}
@@ -25,20 +29,18 @@ export function Skeleton({ className, variant = 'default', lines = 1 }: Skeleton
   }
 
   const variantClasses = {
-    default: 'h-4 w-full rounded',
-    circle: 'h-10 w-10 rounded-full',
-    text: 'h-4 w-full rounded',
-    card: 'h-32 w-full rounded-lg',
+    default: "h-4 w-full rounded",
+    circle: "h-10 w-10 rounded-full",
+    text: "h-4 w-full rounded",
+    card: "h-32 w-full rounded-lg",
   };
 
-  return (
-    <div className={cn('skeleton', variantClasses[variant], className)} />
-  );
+  return <div className={cn("skeleton", variantClasses[variant], className)} />;
 }
 
 export function CardSkeleton({ className }: { className?: string }) {
   return (
-    <div className={cn('rounded-lg border bg-card p-4 space-y-3', className)}>
+    <div className={cn("rounded-lg border bg-card p-4 space-y-3", className)}>
       <Skeleton variant="default" className="h-6 w-3/4" />
       <Skeleton variant="text" lines={2} />
       <div className="flex gap-2">
@@ -49,7 +51,13 @@ export function CardSkeleton({ className }: { className?: string }) {
   );
 }
 
-export function TableSkeleton({ rows = 5, cols = 4 }: { rows?: number; cols?: number }) {
+export function TableSkeleton({
+  rows = 5,
+  cols = 4,
+}: {
+  rows?: number;
+  cols?: number;
+}) {
   return (
     <div className="space-y-2">
       <div className="flex gap-4 p-2 border-b">

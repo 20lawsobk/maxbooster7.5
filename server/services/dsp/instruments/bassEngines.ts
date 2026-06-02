@@ -1,9 +1,22 @@
 import {
-  AudioBuffer, DSPContext, createBuffer,
-  BiquadFilter, OnePoleFilter, DelayLine, AllPassFilter, CombFilter,
-  LFO, Oscillator, ADSR, EnvelopeFollower,
-  msToSamples, dbToLinear, clamp, softClip, hardClip
-} from '../core';
+  AudioBuffer,
+  DSPContext,
+  createBuffer,
+  BiquadFilter,
+  OnePoleFilter,
+  DelayLine,
+  AllPassFilter,
+  CombFilter,
+  LFO,
+  Oscillator,
+  ADSR,
+  EnvelopeFollower,
+  msToSamples,
+  dbToLinear,
+  clamp,
+  softClip,
+  hardClip,
+} from "../core";
 
 export interface SynthesizerEngine {
   noteOn(frequency: number, velocity: number, context: DSPContext): void;
@@ -46,7 +59,11 @@ export class ElectricBassSynth implements SynthesizerEngine {
       this.oscillators[i].setFrequency(frequency * (i + 1), context.sampleRate);
     }
 
-    this.lpFilter.setLowpass(1500 + this.velocity * 2000, 0.8, context.sampleRate);
+    this.lpFilter.setLowpass(
+      1500 + this.velocity * 2000,
+      0.8,
+      context.sampleRate,
+    );
     this.hpFilter.setHighpass(40, 0.7, context.sampleRate);
     this.bodyFilter.setPeaking(120, 2, 4, context.sampleRate);
     this.pickupFilter.setPeaking(800, 1.5, 3, context.sampleRate);
@@ -72,7 +89,10 @@ export class ElectricBassSynth implements SynthesizerEngine {
       let sample = 0;
       const harmonicAmps = [1.0, 0.5, 0.25, 0.12, 0.06, 0.03];
       for (let h = 0; h < 6; h++) {
-        this.oscillators[h].setFrequency(this.frequency * (h + 1), this.sampleRate);
+        this.oscillators[h].setFrequency(
+          this.frequency * (h + 1),
+          this.sampleRate,
+        );
         sample += this.oscillators[h].sine() * harmonicAmps[h];
       }
 
@@ -99,7 +119,7 @@ export class ElectricBassSynth implements SynthesizerEngine {
   }
 
   reset(): void {
-    this.oscillators.forEach(o => o.reset());
+    this.oscillators.forEach((o) => o.reset());
     this.lpFilter.clear();
     this.hpFilter.clear();
     this.bodyFilter.clear();
@@ -167,7 +187,11 @@ export class SynthBassSynth implements SynthesizerEngine {
       let sample = saw1 * 0.4 + saw2 * 0.3 + sub * 0.3;
 
       const filterFreq = 200 + filterEnvValue * 2500 + this.velocity * 1500;
-      this.lpFilter.setLowpass(filterFreq, 2 + filterEnvValue * 4, this.sampleRate);
+      this.lpFilter.setLowpass(
+        filterFreq,
+        2 + filterEnvValue * 4,
+        this.sampleRate,
+      );
       this.resonanceFilter.setPeaking(filterFreq * 0.8, 3, 4, this.sampleRate);
 
       sample = this.lpFilter.process(sample);
@@ -233,12 +257,22 @@ export class AcousticBassSynth implements SynthesizerEngine {
       this.oscillators[i].setFrequency(frequency * (i + 1), context.sampleRate);
     }
 
-    this.lpFilter.setLowpass(1200 + this.velocity * 1000, 0.6, context.sampleRate);
+    this.lpFilter.setLowpass(
+      1200 + this.velocity * 1000,
+      0.6,
+      context.sampleRate,
+    );
     this.hpFilter.setHighpass(30, 0.7, context.sampleRate);
     this.bodyFilter.setPeaking(100, 2.5, 5, context.sampleRate);
     this.airFilter.setPeaking(2500, 1, 2, context.sampleRate);
 
-    this.envelope = new ADSR(0.005, 0.25 + (1 - this.velocity) * 0.1, 0.55, 0.35, context.sampleRate);
+    this.envelope = new ADSR(
+      0.005,
+      0.25 + (1 - this.velocity) * 0.1,
+      0.55,
+      0.35,
+      context.sampleRate,
+    );
     this.bodyEnvelope = new ADSR(0.002, 0.12, 0.35, 0.2, context.sampleRate);
     this.envelope.trigger();
     this.bodyEnvelope.trigger();
@@ -259,17 +293,25 @@ export class AcousticBassSynth implements SynthesizerEngine {
       let sample = 0;
       const harmonicDecay = [1.0, 0.6, 0.35, 0.2, 0.12, 0.07, 0.04, 0.02];
       for (let h = 0; h < 8; h++) {
-        this.oscillators[h].setFrequency(this.frequency * (h + 1), this.sampleRate);
+        this.oscillators[h].setFrequency(
+          this.frequency * (h + 1),
+          this.sampleRate,
+        );
         const sawComp = this.oscillators[h].sawBandLimited(12) * 0.3;
         const sineComp = this.oscillators[h].sine() * 0.7;
         sample += (sawComp + sineComp) * harmonicDecay[h];
       }
 
-      const bodyResonance = Math.sin(2 * Math.PI * 100 * i / this.sampleRate) * bodyEnvValue * 0.1;
+      const bodyResonance =
+        Math.sin((2 * Math.PI * 100 * i) / this.sampleRate) *
+        bodyEnvValue *
+        0.1;
       sample += bodyResonance;
 
       this.stringDelay.write(sample);
-      const delayedSample = this.stringDelay.readInterpolated(Math.floor(this.sampleRate / this.frequency));
+      const delayedSample = this.stringDelay.readInterpolated(
+        Math.floor(this.sampleRate / this.frequency),
+      );
       sample = sample * 0.7 + delayedSample * 0.3;
 
       sample = this.hpFilter.process(sample);
@@ -292,7 +334,7 @@ export class AcousticBassSynth implements SynthesizerEngine {
   }
 
   reset(): void {
-    this.oscillators.forEach(o => o.reset());
+    this.oscillators.forEach((o) => o.reset());
     this.lpFilter.clear();
     this.hpFilter.clear();
     this.bodyFilter.clear();
@@ -510,12 +552,22 @@ export class FunkBassSynth implements SynthesizerEngine {
       this.oscillators[i].setFrequency(frequency * (i + 1), context.sampleRate);
     }
 
-    this.lpFilter.setLowpass(3000 + this.velocity * 3000, 0.8, context.sampleRate);
+    this.lpFilter.setLowpass(
+      3000 + this.velocity * 3000,
+      0.8,
+      context.sampleRate,
+    );
     this.hpFilter.setHighpass(50, 0.7, context.sampleRate);
     this.midFilter.setPeaking(800, 2, 4, context.sampleRate);
     this.presenceFilter.setPeaking(2500, 2.5, 5, context.sampleRate);
 
-    this.envelope = new ADSR(0.001, 0.06 + this.velocity * 0.03, 0.55, 0.1, context.sampleRate);
+    this.envelope = new ADSR(
+      0.001,
+      0.06 + this.velocity * 0.03,
+      0.55,
+      0.1,
+      context.sampleRate,
+    );
     this.slapEnvelope = new ADSR(0.0005, 0.012, 0, 0.015, context.sampleRate);
     this.popEnvelope = new ADSR(0.0003, 0.006, 0, 0.008, context.sampleRate);
     this.envelope.trigger();
@@ -540,14 +592,22 @@ export class FunkBassSynth implements SynthesizerEngine {
       const popValue = this.popEnvelope.process();
 
       let sample = 0;
-      const harmonicAmps = [1.0, 0.7, 0.45, 0.3, 0.2, 0.15, 0.1, 0.07, 0.04, 0.02];
+      const harmonicAmps = [
+        1.0, 0.7, 0.45, 0.3, 0.2, 0.15, 0.1, 0.07, 0.04, 0.02,
+      ];
       for (let h = 0; h < 10; h++) {
-        this.oscillators[h].setFrequency(this.frequency * (h + 1), this.sampleRate);
+        this.oscillators[h].setFrequency(
+          this.frequency * (h + 1),
+          this.sampleRate,
+        );
         sample += this.oscillators[h].sine() * harmonicAmps[h];
       }
 
       const slapClick = (Math.random() * 2 - 1) * slapValue * 0.8;
-      const popHarmonic = Math.sin(2 * Math.PI * this.frequency * 4 * i / this.sampleRate) * popValue * 0.5;
+      const popHarmonic =
+        Math.sin((2 * Math.PI * this.frequency * 4 * i) / this.sampleRate) *
+        popValue *
+        0.5;
 
       sample = sample + slapClick + popHarmonic;
 
@@ -571,7 +631,7 @@ export class FunkBassSynth implements SynthesizerEngine {
   }
 
   reset(): void {
-    this.oscillators.forEach(o => o.reset());
+    this.oscillators.forEach((o) => o.reset());
     this.lpFilter.clear();
     this.hpFilter.clear();
     this.midFilter.clear();
@@ -638,7 +698,11 @@ export class ReesBassSynth implements SynthesizerEngine {
       }
 
       const filterFreq = 150 + filterEnvValue * 2000 + this.velocity * 1500;
-      this.lpFilter.setLowpass(filterFreq, 2 + filterEnvValue * 3, this.sampleRate);
+      this.lpFilter.setLowpass(
+        filterFreq,
+        2 + filterEnvValue * 3,
+        this.sampleRate,
+      );
 
       sample = this.lpFilter.process(sample);
       sample = this.hpFilter.process(sample);
@@ -659,7 +723,7 @@ export class ReesBassSynth implements SynthesizerEngine {
   }
 
   reset(): void {
-    this.oscillators.forEach(o => o.reset());
+    this.oscillators.forEach((o) => o.reset());
     this.lpFilter.clear();
     this.hpFilter.clear();
   }
@@ -695,15 +759,31 @@ export class FMBassSynth implements SynthesizerEngine {
     this.sampleRate = context.sampleRate;
 
     this.carrierOsc.setFrequency(frequency, context.sampleRate);
-    this.modulatorOsc1.setFrequency(frequency * this.modRatio, context.sampleRate);
-    this.modulatorOsc2.setFrequency(frequency * (this.modRatio + 1), context.sampleRate);
+    this.modulatorOsc1.setFrequency(
+      frequency * this.modRatio,
+      context.sampleRate,
+    );
+    this.modulatorOsc2.setFrequency(
+      frequency * (this.modRatio + 1),
+      context.sampleRate,
+    );
 
-    this.lpFilter.setLowpass(2000 + this.velocity * 3000, 0.7, context.sampleRate);
+    this.lpFilter.setLowpass(
+      2000 + this.velocity * 3000,
+      0.7,
+      context.sampleRate,
+    );
     this.hpFilter.setHighpass(35, 0.7, context.sampleRate);
 
     this.modIndex = 2 + this.velocity * 4;
 
-    this.envelope = new ADSR(0.001, 0.12 + (1 - this.velocity) * 0.05, 0.65, 0.18, context.sampleRate);
+    this.envelope = new ADSR(
+      0.001,
+      0.12 + (1 - this.velocity) * 0.05,
+      0.65,
+      0.18,
+      context.sampleRate,
+    );
     this.modEnvelope = new ADSR(0.001, 0.06, 0.25, 0.08, context.sampleRate);
     this.envelope.trigger();
     this.modEnvelope.trigger();
@@ -722,9 +802,10 @@ export class FMBassSynth implements SynthesizerEngine {
       const modEnvValue = this.modEnvelope.process();
 
       const mod1 = this.modulatorOsc1.sine() * this.modIndex * modEnvValue;
-      const mod2 = this.modulatorOsc2.sine() * this.modIndex * 0.5 * modEnvValue;
+      const mod2 =
+        this.modulatorOsc2.sine() * this.modIndex * 0.5 * modEnvValue;
 
-      const carrierPhase = 2 * Math.PI * this.frequency * i / this.sampleRate;
+      const carrierPhase = (2 * Math.PI * this.frequency * i) / this.sampleRate;
       let sample = Math.sin(carrierPhase + mod1 + mod2);
 
       sample = this.lpFilter.process(sample);
@@ -788,8 +869,20 @@ export class PluckBassSynth implements SynthesizerEngine {
     this.hpFilter.setHighpass(40, 0.7, context.sampleRate);
     this.pluckFilter.setPeaking(1200, 3, 5, context.sampleRate);
 
-    this.envelope = new ADSR(0.001, 0.1 + (1 - this.velocity) * 0.04, 0.45, 0.12, context.sampleRate);
-    this.filterEnvelope = new ADSR(0.001, 0.035, 0.15, 0.05, context.sampleRate);
+    this.envelope = new ADSR(
+      0.001,
+      0.1 + (1 - this.velocity) * 0.04,
+      0.45,
+      0.12,
+      context.sampleRate,
+    );
+    this.filterEnvelope = new ADSR(
+      0.001,
+      0.035,
+      0.15,
+      0.05,
+      context.sampleRate,
+    );
     this.envelope.trigger();
     this.filterEnvelope.trigger();
   }
@@ -813,14 +906,20 @@ export class PluckBassSynth implements SynthesizerEngine {
       let sample = saw * 0.4 + square * 0.3 + sub * 0.3;
 
       const filterFreq = 300 + filterEnvValue * 4000 + this.velocity * 2000;
-      this.lpFilter.setLowpass(filterFreq, 3 + filterEnvValue * 5, this.sampleRate);
+      this.lpFilter.setLowpass(
+        filterFreq,
+        3 + filterEnvValue * 5,
+        this.sampleRate,
+      );
 
       sample = this.lpFilter.process(sample);
       sample = this.hpFilter.process(sample);
       sample = this.pluckFilter.process(sample);
 
       this.stringDelay.write(sample * 0.3);
-      const delaySample = this.stringDelay.readInterpolated(msToSamples(5, this.sampleRate));
+      const delaySample = this.stringDelay.readInterpolated(
+        msToSamples(5, this.sampleRate),
+      );
       sample = sample * 0.8 + delaySample * 0.2;
 
       sample *= envValue * this.velocity;
@@ -923,10 +1022,14 @@ export class GrowlBassSynth implements SynthesizerEngine {
       const saw3 = this.oscillator3.sawBandLimited(16);
       const sub = this.subOsc.sine();
 
-      let sample = (saw1 + saw2 + saw3) / 3 * 0.7 + sub * 0.3;
+      let sample = ((saw1 + saw2 + saw3) / 3) * 0.7 + sub * 0.3;
 
       const filterFreq = 200 + filterEnvValue * 2500 + growl * 500;
-      this.lpFilter.setLowpass(filterFreq, 4 + filterEnvValue * 4, this.sampleRate);
+      this.lpFilter.setLowpass(
+        filterFreq,
+        4 + filterEnvValue * 4,
+        this.sampleRate,
+      );
 
       const formantFreq1 = 400 + formantMod * 400;
       const formantFreq2 = 1200 + formantMod * 600;
@@ -972,14 +1075,14 @@ export class GrowlBassSynth implements SynthesizerEngine {
 }
 
 export const BASS_SYNTHESIZERS: Record<string, () => SynthesizerEngine> = {
-  'electric-bass': () => new ElectricBassSynth(),
-  'synth-bass': () => new SynthBassSynth(),
-  'acoustic-bass': () => new AcousticBassSynth(),
-  'sub-bass': () => new SubBassSynth(),
-  'wobble-bass': () => new WobbleBassSynth(),
-  'funk-bass': () => new FunkBassSynth(),
-  'reese-bass': () => new ReesBassSynth(),
-  'fm-bass': () => new FMBassSynth(),
-  'pluck-bass': () => new PluckBassSynth(),
-  'growl-bass': () => new GrowlBassSynth(),
+  "electric-bass": () => new ElectricBassSynth(),
+  "synth-bass": () => new SynthBassSynth(),
+  "acoustic-bass": () => new AcousticBassSynth(),
+  "sub-bass": () => new SubBassSynth(),
+  "wobble-bass": () => new WobbleBassSynth(),
+  "funk-bass": () => new FunkBassSynth(),
+  "reese-bass": () => new ReesBassSynth(),
+  "fm-bass": () => new FMBassSynth(),
+  "pluck-bass": () => new PluckBassSynth(),
+  "growl-bass": () => new GrowlBassSynth(),
 };

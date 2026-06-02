@@ -3,15 +3,24 @@
  * Exports all coordination components for rule-based + learning hybrid architecture
  */
 
-export * from './AutopilotCoordinator.js';
-export * from './SocialMediaRuleEngine.js';
-export * from './AdvertisingRuleEngine.js';
-export * from './FeatureStore.js';
+export * from "./AutopilotCoordinator.js";
+export * from "./SocialMediaRuleEngine.js";
+export * from "./AdvertisingRuleEngine.js";
+export * from "./FeatureStore.js";
 
-import { autopilotCoordinator, AutopilotCoordinator } from './AutopilotCoordinator.js';
-import { socialMediaRuleEngine, SocialMediaRuleEngine } from './SocialMediaRuleEngine.js';
-import { advertisingRuleEngine, AdvertisingRuleEngine } from './AdvertisingRuleEngine.js';
-import { featureStore, FeatureStore } from './FeatureStore.js';
+import {
+  autopilotCoordinator,
+  AutopilotCoordinator,
+} from "./AutopilotCoordinator.js";
+import {
+  socialMediaRuleEngine,
+  SocialMediaRuleEngine,
+} from "./SocialMediaRuleEngine.js";
+import {
+  advertisingRuleEngine,
+  AdvertisingRuleEngine,
+} from "./AdvertisingRuleEngine.js";
+import { featureStore, FeatureStore } from "./FeatureStore.js";
 
 export const coordination = {
   autopilotCoordinator,
@@ -28,7 +37,7 @@ export type {
   ExecutionIntent,
   CoordinationDecision,
   ConflictResolutionStrategy,
-} from './AutopilotCoordinator.js';
+} from "./AutopilotCoordinator.js";
 
 export type {
   PlatformLimits,
@@ -36,7 +45,7 @@ export type {
   SchedulingRule,
   SchedulingContext,
   RuleEvaluationResult,
-} from './SocialMediaRuleEngine.js';
+} from "./SocialMediaRuleEngine.js";
 
 export type {
   BudgetConstraints,
@@ -45,7 +54,7 @@ export type {
   AdContext,
   BudgetAllocationRule,
   AdRuleEvaluationResult,
-} from './AdvertisingRuleEngine.js';
+} from "./AdvertisingRuleEngine.js";
 
 export type {
   AudienceCohort,
@@ -54,4 +63,4 @@ export type {
   CampaignInsight,
   CrossSystemMetrics,
   LearningEvent,
-} from './FeatureStore.js';
+} from "./FeatureStore.js";

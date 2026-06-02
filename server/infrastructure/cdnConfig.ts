@@ -1,9 +1,9 @@
-import { Request, Response, NextFunction } from 'express';
-import { logger } from '../logger.js';
+import { Request, Response, NextFunction } from "express";
+import { logger } from "../logger.js";
 
 interface CDNConfig {
   enabled: boolean;
-  provider: 'cloudflare' | 'fastly' | 'cloudfront' | 'custom';
+  provider: "cloudflare" | "fastly" | "cloudfront" | "custom";
   baseUrl: string;
   staticAssetPaths: string[];
   cacheControlRules: CacheRule[];
@@ -26,9 +26,9 @@ const DEFAULT_CACHE_RULES: CacheRule[] = [
   { pattern: /\.(woff|woff2|ttf|eot)$/, maxAge: 31536000, immutable: true },
   { pattern: /\.(mp3|wav|ogg|flac)$/, maxAge: 86400 },
   { pattern: /\.(mp4|webm)$/, maxAge: 86400 },
-  { pattern: '/api/health', maxAge: 5 },
-  { pattern: '/api/marketplace', maxAge: 60, staleWhileRevalidate: 300 },
-  { pattern: '/api/ai', maxAge: 0, private: true },
+  { pattern: "/api/health", maxAge: 5 },
+  { pattern: "/api/marketplace", maxAge: 60, staleWhileRevalidate: 300 },
+  { pattern: "/api/ai", maxAge: 0, private: true },
 ];
 
 class CDNManager {
@@ -37,10 +37,11 @@ class CDNManager {
 
   private constructor() {
     this.config = {
-      enabled: process.env.CDN_ENABLED === 'true',
-      provider: (process.env.CDN_PROVIDER as Record<string, unknown>) || 'cloudflare',
-      baseUrl: process.env.CDN_BASE_URL || '',
-      staticAssetPaths: ['/static', '/assets', '/uploads', '/audio'],
+      enabled: process.env.CDN_ENABLED === "true",
+      provider:
+        (process.env.CDN_PROVIDER as Record<string, unknown>) || "cloudflare",
+      baseUrl: process.env.CDN_BASE_URL || "",
+      staticAssetPaths: ["/static", "/assets", "/uploads", "/audio"],
       cacheControlRules: DEFAULT_CACHE_RULES,
       purgeApiKey: process.env.CDN_PURGE_API_KEY,
       purgeEndpoint: process.env.CDN_PURGE_ENDPOINT,
@@ -63,59 +64,62 @@ class CDNManager {
 
   getCacheHeaders(path: string): Record<string, string> {
     const headers: Record<string, string> = {};
-    
+
     for (const rule of this.config.cacheControlRules) {
-      const matches = typeof rule.pattern === 'string' 
-        ? path.includes(rule.pattern)
-        : rule.pattern.test(path);
-      
+      const matches =
+        typeof rule.pattern === "string"
+          ? path.includes(rule.pattern)
+          : rule.pattern.test(path);
+
       if (matches) {
         const directives: string[] = [];
-        
+
         if (rule.private) {
-          directives.push('private');
+          directives.push("private");
         } else {
-          directives.push('public');
+          directives.push("public");
         }
-        
+
         directives.push(`max-age=${rule.maxAge}`);
-        
+
         if (rule.staleWhileRevalidate) {
-          directives.push(`stale-while-revalidate=${rule.staleWhileRevalidate}`);
+          directives.push(
+            `stale-while-revalidate=${rule.staleWhileRevalidate}`,
+          );
         }
-        
+
         if (rule.staleIfError) {
           directives.push(`stale-if-error=${rule.staleIfError}`);
         }
-        
+
         if (rule.immutable) {
-          directives.push('immutable');
+          directives.push("immutable");
         }
-        
-        headers['Cache-Control'] = directives.join(', ');
+
+        headers["Cache-Control"] = directives.join(", ");
         break;
       }
     }
-    
-    if (!headers['Cache-Control']) {
-      headers['Cache-Control'] = 'no-cache';
+
+    if (!headers["Cache-Control"]) {
+      headers["Cache-Control"] = "no-cache";
     }
-    
+
     return headers;
   }
 
   async purgeCache(paths: string[]): Promise<boolean> {
     if (!this.config.purgeEndpoint || !this.config.purgeApiKey) {
-      logger.warn('CDN purge not configured');
+      logger.warn("CDN purge not configured");
       return false;
     }
 
     try {
       const response = await fetch(this.config.purgeEndpoint, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Authorization': `Bearer ${this.config.purgeApiKey}`,
-          'Content-Type': 'application/json',
+          Authorization: `Bearer ${this.config.purgeApiKey}`,
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({ files: paths }),
         signal: AbortSignal.timeout(10000),
@@ -125,41 +129,41 @@ class CDNManager {
         logger.info(`CDN cache purged for ${paths.length} paths`);
         return true;
       } else {
-        logger.warn('CDN purge failed:', await response.text());
+        logger.warn("CDN purge failed:", await response.text());
         return false;
       }
     } catch (error) {
-      logger.warn({ err: error }, 'CDN purge error:');
+      logger.warn({ err: error }, "CDN purge error:");
       return false;
     }
   }
 
   async purgeAll(): Promise<boolean> {
     if (!this.config.purgeEndpoint || !this.config.purgeApiKey) {
-      logger.warn('CDN purge not configured');
+      logger.warn("CDN purge not configured");
       return false;
     }
 
     try {
       const response = await fetch(this.config.purgeEndpoint, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Authorization': `Bearer ${this.config.purgeApiKey}`,
-          'Content-Type': 'application/json',
+          Authorization: `Bearer ${this.config.purgeApiKey}`,
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({ purge_everything: true }),
         signal: AbortSignal.timeout(10000),
       });
 
       if (response.ok) {
-        logger.info('CDN cache fully purged');
+        logger.info("CDN cache fully purged");
         return true;
       } else {
-        logger.warn('CDN full purge failed:', await response.text());
+        logger.warn("CDN full purge failed:", await response.text());
         return false;
       }
     } catch (error) {
-      logger.warn({ err: error }, 'CDN full purge error:');
+      logger.warn({ err: error }, "CDN full purge error:");
       return false;
     }
   }
@@ -175,13 +179,17 @@ class CDNManager {
 
 export const cdnManager = CDNManager.getInstance();
 
-export function cdnCacheMiddleware(req: Request, res: Response, next: NextFunction): void {
+export function cdnCacheMiddleware(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): void {
   const headers = cdnManager.getCacheHeaders(req.path);
-  
+
   for (const [key, value] of Object.entries(headers)) {
     res.setHeader(key, value);
   }
-  
+
   next();
 }
 

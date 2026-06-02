@@ -12,9 +12,9 @@
  * Mount either hook at the top-level of a protected page component.
  */
 
-import { useLocation } from 'wouter';
-import { useAuth } from '@/hooks/useAuth';
-import { useEffect } from 'react';
+import { useLocation } from "wouter";
+import { useAuth } from "@/hooks/useAuth";
+import { useEffect } from "react";
 
 export function useRequireAuth() {
   const { user, isLoading } = useAuth();
@@ -22,7 +22,7 @@ export function useRequireAuth() {
 
   useEffect(() => {
     if (!isLoading && !user) {
-      navigate('/login');
+      navigate("/login");
     }
   }, [user, isLoading, navigate]);
 
@@ -36,9 +36,9 @@ export function useRequireAdmin() {
   useEffect(() => {
     if (!isLoading) {
       if (!user) {
-        navigate('/login');
-      } else if (user.role !== 'admin') {
-        navigate('/dashboard');
+        navigate("/login");
+      } else if (user.role !== "admin") {
+        navigate("/dashboard");
       }
     }
   }, [user, isLoading, navigate]);

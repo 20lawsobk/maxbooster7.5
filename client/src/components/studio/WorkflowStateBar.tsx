@@ -1,8 +1,13 @@
-import { useState, useCallback } from 'react';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { useState, useCallback } from "react";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import {
   Mic,
   Scissors,
@@ -16,9 +21,15 @@ import {
   FileOutput,
   X,
   ChevronDown,
-} from 'lucide-react';
+} from "lucide-react";
 
-export type WorkflowState = 'setup' | 'recording' | 'editing' | 'mixing' | 'mastering' | 'delivery';
+export type WorkflowState =
+  | "setup"
+  | "recording"
+  | "editing"
+  | "mixing"
+  | "mastering"
+  | "delivery";
 
 interface WorkflowStep {
   id: WorkflowState;
@@ -30,46 +41,66 @@ interface WorkflowStep {
 
 const WORKFLOW_STEPS: WorkflowStep[] = [
   {
-    id: 'setup',
-    label: 'Setup',
+    id: "setup",
+    label: "Setup",
     icon: Settings2,
-    description: 'Configure project settings and prepare for recording',
-    tasks: ['Set tempo and key', 'Configure audio I/O', 'Add track templates', 'Set up metronome'],
+    description: "Configure project settings and prepare for recording",
+    tasks: [
+      "Set tempo and key",
+      "Configure audio I/O",
+      "Add track templates",
+      "Set up metronome",
+    ],
   },
   {
-    id: 'recording',
-    label: 'Recording',
+    id: "recording",
+    label: "Recording",
     icon: Mic,
-    description: 'Capture audio and MIDI performances',
-    tasks: ['Record vocals', 'Record instruments', 'Capture MIDI', 'Review takes'],
+    description: "Capture audio and MIDI performances",
+    tasks: [
+      "Record vocals",
+      "Record instruments",
+      "Capture MIDI",
+      "Review takes",
+    ],
   },
   {
-    id: 'editing',
-    label: 'Editing',
+    id: "editing",
+    label: "Editing",
     icon: Scissors,
-    description: 'Edit, arrange, and polish your recordings',
-    tasks: ['Comp takes', 'Time alignment', 'Pitch correction', 'Arrange sections'],
+    description: "Edit, arrange, and polish your recordings",
+    tasks: [
+      "Comp takes",
+      "Time alignment",
+      "Pitch correction",
+      "Arrange sections",
+    ],
   },
   {
-    id: 'mixing',
-    label: 'Mixing',
+    id: "mixing",
+    label: "Mixing",
     icon: Sliders,
-    description: 'Balance levels, EQ, and add effects',
-    tasks: ['Set levels', 'Pan positions', 'EQ and compression', 'Add effects'],
+    description: "Balance levels, EQ, and add effects",
+    tasks: ["Set levels", "Pan positions", "EQ and compression", "Add effects"],
   },
   {
-    id: 'mastering',
-    label: 'Mastering',
+    id: "mastering",
+    label: "Mastering",
     icon: Disc,
-    description: 'Final polish and loudness optimization',
-    tasks: ['Apply mastering chain', 'Check loudness', 'A/B reference', 'Final tweaks'],
+    description: "Final polish and loudness optimization",
+    tasks: [
+      "Apply mastering chain",
+      "Check loudness",
+      "A/B reference",
+      "Final tweaks",
+    ],
   },
   {
-    id: 'delivery',
-    label: 'Delivery',
+    id: "delivery",
+    label: "Delivery",
     icon: FileOutput,
-    description: 'Export and distribute your final product',
-    tasks: ['Export formats', 'Quality check', 'Metadata', 'Distribution'],
+    description: "Export and distribute your final product",
+    tasks: ["Export formats", "Quality check", "Metadata", "Distribution"],
   },
 ];
 
@@ -88,24 +119,29 @@ export function WorkflowStateBar({
   onStateChange,
   completedSteps = [],
   projectProgress = 0,
-  className = '',
+  className = "",
   isCollapsed = false,
   onCollapsedChange,
 }: WorkflowStateBarProps) {
   const [showDetails, setShowDetails] = useState(false);
-  const currentIndex = WORKFLOW_STEPS.findIndex(s => s.id === currentState);
+  const currentIndex = WORKFLOW_STEPS.findIndex((s) => s.id === currentState);
 
-  const getStepStatus = useCallback((step: WorkflowStep, index: number) => {
-    if (completedSteps.includes(step.id)) return 'completed';
-    if (step.id === currentState) return 'current';
-    if (index < currentIndex) return 'passed';
-    return 'upcoming';
-  }, [currentState, currentIndex, completedSteps]);
+  const getStepStatus = useCallback(
+    (step: WorkflowStep, index: number) => {
+      if (completedSteps.includes(step.id)) return "completed";
+      if (step.id === currentState) return "current";
+      if (index < currentIndex) return "passed";
+      return "upcoming";
+    },
+    [currentState, currentIndex, completedSteps],
+  );
 
   // If collapsed, render a minimal expand button
   if (isCollapsed) {
     return (
-      <div className={`bg-zinc-900/80 backdrop-blur-sm border-b border-zinc-800 ${className}`}>
+      <div
+        className={`bg-zinc-900/80 backdrop-blur-sm border-b border-zinc-800 ${className}`}
+      >
         <div className="flex items-center justify-center px-2 py-1">
           <Button
             variant="ghost"
@@ -114,7 +150,7 @@ export function WorkflowStateBar({
             className="text-zinc-400 hover:text-white text-xs gap-1"
           >
             <ChevronDown className="h-3 w-3" />
-            Show Workflow ({WORKFLOW_STEPS[currentIndex]?.label || 'Setup'})
+            Show Workflow ({WORKFLOW_STEPS[currentIndex]?.label || "Setup"})
           </Button>
         </div>
       </div>
@@ -123,7 +159,9 @@ export function WorkflowStateBar({
 
   return (
     <TooltipProvider>
-      <div className={`bg-zinc-900/80 backdrop-blur-sm border-b border-zinc-800 ${className}`}>
+      <div
+        className={`bg-zinc-900/80 backdrop-blur-sm border-b border-zinc-800 ${className}`}
+      >
         <div className="flex items-center justify-between px-2 md:px-4 py-2 gap-2">
           <div className="flex items-center gap-1 overflow-x-auto scrollbar-thin scrollbar-thumb-zinc-700 scrollbar-track-transparent pb-1 md:pb-0 flex-1 min-w-0">
             {WORKFLOW_STEPS.map((step, index) => {
@@ -140,31 +178,42 @@ export function WorkflowStateBar({
                         className={`
                           flex items-center gap-1.5 md:gap-2 px-2 md:px-3 py-2 md:py-1.5 rounded-md transition-all shrink-0
                           min-h-[44px] md:min-h-0 touch-manipulation
-                          ${status === 'current' 
-                            ? 'bg-purple-600 text-white' 
-                            : status === 'completed'
-                            ? 'bg-green-600/20 text-green-400 hover:bg-green-600/30'
-                            : status === 'passed'
-                            ? 'bg-zinc-700/50 text-zinc-400 hover:bg-zinc-700'
-                            : 'text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800'
+                          ${
+                            status === "current"
+                              ? "bg-purple-600 text-white"
+                              : status === "completed"
+                                ? "bg-green-600/20 text-green-400 hover:bg-green-600/30"
+                                : status === "passed"
+                                  ? "bg-zinc-700/50 text-zinc-400 hover:bg-zinc-700"
+                                  : "text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800"
                           }
                         `}
                       >
-                        {status === 'completed' ? (
+                        {status === "completed" ? (
                           <Check className="h-4 w-4 md:h-4 md:w-4" />
                         ) : (
                           <Icon className="h-4 w-4 md:h-4 md:w-4" />
                         )}
-                        <span className="text-xs md:text-sm font-medium hidden sm:inline">{step.label}</span>
+                        <span className="text-xs md:text-sm font-medium hidden sm:inline">
+                          {step.label}
+                        </span>
                       </button>
                     </TooltipTrigger>
-                    <TooltipContent side="bottom" className="bg-zinc-800 border-zinc-700">
+                    <TooltipContent
+                      side="bottom"
+                      className="bg-zinc-800 border-zinc-700"
+                    >
                       <div className="space-y-2 p-1">
                         <p className="font-medium text-white">{step.label}</p>
-                        <p className="text-xs text-zinc-400">{step.description}</p>
+                        <p className="text-xs text-zinc-400">
+                          {step.description}
+                        </p>
                         <div className="space-y-1 pt-1 border-t border-zinc-700">
                           {step.tasks.map((task, i) => (
-                            <div key={i} className="flex items-center gap-2 text-xs text-zinc-300">
+                            <div
+                              key={i}
+                              className="flex items-center gap-2 text-xs text-zinc-300"
+                            >
                               <div className="w-1.5 h-1.5 rounded-full bg-zinc-500" />
                               {task}
                             </div>
@@ -175,9 +224,13 @@ export function WorkflowStateBar({
                   </Tooltip>
 
                   {!isLast && (
-                    <ChevronRight className={`h-4 w-4 mx-1 ${
-                      index < currentIndex ? 'text-green-500' : 'text-zinc-600'
-                    }`} />
+                    <ChevronRight
+                      className={`h-4 w-4 mx-1 ${
+                        index < currentIndex
+                          ? "text-green-500"
+                          : "text-zinc-600"
+                      }`}
+                    />
                   )}
                 </div>
               );
@@ -194,8 +247,13 @@ export function WorkflowStateBar({
 
             {projectProgress > 0 && (
               <div className="hidden lg:flex items-center gap-2 min-w-[120px]">
-                <Progress value={projectProgress} className="h-1.5 bg-zinc-700" />
-                <span className="text-xs text-zinc-400 w-8">{projectProgress}%</span>
+                <Progress
+                  value={projectProgress}
+                  className="h-1.5 bg-zinc-700"
+                />
+                <span className="text-xs text-zinc-400 w-8">
+                  {projectProgress}%
+                </span>
               </div>
             )}
 
@@ -205,7 +263,7 @@ export function WorkflowStateBar({
               onClick={() => setShowDetails(!showDetails)}
               className="text-zinc-400 hover:text-white"
             >
-              {showDetails ? 'Hide' : 'Details'}
+              {showDetails ? "Hide" : "Details"}
             </Button>
 
             {onCollapsedChange && (
@@ -233,31 +291,48 @@ export function WorkflowStateBar({
                   <div
                     key={step.id}
                     className={`p-3 rounded-lg border ${
-                      status === 'current'
-                        ? 'bg-purple-600/10 border-purple-500'
-                        : status === 'completed'
-                        ? 'bg-green-600/10 border-green-600/50'
-                        : 'bg-zinc-800/50 border-zinc-700'
+                      status === "current"
+                        ? "bg-purple-600/10 border-purple-500"
+                        : status === "completed"
+                          ? "bg-green-600/10 border-green-600/50"
+                          : "bg-zinc-800/50 border-zinc-700"
                     }`}
                   >
                     <div className="flex items-center gap-2 mb-2">
-                      <Icon className={`h-4 w-4 ${
-                        status === 'current' ? 'text-purple-400' :
-                        status === 'completed' ? 'text-green-400' : 'text-zinc-500'
-                      }`} />
-                      <span className={`text-sm font-medium ${
-                        status === 'current' ? 'text-white' :
-                        status === 'completed' ? 'text-green-400' : 'text-zinc-400'
-                      }`}>
+                      <Icon
+                        className={`h-4 w-4 ${
+                          status === "current"
+                            ? "text-purple-400"
+                            : status === "completed"
+                              ? "text-green-400"
+                              : "text-zinc-500"
+                        }`}
+                      />
+                      <span
+                        className={`text-sm font-medium ${
+                          status === "current"
+                            ? "text-white"
+                            : status === "completed"
+                              ? "text-green-400"
+                              : "text-zinc-400"
+                        }`}
+                      >
                         {step.label}
                       </span>
                     </div>
                     <div className="space-y-1">
                       {step.tasks.slice(0, 3).map((task, i) => (
-                        <div key={i} className="flex items-center gap-2 text-xs text-zinc-400">
-                          <div className={`w-1.5 h-1.5 rounded-full ${
-                            status === 'completed' ? 'bg-green-500' : 'bg-zinc-600'
-                          }`} />
+                        <div
+                          key={i}
+                          className="flex items-center gap-2 text-xs text-zinc-400"
+                        >
+                          <div
+                            className={`w-1.5 h-1.5 rounded-full ${
+                              status === "completed"
+                                ? "bg-green-500"
+                                : "bg-zinc-600"
+                            }`}
+                          />
                           {task}
                         </div>
                       ))}
@@ -280,26 +355,32 @@ export function WorkflowStateBar({
 
 interface WorkflowStateBadgeProps {
   state: WorkflowState;
-  size?: 'sm' | 'md';
+  size?: "sm" | "md";
 }
 
-export function WorkflowStateBadge({ state, size = 'sm' }: WorkflowStateBadgeProps) {
-  const step = WORKFLOW_STEPS.find(s => s.id === state);
+export function WorkflowStateBadge({
+  state,
+  size = "sm",
+}: WorkflowStateBadgeProps) {
+  const step = WORKFLOW_STEPS.find((s) => s.id === state);
   if (!step) return null;
 
   const Icon = step.icon;
   const colors: Record<WorkflowState, string> = {
-    setup: 'bg-blue-600/20 text-blue-400 border-blue-500/50',
-    recording: 'bg-red-600/20 text-red-400 border-red-500/50',
-    editing: 'bg-yellow-600/20 text-yellow-400 border-yellow-500/50',
-    mixing: 'bg-purple-600/20 text-purple-400 border-purple-500/50',
-    mastering: 'bg-orange-600/20 text-orange-400 border-orange-500/50',
-    delivery: 'bg-green-600/20 text-green-400 border-green-500/50',
+    setup: "bg-blue-600/20 text-blue-400 border-blue-500/50",
+    recording: "bg-red-600/20 text-red-400 border-red-500/50",
+    editing: "bg-yellow-600/20 text-yellow-400 border-yellow-500/50",
+    mixing: "bg-purple-600/20 text-purple-400 border-purple-500/50",
+    mastering: "bg-orange-600/20 text-orange-400 border-orange-500/50",
+    delivery: "bg-green-600/20 text-green-400 border-green-500/50",
   };
 
   return (
-    <Badge variant="outline" className={`${colors[state]} ${size === 'sm' ? 'text-xs' : 'text-sm'}`}>
-      <Icon className={`${size === 'sm' ? 'h-3 w-3' : 'h-4 w-4'} mr-1`} />
+    <Badge
+      variant="outline"
+      className={`${colors[state]} ${size === "sm" ? "text-xs" : "text-sm"}`}
+    >
+      <Icon className={`${size === "sm" ? "h-3 w-3" : "h-4 w-4"} mr-1`} />
       {step.label}
     </Badge>
   );

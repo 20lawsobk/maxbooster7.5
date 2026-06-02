@@ -1,6 +1,6 @@
-import { useNetworkStatus, NetworkStatus } from '@/hooks/useNetworkStatus';
-import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
+import { useNetworkStatus, NetworkStatus } from "@/hooks/useNetworkStatus";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import {
   Wifi,
   WifiOff,
@@ -10,56 +10,59 @@ import {
   AlertTriangle,
   Signal,
   SignalLow,
-} from 'lucide-react';
-import { useState, useEffect } from 'react';
+} from "lucide-react";
+import { useState, useEffect } from "react";
 
 interface ConnectionStatusBarProps {
-  position?: 'top' | 'bottom';
+  position?: "top" | "bottom";
   autoHide?: boolean;
   autoHideDelay?: number;
   showOnSlow?: boolean;
   className?: string;
 }
 
-const statusConfig: Record<NetworkStatus, {
-  icon: React.ReactNode;
-  label: string;
-  description: string;
-  bgColor: string;
-  textColor: string;
-}> = {
+const statusConfig: Record<
+  NetworkStatus,
+  {
+    icon: React.ReactNode;
+    label: string;
+    description: string;
+    bgColor: string;
+    textColor: string;
+  }
+> = {
   online: {
     icon: <Wifi className="h-4 w-4" />,
-    label: 'Connected',
-    description: 'Your connection is stable',
-    bgColor: 'bg-green-500',
-    textColor: 'text-white',
+    label: "Connected",
+    description: "Your connection is stable",
+    bgColor: "bg-green-500",
+    textColor: "text-white",
   },
   offline: {
     icon: <WifiOff className="h-4 w-4" />,
-    label: 'Offline',
-    description: 'No internet connection. Some features may be unavailable.',
-    bgColor: 'bg-red-500',
-    textColor: 'text-white',
+    label: "Offline",
+    description: "No internet connection. Some features may be unavailable.",
+    bgColor: "bg-red-500",
+    textColor: "text-white",
   },
   slow: {
     icon: <SignalLow className="h-4 w-4" />,
-    label: 'Slow Connection',
-    description: 'Your connection is slow. Some actions may take longer.',
-    bgColor: 'bg-yellow-500',
-    textColor: 'text-black',
+    label: "Slow Connection",
+    description: "Your connection is slow. Some actions may take longer.",
+    bgColor: "bg-yellow-500",
+    textColor: "text-black",
   },
   reconnecting: {
     icon: <Loader2 className="h-4 w-4 animate-spin" />,
-    label: 'Reconnecting',
-    description: 'Attempting to restore connection...',
-    bgColor: 'bg-blue-500',
-    textColor: 'text-white',
+    label: "Reconnecting",
+    description: "Attempting to restore connection...",
+    bgColor: "bg-blue-500",
+    textColor: "text-white",
   },
 };
 
 export function ConnectionStatusBar({
-  position = 'top',
+  position = "top",
   autoHide = true,
   autoHideDelay = 5000,
   showOnSlow = true,
@@ -83,7 +86,7 @@ export function ConnectionStatusBar({
     } else if (network.isOnline && wasOffline) {
       setIsVisible(true);
       setWasOffline(false);
-      
+
       if (autoHide) {
         const timer = setTimeout(() => {
           setIsVisible(false);
@@ -93,7 +96,18 @@ export function ConnectionStatusBar({
     } else if (!isDismissed) {
       setIsVisible(false);
     }
-  }, [network.status, network.isOffline, network.isReconnecting, network.isSlow, network.isOnline, wasOffline, autoHide, autoHideDelay, showOnSlow, isDismissed]);
+  }, [
+    network.status,
+    network.isOffline,
+    network.isReconnecting,
+    network.isSlow,
+    network.isOnline,
+    wasOffline,
+    autoHide,
+    autoHideDelay,
+    showOnSlow,
+    isDismissed,
+  ]);
 
   if (!isVisible) {
     return null;
@@ -104,12 +118,12 @@ export function ConnectionStatusBar({
   return (
     <div
       className={cn(
-        'fixed left-0 right-0 z-[9999] px-4 py-2 flex items-center justify-between gap-4 shadow-lg transition-all duration-300',
-        position === 'top' ? 'top-0' : 'bottom-0',
+        "fixed left-0 right-0 z-[9999] px-4 py-2 flex items-center justify-between gap-4 shadow-lg transition-all duration-300",
+        position === "top" ? "top-0" : "bottom-0",
         config.bgColor,
         config.textColor,
-        'animate-in slide-in-from-top-2',
-        className
+        "animate-in slide-in-from-top-2",
+        className,
       )}
       role="status"
       aria-live="polite"
@@ -124,7 +138,7 @@ export function ConnectionStatusBar({
             {config.description}
           </span>
         </div>
-        
+
         {network.isReconnecting && network.reconnectAttempts > 0 && (
           <span className="text-xs opacity-75">
             Attempt {network.reconnectAttempts}
@@ -144,7 +158,7 @@ export function ConnectionStatusBar({
             Retry Now
           </Button>
         )}
-        
+
         {network.isReconnecting && (
           <Button
             size="sm"
@@ -155,12 +169,12 @@ export function ConnectionStatusBar({
             Cancel
           </Button>
         )}
-        
+
         {(network.isOnline || network.isSlow) && (
           <Button
             size="sm"
             variant="ghost"
-            className={cn('h-7 w-7 p-0', config.textColor)}
+            className={cn("h-7 w-7 p-0", config.textColor)}
             onClick={() => {
               setIsVisible(false);
               setIsDismissed(true);
@@ -175,39 +189,43 @@ export function ConnectionStatusBar({
   );
 }
 
-export function ConnectionStatusIndicator({ className }: { className?: string }) {
+export function ConnectionStatusIndicator({
+  className,
+}: {
+  className?: string;
+}) {
   const network = useNetworkStatus({ showToasts: false });
 
   const getIndicatorProps = () => {
     if (network.isOffline) {
       return {
         icon: <WifiOff className="h-4 w-4" />,
-        color: 'text-red-500',
+        color: "text-red-500",
         pulse: false,
-        label: 'Offline',
+        label: "Offline",
       };
     }
     if (network.isReconnecting) {
       return {
         icon: <Loader2 className="h-4 w-4 animate-spin" />,
-        color: 'text-blue-500',
+        color: "text-blue-500",
         pulse: true,
-        label: 'Reconnecting',
+        label: "Reconnecting",
       };
     }
     if (network.isSlow) {
       return {
         icon: <SignalLow className="h-4 w-4" />,
-        color: 'text-yellow-500',
+        color: "text-yellow-500",
         pulse: false,
-        label: 'Slow connection',
+        label: "Slow connection",
       };
     }
     return {
       icon: <Signal className="h-4 w-4" />,
-      color: 'text-green-500',
+      color: "text-green-500",
       pulse: false,
-      label: 'Online',
+      label: "Online",
     };
   };
 
@@ -216,10 +234,10 @@ export function ConnectionStatusIndicator({ className }: { className?: string })
   return (
     <div
       className={cn(
-        'flex items-center gap-1',
+        "flex items-center gap-1",
         color,
-        pulse && 'animate-pulse',
-        className
+        pulse && "animate-pulse",
+        className,
       )}
       title={label}
       aria-label={label}

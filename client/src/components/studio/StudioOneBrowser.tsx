@@ -1,12 +1,12 @@
-import { useState, useRef, useCallback, useMemo } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { 
-  Search, 
-  Folder, 
-  FolderOpen, 
-  Music, 
-  FileAudio, 
-  ChevronRight, 
+import { useState, useRef, useCallback, useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
+import {
+  Search,
+  Folder,
+  FolderOpen,
+  Music,
+  FileAudio,
+  ChevronRight,
   ChevronDown,
   Play,
   Pause,
@@ -21,14 +21,14 @@ import {
   MoreHorizontal,
   Zap,
   Loader2,
-} from 'lucide-react';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Badge } from '@/components/ui/badge';
-import { Slider } from '@/components/ui/slider';
-import { studioOneTheme } from '@/lib/studioOneTheme';
+} from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
+import { Slider } from "@/components/ui/slider";
+import { studioOneTheme } from "@/lib/studioOneTheme";
 
 interface Plugin {
   id: string;
@@ -46,7 +46,7 @@ interface PluginCatalogResponse {
 interface BrowserFile {
   id: string;
   name: string;
-  type: 'folder' | 'audio' | 'midi' | 'preset' | 'loop';
+  type: "folder" | "audio" | "midi" | "preset" | "loop";
   path: string;
   duration?: number;
   bpm?: number;
@@ -90,21 +90,45 @@ function FileTreeItem({
   selectedId?: string;
 }) {
   const [expanded, setExpanded] = useState(false);
-  const isFolder = file.type === 'folder';
+  const isFolder = file.type === "folder";
   const isSelected = file.id === selectedId;
 
   const getIcon = () => {
     switch (file.type) {
-      case 'folder':
-        return expanded ? <FolderOpen className="h-4 w-4" /> : <Folder className="h-4 w-4" />;
-      case 'audio':
-        return <FileAudio className="h-4 w-4" style={{ color: studioOneTheme.colors.accent.green }} />;
-      case 'midi':
-        return <Music className="h-4 w-4" style={{ color: studioOneTheme.colors.accent.purple }} />;
-      case 'loop':
-        return <Music className="h-4 w-4" style={{ color: studioOneTheme.colors.accent.cyan }} />;
-      case 'preset':
-        return <Filter className="h-4 w-4" style={{ color: studioOneTheme.colors.accent.orange }} />;
+      case "folder":
+        return expanded ? (
+          <FolderOpen className="h-4 w-4" />
+        ) : (
+          <Folder className="h-4 w-4" />
+        );
+      case "audio":
+        return (
+          <FileAudio
+            className="h-4 w-4"
+            style={{ color: studioOneTheme.colors.accent.green }}
+          />
+        );
+      case "midi":
+        return (
+          <Music
+            className="h-4 w-4"
+            style={{ color: studioOneTheme.colors.accent.purple }}
+          />
+        );
+      case "loop":
+        return (
+          <Music
+            className="h-4 w-4"
+            style={{ color: studioOneTheme.colors.accent.cyan }}
+          />
+        );
+      case "preset":
+        return (
+          <Filter
+            className="h-4 w-4"
+            style={{ color: studioOneTheme.colors.accent.orange }}
+          />
+        );
       default:
         return <FileAudio className="h-4 w-4" />;
     }
@@ -113,7 +137,7 @@ function FileTreeItem({
   return (
     <div>
       <div
-        className={`flex items-center gap-1 py-1 px-2 cursor-pointer hover:bg-white/5 group rounded ${isSelected ? 'bg-white/10' : ''}`}
+        className={`flex items-center gap-1 py-1 px-2 cursor-pointer hover:bg-white/5 group rounded ${isSelected ? "bg-white/10" : ""}`}
         style={{ paddingLeft: depth * 16 + 8 }}
         draggable={!isFolder}
         onClick={() => {
@@ -135,17 +159,23 @@ function FileTreeItem({
             className="p-0.5"
           >
             {expanded ? (
-              <ChevronDown className="h-3 w-3" style={{ color: studioOneTheme.colors.text.muted }} />
+              <ChevronDown
+                className="h-3 w-3"
+                style={{ color: studioOneTheme.colors.text.muted }}
+              />
             ) : (
-              <ChevronRight className="h-3 w-3" style={{ color: studioOneTheme.colors.text.muted }} />
+              <ChevronRight
+                className="h-3 w-3"
+                style={{ color: studioOneTheme.colors.text.muted }}
+              />
             )}
           </button>
         )}
         {!isFolder && <div className="w-4" />}
-        
+
         {getIcon()}
-        
-        <span 
+
+        <span
           className="text-[11px] truncate flex-1"
           style={{ color: studioOneTheme.colors.text.primary }}
         >
@@ -153,8 +183,8 @@ function FileTreeItem({
         </span>
 
         {file.bpm && (
-          <Badge 
-            variant="outline" 
+          <Badge
+            variant="outline"
             className="text-[8px] px-1 py-0 h-4"
             style={{ borderColor: studioOneTheme.colors.border.subtle }}
           >
@@ -163,8 +193,8 @@ function FileTreeItem({
         )}
 
         {file.key && (
-          <Badge 
-            variant="outline" 
+          <Badge
+            variant="outline"
             className="text-[8px] px-1 py-0 h-4"
             style={{ borderColor: studioOneTheme.colors.border.subtle }}
           >
@@ -186,7 +216,10 @@ function FileTreeItem({
                 }}
                 className="p-1 hover:bg-white/10 rounded"
               >
-                <Play className="h-3 w-3" style={{ color: studioOneTheme.colors.accent.green }} />
+                <Play
+                  className="h-3 w-3"
+                  style={{ color: studioOneTheme.colors.accent.green }}
+                />
               </button>
               <button
                 onClick={(e) => {
@@ -195,7 +228,10 @@ function FileTreeItem({
                 }}
                 className="p-1 hover:bg-white/10 rounded"
               >
-                <Plus className="h-3 w-3" style={{ color: studioOneTheme.colors.text.muted }} />
+                <Plus
+                  className="h-3 w-3"
+                  style={{ color: studioOneTheme.colors.text.muted }}
+                />
               </button>
               <button
                 onClick={(e) => {
@@ -204,7 +240,14 @@ function FileTreeItem({
                 }}
                 className="p-1 hover:bg-white/10 rounded"
               >
-                <Star className={`h-3 w-3 ${file.favorite ? 'fill-yellow-500 text-yellow-500' : ''}`} style={{ color: file.favorite ? undefined : studioOneTheme.colors.text.muted }} />
+                <Star
+                  className={`h-3 w-3 ${file.favorite ? "fill-yellow-500 text-yellow-500" : ""}`}
+                  style={{
+                    color: file.favorite
+                      ? undefined
+                      : studioOneTheme.colors.text.muted,
+                  }}
+                />
               </button>
             </>
           )}
@@ -232,20 +275,28 @@ function FileTreeItem({
   );
 }
 
-function WaveformPreview({ duration = 4, progress = 0 }: { duration?: number; progress?: number }) {
+function WaveformPreview({
+  duration = 4,
+  progress = 0,
+}: {
+  duration?: number;
+  progress?: number;
+}) {
   const bars = 50;
   return (
     <div className="flex items-end gap-px h-10 px-2">
       {Array.from({ length: bars }).map((_, i) => {
         const height = Math.random() * 60 + 20;
-        const isPast = (i / bars) < progress;
+        const isPast = i / bars < progress;
         return (
           <div
             key={i}
             className="flex-1 rounded-sm transition-colors"
             style={{
               height: `${height}%`,
-              background: isPast ? studioOneTheme.colors.accent.blue : studioOneTheme.colors.bg.elevated,
+              background: isPast
+                ? studioOneTheme.colors.accent.blue
+                : studioOneTheme.colors.bg.elevated,
             }}
           />
         );
@@ -267,26 +318,41 @@ export function StudioOneBrowser({
   onPreviewPlayPause,
   onPreviewSeek,
 }: StudioOneBrowserProps) {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [viewMode, setViewMode] = useState<'tree' | 'grid'>('tree');
+  const [searchQuery, setSearchQuery] = useState("");
+  const [viewMode, setViewMode] = useState<"tree" | "grid">("tree");
   const [selectedFileId, setSelectedFileId] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState('files');
+  const [activeTab, setActiveTab] = useState("files");
 
   // Fetch plugins from API
-  const { data: pluginCatalog, isLoading: isLoadingPlugins } = useQuery<PluginCatalogResponse>({
-    queryKey: ['/api/studio/plugins'],
-    enabled: activeTab === 'instruments' || activeTab === 'effects',
-    staleTime: 60 * 60 * 1000,
-  });
+  const { data: pluginCatalog, isLoading: isLoadingPlugins } =
+    useQuery<PluginCatalogResponse>({
+      queryKey: ["/api/studio/plugins"],
+      enabled: activeTab === "instruments" || activeTab === "effects",
+      staleTime: 60 * 60 * 1000,
+    });
 
   // Filter and combine effect plugins - includes all effect types from the 200 built-in plugins
   const effectPlugins = useMemo(() => {
     if (!pluginCatalog) return [];
 
     const effectKinds = [
-      'reverb', 'delay', 'compressor', 'eq', 'distortion', 'chorus', 'flanger',
-      'phaser', 'limiter', 'gate', 'vocal', 'microphone', 'modulation',
-      'dynamics', 'filter', 'utility', 'saturation',
+      "reverb",
+      "delay",
+      "compressor",
+      "eq",
+      "distortion",
+      "chorus",
+      "flanger",
+      "phaser",
+      "limiter",
+      "gate",
+      "vocal",
+      "microphone",
+      "modulation",
+      "dynamics",
+      "filter",
+      "utility",
+      "saturation",
     ];
     const plugins: Plugin[] = [];
 
@@ -304,8 +370,21 @@ export function StudioOneBrowser({
     if (!pluginCatalog) return [];
 
     const instrumentKinds = [
-      'piano', 'strings', 'drums', 'bass', 'pad', 'synth', 'analog',
-      'fm', 'wavetable', 'sampler', 'organ', 'lead', 'pluck', 'brass', 'woodwind',
+      "piano",
+      "strings",
+      "drums",
+      "bass",
+      "pad",
+      "synth",
+      "analog",
+      "fm",
+      "wavetable",
+      "sampler",
+      "organ",
+      "lead",
+      "pluck",
+      "brass",
+      "woodwind",
     ];
     const plugins: Plugin[] = [];
 
@@ -322,20 +401,22 @@ export function StudioOneBrowser({
   const filteredInstruments = useMemo(() => {
     if (!searchQuery) return instrumentPlugins;
     const query = searchQuery.toLowerCase();
-    return instrumentPlugins.filter(p => 
-      p.name?.toLowerCase().includes(query) ||
-      p.type?.toLowerCase().includes(query) ||
-      p.author?.toLowerCase().includes(query)
+    return instrumentPlugins.filter(
+      (p) =>
+        p.name?.toLowerCase().includes(query) ||
+        p.type?.toLowerCase().includes(query) ||
+        p.author?.toLowerCase().includes(query),
     );
   }, [instrumentPlugins, searchQuery]);
 
   const filteredEffects = useMemo(() => {
     if (!searchQuery) return effectPlugins;
     const query = searchQuery.toLowerCase();
-    return effectPlugins.filter(p => 
-      p.name?.toLowerCase().includes(query) ||
-      p.type?.toLowerCase().includes(query) ||
-      p.author?.toLowerCase().includes(query)
+    return effectPlugins.filter(
+      (p) =>
+        p.name?.toLowerCase().includes(query) ||
+        p.type?.toLowerCase().includes(query) ||
+        p.author?.toLowerCase().includes(query),
     );
   }, [effectPlugins, searchQuery]);
 
@@ -344,43 +425,49 @@ export function StudioOneBrowser({
     onFileSelect(file);
   };
 
-  const filterFiles = useCallback((files: BrowserFile[], query: string): BrowserFile[] => {
-    if (!query) return files;
-    return files.filter(file => {
-      if (file.name.toLowerCase().includes(query.toLowerCase())) return true;
-      if (file.children) {
-        const filteredChildren = filterFiles(file.children, query);
-        return filteredChildren.length > 0;
-      }
-      return false;
-    }).map(file => {
-      if (file.children) {
-        return { ...file, children: filterFiles(file.children, query) };
-      }
-      return file;
-    });
-  }, []);
+  const filterFiles = useCallback(
+    (files: BrowserFile[], query: string): BrowserFile[] => {
+      if (!query) return files;
+      return files
+        .filter((file) => {
+          if (file.name.toLowerCase().includes(query.toLowerCase()))
+            return true;
+          if (file.children) {
+            const filteredChildren = filterFiles(file.children, query);
+            return filteredChildren.length > 0;
+          }
+          return false;
+        })
+        .map((file) => {
+          if (file.children) {
+            return { ...file, children: filterFiles(file.children, query) };
+          }
+          return file;
+        });
+    },
+    [],
+  );
 
   const filteredFiles = filterFiles(files, searchQuery);
 
   const formatDuration = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = Math.floor(seconds % 60);
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
+    return `${mins}:${secs.toString().padStart(2, "0")}`;
   };
 
   return (
-    <div 
+    <div
       className="flex flex-col h-full"
       style={{ background: studioOneTheme.colors.bg.panel }}
     >
       {/* Header */}
-      <div 
+      <div
         className="p-2 border-b shrink-0"
         style={{ borderColor: studioOneTheme.colors.border.primary }}
       >
         <div className="flex items-center gap-2 mb-2">
-          <span 
+          <span
             className="text-xs font-semibold"
             style={{ color: studioOneTheme.colors.text.primary }}
           >
@@ -388,21 +475,27 @@ export function StudioOneBrowser({
           </span>
           <div className="flex-1" />
           <button
-            onClick={() => setViewMode('tree')}
-            className={`p-1 rounded ${viewMode === 'tree' ? 'bg-white/10' : ''}`}
+            onClick={() => setViewMode("tree")}
+            className={`p-1 rounded ${viewMode === "tree" ? "bg-white/10" : ""}`}
           >
-            <List className="h-4 w-4" style={{ color: studioOneTheme.colors.text.muted }} />
+            <List
+              className="h-4 w-4"
+              style={{ color: studioOneTheme.colors.text.muted }}
+            />
           </button>
           <button
-            onClick={() => setViewMode('grid')}
-            className={`p-1 rounded ${viewMode === 'grid' ? 'bg-white/10' : ''}`}
+            onClick={() => setViewMode("grid")}
+            className={`p-1 rounded ${viewMode === "grid" ? "bg-white/10" : ""}`}
           >
-            <LayoutGrid className="h-4 w-4" style={{ color: studioOneTheme.colors.text.muted }} />
+            <LayoutGrid
+              className="h-4 w-4"
+              style={{ color: studioOneTheme.colors.text.muted }}
+            />
           </button>
         </div>
         <div className="relative">
-          <Search 
-            className="absolute left-2 top-1/2 -translate-y-1/2 h-3 w-3" 
+          <Search
+            className="absolute left-2 top-1/2 -translate-y-1/2 h-3 w-3"
             style={{ color: studioOneTheme.colors.text.muted }}
           />
           <Input
@@ -420,22 +513,40 @@ export function StudioOneBrowser({
       </div>
 
       {/* Tabs */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col overflow-hidden">
-        <TabsList 
+      <Tabs
+        value={activeTab}
+        onValueChange={setActiveTab}
+        className="flex-1 flex flex-col overflow-hidden"
+      >
+        <TabsList
           className="h-8 w-full justify-start rounded-none border-b shrink-0"
-          style={{ 
+          style={{
             background: studioOneTheme.colors.bg.secondary,
             borderColor: studioOneTheme.colors.border.subtle,
           }}
         >
-          <TabsTrigger value="files" className="text-[10px] h-6 px-3">Files</TabsTrigger>
+          <TabsTrigger value="files" className="text-[10px] h-6 px-3">
+            Files
+          </TabsTrigger>
           <TabsTrigger value="instruments" className="text-[10px] h-6 px-3">
-            Instruments {instrumentPlugins.length > 0 && <Badge variant="secondary" className="ml-1 h-4 text-[9px] px-1">{instrumentPlugins.length}</Badge>}
+            Instruments{" "}
+            {instrumentPlugins.length > 0 && (
+              <Badge variant="secondary" className="ml-1 h-4 text-[9px] px-1">
+                {instrumentPlugins.length}
+              </Badge>
+            )}
           </TabsTrigger>
           <TabsTrigger value="effects" className="text-[10px] h-6 px-3">
-            Effects {effectPlugins.length > 0 && <Badge variant="secondary" className="ml-1 h-4 text-[9px] px-1">{effectPlugins.length}</Badge>}
+            Effects{" "}
+            {effectPlugins.length > 0 && (
+              <Badge variant="secondary" className="ml-1 h-4 text-[9px] px-1">
+                {effectPlugins.length}
+              </Badge>
+            )}
           </TabsTrigger>
-          <TabsTrigger value="loops" className="text-[10px] h-6 px-3">Loops</TabsTrigger>
+          <TabsTrigger value="loops" className="text-[10px] h-6 px-3">
+            Loops
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="files" className="flex-1 mt-0 overflow-hidden">
@@ -455,7 +566,7 @@ export function StudioOneBrowser({
               ))}
               {filteredFiles.length === 0 && (
                 <div className="p-4 text-center">
-                  <span 
+                  <span
                     className="text-[11px]"
                     style={{ color: studioOneTheme.colors.text.muted }}
                   >
@@ -467,13 +578,22 @@ export function StudioOneBrowser({
           </ScrollArea>
         </TabsContent>
 
-        <TabsContent value="instruments" className="flex-1 mt-0 overflow-hidden">
+        <TabsContent
+          value="instruments"
+          className="flex-1 mt-0 overflow-hidden"
+        >
           <ScrollArea className="h-full">
             <div className="py-1 space-y-0.5">
               {isLoadingPlugins ? (
                 <div className="flex items-center justify-center py-8">
-                  <Loader2 className="h-4 w-4 animate-spin" style={{ color: studioOneTheme.colors.text.muted }} />
-                  <span className="ml-2 text-[11px]" style={{ color: studioOneTheme.colors.text.muted }}>
+                  <Loader2
+                    className="h-4 w-4 animate-spin"
+                    style={{ color: studioOneTheme.colors.text.muted }}
+                  />
+                  <span
+                    className="ml-2 text-[11px]"
+                    style={{ color: studioOneTheme.colors.text.muted }}
+                  >
                     Loading instruments...
                   </span>
                 </div>
@@ -482,27 +602,51 @@ export function StudioOneBrowser({
                   <button
                     key={plugin.id}
                     className="w-full text-left px-3 py-1.5 hover:bg-white/5 transition-colors flex items-center gap-2"
-                    onClick={() => onFileSelect?.({ id: plugin.id, name: plugin.name, type: 'preset', path: '' } as BrowserFile)}
+                    onClick={() =>
+                      onFileSelect?.({
+                        id: plugin.id,
+                        name: plugin.name,
+                        type: "preset",
+                        path: "",
+                      } as BrowserFile)
+                    }
                     draggable
                     onDragStart={(e) => {
-                      e.dataTransfer.setData('application/json', JSON.stringify({ type: 'plugin', plugin }));
+                      e.dataTransfer.setData(
+                        "application/json",
+                        JSON.stringify({ type: "plugin", plugin }),
+                      );
                     }}
                   >
-                    <Music className="h-3.5 w-3.5 flex-shrink-0" style={{ color: studioOneTheme.colors.accent.purple }} />
+                    <Music
+                      className="h-3.5 w-3.5 flex-shrink-0"
+                      style={{ color: studioOneTheme.colors.accent.purple }}
+                    />
                     <div className="flex-1 min-w-0">
-                      <div className="text-[11px] font-medium truncate" style={{ color: studioOneTheme.colors.text.primary }}>
+                      <div
+                        className="text-[11px] font-medium truncate"
+                        style={{ color: studioOneTheme.colors.text.primary }}
+                      >
                         {plugin.name}
                       </div>
-                      <div className="text-[9px] truncate" style={{ color: studioOneTheme.colors.text.muted }}>
-                        {plugin.author || 'Max Booster'} • {plugin.type}
+                      <div
+                        className="text-[9px] truncate"
+                        style={{ color: studioOneTheme.colors.text.muted }}
+                      >
+                        {plugin.author || "Max Booster"} • {plugin.type}
                       </div>
                     </div>
                   </button>
                 ))
               ) : (
                 <div className="p-4 text-center">
-                  <span className="text-[11px]" style={{ color: studioOneTheme.colors.text.muted }}>
-                    {searchQuery ? 'No instruments match your search' : 'No instruments available'}
+                  <span
+                    className="text-[11px]"
+                    style={{ color: studioOneTheme.colors.text.muted }}
+                  >
+                    {searchQuery
+                      ? "No instruments match your search"
+                      : "No instruments available"}
                   </span>
                 </div>
               )}
@@ -515,8 +659,14 @@ export function StudioOneBrowser({
             <div className="py-1 space-y-0.5">
               {isLoadingPlugins ? (
                 <div className="flex items-center justify-center py-8">
-                  <Loader2 className="h-4 w-4 animate-spin" style={{ color: studioOneTheme.colors.text.muted }} />
-                  <span className="ml-2 text-[11px]" style={{ color: studioOneTheme.colors.text.muted }}>
+                  <Loader2
+                    className="h-4 w-4 animate-spin"
+                    style={{ color: studioOneTheme.colors.text.muted }}
+                  />
+                  <span
+                    className="ml-2 text-[11px]"
+                    style={{ color: studioOneTheme.colors.text.muted }}
+                  >
                     Loading effects...
                   </span>
                 </div>
@@ -525,27 +675,51 @@ export function StudioOneBrowser({
                   <button
                     key={plugin.id}
                     className="w-full text-left px-3 py-1.5 hover:bg-white/5 transition-colors flex items-center gap-2"
-                    onClick={() => onFileSelect?.({ id: plugin.id, name: plugin.name, type: 'preset', path: '' } as BrowserFile)}
+                    onClick={() =>
+                      onFileSelect?.({
+                        id: plugin.id,
+                        name: plugin.name,
+                        type: "preset",
+                        path: "",
+                      } as BrowserFile)
+                    }
                     draggable
                     onDragStart={(e) => {
-                      e.dataTransfer.setData('application/json', JSON.stringify({ type: 'plugin', plugin }));
+                      e.dataTransfer.setData(
+                        "application/json",
+                        JSON.stringify({ type: "plugin", plugin }),
+                      );
                     }}
                   >
-                    <Zap className="h-3.5 w-3.5 flex-shrink-0" style={{ color: studioOneTheme.colors.accent.orange }} />
+                    <Zap
+                      className="h-3.5 w-3.5 flex-shrink-0"
+                      style={{ color: studioOneTheme.colors.accent.orange }}
+                    />
                     <div className="flex-1 min-w-0">
-                      <div className="text-[11px] font-medium truncate" style={{ color: studioOneTheme.colors.text.primary }}>
+                      <div
+                        className="text-[11px] font-medium truncate"
+                        style={{ color: studioOneTheme.colors.text.primary }}
+                      >
                         {plugin.name}
                       </div>
-                      <div className="text-[9px] truncate" style={{ color: studioOneTheme.colors.text.muted }}>
-                        {plugin.author || 'Max Booster'} • {plugin.type}
+                      <div
+                        className="text-[9px] truncate"
+                        style={{ color: studioOneTheme.colors.text.muted }}
+                      >
+                        {plugin.author || "Max Booster"} • {plugin.type}
                       </div>
                     </div>
                   </button>
                 ))
               ) : (
                 <div className="p-4 text-center">
-                  <span className="text-[11px]" style={{ color: studioOneTheme.colors.text.muted }}>
-                    {searchQuery ? 'No effects match your search' : 'No effects available'}
+                  <span
+                    className="text-[11px]"
+                    style={{ color: studioOneTheme.colors.text.muted }}
+                  >
+                    {searchQuery
+                      ? "No effects match your search"
+                      : "No effects available"}
                   </span>
                 </div>
               )}
@@ -555,7 +729,7 @@ export function StudioOneBrowser({
 
         <TabsContent value="loops" className="flex-1 mt-0">
           <div className="p-4 text-center">
-            <span 
+            <span
               className="text-[11px]"
               style={{ color: studioOneTheme.colors.text.muted }}
             >
@@ -567,9 +741,9 @@ export function StudioOneBrowser({
 
       {/* Preview Panel */}
       {previewingFile && (
-        <div 
+        <div
           className="border-t p-2 shrink-0"
-          style={{ 
+          style={{
             background: studioOneTheme.colors.bg.deep,
             borderColor: studioOneTheme.colors.border.primary,
           }}
@@ -581,29 +755,39 @@ export function StudioOneBrowser({
               style={{ background: studioOneTheme.colors.bg.tertiary }}
             >
               {isPreviewPlaying ? (
-                <Pause className="h-4 w-4" style={{ color: studioOneTheme.colors.accent.blue }} />
+                <Pause
+                  className="h-4 w-4"
+                  style={{ color: studioOneTheme.colors.accent.blue }}
+                />
               ) : (
-                <Play className="h-4 w-4" style={{ color: studioOneTheme.colors.accent.green }} />
+                <Play
+                  className="h-4 w-4"
+                  style={{ color: studioOneTheme.colors.accent.green }}
+                />
               )}
             </button>
             <div className="flex-1">
-              <div 
+              <div
                 className="text-[10px] font-medium truncate"
                 style={{ color: studioOneTheme.colors.text.primary }}
               >
                 {previewingFile.name}
               </div>
-              <div 
+              <div
                 className="text-[9px]"
                 style={{ color: studioOneTheme.colors.text.muted }}
               >
-                {previewingFile.duration && formatDuration(previewingFile.duration)}
+                {previewingFile.duration &&
+                  formatDuration(previewingFile.duration)}
                 {previewingFile.bpm && ` • ${previewingFile.bpm} BPM`}
                 {previewingFile.key && ` • ${previewingFile.key}`}
               </div>
             </div>
           </div>
-          <WaveformPreview duration={previewingFile.duration} progress={previewProgress} />
+          <WaveformPreview
+            duration={previewingFile.duration}
+            progress={previewProgress}
+          />
           <div className="mt-1">
             <Slider
               value={[previewProgress * 100]}

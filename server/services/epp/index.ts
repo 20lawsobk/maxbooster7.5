@@ -11,19 +11,19 @@
  *   await sess.close();
  */
 
-import { EppClient }   from './EppClient.js';
-import { EppCommands } from './EppCommands.js';
-import { EppParser }   from './EppParser.js';
-import type { EppConfig, EppResponse } from './types.js';
-import { logger }      from '../../logger.js';
+import { EppClient } from "./EppClient.js";
+import { EppCommands } from "./EppCommands.js";
+import { EppParser } from "./EppParser.js";
+import type { EppConfig, EppResponse } from "./types.js";
+import { logger } from "../../logger.js";
 
-export { EppClient }   from './EppClient.js';
-export { EppCommands } from './EppCommands.js';
-export { EppParser }   from './EppParser.js';
-export type { EppConfig, EppResponse, EppSessionState } from './types.js';
+export { EppClient } from "./EppClient.js";
+export { EppCommands } from "./EppCommands.js";
+export { EppParser } from "./EppParser.js";
+export type { EppConfig, EppResponse, EppSessionState } from "./types.js";
 
 export class EppSession {
-  private client:   EppClient;
+  private client: EppClient;
   private loggedIn: boolean = false;
 
   constructor(private readonly config: EppConfig) {
@@ -49,17 +49,19 @@ export class EppSession {
       const greetingXml = await this.client.connect();
       if (greetingXml) {
         const g = EppParser.parseResponse(greetingXml);
-        logger.info({ svTRID: g.trid.svTRID }, '[EPP] Greeting received');
+        logger.info({ svTRID: g.trid.svTRID }, "[EPP] Greeting received");
       }
     }
 
     if (!this.loggedIn) {
-      const resp = await this._send(EppCommands.login(this.config.user, this.config.pass, this.trid()));
+      const resp = await this._send(
+        EppCommands.login(this.config.user, this.config.pass, this.trid()),
+      );
       if (resp.code !== 1000) {
         throw new Error(`[EPP] Login failed: ${resp.msg} (code ${resp.code})`);
       }
       this.loggedIn = true;
-      logger.info('[EPP] Logged in successfully');
+      logger.info("[EPP] Logged in successfully");
     }
   }
 
@@ -68,7 +70,9 @@ export class EppSession {
     if (this.loggedIn) {
       try {
         await this._send(EppCommands.logout(this.trid()));
-      } catch { /* ignore logout errors */ }
+      } catch {
+        /* ignore logout errors */
+      }
       this.loggedIn = false;
     }
     this.client.disconnect();
@@ -98,7 +102,7 @@ export class EppSession {
   // ── Domain operations ───────────────────────────────────────────────────────
 
   async checkAvailability(fqdn: string): Promise<boolean> {
-    const xml  = EppCommands.domainCheck([fqdn], this.trid());
+    const xml = EppCommands.domainCheck([fqdn], this.trid());
     const resp = await this.execute(xml);
     if (resp.code !== 1000) return false;
 
@@ -107,18 +111,24 @@ export class EppSession {
     const cds: unknown[] = Array.isArray(avail.cd) ? avail.cd : [avail.cd];
     const match = cds.find((cd: Record<string, unknown>) => {
       const n = cd?.name;
-      return (typeof n === 'string' ? n : n?.['#text'] ?? n?.['$text'] ?? '') === fqdn;
+      return (
+        (typeof n === "string" ? n : (n?.["#text"] ?? n?.["$text"] ?? "")) ===
+        fqdn
+      );
     });
     if (!match) return false;
-    const a = match.name?.['@_avail'];
-    return a === 1 || a === '1' || a === true || a === 'true';
+    const a = match.name?.["@_avail"];
+    return a === 1 || a === "1" || a === true || a === "true";
   }
 
   async getDomainInfo(fqdn: string): Promise<EppResponse> {
     return this.execute(EppCommands.domainInfo(fqdn, this.trid()));
   }
 
-  async createContact(id: string, contact: Record<string, unknown>): Promise<EppResponse> {
+  async createContact(
+    id: string,
+    contact: Record<string, unknown>,
+  ): Promise<EppResponse> {
     return this.execute(EppCommands.contactCreate(id, contact, this.trid()));
   }
 
@@ -126,16 +136,30 @@ export class EppSession {
     return this.execute(EppCommands.domainCreate(params, this.trid()));
   }
 
-  async renewDomain(fqdn: string, curExpDate: string, years: number): Promise<EppResponse> {
-    return this.execute(EppCommands.domainRenew(fqdn, curExpDate, years, this.trid()));
+  async renewDomain(
+    fqdn: string,
+    curExpDate: string,
+    years: number,
+  ): Promise<EppResponse> {
+    return this.execute(
+      EppCommands.domainRenew(fqdn, curExpDate, years, this.trid()),
+    );
   }
 
-  async updateNameservers(fqdn: string, addNs: string[], remNs: string[]): Promise<EppResponse> {
-    return this.execute(EppCommands.domainUpdate(fqdn, addNs, remNs, this.trid()));
+  async updateNameservers(
+    fqdn: string,
+    addNs: string[],
+    remNs: string[],
+  ): Promise<EppResponse> {
+    return this.execute(
+      EppCommands.domainUpdate(fqdn, addNs, remNs, this.trid()),
+    );
   }
 
   async transferDomain(fqdn: string, authCode: string): Promise<EppResponse> {
-    return this.execute(EppCommands.domainTransfer(fqdn, authCode, 'request', this.trid()));
+    return this.execute(
+      EppCommands.domainTransfer(fqdn, authCode, "request", this.trid()),
+    );
   }
 
   async deleteDomain(fqdn: string): Promise<EppResponse> {

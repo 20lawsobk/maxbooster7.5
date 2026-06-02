@@ -1,6 +1,12 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { DollarSign, TrendingDown, Sparkles, Check } from 'lucide-react';
-import { useRequireSubscription } from '@/hooks/useRequireAuth';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { DollarSign, TrendingDown, Sparkles, Check } from "lucide-react";
+import { useRequireSubscription } from "@/hooks/useRequireAuth";
 
 interface ServiceComparison {
   service: string;
@@ -10,13 +16,48 @@ interface ServiceComparison {
 }
 
 const COMPETITOR_SERVICES: ServiceComparison[] = [
-  { service: 'Music Distribution (DistroKid/TuneCore)', monthlyPrice: 20, yearlyPrice: 240, included: true },
-  { service: 'Social Media Management (Hootsuite/Buffer)', monthlyPrice: 49, yearlyPrice: 588, included: true },
-  { service: 'Paid Advertising (Facebook/Instagram Ads)', monthlyPrice: 500, yearlyPrice: 6000, included: true },
-  { service: 'DAW Software (Ableton/FL Studio)', monthlyPrice: 20, yearlyPrice: 240, included: true },
-  { service: 'Analytics Platform (Chartmetric)', monthlyPrice: 50, yearlyPrice: 600, included: true },
-  { service: 'Marketplace Platform (Fiverr/SoundBetter)', monthlyPrice: 30, yearlyPrice: 360, included: true },
-  { service: 'Desktop Apps (Additional License)', monthlyPrice: 15, yearlyPrice: 180, included: true },
+  {
+    service: "Music Distribution (DistroKid/TuneCore)",
+    monthlyPrice: 20,
+    yearlyPrice: 240,
+    included: true,
+  },
+  {
+    service: "Social Media Management (Hootsuite/Buffer)",
+    monthlyPrice: 49,
+    yearlyPrice: 588,
+    included: true,
+  },
+  {
+    service: "Paid Advertising (Facebook/Instagram Ads)",
+    monthlyPrice: 500,
+    yearlyPrice: 6000,
+    included: true,
+  },
+  {
+    service: "DAW Software (Ableton/FL Studio)",
+    monthlyPrice: 20,
+    yearlyPrice: 240,
+    included: true,
+  },
+  {
+    service: "Analytics Platform (Chartmetric)",
+    monthlyPrice: 50,
+    yearlyPrice: 600,
+    included: true,
+  },
+  {
+    service: "Marketplace Platform (Fiverr/SoundBetter)",
+    monthlyPrice: 30,
+    yearlyPrice: 360,
+    included: true,
+  },
+  {
+    service: "Desktop Apps (Additional License)",
+    monthlyPrice: 15,
+    yearlyPrice: 180,
+    included: true,
+  },
 ];
 
 const SUBSCRIPTION_PRICES = {
@@ -27,38 +68,65 @@ const SUBSCRIPTION_PRICES = {
 
 export function ValueCalculator() {
   const { user } = useRequireSubscription();
-  
-  const subscriptionTier = user?.subscriptionTier || 'monthly';
-  const isLifetime = subscriptionTier === 'lifetime';
-  const isYearly = subscriptionTier === 'yearly';
-  const isMonthly = subscriptionTier === 'monthly';
 
-  const userMonthlyPrice = isLifetime 
-    ? 0 
-    : isYearly 
-    ? SUBSCRIPTION_PRICES.yearly / 12 
-    : SUBSCRIPTION_PRICES.monthly;
+  const subscriptionTier = user?.subscriptionTier || "monthly";
+  const isLifetime = subscriptionTier === "lifetime";
+  const isYearly = subscriptionTier === "yearly";
+  const isMonthly = subscriptionTier === "monthly";
+
+  const userMonthlyPrice = isLifetime
+    ? 0
+    : isYearly
+      ? SUBSCRIPTION_PRICES.yearly / 12
+      : SUBSCRIPTION_PRICES.monthly;
 
   const competitorMonthlyTotal = COMPETITOR_SERVICES.reduce(
     (sum, service) => sum + service.monthlyPrice,
-    0
+    0,
   );
 
   const competitorYearlyTotal = COMPETITOR_SERVICES.reduce(
     (sum, service) => sum + service.yearlyPrice,
-    0
+    0,
   );
 
   const monthlySavings = competitorMonthlyTotal - userMonthlyPrice;
-  const yearlySavings = competitorYearlyTotal - (isLifetime ? 0 : isYearly ? SUBSCRIPTION_PRICES.yearly : SUBSCRIPTION_PRICES.monthly * 12);
+  const yearlySavings =
+    competitorYearlyTotal -
+    (isLifetime
+      ? 0
+      : isYearly
+        ? SUBSCRIPTION_PRICES.yearly
+        : SUBSCRIPTION_PRICES.monthly * 12);
 
   const lifetimeSavings = {
-    year1: competitorYearlyTotal - (isLifetime ? SUBSCRIPTION_PRICES.lifetime : isYearly ? SUBSCRIPTION_PRICES.yearly : SUBSCRIPTION_PRICES.monthly * 12),
-    year3: competitorYearlyTotal * 3 - (isLifetime ? SUBSCRIPTION_PRICES.lifetime : isYearly ? SUBSCRIPTION_PRICES.yearly * 3 : SUBSCRIPTION_PRICES.monthly * 36),
-    year5: competitorYearlyTotal * 5 - (isLifetime ? SUBSCRIPTION_PRICES.lifetime : isYearly ? SUBSCRIPTION_PRICES.yearly * 5 : SUBSCRIPTION_PRICES.monthly * 60),
+    year1:
+      competitorYearlyTotal -
+      (isLifetime
+        ? SUBSCRIPTION_PRICES.lifetime
+        : isYearly
+          ? SUBSCRIPTION_PRICES.yearly
+          : SUBSCRIPTION_PRICES.monthly * 12),
+    year3:
+      competitorYearlyTotal * 3 -
+      (isLifetime
+        ? SUBSCRIPTION_PRICES.lifetime
+        : isYearly
+          ? SUBSCRIPTION_PRICES.yearly * 3
+          : SUBSCRIPTION_PRICES.monthly * 36),
+    year5:
+      competitorYearlyTotal * 5 -
+      (isLifetime
+        ? SUBSCRIPTION_PRICES.lifetime
+        : isYearly
+          ? SUBSCRIPTION_PRICES.yearly * 5
+          : SUBSCRIPTION_PRICES.monthly * 60),
   };
 
-  const savingsPercentage = ((monthlySavings / competitorMonthlyTotal) * 100).toFixed(0);
+  const savingsPercentage = (
+    (monthlySavings / competitorMonthlyTotal) *
+    100
+  ).toFixed(0);
 
   return (
     <Card className="border-2 border-primary/20 bg-gradient-to-br from-primary/5 via-background to-background">
@@ -68,14 +136,17 @@ export function ValueCalculator() {
           <CardTitle>Your Subscription Value</CardTitle>
         </div>
         <CardDescription>
-          See how much you're saving with Max Booster vs. buying equivalent services separately
+          See how much you're saving with Max Booster vs. buying equivalent
+          services separately
         </CardDescription>
       </CardHeader>
 
       <CardContent className="space-y-6">
         <div className="grid gap-4 md:grid-cols-2">
           <div className="space-y-2">
-            <p className="text-sm text-muted-foreground">Separate Services Cost</p>
+            <p className="text-sm text-muted-foreground">
+              Separate Services Cost
+            </p>
             <div className="flex items-baseline gap-2">
               <span className="text-3xl font-bold text-destructive line-through">
                 ${competitorMonthlyTotal}
@@ -88,7 +159,9 @@ export function ValueCalculator() {
           </div>
 
           <div className="space-y-2">
-            <p className="text-sm text-muted-foreground">Your Max Booster Price</p>
+            <p className="text-sm text-muted-foreground">
+              Your Max Booster Price
+            </p>
             <div className="flex items-baseline gap-2">
               <span className="text-3xl font-bold text-primary">
                 ${userMonthlyPrice.toFixed(2)}
@@ -96,7 +169,9 @@ export function ValueCalculator() {
               <span className="text-muted-foreground">/month</span>
             </div>
             <p className="text-xs text-muted-foreground capitalize">
-              {isLifetime ? 'Lifetime access (paid once)' : `${subscriptionTier} subscription`}
+              {isLifetime
+                ? "Lifetime access (paid once)"
+                : `${subscriptionTier} subscription`}
             </p>
           </div>
         </div>
@@ -104,7 +179,9 @@ export function ValueCalculator() {
         <div className="p-4 rounded-lg bg-primary/10 border border-primary/20">
           <div className="flex items-center gap-3 mb-2">
             <TrendingDown className="h-5 w-5 text-primary" />
-            <p className="font-semibold">You're Saving {savingsPercentage}% 🎉</p>
+            <p className="font-semibold">
+              You're Saving {savingsPercentage}% 🎉
+            </p>
           </div>
           <div className="grid gap-2 text-sm">
             <div className="flex justify-between">
@@ -164,9 +241,10 @@ export function ValueCalculator() {
         {!isLifetime && (
           <div className="p-4 rounded-lg bg-muted/30 border border-dashed">
             <p className="text-sm text-muted-foreground text-center">
-              💡 <strong>Pro Tip:</strong> Upgrade to{' '}
-              <span className="text-primary font-semibold">Lifetime</span> and save{' '}
-              <strong>${lifetimeSavings.year5.toLocaleString()}</strong> over 5 years
+              💡 <strong>Pro Tip:</strong> Upgrade to{" "}
+              <span className="text-primary font-semibold">Lifetime</span> and
+              save <strong>${lifetimeSavings.year5.toLocaleString()}</strong>{" "}
+              over 5 years
             </p>
           </div>
         )}

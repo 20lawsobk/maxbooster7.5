@@ -1,32 +1,67 @@
-import { useState, useRef, useEffect, useCallback } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getCsrfTokenFromCookie } from '@/lib/queryClient';
-import { useLocation } from 'wouter';
-import { useAuth } from '@/hooks/useAuth';
-import { AppLayout } from '@/components/layout/AppLayout';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Separator } from '@/components/ui/separator';
-import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
-import { useToast } from '@/hooks/use-toast';
-import { 
-  FileText, Plus, Download, Send, CheckCircle, Clock, PenTool, Eye, Users, Filter,
-  AlertTriangle, XCircle, History, BarChart3, Ban, RotateCcw
-} from 'lucide-react';
-import { format } from 'date-fns';
-import { 
-  ContractOutcomeHandler, 
-  SignatureTimeline, 
-  ContractBuilder, 
+import { useState, useRef, useEffect, useCallback } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { getCsrfTokenFromCookie } from "@/lib/queryClient";
+import { useLocation } from "wouter";
+import { useAuth } from "@/hooks/useAuth";
+import { AppLayout } from "@/components/layout/AppLayout";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+  CardFooter,
+} from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Separator } from "@/components/ui/separator";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { useToast } from "@/hooks/use-toast";
+import {
+  FileText,
+  Plus,
+  Download,
+  Send,
+  CheckCircle,
+  Clock,
+  PenTool,
+  Eye,
+  Users,
+  Filter,
+  AlertTriangle,
+  XCircle,
+  History,
+  BarChart3,
+  Ban,
+  RotateCcw,
+} from "lucide-react";
+import { format } from "date-fns";
+import {
+  ContractOutcomeHandler,
+  SignatureTimeline,
+  ContractBuilder,
   TemplateBrowser,
-  type ContractOutcome 
-} from '@/components/contracts';
+  type ContractOutcome,
+} from "@/components/contracts";
 
 interface ContractTemplate {
   id: string;
@@ -49,7 +84,13 @@ interface Contract {
   title: string;
   type: string;
   content: string;
-  status: 'draft' | 'pending_signature' | 'partially_signed' | 'fully_executed' | 'voided' | 'expired';
+  status:
+    | "draft"
+    | "pending_signature"
+    | "partially_signed"
+    | "fully_executed"
+    | "voided"
+    | "expired";
   createdAt: string;
   parties: Array<{ name: string; role: string; email?: string }>;
   signatures: ContractSignature[];
@@ -77,29 +118,40 @@ export default function Contracts() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  
-  const [selectedTemplate, setSelectedTemplate] = useState<ContractTemplate | null>(null);
+
+  const [selectedTemplate, setSelectedTemplate] =
+    useState<ContractTemplate | null>(null);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showPreviewDialog, setShowPreviewDialog] = useState(false);
   const [showDetailsDialog, setShowDetailsDialog] = useState(false);
   const [showSignDialog, setShowSignDialog] = useState(false);
   const [showDeclineDialog, setShowDeclineDialog] = useState(false);
-  const [selectedContract, setSelectedContract] = useState<Contract | null>(null);
-  const [previewContent, setPreviewContent] = useState('');
-  const [filterStatus, setFilterStatus] = useState<string>('all');
-  const [declineReason, setDeclineReason] = useState('');
-  const [currentOutcome, setCurrentOutcome] = useState<ContractOutcome | null>(null);
-  const [outcomeDetails, setOutcomeDetails] = useState<Record<string, unknown> | null>(null);
-  const [signStep, setSignStep] = useState<'pick' | 'draw'>('pick');
-  const [signingAs, setSigningAs] = useState<string>('');
+  const [selectedContract, setSelectedContract] = useState<Contract | null>(
+    null,
+  );
+  const [previewContent, setPreviewContent] = useState("");
+  const [filterStatus, setFilterStatus] = useState<string>("all");
+  const [declineReason, setDeclineReason] = useState("");
+  const [currentOutcome, setCurrentOutcome] = useState<ContractOutcome | null>(
+    null,
+  );
+  const [outcomeDetails, setOutcomeDetails] = useState<Record<
+    string,
+    unknown
+  > | null>(null);
+  const [signStep, setSignStep] = useState<"pick" | "draw">("pick");
+  const [signingAs, setSigningAs] = useState<string>("");
   const [pendingContracts, setPendingContracts] = useState<Contract[]>([]);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const isDrawingRef = useRef(false);
   const lastPosRef = useRef<{ x: number; y: number } | null>(null);
 
-  const getCanvasPos = (canvas: HTMLCanvasElement, e: MouseEvent | TouchEvent) => {
+  const getCanvasPos = (
+    canvas: HTMLCanvasElement,
+    e: MouseEvent | TouchEvent,
+  ) => {
     const rect = canvas.getBoundingClientRect();
-    if ('touches' in e) {
+    if ("touches" in e) {
       return {
         x: e.touches[0].clientX - rect.left,
         y: e.touches[0].clientY - rect.top,
@@ -114,7 +166,7 @@ export default function Contracts() {
   const setupCanvas = useCallback(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const ctx = canvas.getContext('2d');
+    const ctx = canvas.getContext("2d");
     if (!ctx) return;
     const dpr = window.devicePixelRatio || 1;
     const rect = canvas.getBoundingClientRect();
@@ -125,27 +177,27 @@ export default function Contracts() {
     } else {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
     }
-    ctx.strokeStyle = '#1e293b';
+    ctx.strokeStyle = "#1e293b";
     ctx.lineWidth = 2.5;
-    ctx.lineCap = 'round';
-    ctx.lineJoin = 'round';
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
   }, []);
 
   useEffect(() => {
-    if (signStep === 'draw') {
+    if (signStep === "draw") {
       setTimeout(setupCanvas, 50);
     }
   }, [signStep, setupCanvas]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
-    if (!canvas || signStep !== 'draw') return;
+    if (!canvas || signStep !== "draw") return;
     const prevent = (e: Event) => e.preventDefault();
-    canvas.addEventListener('touchstart', prevent, { passive: false });
-    canvas.addEventListener('touchmove', prevent, { passive: false });
+    canvas.addEventListener("touchstart", prevent, { passive: false });
+    canvas.addEventListener("touchmove", prevent, { passive: false });
     return () => {
-      canvas.removeEventListener('touchstart', prevent);
-      canvas.removeEventListener('touchmove', prevent);
+      canvas.removeEventListener("touchstart", prevent);
+      canvas.removeEventListener("touchmove", prevent);
     };
   }, [signStep]);
 
@@ -162,7 +214,7 @@ export default function Contracts() {
     const canvas = canvasRef.current;
     if (!canvas) return;
     e.preventDefault();
-    const ctx = canvas.getContext('2d');
+    const ctx = canvas.getContext("2d");
     if (!ctx || !lastPosRef.current) return;
     const pos = getCanvasPos(canvas, e);
     ctx.beginPath();
@@ -182,30 +234,43 @@ export default function Contracts() {
   const isCanvasEmpty = () => {
     const canvas = canvasRef.current;
     if (!canvas) return true;
-    const ctx = canvas.getContext('2d');
+    const ctx = canvas.getContext("2d");
     if (!ctx) return true;
     const data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
-    return !data.some(v => v !== 0);
+    return !data.some((v) => v !== 0);
   };
 
   const submitSignature = () => {
     const canvas = canvasRef.current;
     if (!canvas || !selectedContract || !signingAs) return;
     if (isCanvasEmpty()) {
-      toast({ title: 'Signature required', description: 'Please draw your signature before submitting.', variant: 'destructive' });
+      toast({
+        title: "Signature required",
+        description: "Please draw your signature before submitting.",
+        variant: "destructive",
+      });
       return;
     }
-    const signatureDataUrl = canvas.toDataURL('image/png');
-    signContractMutation.mutate({ contractId: selectedContract.id, partyName: signingAs, signatureData: signatureDataUrl });
+    const signatureDataUrl = canvas.toDataURL("image/png");
+    signContractMutation.mutate({
+      contractId: selectedContract.id,
+      partyName: signingAs,
+      signatureData: signatureDataUrl,
+    });
   };
 
-  const { data: templatesData} = useQuery<{ templates: ContractTemplate[]; categories: string[] }>({
-    queryKey: ['/api/contracts/templates'],
+  const { data: templatesData } = useQuery<{
+    templates: ContractTemplate[];
+    categories: string[];
+  }>({
+    queryKey: ["/api/contracts/templates"],
     enabled: !!user,
   });
 
-  const { data: contractsData, refetch: refetchContracts } = useQuery<{ contracts: Contract[] }>({
-    queryKey: ['/api/contracts/my-contracts'],
+  const { data: contractsData, refetch: refetchContracts } = useQuery<{
+    contracts: Contract[];
+  }>({
+    queryKey: ["/api/contracts/my-contracts"],
     enabled: !!user,
     staleTime: 0,
     refetchInterval: 3000,
@@ -215,12 +280,12 @@ export default function Contracts() {
   });
 
   const { data: statsData } = useQuery<{ stats: ContractStats }>({
-    queryKey: ['/api/contracts/stats/summary'],
+    queryKey: ["/api/contracts/stats/summary"],
     enabled: !!user,
   });
 
   const { data: timelineData } = useQuery<{ timeline: TimelineEvent[] }>({
-    queryKey: ['/api/contracts', selectedContract?.id, 'timeline'],
+    queryKey: ["/api/contracts", selectedContract?.id, "timeline"],
     enabled: !!selectedContract?.id && showDetailsDialog,
   });
 
@@ -228,117 +293,192 @@ export default function Contracts() {
     total: number;
     signed: number;
     pending: number;
-    signers: Array<{ name: string; role: string; status: 'signed' | 'pending'; signedAt?: string }>;
+    signers: Array<{
+      name: string;
+      role: string;
+      status: "signed" | "pending";
+      signedAt?: string;
+    }>;
     allSigned: boolean;
   }>({
-    queryKey: ['/api/contracts', selectedContract?.id, 'signature-status'],
+    queryKey: ["/api/contracts", selectedContract?.id, "signature-status"],
     enabled: !!selectedContract?.id && showDetailsDialog,
   });
 
   const generateContractMutation = useMutation({
     mutationFn: async (variables: Record<string, any>) => {
-      if (!selectedTemplate) throw new Error('No template selected');
+      if (!selectedTemplate) throw new Error("No template selected");
       const csrfToken = getCsrfTokenFromCookie();
-      const res = await fetch('/api/contracts/generate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...(csrfToken ? { 'x-csrf-token': csrfToken } : {}) },
-        credentials: 'include',
+      const res = await fetch("/api/contracts/generate", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(csrfToken ? { "x-csrf-token": csrfToken } : {}),
+        },
+        credentials: "include",
         body: JSON.stringify({ templateId: selectedTemplate.id, variables }),
       });
-      if (!res.ok) throw new Error('Failed to generate contract');
+      if (!res.ok) throw new Error("Failed to generate contract");
       return res.json();
     },
     onSuccess: (newContract: Contract) => {
       queryClient.setQueryData<{ contracts: Contract[] }>(
-        ['/api/contracts/my-contracts'],
-        (old) => ({ contracts: [newContract, ...(old?.contracts ?? [])] })
+        ["/api/contracts/my-contracts"],
+        (old) => ({ contracts: [newContract, ...(old?.contracts ?? [])] }),
       );
-      queryClient.invalidateQueries({ queryKey: ['/api/contracts/stats/summary'] });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/contracts/stats/summary"],
+      });
       setShowCreateDialog(false);
       setSelectedTemplate(null);
-      setCurrentOutcome('contract_drafted');
-      toast({ title: 'Contract created', description: 'Your contract has been generated and saved as a draft.' });
+      setCurrentOutcome("contract_drafted");
+      toast({
+        title: "Contract created",
+        description: "Your contract has been generated and saved as a draft.",
+      });
       refetchContracts();
     },
     onError: (error: Error) => {
-      toast({ title: 'Error', description: error.message, variant: 'destructive' });
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
     },
   });
 
   const sendForSignatureMutation = useMutation({
     mutationFn: async (contractId: string) => {
       const csrfToken = getCsrfTokenFromCookie();
-      const res = await fetch(`/api/contracts/${contractId}/send-for-signature`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: csrfToken ? { 'x-csrf-token': csrfToken } : {},
-      });
-      if (!res.ok) throw new Error('Failed to send for signature');
+      const res = await fetch(
+        `/api/contracts/${contractId}/send-for-signature`,
+        {
+          method: "POST",
+          credentials: "include",
+          headers: csrfToken ? { "x-csrf-token": csrfToken } : {},
+        },
+      );
+      if (!res.ok) throw new Error("Failed to send for signature");
       return res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/contracts/my-contracts'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/contracts/stats/summary'] });
-      setCurrentOutcome('signature_requested');
-      toast({ title: 'Signature requested', description: 'The contract has been sent for signature.' });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/contracts/my-contracts"],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/contracts/stats/summary"],
+      });
+      setCurrentOutcome("signature_requested");
+      toast({
+        title: "Signature requested",
+        description: "The contract has been sent for signature.",
+      });
     },
     onError: (error: Error) => {
-      toast({ title: 'Error', description: error.message, variant: 'destructive' });
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
     },
   });
 
   const signContractMutation = useMutation({
-    mutationFn: async ({ contractId, partyName, signatureData }: { contractId: string; partyName: string; signatureData: string }) => {
+    mutationFn: async ({
+      contractId,
+      partyName,
+      signatureData,
+    }: {
+      contractId: string;
+      partyName: string;
+      signatureData: string;
+    }) => {
       const csrfToken = getCsrfTokenFromCookie();
       const res = await fetch(`/api/contracts/${contractId}/sign`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...(csrfToken ? { 'x-csrf-token': csrfToken } : {}) },
-        credentials: 'include',
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(csrfToken ? { "x-csrf-token": csrfToken } : {}),
+        },
+        credentials: "include",
         body: JSON.stringify({ partyName, signature: signatureData }),
       });
-      if (!res.ok) throw new Error('Failed to sign contract');
+      if (!res.ok) throw new Error("Failed to sign contract");
       return res.json();
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['/api/contracts/my-contracts'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/contracts/stats/summary'] });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/contracts/my-contracts"],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/contracts/stats/summary"],
+      });
       setShowSignDialog(false);
-      setSignStep('pick');
-      setSigningAs('');
-      if (data.status === 'fully_executed') {
-        setCurrentOutcome('contract_executed');
+      setSignStep("pick");
+      setSigningAs("");
+      if (data.status === "fully_executed") {
+        setCurrentOutcome("contract_executed");
       } else {
-        setCurrentOutcome('contract_signed');
+        setCurrentOutcome("contract_signed");
       }
-      toast({ title: 'Contract signed', description: 'Your signature has been recorded.' });
+      toast({
+        title: "Contract signed",
+        description: "Your signature has been recorded.",
+      });
     },
     onError: (error: Error) => {
-      toast({ title: 'Error', description: error.message, variant: 'destructive' });
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
     },
   });
 
   const declineSignatureMutation = useMutation({
-    mutationFn: async ({ contractId, partyName, reason }: { contractId: string; partyName: string; reason: string }) => {
+    mutationFn: async ({
+      contractId,
+      partyName,
+      reason,
+    }: {
+      contractId: string;
+      partyName: string;
+      reason: string;
+    }) => {
       const csrfToken = getCsrfTokenFromCookie();
       const res = await fetch(`/api/contracts/${contractId}/decline`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...(csrfToken ? { 'x-csrf-token': csrfToken } : {}) },
-        credentials: 'include',
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(csrfToken ? { "x-csrf-token": csrfToken } : {}),
+        },
+        credentials: "include",
         body: JSON.stringify({ partyName, reason }),
       });
-      if (!res.ok) throw new Error('Failed to decline signature');
+      if (!res.ok) throw new Error("Failed to decline signature");
       return res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/contracts/my-contracts'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/contracts/stats/summary'] });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/contracts/my-contracts"],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/contracts/stats/summary"],
+      });
       setShowDeclineDialog(false);
-      setDeclineReason('');
-      setCurrentOutcome('signature_declined');
-      toast({ title: 'Signature declined', description: 'The contract has been voided.' });
+      setDeclineReason("");
+      setCurrentOutcome("signature_declined");
+      toast({
+        title: "Signature declined",
+        description: "The contract has been voided.",
+      });
     },
     onError: (error: Error) => {
-      toast({ title: 'Error', description: error.message, variant: 'destructive' });
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
     },
   });
 
@@ -346,45 +486,66 @@ export default function Contracts() {
     mutationFn: async (contractId: string) => {
       const csrfToken = getCsrfTokenFromCookie();
       const res = await fetch(`/api/contracts/${contractId}/void`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...(csrfToken ? { 'x-csrf-token': csrfToken } : {}) },
-        credentials: 'include',
-        body: JSON.stringify({ reason: 'Cancelled by user' }),
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(csrfToken ? { "x-csrf-token": csrfToken } : {}),
+        },
+        credentials: "include",
+        body: JSON.stringify({ reason: "Cancelled by user" }),
       });
-      if (!res.ok) throw new Error('Failed to void contract');
+      if (!res.ok) throw new Error("Failed to void contract");
       return res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/contracts/my-contracts'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/contracts/stats/summary'] });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/contracts/my-contracts"],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/contracts/stats/summary"],
+      });
       setShowDetailsDialog(false);
-      setCurrentOutcome('contract_terminated');
-      toast({ title: 'Contract voided', description: 'The contract has been terminated.' });
+      setCurrentOutcome("contract_terminated");
+      toast({
+        title: "Contract voided",
+        description: "The contract has been terminated.",
+      });
     },
     onError: (error: Error) => {
-      toast({ title: 'Error', description: error.message, variant: 'destructive' });
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
     },
   });
 
   const downloadPDF = async (contractId: string) => {
     try {
       const res = await fetch(`/api/contracts/${contractId}/pdf`, {
-        credentials: 'include',
+        credentials: "include",
       });
-      if (!res.ok) throw new Error('Failed to download PDF');
-      
+      if (!res.ok) throw new Error("Failed to download PDF");
+
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
+      const a = document.createElement("a");
       a.href = url;
       a.download = `contract-${contractId}.pdf`;
       a.click();
       URL.revokeObjectURL(url);
-      
-      setCurrentOutcome('pdf_downloaded');
-      toast({ title: 'PDF downloaded', description: 'Contract PDF has been downloaded.' });
+
+      setCurrentOutcome("pdf_downloaded");
+      toast({
+        title: "PDF downloaded",
+        description: "Contract PDF has been downloaded.",
+      });
     } catch (error) {
-      toast({ title: 'Error', description: error.message, variant: 'destructive' });
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
     }
   };
 
@@ -392,21 +553,44 @@ export default function Contracts() {
   const categories = templatesData?.categories || [];
   const queryContracts = contractsData?.contracts || [];
   const pendingIds = new Set(queryContracts.map((c) => c.id));
-  const contracts = [...queryContracts, ...pendingContracts.filter((c) => !pendingIds.has(c.id))];
+  const contracts = [
+    ...queryContracts,
+    ...pendingContracts.filter((c) => !pendingIds.has(c.id)),
+  ];
   const stats = statsData?.stats;
-  
-  const filteredContracts = filterStatus === 'all' 
-    ? contracts 
-    : contracts.filter(c => c.status === filterStatus);
+
+  const filteredContracts =
+    filterStatus === "all"
+      ? contracts
+      : contracts.filter((c) => c.status === filterStatus);
 
   const getStatusBadge = (status: string) => {
-    const variants: Record<string, { variant: 'default' | 'secondary' | 'destructive' | 'outline'; label: string; icon: React.ElementType }> = {
-      draft: { variant: 'outline', label: 'Draft', icon: FileText },
-      pending_signature: { variant: 'secondary', label: 'Awaiting Signature', icon: Clock },
-      partially_signed: { variant: 'secondary', label: 'Partially Signed', icon: PenTool },
-      fully_executed: { variant: 'default', label: 'Executed', icon: CheckCircle },
-      voided: { variant: 'destructive', label: 'Voided', icon: XCircle },
-      expired: { variant: 'outline', label: 'Expired', icon: AlertTriangle },
+    const variants: Record<
+      string,
+      {
+        variant: "default" | "secondary" | "destructive" | "outline";
+        label: string;
+        icon: React.ElementType;
+      }
+    > = {
+      draft: { variant: "outline", label: "Draft", icon: FileText },
+      pending_signature: {
+        variant: "secondary",
+        label: "Awaiting Signature",
+        icon: Clock,
+      },
+      partially_signed: {
+        variant: "secondary",
+        label: "Partially Signed",
+        icon: PenTool,
+      },
+      fully_executed: {
+        variant: "default",
+        label: "Executed",
+        icon: CheckCircle,
+      },
+      voided: { variant: "destructive", label: "Voided", icon: XCircle },
+      expired: { variant: "outline", label: "Expired", icon: AlertTriangle },
     };
     const config = variants[status] || variants.draft;
     const Icon = config.icon;
@@ -420,22 +604,22 @@ export default function Contracts() {
 
   const handleTemplateSelect = (template: ContractTemplate) => {
     setSelectedTemplate(template);
-    setCurrentOutcome('template_selected');
+    setCurrentOutcome("template_selected");
   };
 
   if (!user) {
-    setLocation('/login');
+    setLocation("/login");
     return null;
   }
 
-return (
+  return (
     <AppLayout>
-      <ContractOutcomeHandler 
-        outcome={currentOutcome} 
+      <ContractOutcomeHandler
+        outcome={currentOutcome}
         details={outcomeDetails}
         onAcknowledge={() => setCurrentOutcome(null)}
       />
-      
+
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
@@ -447,10 +631,13 @@ return (
               Create, manage, and sign legal contracts for your music business
             </p>
           </div>
-          <Dialog open={showCreateDialog} onOpenChange={(open) => {
-            setShowCreateDialog(open);
-            if (!open) setSelectedTemplate(null);
-          }}>
+          <Dialog
+            open={showCreateDialog}
+            onOpenChange={(open) => {
+              setShowCreateDialog(open);
+              if (!open) setSelectedTemplate(null);
+            }}
+          >
             <DialogTrigger asChild>
               <Button>
                 <Plus className="h-4 w-4 mr-2" />
@@ -460,16 +647,17 @@ return (
             <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden">
               <DialogHeader>
                 <DialogTitle>
-                  {selectedTemplate ? `Create ${selectedTemplate.name}` : 'Create New Contract'}
+                  {selectedTemplate
+                    ? `Create ${selectedTemplate.name}`
+                    : "Create New Contract"}
                 </DialogTitle>
                 <DialogDescription>
-                  {selectedTemplate 
-                    ? 'Fill in the contract details below'
-                    : 'Choose a template to get started'
-                  }
+                  {selectedTemplate
+                    ? "Fill in the contract details below"
+                    : "Choose a template to get started"}
                 </DialogDescription>
               </DialogHeader>
-              
+
               <ScrollArea className="max-h-[70vh]">
                 {!selectedTemplate ? (
                   <TemplateBrowser
@@ -484,15 +672,20 @@ return (
                       setPreviewContent(content);
                       setShowPreviewDialog(true);
                     }}
-                    onSubmit={(variables) => generateContractMutation.mutate(variables)}
+                    onSubmit={(variables) =>
+                      generateContractMutation.mutate(variables)
+                    }
                     isSubmitting={generateContractMutation.isPending}
                   />
                 )}
               </ScrollArea>
-              
+
               {selectedTemplate && (
                 <DialogFooter>
-                  <Button variant="outline" onClick={() => setSelectedTemplate(null)}>
+                  <Button
+                    variant="outline"
+                    onClick={() => setSelectedTemplate(null)}
+                  >
                     Back to Templates
                   </Button>
                 </DialogFooter>
@@ -508,27 +701,39 @@ return (
               <div className="text-xs text-muted-foreground">Total</div>
             </Card>
             <Card className="p-3">
-              <div className="text-2xl font-bold text-muted-foreground">{stats.draft}</div>
+              <div className="text-2xl font-bold text-muted-foreground">
+                {stats.draft}
+              </div>
               <div className="text-xs text-muted-foreground">Drafts</div>
             </Card>
             <Card className="p-3">
-              <div className="text-2xl font-bold text-amber-500">{stats.pendingSignature}</div>
+              <div className="text-2xl font-bold text-amber-500">
+                {stats.pendingSignature}
+              </div>
               <div className="text-xs text-muted-foreground">Pending</div>
             </Card>
             <Card className="p-3">
-              <div className="text-2xl font-bold text-blue-500">{stats.partiallySigned}</div>
+              <div className="text-2xl font-bold text-blue-500">
+                {stats.partiallySigned}
+              </div>
               <div className="text-xs text-muted-foreground">Partial</div>
             </Card>
             <Card className="p-3">
-              <div className="text-2xl font-bold text-green-500">{stats.fullyExecuted}</div>
+              <div className="text-2xl font-bold text-green-500">
+                {stats.fullyExecuted}
+              </div>
               <div className="text-xs text-muted-foreground">Active</div>
             </Card>
             <Card className="p-3">
-              <div className="text-2xl font-bold text-red-500">{stats.voided}</div>
+              <div className="text-2xl font-bold text-red-500">
+                {stats.voided}
+              </div>
               <div className="text-xs text-muted-foreground">Voided</div>
             </Card>
             <Card className="p-3">
-              <div className="text-2xl font-bold text-gray-500">{stats.expired}</div>
+              <div className="text-2xl font-bold text-gray-500">
+                {stats.expired}
+              </div>
               <div className="text-xs text-muted-foreground">Expired</div>
             </Card>
           </div>
@@ -541,7 +746,9 @@ return (
             <TabsTrigger value="pending">
               Pending Signatures
               {stats && stats.pendingSignature > 0 && (
-                <Badge variant="secondary" className="ml-2">{stats.pendingSignature}</Badge>
+                <Badge variant="secondary" className="ml-2">
+                  {stats.pendingSignature}
+                </Badge>
               )}
             </TabsTrigger>
           </TabsList>
@@ -558,14 +765,17 @@ return (
                     <SelectItem value="all">All Contracts</SelectItem>
                     <SelectItem value="draft">Drafts</SelectItem>
                     <SelectItem value="pending_signature">Pending</SelectItem>
-                    <SelectItem value="partially_signed">Partially Signed</SelectItem>
+                    <SelectItem value="partially_signed">
+                      Partially Signed
+                    </SelectItem>
                     <SelectItem value="fully_executed">Executed</SelectItem>
                     <SelectItem value="voided">Voided</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <span className="text-sm text-muted-foreground">
-                {filteredContracts.length} contract{filteredContracts.length !== 1 ? 's' : ''}
+                {filteredContracts.length} contract
+                {filteredContracts.length !== 1 ? "s" : ""}
               </span>
             </div>
 
@@ -576,7 +786,10 @@ return (
                 <p className="text-sm text-muted-foreground mt-1">
                   Create your first contract using one of our templates
                 </p>
-                <Button className="mt-4" onClick={() => setShowCreateDialog(true)}>
+                <Button
+                  className="mt-4"
+                  onClick={() => setShowCreateDialog(true)}
+                >
                   <Plus className="h-4 w-4 mr-2" />
                   Create Contract
                 </Button>
@@ -587,11 +800,16 @@ return (
                   <Card key={contract.id}>
                     <CardHeader className="pb-3">
                       <div className="flex items-center justify-between">
-                        <CardTitle className="text-lg">{contract.title}</CardTitle>
+                        <CardTitle className="text-lg">
+                          {contract.title}
+                        </CardTitle>
                         {getStatusBadge(contract.status)}
                       </div>
                       <CardDescription>
-                        Created {contract.createdAt ? format(new Date(contract.createdAt), 'MMM d, yyyy') : '—'}
+                        Created{" "}
+                        {contract.createdAt
+                          ? format(new Date(contract.createdAt), "MMM d, yyyy")
+                          : "—"}
                       </CardDescription>
                     </CardHeader>
                     <CardContent className="pb-3">
@@ -603,14 +821,18 @@ return (
                         <div className="flex items-center gap-1">
                           <CheckCircle className="h-4 w-4 text-muted-foreground" />
                           <span>
-                            {contract.signatures.filter(s => s.signedAt).length}/{contract.signatures.length} signed
+                            {
+                              contract.signatures.filter((s) => s.signedAt)
+                                .length
+                            }
+                            /{contract.signatures.length} signed
                           </span>
                         </div>
                       </div>
                     </CardContent>
                     <CardFooter className="gap-2 flex-wrap">
-                      <Button 
-                        variant="outline" 
+                      <Button
+                        variant="outline"
                         size="sm"
                         onClick={() => {
                           setSelectedContract(contract);
@@ -620,26 +842,29 @@ return (
                         <Eye className="h-4 w-4 mr-1" />
                         View
                       </Button>
-                      <Button 
-                        variant="outline" 
+                      <Button
+                        variant="outline"
                         size="sm"
                         onClick={() => downloadPDF(contract.id)}
                       >
                         <Download className="h-4 w-4 mr-1" />
                         PDF
                       </Button>
-                      {contract.status === 'draft' && (
-                        <Button 
+                      {contract.status === "draft" && (
+                        <Button
                           size="sm"
-                          onClick={() => sendForSignatureMutation.mutate(contract.id)}
+                          onClick={() =>
+                            sendForSignatureMutation.mutate(contract.id)
+                          }
                           disabled={sendForSignatureMutation.isPending}
                         >
                           <Send className="h-4 w-4 mr-1" />
                           Send for Signature
                         </Button>
                       )}
-                      {(contract.status === 'pending_signature' || contract.status === 'partially_signed') && (
-                        <Button 
+                      {(contract.status === "pending_signature" ||
+                        contract.status === "partially_signed") && (
+                        <Button
                           size="sm"
                           onClick={() => {
                             setSelectedContract(contract);
@@ -669,7 +894,11 @@ return (
           </TabsContent>
 
           <TabsContent value="pending" className="space-y-4">
-            {contracts.filter(c => c.status === 'pending_signature' || c.status === 'partially_signed').length === 0 ? (
+            {contracts.filter(
+              (c) =>
+                c.status === "pending_signature" ||
+                c.status === "partially_signed",
+            ).length === 0 ? (
               <Card className="p-8 text-center">
                 <Clock className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                 <h3 className="font-medium">No pending signatures</h3>
@@ -680,12 +909,18 @@ return (
             ) : (
               <div className="grid gap-4">
                 {contracts
-                  .filter(c => c.status === 'pending_signature' || c.status === 'partially_signed')
+                  .filter(
+                    (c) =>
+                      c.status === "pending_signature" ||
+                      c.status === "partially_signed",
+                  )
                   .map((contract) => (
                     <Card key={contract.id}>
                       <CardHeader>
                         <div className="flex items-center justify-between">
-                          <CardTitle className="text-lg">{contract.title}</CardTitle>
+                          <CardTitle className="text-lg">
+                            {contract.title}
+                          </CardTitle>
                           {getStatusBadge(contract.status)}
                         </div>
                         <CardDescription>
@@ -694,26 +929,42 @@ return (
                       </CardHeader>
                       <CardContent>
                         <div className="space-y-2">
-                          {contract.signatures.filter(s => !s.signedAt).map((sig, i) => (
-                            <div key={i} className="flex items-center gap-2 text-sm">
-                              <Clock className="h-4 w-4 text-amber-500" />
-                              <span>{sig.partyName}</span>
-                              <span className="text-muted-foreground">(pending)</span>
-                            </div>
-                          ))}
-                          {contract.signatures.filter(s => s.signedAt).map((sig, i) => (
-                            <div key={i} className="flex items-center gap-2 text-sm">
-                              <CheckCircle className="h-4 w-4 text-green-500" />
-                              <span>{sig.partyName}</span>
-                              <span className="text-muted-foreground">
-                                (signed {sig.signedAt ? format(new Date(sig.signedAt), 'MMM d') : '—'})
-                              </span>
-                            </div>
-                          ))}
+                          {contract.signatures
+                            .filter((s) => !s.signedAt)
+                            .map((sig, i) => (
+                              <div
+                                key={i}
+                                className="flex items-center gap-2 text-sm"
+                              >
+                                <Clock className="h-4 w-4 text-amber-500" />
+                                <span>{sig.partyName}</span>
+                                <span className="text-muted-foreground">
+                                  (pending)
+                                </span>
+                              </div>
+                            ))}
+                          {contract.signatures
+                            .filter((s) => s.signedAt)
+                            .map((sig, i) => (
+                              <div
+                                key={i}
+                                className="flex items-center gap-2 text-sm"
+                              >
+                                <CheckCircle className="h-4 w-4 text-green-500" />
+                                <span>{sig.partyName}</span>
+                                <span className="text-muted-foreground">
+                                  (signed{" "}
+                                  {sig.signedAt
+                                    ? format(new Date(sig.signedAt), "MMM d")
+                                    : "—"}
+                                  )
+                                </span>
+                              </div>
+                            ))}
                         </div>
                       </CardContent>
                       <CardFooter className="gap-2">
-                        <Button 
+                        <Button
                           size="sm"
                           onClick={() => {
                             setSelectedContract(contract);
@@ -723,8 +974,8 @@ return (
                           <PenTool className="h-4 w-4 mr-1" />
                           Sign Now
                         </Button>
-                        <Button 
-                          variant="outline" 
+                        <Button
+                          variant="outline"
                           size="sm"
                           onClick={() => {
                             setSelectedContract(contract);
@@ -750,13 +1001,15 @@ return (
                 Contract details and signature status
               </DialogDescription>
             </DialogHeader>
-            
+
             {selectedContract && (
               <div className="grid md:grid-cols-2 gap-6">
                 <div className="space-y-4">
                   <Card>
                     <CardHeader className="pb-2">
-                      <CardTitle className="text-sm">Contract Preview</CardTitle>
+                      <CardTitle className="text-sm">
+                        Contract Preview
+                      </CardTitle>
                     </CardHeader>
                     <CardContent>
                       <ScrollArea className="h-[300px] w-full rounded border p-4">
@@ -766,43 +1019,53 @@ return (
                       </ScrollArea>
                     </CardContent>
                   </Card>
-                  
+
                   <div className="flex gap-2">
-                    <Button 
-                      variant="outline" 
+                    <Button
+                      variant="outline"
                       className="flex-1"
                       onClick={() => downloadPDF(selectedContract.id)}
                     >
                       <Download className="h-4 w-4 mr-2" />
                       Download PDF
                     </Button>
-                    {selectedContract.status !== 'fully_executed' && selectedContract.status !== 'voided' && (
-                      <Button 
-                        variant="destructive" 
-                        className="flex-1"
-                        onClick={() => voidContractMutation.mutate(selectedContract.id)}
-                      >
-                        <Ban className="h-4 w-4 mr-2" />
-                        Void Contract
-                      </Button>
-                    )}
+                    {selectedContract.status !== "fully_executed" &&
+                      selectedContract.status !== "voided" && (
+                        <Button
+                          variant="destructive"
+                          className="flex-1"
+                          onClick={() =>
+                            voidContractMutation.mutate(selectedContract.id)
+                          }
+                        >
+                          <Ban className="h-4 w-4 mr-2" />
+                          Void Contract
+                        </Button>
+                      )}
                   </div>
                 </div>
-                
+
                 <div>
                   <SignatureTimeline
-                    signers={signatureStatusData?.signers.map(s => ({
-                      ...s,
-                      status: s.status as 'signed' | 'pending' | 'declined',
-                    })) || selectedContract.parties.map(p => {
-                      const sig = selectedContract.signatures.find(s => s.partyName === p.name);
-                      return {
-                        name: p.name,
-                        role: p.role,
-                        status: sig?.signedAt ? 'signed' as const : 'pending' as const,
-                        signedAt: sig?.signedAt,
-                      };
-                    })}
+                    signers={
+                      signatureStatusData?.signers.map((s) => ({
+                        ...s,
+                        status: s.status as "signed" | "pending" | "declined",
+                      })) ||
+                      selectedContract.parties.map((p) => {
+                        const sig = selectedContract.signatures.find(
+                          (s) => s.partyName === p.name,
+                        );
+                        return {
+                          name: p.name,
+                          role: p.role,
+                          status: sig?.signedAt
+                            ? ("signed" as const)
+                            : ("pending" as const),
+                          signedAt: sig?.signedAt,
+                        };
+                      })
+                    }
                     timeline={timelineData?.timeline || []}
                     showTimeline={true}
                   />
@@ -826,47 +1089,73 @@ return (
               </pre>
             </ScrollArea>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setShowPreviewDialog(false)}>Close</Button>
+              <Button
+                variant="outline"
+                onClick={() => setShowPreviewDialog(false)}
+              >
+                Close
+              </Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
 
-        <Dialog open={showSignDialog} onOpenChange={(open) => { setShowSignDialog(open); if (!open) { setSignStep('pick'); setSigningAs(''); } }}>
+        <Dialog
+          open={showSignDialog}
+          onOpenChange={(open) => {
+            setShowSignDialog(open);
+            if (!open) {
+              setSignStep("pick");
+              setSigningAs("");
+            }
+          }}
+        >
           <DialogContent className="max-w-lg">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
                 <PenTool className="h-5 w-5 text-primary" />
-                {signStep === 'pick' ? 'Sign Contract' : 'Draw Your Signature'}
+                {signStep === "pick" ? "Sign Contract" : "Draw Your Signature"}
               </DialogTitle>
               <DialogDescription>
-                {signStep === 'pick'
-                  ? 'Select which party you are signing as.'
-                  : 'Draw your signature in the box below using your mouse or finger.'}
+                {signStep === "pick"
+                  ? "Select which party you are signing as."
+                  : "Draw your signature in the box below using your mouse or finger."}
               </DialogDescription>
             </DialogHeader>
 
-            {selectedContract && signStep === 'pick' && (
+            {selectedContract && signStep === "pick" && (
               <div className="space-y-4">
                 <Card className="p-4 bg-muted/50">
                   <p className="font-medium">{selectedContract.title}</p>
                   <p className="text-sm text-muted-foreground mt-1">
-                    {selectedContract.parties.length} {selectedContract.parties.length === 1 ? 'party' : 'parties'} involved
+                    {selectedContract.parties.length}{" "}
+                    {selectedContract.parties.length === 1
+                      ? "party"
+                      : "parties"}{" "}
+                    involved
                   </p>
                 </Card>
-                <p className="text-sm text-muted-foreground">Who are you signing as?</p>
-                {selectedContract.signatures.filter(s => !s.signedAt).length > 0 ? (
+                <p className="text-sm text-muted-foreground">
+                  Who are you signing as?
+                </p>
+                {selectedContract.signatures.filter((s) => !s.signedAt).length >
+                0 ? (
                   <div className="space-y-2">
-                    {selectedContract.signatures.filter(s => !s.signedAt).map((sig, i) => (
-                      <Button
-                        key={i}
-                        variant="outline"
-                        className="w-full justify-start h-12"
-                        onClick={() => { setSigningAs(sig.partyName); setSignStep('draw'); }}
-                      >
-                        <Users className="h-4 w-4 mr-2 text-muted-foreground" />
-                        <span className="font-medium">{sig.partyName}</span>
-                      </Button>
-                    ))}
+                    {selectedContract.signatures
+                      .filter((s) => !s.signedAt)
+                      .map((sig, i) => (
+                        <Button
+                          key={i}
+                          variant="outline"
+                          className="w-full justify-start h-12"
+                          onClick={() => {
+                            setSigningAs(sig.partyName);
+                            setSignStep("draw");
+                          }}
+                        >
+                          <Users className="h-4 w-4 mr-2 text-muted-foreground" />
+                          <span className="font-medium">{sig.partyName}</span>
+                        </Button>
+                      ))}
                   </div>
                 ) : (
                   <div className="space-y-2">
@@ -875,12 +1164,12 @@ return (
                       className="w-full border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
                       placeholder="Enter your name or role (e.g. Artist, Producer)"
                       value={signingAs}
-                      onChange={e => setSigningAs(e.target.value)}
+                      onChange={(e) => setSigningAs(e.target.value)}
                     />
                     <Button
                       className="w-full"
                       disabled={!signingAs.trim()}
-                      onClick={() => setSignStep('draw')}
+                      onClick={() => setSignStep("draw")}
                     >
                       Continue to Signature
                     </Button>
@@ -889,10 +1178,13 @@ return (
               </div>
             )}
 
-            {selectedContract && signStep === 'draw' && (
+            {selectedContract && signStep === "draw" && (
               <div className="space-y-4">
                 <div className="text-sm text-center text-muted-foreground">
-                  Signing as: <span className="font-semibold text-foreground">{signingAs}</span>
+                  Signing as:{" "}
+                  <span className="font-semibold text-foreground">
+                    {signingAs}
+                  </span>
                 </div>
                 <div className="relative rounded-lg border-2 border-dashed border-border bg-white overflow-hidden">
                   <canvas
@@ -913,23 +1205,37 @@ return (
                   </p>
                 </div>
                 <div className="flex items-center justify-between">
-                  <Button type="button" variant="ghost" size="sm" onClick={clearCanvas}>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={clearCanvas}
+                  >
                     <RotateCcw className="h-3.5 w-3.5 mr-1.5" />
                     Clear
                   </Button>
                   <div className="flex gap-2">
-                    <Button variant="outline" size="sm" onClick={() => setSignStep('pick')}>Back</Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setSignStep("pick")}
+                    >
+                      Back
+                    </Button>
                     <Button
                       size="sm"
                       onClick={submitSignature}
                       disabled={signContractMutation.isPending}
                     >
-                      {signContractMutation.isPending ? 'Signing...' : 'Submit Signature'}
+                      {signContractMutation.isPending
+                        ? "Signing..."
+                        : "Submit Signature"}
                     </Button>
                   </div>
                 </div>
                 <p className="text-xs text-center text-muted-foreground">
-                  By submitting, you agree to all terms of this contract and confirm this is your legal signature.
+                  By submitting, you agree to all terms of this contract and
+                  confirm this is your legal signature.
                 </p>
               </div>
             )}
@@ -944,7 +1250,7 @@ return (
                 Please provide a reason for declining to sign this contract.
               </DialogDescription>
             </DialogHeader>
-            
+
             <div className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="decline-reason">Reason</Label>
@@ -957,16 +1263,21 @@ return (
                 />
               </div>
             </div>
-            
+
             <DialogFooter>
-              <Button variant="outline" onClick={() => setShowDeclineDialog(false)}>
+              <Button
+                variant="outline"
+                onClick={() => setShowDeclineDialog(false)}
+              >
                 Cancel
               </Button>
-              <Button 
+              <Button
                 variant="destructive"
                 onClick={() => {
                   if (selectedContract) {
-                    const unsignedParty = selectedContract.signatures.find(s => !s.signedAt);
+                    const unsignedParty = selectedContract.signatures.find(
+                      (s) => !s.signedAt,
+                    );
                     if (unsignedParty) {
                       declineSignatureMutation.mutate({
                         contractId: selectedContract.id,

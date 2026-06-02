@@ -11,21 +11,25 @@
  *   shutdownRedis()   — no-op (PDIM manages its own lifecycle)
  */
 
-import { logger } from '../logger.js';
-import { getPdimClient, isPdimConfigured } from './pdimClient.js';
+import { logger } from "../logger.js";
+import { getPdimClient, isPdimConfigured } from "./pdimClient.js";
 
 export type RedisClientType = any;
 
 export async function getRedisClient(): Promise<unknown> {
   if (!isPdimConfigured()) {
-    throw new Error('[Redis] PDIM is not configured — PDIM_HTTP_EXEC_URL must be set');
+    throw new Error(
+      "[Redis] PDIM is not configured — PDIM_HTTP_EXEC_URL must be set",
+    );
   }
   return getPdimClient();
 }
 
 export async function createRedisClient(): Promise<unknown> {
   if (!isPdimConfigured()) {
-    throw new Error('[Redis] PDIM is not configured — PDIM_HTTP_EXEC_URL must be set');
+    throw new Error(
+      "[Redis] PDIM is not configured — PDIM_HTTP_EXEC_URL must be set",
+    );
   }
   return getPdimClient().duplicate();
 }
@@ -41,5 +45,7 @@ export async function isRedisHealthy(): Promise<boolean> {
 }
 
 export async function shutdownRedis(): Promise<void> {
-  logger.info('[Redis] PDIM manages its own lifecycle — no shutdown action needed');
+  logger.info(
+    "[Redis] PDIM manages its own lifecycle — no shutdown action needed",
+  );
 }

@@ -1,27 +1,27 @@
-import React, { 
-  createContext, 
-  useContext, 
-  useEffect, 
-  useState, 
-  useCallback, 
-  useRef 
-} from 'react';
-import { 
-  getShortcutManager, 
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  useCallback,
+  useRef,
+} from "react";
+import {
+  getShortcutManager,
   DEFAULT_SHORTCUTS,
-  type ShortcutManager 
-} from '@/lib/shortcuts/ShortcutManager';
-import { 
-  getCommandRegistry, 
+  type ShortcutManager,
+} from "@/lib/shortcuts/ShortcutManager";
+import {
+  getCommandRegistry,
   DEFAULT_COMMANDS,
-  type CommandRegistry 
-} from '@/lib/commands/CommandRegistry';
-import { 
-  ShortcutDefinition, 
+  type CommandRegistry,
+} from "@/lib/commands/CommandRegistry";
+import {
+  ShortcutDefinition,
   ShortcutContext as ShortcutContextType,
-  ShortcutEvent 
-} from '@/lib/shortcuts/types';
-import { Command } from '@/lib/commands/CommandRegistry';
+  ShortcutEvent,
+} from "@/lib/shortcuts/types";
+import { Command } from "@/lib/commands/CommandRegistry";
 
 interface ShortcutContextValue {
   shortcutManager: ShortcutManager;
@@ -56,15 +56,16 @@ export interface ShortcutProviderProps {
   persistConfig?: boolean;
 }
 
-export function ShortcutProvider({ 
-  children, 
-  defaultContext = 'global',
-  persistConfig = true 
+export function ShortcutProvider({
+  children,
+  defaultContext = "global",
+  persistConfig = true,
 }: ShortcutProviderProps) {
   const shortcutManagerRef = useRef<ShortcutManager | null>(null);
   const commandRegistryRef = useRef<CommandRegistry | null>(null);
-  
-  const [currentContext, setCurrentContextState] = useState<ShortcutContextType>(defaultContext);
+
+  const [currentContext, setCurrentContextState] =
+    useState<ShortcutContextType>(defaultContext);
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
   const [isShortcutGuideOpen, setIsShortcutGuideOpen] = useState(false);
   const [shortcutsEnabled, setShortcutsEnabled] = useState(true);
@@ -78,41 +79,41 @@ export function ShortcutProvider({
     commandRegistryRef.current.registerMany(DEFAULT_COMMANDS);
 
     const openPaletteShortcut: ShortcutDefinition = {
-      id: 'internal.open-command-palette',
-      key: 'k',
-      modifiers: ['cmd'],
-      description: 'Open command palette',
-      category: 'global',
-      context: 'global',
+      id: "internal.open-command-palette",
+      key: "k",
+      modifiers: ["cmd"],
+      description: "Open command palette",
+      category: "global",
+      context: "global",
       action: () => setIsCommandPaletteOpen(true),
       allowInInput: true,
     };
 
     const showHelpShortcut: ShortcutDefinition = {
-      id: 'internal.show-shortcuts',
-      key: '/',
-      modifiers: ['cmd'],
-      description: 'Show keyboard shortcuts',
-      category: 'global',
-      context: 'global',
+      id: "internal.show-shortcuts",
+      key: "/",
+      modifiers: ["cmd"],
+      description: "Show keyboard shortcuts",
+      category: "global",
+      context: "global",
       action: () => setIsShortcutGuideOpen(true),
     };
 
     const showHelpQuestionMark: ShortcutDefinition = {
-      id: 'internal.show-shortcuts-question',
-      key: '?',
-      description: 'Show keyboard shortcuts',
-      category: 'global',
-      context: 'global',
+      id: "internal.show-shortcuts-question",
+      key: "?",
+      description: "Show keyboard shortcuts",
+      category: "global",
+      context: "global",
       action: () => setIsShortcutGuideOpen(true),
     };
 
     const escapeShortcut: ShortcutDefinition = {
-      id: 'internal.escape',
-      key: 'Escape',
-      description: 'Close overlays',
-      category: 'global',
-      context: 'global',
+      id: "internal.escape",
+      key: "Escape",
+      description: "Close overlays",
+      category: "global",
+      context: "global",
       action: () => {
         setIsCommandPaletteOpen(false);
         setIsShortcutGuideOpen(false);
@@ -128,10 +129,12 @@ export function ShortcutProvider({
     setRecentCommands(commandRegistryRef.current.getRecentCommands(5));
 
     return () => {
-      shortcutManagerRef.current?.unregister('internal.open-command-palette');
-      shortcutManagerRef.current?.unregister('internal.show-shortcuts');
-      shortcutManagerRef.current?.unregister('internal.show-shortcuts-question');
-      shortcutManagerRef.current?.unregister('internal.escape');
+      shortcutManagerRef.current?.unregister("internal.open-command-palette");
+      shortcutManagerRef.current?.unregister("internal.show-shortcuts");
+      shortcutManagerRef.current?.unregister(
+        "internal.show-shortcuts-question",
+      );
+      shortcutManagerRef.current?.unregister("internal.escape");
     };
   }, [persistConfig]);
 
@@ -146,7 +149,9 @@ export function ShortcutProvider({
 
   useEffect(() => {
     if (shortcutManagerRef.current) {
-      shortcutManagerRef.current.setEnabled(shortcutsEnabled && !isCommandPaletteOpen);
+      shortcutManagerRef.current.setEnabled(
+        shortcutsEnabled && !isCommandPaletteOpen,
+      );
     }
   }, [shortcutsEnabled, isCommandPaletteOpen]);
 
@@ -163,7 +168,7 @@ export function ShortcutProvider({
   }, []);
 
   const toggleCommandPalette = useCallback(() => {
-    setIsCommandPaletteOpen(prev => !prev);
+    setIsCommandPaletteOpen((prev) => !prev);
   }, []);
 
   const openShortcutGuide = useCallback(() => {
@@ -175,7 +180,7 @@ export function ShortcutProvider({
   }, []);
 
   const toggleShortcutGuide = useCallback(() => {
-    setIsShortcutGuideOpen(prev => !prev);
+    setIsShortcutGuideOpen((prev) => !prev);
   }, []);
 
   const registerShortcut = useCallback((shortcut: ShortcutDefinition) => {
@@ -242,17 +247,19 @@ export function ShortcutProvider({
 export function useShortcuts(): ShortcutContextValue {
   const context = useContext(ShortcutContextObj);
   if (!context) {
-    throw new Error('useShortcuts must be used within a ShortcutProvider');
+    throw new Error("useShortcuts must be used within a ShortcutProvider");
   }
   return context;
 }
 
 export function useShortcut(
-  shortcut: Omit<ShortcutDefinition, 'id'> & { id?: string },
-  deps: React.DependencyList = []
+  shortcut: Omit<ShortcutDefinition, "id"> & { id?: string },
+  deps: React.DependencyList = [],
 ) {
   const { registerShortcut, unregisterShortcut } = useShortcuts();
-  const idRef = useRef(shortcut.id || `shortcut-${Math.random().toString(36).substr(2, 9)}`);
+  const idRef = useRef(
+    shortcut.id || `shortcut-${Math.random().toString(36).substr(2, 9)}`,
+  );
 
   useEffect(() => {
     const fullShortcut: ShortcutDefinition = {
@@ -315,7 +322,7 @@ export function useShortcutContext(context: ShortcutContextType) {
   useEffect(() => {
     setCurrentContext(context);
     return () => {
-      setCurrentContext('global');
+      setCurrentContext("global");
     };
   }, [context, setCurrentContext]);
 }

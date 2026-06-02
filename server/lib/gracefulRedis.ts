@@ -5,8 +5,8 @@
  * All operations throw on failure — no silent degradation.
  */
 
-import { logger } from '../logger.js';
-import { getPdimClient, isPdimConfigured } from './pdimClient.js';
+import { logger } from "../logger.js";
+import { getPdimClient, isPdimConfigured } from "./pdimClient.js";
 
 interface RedisClientWrapper {
   client: Record<string, unknown>;
@@ -19,9 +19,13 @@ interface RedisClientWrapper {
   expire(key: string, seconds: number): Promise<void>;
 }
 
-export function createGracefulRedisClient(serviceName: string): RedisClientWrapper {
+export function createGracefulRedisClient(
+  serviceName: string,
+): RedisClientWrapper {
   if (!isPdimConfigured()) {
-    throw new Error(`[${serviceName}] PDIM is not configured — PDIM_HTTP_EXEC_URL must be set`);
+    throw new Error(
+      `[${serviceName}] PDIM is not configured — PDIM_HTTP_EXEC_URL must be set`,
+    );
   }
 
   const pdim = getPdimClient();
@@ -29,7 +33,9 @@ export function createGracefulRedisClient(serviceName: string): RedisClientWrapp
 
   return {
     client: pdim,
-    get isConnected() { return true; },
+    get isConnected() {
+      return true;
+    },
 
     async get(key: string): Promise<string | null> {
       return pdim.get(key);
@@ -62,6 +68,10 @@ export function createGracefulRedisClient(serviceName: string): RedisClientWrapp
   };
 }
 
-export function createLegacyGracefulRedisClient(_serviceName: string): Record<string, unknown> {
-  throw new Error('createLegacyGracefulRedisClient is removed — use createGracefulRedisClient with PDIM');
+export function createLegacyGracefulRedisClient(
+  _serviceName: string,
+): Record<string, unknown> {
+  throw new Error(
+    "createLegacyGracefulRedisClient is removed — use createGracefulRedisClient with PDIM",
+  );
 }

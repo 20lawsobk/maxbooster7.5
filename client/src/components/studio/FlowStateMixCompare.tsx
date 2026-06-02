@@ -1,5 +1,5 @@
-import { useState, useCallback, useRef, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useState, useCallback, useRef, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   GitCompare,
   Play,
@@ -14,17 +14,17 @@ import {
   StarOff,
   ArrowLeftRight,
   Clock,
-  Waveform
-} from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Slider } from '@/components/ui/slider';
-import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
-import { Input } from '@/components/ui/input';
-import { useToast } from '@/hooks/use-toast';
-import { cn } from '@/lib/utils';
+  Waveform,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Slider } from "@/components/ui/slider";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import { Input } from "@/components/ui/input";
+import { useToast } from "@/hooks/use-toast";
+import { cn } from "@/lib/utils";
 
 interface MixVersion {
   id: string;
@@ -54,61 +54,61 @@ const generateMockWaveform = (): number[] => {
 };
 
 export function FlowStateMixCompare({
-  currentMixName = 'Current Mix',
+  currentMixName = "Current Mix",
   onSelectMix,
-  className
+  className,
 }: FlowStateMixCompareProps) {
   const { toast } = useToast();
   const [mixes, setMixes] = useState<MixVersion[]>([
     {
-      id: 'current',
+      id: "current",
       name: currentMixName,
       timestamp: new Date(),
       lufs: -14.2,
       peak: -0.8,
       duration: 210,
-      notes: 'Current working version',
+      notes: "Current working version",
       isFavorite: false,
-      waveform: generateMockWaveform()
+      waveform: generateMockWaveform(),
     },
     {
-      id: 'v3',
-      name: 'Mix v3 - More Bass',
+      id: "v3",
+      name: "Mix v3 - More Bass",
       timestamp: new Date(Date.now() - 3600000),
       lufs: -13.8,
       peak: -0.5,
       duration: 210,
-      notes: 'Boosted low end, adjusted kick',
+      notes: "Boosted low end, adjusted kick",
       isFavorite: true,
-      waveform: generateMockWaveform()
+      waveform: generateMockWaveform(),
     },
     {
-      id: 'v2',
-      name: 'Mix v2 - Vocal Focus',
+      id: "v2",
+      name: "Mix v2 - Vocal Focus",
       timestamp: new Date(Date.now() - 7200000),
       lufs: -14.5,
       peak: -1.2,
       duration: 210,
-      notes: 'Vocals forward, less reverb',
+      notes: "Vocals forward, less reverb",
       isFavorite: false,
-      waveform: generateMockWaveform()
+      waveform: generateMockWaveform(),
     },
     {
-      id: 'v1',
-      name: 'Mix v1 - Initial',
+      id: "v1",
+      name: "Mix v1 - Initial",
       timestamp: new Date(Date.now() - 86400000),
       lufs: -15.0,
       peak: -1.8,
       duration: 210,
-      notes: 'First rough mix',
+      notes: "First rough mix",
       isFavorite: false,
-      waveform: generateMockWaveform()
+      waveform: generateMockWaveform(),
     },
   ]);
 
-  const [mixA, setMixA] = useState<string>('current');
-  const [mixB, setMixB] = useState<string>('v3');
-  const [activeMix, setActiveMix] = useState<'A' | 'B'>('A');
+  const [mixA, setMixA] = useState<string>("current");
+  const [mixB, setMixB] = useState<string>("v3");
+  const [activeMix, setActiveMix] = useState<"A" | "B">("A");
   const [isPlaying, setIsPlaying] = useState(false);
   const [loudnessMatch, setLoudnessMatch] = useState(true);
   const [autoSwitch, setAutoSwitch] = useState(false);
@@ -120,14 +120,14 @@ export function FlowStateMixCompare({
   const autoSwitchRef = useRef<NodeJS.Timeout | null>(null);
   const playbackRef = useRef<NodeJS.Timeout | null>(null);
 
-  const mixAData = mixes.find(m => m.id === mixA);
-  const mixBData = mixes.find(m => m.id === mixB);
-  const activeMixData = activeMix === 'A' ? mixAData : mixBData;
+  const mixAData = mixes.find((m) => m.id === mixA);
+  const mixBData = mixes.find((m) => m.id === mixB);
+  const activeMixData = activeMix === "A" ? mixAData : mixBData;
 
   useEffect(() => {
     if (isPlaying && autoSwitch) {
       autoSwitchRef.current = setInterval(() => {
-        setActiveMix(prev => prev === 'A' ? 'B' : 'A');
+        setActiveMix((prev) => (prev === "A" ? "B" : "A"));
       }, autoSwitchInterval[0] * 1000);
     }
     return () => {
@@ -138,7 +138,7 @@ export function FlowStateMixCompare({
   useEffect(() => {
     if (isPlaying) {
       playbackRef.current = setInterval(() => {
-        setCurrentTime(prev => {
+        setCurrentTime((prev) => {
           const duration = activeMixData?.duration || 210;
           if (prev >= duration) {
             setIsPlaying(false);
@@ -154,20 +154,22 @@ export function FlowStateMixCompare({
   }, [isPlaying, activeMixData?.duration]);
 
   const toggleFavorite = (mixId: string) => {
-    setMixes(prev => prev.map(m =>
-      m.id === mixId ? { ...m, isFavorite: !m.isFavorite } : m
-    ));
+    setMixes((prev) =>
+      prev.map((m) =>
+        m.id === mixId ? { ...m, isFavorite: !m.isFavorite } : m,
+      ),
+    );
   };
 
   const deleteMix = (mixId: string) => {
-    if (mixId === 'current') {
-      toast({ title: 'Cannot delete current mix', variant: 'destructive' });
+    if (mixId === "current") {
+      toast({ title: "Cannot delete current mix", variant: "destructive" });
       return;
     }
-    if (mixA === mixId) setMixA('current');
-    if (mixB === mixId) setMixB('current');
-    setMixes(prev => prev.filter(m => m.id !== mixId));
-    toast({ title: 'Mix version deleted' });
+    if (mixA === mixId) setMixA("current");
+    if (mixB === mixId) setMixB("current");
+    setMixes((prev) => prev.filter((m) => m.id !== mixId));
+    toast({ title: "Mix version deleted" });
   };
 
   const saveMixSnapshot = () => {
@@ -178,12 +180,12 @@ export function FlowStateMixCompare({
       lufs: mixAData?.lufs || -14,
       peak: mixAData?.peak || -1,
       duration: mixAData?.duration || 210,
-      notes: '',
+      notes: "",
       isFavorite: false,
-      waveform: generateMockWaveform()
+      waveform: generateMockWaveform(),
     };
-    setMixes(prev => [newMix, ...prev]);
-    toast({ title: 'Mix snapshot saved' });
+    setMixes((prev) => [newMix, ...prev]);
+    toast({ title: "Mix snapshot saved" });
   };
 
   const swapMixes = () => {
@@ -195,7 +197,7 @@ export function FlowStateMixCompare({
   const formatTime = (seconds: number): string => {
     const mins = Math.floor(seconds / 60);
     const secs = Math.floor(seconds % 60);
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
+    return `${mins}:${secs.toString().padStart(2, "0")}`;
   };
 
   const getLoudnessDiff = (): number => {
@@ -204,7 +206,9 @@ export function FlowStateMixCompare({
   };
 
   return (
-    <div className={cn("flex flex-col h-full bg-zinc-950 text-white", className)}>
+    <div
+      className={cn("flex flex-col h-full bg-zinc-950 text-white", className)}
+    >
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-800">
         <div className="flex items-center gap-3">
@@ -213,7 +217,9 @@ export function FlowStateMixCompare({
           </div>
           <div>
             <h2 className="font-semibold">Mix Compare</h2>
-            <p className="text-xs text-zinc-500">A/B comparison with loudness matching</p>
+            <p className="text-xs text-zinc-500">
+              A/B comparison with loudness matching
+            </p>
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -228,20 +234,22 @@ export function FlowStateMixCompare({
         {/* Left Panel - Mix List */}
         <div className="w-72 border-r border-zinc-800 overflow-auto p-4">
           <h3 className="font-medium mb-3">Mix Versions ({mixes.length})</h3>
-          
+
           <div className="space-y-2">
-            {mixes.map(mix => (
+            {mixes.map((mix) => (
               <Card
                 key={mix.id}
                 className={cn(
                   "bg-zinc-900 border-zinc-800 p-3 cursor-pointer transition-all",
-                  (mixA === mix.id || mixB === mix.id) && "border-cyan-500/50"
+                  (mixA === mix.id || mixB === mix.id) && "border-cyan-500/50",
                 )}
               >
                 <div className="flex items-start justify-between mb-2">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                      <span className="font-medium text-sm truncate">{mix.name}</span>
+                      <span className="font-medium text-sm truncate">
+                        {mix.name}
+                      </span>
                       {mix.isFavorite && (
                         <Star className="w-3 h-3 text-yellow-400 fill-yellow-400 shrink-0" />
                       )}
@@ -251,8 +259,16 @@ export function FlowStateMixCompare({
                     </p>
                   </div>
                   <div className="flex items-center gap-1 shrink-0">
-                    {mixA === mix.id && <Badge className="bg-cyan-500/20 text-cyan-400 text-xs">A</Badge>}
-                    {mixB === mix.id && <Badge className="bg-orange-500/20 text-orange-400 text-xs">B</Badge>}
+                    {mixA === mix.id && (
+                      <Badge className="bg-cyan-500/20 text-cyan-400 text-xs">
+                        A
+                      </Badge>
+                    )}
+                    {mixB === mix.id && (
+                      <Badge className="bg-orange-500/20 text-orange-400 text-xs">
+                        B
+                      </Badge>
+                    )}
                   </div>
                 </div>
 
@@ -263,13 +279,15 @@ export function FlowStateMixCompare({
                 </div>
 
                 {mix.notes && (
-                  <p className="text-xs text-zinc-400 mb-2 line-clamp-1">{mix.notes}</p>
+                  <p className="text-xs text-zinc-400 mb-2 line-clamp-1">
+                    {mix.notes}
+                  </p>
                 )}
 
                 <div className="flex items-center gap-1">
                   <Button
                     size="sm"
-                    variant={mixA === mix.id ? 'default' : 'outline'}
+                    variant={mixA === mix.id ? "default" : "outline"}
                     className="h-6 text-xs flex-1"
                     onClick={() => setMixA(mix.id)}
                   >
@@ -277,7 +295,7 @@ export function FlowStateMixCompare({
                   </Button>
                   <Button
                     size="sm"
-                    variant={mixB === mix.id ? 'default' : 'outline'}
+                    variant={mixB === mix.id ? "default" : "outline"}
                     className="h-6 text-xs flex-1"
                     onClick={() => setMixB(mix.id)}
                   >
@@ -295,7 +313,7 @@ export function FlowStateMixCompare({
                       <StarOff className="w-3 h-3" />
                     )}
                   </Button>
-                  {mix.id !== 'current' && (
+                  {mix.id !== "current" && (
                     <Button
                       size="icon"
                       variant="ghost"
@@ -319,21 +337,23 @@ export function FlowStateMixCompare({
               <motion.button
                 className={cn(
                   "flex-1 max-w-xs p-4 rounded-lg border-2 transition-all",
-                  activeMix === 'A' 
-                    ? "border-cyan-500 bg-cyan-500/10" 
-                    : "border-zinc-700 bg-zinc-900 hover:border-zinc-600"
+                  activeMix === "A"
+                    ? "border-cyan-500 bg-cyan-500/10"
+                    : "border-zinc-700 bg-zinc-900 hover:border-zinc-600",
                 )}
-                onClick={() => setActiveMix('A')}
+                onClick={() => setActiveMix("A")}
                 whileTap={{ scale: 0.98 }}
               >
                 <div className="flex items-center justify-between mb-2">
-                  <Badge className={cn(
-                    "text-lg px-3",
-                    activeMix === 'A' ? "bg-cyan-500" : "bg-zinc-700"
-                  )}>
+                  <Badge
+                    className={cn(
+                      "text-lg px-3",
+                      activeMix === "A" ? "bg-cyan-500" : "bg-zinc-700",
+                    )}
+                  >
                     A
                   </Badge>
-                  {activeMix === 'A' && (
+                  {activeMix === "A" && (
                     <motion.div
                       initial={{ scale: 0 }}
                       animate={{ scale: 1 }}
@@ -359,21 +379,23 @@ export function FlowStateMixCompare({
               <motion.button
                 className={cn(
                   "flex-1 max-w-xs p-4 rounded-lg border-2 transition-all",
-                  activeMix === 'B' 
-                    ? "border-orange-500 bg-orange-500/10" 
-                    : "border-zinc-700 bg-zinc-900 hover:border-zinc-600"
+                  activeMix === "B"
+                    ? "border-orange-500 bg-orange-500/10"
+                    : "border-zinc-700 bg-zinc-900 hover:border-zinc-600",
                 )}
-                onClick={() => setActiveMix('B')}
+                onClick={() => setActiveMix("B")}
                 whileTap={{ scale: 0.98 }}
               >
                 <div className="flex items-center justify-between mb-2">
-                  <Badge className={cn(
-                    "text-lg px-3",
-                    activeMix === 'B' ? "bg-orange-500" : "bg-zinc-700"
-                  )}>
+                  <Badge
+                    className={cn(
+                      "text-lg px-3",
+                      activeMix === "B" ? "bg-orange-500" : "bg-zinc-700",
+                    )}
+                  >
                     B
                   </Badge>
-                  {activeMix === 'B' && (
+                  {activeMix === "B" && (
                     <motion.div
                       initial={{ scale: 0 }}
                       animate={{ scale: 1 }}
@@ -385,9 +407,7 @@ export function FlowStateMixCompare({
                 <p className="text-xs text-zinc-500 text-left mt-1">
                   {mixBData?.lufs.toFixed(1)} LUFS
                   {loudnessMatch && getLoudnessDiff() !== 0 && (
-                    <span className="text-yellow-400 ml-1">
-                      (matched)
-                    </span>
+                    <span className="text-yellow-400 ml-1">(matched)</span>
                   )}
                 </p>
               </motion.button>
@@ -397,12 +417,17 @@ export function FlowStateMixCompare({
             {mixAData && mixBData && (
               <div className="mt-4 text-center">
                 <p className="text-sm text-zinc-400">
-                  Loudness difference: 
-                  <span className={cn(
-                    "font-mono ml-2",
-                    Math.abs(getLoudnessDiff()) < 1 ? "text-green-400" : "text-yellow-400"
-                  )}>
-                    {getLoudnessDiff() > 0 ? '+' : ''}{getLoudnessDiff().toFixed(1)} dB
+                  Loudness difference:
+                  <span
+                    className={cn(
+                      "font-mono ml-2",
+                      Math.abs(getLoudnessDiff()) < 1
+                        ? "text-green-400"
+                        : "text-yellow-400",
+                    )}
+                  >
+                    {getLoudnessDiff() > 0 ? "+" : ""}
+                    {getLoudnessDiff().toFixed(1)} dB
                   </span>
                 </p>
               </div>
@@ -415,21 +440,25 @@ export function FlowStateMixCompare({
               {/* Waveform A */}
               <div className="flex-1 mb-2">
                 <div className="flex items-center justify-between mb-1">
-                  <span className="text-xs text-zinc-400">Mix A: {mixAData?.name}</span>
+                  <span className="text-xs text-zinc-400">
+                    Mix A: {mixAData?.name}
+                  </span>
                   <Badge variant="secondary" className="text-xs">
                     {mixAData?.lufs.toFixed(1)} LUFS
                   </Badge>
                 </div>
-                <div className={cn(
-                  "h-20 bg-zinc-900 rounded-lg flex items-center px-2 relative",
-                  activeMix === 'A' && "ring-2 ring-cyan-500"
-                )}>
+                <div
+                  className={cn(
+                    "h-20 bg-zinc-900 rounded-lg flex items-center px-2 relative",
+                    activeMix === "A" && "ring-2 ring-cyan-500",
+                  )}
+                >
                   {mixAData?.waveform.map((v, i) => (
                     <div
                       key={i}
                       className={cn(
                         "flex-1 mx-px rounded-sm transition-colors",
-                        activeMix === 'A' ? "bg-cyan-500" : "bg-cyan-800"
+                        activeMix === "A" ? "bg-cyan-500" : "bg-cyan-800",
                       )}
                       style={{ height: `${v * 100}%` }}
                     />
@@ -438,7 +467,9 @@ export function FlowStateMixCompare({
                   {isPlaying && (
                     <div
                       className="absolute top-0 bottom-0 w-0.5 bg-white"
-                      style={{ left: `${(currentTime / (activeMixData?.duration || 210)) * 100}%` }}
+                      style={{
+                        left: `${(currentTime / (activeMixData?.duration || 210)) * 100}%`,
+                      }}
                     />
                   )}
                 </div>
@@ -447,21 +478,25 @@ export function FlowStateMixCompare({
               {/* Waveform B */}
               <div className="flex-1 mt-2">
                 <div className="flex items-center justify-between mb-1">
-                  <span className="text-xs text-zinc-400">Mix B: {mixBData?.name}</span>
+                  <span className="text-xs text-zinc-400">
+                    Mix B: {mixBData?.name}
+                  </span>
                   <Badge variant="secondary" className="text-xs">
                     {mixBData?.lufs.toFixed(1)} LUFS
                   </Badge>
                 </div>
-                <div className={cn(
-                  "h-20 bg-zinc-900 rounded-lg flex items-center px-2 relative",
-                  activeMix === 'B' && "ring-2 ring-orange-500"
-                )}>
+                <div
+                  className={cn(
+                    "h-20 bg-zinc-900 rounded-lg flex items-center px-2 relative",
+                    activeMix === "B" && "ring-2 ring-orange-500",
+                  )}
+                >
                   {mixBData?.waveform.map((v, i) => (
                     <div
                       key={i}
                       className={cn(
                         "flex-1 mx-px rounded-sm transition-colors",
-                        activeMix === 'B' ? "bg-orange-500" : "bg-orange-800"
+                        activeMix === "B" ? "bg-orange-500" : "bg-orange-800",
                       )}
                       style={{ height: `${v * 100}%` }}
                     />
@@ -469,7 +504,9 @@ export function FlowStateMixCompare({
                   {isPlaying && (
                     <div
                       className="absolute top-0 bottom-0 w-0.5 bg-white"
-                      style={{ left: `${(currentTime / (activeMixData?.duration || 210)) * 100}%` }}
+                      style={{
+                        left: `${(currentTime / (activeMixData?.duration || 210)) * 100}%`,
+                      }}
                     />
                   )}
                 </div>
@@ -484,21 +521,32 @@ export function FlowStateMixCompare({
               <div className="flex items-center gap-3">
                 <Button
                   size="icon"
-                  variant={isPlaying ? 'default' : 'outline'}
-                  className={cn("h-10 w-10", isPlaying && "bg-green-500 hover:bg-green-600")}
+                  variant={isPlaying ? "default" : "outline"}
+                  className={cn(
+                    "h-10 w-10",
+                    isPlaying && "bg-green-500 hover:bg-green-600",
+                  )}
                   onClick={() => setIsPlaying(!isPlaying)}
                 >
-                  {isPlaying ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5" />}
+                  {isPlaying ? (
+                    <Pause className="w-5 h-5" />
+                  ) : (
+                    <Play className="w-5 h-5" />
+                  )}
                 </Button>
                 <Button
                   size="icon"
                   variant="outline"
-                  onClick={() => { setIsPlaying(false); setCurrentTime(0); }}
+                  onClick={() => {
+                    setIsPlaying(false);
+                    setCurrentTime(0);
+                  }}
                 >
                   <RotateCcw className="w-4 h-4" />
                 </Button>
                 <span className="font-mono text-sm">
-                  {formatTime(currentTime)} / {formatTime(activeMixData?.duration || 210)}
+                  {formatTime(currentTime)} /{" "}
+                  {formatTime(activeMixData?.duration || 210)}
                 </span>
               </div>
 
@@ -509,7 +557,11 @@ export function FlowStateMixCompare({
                   variant="ghost"
                   onClick={() => setMuted(!muted)}
                 >
-                  {muted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
+                  {muted ? (
+                    <VolumeX className="w-4 h-4" />
+                  ) : (
+                    <Volume2 className="w-4 h-4" />
+                  )}
                 </Button>
                 <Slider
                   value={volume}
@@ -527,11 +579,19 @@ export function FlowStateMixCompare({
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-6">
                 <div className="flex items-center gap-2">
-                  <Switch checked={loudnessMatch} onCheckedChange={setLoudnessMatch} />
-                  <Label className="text-sm text-zinc-400">Loudness Match</Label>
+                  <Switch
+                    checked={loudnessMatch}
+                    onCheckedChange={setLoudnessMatch}
+                  />
+                  <Label className="text-sm text-zinc-400">
+                    Loudness Match
+                  </Label>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Switch checked={autoSwitch} onCheckedChange={setAutoSwitch} />
+                  <Switch
+                    checked={autoSwitch}
+                    onCheckedChange={setAutoSwitch}
+                  />
                   <Label className="text-sm text-zinc-400">Auto Switch</Label>
                 </div>
                 {autoSwitch && (
@@ -540,7 +600,9 @@ export function FlowStateMixCompare({
                     <Input
                       type="number"
                       value={autoSwitchInterval[0]}
-                      onChange={(e) => setAutoSwitchInterval([parseInt(e.target.value) || 4])}
+                      onChange={(e) =>
+                        setAutoSwitchInterval([parseInt(e.target.value) || 4])
+                      }
                       className="w-14 h-7 bg-zinc-900 border-zinc-700 text-center"
                     />
                     <Label className="text-sm text-zinc-400">sec</Label>
@@ -549,9 +611,19 @@ export function FlowStateMixCompare({
               </div>
 
               <div className="text-sm text-zinc-500">
-                Press <kbd className="px-1.5 py-0.5 bg-zinc-800 rounded text-xs">Space</kbd> to play,{' '}
-                <kbd className="px-1.5 py-0.5 bg-zinc-800 rounded text-xs">A</kbd> /{' '}
-                <kbd className="px-1.5 py-0.5 bg-zinc-800 rounded text-xs">B</kbd> to switch
+                Press{" "}
+                <kbd className="px-1.5 py-0.5 bg-zinc-800 rounded text-xs">
+                  Space
+                </kbd>{" "}
+                to play,{" "}
+                <kbd className="px-1.5 py-0.5 bg-zinc-800 rounded text-xs">
+                  A
+                </kbd>{" "}
+                /{" "}
+                <kbd className="px-1.5 py-0.5 bg-zinc-800 rounded text-xs">
+                  B
+                </kbd>{" "}
+                to switch
               </div>
             </div>
           </div>

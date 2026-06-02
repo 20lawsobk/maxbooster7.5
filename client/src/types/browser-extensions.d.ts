@@ -1,5 +1,5 @@
 interface FileSystemFileHandle {
-  readonly kind: 'file';
+  readonly kind: "file";
   readonly name: string;
   getFile(): Promise<File>;
 }
@@ -14,7 +14,9 @@ interface FileSystemOpenPickerOptions {
 }
 
 interface Window {
-  showOpenFilePicker(options?: FileSystemOpenPickerOptions): Promise<FileSystemFileHandle[]>;
+  showOpenFilePicker(
+    options?: FileSystemOpenPickerOptions,
+  ): Promise<FileSystemFileHandle[]>;
 }
 
 interface Document {

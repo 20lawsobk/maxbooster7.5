@@ -1,7 +1,13 @@
-import React, { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  type ReactNode,
+} from "react";
 
-type Theme = 'light' | 'dark' | 'system';
-type ResolvedTheme = 'light' | 'dark';
+type Theme = "light" | "dark" | "system";
+type ResolvedTheme = "light" | "dark";
 
 interface ThemeContextType {
   theme: Theme;
@@ -12,28 +18,30 @@ interface ThemeContextType {
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
-const STORAGE_KEY = 'max-booster-theme';
+const STORAGE_KEY = "max-booster-theme";
 
 function getSystemTheme(): ResolvedTheme {
-  if (typeof window !== 'undefined' && window.matchMedia) {
-    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  if (typeof window !== "undefined" && window.matchMedia) {
+    return window.matchMedia("(prefers-color-scheme: dark)").matches
+      ? "dark"
+      : "light";
   }
-  return 'light';
+  return "light";
 }
 
 function getStoredTheme(): Theme {
-  if (typeof window !== 'undefined') {
+  if (typeof window !== "undefined") {
     const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored === 'light' || stored === 'dark' || stored === 'system') {
+    if (stored === "light" || stored === "dark" || stored === "system") {
       return stored;
     }
   }
-  return 'dark';
+  return "dark";
 }
 
 function applyTheme(resolvedTheme: ResolvedTheme) {
   const root = document.documentElement;
-  root.classList.remove('light', 'dark');
+  root.classList.remove("light", "dark");
   root.classList.add(resolvedTheme);
 }
 
@@ -41,27 +49,27 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   const [theme, setThemeState] = useState<Theme>(() => getStoredTheme());
   const [resolvedTheme, setResolvedTheme] = useState<ResolvedTheme>(() => {
     const stored = getStoredTheme();
-    return stored === 'system' ? getSystemTheme() : stored;
+    return stored === "system" ? getSystemTheme() : stored;
   });
 
   useEffect(() => {
-    const newResolved = theme === 'system' ? getSystemTheme() : theme;
+    const newResolved = theme === "system" ? getSystemTheme() : theme;
     setResolvedTheme(newResolved);
     applyTheme(newResolved);
   }, [theme]);
 
   useEffect(() => {
-    if (theme !== 'system') return;
+    if (theme !== "system") return;
 
-    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
     const handleChange = (e: MediaQueryListEvent) => {
-      const newResolved = e.matches ? 'dark' : 'light';
+      const newResolved = e.matches ? "dark" : "light";
       setResolvedTheme(newResolved);
       applyTheme(newResolved);
     };
 
-    mediaQuery.addEventListener('change', handleChange);
-    return () => mediaQuery.removeEventListener('change', handleChange);
+    mediaQuery.addEventListener("change", handleChange);
+    return () => mediaQuery.removeEventListener("change", handleChange);
   }, [theme]);
 
   const setTheme = (newTheme: Theme) => {
@@ -70,12 +78,15 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   };
 
   const toggleTheme = () => {
-    const next: Theme = theme === 'light' ? 'dark' : theme === 'dark' ? 'system' : 'light';
+    const next: Theme =
+      theme === "light" ? "dark" : theme === "dark" ? "system" : "light";
     setTheme(next);
   };
 
   return (
-    <ThemeContext.Provider value={{ theme, resolvedTheme, setTheme, toggleTheme }}>
+    <ThemeContext.Provider
+      value={{ theme, resolvedTheme, setTheme, toggleTheme }}
+    >
       {children}
     </ThemeContext.Provider>
   );
@@ -84,7 +95,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
 export function useTheme(): ThemeContextType {
   const context = useContext(ThemeContext);
   if (context === undefined) {
-    throw new Error('useTheme must be used within a ThemeProvider');
+    throw new Error("useTheme must be used within a ThemeProvider");
   }
   return context;
 }

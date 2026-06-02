@@ -1,20 +1,23 @@
-import { randomBytes } from 'crypto';
+import { randomBytes } from "crypto";
 /**
  * Simulation API Routes
- * 
+ *
  * Provides endpoints for running and monitoring real-life simulations
  * to test Max Booster systems before launch
  */
 
-import { Router, Request, Response } from 'express';
-import { 
-  RealLifeSimulationEngine, 
+import { Router, Request, Response } from "express";
+import {
+  RealLifeSimulationEngine,
   SIMULATION_PERIODS,
-  runFullLifecycleSimulation 
-} from '../simulations/realLifeSimulation';
-import { EventGenerator, INDUSTRY_BENCHMARKS } from '../simulations/eventGenerators';
-import { logger } from '../logger.js';
-import { requireAdmin } from '../middleware/auth.js';
+  runFullLifecycleSimulation,
+} from "../simulations/realLifeSimulation";
+import {
+  EventGenerator,
+  INDUSTRY_BENCHMARKS,
+} from "../simulations/eventGenerators";
+import { logger } from "../logger.js";
+import { requireAdmin } from "../middleware/auth.js";
 
 const router = Router();
 
@@ -31,20 +34,23 @@ const simulationResultTimestamps: Map<string, number> = new Map();
 // Without this, simulationResults/Logs only shrink when the user explicitly
 // calls DELETE — at 90M scale users frequently abandon results.
 const SIM_RESULT_TTL_MS = 60 * 60 * 1000;
-setInterval(() => {
-  const cutoff = Date.now() - SIM_RESULT_TTL_MS;
-  for (const [id, ts] of simulationResultTimestamps) {
-    if (ts < cutoff) {
-      simulationResults.delete(id);
-      simulationLogs.delete(id);
-      simulationResultTimestamps.delete(id);
+setInterval(
+  () => {
+    const cutoff = Date.now() - SIM_RESULT_TTL_MS;
+    for (const [id, ts] of simulationResultTimestamps) {
+      if (ts < cutoff) {
+        simulationResults.delete(id);
+        simulationLogs.delete(id);
+        simulationResultTimestamps.delete(id);
+      }
     }
-  }
-}, 15 * 60 * 1000).unref();
+  },
+  15 * 60 * 1000,
+).unref();
 
 // Generate unique simulation ID
 function generateSimulationId(): string {
-  return `sim_${Date.now()}_${randomBytes(3).toString('hex')}`;
+  return `sim_${Date.now()}_${randomBytes(3).toString("hex")}`;
 }
 
 // Time acceleration: 98% acceleration = 0.48 seconds per simulated day
@@ -52,34 +58,34 @@ const REAL_SECONDS_PER_DAY = 0.48;
 
 function getPeroidDescription(name: string): string {
   const descriptions: Record<string, string> = {
-    '1_month': 'Quick validation test - basic user flows and payments',
-    '3_months': 'Short-term test - seasonal patterns and user retention',
-    '6_months': 'Medium-term test - growth trends and churn analysis',
-    '1_year': 'Annual cycle test - full seasonal patterns and revenue trends',
-    '3_years': 'Growth phase test - market expansion and scaling',
-    '6_years': 'Maturity test - sustainable growth and market position',
-    '10_years': 'Long-term viability - technology shifts and adaptation',
-    '14_years': 'Extended lifecycle - multi-generation platform evolution',
-    '18_years': 'Durability test - long-term market dynamics',
-    '22_years': 'Legacy test - platform longevity and relevance',
-    '26_years': 'Generational test - cross-generational user patterns',
-    '30_years': 'Era test - industry transformation scenarios',
-    '34_years': 'Extended era test - multiple market cycles',
-    '38_years': 'Historical scale test - long-term economic patterns',
-    '42_years': 'Multi-decade test - comprehensive lifecycle',
-    '46_years': 'Near-maximum test - extreme longevity scenarios',
-    '50_years': 'Full lifecycle test - complete platform lifespan simulation',
+    "1_month": "Quick validation test - basic user flows and payments",
+    "3_months": "Short-term test - seasonal patterns and user retention",
+    "6_months": "Medium-term test - growth trends and churn analysis",
+    "1_year": "Annual cycle test - full seasonal patterns and revenue trends",
+    "3_years": "Growth phase test - market expansion and scaling",
+    "6_years": "Maturity test - sustainable growth and market position",
+    "10_years": "Long-term viability - technology shifts and adaptation",
+    "14_years": "Extended lifecycle - multi-generation platform evolution",
+    "18_years": "Durability test - long-term market dynamics",
+    "22_years": "Legacy test - platform longevity and relevance",
+    "26_years": "Generational test - cross-generational user patterns",
+    "30_years": "Era test - industry transformation scenarios",
+    "34_years": "Extended era test - multiple market cycles",
+    "38_years": "Historical scale test - long-term economic patterns",
+    "42_years": "Multi-decade test - comprehensive lifecycle",
+    "46_years": "Near-maximum test - extreme longevity scenarios",
+    "50_years": "Full lifecycle test - complete platform lifespan simulation",
   };
-  return descriptions[name] || 'Simulation period';
+  return descriptions[name] || "Simulation period";
 }
 
 // GET /api/simulation/periods - Get available simulation periods
-router.get('/periods', (req: Request, res: Response) => {
+router.get("/periods", (req: Request, res: Response) => {
   try {
     const periods = Object.entries(SIMULATION_PERIODS).map(([name, days]) => ({
       name,
       days,
-      estimatedRealTime: `${Math.ceil(days * REAL_SECONDS_PER_DAY / 60)} minutes`,
+      estimatedRealTime: `${Math.ceil((days * REAL_SECONDS_PER_DAY) / 60)} minutes`,
       description: getPeroidDescription(name),
     }));
 
@@ -91,29 +97,33 @@ router.get('/periods', (req: Request, res: Response) => {
       realSecondsPerDay: REAL_SECONDS_PER_DAY,
     });
   } catch (error) {
-    logger.warn({ err: error }, 'Error fetching simulation periods:');
-    res.status(500).json({ success: false, error: 'Failed to fetch simulation periods' });
+    logger.warn({ err: error }, "Error fetching simulation periods:");
+    res
+      .status(500)
+      .json({ success: false, error: "Failed to fetch simulation periods" });
   }
 });
 
 // GET /api/simulation/benchmarks - Get industry benchmarks
-router.get('/benchmarks', (req: Request, res: Response) => {
+router.get("/benchmarks", (req: Request, res: Response) => {
   try {
     res.json({
       success: true,
       benchmarks: INDUSTRY_BENCHMARKS,
     });
   } catch (error) {
-    logger.warn({ err: error }, 'Error fetching benchmarks:');
-    res.status(500).json({ success: false, error: 'Failed to fetch benchmarks' });
+    logger.warn({ err: error }, "Error fetching benchmarks:");
+    res
+      .status(500)
+      .json({ success: false, error: "Failed to fetch benchmarks" });
   }
 });
 
 // POST /api/simulation/start - Start a new simulation
-router.post('/start', async (req: Request, res: Response) => {
+router.post("/start", async (req: Request, res: Response) => {
   try {
     const {
-      periodName = '1_month',
+      periodName = "1_month",
       initialUsers = 100,
       initialReleases = 50,
       seedMoney = 10000,
@@ -125,15 +135,16 @@ router.post('/start', async (req: Request, res: Response) => {
     if (!SIMULATION_PERIODS[periodName as keyof typeof SIMULATION_PERIODS]) {
       return res.status(400).json({
         success: false,
-        error: `Invalid period. Valid options: ${Object.keys(SIMULATION_PERIODS).join(', ')}`,
+        error: `Invalid period. Valid options: ${Object.keys(SIMULATION_PERIODS).join(", ")}`,
       });
     }
 
     const simulationId = generateSimulationId();
-    
+
     const simulation = new RealLifeSimulationEngine({
       periodName: periodName as keyof typeof SIMULATION_PERIODS,
-      daysToSimulate: SIMULATION_PERIODS[periodName as keyof typeof SIMULATION_PERIODS],
+      daysToSimulate:
+        SIMULATION_PERIODS[periodName as keyof typeof SIMULATION_PERIODS],
       initialUsers,
       initialReleases,
       seedMoney,
@@ -141,28 +152,40 @@ router.post('/start', async (req: Request, res: Response) => {
       enableSystemFailures,
       enableMarketFluctuations,
       realTimeTracking: true,
-      snapshotIntervalDays: Math.max(1, Math.floor(SIMULATION_PERIODS[periodName as keyof typeof SIMULATION_PERIODS] / 30)),
+      snapshotIntervalDays: Math.max(
+        1,
+        Math.floor(
+          SIMULATION_PERIODS[periodName as keyof typeof SIMULATION_PERIODS] /
+            30,
+        ),
+      ),
     });
 
     activeSimulations.set(simulationId, simulation);
     simulationLogs.set(simulationId, []);
 
-    simulation.on('event', (event) => {
+    simulation.on("event", (event) => {
       const logs = simulationLogs.get(simulationId) || [];
-      logs.push(`[${event.simulatedTime.toISOString()}] ${event.type}: ${JSON.stringify(event.data)}`);
+      logs.push(
+        `[${event.simulatedTime.toISOString()}] ${event.type}: ${JSON.stringify(event.data)}`,
+      );
       if (logs.length > 1000) logs.shift();
       simulationLogs.set(simulationId, logs);
     });
 
-    simulation.on('progress', (progress) => {
-      logger.debug(`[SIM ${simulationId}] Day ${progress.day}/${progress.totalDays} (${progress.percentComplete.toFixed(1)}%)`);
+    simulation.on("progress", (progress) => {
+      logger.debug(
+        `[SIM ${simulationId}] Day ${progress.day}/${progress.totalDays} (${progress.percentComplete.toFixed(1)}%)`,
+      );
     });
 
-    simulation.on('snapshot', (snapshot) => {
-      logger.info(`[SIM ${simulationId}] Snapshot at day ${snapshot.dayNumber}`);
+    simulation.on("snapshot", (snapshot) => {
+      logger.info(
+        `[SIM ${simulationId}] Snapshot at day ${snapshot.dayNumber}`,
+      );
     });
 
-    simulation.on('complete', (result) => {
+    simulation.on("complete", (result) => {
       simulationResults.set(simulationId, result);
       simulationResultTimestamps.set(simulationId, Date.now());
       activeSimulations.delete(simulationId);
@@ -189,27 +212,27 @@ router.post('/start', async (req: Request, res: Response) => {
         enableSystemFailures,
         enableMarketFluctuations,
       },
-      estimatedRealTime: `${Math.ceil(SIMULATION_PERIODS[periodName as keyof typeof SIMULATION_PERIODS] * 0.02 * 24 / 60)} minutes`,
-      message: 'Simulation started. Use /api/simulation/status/:id to track progress.',
+      estimatedRealTime: `${Math.ceil((SIMULATION_PERIODS[periodName as keyof typeof SIMULATION_PERIODS] * 0.02 * 24) / 60)} minutes`,
+      message:
+        "Simulation started. Use /api/simulation/status/:id to track progress.",
     });
-
   } catch (error) {
-    logger.warn({ err: error }, 'Failed to start simulation:');
-    res.status(500).json({ success: false, error: 'Internal server error' });
+    logger.warn({ err: error }, "Failed to start simulation:");
+    res.status(500).json({ success: false, error: "Internal server error" });
   }
 });
 
 // POST /api/simulation/start-full - Start full 50-year lifecycle simulation
-router.post('/start-full', async (req: Request, res: Response) => {
+router.post("/start-full", async (req: Request, res: Response) => {
   try {
     const simulationId = `full_${Date.now()}`;
-    
+
     res.json({
       success: true,
       simulationId,
-      message: 'Full lifecycle simulation starting in background',
+      message: "Full lifecycle simulation starting in background",
       periods: Object.keys(SIMULATION_PERIODS),
-      estimatedTotalTime: 'Several hours at 98% acceleration',
+      estimatedTotalTime: "Several hours at 98% acceleration",
     });
 
     runFullLifecycleSimulation()
@@ -223,15 +246,14 @@ router.post('/start-full', async (req: Request, res: Response) => {
         simulationResults.set(simulationId, { error: error.message });
         simulationResultTimestamps.set(simulationId, Date.now());
       });
-
   } catch (error) {
-    logger.warn({ err: error }, 'Failed to start full simulation:');
-    res.status(500).json({ success: false, error: 'Internal server error' });
+    logger.warn({ err: error }, "Failed to start full simulation:");
+    res.status(500).json({ success: false, error: "Internal server error" });
   }
 });
 
 // GET /api/simulation/status/:id - Get simulation status
-router.get('/status/:id', (req: Request, res: Response) => {
+router.get("/status/:id", (req: Request, res: Response) => {
   try {
     const { id } = req.params;
 
@@ -240,7 +262,7 @@ router.get('/status/:id', (req: Request, res: Response) => {
       const status = simulation.getStatus();
       return res.json({
         success: true,
-        status: 'running',
+        status: "running",
         ...status,
         recentLogs: (simulationLogs.get(id) || []).slice(-50),
       });
@@ -250,7 +272,7 @@ router.get('/status/:id', (req: Request, res: Response) => {
     if (result) {
       return res.json({
         success: true,
-        status: 'completed',
+        status: "completed",
         result: {
           ...result,
           allEvents: undefined,
@@ -259,15 +281,17 @@ router.get('/status/:id', (req: Request, res: Response) => {
       });
     }
 
-    res.status(404).json({ success: false, error: 'Simulation not found' });
+    res.status(404).json({ success: false, error: "Simulation not found" });
   } catch (error) {
-    logger.warn({ err: error }, 'Error fetching simulation status:');
-    res.status(500).json({ success: false, error: 'Failed to fetch simulation status' });
+    logger.warn({ err: error }, "Error fetching simulation status:");
+    res
+      .status(500)
+      .json({ success: false, error: "Failed to fetch simulation status" });
   }
 });
 
 // GET /api/simulation/metrics/:id - Get real-time metrics
-router.get('/metrics/:id', (req: Request, res: Response) => {
+router.get("/metrics/:id", (req: Request, res: Response) => {
   try {
     const { id } = req.params;
 
@@ -293,15 +317,17 @@ router.get('/metrics/:id', (req: Request, res: Response) => {
       });
     }
 
-    res.status(404).json({ success: false, error: 'Simulation not found' });
+    res.status(404).json({ success: false, error: "Simulation not found" });
   } catch (error) {
-    logger.warn({ err: error }, 'Error fetching simulation metrics:');
-    res.status(500).json({ success: false, error: 'Failed to fetch simulation metrics' });
+    logger.warn({ err: error }, "Error fetching simulation metrics:");
+    res
+      .status(500)
+      .json({ success: false, error: "Failed to fetch simulation metrics" });
   }
 });
 
 // GET /api/simulation/snapshots/:id - Get simulation snapshots
-router.get('/snapshots/:id', (req: Request, res: Response) => {
+router.get("/snapshots/:id", (req: Request, res: Response) => {
   try {
     const { id } = req.params;
 
@@ -323,15 +349,19 @@ router.get('/snapshots/:id', (req: Request, res: Response) => {
       });
     }
 
-    res.status(404).json({ success: false, error: 'Simulation snapshots not found' });
+    res
+      .status(404)
+      .json({ success: false, error: "Simulation snapshots not found" });
   } catch (error) {
-    logger.warn({ err: error }, 'Error fetching simulation snapshots:');
-    res.status(500).json({ success: false, error: 'Failed to fetch simulation snapshots' });
+    logger.warn({ err: error }, "Error fetching simulation snapshots:");
+    res
+      .status(500)
+      .json({ success: false, error: "Failed to fetch simulation snapshots" });
   }
 });
 
 // GET /api/simulation/events/:id - Get simulation events
-router.get('/events/:id', (req: Request, res: Response) => {
+router.get("/events/:id", (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const { category, impact, limit = 100 } = req.query;
@@ -341,10 +371,14 @@ router.get('/events/:id', (req: Request, res: Response) => {
       let events = result.allEvents;
 
       if (category) {
-        events = events.filter((e: Record<string, unknown>) => e.category === category);
+        events = events.filter(
+          (e: Record<string, unknown>) => e.category === category,
+        );
       }
       if (impact) {
-        events = events.filter((e: Record<string, unknown>) => e.impact === impact);
+        events = events.filter(
+          (e: Record<string, unknown>) => e.impact === impact,
+        );
       }
 
       const limitNum = Math.min(parseInt(limit as string) || 100, 1000);
@@ -362,56 +396,70 @@ router.get('/events/:id', (req: Request, res: Response) => {
     if (logs) {
       return res.json({
         success: true,
-        status: 'running',
-        recentEvents: logs.slice(-Math.min(Math.max(parseInt(limit as string) || 100, 1), 500)),
+        status: "running",
+        recentEvents: logs.slice(
+          -Math.min(Math.max(parseInt(limit as string) || 100, 1), 500),
+        ),
       });
     }
 
-    res.status(404).json({ success: false, error: 'Simulation events not found' });
+    res
+      .status(404)
+      .json({ success: false, error: "Simulation events not found" });
   } catch (error) {
-    logger.warn({ err: error }, 'Error fetching simulation events:');
-    res.status(500).json({ success: false, error: 'Failed to fetch simulation events' });
+    logger.warn({ err: error }, "Error fetching simulation events:");
+    res
+      .status(500)
+      .json({ success: false, error: "Failed to fetch simulation events" });
   }
 });
 
 // POST /api/simulation/pause/:id - Pause simulation
-router.post('/pause/:id', (req: Request, res: Response) => {
+router.post("/pause/:id", (req: Request, res: Response) => {
   try {
     const { id } = req.params;
 
     const simulation = activeSimulations.get(id);
     if (simulation) {
       simulation.pause();
-      return res.json({ success: true, message: 'Simulation paused' });
+      return res.json({ success: true, message: "Simulation paused" });
     }
 
-    res.status(404).json({ success: false, error: 'Simulation not found or not running' });
+    res
+      .status(404)
+      .json({ success: false, error: "Simulation not found or not running" });
   } catch (error) {
-    logger.warn({ err: error }, 'Error pausing simulation:');
-    res.status(500).json({ success: false, error: 'Failed to pause simulation' });
+    logger.warn({ err: error }, "Error pausing simulation:");
+    res
+      .status(500)
+      .json({ success: false, error: "Failed to pause simulation" });
   }
 });
 
 // POST /api/simulation/resume/:id - Resume simulation
-router.post('/resume/:id', (req: Request, res: Response) => {
+router.post("/resume/:id", (req: Request, res: Response) => {
   try {
     const { id } = req.params;
 
     const simulation = activeSimulations.get(id);
     if (simulation) {
       simulation.resume();
-      return res.json({ success: true, message: 'Simulation resumed' });
+      return res.json({ success: true, message: "Simulation resumed" });
     }
 
-    res.status(404).json({ success: false, error: 'Simulation not found or not running' });
+    res
+      .status(404)
+      .json({ success: false, error: "Simulation not found or not running" });
   } catch (error) {
-    logger.warn({ err: error }, 'Error resuming simulation:');
-    res.status(500).json({ success: false, error: 'Failed to resume simulation' });
+    logger.warn({ err: error }, "Error resuming simulation:");
+    res
+      .status(500)
+      .json({ success: false, error: "Failed to resume simulation" });
   }
 });
 
 // POST /api/simulation/stop/:id - Stop simulation
-router.post('/stop/:id', (req: Request, res: Response) => {
+router.post("/stop/:id", (req: Request, res: Response) => {
   try {
     const { id } = req.params;
 
@@ -419,18 +467,22 @@ router.post('/stop/:id', (req: Request, res: Response) => {
     if (simulation) {
       simulation.stop();
       activeSimulations.delete(id);
-      return res.json({ success: true, message: 'Simulation stopped' });
+      return res.json({ success: true, message: "Simulation stopped" });
     }
 
-    res.status(404).json({ success: false, error: 'Simulation not found or not running' });
+    res
+      .status(404)
+      .json({ success: false, error: "Simulation not found or not running" });
   } catch (error) {
-    logger.warn({ err: error }, 'Error stopping simulation:');
-    res.status(500).json({ success: false, error: 'Failed to stop simulation' });
+    logger.warn({ err: error }, "Error stopping simulation:");
+    res
+      .status(500)
+      .json({ success: false, error: "Failed to stop simulation" });
   }
 });
 
 // GET /api/simulation/results/:id - Get final results
-router.get('/results/:id', (req: Request, res: Response) => {
+router.get("/results/:id", (req: Request, res: Response) => {
   try {
     const { id } = req.params;
 
@@ -456,15 +508,19 @@ router.get('/results/:id', (req: Request, res: Response) => {
       });
     }
 
-    res.status(404).json({ success: false, error: 'Simulation results not found' });
+    res
+      .status(404)
+      .json({ success: false, error: "Simulation results not found" });
   } catch (error) {
-    logger.warn({ err: error }, 'Error fetching simulation results:');
-    res.status(500).json({ success: false, error: 'Failed to fetch simulation results' });
+    logger.warn({ err: error }, "Error fetching simulation results:");
+    res
+      .status(500)
+      .json({ success: false, error: "Failed to fetch simulation results" });
   }
 });
 
 // GET /api/simulation/report/:id - Generate detailed report
-router.get('/report/:id', (req: Request, res: Response) => {
+router.get("/report/:id", (req: Request, res: Response) => {
   try {
     const { id } = req.params;
 
@@ -472,44 +528,52 @@ router.get('/report/:id', (req: Request, res: Response) => {
     if (!result || result.error) {
       return res.status(404).json({
         success: false,
-        error: 'Simulation results not found or simulation failed',
+        error: "Simulation results not found or simulation failed",
       });
     }
 
     const report = generateSimulationReport(result);
-    res.setHeader('Content-Type', 'text/markdown');
-    res.setHeader('Content-Disposition', `attachment; filename="simulation_report_${id}.md"`);
+    res.setHeader("Content-Type", "text/markdown");
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename="simulation_report_${id}.md"`,
+    );
     res.send(report);
   } catch (error) {
-    logger.warn({ err: error }, 'Error generating simulation report:');
-    res.status(500).json({ success: false, error: 'Failed to generate simulation report' });
+    logger.warn({ err: error }, "Error generating simulation report:");
+    res
+      .status(500)
+      .json({ success: false, error: "Failed to generate simulation report" });
   }
 });
 
 function safeFixed(val: Record<string, unknown>, digits: number): string {
   const n = Number(val);
-  return isNaN(n) ? '0' : n.toFixed(digits);
+  return isNaN(n) ? "0" : n.toFixed(digits);
 }
 
 function safeLocale(val: Record<string, unknown>): string {
   const n = Number(val);
-  return isNaN(n) ? '0' : n.toLocaleString();
+  return isNaN(n) ? "0" : n.toLocaleString();
 }
 
 function generateSimulationReport(result: Record<string, unknown>): string {
   const { config, finalMetrics, kpis, systemTests, recommendations } = result;
-  
-  const testStatus = (systemTests?.failed ?? 1) === 0 ? '✅ ALL TESTS PASSED' :
-                     (systemTests?.criticalIssues?.length ?? 0) > 0 ? '❌ CRITICAL ISSUES FOUND' :
-                     '⚠️ WARNINGS DETECTED';
 
-  const ltvCacRatio = (kpis?.cac ?? 0) > 0 ? (kpis.ltv / kpis.cac) : 0;
+  const testStatus =
+    (systemTests?.failed ?? 1) === 0
+      ? "✅ ALL TESTS PASSED"
+      : (systemTests?.criticalIssues?.length ?? 0) > 0
+        ? "❌ CRITICAL ISSUES FOUND"
+        : "⚠️ WARNINGS DETECTED";
+
+  const ltvCacRatio = (kpis?.cac ?? 0) > 0 ? kpis.ltv / kpis.cac : 0;
 
   return `# Max Booster Simulation Report
 
 ## Executive Summary
 
-**Period:** ${config?.periodName ?? 'Unknown'} (${config?.daysToSimulate ?? 0} simulated days)
+**Period:** ${config?.periodName ?? "Unknown"} (${config?.daysToSimulate ?? 0} simulated days)
 **Status:** ${testStatus}
 **Generated:** ${new Date().toISOString()}
 
@@ -521,10 +585,14 @@ function generateSimulationReport(result: Record<string, unknown>): string {
 |--------|--------|--------|----------|
 | System Tests | ${systemTests?.passed ?? 0} | ${systemTests?.failed ?? 0} | ${systemTests?.warnings ?? 0} |
 
-${(systemTests?.criticalIssues?.length ?? 0) > 0 ? `
+${
+  (systemTests?.criticalIssues?.length ?? 0) > 0
+    ? `
 ### Critical Issues
-${systemTests.criticalIssues.map((issue: string) => `- ❌ ${issue}`).join('\n')}
-` : ''}
+${systemTests.criticalIssues.map((issue: string) => `- ❌ ${issue}`).join("\n")}
+`
+    : ""
+}
 
 ---
 
@@ -532,15 +600,15 @@ ${systemTests.criticalIssues.map((issue: string) => `- ❌ ${issue}`).join('\n')
 
 | KPI | Value | Status |
 |-----|-------|--------|
-| User Growth Rate | ${safeFixed(kpis?.userGrowthRate, 1)}% | ${(kpis?.userGrowthRate ?? 0) > 0 ? '✅' : '❌'} |
-| Revenue Growth Rate | ${safeFixed(kpis?.revenueGrowthRate, 1)}% | ${(kpis?.revenueGrowthRate ?? 0) > 0 ? '✅' : '❌'} |
-| Churn Rate | ${safeFixed(kpis?.churnRate, 2)}% | ${(kpis?.churnRate ?? 100) < 5 ? '✅' : (kpis?.churnRate ?? 100) < 10 ? '⚠️' : '❌'} |
-| LTV | $${safeFixed(kpis?.ltv, 2)} | ${(kpis?.ltv ?? 0) > 100 ? '✅' : '⚠️'} |
-| LTV/CAC Ratio | ${safeFixed(ltvCacRatio, 2)} | ${ltvCacRatio > 3 ? '✅' : ltvCacRatio > 1 ? '⚠️' : '❌'} |
-| Viral Coefficient | ${safeFixed(kpis?.viralCoefficient, 2)} | ${(kpis?.viralCoefficient ?? 0) > 0.5 ? '✅' : '⚠️'} |
-| NPS Score | ${safeFixed(kpis?.nps, 0)} | ${(kpis?.nps ?? 0) > 50 ? '✅' : (kpis?.nps ?? 0) > 0 ? '⚠️' : '❌'} |
-| System Uptime | ${safeFixed(kpis?.systemUptime, 2)}% | ${(kpis?.systemUptime ?? 0) > 99.9 ? '✅' : (kpis?.systemUptime ?? 0) > 99 ? '⚠️' : '❌'} |
-| Autonomous Efficiency | ${safeFixed(kpis?.autonomousEfficiency, 1)}% | ${(kpis?.autonomousEfficiency ?? 0) > 90 ? '✅' : '⚠️'} |
+| User Growth Rate | ${safeFixed(kpis?.userGrowthRate, 1)}% | ${(kpis?.userGrowthRate ?? 0) > 0 ? "✅" : "❌"} |
+| Revenue Growth Rate | ${safeFixed(kpis?.revenueGrowthRate, 1)}% | ${(kpis?.revenueGrowthRate ?? 0) > 0 ? "✅" : "❌"} |
+| Churn Rate | ${safeFixed(kpis?.churnRate, 2)}% | ${(kpis?.churnRate ?? 100) < 5 ? "✅" : (kpis?.churnRate ?? 100) < 10 ? "⚠️" : "❌"} |
+| LTV | $${safeFixed(kpis?.ltv, 2)} | ${(kpis?.ltv ?? 0) > 100 ? "✅" : "⚠️"} |
+| LTV/CAC Ratio | ${safeFixed(ltvCacRatio, 2)} | ${ltvCacRatio > 3 ? "✅" : ltvCacRatio > 1 ? "⚠️" : "❌"} |
+| Viral Coefficient | ${safeFixed(kpis?.viralCoefficient, 2)} | ${(kpis?.viralCoefficient ?? 0) > 0.5 ? "✅" : "⚠️"} |
+| NPS Score | ${safeFixed(kpis?.nps, 0)} | ${(kpis?.nps ?? 0) > 50 ? "✅" : (kpis?.nps ?? 0) > 0 ? "⚠️" : "❌"} |
+| System Uptime | ${safeFixed(kpis?.systemUptime, 2)}% | ${(kpis?.systemUptime ?? 0) > 99.9 ? "✅" : (kpis?.systemUptime ?? 0) > 99 ? "⚠️" : "❌"} |
+| Autonomous Efficiency | ${safeFixed(kpis?.autonomousEfficiency, 1)}% | ${(kpis?.autonomousEfficiency ?? 0) > 90 ? "✅" : "⚠️"} |
 
 ---
 
@@ -577,17 +645,18 @@ ${systemTests.criticalIssues.map((issue: string) => `- ❌ ${issue}`).join('\n')
 
 ## Recommendations
 
-${(recommendations ?? []).map((rec: string, i: number) => `${i + 1}. ${rec}`).join('\n')}
+${(recommendations ?? []).map((rec: string, i: number) => `${i + 1}. ${rec}`).join("\n")}
 
 ---
 
 ## Conclusion
 
-${testStatus === '✅ ALL TESTS PASSED' ? 
-  'The simulation completed successfully with all systems operating within expected parameters. Max Booster is ready for launch.' :
-  testStatus === '⚠️ WARNINGS DETECTED' ?
-  'The simulation completed with some warnings. Review the recommendations above before launch.' :
-  'Critical issues were detected during simulation. These must be addressed before launch.'
+${
+  testStatus === "✅ ALL TESTS PASSED"
+    ? "The simulation completed successfully with all systems operating within expected parameters. Max Booster is ready for launch."
+    : testStatus === "⚠️ WARNINGS DETECTED"
+      ? "The simulation completed with some warnings. Review the recommendations above before launch."
+      : "Critical issues were detected during simulation. These must be addressed before launch."
 }
 
 ---
@@ -598,24 +667,28 @@ ${testStatus === '✅ ALL TESTS PASSED' ?
 }
 
 // GET /api/simulation/list - List all simulations
-router.get('/list', (req: Request, res: Response) => {
+router.get("/list", (req: Request, res: Response) => {
   try {
-    const running = Array.from(activeSimulations.entries()).map(([id, sim]) => ({
-      id,
-      status: 'running',
-      ...sim.getStatus(),
-    }));
+    const running = Array.from(activeSimulations.entries()).map(
+      ([id, sim]) => ({
+        id,
+        status: "running",
+        ...sim.getStatus(),
+      }),
+    );
 
-    const completed = Array.from(simulationResults.entries()).map(([id, result]) => ({
-      id,
-      status: result.error ? 'failed' : 'completed',
-      error: result.error,
-      periodName: result.config?.periodName,
-      finalUsers: result.finalMetrics?.users?.total,
-      finalMRR: result.finalMetrics?.revenue?.mrr,
-      testsPassed: result.systemTests?.passed,
-      testsFailed: result.systemTests?.failed,
-    }));
+    const completed = Array.from(simulationResults.entries()).map(
+      ([id, result]) => ({
+        id,
+        status: result.error ? "failed" : "completed",
+        error: result.error,
+        periodName: result.config?.periodName,
+        finalUsers: result.finalMetrics?.users?.total,
+        finalMRR: result.finalMetrics?.revenue?.mrr,
+        testsPassed: result.systemTests?.passed,
+        testsFailed: result.systemTests?.failed,
+      }),
+    );
 
     res.json({
       success: true,
@@ -624,20 +697,22 @@ router.get('/list', (req: Request, res: Response) => {
       total: running.length + completed.length,
     });
   } catch (error) {
-    logger.warn({ err: error }, 'Error listing simulations:');
-    res.status(500).json({ success: false, error: 'Failed to list simulations' });
+    logger.warn({ err: error }, "Error listing simulations:");
+    res
+      .status(500)
+      .json({ success: false, error: "Failed to list simulations" });
   }
 });
 
 // POST /api/simulation/generate-event - Generate test event
-router.post('/generate-event', (req: Request, res: Response) => {
+router.post("/generate-event", (req: Request, res: Response) => {
   try {
     const { type, params = {} } = req.body;
 
-    if (!type || typeof type !== 'string') {
+    if (!type || typeof type !== "string") {
       return res.status(400).json({
         success: false,
-        error: 'Event type is required',
+        error: "Event type is required",
       });
     }
 
@@ -645,31 +720,31 @@ router.post('/generate-event', (req: Request, res: Response) => {
 
     let event;
     switch (type) {
-      case 'user_signup':
+      case "user_signup":
         event = generator.generateUserSignupEvent(params.probability);
         break;
-      case 'market':
+      case "market":
         event = generator.generateMarketEvent();
         break;
-      case 'system':
+      case "system":
         event = generator.generateSystemEvent();
         break;
       default:
         return res.status(400).json({
           success: false,
-          error: 'Invalid event type. Valid types: user_signup, market, system',
+          error: "Invalid event type. Valid types: user_signup, market, system",
         });
     }
 
     res.json({ success: true, event });
   } catch (error) {
-    logger.warn({ err: error }, 'Error generating simulation event:');
-    res.status(500).json({ success: false, error: 'Failed to generate event' });
+    logger.warn({ err: error }, "Error generating simulation event:");
+    res.status(500).json({ success: false, error: "Failed to generate event" });
   }
 });
 
 // GET /api/simulation/:id - Get overview of a specific simulation (must be after all literal paths)
-router.get('/:id', (req: Request, res: Response) => {
+router.get("/:id", (req: Request, res: Response) => {
   try {
     const { id } = req.params;
 
@@ -678,7 +753,7 @@ router.get('/:id', (req: Request, res: Response) => {
       return res.json({
         success: true,
         id,
-        status: 'running',
+        status: "running",
         ...running.getStatus(),
         logs: simulationLogs.get(id) ?? [],
       });
@@ -689,20 +764,24 @@ router.get('/:id', (req: Request, res: Response) => {
       return res.json({
         success: true,
         id,
-        status: result.error ? 'failed' : 'completed',
+        status: result.error ? "failed" : "completed",
         result,
         logs: simulationLogs.get(id) ?? [],
       });
     }
 
-    return res.status(404).json({ success: false, error: 'Simulation not found' });
+    return res
+      .status(404)
+      .json({ success: false, error: "Simulation not found" });
   } catch (error) {
-    logger.warn({ err: error }, 'Error fetching simulation:');
-    res.status(500).json({ success: false, error: 'Failed to fetch simulation' });
+    logger.warn({ err: error }, "Error fetching simulation:");
+    res
+      .status(500)
+      .json({ success: false, error: "Failed to fetch simulation" });
   }
 });
 
-router.delete('/:id', (req: Request, res: Response) => {
+router.delete("/:id", (req: Request, res: Response) => {
   try {
     const { id } = req.params;
 
@@ -716,10 +795,12 @@ router.delete('/:id', (req: Request, res: Response) => {
     simulationLogs.delete(id);
     simulationResultTimestamps.delete(id);
 
-    res.json({ success: true, message: 'Simulation deleted' });
+    res.json({ success: true, message: "Simulation deleted" });
   } catch (error) {
-    logger.warn({ err: error }, 'Error deleting simulation:');
-    res.status(500).json({ success: false, error: 'Failed to delete simulation' });
+    logger.warn({ err: error }, "Error deleting simulation:");
+    res
+      .status(500)
+      .json({ success: false, error: "Failed to delete simulation" });
   }
 });
 

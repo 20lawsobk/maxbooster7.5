@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo, useRef, useEffect } from 'react';
+import { useState, useCallback, useMemo, useRef, useEffect } from "react";
 
 export interface SelectionItem {
   id: string;
@@ -34,18 +34,18 @@ export interface UseSelectionResult<T extends SelectionItem = SelectionItem> {
   getCheckboxProps: (id: string) => {
     checked: boolean;
     onCheckedChange: (checked: boolean) => void;
-    'aria-label': string;
+    "aria-label": string;
   };
   getSelectAllProps: () => {
     checked: boolean;
     indeterminate: boolean;
     onCheckedChange: (checked: boolean) => void;
-    'aria-label': string;
+    "aria-label": string;
   };
 }
 
 export function useSelection<T extends SelectionItem = SelectionItem>(
-  options: UseSelectionOptions<T> = {}
+  options: UseSelectionOptions<T> = {},
 ): UseSelectionResult<T> {
   const {
     items = [],
@@ -62,102 +62,123 @@ export function useSelection<T extends SelectionItem = SelectionItem>(
         if (stored) {
           return new Set(JSON.parse(stored));
         }
-      } catch {
-      }
+      } catch {}
     }
     return new Set(initialSelection);
   });
 
   const lastSelectedRef = useRef<string | null>(null);
-  const itemIds = useMemo(() => items.map(item => item.id), [items]);
+  const itemIds = useMemo(() => items.map((item) => item.id), [items]);
 
   useEffect(() => {
     if (persistKey) {
       try {
-        localStorage.setItem(`selection-${persistKey}`, JSON.stringify(Array.from(selectedIds)));
-      } catch {
-      }
+        localStorage.setItem(
+          `selection-${persistKey}`,
+          JSON.stringify(Array.from(selectedIds)),
+        );
+      } catch {}
     }
   }, [selectedIds, persistKey]);
 
-  const updateSelection = useCallback((newSelection: Set<string>) => {
-    setSelectedIds(newSelection);
-    if (onSelectionChange) {
-      const selectedItems = items.filter(item => newSelection.has(item.id));
-      onSelectionChange(Array.from(newSelection), selectedItems);
-    }
-  }, [items, onSelectionChange]);
+  const updateSelection = useCallback(
+    (newSelection: Set<string>) => {
+      setSelectedIds(newSelection);
+      if (onSelectionChange) {
+        const selectedItems = items.filter((item) => newSelection.has(item.id));
+        onSelectionChange(Array.from(newSelection), selectedItems);
+      }
+    },
+    [items, onSelectionChange],
+  );
 
   const selectedItems = useMemo(() => {
-    return items.filter(item => selectedIds.has(item.id));
+    return items.filter((item) => selectedIds.has(item.id));
   }, [items, selectedIds]);
 
   const selectedCount = useMemo(() => selectedIds.size, [selectedIds]);
 
   const isAllSelected = useMemo(() => {
-    return itemIds.length > 0 && itemIds.every(id => selectedIds.has(id));
+    return itemIds.length > 0 && itemIds.every((id) => selectedIds.has(id));
   }, [itemIds, selectedIds]);
 
   const isSomeSelected = useMemo(() => {
-    const count = itemIds.filter(id => selectedIds.has(id)).length;
+    const count = itemIds.filter((id) => selectedIds.has(id)).length;
     return count > 0 && count < itemIds.length;
   }, [itemIds, selectedIds]);
 
-  const isSelected = useCallback((id: string) => selectedIds.has(id), [selectedIds]);
+  const isSelected = useCallback(
+    (id: string) => selectedIds.has(id),
+    [selectedIds],
+  );
 
-  const select = useCallback((id: string) => {
-    if (maxSelection && selectedIds.size >= maxSelection) return;
-    const next = new Set(selectedIds);
-    next.add(id);
-    lastSelectedRef.current = id;
-    updateSelection(next);
-  }, [selectedIds, maxSelection, updateSelection]);
-
-  const deselect = useCallback((id: string) => {
-    const next = new Set(selectedIds);
-    next.delete(id);
-    updateSelection(next);
-  }, [selectedIds, updateSelection]);
-
-  const toggle = useCallback((id: string) => {
-    if (selectedIds.has(id)) {
-      deselect(id);
-    } else {
-      select(id);
-    }
-  }, [selectedIds, select, deselect]);
-
-  const selectRange = useCallback((startId: string, endId: string) => {
-    const startIndex = itemIds.indexOf(startId);
-    const endIndex = itemIds.indexOf(endId);
-
-    if (startIndex === -1 || endIndex === -1) return;
-
-    const [from, to] = startIndex < endIndex
-      ? [startIndex, endIndex]
-      : [endIndex, startIndex];
-
-    const rangeIds = itemIds.slice(from, to + 1);
-    const next = new Set(selectedIds);
-
-    for (const id of rangeIds) {
-      if (!maxSelection || next.size < maxSelection) {
-        next.add(id);
-      }
-    }
-
-    lastSelectedRef.current = endId;
-    updateSelection(next);
-  }, [itemIds, selectedIds, maxSelection, updateSelection]);
-
-  const toggleWithShift = useCallback((id: string, shiftKey: boolean) => {
-    if (shiftKey && lastSelectedRef.current !== null) {
-      selectRange(lastSelectedRef.current, id);
-    } else {
-      toggle(id);
+  const select = useCallback(
+    (id: string) => {
+      if (maxSelection && selectedIds.size >= maxSelection) return;
+      const next = new Set(selectedIds);
+      next.add(id);
       lastSelectedRef.current = id;
-    }
-  }, [toggle, selectRange]);
+      updateSelection(next);
+    },
+    [selectedIds, maxSelection, updateSelection],
+  );
+
+  const deselect = useCallback(
+    (id: string) => {
+      const next = new Set(selectedIds);
+      next.delete(id);
+      updateSelection(next);
+    },
+    [selectedIds, updateSelection],
+  );
+
+  const toggle = useCallback(
+    (id: string) => {
+      if (selectedIds.has(id)) {
+        deselect(id);
+      } else {
+        select(id);
+      }
+    },
+    [selectedIds, select, deselect],
+  );
+
+  const selectRange = useCallback(
+    (startId: string, endId: string) => {
+      const startIndex = itemIds.indexOf(startId);
+      const endIndex = itemIds.indexOf(endId);
+
+      if (startIndex === -1 || endIndex === -1) return;
+
+      const [from, to] =
+        startIndex < endIndex ? [startIndex, endIndex] : [endIndex, startIndex];
+
+      const rangeIds = itemIds.slice(from, to + 1);
+      const next = new Set(selectedIds);
+
+      for (const id of rangeIds) {
+        if (!maxSelection || next.size < maxSelection) {
+          next.add(id);
+        }
+      }
+
+      lastSelectedRef.current = endId;
+      updateSelection(next);
+    },
+    [itemIds, selectedIds, maxSelection, updateSelection],
+  );
+
+  const toggleWithShift = useCallback(
+    (id: string, shiftKey: boolean) => {
+      if (shiftKey && lastSelectedRef.current !== null) {
+        selectRange(lastSelectedRef.current, id);
+      } else {
+        toggle(id);
+        lastSelectedRef.current = id;
+      }
+    },
+    [toggle, selectRange],
+  );
 
   const selectAll = useCallback(() => {
     const idsToSelect = maxSelection ? itemIds.slice(0, maxSelection) : itemIds;
@@ -176,58 +197,73 @@ export function useSelection<T extends SelectionItem = SelectionItem>(
     deselectAll();
   }, [deselectAll]);
 
-  const setSelection = useCallback((ids: string[]) => {
-    const idsToSelect = maxSelection ? ids.slice(0, maxSelection) : ids;
-    updateSelection(new Set(idsToSelect));
-  }, [maxSelection, updateSelection]);
+  const setSelection = useCallback(
+    (ids: string[]) => {
+      const idsToSelect = maxSelection ? ids.slice(0, maxSelection) : ids;
+      updateSelection(new Set(idsToSelect));
+    },
+    [maxSelection, updateSelection],
+  );
 
-  const handleItemClick = useCallback((id: string, e: React.MouseEvent) => {
-    if (e.shiftKey) {
-      toggleWithShift(id, true);
-    } else if (e.ctrlKey || e.metaKey) {
-      toggle(id);
-    } else {
-      setSelection([id]);
-    }
-  }, [toggleWithShift, toggle, setSelection]);
-
-  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
-    if ((e.ctrlKey || e.metaKey) && e.key === 'a') {
-      e.preventDefault();
-      if (isAllSelected) {
-        deselectAll();
+  const handleItemClick = useCallback(
+    (id: string, e: React.MouseEvent) => {
+      if (e.shiftKey) {
+        toggleWithShift(id, true);
+      } else if (e.ctrlKey || e.metaKey) {
+        toggle(id);
       } else {
-        selectAll();
-      }
-    } else if (e.key === 'Escape') {
-      clearSelection();
-    }
-  }, [isAllSelected, selectAll, deselectAll, clearSelection]);
-
-  const getCheckboxProps = useCallback((id: string) => ({
-    checked: selectedIds.has(id),
-    onCheckedChange: (checked: boolean) => {
-      if (checked) {
-        select(id);
-      } else {
-        deselect(id);
+        setSelection([id]);
       }
     },
-    'aria-label': `Select item ${id}`,
-  }), [selectedIds, select, deselect]);
+    [toggleWithShift, toggle, setSelection],
+  );
 
-  const getSelectAllProps = useCallback(() => ({
-    checked: isAllSelected,
-    indeterminate: isSomeSelected,
-    onCheckedChange: (checked: boolean) => {
-      if (checked) {
-        selectAll();
-      } else {
-        deselectAll();
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === "a") {
+        e.preventDefault();
+        if (isAllSelected) {
+          deselectAll();
+        } else {
+          selectAll();
+        }
+      } else if (e.key === "Escape") {
+        clearSelection();
       }
     },
-    'aria-label': isAllSelected ? 'Deselect all' : 'Select all',
-  }), [isAllSelected, isSomeSelected, selectAll, deselectAll]);
+    [isAllSelected, selectAll, deselectAll, clearSelection],
+  );
+
+  const getCheckboxProps = useCallback(
+    (id: string) => ({
+      checked: selectedIds.has(id),
+      onCheckedChange: (checked: boolean) => {
+        if (checked) {
+          select(id);
+        } else {
+          deselect(id);
+        }
+      },
+      "aria-label": `Select item ${id}`,
+    }),
+    [selectedIds, select, deselect],
+  );
+
+  const getSelectAllProps = useCallback(
+    () => ({
+      checked: isAllSelected,
+      indeterminate: isSomeSelected,
+      onCheckedChange: (checked: boolean) => {
+        if (checked) {
+          selectAll();
+        } else {
+          deselectAll();
+        }
+      },
+      "aria-label": isAllSelected ? "Deselect all" : "Select all",
+    }),
+    [isAllSelected, isSomeSelected, selectAll, deselectAll],
+  );
 
   return {
     selectedIds,
@@ -255,62 +291,65 @@ export function useSelection<T extends SelectionItem = SelectionItem>(
 export function useMultiSelectKeyboard<T extends SelectionItem = SelectionItem>(
   selection: UseSelectionResult<T>,
   focusedIndex: number,
-  itemIds: string[]
+  itemIds: string[],
 ) {
-  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
-    const currentId = itemIds[focusedIndex];
-    if (!currentId) return;
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      const currentId = itemIds[focusedIndex];
+      if (!currentId) return;
 
-    switch (e.key) {
-      case ' ':
-        e.preventDefault();
-        if (e.shiftKey) {
-          selection.toggleWithShift(currentId, true);
-        } else {
-          selection.toggle(currentId);
-        }
-        break;
-      case 'a':
-        if (e.ctrlKey || e.metaKey) {
+      switch (e.key) {
+        case " ":
           e.preventDefault();
-          if (selection.isAllSelected) {
-            selection.deselectAll();
+          if (e.shiftKey) {
+            selection.toggleWithShift(currentId, true);
           } else {
-            selection.selectAll();
+            selection.toggle(currentId);
           }
-        }
-        break;
-      case 'Escape':
-        selection.clearSelection();
-        break;
-    }
-  }, [selection, focusedIndex, itemIds]);
+          break;
+        case "a":
+          if (e.ctrlKey || e.metaKey) {
+            e.preventDefault();
+            if (selection.isAllSelected) {
+              selection.deselectAll();
+            } else {
+              selection.selectAll();
+            }
+          }
+          break;
+        case "Escape":
+          selection.clearSelection();
+          break;
+      }
+    },
+    [selection, focusedIndex, itemIds],
+  );
 
   return { handleKeyDown };
 }
 
 export function useSelectionShortcuts(
   containerRef: React.RefObject<HTMLElement>,
-  selection: UseSelectionResult<unknown>
+  selection: UseSelectionResult<unknown>,
 ) {
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
 
     const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.key === 'a') {
+      if ((e.ctrlKey || e.metaKey) && e.key === "a") {
         e.preventDefault();
         if (selection.isAllSelected) {
           selection.deselectAll();
         } else {
           selection.selectAll();
         }
-      } else if (e.key === 'Escape') {
+      } else if (e.key === "Escape") {
         selection.clearSelection();
       }
     };
 
-    container.addEventListener('keydown', handleKeyDown);
-    return () => container.removeEventListener('keydown', handleKeyDown);
+    container.addEventListener("keydown", handleKeyDown);
+    return () => container.removeEventListener("keydown", handleKeyDown);
   }, [containerRef, selection]);
 }

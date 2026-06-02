@@ -1,15 +1,19 @@
-import { logger } from '@/lib/logger';
-import { useState, useEffect, useCallback } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { motion, AnimatePresence } from 'framer-motion';
-import { apiRequest } from '@/lib/queryClient';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
-import { Badge } from '@/components/ui/badge';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { useToast } from '@/hooks/use-toast';
-import { cn } from '@/lib/utils';
+import { logger } from "@/lib/logger";
+import { useState, useEffect, useCallback } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { motion, AnimatePresence } from "framer-motion";
+import { apiRequest } from "@/lib/queryClient";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
+import { Badge } from "@/components/ui/badge";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { useToast } from "@/hooks/use-toast";
+import { cn } from "@/lib/utils";
 import {
   CheckCircle,
   Circle,
@@ -37,8 +41,8 @@ import {
   Maximize2,
   PartyPopper,
   Lock,
-} from 'lucide-react';
-import { Link } from 'wouter';
+} from "lucide-react";
+import { Link } from "wouter";
 
 interface OnboardingTask {
   id: string;
@@ -69,7 +73,7 @@ interface OnboardingProgressData {
 }
 
 interface OnboardingChecklistProps {
-  variant?: 'floating' | 'inline' | 'sidebar';
+  variant?: "floating" | "inline" | "sidebar";
   showOnComplete?: boolean;
   className?: string;
 }
@@ -89,14 +93,24 @@ const ICON_MAP: Record<string, typeof User> = {
 };
 
 const REWARDS = [
-  { threshold: 25, label: 'Quick Starter', icon: Star, color: 'text-blue-500' },
-  { threshold: 50, label: 'Halfway Hero', icon: Zap, color: 'text-purple-500' },
-  { threshold: 75, label: 'Almost Pro', icon: Target, color: 'text-orange-500' },
-  { threshold: 100, label: 'Max Champion', icon: Trophy, color: 'text-yellow-500' },
+  { threshold: 25, label: "Quick Starter", icon: Star, color: "text-blue-500" },
+  { threshold: 50, label: "Halfway Hero", icon: Zap, color: "text-purple-500" },
+  {
+    threshold: 75,
+    label: "Almost Pro",
+    icon: Target,
+    color: "text-orange-500",
+  },
+  {
+    threshold: 100,
+    label: "Max Champion",
+    icon: Trophy,
+    color: "text-yellow-500",
+  },
 ];
 
 export default function OnboardingChecklist({
-  variant = 'floating',
+  variant = "floating",
   showOnComplete = false,
   className,
 }: OnboardingChecklistProps) {
@@ -104,24 +118,30 @@ export default function OnboardingChecklist({
   const [isDismissed, setIsDismissed] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
   const [celebratingStep, setCelebratingStep] = useState<string | null>(null);
-  const [justUnlockedReward, setJustUnlockedReward] = useState<typeof REWARDS[0] | null>(null);
+  const [justUnlockedReward, setJustUnlockedReward] = useState<
+    (typeof REWARDS)[0] | null
+  >(null);
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
   const { data: progress, isLoading } = useQuery<OnboardingProgressData>({
-    queryKey: ['/api/onboarding/progress'],
+    queryKey: ["/api/onboarding/progress"],
     staleTime: 30000,
     refetchOnWindowFocus: false,
   });
 
   const completeStepMutation = useMutation({
     mutationFn: async (stepId: string) => {
-      const response = await apiRequest('POST', '/api/onboarding/complete-step', { stepId });
+      const response = await apiRequest(
+        "POST",
+        "/api/onboarding/complete-step",
+        { stepId },
+      );
       return response.json();
     },
     onSuccess: (data, stepId) => {
-      queryClient.invalidateQueries({ queryKey: ['/api/onboarding/progress'] });
-      
+      queryClient.invalidateQueries({ queryKey: ["/api/onboarding/progress"] });
+
       setCelebratingStep(stepId);
       setTimeout(() => setCelebratingStep(null), 2000);
 
@@ -134,7 +154,9 @@ export default function OnboardingChecklist({
 
       const prevPercentage = progress?.completionPercentage || 0;
       const newReward = REWARDS.find(
-        (r) => prevPercentage < r.threshold && (data.completionPercentage || 0) >= r.threshold
+        (r) =>
+          prevPercentage < r.threshold &&
+          (data.completionPercentage || 0) >= r.threshold,
       );
       if (newReward) {
         setJustUnlockedReward(newReward);
@@ -142,51 +164,51 @@ export default function OnboardingChecklist({
       }
     },
     onError: (error) => {
-      logger.error('Failed to complete step:', error);
+      logger.error("Failed to complete step:", error);
     },
   });
 
   const skipMutation = useMutation({
     mutationFn: async () => {
-      const response = await apiRequest('POST', '/api/onboarding/skip');
+      const response = await apiRequest("POST", "/api/onboarding/skip");
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/onboarding/progress'] });
+      queryClient.invalidateQueries({ queryKey: ["/api/onboarding/progress"] });
       toast({
-        title: 'Onboarding Skipped',
-        description: 'You can always complete tasks later from your dashboard.',
+        title: "Onboarding Skipped",
+        description: "You can always complete tasks later from your dashboard.",
       });
     },
   });
 
   useEffect(() => {
-    const savedDismissed = localStorage.getItem('onboardingDismissed');
-    const savedMinimized = localStorage.getItem('onboardingMinimized');
-    if (savedDismissed === 'true') setIsDismissed(true);
-    if (savedMinimized === 'true') setIsMinimized(true);
+    const savedDismissed = localStorage.getItem("onboardingDismissed");
+    const savedMinimized = localStorage.getItem("onboardingMinimized");
+    if (savedDismissed === "true") setIsDismissed(true);
+    if (savedMinimized === "true") setIsMinimized(true);
   }, []);
 
   const handleDismiss = useCallback(() => {
     setIsDismissed(true);
-    localStorage.setItem('onboardingDismissed', 'true');
+    localStorage.setItem("onboardingDismissed", "true");
   }, []);
 
   const handleRestore = useCallback(() => {
     setIsDismissed(false);
     setIsMinimized(false);
-    localStorage.removeItem('onboardingDismissed');
-    localStorage.removeItem('onboardingMinimized');
+    localStorage.removeItem("onboardingDismissed");
+    localStorage.removeItem("onboardingMinimized");
   }, []);
 
   const handleMinimize = useCallback(() => {
     setIsMinimized(true);
-    localStorage.setItem('onboardingMinimized', 'true');
+    localStorage.setItem("onboardingMinimized", "true");
   }, []);
 
   const handleMaximize = useCallback(() => {
     setIsMinimized(false);
-    localStorage.removeItem('onboardingMinimized');
+    localStorage.removeItem("onboardingMinimized");
   }, []);
 
   const getIcon = (iconName: string | null) => {
@@ -197,8 +219,12 @@ export default function OnboardingChecklist({
   const completedCount = progress?.tasks.filter((t) => t.completed).length || 0;
   const totalCount = progress?.tasks.length || 0;
   const progressPercentage = progress?.completionPercentage || 0;
-  const currentReward = REWARDS.find((r) => progressPercentage < r.threshold) || REWARDS[REWARDS.length - 1];
-  const unlockedRewards = REWARDS.filter((r) => progressPercentage >= r.threshold);
+  const currentReward =
+    REWARDS.find((r) => progressPercentage < r.threshold) ||
+    REWARDS[REWARDS.length - 1];
+  const unlockedRewards = REWARDS.filter(
+    (r) => progressPercentage >= r.threshold,
+  );
 
   if (isLoading) {
     return null;
@@ -210,7 +236,12 @@ export default function OnboardingChecklist({
 
   if (isDismissed) {
     return (
-      <div className={cn('fixed bottom-20 lg:bottom-4 right-4 z-[42]', variant !== 'floating' && 'hidden')}>
+      <div
+        className={cn(
+          "fixed bottom-20 lg:bottom-4 right-4 z-[42]",
+          variant !== "floating" && "hidden",
+        )}
+      >
         <Button
           onClick={handleRestore}
           size="sm"
@@ -225,7 +256,7 @@ export default function OnboardingChecklist({
     );
   }
 
-  if (isMinimized && variant === 'floating') {
+  if (isMinimized && variant === "floating") {
     return (
       <motion.div
         initial={{ scale: 0.8, opacity: 0 }}
@@ -286,14 +317,28 @@ export default function OnboardingChecklist({
               variant="ghost"
               className="h-7 w-7"
             >
-              {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+              {isExpanded ? (
+                <ChevronUp className="w-4 h-4" />
+              ) : (
+                <ChevronDown className="w-4 h-4" />
+              )}
             </Button>
-            {variant === 'floating' && (
-              <Button onClick={handleMinimize} size="icon" variant="ghost" className="h-7 w-7">
+            {variant === "floating" && (
+              <Button
+                onClick={handleMinimize}
+                size="icon"
+                variant="ghost"
+                className="h-7 w-7"
+              >
                 <Minimize2 className="w-4 h-4" />
               </Button>
             )}
-            <Button onClick={handleDismiss} size="icon" variant="ghost" className="h-7 w-7">
+            <Button
+              onClick={handleDismiss}
+              size="icon"
+              variant="ghost"
+              className="h-7 w-7"
+            >
               <X className="w-4 h-4" />
             </Button>
           </div>
@@ -310,10 +355,10 @@ export default function OnboardingChecklist({
                   <TooltipTrigger>
                     <div
                       className={cn(
-                        'w-6 h-6 rounded-full flex items-center justify-center transition-all',
+                        "w-6 h-6 rounded-full flex items-center justify-center transition-all",
                         isUnlocked
-                          ? 'bg-gradient-to-br from-blue-500 to-purple-600 text-white'
-                          : 'bg-muted text-muted-foreground'
+                          ? "bg-gradient-to-br from-blue-500 to-purple-600 text-white"
+                          : "bg-muted text-muted-foreground",
                       )}
                     >
                       {isUnlocked ? (
@@ -325,7 +370,9 @@ export default function OnboardingChecklist({
                   </TooltipTrigger>
                   <TooltipContent>
                     <p>{reward.label}</p>
-                    <p className="text-xs text-muted-foreground">{reward.threshold}% complete</p>
+                    <p className="text-xs text-muted-foreground">
+                      {reward.threshold}% complete
+                    </p>
                   </TooltipContent>
                 </Tooltip>
               );
@@ -338,7 +385,7 @@ export default function OnboardingChecklist({
         {isExpanded && (
           <motion.div
             initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
+            animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
             transition={{ duration: 0.2 }}
           >
@@ -348,13 +395,15 @@ export default function OnboardingChecklist({
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <Sparkles className="w-4 h-4 text-blue-500" />
-                      <span className="text-sm font-medium">Suggested Next</span>
+                      <span className="text-sm font-medium">
+                        Suggested Next
+                      </span>
                     </div>
                     <Badge variant="secondary" className="text-xs">
                       +{progress.recommendedNextStep.points} XP
                     </Badge>
                   </div>
-                  <Link href={progress.recommendedNextStep.actionUrl || '#'}>
+                  <Link href={progress.recommendedNextStep.actionUrl || "#"}>
                     <Button size="sm" className="w-full mt-2">
                       {progress.recommendedNextStep.name}
                       <ArrowRight className="w-4 h-4 ml-2" />
@@ -374,13 +423,13 @@ export default function OnboardingChecklist({
                       layout
                       animate={isCelebrating ? { scale: [1, 1.02, 1] } : {}}
                     >
-                      <Link href={task.actionUrl || '#'}>
+                      <Link href={task.actionUrl || "#"}>
                         <div
                           className={cn(
-                            'flex items-center space-x-3 p-3 rounded-lg transition-all cursor-pointer',
+                            "flex items-center space-x-3 p-3 rounded-lg transition-all cursor-pointer",
                             task.completed
-                              ? 'bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800'
-                              : 'bg-muted/50 hover:bg-muted border border-transparent'
+                              ? "bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800"
+                              : "bg-muted/50 hover:bg-muted border border-transparent",
                           )}
                           onClick={(e) => {
                             if (!task.completed) {
@@ -409,15 +458,18 @@ export default function OnboardingChecklist({
                           </div>
                           <TaskIcon
                             className={cn(
-                              'w-5 h-5 flex-shrink-0',
-                              task.completed ? 'text-green-600' : 'text-muted-foreground'
+                              "w-5 h-5 flex-shrink-0",
+                              task.completed
+                                ? "text-green-600"
+                                : "text-muted-foreground",
                             )}
                           />
                           <div className="flex-1 min-w-0">
                             <p
                               className={cn(
-                                'font-medium text-sm truncate',
-                                task.completed && 'line-through text-muted-foreground'
+                                "font-medium text-sm truncate",
+                                task.completed &&
+                                  "line-through text-muted-foreground",
                               )}
                             >
                               {task.name}
@@ -504,7 +556,12 @@ export default function OnboardingChecklist({
                 animate={{ rotate: [0, 10, -10, 0], scale: [1, 1.2, 1] }}
                 transition={{ duration: 0.5 }}
               >
-                <justUnlockedReward.icon className={cn('w-12 h-12 mx-auto mb-2', justUnlockedReward.color)} />
+                <justUnlockedReward.icon
+                  className={cn(
+                    "w-12 h-12 mx-auto mb-2",
+                    justUnlockedReward.color,
+                  )}
+                />
               </motion.div>
               <p className="font-bold text-lg">Reward Unlocked!</p>
               <p className="text-white/80">{justUnlockedReward.label}</p>
@@ -515,12 +572,12 @@ export default function OnboardingChecklist({
     </>
   );
 
-  if (variant === 'floating') {
+  if (variant === "floating") {
     return (
       <motion.div
         initial={{ opacity: 0, y: 20, scale: 0.95 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
-        className={cn('fixed bottom-20 lg:bottom-4 right-4 z-[42]', className)}
+        className={cn("fixed bottom-20 lg:bottom-4 right-4 z-[42]", className)}
       >
         <Card className="w-full max-w-md shadow-xl border-2 border-primary/20 relative overflow-hidden">
           {cardContent}
@@ -530,7 +587,7 @@ export default function OnboardingChecklist({
   }
 
   return (
-    <Card className={cn('w-full relative overflow-hidden', className)}>
+    <Card className={cn("w-full relative overflow-hidden", className)}>
       {cardContent}
     </Card>
   );
