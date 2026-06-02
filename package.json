@@ -59,7 +59,8 @@
     "test:watch": "vitest watch --config vitest.config.ts",
     "test:coverage": "vitest run --coverage --config vitest.config.ts",
     "test:ci": "vitest run --config vitest.config.ts --reporter=junit --outputFile=test-results.xml",
-    "gateway": "npx tsx server/diffusion-gateway/index.ts"
+    "gateway": "npx tsx server/diffusion-gateway/index.ts",
+    "check:fast": "tsgo -p tsconfig.json --noEmit"
   },
   "build": {
     "appId": "com.blawzmusic.maxbooster",
